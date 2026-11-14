@@ -3,7 +3,7 @@ owner: data layer
 sources:
   - packages/alpha-data/src/**
   - packages/alpha-data/pyproject.toml
-verified: b4b36f41caa0
+verified: 4c249969061e
 ---
 
 # alpha-data workspace

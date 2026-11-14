@@ -6,7 +6,7 @@ sources:
   - packages/alpha-data/src/alpha_data/snapshot.py
   - packages/alpha-data/src/alpha_data/adapters/alpaca_adapter.py
   - packages/alpha-data/src/alpha_data/adapters/ccxt_adapter.py
-verified: b4b36f41caa0
+verified: 4c249969061e
 ---
 
 # Bar timeframes

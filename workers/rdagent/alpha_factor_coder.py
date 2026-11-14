@@ -14,6 +14,7 @@ Proposed upstream patch: reset the counter in ``CoSTEER.develop`` (or key it by 
 
 from __future__ import annotations
 
+import hashlib
 import os
 import tempfile
 from collections.abc import Mapping, Sequence
@@ -26,14 +27,33 @@ from rdagent.components.coder.factor_coder import FactorCoSTEER
 from rdagent.core.serialization import dump, load
 
 
-def demote(knowledge: Any, task_informations: Sequence[str]) -> list[str]:
-    """Retain rejected code and its history, removing both successful retrieval paths."""
+def _code_sha256(unit: Any) -> str | None:
+    code = (getattr(unit.implementation, "file_dict", None) or {}).get("factor.py")
+    return hashlib.sha256(code.encode()).hexdigest() if isinstance(code, str) else None
+
+
+def demote(
+    knowledge: Any,
+    task_informations: Sequence[str],
+    code_sha256s: Sequence[str | None] | None = None,
+) -> list[str]:
+    """Retain rejected code and its history, removing both successful retrieval paths.
+
+    With ``code_sha256s`` (aligned with ``task_informations``) only the implementation with that
+    exact code is demoted, so an earlier accepted implementation of the same task stays offered.
+    """
+    digests = list(code_sha256s) if code_sha256s is not None else [None] * len(task_informations)
     demoted = []
-    for information in dict.fromkeys(task_informations):
-        changed = information in knowledge.success_task_to_knowledge_dict
-        knowledge.success_task_to_knowledge_dict.pop(information, None)
+    for information, digest in dict.fromkeys(zip(task_informations, digests, strict=True)):
+        changed = False
+        current = knowledge.success_task_to_knowledge_dict.get(information)
+        if current is not None and (digest is None or _code_sha256(current) == digest):
+            knowledge.success_task_to_knowledge_dict.pop(information)
+            changed = True
         for node_id, unit in knowledge.node_to_implementation_knowledge_dict.items():
             if unit.target_task.get_task_information() != information:
+                continue
+            if digest is not None and _code_sha256(unit) != digest:
                 continue
             node = knowledge.graph.nodes[node_id]
             if node.label == "task_success_implement":
@@ -45,7 +65,9 @@ def demote(knowledge: Any, task_informations: Sequence[str]) -> list[str]:
 
 
 def demote_in_file(
-    environ: Mapping[str, str], task_informations: Sequence[str]
+    environ: Mapping[str, str],
+    task_informations: Sequence[str],
+    code_sha256s: Sequence[str | None] | None = None,
 ) -> tuple[list[str], str | None]:
     """A memory failure is advisory; report it without stopping the research run."""
     try:
@@ -61,7 +83,7 @@ def demote_in_file(
         with lock:
             with path.open("rb") as stream:
                 knowledge = load(stream)
-            demoted = demote(knowledge, task_informations)
+            demoted = demote(knowledge, task_informations, code_sha256s)
             descriptor, temporary = tempfile.mkstemp(prefix=".coder-verdict-", dir=path.parent)
             try:
                 with os.fdopen(descriptor, "wb") as stream:

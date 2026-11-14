@@ -570,8 +570,10 @@ Unknown ledger schemas are skipped by the proposer with a counted explanation. T
 keeps their trial indices contiguous, excludes their contents from identity and repeat checks,
 and counts each as one conservative trial with p = 1.0. Evaluations containing such rows add
 `ledger_unknown_rows` (count and distinct schema names) and warn on stderr. Malformed complete
-lines and malformed known-schema rows still fail loud. Both readers ignore a final line without
-a newline while another writer may be appending.
+lines and malformed known-schema rows still fail loud. The proposer, which reads without the
+ledger lock, ignores a final line without a newline (another writer may be appending); the
+evaluator, the exposure command and the rule family read under the lock, so for them a partial
+last line means a crashed writer and they fail loud rather than append after it.
 
 ### Exposure log and imported trials
 

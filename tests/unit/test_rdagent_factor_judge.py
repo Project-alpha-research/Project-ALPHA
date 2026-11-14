@@ -7,6 +7,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -198,7 +199,11 @@ def judge_parts(*names: str) -> dict[str, Any]:
         for n in tree.body
         if isinstance(n, (ast.FunctionDef, ast.ClassDef))
         and (
-            n.name in names or ("AlphaFactorRunner" in names and n.name == "record_coder_verdicts")
+            n.name in names
+            or (
+                ("AlphaFactorRunner" in names or "record_coder_verdicts" in names)
+                and n.name in {"record_coder_verdicts", "_record_coder_verdicts"}
+            )
         )
     ]
     namespace = {
@@ -209,6 +214,7 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "json": json,
         "pd": pd,
         "subprocess": subprocess,
+        "sys": sys,
         "Developer": object,
         "FactorEmptyError": ValueError,
         "LEGACY_KEYS": ["IC"],
@@ -497,8 +503,11 @@ def test_runner_records_code_verdicts_before_evaluator_failure(
         monkeypatch.setenv(key, value)
     calls = []
 
-    def demote(environ: Any, tasks: list[str]) -> tuple[list[str], str | None]:
+    def demote(
+        environ: Any, tasks: list[str], digests: list[str] | None = None
+    ) -> tuple[list[str], str | None]:
         calls.append(tasks)
+        assert digests is not None and len(digests) == len(tasks)  # exact code identity
         return (tasks, None) if persistent else ([], "no persistent coding memory")
 
     namespace["demote_in_file"] = demote

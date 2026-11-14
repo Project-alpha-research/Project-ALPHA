@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -112,8 +113,19 @@ def record_coder_verdicts(
 ) -> None:
     if not rejected:
         return
+    try:
+        _record_coder_verdicts(run, iteration, rejected)
+    except Exception as error:  # noqa: BLE001 - a verdict record never stops the runner
+        print(f"coder verdicts not recorded: {type(error).__name__}", file=sys.stderr)
+
+
+def _record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
     informations = [task.get_task_information() for task, _ in rejected]
-    demoted, note = demote_in_file(os.environ, informations)
+    demoted, note = demote_in_file(
+        os.environ, informations, [factor["code_sha256"] for _, factor in rejected]
+    )
     with (run / "coder-verdicts.jsonl").open("a") as stream:
         for (_, factor), information in zip(rejected, informations, strict=True):
             stream.write(
@@ -297,7 +309,9 @@ class AlphaFactorRunner(Developer):
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
-                    elif factor["status"] in {"LOOKAHEAD", "FAILED"}:
+                    elif factor["status"] == "FAILED" or check["status"] == "LOOKAHEAD":
+                        # Only ALPHA's verdict on the code itself: a check that merely errored
+                        # (timeout, subprocess failure) says nothing about the code.
                         rejected.append((task, factor))
                 else:
                     factor["failure_detail"] = execution

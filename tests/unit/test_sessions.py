@@ -81,3 +81,10 @@ def test_default_local_date_and_continuous_known_at() -> None:
     assert session_date_of(ts, None) == date(2026, 11, 3)
     assert bar_known_at(ts, timeframe=DAILY, calendar=None) == ts + timedelta(days=1)
     assert bar_known_at(ts, timeframe=BarTimeframe(60), calendar=None) == ts + timedelta(hours=1)
+
+
+def test_daily_bar_on_a_holiday_is_known_at_the_end_of_its_day() -> None:
+    holiday = datetime(2020, 1, 1, tzinfo=UTC)
+    assert bar_known_at(holiday, timeframe=DAILY, calendar="XNYS") == datetime(
+        2020, 1, 2, tzinfo=UTC
+    )

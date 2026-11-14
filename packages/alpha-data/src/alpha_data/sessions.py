@@ -86,8 +86,14 @@ def filter_session(
 
 
 def bar_known_at(ts: datetime, *, timeframe: BarTimeframe, calendar: str | None) -> datetime:
-    """Daily stock stamps denote session dates; intraday stamps denote interval starts."""
+    """Daily stock stamps denote session dates; intraday stamps denote interval starts.
+
+    A daily bar dated on a day that is not an exchange session (a vendor row on a holiday) has no
+    close to wait for; it is treated as known at the end of its UTC day, never earlier.
+    """
     ts = _aware_utc(ts)
     if timeframe.is_daily and calendar is not None:
-        return session_bounds(calendar, ts.date())[1]
+        if _calendar(calendar).is_session(ts.date().isoformat()):
+            return session_bounds(calendar, ts.date())[1]
+        return ts + timeframe.duration
     return ts + timeframe.duration

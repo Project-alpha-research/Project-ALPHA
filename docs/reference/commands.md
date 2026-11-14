@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-234 commands in 25 groups. Options marked (required) are
+235 commands in 26 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -364,6 +364,10 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 - `alpha suite reserve <PROJECT_ID> <EXPERIMENT_ID> <ACTION>` — Persist the exact queued journal before a detached suit… Options: `--job-id (required)`, +1 more
 - `alpha suite run <PROJECT_ID> <EXPERIMENT_ID> <ACTION>` — Execute exactly one ready allowlisted plan and persist its… Options: `--job-id`, +3 more
 - `alpha suite status <JOB_ID>` — Read one durable job and its bounded journal. Options: `--event-limit`, `--event-offset`, `--event-tail`, `--json`
+
+## alpha test
+
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +5 more
 
 ## alpha validate
 

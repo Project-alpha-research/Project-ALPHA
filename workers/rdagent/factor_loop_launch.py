@@ -174,6 +174,7 @@ def loop_environment(
         "FACTOR_CoSTEER_data_folder": str(run / "factor_data" / "full"),
         "FACTOR_CoSTEER_data_folder_debug": str(run / "factor_data" / "debug"),
         "QLIB_FACTOR_SCEN": "alpha_factor_judge.AlphaFactorScenario",
+        "QLIB_FACTOR_CODER": "alpha_factor_coder.AlphaFactorCoSTEER",
         "QLIB_FACTOR_RUNNER": "alpha_factor_judge.AlphaFactorRunner",
         "QLIB_FACTOR_SUMMARIZER": "alpha_factor_judge.AlphaFactorFeedback",
         "QLIB_FACTOR_HYPOTHESIS_GEN": "alpha_factor_judge.AlphaFactorHypothesisGen",

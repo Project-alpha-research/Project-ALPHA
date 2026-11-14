@@ -260,10 +260,9 @@ def test_open_loop_without_memory_and_failed_session(tmp_path: Path) -> None:
         "LOG_TRACE_PATH": str(tmp_path / "checkout"),
         "FACTOR_CoSTEER_max_loop": "2",
     }
-    cls.load.return_value = SimpleNamespace(coder=SimpleNamespace(max_loop=1))
+    cls.load.return_value = SimpleNamespace(coder="pickled coder", trace=None)
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
     assert loop is cls.load.return_value and total == 5
-    assert loop.coder.max_loop == 2  # this run's attempt limit, not the pickled one
     cls.load.assert_called_once_with(old / "2/4_record", checkout=tmp_path / "checkout")
     # A truncated newest dump: the next-older dump is used instead.
     cls.load.reset_mock()
@@ -625,3 +624,41 @@ def test_runtime_gateway_explicitly_waives_temperature(
     monkeypatch.setattr(launch.Launch, "spawn", capture)
     with pytest.raises(launch.LaunchError, match="command captured"):
         test_runtime_offline_e2e(tmp_path, monkeypatch, knowledge_only=False)
+
+
+@RUNTIME
+def test_coder_restarts_the_knowledge_counter_per_experiment(tmp_path: Path) -> None:
+    script = r"""
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+sys.path.insert(0, sys.argv[1])
+from factor_loop_entry import install_source
+install_source(Path(sys.argv[2]))
+from rdagent.components.coder.factor_coder import FactorCoSTEER
+import alpha_factor_coder
+seen = []
+FactorCoSTEER.develop = lambda self, exp: seen.append(self.rag.current_generated_trace_count) or exp
+coder = alpha_factor_coder.AlphaFactorCoSTEER.__new__(alpha_factor_coder.AlphaFactorCoSTEER)
+coder.rag = SimpleNamespace(current_generated_trace_count=5)
+assert coder.develop("exp") == "exp" and seen == [0], seen
+"""
+    subprocess.run(
+        [
+            os.environ["ALPHA_FACTOR_PYTHON"],
+            "-I",
+            "-B",
+            "-c",
+            script,
+            str(WORKER),
+            os.environ["ALPHA_RDAGENT_SOURCE"],
+        ],
+        check=True,
+        cwd=tmp_path,
+        env={
+            "HOME": str(tmp_path),
+            "PATH": "/usr/bin:/bin",
+            "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+        },
+        timeout=120,
+    )

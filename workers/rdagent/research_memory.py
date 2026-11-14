@@ -353,9 +353,21 @@ def open_factor_loop(
             except Exception as error:  # noqa: BLE001 - try an older dump, then a fresh loop
                 error_type = type(error).__name__
                 continue
-            # The pickled coder keeps the earlier run's attempt limit; apply this run's.
-            if hasattr(loop.coder, "max_loop") and environ.get("FACTOR_CoSTEER_max_loop"):
-                loop.coder.max_loop = int(environ["FACTOR_CoSTEER_max_loop"])
+            # The pickled coder carries the earlier run's class and settings (attempt limit, its
+            # in-memory knowledge counter). Build this run's coder from the current settings,
+            # exactly as RDLoop.__init__ does; its knowledge comes from the shared file anyway.
+            if getattr(settings, "coder", None) and getattr(loop, "trace", None) is not None:
+                try:
+                    from rdagent.core.utils import import_class
+
+                    loop.coder = import_class(settings.coder)(loop.trace.scen)
+                except Exception as error:  # noqa: BLE001 - keep the pickled coder, say so
+                    _safe_event(
+                        environ,
+                        "coder-rebuild-failed",
+                        f"This run's coder could not be built ({type(error).__name__}); "
+                        "using the continued session's coder.",
+                    )
             _safe_event(
                 environ,
                 "continued",

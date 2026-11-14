@@ -101,11 +101,12 @@ def test_loop_environment_is_exact_and_names_alpha_classes(tmp_path: Path) -> No
     assert env["QLIB_FACTOR_RUNNER"] == "alpha_factor_judge.AlphaFactorRunner"
     assert env["QLIB_FACTOR_SUMMARIZER"] == "alpha_factor_judge.AlphaFactorFeedback"
     assert env["QLIB_FACTOR_SCEN"] == "alpha_factor_judge.AlphaFactorScenario"
+    assert env["QLIB_FACTOR_CODER"] == "alpha_factor_coder.AlphaFactorCoSTEER"
     assert env["QLIB_FACTOR_HYPOTHESIS_GEN"] == "alpha_factor_judge.AlphaFactorHypothesisGen"
     assert env["FACTOR_CoSTEER_max_loop"] == "2"
     assert env["CONDA_DEFAULT_ENV"] == "alpha-no-conda"
     assert not any(k.startswith(("OPENAI", "ALPHA_GATEWAY", "MODEL_CoSTEER")) for k in env)
-    assert len(env) == 31
+    assert len(env) == 32
     assert env["FACTOR_CoSTEER_python_bin"].startswith(
         "env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE "
     )

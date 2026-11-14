@@ -450,6 +450,44 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   `logs/` and `receipt.json`. The trial ledger is shared by all runs and append-only.
 - Generated factor code runs with the gateway's address and token removed from its environment.
 
+### Research memory (2026-11-15)
+
+Memory is enabled by default. RD-Agent keeps CoSTEER's working factor programs and failed
+coding attempts, and continues the previous run's hypothesis, experiment and feedback trace.
+It uses RD-Agent's supported knowledge settings and session checkout; earlier run folders stay
+unchanged. This is working knowledge: ALPHA's trial ledger remains the sole evidence authority.
+Nothing is copied between memory and the ledger.
+
+The default location is `research-memory/` beside the trial ledger. Use `--memory-dir /abs/path`
+to choose another location outside every git work tree, or `--no-memory` to run fresh without
+reading or writing memory. `--coder-max-loop` accepts 1–3 (default 2); at 1 the coder cannot learn
+an error-to-fix lesson within a run. The gateway's 60-call cap still applies.
+
+`memory.json` links sessions by path and records runs, hashes and warnings. CoSTEER writes
+`costeer/factor-knowledge.pkl`. The signing key lives at `signing/artifact_signing.key` (mode
+0600): it is an integrity key, not a credential. Keep the memory directory and linked run folders
+available together.
+
+Unreadable manifests, changed RD-Agent versions and unloadable coding knowledge are quarantined
+with a reason. Missing or unloadable sessions start a fresh trace while keeping usable coding
+knowledge. A changed ALPHA judge produces a warning and continuation still proceeds. Warnings
+appear in the run receipt; entry-side events are in `memory-events.jsonl`. If a gateway secret is
+found, the knowledge file is deleted and the new session is excluded; the warning names any
+session files left for the owner to delete. A recording failure is also reported in the receipt.
+
+Inspect without changing memory (omit `--json` for a plain-English explanation):
+
+```sh
+.venv/bin/python workers/rdagent/research_memory.py show \
+  --memory-dir /abs/runs/rdagent-trial-ledger/research-memory \
+  --trial-ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl --json
+```
+
+Set `ALPHA_FACTOR_PYTHON` and `ALPHA_RDAGENT_SOURCE` to inspect coding attempts, errors, working
+programs and research rounds alongside the ledger's verdicts. Without that runtime the inspector
+shows manifest facts and explains what is missing. It copies the integrity key into a temporary
+HOME for reading signed artifacts and removes the copy afterwards.
+
 ### Evidence recorded per trial
 
 All files below live under the run directory, outside git; they remain exploratory, not admitted.

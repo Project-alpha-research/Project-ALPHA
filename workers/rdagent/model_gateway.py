@@ -349,6 +349,17 @@ class EmbeddingBackend(Protocol):
 
 class FakeChat:
     def __init__(self) -> None:
+        script = os.environ.get("ALPHA_GATEWAY_FAKE_SCRIPT")
+        self.script = json.loads(Path(script).read_text()) if script else []
+        if not isinstance(self.script, list) or any(
+            not isinstance(entry, dict)
+            or not isinstance(entry.get("contains"), str)
+            or not isinstance(entry.get("reply"), str)
+            for entry in self.script
+        ):
+            raise ValueError(
+                "ALPHA_GATEWAY_FAKE_SCRIPT must contain a list of contains/reply strings"
+            )
         self.remaining_bad = int(os.environ.get("ALPHA_GATEWAY_FAKE_BAD_JSON_FIRST", "0"))
         self.lock = threading.Lock()
 
@@ -360,6 +371,12 @@ class FakeChat:
         effort: str,
         schema: dict[str, Any] | None,
     ) -> ChatResult:
+        for entry in self.script:
+            if entry["contains"] in instructions + "\n" + prompt:
+                reply = entry["reply"]
+                return ChatResult(
+                    reply, "fake", len(prompt) // 4, completion_tokens=len(reply) // 4
+                )
         with self.lock:
             bad = self.remaining_bad > 0
             self.remaining_bad -= int(bad)

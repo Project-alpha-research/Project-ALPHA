@@ -368,6 +368,16 @@ def open_factor_loop(
                         f"This run's coder could not be built ({type(error).__name__}); "
                         "using the continued session's coder.",
                     )
+            # RDLoop.__init__ logs the scenario under the tag "scenario"; a loaded session skips
+            # __init__, so this run's log folder would have none and RD-Agent's own viewer could
+            # not tell what kind of run it is (it then stops on its first result). Log it here.
+            if getattr(loop, "trace", None) is not None:
+                try:
+                    from rdagent.log import rdagent_logger
+
+                    rdagent_logger.log_object(loop.trace.scen, tag="scenario")
+                except Exception:  # noqa: BLE001, S110 - a missing viewer tag never stops a run
+                    pass
             _safe_event(
                 environ,
                 "continued",

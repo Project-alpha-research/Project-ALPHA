@@ -11,6 +11,8 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine.diagnose import write_diagnostics
+from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
@@ -130,6 +132,17 @@ def _execute(
                 encoding="utf-8",
             ),
         )
+        if "no-diagnostics" not in result["labels"]:
+            write_diagnostics(
+                idea,
+                prepared.bars,
+                prepared.dividends,
+                prepared.spec,
+                out,
+                prepared.identity,
+                home,
+                result,
+            )
         _, manifest = write_validation_run(
             home,
             prepared.bars,
@@ -157,9 +170,18 @@ def _execute(
         benchmark_sharpe=manifest.get("oos_metrics", {}).get("benchmark_sharpe"),
         dsr=dsr.get("dsr") if isinstance(dsr, dict) else None,
     )
+    diagnostics = read_json(rdir / "diagnostics.json")
+    result.update(
+        flags=diagnostics.get("flags", []),
+        benchmark_sharpe=diagnostics.get("benchmark", {}).get("sharpe"),
+        variants_evaluated=diagnostics.get("variants_evaluated", 0),
+        facts=build_facts(rdir),
+    )
 
 
-def run_idea(idea: IdeaSpec, *, home: Path, seed: int = 7, quick: bool = False) -> dict[str, Any]:
+def run_idea(
+    idea: IdeaSpec, *, home: Path, seed: int = 7, quick: bool = False, no_diagnose: bool = False
+) -> dict[str, Any]:
     """Run assets independently; ledger failures remain fatal rather than losing trial history."""
     knobs = _gauntlet.GauntletParams(seed=seed)
     if quick:
@@ -188,7 +210,16 @@ def run_idea(idea: IdeaSpec, *, home: Path, seed: int = 7, quick: bool = False) 
             )
         )
         result.update(
-            asset=asset, labels=["all-in", "dev-machine-data", *(["quick"] if quick else [])]
+            asset=asset,
+            labels=[
+                "all-in",
+                "dev-machine-data",
+                *(["quick"] if quick else []),
+                *(["no-diagnostics"] if no_diagnose else []),
+            ],
+            flags=[],
+            facts=[],
+            variants_evaluated=0,
         )
         try:
             prepared.append(_prepare(idea, asset, home, knobs, result))
@@ -222,7 +253,7 @@ def run_idea(idea: IdeaSpec, *, home: Path, seed: int = 7, quick: bool = False) 
                 **{
                     key: value
                     for key, value in result.items()
-                    if key not in {"asset", "run_dir", "error"}
+                    if key not in {"asset", "run_dir", "error", "facts"}
                 },
             },
         )

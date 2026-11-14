@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: aa600e57932d
+verified: 985923896aab
 ---
 
 # Web API invariants
@@ -97,7 +97,8 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
 - Run labels are server-side: `_runs.display_name` builds `<strategy> D1 — <symbol> · <source> · <first → last> · run
-  <8 hex>` from the manifest and omits any part it does not record; `market_of` decides crypto/equities or `unknown`.
+  <8 hex>` from the manifest and omits any part it does not record; `market_of` decides crypto/equities or `unknown`;
+  the equity sources include `alpaca`.
   Identity fields (symbol, symbols, label, snapshot id) are read from the manifest top level first, then its `metadata`.
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.

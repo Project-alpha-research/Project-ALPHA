@@ -21,6 +21,7 @@ from rdagent.scenarios.qlib.proposal.factor_proposal import QlibFactorHypothesis
 from rdagent.utils import convert2bool
 from rdagent.utils.agent.tpl import T
 
+from alpha_factor_coder import demote_in_file
 from alpha_factor_data import check_prefix_invariance
 
 LEGACY_KEYS = ["IC"] + [
@@ -81,7 +82,16 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
     )
     lines, seen = [], set()
-    for row in (r for r in reversed(rows) if r.get("schema") != "AlphaRuleTrialV1"):
+    unknown: list[str] = []
+    known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
+            raise ValueError("invalid ALPHA trial ledger schema")
+        if row["schema"] not in known | {"AlphaRuleTrialV1"}:
+            unknown.append(row["schema"])
+        elif row["schema"] in known:
+            ledger_summary(row)  # Validate known rows even outside the 30-row summary.
+    for row in (r for r in reversed(rows) if r["schema"] in known):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
@@ -90,6 +100,38 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         if len(lines) == 30:
             break
     context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+    if unknown:
+        context["hypothesis_and_feedback"] += (
+            f"\n{len(unknown)} ledger rows of other kinds were skipped "
+            f"({', '.join(sorted(set(unknown)))})"
+        )
+
+
+def record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
+    if not rejected:
+        return
+    informations = [task.get_task_information() for task, _ in rejected]
+    demoted, note = demote_in_file(os.environ, informations)
+    with (run / "coder-verdicts.jsonl").open("a") as stream:
+        for (_, factor), information in zip(rejected, informations, strict=True):
+            stream.write(
+                json.dumps(
+                    {
+                        "schema": "AlphaCoderVerdictV1",
+                        "iteration": iteration,
+                        "name": factor["name"],
+                        "code_sha256": factor["code_sha256"],
+                        "status": factor["status"],
+                        "task_information_sha256": hashlib.sha256(information.encode()).hexdigest(),
+                        "demoted": information in demoted,
+                        "note": note,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
 
 
 def record_code(run: Path, digest: str, code: bytes) -> None:
@@ -213,6 +255,7 @@ class AlphaFactorRunner(Developer):
         folder = run / "evaluations" / f"iter-{iteration}"
         folder.mkdir(exist_ok=False)
         factors, frames = [], []
+        rejected = []
         if not (len(exp.sub_tasks) == len(exp.sub_workspace_list) == len(exp.prop_dev_feedback)):
             raise ValueError("factor tasks, workspaces and feedback lengths differ")
         for task, workspace, feedback in zip(
@@ -254,9 +297,12 @@ class AlphaFactorRunner(Developer):
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
+                    elif factor["status"] in {"LOOKAHEAD", "FAILED"}:
+                        rejected.append((task, factor))
                 else:
                     factor["failure_detail"] = execution
             factors.append(factor)
+        record_coder_verdicts(run, iteration, rejected)
         if frames:
             values_frame = pd.concat(frames, axis=1).sort_index().reset_index()
             values_frame["date"] = pd.to_datetime(values_frame.date, utc=True).dt.date

@@ -45,6 +45,10 @@ STUDY_AS_OF = "2023-12-31"
 HISTORY = 251
 
 
+class ReservedDataError(DataError):
+    """Data dated on or after the reserved start reached the study: never a trial outcome."""
+
+
 def classify(mean: float, q: float) -> str:
     if q >= 0.10 or mean == 0:
         return "INSUFFICIENT"
@@ -104,12 +108,12 @@ def _load(
     dividends = _runner.load_dividends(symbol, data_dir=data, snapshot_id=snapshot_id, as_of=as_of)
     cutoff = date.fromisoformat(RESERVED_START)
     if any(b.ts.date() >= cutoff for b in bars) or any(
-        d.ex_date >= cutoff
-        or d.knowledge_time >= cutoff
-        or (d.pay_date is not None and d.pay_date >= cutoff)
-        for d in dividends
+        d.ex_date >= cutoff or d.knowledge_time >= cutoff for d in dividends
     ):
-        raise DataError("point-in-time loader returned reserved bars or dividends")
+        # A leak is an integrity failure: abort the whole run before the ledger is touched.
+        raise ReservedDataError("point-in-time loader returned reserved bars or dividends")
+    # A dividend that went ex in 2023 but is paid in 2024 is known in 2023 and stays; the engine
+    # never credits a pay date after the last scored session.
     manifest_bytes = (data / "snapshots" / snapshot_id / "manifest.json").read_bytes()
     manifest = json.loads(manifest_bytes)
     inputs.update(
@@ -383,6 +387,8 @@ def _trial(
         seed = int(sha((digest + symbol + str(n)).encode())[:8], 16)
         row["measures"] = _measures(frame, books, details, bars, config, seed)
         row.update(p=row["measures"]["p"], outcome="INSUFFICIENT")
+    except ReservedDataError:
+        raise
     except Exception as error:  # A failed declared trial still counts; its error is evidence.
         row["error"] = f"{type(error).__name__}: {error}"
         return row

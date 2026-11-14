@@ -682,8 +682,18 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
             identities.add(digest)
         for row in rows:
             row.update(
-                family_size=len(trial_family([*history, *rows])),
-                distinct_factors=len(identities),
+                family_size=len(
+                    trial_family(
+                        [r for r in [*history, *rows] if r["schema"] != "AlphaRuleTrialV1"]
+                    )
+                ),
+                distinct_factors=len(
+                    {
+                        r["code_sha256"]
+                        for r in [*history, *rows]
+                        if r["schema"] != "AlphaRuleTrialV1"
+                    }
+                ),
                 total_trials=len(history) + len(rows),
             )
         with ledger.open("ab", buffering=0) as stream:

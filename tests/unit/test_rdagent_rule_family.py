@@ -358,7 +358,7 @@ def test_cli_appends_one_complete_block_after_mixed_history(
 
 
 @pytest.mark.parametrize("kind", ["bars", "dividends"])
-def test_loader_escape_is_invalid_not_evaluated(
+def test_loader_escape_aborts_before_the_ledger(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
 ) -> None:
     path, data, _ = fixture(tmp_path)
@@ -381,11 +381,11 @@ def test_loader_escape_is_invalid_not_evaluated(
         ]
 
     monkeypatch.setattr(_runner, "load_" + kind, escaped)
-    result = rf.run_family(
-        path, ev.sha(path.read_bytes()), data, tmp_path / "run", tmp_path / "ledger"
-    )
-    assert all(t["outcome"] == "INVALID" and "reserved" in t["error"] for t in result["trials"])
+    # A point-in-time leak is an integrity failure, not a trial outcome: the run aborts.
+    with pytest.raises(rf.ReservedDataError, match="reserved"):
+        rf.run_family(path, ev.sha(path.read_bytes()), data, tmp_path / "run", tmp_path / "ledger")
     assert not list((tmp_path / "run").rglob("*.parquet"))
+    assert not (tmp_path / "ledger").exists() or not (tmp_path / "ledger").read_bytes()
 
 
 def test_primary_statistics_and_execution_descriptions(tmp_path: Path) -> None:

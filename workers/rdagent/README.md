@@ -488,6 +488,14 @@ programs and research rounds alongside the ledger's verdicts. Without that runti
 shows manifest facts and explains what is missing. It copies the integrity key into a temporary
 HOME for reading signed artifacts and removes the copy afterwards.
 
+Known limits: a run that crashes before finishing a round keeps the previous session as the one
+to continue (if the newest step dump is truncated, the next-older dump is used). Two runs started
+at the same time from one memory both continue the same session and the later one becomes the
+pointer; the coding knowledge itself is shared safely through RD-Agent's file lock. A continued
+session keeps RD-Agent's pickled scenario description from its first run (the data folders and
+the coder's attempt limit come from the current run). RD-Agent's own logs from a memory run are
+signed with the memory key, so its log viewer needs `ARTIFACT_SIGNING_KEY_PATH` pointed there.
+
 ### Evidence recorded per trial
 
 All files below live under the run directory, outside git; they remain exploratory, not admitted.

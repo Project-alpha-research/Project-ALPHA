@@ -429,7 +429,8 @@ def display_name(kind: str, run_id: str, manifest: dict[str, Any], rdir: Path) -
         ", ".join(symbols) if symbols else None
     )
     parts = [part for part in (symbol, manifest.get("source"), _curve_period(rdir)) if part]
-    timeframe = manifest.get("timeframe") or "1D"
+    raw_timeframe = manifest.get("timeframe")
+    timeframe = raw_timeframe if isinstance(raw_timeframe, str) and raw_timeframe else "1D"
     label = timeframe[-1].upper() + timeframe[:-1]
     return f"{strategy} {label} — {' · '.join([*parts, f'run {run_id[:8]}'])}"
 

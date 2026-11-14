@@ -316,19 +316,34 @@ def load_dividends(
 
 
 def resolve_periods_per_year(
-    bars: Sequence[Bar], *, timeframe: BarTimeframe = DAILY, override: int | None = None
+    bars: Sequence[Bar],
+    *,
+    timeframe: BarTimeframe = DAILY,
+    session: str | None = None,
+    override: int | None = None,
 ) -> int:
-    """Keep daily annualisation stable; infer intraday frequency from observed timestamps."""
+    """Bars per year for annualisation: daily keeps 252; intraday follows the bar size.
+
+    Intraday counts come from the timeframe and session, not from the sample: a calendar-time
+    estimate (bars over elapsed years) over-counts a short regular-session sample (one week of 5m
+    bars reads about 1.7 times too high) and would also change vol-target sizing with sample
+    length. Continuous (24/7) markets: 365.25 days of bars; regular stock sessions: 252 sessions
+    of 390 minutes; extended hours: 252 sessions of 960 minutes (04:00-20:00 New York).
+    """
     if override is not None:
         return override
     if timeframe.is_daily:
         return 252
-    from alpha_cli.spine.stores import periods_per_year
-
-    try:
-        return periods_per_year([bar.ts for bar in bars])
-    except ValueError as exc:
-        raise DataError(str(exc)) from exc
+    if not bars:
+        raise DataError("annualisation needs at least one bar")
+    minutes = timeframe.minutes
+    if session in (None, "continuous"):
+        return 525_960 // minutes
+    if session == "regular":
+        return 252 * -(-390 // minutes)
+    if session == "extended":
+        return 252 * -(-960 // minutes)
+    raise DataError(f"unknown session {session!r} for annualisation")
 
 
 def run_full_backtest(

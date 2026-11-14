@@ -27,7 +27,7 @@
     "apps/alpha-cli/src/alpha_cli/artifact_contract.py::verify_manifest_artifacts": 182,
     "apps/alpha-cli/src/alpha_cli/backtest_cmds.py::holdout": 175,
     "apps/alpha-cli/src/alpha_cli/backtest_cmds.py::portfolio": 176,
-    "apps/alpha-cli/src/alpha_cli/backtest_cmds.py::run": 155,
+    "apps/alpha-cli/src/alpha_cli/backtest_cmds.py::run": 154,
     "apps/alpha-cli/src/alpha_cli/control_store.py::ControlStore._gate_packet_inputs": 190,
     "apps/alpha-cli/src/alpha_cli/control_store.py::ControlStore._link_stage_run": 199,
     "apps/alpha-cli/src/alpha_cli/control_store.py::ControlStore._open_readonly": 168,

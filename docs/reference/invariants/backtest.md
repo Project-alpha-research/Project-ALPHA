@@ -46,8 +46,11 @@ Nautilus harness, its feed encoding, fee model and result schema, and the multi-
   submit on the next quote (`alpha_strategies.base`); an order submitted inside `on_bar` would fill at the
   previous quote, and the engine refuses fills that do not land on an opening quote.
   `tests/unit/test_nautilus_feed.py`, oracle `tests/oracles/test_intraday_fill_oracle.py`.
-- Annualisation: daily runs use 252 unless `--periods-per-year` is given; intraday runs infer bars per year
-  from their timestamps (`spine.stores.periods_per_year`). Costs are the same defaults for every asset class
+- Annualisation: daily runs use 252 unless `--periods-per-year` is given; intraday runs take bars per year
+  from the bar size and session (`_runner.resolve_periods_per_year`: 24/7 = 365.25 days, regular stock
+  sessions = 252 x 390 minutes, extended = 252 x 960 minutes), never from the sample's length, which
+  over-counts short samples and would change vol-target sizing. Dividend entitlement is dated by UTC day,
+  so with `--session extended` a winter after-hours bar after 00:00 UTC counts as the next day. Costs are the same defaults for every asset class
   (fee 1 bp, slippage 2 bp); pass `--fee-bps` for a venue's real fee (Binance spot taker about 10 bp).
 - `timing="utc_day_end_next_open"` needs UTC-midnight bars: the decision bar is stamped at the next
   midnight and the quote one microsecond later. It models execution; it is not evidence the price was

@@ -185,3 +185,26 @@ def test_archive_cli_manifest_and_margin_rule(
     mismatch = cli.invoke(app, [*args, "--from-timeframe", "1h"])
     assert mismatch.exit_code != 0
     assert "frequency" in mismatch.output
+
+
+def test_intraday_annualisation_follows_bar_size_and_session() -> None:
+    from alpha_cli._runner import resolve_periods_per_year
+    from alpha_core import Bar
+    from alpha_data.timeframe import DAILY, parse_timeframe
+
+    bar = Bar(
+        symbol="SPY",
+        ts=datetime(2026, 11, 16, 14, 30, tzinfo=UTC),
+        open=1.0,
+        high=1.0,
+        low=1.0,
+        close=1.0,
+        volume=1.0,
+    )
+    five, hour = parse_timeframe("5m"), parse_timeframe("1h")
+    assert resolve_periods_per_year([bar], timeframe=DAILY) == 252
+    assert resolve_periods_per_year([bar], timeframe=five, session="regular") == 252 * 78
+    assert resolve_periods_per_year([bar], timeframe=hour, session="regular") == 252 * 7
+    assert resolve_periods_per_year([bar], timeframe=five, session="extended") == 252 * 192
+    assert resolve_periods_per_year([bar], timeframe=hour, session="continuous") == 8_766
+    assert resolve_periods_per_year([bar], timeframe=hour, override=100) == 100

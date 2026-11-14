@@ -129,7 +129,8 @@ def test_cli_intraday_determinism_and_report(
         "session": "regular",
         "manifest_id": None,
     }
-    assert manifest["params"]["periods_per_year"] == periods_per_year([bar.ts for bar in bars])
+    # 5m regular session: 78 bars a session, 252 sessions (from the bar size, not the sample)
+    assert manifest["params"]["periods_per_year"] == 252 * 78
     equity = (rdir / "equity_curve.parquet").read_bytes()
     second = cli.invoke(app, args)
     assert second.exit_code == 0, second.output
@@ -242,14 +243,14 @@ def test_daily_identity_inputs_and_manifest_keys_are_unchanged(
     }
 
 
-def test_intraday_annualisation_needs_30_bars_unless_explicit(
+def test_intraday_annualisation_needs_no_minimum_sample(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Bars per year come from the bar size and session, so a short sample runs and is not inflated."""
     _seed(tmp_path, monkeypatch, _bars()[:20], "5m")
     cli = CliRunner()
-    failed = cli.invoke(app, _command("--timeframe", "5m"))
-    assert failed.exit_code != 0
-    assert "at least 30 bars" in failed.output
+    short = cli.invoke(app, _command("--timeframe", "5m"))
+    assert short.exit_code == 0, short.output
     explicit = cli.invoke(app, _command("--timeframe", "5m", "--periods-per-year", "20000"))
     assert explicit.exit_code == 0, explicit.output
 

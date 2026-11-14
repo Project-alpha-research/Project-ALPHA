@@ -430,6 +430,20 @@ def _load_run_bars(
     return symbol, bars, snapshot_id, dividends, fields
 
 
+def _annualised(
+    spec: _runner.RunSpec,
+    bars: list[Bar],
+    target: BarTimeframe,
+    fields: dict[str, str | None],
+    override: int | None,
+) -> _runner.RunSpec:
+    """Set bars per year from the bar size and session (daily: 252) unless the owner gave it."""
+    ppy = _runner.resolve_periods_per_year(
+        bars, timeframe=target, session=fields.get("session"), override=override
+    )
+    return replace(spec, periods_per_year=ppy)
+
+
 def _run_timeframes(
     timeframe: str, from_timeframe: str | None, manifest_id: str | None, snapshot: str | None
 ) -> tuple[BarTimeframe, BarTimeframe]:
@@ -562,10 +576,9 @@ def run(
             stored=stored,
             session=session,
             manifest_id=manifest_id,
-            resampled=from_timeframe is not None,
+            resampled=stored != target,
         )
-        ppy = _runner.resolve_periods_per_year(bars, timeframe=target, override=periods_per_year)
-        spec = replace(spec, periods_per_year=ppy)
+        spec = _annualised(spec, bars, target, timeframe_fields, periods_per_year)
         # kronos: precompute the signal cache (slow model, runs once) and pin its key on the
         # spec; every other strategy passes through untouched.
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(

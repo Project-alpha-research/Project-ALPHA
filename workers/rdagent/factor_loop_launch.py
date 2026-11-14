@@ -473,6 +473,15 @@ class Launch:
         return exit_status
 
 
+def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
+    """A plain reason for a failed loop; names the call cap when the run used all of it."""
+    this_run = gateway_state.get("this_run") if isinstance(gateway_state, dict) else None
+    calls = (this_run or {}).get("calls") or 0
+    if calls >= args.run_max_calls:
+        return f"loop exit {code}: model call cap reached ({calls} of {args.run_max_calls} calls)"
+    return f"loop exit {code}"
+
+
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     paths = validate(args, environ)
     args.run_dir.mkdir()
@@ -489,7 +498,9 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
         launch.prepare()
         base_url, token = launch.gateway()
         code = launch.loop(base_url, token)
-        status, reason = (0, "completed") if code == 0 else (1, f"loop exit {code}")
+        status, reason = (
+            (0, "completed") if code == 0 else (1, exit_reason(code, launch.gateway_status(), args))
+        )
     except LaunchError as error:
         reason = str(error)
     except KeyboardInterrupt:

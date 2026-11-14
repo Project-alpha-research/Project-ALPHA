@@ -11,6 +11,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 from collections.abc import Iterator
 from dataclasses import asdict
 from datetime import UTC, date, datetime, time, timedelta
@@ -1348,4 +1349,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except DataError as error:  # a refusal is one plain line, not a traceback
+        print(f"rdagent-factor-eval: {error}", file=sys.stderr)
+        raise SystemExit(2) from None

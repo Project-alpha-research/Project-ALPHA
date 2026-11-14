@@ -1,6 +1,7 @@
 """Intraday completion firewall and exchange-local corporate-action clocks."""
 
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import polars as pl
 import pytest
@@ -13,7 +14,7 @@ from alpha_data.timeframe import DAILY, BarTimeframe
 from tests.fixtures.cli_fixtures import seed_store
 
 
-def frame(stamps):
+def frame(stamps: list[datetime]) -> pl.DataFrame:
     return pl.DataFrame(
         {
             "ts": stamps,
@@ -26,7 +27,7 @@ def frame(stamps):
     )
 
 
-def test_five_minute_firewall_and_typed_source(tmp_path):
+def test_five_minute_firewall_and_typed_source(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path)
     start = datetime(2026, 3, 9, 13, 30, tzinfo=UTC)
     stamps = [start + timedelta(minutes=5 * i) for i in range(8)]
@@ -42,7 +43,7 @@ def test_five_minute_firewall_and_typed_source(tmp_path):
         reader.dividends_as_of("SPY", when.replace(tzinfo=None))
 
 
-def test_split_and_dividend_use_local_date(tmp_path):
+def test_split_and_dividend_use_local_date(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path)
     stamps = [datetime(2026, 11, 3, 0, 30, tzinfo=UTC), datetime(2026, 11, 3, 14, 30, tzinfo=UTC)]
     store.write_bars("SPY", frame(stamps))
@@ -69,7 +70,7 @@ def test_split_and_dividend_use_local_date(tmp_path):
     assert reader.dividends_as_of("SPY", after) == [dividend]
 
 
-def test_daily_fixture_unchanged(tmp_path):
+def test_daily_fixture_unchanged(tmp_path: Path) -> None:
     seed_store(tmp_path, n=30)
     store = ParquetStore(tmp_path / "store")
     cutoff = datetime(2020, 1, 10, tzinfo=UTC)
@@ -84,7 +85,7 @@ def test_daily_fixture_unchanged(tmp_path):
 
 @pytest.mark.bias_guard
 @pytest.mark.parametrize("leaky", [False, True])
-def test_intraday_future_poison_with_leaky_control(tmp_path, leaky):
+def test_intraday_future_poison_with_leaky_control(tmp_path: Path, leaky: bool) -> None:
     store = ParquetStore(tmp_path)
     start = datetime(2026, 3, 9, 13, 30, tzinfo=UTC)
     original = frame([start + timedelta(minutes=5 * i) for i in range(8)])
@@ -92,7 +93,7 @@ def test_intraday_future_poison_with_leaky_control(tmp_path, leaky):
     cutoff = start + timedelta(minutes=32)
     reader = PointInTimeReader(store, {}, timeframe=BarTimeframe(5), calendar="XNYS")
 
-    def read():
+    def read() -> pl.DataFrame:
         return (
             store.read_bars("SPY").filter(pl.col("ts") <= cutoff)
             if leaky
@@ -117,7 +118,9 @@ def test_intraday_future_poison_with_leaky_control(tmp_path, leaky):
         assert not before.equals(read())
 
 
-def test_crypto_local_gate_uses_utc_and_loader_propagates_intraday_clock(tmp_path):
+def test_crypto_local_gate_uses_utc_and_loader_propagates_intraday_clock(
+    tmp_path: Path,
+) -> None:
     from alpha_cli._runner import load_bars, load_dividends
 
     store = ParquetStore(tmp_path / "store-5m")
@@ -142,7 +145,7 @@ def test_crypto_local_gate_uses_utc_and_loader_propagates_intraday_clock(tmp_pat
     assert load_dividends("SPY", data_dir=tmp_path, timeframe="5m", as_of=cutoff) == []
 
 
-def test_invalid_future_bar_cannot_break_intraday_typed_read(tmp_path):
+def test_invalid_future_bar_cannot_break_intraday_typed_read(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path)
     start = datetime(2026, 3, 9, 13, 30, tzinfo=UTC)
     values = frame([start, start + timedelta(minutes=5)]).with_columns(

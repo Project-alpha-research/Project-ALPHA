@@ -6,6 +6,10 @@ sources:
   - packages/alpha-data/src/alpha_data/snapshot.py
   - packages/alpha-data/src/alpha_data/adapters/alpaca_adapter.py
   - packages/alpha-data/src/alpha_data/adapters/ccxt_adapter.py
+  - packages/alpha-data/src/alpha_data/pit.py
+  - packages/alpha-data/src/alpha_data/sessions.py
+  - packages/alpha-data/src/alpha_data/resample.py
+  - packages/alpha-data/src/alpha_data/align.py
 verified: b4b36f41caa0
 ---
 
@@ -40,6 +44,30 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
   none is a `calendar_gap`, and an off-grid bar is `misaligned_bar`; all critical. Pre-market and
   after-hours bars are kept and counted (`extended_hours_rows`). Tests: `tests/unit/test_bar_timeframe.py`,
   `tests/unit/test_ingest_pipeline_intraday.py`.
+
+## Reading intraday bars
+
+- The firewall: an intraday read at cutoff `when` returns only bars with `ts + duration <= when`
+  (`PointInTimeReader(timeframe=...)`); the daily read is unchanged. Corporate-action knowledge and
+  ex-date gates, and each bar's split factor, use the exchange-local date (`session_date_of`; UTC for
+  crypto), so an after-hours bar stamped after 00:00 UTC belongs to its New York session.
+- Sessions (`sessions.py`): `regular` (exchange hours; a bar counts only when `open <= ts` and
+  `ts + duration <= close`, so a clock-aligned 09:00 hourly bar is dropped), `extended` (every bar the
+  provider returned), `continuous` (24/7, no calendar). Stocks default to `regular`, crypto to `continuous`.
+- Resampling (`resample_bars`): the target must be a whole multiple of the source. Stock bins start at
+  each session's open and are cut at its close (half days included); a daily target gives one bar per
+  session at the session date 00:00 UTC. Crypto bins sit on the UTC grid. Only regular-session input is
+  resampled. A bin that ends after `known_by` is still forming and is dropped; any other incomplete bin
+  fails loud naming its first missing bar. OHLCV: first open, max high, min low, last close, summed volume.
+- Alignment (`align_as_known`): each finer bar gets the latest coarser bar whose known time is at or
+  before the finer bar's known time (daily stock bars are known at the session close), joined on known
+  times, never on bar starts. Known time is `bar_known_at`.
+- `_runner.load_bars(..., timeframe=, source_timeframe=, session=)` and `alpha data candles --timeframe
+  --from-timeframe --session` use these; a store or snapshot holding another bar size fails loud.
+  Cutoffs accept a date (end of that day) or an ISO instant with an offset (`parse_cutoff`).
+- Guards: `tests/bias_guards/test_intraday_future_poison.py` (reader, resampler and alignment, each with
+  a leaky twin that must differ); unit tests `test_sessions.py`, `test_resample.py`, `test_align.py`,
+  `test_pit_intraday.py`.
 
 ## Adapters
 

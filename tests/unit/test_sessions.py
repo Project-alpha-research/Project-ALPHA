@@ -22,7 +22,7 @@ from alpha_data.timeframe import DAILY, BarTimeframe
     ("day", "open_hour", "close_hour"),
     [(date(2026, 3, 9), 13, 20), (date(2026, 11, 2), 14, 21), (date(2026, 11, 27), 14, 18)],
 )
-def test_regular_bounds_and_filter(day, open_hour, close_hour):
+def test_regular_bounds_and_filter(day: date, open_hour: int, close_hour: int) -> None:
     opening, closing = session_bounds("XNYS", day)
     assert opening == datetime.combine(day, datetime.min.time(), UTC).replace(
         hour=open_hour, minute=30
@@ -41,7 +41,7 @@ def test_regular_bounds_and_filter(day, open_hour, close_hour):
     )
 
 
-def test_clock_aligned_hour_and_weekend():
+def test_clock_aligned_hour_and_weekend() -> None:
     ny = ZoneInfo("America/New_York")
     stamps = [datetime(2026, 3, 9, h, tzinfo=ny).astimezone(UTC) for h in (9, 10, 15, 16)]
     stamps.append(datetime(2026, 3, 8, 15, tzinfo=UTC))
@@ -59,7 +59,7 @@ def test_clock_aligned_hour_and_weekend():
         ("regular", "XNYS", DAILY),
     ],
 )
-def test_passthrough(scope, calendar, timeframe):
+def test_passthrough(scope: str, calendar: str | None, timeframe: BarTimeframe) -> None:
     frame = pl.DataFrame({"ts": [datetime(2026, 3, 8, tzinfo=UTC)]})
     assert filter_session(frame, timeframe=timeframe, calendar=calendar, scope=scope) is frame
 
@@ -68,12 +68,12 @@ def test_passthrough(scope, calendar, timeframe):
     ("scope", "calendar"),
     [("bad", None), ("continuous", "XNYS"), ("regular", None), ("extended", None)],
 )
-def test_scope_errors(scope, calendar):
+def test_scope_errors(scope: str, calendar: str | None) -> None:
     with pytest.raises(DataError):
         check_session(scope, calendar)
 
 
-def test_default_local_date_and_continuous_known_at():
+def test_default_local_date_and_continuous_known_at() -> None:
     ts = datetime(2026, 11, 3, 1, tzinfo=UTC)
     assert default_session("XNYS") == "regular"
     assert default_session(None) == "continuous"

@@ -10,6 +10,7 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli.main import app
+from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 
 runner = CliRunner()
@@ -54,7 +55,7 @@ def test_candles_unknown_symbol_fails_loud(tmp_path: Path, monkeypatch: pytest.M
     assert result.exit_code != 0
 
 
-def seed_intraday(tmp_path, *, dataset_timeframe="5m"):
+def seed_intraday(tmp_path: Path, *, dataset_timeframe: str = "5m") -> ParquetStore:
     import polars as pl
 
     from alpha_data.adapters.base import DatasetIdentity, FetchReceipt
@@ -104,7 +105,7 @@ def seed_intraday(tmp_path, *, dataset_timeframe="5m"):
     return store
 
 
-def test_candles_intraday_and_iso_cutoff(tmp_path, monkeypatch):
+def test_candles_intraday_and_iso_cutoff(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_intraday(tmp_path)
     result = runner.invoke(
@@ -131,7 +132,9 @@ def test_candles_intraday_and_iso_cutoff(tmp_path, monkeypatch):
     assert payload["provenance"]["source"] == "alpaca"
 
 
-def test_candles_resample_from_five_minutes(tmp_path, monkeypatch):
+def test_candles_resample_from_five_minutes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_intraday(tmp_path)
     result = runner.invoke(
@@ -145,7 +148,9 @@ def test_candles_resample_from_five_minutes(tmp_path, monkeypatch):
     assert payload["provenance"]["source"] == "alpaca"
 
 
-def test_candles_mismatched_stored_timeframe(tmp_path, monkeypatch):
+def test_candles_mismatched_stored_timeframe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_intraday(tmp_path, dataset_timeframe="1h")
     result = runner.invoke(app, ["data", "candles", "SPY", "--timeframe", "5m", "--json"])
@@ -153,7 +158,7 @@ def test_candles_mismatched_stored_timeframe(tmp_path, monkeypatch):
     assert "1h" in result.output and "5m" in result.output
 
 
-def test_snapshot_timeframe_mismatch(tmp_path):
+def test_snapshot_timeframe_mismatch(tmp_path: Path) -> None:
     from alpha_cli._runner import load_bars, load_dividends
     from alpha_core import DataError
     from alpha_data.snapshot import create_snapshot
@@ -177,7 +182,7 @@ def test_snapshot_timeframe_mismatch(tmp_path):
 
 
 @pytest.mark.parametrize("value", ["2026-03-09T10:02:00", "nonsense", "20260309"])
-def test_parse_cutoff_rejects_noncanonical_or_naive(value):
+def test_parse_cutoff_rejects_noncanonical_or_naive(value: str) -> None:
     from alpha_cli._runner import parse_cutoff
     from alpha_core import DataError
 
@@ -185,7 +190,7 @@ def test_parse_cutoff_rejects_noncanonical_or_naive(value):
         parse_cutoff(value)
 
 
-def test_parse_cutoff_date_and_instant():
+def test_parse_cutoff_date_and_instant() -> None:
     from alpha_cli._runner import parse_as_of, parse_cutoff
 
     assert parse_cutoff(None) is None

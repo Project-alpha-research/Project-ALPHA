@@ -189,19 +189,14 @@ def _bar_store(
     session: str | None,
 ) -> tuple[ParquetStore, str | None, str]:
     from alpha_data.sessions import check_session, default_session
-    from alpha_data.snapshot import resolve_snapshot_dir, snapshot_timeframe, verify_snapshot
+    from alpha_data.snapshot import resolve_snapshot_dir, verify_snapshot
     from alpha_data.store import ParquetStore
     from alpha_data.timeframe import store_dir
 
     if snapshot_id is not None:
         root = resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
-        verify_snapshot(root)
-        actual = snapshot_timeframe(root)
-        if actual != stored.canonical:
-            raise DataError(
-                f"snapshot timeframe {actual} differs from requested stored timeframe "
-                f"{stored.canonical}"
-            )
+        # re-hash against the manifest before trusting the bytes; refuses another bar size
+        verify_snapshot(root, timeframe=stored.canonical)
     else:
         root = store_dir(data_dir, stored)
     store = ParquetStore(root)

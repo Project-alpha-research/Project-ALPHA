@@ -10,7 +10,7 @@ from alpha_data.align import align_as_known
 from alpha_data.timeframe import DAILY, BarTimeframe
 
 
-def frame(stamps):
+def frame(stamps: list[datetime]) -> pl.DataFrame:
     return pl.DataFrame(
         {
             "ts": stamps,
@@ -22,7 +22,7 @@ def frame(stamps):
     )
 
 
-def test_daily_attaches_at_close_and_next_session():
+def test_daily_attaches_at_close_and_next_session() -> None:
     coarse = frame([datetime(2026, 3, day, tzinfo=UTC) for day in (9, 10)])
     fine = frame(
         [datetime(2026, 3, 9, 19, minute, tzinfo=UTC) for minute in (50, 55)]
@@ -42,7 +42,7 @@ def test_daily_attaches_at_close_and_next_session():
         assert result[f"htf_{col}"].to_list() == [None, 100.0, 100.0]
 
 
-def test_crypto_hour():
+def test_crypto_hour() -> None:
     coarse = frame([datetime(2026, 3, 9, hour, tzinfo=UTC) for hour in (0, 1)])
     fine = frame([datetime(2026, 3, 9, 0, minute, tzinfo=UTC) for minute in (50, 55)])
     result = align_as_known(
@@ -57,7 +57,7 @@ def test_crypto_hour():
 
 
 @pytest.mark.parametrize("hours", [(1, 0), (0, 0)])
-def test_coarse_must_be_strictly_increasing(hours):
+def test_coarse_must_be_strictly_increasing(hours: tuple[int, int]) -> None:
     coarse = frame([datetime(2026, 3, 9, hour, tzinfo=UTC) for hour in hours])
     with pytest.raises(DataError, match="strictly increasing"):
         align_as_known(
@@ -71,11 +71,11 @@ def test_coarse_must_be_strictly_increasing(hours):
 
 @pytest.mark.bias_guard
 @pytest.mark.parametrize("leaky", [False, True])
-def test_alignment_future_poison_with_leaky_control(leaky):
+def test_alignment_future_poison_with_leaky_control(leaky: bool) -> None:
     coarse = frame([datetime(2026, 3, 9, hour, tzinfo=UTC) for hour in (0, 1)])
     fine = frame([datetime(2026, 3, 9, 1, 5, tzinfo=UTC)])
 
-    def read(values):
+    def read(values: pl.DataFrame) -> pl.DataFrame:
         if leaky:
             return fine.join_asof(values, on="ts", strategy="backward", suffix="_coarse")
         return align_as_known(

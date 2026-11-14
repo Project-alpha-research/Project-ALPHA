@@ -85,3 +85,28 @@ the rules for entries are in the first. New entries are appended at the end of t
 - **Context:** said while approving the clean spine. Every change of direction, new part and
   removed part is written into the project layer in the same piece of work, not afterwards.
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md).
+
+### 2026-11-15 Nothing planned is lost; the end goal
+
+- **Said:** "Ensure everything we discussed and planned is included in production ready and w
+  ending loose any features. The end goal is to have the most advanced and capible pipe line for
+  navigating financial markets with ai. We need every capability that matches what would help
+  retail traders find edge".
+- **Context:** led to the [production-ready checklist](../../roadmap/production-scope.md), the
+  single list of what "production ready" includes. Nothing is removed unless it is replaced,
+  rebuilt slimmer, or covered by an entry in this log.
+- **Governs:** the whole project.
+
+### 2026-11-15 Five scope answers
+
+- **Said:** "1. Yes later with free sources first 2. Tell me what you need and I will get it
+  3. Yes 4. Yes optimal for the pipe like if I want ti build strgey for prop form soeifucky or
+  see how one I devolp would perform on prop firm 5. Yes".
+- **Context:** answers five questions from the checklist. (1) Paid or account-only data
+  (options, flows, news, fundamentals) comes after production ready; free sources first.
+  (2) The owner will create the free macro-data key when told what is needed. (3) The in-product
+  assistant panel is removed once the investigation trail screen exists. (4) The prop-firm check
+  stays as an optional pipeline tool, for building a strategy for a prop firm or seeing how one
+  would perform there. (5) A "how this was computed" view per finding is enough; no whole-code map.
+- **Governs:** the [data layer](components/data-layer.md), [AI assistants](components/ai-assistants.md),
+  [validation and evidence](components/validation-and-evidence.md), the [Workstation](components/web-workstation.md).

@@ -97,6 +97,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Gate coverage for workers/rdagent — small (S)
 - Generalise D0 screening to every registered producer (Phase E) — medium (M)
 - Governed storage restore and query for real-data native studies (W19) — large (L)
+- Intraday (1h) equity timeframe — medium (M)
 - Intraday bars in the multi-asset portfolio replay — medium (M)
 - Intraday candles and run charts in the Workstation — medium (M)
 - Live trading phase (private, single owner) — very large (XL)
@@ -117,7 +118,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 
 ## Housekeeping
 
-- Backlog items: 29
+- Backlog items: 30
 - Staged refactors: 6
 
 ## Where things are

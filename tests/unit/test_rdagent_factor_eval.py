@@ -88,6 +88,132 @@ def evaluate(run: Path, req: Path, ledger: Path) -> dict[str, Any]:
     return ev.evaluate(run, req, run / "result.json", ledger)
 
 
+def test_unknown_ledger_rows_count_conservatively_and_do_not_repeat(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    ledger = tmp_path / "ledger"
+    first = tmp_path / "first"
+    req = fixture(first)
+    request = json.loads(req.read_bytes())
+    request["factors"][0]["status"] = "FAILED"
+    req.write_text(json.dumps(request))
+    evaluate(first, req, ledger)
+    old = ev._read_ledger(ledger)[0]
+    digest = hashlib.sha256(b"43").hexdigest()
+    unknown = {
+        "schema": "FutureTrial",
+        "trial_index": 2,
+        "code_sha256": digest,
+        "status": "CANDIDATE",
+        "p": 0.0,
+    }
+    ledger.write_text(
+        "".join(json.dumps(r) + "\n" for r in [old, unknown, {**old, "trial_index": 3}])
+    )
+    run = tmp_path / "new"
+    req = fixture(run, seed=43)
+    with (
+        patch.object(
+            ev,
+            "screen",
+            side_effect=[{"status": "OK", "p": p, "direction": 1} for p in (0.05, 1.0, 1.0)],
+        ),
+        patch.object(ev, "replay", side_effect=AssertionError("must not replay")),
+    ):
+        result = evaluate(run, req, ledger)
+    assert result["ledger_unknown_rows"] == {"count": 1, "schemas": ["FutureTrial"]}
+    assert "1" in capsys.readouterr().err and result["factors"][0]["status"] == "SCREEN_FAIL"
+    assert result["family_size"] == 7  # old three clocks, one unknown, new three clocks
+    assert result["factors"][0]["q"] == pytest.approx(0.35)
+    assert result["distinct_factors"] == 2
+    assert result["factors"][0]["distinct_factors"] == 2
+    assert result["factors"][0]["trial_index"] == 4
+    assert result["ledger_trials_all_families"] == 4
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        [],
+        {},
+        {"schema": None},
+        {"schema": "Future", "trial_index": 2},
+        {"schema": "AlphaRdagentFactorTrialV1", "trial_index": 1},
+    ],
+)
+def test_ledger_malformed_known_or_untyped_rows_fail(tmp_path: Path, row: Any) -> None:
+    ledger = tmp_path / "ledger"
+    ledger.write_text(json.dumps(row) + "\n")
+    with pytest.raises(DataError, match="invalid trial ledger line 1"):
+        ev._read_ledger(ledger)
+
+
+def test_ledger_unknown_rows_kept_and_partial_line_fails_loud(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger"
+    row = {"schema": "Future", "trial_index": 1}
+    ledger.write_text(json.dumps(row) + "\n")
+    assert ev._read_ledger(ledger).unknown_rows == [row]
+    # Writers append under the lock: a partial last line is a crashed writer, not a reader race.
+    ledger.write_text(json.dumps(row) + '\n{"schema":')
+    with pytest.raises(DataError, match="incomplete trial ledger line"):
+        ev._read_ledger(ledger)
+    ledger.write_text('{"schema":\n')
+    with pytest.raises(DataError, match="invalid trial ledger line 1"):
+        ev._read_ledger(ledger)
+
+
+def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -> None:
+    run = tmp_path / "baseline"
+    req = fixture(run)
+    request, panel, values, _ = ev._inputs(run, req)
+    request["factors"][0]["status"] = "FAILED"
+    # Captured before verdict-feedback changes; fixed inputs exclude source fingerprints.
+    record = ev._evaluate_locked(
+        run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
+    )
+    assert ev.sha(ev.canonical(record)) == (
+        "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
+    )
+
+
+def test_unknown_rows_never_reach_external_ledger_consumers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import sys
+
+    from alpha_cli import rdagent_exposure
+
+    ledger = tmp_path / "ledger"
+    ledger.write_text('{"schema":"Future", "trial_index":1}\n')
+    rows = ev._read_ledger(ledger)
+    # Rule-family callers use length for the next line index; exposure callers iterate.
+    assert len(rows) == 1
+    assert list(rows) == []
+    monkeypatch.setattr(sys, "argv", ["exposure", "list", "--ledger", str(ledger), "--json"])
+    rdagent_exposure.main()
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["trials"] == []
+    assert "1 ledger rows of other kinds were skipped (Future)" in captured.err
+
+
+@pytest.mark.parametrize("unknown_code", [None, b"historical", b"other"])
+def test_import_ignores_unknown_identity_and_counts_unknown_trial(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unknown_code: bytes | None
+) -> None:
+    ledger, source = tmp_path / "ledger", tmp_path / "import.json"
+    _, item = historical(tmp_path, code=b"historical")
+    unknown: dict[str, Any] = {"schema": "Future", "trial_index": 1}
+    if unknown_code:
+        unknown["code_sha256"] = ev.sha(unknown_code)
+    ledger.write_text(json.dumps(unknown) + "\n")
+    source.write_text(json.dumps([item]))
+    import_command(ledger, source, monkeypatch)
+    imported = ev._read_ledger(ledger)[1]
+    assert imported["trial_index"] == 2
+    assert imported["distinct_factors"] == 1
+    assert imported["total_trials"] == imported["family_size"] == 2
+
+
 def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)

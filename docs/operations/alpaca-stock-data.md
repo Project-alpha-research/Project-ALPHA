@@ -76,6 +76,12 @@ uv run alpha data snapshot alpaca-starter-$(date +%F) SPY QQQ IWM DIA TLT IEF GL
 uv run alpha data verify alpaca-starter-$(date +%F)
 ```
 
+Intraday bars (any size from 1 minute to 23 hours) use the same command with `--timeframe`, for
+example `--timeframe 5m` or `--timeframe 1h`; each bar size gets its own store folder
+(`store-5m`, `store-1h`) and its own snapshots (`alpha data snapshot ... --timeframe 5m`). The 2026-11-14
+intraday download went into `/home/hunta/alpha-clean-base/data-intraday`. Rules:
+[bar timeframes](../reference/invariants/data-bar-timeframes.md).
+
 Why a separate folder (`data-alpaca`): the main data folder already holds the same 16 symbols from
 Yahoo, and ALPHA never mixes two sources in one price series, so an Alpaca download onto a
 Yahoo-held symbol is refused. The crypto data stays in `/home/hunta/alpha-clean-base/data`.

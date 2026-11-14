@@ -84,7 +84,7 @@ missing = "tested in-process and in a browser against a test server; no end-to-e
 [[capability]]
 id = "stock-data"
 name = "Download and freeze stock and ETF prices"
-what = "Download daily stock or ETF prices, freeze them into a checked snapshot, and verify it later."
+what = "Download stock or ETF prices (daily by default; intraday bars: see intraday-bars), freeze them into a checked snapshot, and verify it later."
 see_it = [
   "uv run alpha data pull SPY --source tiingo --start 2020-01-01 --end 2020-12-31",
   "uv run alpha data snapshot <name> SPY, then uv run alpha data verify <name>",
@@ -108,6 +108,35 @@ real_data_needs = "A Tiingo key for the authoritative source, and confirmation o
 needs = []
 state = "Partial"
 missing = "no offline way to get prices in; snapshot, verify and as-of read are proven end to end"
+
+[[capability]]
+id = "intraday-bars"
+name = "Intraday bars, from one minute to one hour, end to end"
+what = "Download, store, freeze, read point-in-time, resample and backtest stock, ETF and crypto bars of any size from one minute to one day; daily stays the default."
+see_it = [
+  "uv run alpha data pull SPY --source alpaca --asset-class etf --timeframe 5m --start 2026-08-03 --end 2026-11-13",
+  "uv run alpha data candles SPY --timeframe 1h --from-timeframe 5m --json",
+  "uv run alpha backtest run SPY --timeframe 5m --strategy breakout --param window=12, then uv run alpha report <run>",
+  "Workstation: Run Browser lists intraday runs with their bar size (M5, H1)",
+]
+entry_points = [
+  "cli: alpha data pull",
+  "cli: alpha data candles",
+  "cli: alpha backtest run",
+  "code: packages/alpha-data/src/alpha_data/timeframe.py",
+  "code: packages/alpha-data/src/alpha_data/resample.py",
+]
+proof_synthetic = [
+  "tests/integration/test_data_cli.py::test_intraday_pull_store_snapshot_and_status",
+  "tests/integration/test_intraday_backtest.py::test_cli_intraday_determinism_and_report",
+  "tests/integration/test_intraday_backtest.py::test_cli_resamples_stock_sessions",
+]
+real_data = "not yet confirmed (free sources): on 2026-11-14 the Dell holds SPY and AAPL 5-minute and 1-hour bars from Alpaca (3 Aug to 13 Nov 2026) and BTCUSDT and ETHUSDT 1-hour (12 months) and 5-minute (3 months) bars from Binance archives, in /home/hunta/alpha-clean-base/data-intraday; two system-test runs read them (docs/reference/project/components/data-layer.md)"
+real_data_needs = "Confirmation of real data on the Mac."
+needs = []
+state = "Partial"
+missing = "proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily"
+docs = ["docs/reference/invariants/data-bar-timeframes.md"]
 
 [[capability]]
 id = "crypto-data"

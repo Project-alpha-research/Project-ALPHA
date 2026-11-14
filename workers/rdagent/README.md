@@ -490,6 +490,23 @@ Series include a `clock` column; replay and holdings files have one block per re
 - `calls-labelled.jsonl`: this run's gateway calls labelled by loop and step; `launch.jsonl` also records launcher step starts.
 - New trial-ledger rows carry a deterministic plain-English `plain_name` beside the original name.
 
+### Human-authored rule families
+
+```sh
+.venv/bin/python -m alpha_cli.rdagent_rule_family run \
+  --spec /abs/spec.json --spec-sha256 <sha256> --data-dir /abs/data \
+  --run-dir /abs/new-rule-run --ledger /abs/rdagent-factor-trials.jsonl
+```
+
+- Copies the frozen `spec.json` and `spec.sha256` into the new run directory outside git.
+- Writes `trials/<symbol>-N<N>/series.parquet`, `trial.json`, and each book's `fills.parquet`.
+- Writes `family-result.json` with within-family BH, outcomes, warnings and exploratory labels.
+- Appends one block of rule trials to the shared ledger and writes `receipt.json` with hashes and indices.
+
+Optional instrument defaults are 0 fee / 5 bps slippage, 252 periods per year, CASH for
+non-crypto and MARGIN for slash pairs; each default is a warning. Reads stop at 2023-12-31.
+Rule trials count in the ledger total but do not enter RD-Agent's factor family or proposal summary.
+
 ### Exposure log and imported trials
 
 ```sh

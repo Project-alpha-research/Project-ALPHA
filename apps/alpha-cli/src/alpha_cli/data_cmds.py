@@ -67,9 +67,12 @@ def _candle_provenance(
     snapshot_id: str | None,
     knowledge_cutoff: datetime | None,
     timeframe: BarTimeframe = DAILY,
+    source_timeframe: BarTimeframe | None = None,
+    session: str | None = None,
 ) -> dict[str, object]:
     data_root = AlphaSettings().data_dir
-    root = data_root / "snapshots" / snapshot_id if snapshot_id else store_dir(data_root, timeframe)
+    stored = source_timeframe or timeframe
+    root = data_root / "snapshots" / snapshot_id if snapshot_id else store_dir(data_root, stored)
     store = ParquetStore(root)
     provenance = store.read_provenance(symbol)
     path = store._provenance_path(symbol)
@@ -96,7 +99,7 @@ def _candle_provenance(
             if reviewed.is_file()
             else "qualified"
         )
-    return {
+    result: dict[str, object] = {
         "source": source,
         "venue": venue,
         "timeframe": dataset_timeframe,
@@ -106,6 +109,14 @@ def _candle_provenance(
         "knowledge_cutoff": knowledge_cutoff.isoformat() if knowledge_cutoff is not None else None,
         "quality_status": quality_status,
     }
+
+    if not timeframe.is_daily or not stored.is_daily:
+        from alpha_cli._runner import _calendar_for
+        from alpha_data.sessions import default_session
+
+        result["timeframe"] = timeframe.canonical
+        result["session"] = session or default_session(_calendar_for(symbol, provenance))
+    return result
 
 
 def _adapter(
@@ -494,25 +505,37 @@ def snapshot(
 @data_app.command()
 def candles(
     symbol: str,
-    start: str = typer.Option(None, help="lower bound YYYY-MM-DD (inclusive)"),
-    end: str = typer.Option(None, help="as-of cutoff YYYY-MM-DD (inclusive)"),
+    start: str = typer.Option(None, help="inclusive lower bound: date or ISO instant with offset"),
+    end: str = typer.Option(None, help="as-of cutoff: date or ISO instant with offset"),
     snapshot: str = typer.Option(None, help="snapshot id for provenance"),
     manifest_id: str = typer.Option(None, help="exact qualified bulk chart manifest"),
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
     expected_snapshot_hash: str | None = None,
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
+    source_timeframe: str | None = typer.Option(
+        None, "--from-timeframe", help="stored timeframe to resample from"
+    ),
+    session: str | None = typer.Option(None, help="regular, extended or continuous"),
 ) -> None:
     """Point-in-time OHLCV candles for SYMBOL (split-adjusted; ``--end`` is an as-of cutoff).
 
     Reads through the same look-ahead firewall a backtest uses, so a chart can never show a bar past
     its window nor a split not yet known at ``--end``.
     """
-    from alpha_cli._runner import load_bars
+    from alpha_cli._runner import load_bars, parse_cutoff
 
     try:
-        when = datetime.combine(date.fromisoformat(end), time.max, tzinfo=UTC) if end else None
-        lower = date.fromisoformat(start) if start else None
-    except ValueError as exc:
-        raise typer.BadParameter(f"--start/--end must be YYYY-MM-DD: {exc}") from exc
+        target = parse_timeframe(timeframe)
+        stored = parse_timeframe(source_timeframe or timeframe)
+        when = parse_cutoff(end)
+        # Preserve the existing candle date window, including its last microsecond.
+        if end is not None and len(end) == 10 and when is not None:
+            when = when.replace(microsecond=999999)
+        lower = parse_cutoff(start)
+        if start is not None and len(start) == 10 and lower is not None:
+            lower = datetime.combine(lower.date(), time.min, tzinfo=UTC)
+    except DataError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     try:
         provenance = None
         if expected_snapshot_hash is not None:
@@ -538,7 +561,13 @@ def candles(
             snap = None
         else:
             bars, snap = load_bars(
-                symbol, data_dir=AlphaSettings().data_dir, snapshot_id=snapshot, as_of=when
+                symbol,
+                data_dir=AlphaSettings().data_dir,
+                snapshot_id=snapshot,
+                as_of=when,
+                timeframe=target.canonical,
+                source_timeframe=stored.canonical,
+                session=session,
             )
             if (
                 expected_snapshot_hash is not None
@@ -550,7 +579,7 @@ def candles(
     rows = [
         {"t": b.ts.timestamp(), "o": b.open, "h": b.high, "l": b.low, "c": b.close, "v": b.volume}
         for b in bars
-        if lower is None or b.ts.date() >= lower
+        if lower is None or b.ts >= lower
     ]
     if json_out:
         cutoff = when or (bars[-1].ts if bars else None)
@@ -564,6 +593,9 @@ def candles(
                         symbol,
                         snapshot_id=snap,
                         knowledge_cutoff=cutoff,
+                        timeframe=target,
+                        source_timeframe=stored,
+                        session=session,
                     ),
                     "bars": rows,
                 }

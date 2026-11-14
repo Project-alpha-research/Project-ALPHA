@@ -28,6 +28,7 @@ import numpy as np
 from alpha_cli._identity import RunIdentity, execution_fingerprint, strategy_fingerprint
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.snapshot import snapshot_manifest_hash
+from alpha_data.timeframe import BarTimeframe, parse_timeframe
 from alpha_validation import (
     FloatArray,
     FoldSummary,
@@ -39,6 +40,7 @@ from alpha_validation import (
 
 if TYPE_CHECKING:
     from alpha_backtest.results import BacktestResult
+    from alpha_data.store import ParquetStore
 
 
 @dataclass(frozen=True)
@@ -149,12 +151,82 @@ def parse_as_of(value: str | None) -> datetime | None:
     return datetime.combine(parsed, time(23, 59, 59), tzinfo=UTC)
 
 
+def parse_cutoff(value: str | None) -> datetime | None:
+    """Accept a canonical date or an exact ISO 8601 instant with an explicit offset."""
+    if value is None:
+        return None
+    if len(value) == 10:
+        return parse_as_of(value)
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise DataError(
+            f"cutoff must be YYYY-MM-DD or an ISO instant with offset, got {value!r}"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise DataError(f"cutoff must include a timezone offset, got {value!r}")
+    return parsed.astimezone(UTC)
+
+
+def _calendar_for(symbol: str, provenance: dict[str, object] | None) -> str | None:
+    dataset = provenance.get("dataset") if provenance is not None else None
+    if isinstance(dataset, dict):
+        if dataset["asset_class"] == "crypto":
+            return None
+        calendar = dataset["calendar"]
+        if not isinstance(calendar, str):
+            raise DataError(f"invalid dataset calendar for {symbol!r}")
+        return calendar
+    return None if "/" in symbol else "XNYS"
+
+
+def _bar_store(
+    symbol: str,
+    *,
+    data_dir: Path,
+    snapshot_id: str | None,
+    stored: BarTimeframe,
+    session: str | None,
+) -> tuple[ParquetStore, str | None, str]:
+    from alpha_data.sessions import check_session, default_session
+    from alpha_data.snapshot import resolve_snapshot_dir, snapshot_timeframe, verify_snapshot
+    from alpha_data.store import ParquetStore
+    from alpha_data.timeframe import store_dir
+
+    if snapshot_id is not None:
+        root = resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
+        verify_snapshot(root)
+        actual = snapshot_timeframe(root)
+        if actual != stored.canonical:
+            raise DataError(
+                f"snapshot timeframe {actual} differs from requested stored timeframe "
+                f"{stored.canonical}"
+            )
+    else:
+        root = store_dir(data_dir, stored)
+    store = ParquetStore(root)
+    provenance = store.read_provenance(symbol)
+    dataset = provenance.get("dataset") if provenance is not None else None
+    if isinstance(dataset, dict) and dataset["timeframe"] != stored.canonical:
+        raise DataError(
+            f"{symbol!r} dataset timeframe {dataset['timeframe']} differs from requested "
+            f"stored timeframe {stored.canonical}"
+        )
+    calendar = _calendar_for(symbol, provenance)
+    scope = session or default_session(calendar)
+    check_session(scope, calendar)
+    return store, calendar, scope
+
+
 def load_bars(
     symbol: str,
     *,
     data_dir: Path,
     snapshot_id: str | None = None,
     as_of: datetime | None = None,
+    timeframe: str = "1D",
+    source_timeframe: str | None = None,
+    session: str | None = None,
 ) -> tuple[list[Bar], str | None]:
     """Load the point-in-time history for ``symbol`` — live store or a frozen snapshot.
 
@@ -167,19 +239,38 @@ def load_bars(
     what the run actually consumed — the live store is wholesale-replaced by pulls and cannot back a
     reproducibility claim. Fails loud (``DataError``) on a missing/tampered snapshot or < 2 bars.
     """
-    from alpha_data.snapshot import resolve_snapshot_dir, verify_snapshot
-    from alpha_data.source import PointInTimeSource
-    from alpha_data.store import ParquetStore
+    from pydantic import ValidationError
 
-    if snapshot_id is not None:
-        snap_dir = resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
-        verify_snapshot(snap_dir)  # re-hash against the manifest before trusting the bytes
-        store = ParquetStore(snap_dir)
-    else:
-        store = ParquetStore(data_dir / "store")
-    source = PointInTimeSource(store, {symbol: store.read_actions(symbol)})
+    from alpha_data.pit import PointInTimeReader
+    from alpha_data.resample import resample_bars
+    from alpha_data.sessions import filter_session
+    from alpha_data.source import PointInTimeSource
+
+    target = parse_timeframe(timeframe)
+    stored = parse_timeframe(source_timeframe or timeframe)
+    store, calendar, scope = _bar_store(
+        symbol, data_dir=data_dir, snapshot_id=snapshot_id, stored=stored, session=session
+    )
+    actions = {symbol: store.read_actions(symbol)}
     when = as_of if as_of is not None else datetime(2999, 1, 1, tzinfo=UTC)
-    bars = source.as_of(symbol, when)
+    if target.is_daily and stored.is_daily:
+        source = PointInTimeSource(store, actions)
+        bars = source.as_of(symbol, when)
+    else:
+        reader = PointInTimeReader(store, actions, timeframe=stored, calendar=calendar)
+        frame = filter_session(
+            reader.as_of(symbol, when), timeframe=stored, calendar=calendar, scope=scope
+        )
+        if target != stored:
+            frame = resample_bars(
+                frame, source=stored, target=target, calendar=calendar, known_by=as_of
+            )
+        bars = []
+        for row in frame.iter_rows(named=True):
+            try:
+                bars.append(Bar(symbol=symbol, **row))
+            except ValidationError as exc:
+                raise DataError(f"invalid bar for {symbol!r} at {row['ts']}: {exc}") from exc
     if len(bars) < 2:
         raise DataError(f"need >= 2 bars for {symbol!r} as of {when.date()}, got {len(bars)}")
     return bars, snapshot_id
@@ -191,6 +282,9 @@ def load_dividends(
     data_dir: Path,
     snapshot_id: str | None = None,
     as_of: datetime | None = None,
+    timeframe: str = "1D",
+    source_timeframe: str | None = None,
+    session: str | None = None,
 ) -> list[CorporateAction]:
     """The symbol's knowledge-complete DIVIDEND actions from the store (or a frozen snapshot).
 
@@ -198,17 +292,18 @@ def load_dividends(
     returns ``[]`` for symbols with no stored actions (crypto, stooq). The engine credits these
     at pay date against the pre-ex holding — decoupled from prices (spec §6.1.4).
     """
-    from alpha_data.snapshot import resolve_snapshot_dir, verify_snapshot
     from alpha_data.source import PointInTimeSource
-    from alpha_data.store import ParquetStore
 
-    if snapshot_id is not None:
-        snap_dir = resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
-        verify_snapshot(snap_dir)
-        store = ParquetStore(snap_dir)
-    else:
-        store = ParquetStore(data_dir / "store")
-    source = PointInTimeSource(store, {symbol: store.read_actions(symbol)})
+    target = parse_timeframe(timeframe)
+    stored = parse_timeframe(source_timeframe or timeframe)
+    if target < stored or target.minutes % stored.minutes:
+        raise DataError(f"cannot resample {stored.canonical} to {target.canonical}")
+    store, calendar, _scope = _bar_store(
+        symbol, data_dir=data_dir, snapshot_id=snapshot_id, stored=stored, session=session
+    )
+    source = PointInTimeSource(
+        store, {symbol: store.read_actions(symbol)}, timeframe=stored, calendar=calendar
+    )
     when = as_of if as_of is not None else datetime(2999, 1, 1, tzinfo=UTC)
     return source.dividends_as_of(symbol, when)
 

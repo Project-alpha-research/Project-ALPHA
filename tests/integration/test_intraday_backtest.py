@@ -246,7 +246,7 @@ def test_daily_identity_inputs_and_manifest_keys_are_unchanged(
 def test_intraday_annualisation_needs_no_minimum_sample(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Bars per year come from the bar size and session, so a short sample runs and is not inflated."""
+    """Bars per year follow the bar size and session: a short sample runs, not inflated."""
     _seed(tmp_path, monkeypatch, _bars()[:20], "5m")
     cli = CliRunner()
     short = cli.invoke(app, _command("--timeframe", "5m"))

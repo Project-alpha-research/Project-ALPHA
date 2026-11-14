@@ -571,7 +571,9 @@ def run_family(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Run a preregistered human-authored rule family through the trial ledger."
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     for name in ("spec", "data-dir", "run-dir", "ledger"):

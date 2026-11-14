@@ -98,9 +98,9 @@ Prices, the universe, and the context a trader needs around them.
 | Completeness check on downloaded bars | Working | `alpha-data` | Now | [status] |
 | Check a whole history and freeze a date range in one step each | Missing | backlog | Path 1 | [status] |
 | Daily stock and ETF bars from a free source, frozen and verified | Unproven | `alpha-data` | Path 1 | [free] |
-| Any bar size from one minute up; the daily-only refusal removed | Missing | `alpha-data` adapters | Path 1 | [any-bar] |
+| Any bar size from one minute up; the daily-only refusal removed | Unproven | `alpha-data`, `alpha-backtest`; PRs #185, #189, #194 (draft) | Path 1 | [any-bar] |
 | Year length taken from the calendar (crypto trades 365 days), not fixed at 252 | Missing | `alpha-cli` | Path 1 | [precise] |
-| Intraday bars on disk: crypto hourly and 5-minute first, stocks after | Missing | `alpha-data`; backlog | Path 2 | [any-bar] |
+| Intraday bars on disk: crypto hourly and 5-minute first, stocks after | Unproven | `data-intraday` folder: BTC/ETH 1h and 5m, SPY/AAPL 5m and 1h (2026-11-14) | Path 2 | [any-bar] |
 | Universe as it was on each date, delisted coins included; survivor bias labelled | Missing | `alpha-data` | Path 3 | private |
 | Reads see only what was known then; snapshots and receipts never change | Working | `alpha-data` | Now | [precise] |
 | Large names and coins, and products funds cannot trade, both in scope | Unproven | `alpha-data` | Path 3 | [retail] |
@@ -148,7 +148,7 @@ Simulating the idea with costs, against the right comparison.
 | Plain answer to "is this mostly the market?" beside every result | Missing | run report | Path 1 | [partner] |
 | Twins of a test: sizing changed only, or one filter removed | Missing | new `alpha vary` | Path 1 | private |
 | Variants compared at the same capital and risk | Missing | `alpha-backtest` | Later | private |
-| Daily decision with intraday entry timing | Missing | Nautilus or Qlib | Path 2 | [any-bar] |
+| Daily decision with intraday entry timing | Missing | `align_as_known` exists (PR #189); not yet usable from rules or strategies | Path 2 | [any-bar] |
 | Machine-learning models trained by Qlib and replayed with costs | Working | `workers/qlib` | Now | [status] |
 | Strategy development workspace (fixed approved steps) | Unproven | `alpha-strategies` | Later | [status] |
 

@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: 52afa08d8290
+verified: ece16d7433e6
 ---
 
 # Bar timeframes

@@ -7,6 +7,7 @@ import errno
 import json
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -50,7 +51,10 @@ def links(run_dirs: list[Path], links_dir: Path) -> Path:
         if destination.exists() and not destination.is_symlink():
             raise ValueError(f"cannot replace a non-symlink: {destination}")
     for entry in directory.iterdir():
-        if entry.is_symlink():
+        # Only links this launcher makes (to a run's work/log); any other symlink is left alone.
+        if entry.is_symlink() and (
+            entry.name in targets or Path(os.readlink(entry)).parts[-2:] == ("work", "log")
+        ):
             entry.unlink()
     for name, target in targets.items():
         (directory / name).symlink_to(target, target_is_directory=True)
@@ -129,6 +133,10 @@ def check_port(port: int) -> None:
             raise
 
 
+def _interrupt(signum: int, frame: object) -> None:
+    raise KeyboardInterrupt
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     serve = parser.add_subparsers(dest="command", required=True).add_parser("serve")
@@ -168,13 +176,24 @@ def main(argv: list[str] | None = None) -> int:
             copied.chmod(0o600)
             environment = viewer_environment(python, home, source, copied)
             print(f"RD-Agent viewer: http://127.0.0.1:{args.port}", flush=True)
-            return subprocess.run(
-                viewer_command(python, directory, args.port), env=environment, cwd=home, check=False
-            ).returncode
+            child = subprocess.Popen(
+                viewer_command(python, directory, args.port), env=environment, cwd=home
+            )
+            # A plain kill (SIGTERM) must still stop the viewer and remove the copied key.
+            signal.signal(signal.SIGTERM, _interrupt)
+            try:
+                return child.wait()
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
     except KeyboardInterrupt:
         print("rdagent-viewer: interrupted", file=sys.stderr)
         return 130
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, IndexError, subprocess.SubprocessError) as error:
         print(f"rdagent-viewer: {error}", file=sys.stderr)
         return 1
 

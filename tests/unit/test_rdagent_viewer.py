@@ -30,12 +30,14 @@ def test_links_replace_only_symlinks(tmp_path: Path) -> None:
     runs = [run_dir(tmp_path, name) for name in ("first", "second")]
     directory = tmp_path / "links"
     directory.mkdir()
-    (directory / "stale").symlink_to(tmp_path / "missing")
+    (directory / "stale").symlink_to(tmp_path / "gone-run/work/log")
+    (directory / "unrelated").symlink_to(tmp_path / "missing")
     (directory / "first").symlink_to(tmp_path / "old")
     (directory / "keep.txt").write_text("keep")
     (directory / "keep-dir").mkdir()
     assert viewer.links(runs, directory) == directory
-    assert not (directory / "stale").is_symlink()
+    assert not (directory / "stale").is_symlink()  # an earlier viewer link
+    assert (directory / "unrelated").is_symlink()  # not ours: left alone
     for run in runs:
         assert (directory / run.name).readlink() == run / "work/log"
     assert (directory / "keep.txt").read_text() == "keep"
@@ -227,7 +229,18 @@ def test_serve_verifies_and_cleans_temporary_home(
                 raise KeyboardInterrupt
         return subprocess.CompletedProcess(command, 0)
 
+    class Popen:
+        def __init__(self, command: list[str], **kwargs: object) -> None:
+            child(command, **kwargs)
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+        def poll(self) -> int:
+            return 0
+
     monkeypatch.setattr(viewer.subprocess, "run", child)
+    monkeypatch.setattr(viewer.subprocess, "Popen", Popen)
     result = viewer.main(["serve", "--run-dir", str(run), "--signing-key", str(key)])
     assert result == (130 if interrupt else 0)
     assert len(commands) == 2

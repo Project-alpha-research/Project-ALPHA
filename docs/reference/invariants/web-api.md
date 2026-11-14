@@ -96,8 +96,9 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
-- Run labels are server-side: `_runs.display_name` builds `<strategy> D1 — <symbol> · <source> · <first → last> · run
-  <8 hex>` from the manifest and omits any part it does not record; `market_of` decides crypto/equities or `unknown`.
+- Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
+  <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
+  shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides crypto/equities or `unknown`.
   Identity fields (symbol, symbols, label, snapshot id) are read from the manifest top level first, then its `metadata`.
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.

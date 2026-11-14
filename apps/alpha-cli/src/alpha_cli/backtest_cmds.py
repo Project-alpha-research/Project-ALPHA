@@ -8,16 +8,17 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _runner, rules_cmds
-from alpha_core import DataError
+from alpha_core import Bar, CorporateAction, DataError
 from alpha_core.config import AlphaSettings
-from alpha_data.timeframe import parse_timeframe
+from alpha_data.timeframe import BarTimeframe, parse_timeframe
 from alpha_validation import annualized_volatility, cagr, max_drawdown, sharpe_ratio
 
 backtest_app = typer.Typer(help="Run the v1 strategy through the backtest engine.")
@@ -358,6 +359,123 @@ def oos(
     )
 
 
+def _load_run_bars(
+    symbol: str,
+    *,
+    data_dir: Path,
+    snapshot: str | None,
+    as_of: datetime | None,
+    target: BarTimeframe,
+    stored: BarTimeframe,
+    session: str | None,
+    manifest_id: str | None,
+    resampled: bool,
+) -> tuple[str, list[Bar], str | None, list[CorporateAction], dict[str, str | None]]:
+    """Bars, dividends and the extra identity fields of one ``backtest run`` read.
+
+    A daily run from the store or a snapshot returns no extra fields, so its identity inputs and
+    manifest keys are unchanged; any other read names its timeframe, source timeframe, session and
+    archive manifest.
+    """
+    scope: str
+    if manifest_id is not None:
+        from alpha_cli._archive_bars import load_archive_bars
+        from alpha_cli.crypto_data_cmds import _bulk_store
+        from alpha_data.sessions import check_session
+
+        scope = session or "continuous"
+        check_session(scope, None)
+        bars = load_archive_bars(
+            _bulk_store(),
+            manifest_id,
+            symbol=symbol,
+            timeframe=target,
+            source_timeframe=stored,
+            as_of=as_of,
+        )
+        if len(bars) < 2:
+            raise DataError(f"need >= 2 bars for {symbol!r}, got {len(bars)}")
+        symbol, snapshot_id, dividends = bars[0].symbol, None, []
+    else:
+        bars, snapshot_id = _load_bars(
+            symbol,
+            data_dir=data_dir,
+            snapshot_id=snapshot,
+            as_of=as_of,
+            timeframe=target.canonical,
+            source_timeframe=stored.canonical,
+            session=session,
+        )
+        dividends = _load_dividends(
+            symbol,
+            data_dir=data_dir,
+            snapshot_id=snapshot,
+            as_of=as_of,
+            timeframe=target.canonical,
+            source_timeframe=stored.canonical,
+            session=session,
+        )
+    if target.is_daily and manifest_id is None and not resampled:
+        return symbol, bars, snapshot_id, dividends, {}
+    if manifest_id is None:
+        _, _, scope = _runner._bar_store(
+            symbol, data_dir=data_dir, snapshot_id=snapshot, stored=stored, session=session
+        )
+    fields: dict[str, str | None] = {
+        "timeframe": target.canonical,
+        "source_timeframe": stored.canonical,
+        "session": scope,
+        "manifest_id": manifest_id,
+    }
+    return symbol, bars, snapshot_id, dividends, fields
+
+
+def _run_timeframes(
+    timeframe: str, from_timeframe: str | None, manifest_id: str | None, snapshot: str | None
+) -> tuple[BarTimeframe, BarTimeframe]:
+    """The run's bar timeframe and the stored one it is read (and maybe resampled) from."""
+    if manifest_id is not None and snapshot is not None:
+        raise DataError("--manifest-id and --snapshot are mutually exclusive")
+    return parse_timeframe(timeframe), parse_timeframe(from_timeframe or timeframe)
+
+
+def _run_manifest(
+    identity: Any,
+    symbol: str,
+    snapshot_id: str | None,
+    as_of: str | None,
+    spec: _runner.RunSpec,
+    result: Any,
+    research_gate_override: bool,
+    timeframe_fields: dict[str, str | None],
+    forecast_meta: dict[str, Any] | None,
+) -> dict[str, object]:
+    """The ``backtest run`` manifest; a daily run carries no timeframe fields (keys unchanged)."""
+    run_id = identity.run_id
+    manifest: dict[str, object] = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "command": "backtest_run",
+        "symbol": symbol,
+        "snapshot_id": snapshot_id,
+        "research_cutoff": as_of,
+        "params": vars(spec),
+        "orders": result.orders,
+        "fills": result.fills,
+        "rejected": result.rejected,
+        "pretrade_rejections": len(result.execution_rejections),
+        "n_trades": len(result.trades),
+        "starting_equity": result.starting_equity,
+        "final_equity": result.final_equity,
+        **_artifacts.research_gate_override_fields(research_gate_override),
+        **identity.manifest_fields(),
+        **timeframe_fields,
+    }
+    if forecast_meta is not None:
+        manifest["forecast"] = forecast_meta
+    return manifest
+
+
 @backtest_app.command()
 def run(
     symbol: str,
@@ -391,9 +509,7 @@ def run(
     from_timeframe: str | None = typer.Option(None, help="stored timeframe to resample from"),
     session: str | None = typer.Option(None, help="regular, extended or continuous"),
     manifest_id: str | None = typer.Option(None, help="verified archive chart-dataset group id"),
-    as_of: str | None = typer.Option(
-        None, "--as-of", help="inclusive date or ISO instant with offset"
-    ),
+    as_of: str | None = typer.Option(None, "--as-of", help="date or ISO instant with offset"),
     research_gate_override: bool = typer.Option(
         False, "--research-gate-override", help=_RESEARCH_GATE_OVERRIDE_HELP
     ),
@@ -406,16 +522,12 @@ def run(
     """
     settings = AlphaSettings()
     try:
-        target = parse_timeframe(timeframe)
-        stored = parse_timeframe(from_timeframe or timeframe)
-        if manifest_id is not None and snapshot is not None:
-            raise DataError("--manifest-id and --snapshot are mutually exclusive")
+        target, stored = _run_timeframes(timeframe, from_timeframe, manifest_id, snapshot)
         rules_spec = rules_cmds.resolve_rules_spec(
             strategy, rules, settings.data_dir, rules_file=rules_file, rules_sha256=rules_sha256
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    # walk-forward fields are unused by a plain backtest; carry coherent defaults
     spec = _runner.RunSpec(
         lookback=lookback,
         skip=skip,
@@ -441,67 +553,19 @@ def run(
     )
     try:
         research_cutoff = _runner.parse_cutoff(as_of)
-        if manifest_id is not None:
-            from alpha_cli._archive_bars import load_archive_bars
-            from alpha_cli.crypto_data_cmds import _bulk_store
-            from alpha_data.sessions import check_session
-
-            check_session(session or "continuous", None)
-            bars = load_archive_bars(
-                _bulk_store(),
-                manifest_id,
-                symbol=symbol,
-                timeframe=target,
-                source_timeframe=stored,
-                as_of=research_cutoff,
-            )
-            if len(bars) < 2:
-                raise DataError(f"need >= 2 bars for {symbol!r}, got {len(bars)}")
-            symbol = bars[0].symbol
-            snapshot_id = None
-            dividends = []
-            scope = "continuous"
-        else:
-            bars, snapshot_id = _load_bars(
-                symbol,
-                data_dir=settings.data_dir,
-                snapshot_id=snapshot,
-                as_of=research_cutoff,
-                timeframe=target.canonical,
-                source_timeframe=stored.canonical,
-                session=session,
-            )
-            dividends = _load_dividends(
-                symbol,
-                data_dir=settings.data_dir,
-                snapshot_id=snapshot,
-                as_of=research_cutoff,
-                timeframe=target.canonical,
-                source_timeframe=stored.canonical,
-                session=session,
-            )
-        timeframe_fields: dict[str, str | None] = {}
-        if not target.is_daily or manifest_id is not None or from_timeframe is not None:
-            if manifest_id is None:
-                _, _, scope = _runner._bar_store(
-                    symbol,
-                    data_dir=settings.data_dir,
-                    snapshot_id=snapshot,
-                    stored=stored,
-                    session=session,
-                )
-            timeframe_fields = {
-                "timeframe": target.canonical,
-                "source_timeframe": stored.canonical,
-                "session": scope,
-                "manifest_id": manifest_id,
-            }
-        spec = replace(
-            spec,
-            periods_per_year=_runner.resolve_periods_per_year(
-                bars, timeframe=target, override=periods_per_year
-            ),
+        symbol, bars, snapshot_id, dividends, timeframe_fields = _load_run_bars(
+            symbol,
+            data_dir=settings.data_dir,
+            snapshot=snapshot,
+            as_of=research_cutoff,
+            target=target,
+            stored=stored,
+            session=session,
+            manifest_id=manifest_id,
+            resampled=from_timeframe is not None,
         )
+        ppy = _runner.resolve_periods_per_year(bars, timeframe=target, override=periods_per_year)
+        spec = replace(spec, periods_per_year=ppy)
         # kronos: precompute the signal cache (slow model, runs once) and pin its key on the
         # spec; every other strategy passes through untouched.
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(
@@ -536,27 +600,17 @@ def run(
     )
     run_id = identity.run_id
     rdir = _artifacts.run_dir(settings.data_dir, run_id)
-    manifest = {
-        "schema_version": 1,
-        "run_id": run_id,
-        "command": "backtest_run",
-        "symbol": symbol,
-        "snapshot_id": snapshot_id,
-        "research_cutoff": as_of,
-        "params": vars(spec),
-        "orders": result.orders,
-        "fills": result.fills,
-        "rejected": result.rejected,
-        "pretrade_rejections": len(result.execution_rejections),
-        "n_trades": len(result.trades),
-        "starting_equity": result.starting_equity,
-        "final_equity": result.final_equity,
-        **_artifacts.research_gate_override_fields(research_gate_override),
-        **identity.manifest_fields(),
-        **timeframe_fields,
-    }
-    if forecast_meta is not None:
-        manifest["forecast"] = forecast_meta
+    manifest = _run_manifest(
+        identity,
+        symbol,
+        snapshot_id,
+        as_of,
+        spec,
+        result,
+        research_gate_override,
+        timeframe_fields,
+        forecast_meta,
+    )
     _artifacts.write_run(
         rdir,
         manifest=manifest,
@@ -566,11 +620,10 @@ def run(
         periods_per_year=spec.periods_per_year,
     )
     warn = f" ({result.rejected} orders rejected)" if result.rejected else ""
-    timeframe_label = "" if target.is_daily else f" {target.canonical}"
     typer.echo(
-        f"backtest {symbol}{timeframe_label} -> run {run_id}: "
-        f"{result.orders} orders, {result.fills} fills, "
-        f"{len(result.trades)} trades, final equity {result.final_equity:.2f}{warn}"
+        f"backtest {symbol}{'' if target.is_daily else ' ' + target.canonical} -> run {run_id}: "
+        f"{result.orders} orders, {result.fills} fills, {len(result.trades)} trades, "
+        f"final equity {result.final_equity:.2f}{warn}"
     )
     if forecast_meta is not None and forecast_meta["pretrain"]["overlap"]:
         typer.secho(

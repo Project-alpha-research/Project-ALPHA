@@ -32,7 +32,7 @@ Run the v1 strategy through the backtest engine.
 - `alpha backtest holdout <SYMBOL>` — Evaluate one frozen fixed-parameter candidate on its revealed final holdout once.
 - `alpha backtest oos <SYMBOL>` — Evaluate one fixed rule over causal walk-forward OOS windows; no model is refit. Options: `--strategy`, `--lookback`, +19 more
 - `alpha backtest portfolio <SYMBOLS>` — Backtest a diversified basket: run the strategy across SYMBOLS and combine the… Options: `--strategy`, +24 more
-- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +18 more
+- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +22 more
 
 ## alpha chart
 

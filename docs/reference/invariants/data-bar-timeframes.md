@@ -67,7 +67,8 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
   --from-timeframe --session` use these; a store or snapshot holding another bar size fails loud.
   Cutoffs accept a date (end of that UTC day, the historical meaning) or an ISO instant with an offset
   (`parse_cutoff`). A daily read at an instant inside a day keeps only bars already closed then
-  (`bar_known_at`: the session close for stocks, the next UTC midnight for crypto).
+  (`bar_known_at`: the session close for stocks, the next UTC midnight for crypto and for a stock
+  bar dated on a non-session day).
 - Known limits: corporate-action knowledge is date-level (an action known on day D is visible from 00:00
   local on D, so a dividend announced after the close shows in that morning's intraday read; splits are
   gated on the ex-date and are unaffected). A session's last resampled bin may be shorter than the target

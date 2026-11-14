@@ -258,6 +258,59 @@ def _intraday_session_errors(
     return errors, sum(ts not in regular for ts in timestamps)
 
 
+def _calendar_checks(
+    result: FetchResult,
+    identity: DatasetIdentity,
+    receipt: FetchReceipt,
+    timeframe: BarTimeframe,
+    incoming: set[datetime],
+) -> tuple[list[str], int, ZoneInfo | None]:
+    """Exchange-calendar checks for stock/ETF pulls: errors, extended-hours rows, session zone.
+
+    Intraday requests are bounded by exchange-local session dates (an after-hours bar on a
+    winter evening is stamped after 00:00 UTC of the next day), so the zone is returned for the
+    stored-session comparison.
+    """
+    critical: list[str] = []
+    extended_hours_rows = 0
+    session_zone: ZoneInfo | None = None
+    if identity.asset_class not in {"stock", "etf"}:
+        return critical, extended_hours_rows, session_zone
+    try:
+        import exchange_calendars as xcals  # type: ignore[import-untyped]  # noqa: PLC0415
+        from exchange_calendars.errors import (  # type: ignore[import-untyped]  # noqa: PLC0415
+            CalendarError,
+        )
+
+        calendar = xcals.get_calendar(identity.calendar)
+        sessions = calendar.sessions_in_range(
+            receipt.requested_start.isoformat(), receipt.requested_end.isoformat()
+        )
+        expected_sessions = {timestamp.date() for timestamp in sessions}
+        if not timeframe.is_daily:
+            session_zone = ZoneInfo(str(calendar.tz))
+            intervals = [
+                (
+                    session.date(),
+                    calendar.session_open(session).to_pydatetime().astimezone(UTC),
+                    calendar.session_close(session).to_pydatetime().astimezone(UTC),
+                )
+                for session in sessions
+            ]
+            errors, extended_hours_rows = _intraday_session_errors(
+                result.bars["ts"].to_list(), intervals, timeframe
+            )
+            critical.extend(errors)
+    except (ValueError, KeyError, CalendarError) as exc:
+        critical.append(f"invalid_exchange_calendar:{identity.calendar}:{type(exc).__name__}")
+    else:
+        if timeframe.is_daily:
+            incoming_dates = {timestamp.date() for timestamp in incoming}
+            for missing in sorted(expected_sessions - incoming_dates):
+                critical.append(f"calendar_gap:{missing.isoformat()}")
+    return critical, extended_hours_rows, session_zone
+
+
 def _quality_report(
     *,
     store: ParquetStore,
@@ -307,43 +360,10 @@ def _quality_report(
     incoming_rows = _rows_by_ts(result.bars)
     timeframe = parse_timeframe(identity.timeframe)
     intraday_stock = not timeframe.is_daily and identity.asset_class in {"stock", "etf"}
-    extended_hours_rows = 0
-    # Intraday requests are bounded by exchange-local session dates (an after-hours bar on a
-    # winter evening is stamped after 00:00 UTC of the next day), so compare in that timezone.
-    session_zone: ZoneInfo | None = None
-    if identity.asset_class in {"stock", "etf"}:
-        try:
-            import exchange_calendars as xcals  # type: ignore[import-untyped]  # noqa: PLC0415
-            from exchange_calendars.errors import (  # type: ignore[import-untyped]  # noqa: PLC0415
-                CalendarError,
-            )
-
-            calendar = xcals.get_calendar(identity.calendar)
-            sessions = calendar.sessions_in_range(
-                receipt.requested_start.isoformat(), receipt.requested_end.isoformat()
-            )
-            expected_sessions = {timestamp.date() for timestamp in sessions}
-            if intraday_stock:
-                session_zone = ZoneInfo(str(calendar.tz))
-                intervals = [
-                    (
-                        session.date(),
-                        calendar.session_open(session).to_pydatetime().astimezone(UTC),
-                        calendar.session_close(session).to_pydatetime().astimezone(UTC),
-                    )
-                    for session in sessions
-                ]
-                errors, extended_hours_rows = _intraday_session_errors(
-                    result.bars["ts"].to_list(), intervals, timeframe
-                )
-                critical.extend(errors)
-        except (ValueError, KeyError, CalendarError) as exc:
-            critical.append(f"invalid_exchange_calendar:{identity.calendar}:{type(exc).__name__}")
-        else:
-            if timeframe.is_daily:
-                incoming_dates = {timestamp.date() for timestamp in incoming_rows}
-                for missing in sorted(expected_sessions - incoming_dates):
-                    critical.append(f"calendar_gap:{missing.isoformat()}")
+    calendar_errors, extended_hours_rows, session_zone = _calendar_checks(
+        result, identity, receipt, timeframe, set(incoming_rows)
+    )
+    critical.extend(calendar_errors)
     current_rows = _rows_by_ts(current_bars) if current_bars is not None else {}
 
     def request_day(timestamp: datetime) -> date:

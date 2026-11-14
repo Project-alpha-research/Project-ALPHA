@@ -135,7 +135,7 @@ def _candle_rows(
     ):
         value = bars.get(key) if bars is not None else None
         if isinstance(value, str) and value:
-            args.extend([option, value])
+            args.append(f"{option}={value}")  # one argv item: a value is never an option
     if expected_snapshot_hash is not None:
         args.extend(["--expected-snapshot-hash", expected_snapshot_hash])
     if start is not None:

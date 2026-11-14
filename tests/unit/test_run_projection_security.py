@@ -58,12 +58,5 @@ def test_candle_projection_reads_a_run_at_its_own_bar_size(
         "SPY", "snap", data_dir=tmp_path, start=None, end=None, bars=intraday
     )
     run_projection._candle_rows("SPY", "snap", data_dir=tmp_path, start=None, end=None, bars={})
-    assert commands[0][-6:] == [
-        "--timeframe",
-        "1h",
-        "--from-timeframe",
-        "5m",
-        "--session",
-        "regular",
-    ]
+    assert commands[0][-3:] == ["--timeframe=1h", "--from-timeframe=5m", "--session=regular"]
     assert commands[1][1:] == ["data", "candles", "SPY", "--snapshot", "snap", "--json"]

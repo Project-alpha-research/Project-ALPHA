@@ -640,13 +640,20 @@ def show(root: Path, *, ledger: Path | None = None) -> dict[str, Any]:
             raw = b""
             result["message"] = "The trial ledger could not be read."
         # Only complete lines: a run may be appending right now.
+        skipped = 0
         for line in raw[: raw.rfind(b"\n") + 1].splitlines():
             try:
                 row = json.loads(line)
             except ValueError:
-                continue
+                row = None
             if isinstance(row, dict):
                 rows.append(row)
+            elif line.strip():
+                skipped += 1
+        if skipped:
+            result["ledger_warning"] = (
+                f"{skipped} trial ledger line(s) could not be read; their verdicts are not shown."
+            )
         for round_ in result["rounds"]:
             round_["alpha_verdicts"] = {
                 name: [
@@ -690,6 +697,8 @@ def _plain(view: dict[str, Any]) -> str:
             lines.append("ALPHA's verdicts: " + _json(round_["alpha_verdicts"]))
     if "message" in view:
         lines.append(view["message"])
+    if "ledger_warning" in view:
+        lines.append(view["ledger_warning"])
     lines.append("ALPHA's trial ledger is the evidence authority.")
     return "\n".join(lines)
 

@@ -662,3 +662,13 @@ assert coder.develop("exp") == "exp" and seen == [0], seen
         },
         timeout=120,
     )
+
+
+def test_inspector_warns_about_unreadable_ledger_lines(tmp_path: Path) -> None:
+    plan = prepare(tmp_path)
+    session(tmp_path)
+    record(plan, tmp_path)
+    ledger = tmp_path / "trials.jsonl"
+    ledger.write_text('{"name": "a", "status": "OK"}\nnot json\n')
+    view = memory.show(tmp_path / "memory", ledger=ledger)
+    assert "1 trial ledger line" in view["ledger_warning"]

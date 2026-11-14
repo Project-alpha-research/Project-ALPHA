@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 928dfcee
+verified: 9bf6bec8afaf
 ---
 
 # Production-ready scope, part 2: overfit tests to engines

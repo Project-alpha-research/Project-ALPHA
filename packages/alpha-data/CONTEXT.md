@@ -3,7 +3,7 @@ owner: data layer
 sources:
   - packages/alpha-data/src/**
   - packages/alpha-data/pyproject.toml
-verified: 13cb45f9b135
+verified: e97f16ba6601
 ---
 
 # alpha-data workspace
@@ -34,10 +34,11 @@ import it. It must never let a read see data that was not knowable at the cutoff
 ## How to change it
 
 - Code: `packages/alpha-data/src/alpha_data/`; vendor adapters in `adapters/`, the crypto data
-  house in `crypto/` and `crypto/providers/`.
+  house in `crypto/` and `crypto/providers/`; FRED macro reference vintages in `context/`
+  (separate parquet/provenance under `data_dir/context/fred`, never bars or backtest inputs).
 - Tests: `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,
-  `test_crypto_*` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
+  `test_crypto_*`, `test_context_fred.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
   `test_survivorship.py`, `test_candles_pit.py`, `test_crypto_*_future_poison.py`; integration
   `tests/integration/test_data_cli.py` and `tests/integration/test_crypto_*`.
 - A new or changed read path needs its future-poison guard with a must-fail leaky twin

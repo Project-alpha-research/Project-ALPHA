@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-234 commands in 25 groups. Options marked (required) are
+238 commands in 26 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -39,6 +39,15 @@ Run the v1 strategy through the backtest engine.
 Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
 - `alpha chart overlays <SYMBOL>` — Indicator series and pattern annotations over the PIT candle window of SYMBOL. Options: `--indicator`, `--pattern`, +4 more
+
+## alpha context
+
+Macro reference data as first published, separate from bars.
+
+- `alpha context list` — List locally stored series and their provenance (no network). Options: `--json`
+- `alpha context pull` — Pull FRED vintages using FRED_API_KEY; default to the macro starter set. Options: `--series`, `--json`
+- `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +3 more
+- `alpha context window` — Summarise the macro window; endpoints use values knowable at each boundary. Options: `--start (required)`, +4 more
 
 ## alpha crypto-data
 

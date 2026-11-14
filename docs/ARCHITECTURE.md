@@ -120,6 +120,7 @@ another package is named.
 | Subfolder | Owning module | Purpose |
 |---|---|---|
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
+| `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |
 | `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
 | `runs/` | `_artifacts` (backtest/validate runs; listed in `run_store.RUN_DIRS`) | Immutable single-strategy run directories with manifest-pinned artifacts. |
 | `portfolio/` | `backtest_cmds` (`RUN_DIRS`) | Portfolio backtest run directories. |

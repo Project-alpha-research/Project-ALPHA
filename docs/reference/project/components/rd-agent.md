@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 3a0098cd96e3
+verified: a0b2ee24
 ---
 
 # RD-Agent
@@ -79,6 +79,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
+- Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 
 ## Decisions and open questions
 

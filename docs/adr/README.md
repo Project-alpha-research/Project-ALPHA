@@ -55,6 +55,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0047](0047-alpaca-interim-stock-source.md) | Alpaca's free plan is an interim, not-yet-confirmed stock source (SIP feed, raw prices plus actions, split cross-check; never replaces Tiingo) | Accepted | 2026-11-14 |
 | [0048](0048-daily-rule-lane-binding-and-named-months.md) | Daily-rule approvals bind every module the lane runs through; the daily price query reads named months | Accepted | 2026-11-14 |
 | [0049](0049-alpha-judges-rdagent-factors.md) | ALPHA, not RD-Agent's built-in Qlib backtest, judges RD-Agent's factors (ALPHA classes through RD-Agent's settings; reserved 2024+ window) | Accepted | 2026-11-14 |
+| [0051](0051-glue-rules-for-outside-projects.md) | Glue rules for outside projects: how a library or engine is chosen, pinned and joined; a register of every one used or judged | Accepted | 2026-11-15 |
 
 ## Conventions
 

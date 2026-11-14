@@ -7,7 +7,7 @@ import pytest
 
 from alpha_core import DataError
 from alpha_data.resample import resample_bars
-from alpha_data.timeframe import BarTimeframe
+from alpha_data.timeframe import DAILY, BarTimeframe
 
 
 def bars(start: datetime, count: int, minutes: int) -> pl.DataFrame:
@@ -107,8 +107,29 @@ def test_trailing_unknown_bin_dropped() -> None:
         known_by=start + timedelta(minutes=70),
     )
     assert result.height == 1
-    with pytest.raises(DataError, match="missing"):
-        resample_bars(frame, source=BarTimeframe(5), target=BarTimeframe(60), calendar=None)
+    # Without known_by the data's own end is the cutoff: the forming bin is dropped, not refused.
+    unbounded = resample_bars(frame, source=BarTimeframe(5), target=BarTimeframe(60), calendar=None)
+    assert unbounded.equals(result)
+
+
+def test_truncated_stock_session_fails_loud() -> None:
+    # 2026-03-09 (New York daylight time): open 13:30 UTC. Bars start at 14:30, so the
+    # 13:30-14:30 bin of a session that has already closed is missing.
+    late = bars(datetime(2026, 3, 9, 14, 30, tzinfo=UTC), 66, 5)
+    with pytest.raises(DataError, match="incomplete bin"):
+        resample_bars(
+            late,
+            source=BarTimeframe(5),
+            target=BarTimeframe(60),
+            calendar="XNYS",
+            known_by=datetime(2026, 3, 10, tzinfo=UTC),
+        )
+
+
+def test_missing_whole_session_fails_loud() -> None:
+    frame = pl.concat([bars(datetime(2026, 3, day, 13, 30, tzinfo=UTC), 78, 5) for day in (9, 11)])
+    with pytest.raises(DataError, match="missing the whole 2026-03-10 session"):
+        resample_bars(frame, source=BarTimeframe(5), target=DAILY, calendar="XNYS")
 
 
 def test_extended_hours_refused() -> None:

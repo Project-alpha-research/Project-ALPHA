@@ -251,6 +251,17 @@ def load_bars(
     if target.is_daily and stored.is_daily:
         source = PointInTimeSource(store, actions)
         bars = source.as_of(symbol, when)
+        if as_of is not None and as_of.astimezone(UTC).time() < time(23, 59, 59):
+            # A date cutoff (end of that UTC day) keeps its historical meaning. An exact instant
+            # inside a day must not see that day's daily bar before it closes: a stored daily bar
+            # is stamped 00:00 UTC on its session date but is known only at the session close.
+            from alpha_data.sessions import bar_known_at
+
+            bars = [
+                bar
+                for bar in bars
+                if bar_known_at(bar.ts, timeframe=stored, calendar=calendar) <= as_of
+            ]
     else:
         reader = PointInTimeReader(store, actions, timeframe=stored, calendar=calendar)
         frame = filter_session(

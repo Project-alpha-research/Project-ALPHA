@@ -57,14 +57,21 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
 - Resampling (`resample_bars`): the target must be a whole multiple of the source. Stock bins start at
   each session's open and are cut at its close (half days included); a daily target gives one bar per
   session at the session date 00:00 UTC. Crypto bins sit on the UTC grid. Only regular-session input is
-  resampled. A bin that ends after `known_by` is still forming and is dropped; any other incomplete bin
-  fails loud naming its first missing bar. OHLCV: first open, max high, min low, last close, summed volume.
+  resampled. Every stock session is checked from open to close and every exchange session between the
+  first and last bar must be present. A bin that ends after `known_by` (default: the data's own end) is
+  still forming and is dropped; any other incomplete bin or missing session fails loud. OHLCV: first open, max high, min low, last close, summed volume.
 - Alignment (`align_as_known`): each finer bar gets the latest coarser bar whose known time is at or
   before the finer bar's known time (daily stock bars are known at the session close), joined on known
   times, never on bar starts. Known time is `bar_known_at`.
 - `_runner.load_bars(..., timeframe=, source_timeframe=, session=)` and `alpha data candles --timeframe
   --from-timeframe --session` use these; a store or snapshot holding another bar size fails loud.
-  Cutoffs accept a date (end of that day) or an ISO instant with an offset (`parse_cutoff`).
+  Cutoffs accept a date (end of that UTC day, the historical meaning) or an ISO instant with an offset
+  (`parse_cutoff`). A daily read at an instant inside a day keeps only bars already closed then
+  (`bar_known_at`: the session close for stocks, the next UTC midnight for crypto).
+- Known limits: corporate-action knowledge is date-level (an action known on day D is visible from 00:00
+  local on D, so a dividend announced after the close shows in that morning's intraday read; splits are
+  gated on the ex-date and are unaffected). A session's last resampled bin may be shorter than the target
+  (it ends at the close) but carries the target's duration, so its known time errs late, never early.
 - Guards: `tests/bias_guards/test_intraday_future_poison.py` (reader, resampler and alignment, each with
   a leaky twin that must differ); unit tests `test_sessions.py`, `test_resample.py`, `test_align.py`,
   `test_pit_intraday.py`.

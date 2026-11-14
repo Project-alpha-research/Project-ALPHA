@@ -185,3 +185,52 @@ def test_leaky_twin_alignment_on_bar_start_is_caught() -> None:
         )
 
     assert not leaky(clean).equals(leaky(poisoned_fine))
+
+
+def _seed_daily(data_dir: Path, closes: list[float]) -> None:
+    days = [datetime(2026, 11, 16 + i, tzinfo=UTC) for i in range(len(closes))]
+    ParquetStore(data_dir / "store").write_bars(
+        "SPY",
+        pl.DataFrame(
+            {
+                "ts": days,
+                "open": closes,
+                "high": [c + 1.0 for c in closes],
+                "low": [c - 1.0 for c in closes],
+                "close": closes,
+                "volume": [1_000.0] * len(closes),
+            },
+            schema=_SCHEMA,
+        ),
+    )
+
+
+# 15:00 New York on 2026-11-18: that session's daily bar closes at 16:00 and is not yet known.
+_DAILY_INSTANT = datetime(2026, 11, 18, 20, 0, tzinfo=UTC)
+
+
+def test_daily_read_at_an_instant_waits_for_the_session_close(tmp_path: Path) -> None:
+    from alpha_cli._runner import load_bars
+
+    _seed_daily(tmp_path / "clean", [100.0, 101.0, 102.0, 103.0])
+    _seed_daily(tmp_path / "poisoned", [100.0, 101.0, _POISON, _POISON])
+    clean, _ = load_bars("SPY", data_dir=tmp_path / "clean", as_of=_DAILY_INSTANT)
+    poisoned, _ = load_bars("SPY", data_dir=tmp_path / "poisoned", as_of=_DAILY_INSTANT)
+    assert clean == poisoned
+    assert [bar.close for bar in clean] == [100.0, 101.0]
+    # A date cutoff keeps its meaning (end of that UTC day): the 2026-11-18 bar is included.
+    whole_day, _ = load_bars(
+        "SPY", data_dir=tmp_path / "clean", as_of=datetime(2026, 11, 18, 23, 59, 59, tzinfo=UTC)
+    )
+    assert [bar.close for bar in whole_day] == [100.0, 101.0, 102.0]
+
+
+def test_leaky_twin_daily_start_stamp_filter_is_caught(tmp_path: Path) -> None:
+    """Filtering daily bars on their 00:00 UTC stamp shows the 2026-11-18 bar at 15:00 New York."""
+    _seed_daily(tmp_path / "clean", [100.0, 101.0, 102.0, 103.0])
+    _seed_daily(tmp_path / "poisoned", [100.0, 101.0, _POISON, _POISON])
+
+    def leaky(root: Path) -> pl.DataFrame:
+        return ParquetStore(root / "store").read_bars("SPY").filter(pl.col("ts") <= _DAILY_INSTANT)
+
+    assert not leaky(tmp_path / "clean").equals(leaky(tmp_path / "poisoned"))

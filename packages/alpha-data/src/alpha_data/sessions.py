@@ -49,6 +49,11 @@ def session_bounds(calendar: str, session_date: date) -> tuple[datetime, datetim
     return opening.astimezone(UTC), closing.astimezone(UTC)
 
 
+def sessions_between(calendar: str, first: date, last: date) -> list[date]:
+    """Every exchange session date from ``first`` to ``last`` inclusive."""
+    return [ts.date() for ts in _calendar(calendar).sessions_in_range(first, last)]
+
+
 def session_date_of(ts: datetime, calendar: str | None) -> date:
     ts = _aware_utc(ts)
     return ts.astimezone(_calendar(calendar).tz).date() if calendar is not None else ts.date()

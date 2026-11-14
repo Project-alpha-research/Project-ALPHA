@@ -8,7 +8,13 @@ from datetime import UTC, datetime, time
 import polars as pl
 
 from alpha_core import DataError
-from alpha_data.sessions import _aware_utc, filter_session, session_bounds, session_date_of
+from alpha_data.sessions import (
+    _aware_utc,
+    filter_session,
+    session_bounds,
+    session_date_of,
+    sessions_between,
+)
 from alpha_data.timeframe import BarTimeframe
 
 
@@ -22,8 +28,12 @@ def resample_bars(
 ) -> pl.DataFrame:
     """Aggregate complete intervals, refusing gaps in every already-known bin.
 
-    Inspect bins between the first and last observed bins in each session (or the continuous
-    UTC range), including wholly missing interior bins. Source starts are aligned to each bin.
+    Stock sessions are checked from their open to their close, and every exchange session between
+    the first and last bar must be present; crypto is checked across the continuous UTC range.
+    A bin ending after ``known_by`` is still forming and is dropped. Without ``known_by`` the
+    data's own end (last bar start plus one source bar) is the cutoff, so a store read mid-session
+    drops its forming bin instead of failing. Each output bar is stamped at its bin start; a stock
+    session's last bin may be shorter than ``target`` (it ends at the close).
     """
     if target == source:
         return frame
@@ -42,6 +52,8 @@ def resample_bars(
     stamps = [_aware_utc(ts) for ts in frame["ts"].to_list()]
     if len(set(stamps)) != len(stamps) or stamps != sorted(stamps):
         raise DataError("resample source timestamps must be strictly increasing")
+    if known_by is None:
+        known_by = stamps[-1] + source.duration
 
     # Each session is independent: overnight and holiday gaps are not missing stock bars.
     groups: dict[tuple[datetime, datetime | None], list[int]] = defaultdict(list)
@@ -53,18 +65,28 @@ def resample_bars(
             else (epoch, None)
         )
         groups[(opening, closing)].append(index)
+    if calendar is not None:
+        held = {session_date_of(opening, calendar) for opening, _ in groups}
+        first, last = session_date_of(stamps[0], calendar), session_date_of(stamps[-1], calendar)
+        for day in sessions_between(calendar, first, last):
+            if day not in held and session_bounds(calendar, day)[1] <= known_by:
+                raise DataError(f"resample input is missing the whole {day} session")
 
     output: list[dict[str, object]] = []
     for (anchor, closing), indices in groups.items():
         bins: dict[int, list[int]] = defaultdict(list)
         for index in indices:
             bins[(stamps[index] - anchor) // target.duration].append(index)
-        for number in range(min(bins), max(bins) + 1):
+        if closing is not None:  # a stock session: every bin from the open to the close
+            numbers = range(0, -(-(closing - anchor) // target.duration))
+        else:
+            numbers = range(min(bins), max(bins) + 1)
+        for number in numbers:
             start = anchor + number * target.duration
             end = start + target.duration
             if closing is not None:
                 end = min(end, closing)
-            if known_by is not None and end > known_by:
+            if end > known_by:
                 continue
             members = bins.get(number, [])
             present = {stamps[index] for index in members}

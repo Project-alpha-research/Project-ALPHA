@@ -384,7 +384,7 @@ class Launch:
                     source_sha256=SOURCE_SHA256,
                     judge_sha256=research_memory.judge_sha256(),
                 )
-            except OSError as error:  # memory is a warning, never a refusal: run without it
+            except Exception as error:  # noqa: BLE001 - memory is a warning, never a refusal
                 self.receipt["memory_warning"] = (
                     f"memory unavailable ({type(error).__name__}); this run starts fresh"
                 )

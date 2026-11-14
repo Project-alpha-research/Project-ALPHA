@@ -319,35 +319,63 @@ def open_factor_loop(
     if knowledge.exists():
         try:
             _load_knowledge(knowledge)
+        except ImportError:
+            pass  # a broken runtime is not a broken knowledge file: never quarantine for it
         except Exception as error:  # noqa: BLE001 - corrupt upstream artifacts must not stop a run
             warning = _warning(
                 "knowledge-unloadable",
                 f"Coding knowledge could not be loaded ({type(error).__name__}); starting empty.",
             )
-            with _lock(root):
-                _quarantine(root, [knowledge], warning)
-            _event(environ, **warning)
+            try:
+                with _lock(root):
+                    _quarantine(root, [knowledge], warning)
+            except OSError:
+                warning["message"] += " It could not be set aside either."
+            _safe_event(environ, **warning)
     session = environ.get("ALPHA_RDAGENT_CONTINUE_SESSION")
     if session:
-        try:
-            loop = loop_cls.load(session, checkout=Path(environ["LOG_TRACE_PATH"]))
-            total = int(environ["ALPHA_RDAGENT_CONTINUE_LOOPS"]) + loop_n
-        except Exception as error:  # noqa: BLE001 - a bad session falls back to a fresh upstream loop
-            _event(
-                environ,
-                "session-unloadable",
-                f"The previous session could not be loaded ({type(error).__name__}); "
-                "starting a fresh loop.",
-            )
-        else:
-            _event(
+        # RD-Agent writes step dumps with a plain open("wb"): a run killed mid-dump can leave a
+        # truncated newest file. Try the newest few dumps, newest first, before giving up.
+        dumps = sorted(
+            (
+                p
+                for p in Path(session).glob("*/*_*")
+                if p.is_file() and p.parent.name.isdecimal() and p.name.split("_")[0].isdecimal()
+            ),
+            key=lambda p: (int(p.parent.name), int(p.name.split("_")[0])),
+            reverse=True,
+        )[:3]
+        error_type = "no step dump"
+        for dump in dumps:
+            try:
+                loop = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
+                total = int(environ["ALPHA_RDAGENT_CONTINUE_LOOPS"]) + loop_n
+            except Exception as error:  # noqa: BLE001 - try an older dump, then a fresh loop
+                error_type = type(error).__name__
+                continue
+            # The pickled coder keeps the earlier run's attempt limit; apply this run's.
+            if hasattr(loop.coder, "max_loop") and environ.get("FACTOR_CoSTEER_max_loop"):
+                loop.coder.max_loop = int(environ["FACTOR_CoSTEER_max_loop"])
+            _safe_event(
                 environ,
                 "continued",
-                f"Continued session {session}; "
+                f"Continued session {session} from {dump.parent.name}/{dump.name}; "
                 f"{total - loop_n} completed loops, {loop_n} new loops.",
             )
             return loop, total
+        _safe_event(
+            environ,
+            "session-unloadable",
+            f"The previous session could not be loaded ({error_type}); starting a fresh loop.",
+        )
     return loop_cls(settings), loop_n
+
+
+def _safe_event(environ: Mapping[str, str], code: str, message: str) -> None:
+    try:
+        _event(environ, code, message)
+    except OSError:
+        print(f"research memory: {code}: {message}", file=sys.stderr)
 
 
 def _redact(value: Any, secrets: Sequence[str]) -> Any:
@@ -400,7 +428,31 @@ def _record(
             _quarantine(root, [knowledge], warning, delete=True)
         result["loops_after"] = completed_loops(session)
         result["knowledge_sha256_after"] = _hash(knowledge)
-        if not found and any(p.is_file() for p in session.glob("[0-9]*/*_*")):
+        events = run_dir / "memory-events.jsonl"
+        codes = set()
+        if events.exists():
+            for line in events.read_text(errors="replace").splitlines():
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    event = None
+                if (
+                    not _fields(event, {"schema": str, "code": str, "message": str, "ts": str})
+                    or event["schema"] != "AlphaRdagentMemoryEventV1"
+                ):
+                    # The child may die mid-write; one bad line must not lose the whole record.
+                    result["warnings"].append(
+                        _warning("memory-event-corrupt", "A memory event line was unreadable.")
+                    )
+                    continue
+                codes.add(event["code"])
+                result["warnings"].append(event)
+        # Point at this run only when it got further than the lineage it continued (or when it
+        # had to start fresh); a run that crashed before finishing a loop keeps the old pointer.
+        progressed = result["loops_after"] > plan.loops_before or (
+            result["loops_after"] > 0 and "session-unloadable" in codes
+        )
+        if not found and progressed:
             manifest["latest_session"] = {
                 "run_id": run_id,
                 "run_dir": str(run_dir),
@@ -409,16 +461,6 @@ def _record(
                 "judge_sha256": plan.judge_sha256,
                 "recorded_at": ended_at,
             }
-        events = run_dir / "memory-events.jsonl"
-        if events.exists():
-            for line in events.read_text().splitlines():
-                event = json.loads(line)
-                if (
-                    not _fields(event, {"schema": str, "code": str, "message": str, "ts": str})
-                    or event["schema"] != "AlphaRdagentMemoryEventV1"
-                ):
-                    raise ValueError("Invalid memory event")
-                result["warnings"].append(event)
         manifest["runs"].append(
             {
                 "run_id": run_id,
@@ -579,7 +621,20 @@ def show(root: Path, *, ledger: Path | None = None) -> dict[str, Any]:
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             result["message"] = f"Memory could not be inspected ({type(error).__name__})."
     if ledger:
-        rows = [json.loads(line) for line in ledger.read_text().splitlines()]
+        rows = []
+        try:
+            raw = ledger.read_bytes()
+        except OSError:
+            raw = b""
+            result["message"] = "The trial ledger could not be read."
+        # Only complete lines: a run may be appending right now.
+        for line in raw[: raw.rfind(b"\n") + 1].splitlines():
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
         for round_ in result["rounds"]:
             round_["alpha_verdicts"] = {
                 name: [

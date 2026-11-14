@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -139,13 +140,33 @@ def test_record_continuation_versions_and_events(tmp_path: Path) -> None:
 @pytest.mark.parametrize("missing", [True, False])
 def test_previous_missing_or_without_completed_loop(tmp_path: Path, missing: bool) -> None:
     plan = prepare(tmp_path)
-    path = session(tmp_path, record=False)
+    path = session(tmp_path)
     record(plan, tmp_path)
+    assert manifest(tmp_path)["latest_session"]["completed_loops"] == 1
     if missing:
-        (path / "0/0_propose").unlink()
+        shutil.rmtree(path)
+    else:
+        (path / "0/4_record").unlink()
     next_plan = prepare(tmp_path, "two")
     assert next_plan.continue_from is None
     assert codes(next_plan.warnings) == {"previous-session-missing"}
+
+
+def test_crashed_run_keeps_the_previous_pointer(tmp_path: Path) -> None:
+    plan = prepare(tmp_path)
+    session(tmp_path)
+    record(plan, tmp_path)
+    plan = prepare(tmp_path, "two")
+    assert plan.loops_before == 1
+    crashed = tmp_path / "two/work/log/__session__/1"
+    crashed.mkdir(parents=True)
+    (crashed / "0_direct_exp_gen").write_bytes(b"half a loop")
+    (tmp_path / "two/memory-events.jsonl").write_text('{"schema": "AlphaRdagent')  # cut off
+    result = record(plan, tmp_path, "two")
+    assert "memory-event-corrupt" in codes(result["warnings"])
+    assert "memory-record-failed" not in codes(result["warnings"])
+    assert manifest(tmp_path)["latest_session"]["run_id"] == "one"
+    assert len(manifest(tmp_path)["runs"]) == 2
 
 
 @pytest.mark.parametrize("location", ["knowledge", "session"])
@@ -227,16 +248,28 @@ def test_open_loop_without_memory_and_failed_session(tmp_path: Path) -> None:
     cls.assert_called_once_with("settings")
     plan = prepare(tmp_path)
     (tmp_path / "one").mkdir()
+    old = tmp_path / "old/__session__"
+    for loop_index in ("0", "1", "2"):
+        (old / loop_index).mkdir(parents=True)
+        for step in ("3_feedback", "4_record"):
+            (old / loop_index / step).write_bytes(b"dump")
     env = {
         **plan.env,
-        "ALPHA_RDAGENT_CONTINUE_SESSION": "/old/session",
+        "ALPHA_RDAGENT_CONTINUE_SESSION": str(old),
         "ALPHA_RDAGENT_CONTINUE_LOOPS": "3",
         "LOG_TRACE_PATH": str(tmp_path / "checkout"),
+        "FACTOR_CoSTEER_max_loop": "2",
     }
-    cls.load.return_value = SimpleNamespace()
+    cls.load.return_value = SimpleNamespace(coder=SimpleNamespace(max_loop=1))
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
     assert loop is cls.load.return_value and total == 5
-    cls.load.assert_called_once_with("/old/session", checkout=tmp_path / "checkout")
+    assert loop.coder.max_loop == 2  # this run's attempt limit, not the pickled one
+    cls.load.assert_called_once_with(old / "2/4_record", checkout=tmp_path / "checkout")
+    # A truncated newest dump: the next-older dump is used instead.
+    cls.load.reset_mock()
+    cls.load.side_effect = [ValueError("truncated"), SimpleNamespace(coder=None)]
+    loop, total = memory.open_factor_loop(cls, "settings", 2, env)
+    assert total == 5 and cls.load.call_args.args[0] == old / "2/3_feedback"
     cls.load.side_effect = ValueError("secret key path")
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
     assert total == 2 and loop is cls.return_value

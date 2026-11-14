@@ -50,8 +50,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
 | Spine foundations | `spine/stores` (store resolution and bar frequency) | `test_spine_stores`, `test_all_in_sizing` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
-| Crypto, daily data | `_crypto_*` (15; incl. `_crypto_snapshot_members`), `crypto_*` (4), `data_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*` |
-| Macro context | `context_cmds` (FRED pull/list/show/window; environment key only) | `test_context_*` |
+| Crypto, daily data, macro context | `_crypto_*` (15; incl. `_crypto_snapshot_members`), `crypto_*` (4), `data_cmds`, `context_cmds` (FRED) | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
 | RD-Agent factor judging | `rdagent_factor_eval` (ADR-0049; run as a subprocess by the worker) | `test_rdagent_factor_eval` |
 | Machine learning | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds` | `test_ml_*`, `test_forecast_*` |

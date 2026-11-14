@@ -85,17 +85,17 @@ Provider-native crypto acquisition, qualification, snapshots, and storage.
 
 Data ingestion, snapshots, and integrity.
 
-- `alpha data audit <PROVIDER> <RECEIPT_ID>` — Read one immutable candidate/quarantine quality report. Options: `--json`
-- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +4 more
+- `alpha data audit <PROVIDER> <RECEIPT_ID>` — Read one immutable candidate/quarantine quality report. Options: `--json`, `--timeframe`
+- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +7 more
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
-- `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +6 more
-- `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`
-- `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`
-- `alpha data snapshot <SNAPSHOT_ID> <SYMBOLS>` — Freeze the current store for SYMBOLS into an immutable, hashed snapsh… Options: `--source`, `--exchange`
+- `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more
+- `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`, +1 more
+- `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`, `--timeframe`
+- `alpha data snapshot <SNAPSHOT_ID> <SYMBOLS>` — Freeze the current store for SYMBOLS into an immutable, hashed snapsh… Options: `--source`, +2 more
 - `alpha data snapshots` — List every immutable snapshot's manifest summary in deterministic id order. Options: `--json`
-- `alpha data source-status <SYMBOL>` — Show canonical provenance and pending candidate/quarantine receipts for SYMBOL. Options: `--json`
-- `alpha data symbols` — List every symbol with stored bars (the workstation's symbol picker reads this). Options: `--json`, `--with-actions`
+- `alpha data source-status <SYMBOL>` — Show canonical provenance and pending candidate/quarantine receipts for SYMBOL. Options: `--json`, `--timeframe`
+- `alpha data symbols` — List every symbol with stored bars (the workstation's symbol picker reads this). Options: `--json`, `--with-actions`, `--timeframe`
 - `alpha data ticker <SYMBOL>` — Report SYMBOL's current last-trade price on a CCXT venue (read-only; needs network). Options: `--source`, `--exchange`, +1 more
 - `alpha data universe import <NAME> <CSV_PATH>` — Import symbol,effective_from,effective_to,delisting_return,reason ro… Options: `--json`
 - `alpha data universe show <NAME>` — List the members of universe NAME as of a date, including names that later left. Options: `--as-of (required)`, `--json`

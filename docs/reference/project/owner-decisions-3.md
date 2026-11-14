@@ -110,3 +110,22 @@ the rules for entries are in the first. New entries are appended at the end of t
   would perform there. (5) A "how this was computed" view per finding is enough; no whole-code map.
 - **Governs:** the [data layer](components/data-layer.md), [AI assistants](components/ai-assistants.md),
   [validation and evidence](components/validation-and-evidence.md), the [Workstation](components/web-workstation.md).
+
+### 2026-11-15 Glue in more proven open-source projects
+
+- **Said:** "I want ti add more robust repos that are built well and not vibe coded like mine and
+  have the glue like we do with qlib and rd agents it seems to work well." And: "Also should we
+  use ducbBB for data handling".
+- **Context:** the owner sent three examples from a social-media post (a reinforcement-learning
+  trading library, a machine-learning-for-trading course, a portfolio report library) and asked
+  for each to be judged, and for other projects worth gluing in. A popular project is not
+  automatically adopted: each is judged on fit, upkeep, licence and what hand-written code it
+  lets ALPHA delete.
+- **Governs:** the whole project; the [overview](overview.md#the-target-shape).
+
+### 2026-11-15 RD-Agent's own run viewer is installed
+
+- **Said:** chose "Install the viewer" when asked whether to add RD-Agent's step-by-step run
+  viewer as a separate pinned install or to skip it (a selection from offered options).
+- **Context:** it runs in its own install, reachable only from the owner's devices.
+- **Governs:** [RD-Agent](components/rd-agent.md).

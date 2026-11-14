@@ -116,6 +116,9 @@ def check_port(port: int) -> None:
     if not 1 <= port <= 65535:
         raise ValueError("port must be between 1 and 65535")
     with socket.socket() as connection:
+        # Streamlit itself reuses the address, so a just-stopped viewer's TIME_WAIT socket must
+        # not read as "already listening"; a live listener still refuses the bind.
+        connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             connection.bind(("127.0.0.1", port))
         except OSError as error:

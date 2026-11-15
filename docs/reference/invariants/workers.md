@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3a0098cd96e3
+verified: 21a8165284fc
 ---
 
 # Worker invariants
@@ -128,7 +128,8 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   all model settings. `tests/unit/test_rdagent_model_gateway.py`.
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md)): the one model-connected
   real-data route, started by `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs
-  unmodified; only the classes named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`), and they
+  unmodified; only the classes named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, and
+  `alpha_factor_coder.py`, which only restarts one upstream counter per experiment), and they
   import RD-Agent and pandas, never an ALPHA package: the evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess
   in ALPHA's environment. The loop is never given data on or after 2024-01-01; every factor goes to the append-only
   cross-run trial ledger (a repeat by code hash is not new evidence); `decision` is ALPHA's rule, never the model's;
@@ -136,7 +137,23 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   disclosure. Its runtime is built only by `--with-factor-runtime` from `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.
+  A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
+  plain line and exits 2. Research memory is described in the
+  [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
+  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`.
+- Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
+  is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
+  than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger
+  (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
+  the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
+  family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
+- Run viewer (`rdagent_viewer.py serve`, `rdagent_ui_entry.py`): RD-Agent's own unmodified Streamlit log viewer on a
+  run folder, foreground and local only. It runs in its own hash-pinned Python 3.11 runtime, built only by
+  `--with-ui` from `ui-requirements.lock` and recorded by `install_stock_profile.py --profile ui`; the entry
+  verifies the pinned source and imports RD-Agent through the same narrow finder as the factor loop. It binds `127.0.0.1`,
+  refuses a busy port, runs with an exact environment and a temporary home that is removed on exit, and replaces only
+  symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
+  never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
   such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
   `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.

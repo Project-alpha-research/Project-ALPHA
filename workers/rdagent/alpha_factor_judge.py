@@ -28,6 +28,9 @@ LEGACY_KEYS = ["IC"] + [
     for cost in ("without", "with")
     for metric in ("annualized_return", "max_drawdown")
 ]
+# RD-Agent's own log viewer (rdagent/log/ui/app.py, QLIB_SELECTED_METRICS) indexes these too;
+# ALPHA does not compute an information ratio, so it is present as NaN, never invented.
+VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
 
 
 SWING_BRIEF = (
@@ -81,7 +84,7 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
     )
     lines, seen = [], set()
-    for row in reversed(rows):
+    for row in (r for r in reversed(rows) if r.get("schema") != "AlphaRuleTrialV1"):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
@@ -202,7 +205,7 @@ class AlphaFactorRunner(Developer):
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
         if not exp.sub_tasks:
-            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS, float("nan")))
+            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS + VIEWER_KEYS, float("nan")))
             exp.stdout = "baseline: no factors; ALPHA evaluates factors standalone"
             return exp
         run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
@@ -295,7 +298,9 @@ class AlphaFactorRunner(Developer):
                 lines[-1] if lines else f"ALPHA evaluator exit {result.returncode}"
             )
         record = json.loads((folder / "result.json").read_bytes())
-        exp.result = pd.Series(record["legacy_result"])
+        exp.result = pd.Series(
+            {**dict.fromkeys(VIEWER_KEYS, float("nan")), **record["legacy_result"]}
+        )
         exp.stdout = record["feedback_text"]
         exp.alpha_evaluation = record
         if all(f["status"] == "FAILED" for f in factors):

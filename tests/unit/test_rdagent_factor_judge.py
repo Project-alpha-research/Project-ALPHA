@@ -207,6 +207,7 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "Developer": object,
         "FactorEmptyError": ValueError,
         "LEGACY_KEYS": ["IC"],
+        "VIEWER_KEYS": [],
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<judge-evidence>", "exec"), namespace)
     return namespace
@@ -436,3 +437,14 @@ with patch.object(j.QlibFactorHypothesisGen, 'prepare_context', return_value=({'
         cwd=tmp_path,
         timeout=60,
     )
+
+
+def test_hypothesis_summary_skips_rule_families(tmp_path: Path) -> None:
+    import json
+
+    namespace = swing_parts()
+    ledger = tmp_path / "ledger"
+    ledger.write_text(json.dumps({"schema": "AlphaRuleTrialV1", "name": "human-rule"}) + "\n")
+    context = {"hypothesis_and_feedback": ""}
+    namespace["append_swing_context"](context, str(ledger))
+    assert "human-rule" not in context["hypothesis_and_feedback"]

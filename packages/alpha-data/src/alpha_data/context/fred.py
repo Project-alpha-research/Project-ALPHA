@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Mapping
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +23,7 @@ from alpha_data.context.views import (
     metadata_fields,
     series_path,
     validate,
+    validate_fetched_at,
 )
 from alpha_data.context.views import (
     as_known as as_known,
@@ -202,7 +203,7 @@ class FredAdapter:
             offset += len(page)
         return rows
 
-    def fetch(self, series_id: str) -> tuple[pl.DataFrame, dict[str, str]]:
+    def fetch(self, series_id: str, *, as_of: date) -> tuple[pl.DataFrame, dict[str, str]]:
         key = os.environ.get("FRED_API_KEY", "").strip()
         if not key:
             raise DataError("FRED requires FRED_API_KEY in the environment")
@@ -223,7 +224,7 @@ class FredAdapter:
             except _HTTPError as exc:
                 if exc.status != 400 or _NO_VINTAGES in str(exc):
                     raise
-                rows = self._windowed_rows(series_id, key)
+                rows = self._windowed_rows(series_id, key, as_of=as_of)
         except _HTTPError as exc:
             if exc.status != 400 or _NO_VINTAGES not in str(exc):
                 raise
@@ -234,12 +235,12 @@ class FredAdapter:
             raise DataError("FRED returned no observations")
         return df, metadata
 
-    def _windowed_rows(self, series_id: str, key: str) -> list[Any]:
-        """Five-year real-time windows from 1920 to next year, after one window for all earlier."""
+    def _windowed_rows(self, series_id: str, key: str, *, as_of: date) -> list[Any]:
+        """Five-year windows through the year after as_of, plus early and open-ended tails."""
         rows = self._pages(series_id, key, _START, date(1919, 12, 31))
-        last_year = date.today().year + 1
-        for year in range(1920, last_year + 1, 5):
-            end = _END if year + 5 > last_year else date(year + 4, 12, 31)
+        years = list(range(1920, max(1921, min(10000, as_of.year + 2)), 5))
+        for year in years:
+            end = _END if year == years[-1] else date(year + 4, 12, 31)
             rows.extend(self._pages(series_id, key, date(year, 1, 1), end))
         return rows
 
@@ -254,8 +255,9 @@ class FredAdapter:
         return rows
 
 
-def pull_series(series_id: str, *, data_dir: Path) -> dict[str, Any]:
+def pull_series(series_id: str, *, data_dir: Path, fetched_at: datetime) -> dict[str, Any]:
     """Fetch and replace one stored series; report distinct publication dates as vintages."""
-    df, metadata = FredAdapter().fetch(series_id)
-    provenance = store_series(series_id, df, metadata, data_dir=data_dir)
+    validate_fetched_at(fetched_at)
+    df, metadata = FredAdapter().fetch(series_id, as_of=fetched_at.date())
+    provenance = store_series(series_id, df, metadata, data_dir=data_dir, fetched_at=fetched_at)
     return {**provenance, "vintages": df["known_from"].n_unique()}

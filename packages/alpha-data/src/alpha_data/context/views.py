@@ -6,7 +6,7 @@ import hashlib
 import io
 import json
 import re
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -46,19 +46,30 @@ def validate(df: pl.DataFrame) -> None:
     if df.select("series_id", "obs_date", "known_from").is_duplicated().any():
         raise DataError("conflicting or duplicate FRED vintage")
     ordered = df.sort("series_id", "obs_date", "known_from")
-    next_start = pl.col("known_from").shift(-1).over("series_id", "obs_date")
-    if ordered.filter(
-        next_start.is_not_null()
-        & (pl.col("known_until").is_null() | (pl.col("known_until") >= next_start))
-    ).height:
+    n = ordered.height
+    if n < 2:
+        return
+    # Pair adjacent sorted rows positionally; only compare periods within the same group.
+    previous = ordered.head(n - 1)
+    following = ordered.tail(n - 1)
+    same_group = (previous["series_id"] == following["series_id"]) & (
+        previous["obs_date"] == following["obs_date"]
+    )
+    if (
+        same_group
+        & (previous["known_until"].is_null() | (previous["known_until"] >= following["known_from"]))
+    ).any():
         raise DataError("overlapping FRED vintage periods")
 
 
 def as_known(df: pl.DataFrame, *, as_of: date) -> pl.DataFrame:
-    """One vintage per observation: greatest publication date no later than as_of."""
+    """One vintage per observation valid at as_of, including both period boundaries."""
     validate(df)
     return (
-        df.filter(pl.col("known_from") <= as_of)
+        df.filter(
+            (pl.col("known_from") <= as_of)
+            & (pl.col("known_until").is_null() | (pl.col("known_until") >= as_of))
+        )
         .sort("known_from")
         .unique(subset=["series_id", "obs_date"], keep="last")
         .sort("series_id", "obs_date")
@@ -92,27 +103,34 @@ def metadata_fields(metadata: dict[str, Any]) -> dict[str, str]:
     return {k: metadata[k] for k in METADATA_FIELDS}
 
 
+def validate_fetched_at(fetched_at: datetime) -> None:
+    if (
+        not isinstance(fetched_at, datetime)
+        or fetched_at.tzinfo is None
+        or fetched_at.utcoffset() != timedelta(0)
+    ):
+        raise DataError("FRED fetched_at must be aware UTC")
+
+
 def store_series(
     series_id: str,
     df: pl.DataFrame,
     metadata: dict[str, Any],
     *,
     data_dir: Path,
-    fetched_at: datetime | None = None,
+    fetched_at: datetime,
 ) -> dict[str, Any]:
     """Replace parquet and provenance individually atomically; readers verify their binding."""
+    validate_fetched_at(fetched_at)
     path = series_path(series_id, data_dir)
     validate(df)
     if df.is_empty() or df["series_id"].unique().to_list() != [series_id]:
         raise DataError("FRED storage requires nonempty rows for exactly the requested series")
-    now = fetched_at if fetched_at is not None else datetime.now(UTC)
-    if now.tzinfo is None or now.utcoffset() != timedelta(0):
-        raise DataError("FRED fetched_at must be aware UTC")
     provenance = {
         **metadata_fields(metadata),
         "source": "fred",
         "series_id": series_id,
-        "fetched_at": now.isoformat(),
+        "fetched_at": fetched_at.isoformat(),
         "rows": df.height,
         "first_obs": str(df["obs_date"].min()),
         "last_obs": str(df["obs_date"].max()),

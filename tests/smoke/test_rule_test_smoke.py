@@ -22,9 +22,10 @@ def test_rule_test_records_two_assets(tmp_path: Path) -> None:
     other = home / "crypto"
     for directory, symbol, source in ((data, "SPY", "alpaca"), (other, "BTC/USDT", "binance")):
         seed_store(directory, symbol=symbol, n=400)
-        provenance = ParquetStore(directory / "store")._provenance_path(symbol)
-        provenance.parent.mkdir(parents=True, exist_ok=True)
-        provenance.write_text(json.dumps({"source": source}))
+        # Strict pull provenance: bar reads reject a partial provenance file.
+        ParquetStore(directory / "store").write_provenance(
+            symbol, source=source, adapter_version="1", parser_version="1"
+        )
     (data / "stores.toml").write_text('crypto = "../crypto"\n')
     spec = home / "spec.toml"
     spec.write_text(

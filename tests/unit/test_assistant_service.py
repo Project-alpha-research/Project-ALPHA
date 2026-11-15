@@ -190,7 +190,8 @@ def test_assistant_context_is_exact_cutoff_bounded_and_future_poison_invariant(
     before = assemble_context(context, tmp_path)
     assert before[0]["label"] == "Stored chart · last 120 bars maximum"
     assert before[0]["data"]["attached_bars"] == 120
-    assert before[0]["data"]["total_bars"] == 150
+    # 00:00 UTC on 2020-05-29: that day's bar has not closed yet, so 149 of the 150 are known.
+    assert before[0]["data"]["total_bars"] == 149
     future = linear_bars("ZZ", date(2020, 5, 30), 30, first_close=10000.0)
     store.write_bars("ZZ", pl.concat([history, future]))
     assert assemble_context(context, tmp_path) == before

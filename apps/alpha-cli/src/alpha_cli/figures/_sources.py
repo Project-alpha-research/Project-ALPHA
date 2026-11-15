@@ -114,6 +114,7 @@ def bars(
         data_dir=data_dir,
         start=manifest.get("start") if isinstance(manifest.get("start"), str) else None,
         end=manifest.get("end") if isinstance(manifest.get("end"), str) else None,
+        bars=manifest,
     )
     if not rows:
         return [], "snapshot_unavailable"

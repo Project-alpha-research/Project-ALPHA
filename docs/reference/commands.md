@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-239 commands in 27 groups. Options marked (required) are
+242 commands in 29 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -109,6 +109,10 @@ Data ingestion, snapshots, and integrity.
 - `alpha data universe import <NAME> <CSV_PATH>` — Import symbol,effective_from,effective_to,delisting_return,reason ro… Options: `--json`
 - `alpha data universe show <NAME>` — List the members of universe NAME as of a date, including names that later left. Options: `--as-of (required)`, `--json`
 - `alpha data verify <SNAPSHOT_ID>` — Re-hash a snapshot and confirm it matches its manifest.
+
+## alpha diagnose
+
+- `alpha diagnose <RUN_ID>` — Read the automatic diagnostic pass and audit stored with a rule test. Options: `--json`
 
 ## alpha evidence
 
@@ -326,6 +330,13 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research status <PROJECT_ID>` — Show the one current phase, execution state, next action, budget, and firewall… Options: `--json`
 - `alpha research verify <PROJECT_ID>` — Regenerate and byte-verify a dossier without parsing Markdown as control state. Options: `--path (required)`, `--json`
 
+## alpha results
+
+List rule tests and quote their stored results.
+
+- `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
+- `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`
+
 ## alpha risk
 
 Risk & scenario analysis over stored runs.
@@ -376,7 +387,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +5 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +6 more
 
 ## alpha validate
 

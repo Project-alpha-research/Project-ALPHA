@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: f0d07735b204
+verified: 79a8f417ba9b
 ---
 
 # Production-ready scope, part 3: screens to hygiene, lost features, questions
@@ -84,7 +84,8 @@ owner's eye, because nothing stands in their place today:
 - **A visual code map.** Atlas was retired by a build decision record
   ([ADR-0040](../adr/0040-one-file-system-atlas-retired.md)), not by an entry in the owner's
   log. The file system replaced it for agents; the owner-facing part, "how this was computed"
-  on a screen (stage 7), is Missing.
+  on a screen (stage 7), is Missing. The owner has since said that part is enough
+  ([answers][answers], question 5).
 
 Cuts that are planned but not made yet. Each keeps its capability in a row above:
 the staged research cases (to the one gate), the in-product assistant and demo panels (folded
@@ -93,7 +94,9 @@ counted), the old daily-rule study lane (into Path 1), and the literature worker
 feeder). Rules, scans and patterns are reshaped into the Setup Lab, never cut: they are the
 only route to "show every match first".
 
-## Open questions for the owner
+## Questions put to the owner
+
+The owner answered all five on 2026-11-15; the answers are in the [decisions log][answers].
 
 1. **Data that costs money or needs an account.** Options quotes, flow data, news text and
    company fundamentals are marked Later. Must they work before ALPHA counts as production
@@ -106,6 +109,7 @@ only route to "show every match first".
 5. **Code map.** Is "how this was computed" on each finding enough, or do you want a picture
    of the whole code back as well?
 
+[answers]: ../reference/project/owner-decisions-3.md#2026-11-15-five-scope-answers
 [delegate]: ../reference/project/owner-decisions.md#2026-11-14-agents-merge-and-decide-routine-matters
 [files]: ../reference/project/owner-decisions.md#2026-11-14-what-the-file-system-is-for
 [free]: ../reference/project/owner-decisions-2.md#2026-11-14-free-real-data-on-the-dell-now

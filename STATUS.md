@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 19 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 12 working, 20 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -42,6 +42,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **"Native job result" screen (W04, W18)** — its smoke check now passes here: alpha and the web app read a made-up stock job's result; the browser lane fails here only because the web front end's test packages are not installed; no real job exists yet. Needs: a real (not made-up) stock RD-Agent job, which needs an AI model connection. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **AI-run daily trading-rule study (Packet 3, W08)** — with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired. Needs: the Dell's storage settings, created by you (docs/operations/storage-settings.md; 10 GB reserve per ADR-0043); real Binance daily bars admitted into that storage. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md). More: [docs/operations/storage-settings.md](docs/operations/storage-settings.md).
 - **Running ALPHA on your Mac with real data providers** — one final review and a run on your Mac. Needs: your Mac; access to a real data provider (blocked since 31 August).
+- **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 
@@ -90,6 +91,9 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Check a coin's whole downloaded daily history in one step — medium (M)
 - ControlStore-owned durable acquisition journal — large (L)
 - Data-directory naming migration — medium (M)
+- Delivery tooling paper cuts found while building the swing-judge stack — small (S)
+- Exact versions for outside projects in the main install's manifests — small (S)
+- Exposure log: correct entries and match ideas by economic family — medium (M)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
 - Full Qlib model zoo and fold-by-fold counterfactual retraining (W11/W12) — very large (XL)
@@ -101,17 +105,22 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Local vision model and hosted finance reasoning — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
+- Name where NautilusTrader may be imported — small (S)
 - Offline price import from a local file — medium (M)
+- One trial ledger, many code versions — medium (M)
 - Options expression research (W16) — large (L)
 - Overlap-corrected t statistic for the quick screen — small (S)
+- Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
+- RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
+- Re-check the vendored Kronos copy against the glue rules — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
 
 ## Housekeeping
 
-- Backlog items: 24
+- Backlog items: 32
 - Staged refactors: 6
 
 ## Where things are

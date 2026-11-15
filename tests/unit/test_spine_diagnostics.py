@@ -236,3 +236,55 @@ def test_performance_hand_computed() -> None:
     assert result["cagr"] == pytest.approx(-0.01)
     assert result["max_drawdown"] == pytest.approx(-0.1)
     assert result["sharpe"] == pytest.approx(0, abs=1e-12)
+
+
+def _flag_sections(base: float | None, delayed: float, variant: float) -> dict:
+    return {
+        "full_sample": {"sharpe": base},
+        "benchmark": {"sharpe": None},
+        "sensitivity": {"variants": [{"kind": "costs", "sharpe": variant}]},
+        "delay": {"base_sharpe": base, "delayed_sharpe": delayed},
+        "concentration": {"top_3": None},
+        "drawdowns": {"episodes": []},
+    }
+
+
+@pytest.mark.parametrize("base", [-1.0, 0.0, float("inf"), float("nan")])
+def test_delay_flag_needs_a_positive_finite_base(base: float) -> None:
+    # A delayed Sharpe of -0.8 is "below half" of a base of -1 arithmetically; that is no finding.
+    names = {item["flag"] for item in flags(_flag_sections(base, -0.8, 0.3))}
+    assert "fragile-to-delay" not in names
+    assert {item["flag"] for item in flags(_flag_sections(1.0, 0.4, 0.6))} == {"fragile-to-delay"}
+
+
+def test_negative_base_does_not_make_a_better_variant_fragile() -> None:
+    assert flags(_flag_sections(-1.0, -1.0, -0.8)) != []  # a losing variant is still flagged
+    assert flags(_flag_sections(-1.0, -1.0, 0.2)) == []
+    assert flags(_flag_sections(2.0, 2.0, 0.9))[0]["flag"] == "fragile-to-costs"
+
+
+def test_flag_text_never_prints_none() -> None:
+    (flag,) = flags(_flag_sections(None, 0.0, -0.2))
+    assert flag["flag"] == "fragile-to-costs"
+    assert "None" not in flag["detail"]
+    assert flag["detail"].endswith("base Sharpe is unavailable.")
+    (rounded,) = flags(_flag_sections(1.23456, 1.0, 0.1))
+    assert rounded["detail"].endswith("base Sharpe is 1.23.")
+
+
+def test_delay_share_is_null_with_a_reason_unless_base_is_positive() -> None:
+    returns = np.array([0.01, 0.03, -0.01, 0.02, 0.01, -0.02])
+    costs = np.zeros(6)
+    winning = delay(returns, np.ones(6), costs, 252)
+    assert winning["base_sharpe"] > 0
+    assert winning["delayed_share_of_base"] == pytest.approx(
+        winning["delayed_sharpe"] / winning["base_sharpe"]
+    )
+    assert "delayed_share_of_base" not in winning["reasons"]
+    losing = delay(-returns, np.ones(6), costs, 252)
+    assert losing["base_sharpe"] < 0
+    assert losing["delayed_share_of_base"] is None
+    assert "not positive" in losing["reasons"]["delayed_share_of_base"]
+    flat = delay(returns, np.zeros(6), costs, 252)
+    assert flat["delayed_share_of_base"] is None
+    assert "unavailable" in flat["reasons"]["delayed_share_of_base"]

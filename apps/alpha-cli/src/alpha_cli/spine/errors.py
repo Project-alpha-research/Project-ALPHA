@@ -46,3 +46,28 @@ def test_error(message: str, stores: list[str] | None = None) -> SpineError:
         message,
         "Run alpha test again after correcting the reported input or data error.",
     )
+
+
+def tool_error(exc: Exception, stores: list[str] | None = None) -> SpineError:
+    """Map a failure inside ``alpha tool`` to its stable code and next step."""
+    if isinstance(exc, SpineError):
+        return exc
+    message = str(exc)
+    if "not found" in message or "unknown store" in message:
+        return SpineError(
+            "UNKNOWN_ASSET",
+            message,
+            "Run alpha tool again with a symbol held in a known store (SYMBOL or SYMBOL@store).",
+            stores,
+        )
+    if "at least" in message and ("bars" in message or "points" in message):
+        return SpineError(
+            "TOO_FEW_BARS",
+            message,
+            "Run alpha tool on a run, benchmark or market with more shared history.",
+        )
+    return SpineError(
+        "TOOL_FAILED",
+        message,
+        "Run alpha tool again after correcting the reported input or data error.",
+    )

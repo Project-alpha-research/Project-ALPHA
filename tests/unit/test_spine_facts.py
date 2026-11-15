@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from alpha_cli.spine.facts import METRICS, build_facts
+from alpha_cli.spine.facts import METRICS, TOOL_METRICS, build_facts
 
 
 def test_facts_are_stored_values_and_missing_file_is_null(tmp_path: Path) -> None:
@@ -16,7 +16,9 @@ def test_facts_are_stored_values_and_missing_file_is_null(tmp_path: Path) -> Non
         json.dumps({"benchmark": {"sharpe": 2.345, "basis": "buy and hold, same bars, no costs"}})
     )
     facts = {item["metric"]: item for item in build_facts(tmp_path)}
-    assert set(facts) == set(METRICS)
+    # Run facts are every documented metric except those the investigation tools store.
+    assert set(facts) == set(METRICS) - set(TOOL_METRICS)
+    assert set(TOOL_METRICS) < set(METRICS)
     assert facts["oos_sharpe"]["value"] == pytest.approx(1.23456789)
     assert facts["oos_sharpe"]["source"] == "manifest.json:oos_metrics.sharpe"
     assert facts["oos_sharpe"]["reason"] is None
@@ -74,3 +76,20 @@ def test_trial_count_basis_is_ledger_not_returns(tmp_path: Path) -> None:
     )
     count = next(f for f in build_facts(tmp_path) if f["metric"] == "total_trials")
     assert count["basis"] == "ledger at the time of the run"
+
+
+@pytest.mark.parametrize("dsr", [None, 0.97, "n/a", [1]])
+def test_null_or_bare_number_in_place_of_an_object_is_a_null_fact(
+    tmp_path: Path, dsr: object
+) -> None:
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"dsr": dsr, "verdict": None, "oos_metrics": 1.5, "spine": {"labels": []}})
+    )
+    (tmp_path / "diagnostics.json").write_text(
+        json.dumps({"benchmark": {"sharpe": None, "reasons": "broken"}, "trials": 3})
+    )
+    facts = {item["metric"]: item for item in build_facts(tmp_path)}
+    for metric in ("dsr", "verdict", "oos_sharpe", "benchmark_sharpe", "trial_dsr"):
+        assert facts[metric]["value"] is None
+        assert "is unavailable" in facts[metric]["reason"]
+    assert facts["dsr"]["reason"] == "manifest.json:dsr.dsr is unavailable"

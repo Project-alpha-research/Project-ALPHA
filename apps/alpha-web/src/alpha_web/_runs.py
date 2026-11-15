@@ -436,7 +436,7 @@ def display_name(kind: str, run_id: str, manifest: dict[str, Any], rdir: Path) -
 
 
 _CRYPTO_SOURCES = ("ccxt", "binance", "bybit", "coinbase")
-_EQUITY_SOURCES = ("tiingo", "yfinance", "stooq", "quantpad")
+_EQUITY_SOURCES = ("tiingo", "yfinance", "stooq", "quantpad", "alpaca")
 
 
 def market_of(manifest: dict[str, Any]) -> str:

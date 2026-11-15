@@ -961,3 +961,17 @@ name = "QuantPad code"
 recommendation = "DELETE"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): delete: command, adapter and archive code removed; registered QuantPad datasets stay readable
 owner_decision = "DELETE"
+
+[[capability]]
+id = "rule-test"
+name = "Test a trading rule on several assets with one command"
+what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger."
+see_it = ["uv run alpha test spec.toml --quick --json", "Workstation: Run Browser"]
+entry_points = ["cli: alpha test"]
+proof_synthetic = ["tests/unit/test_spine_spec.py::test_run_records_errors_and_continues"]
+proof_smoke = ["tests/smoke/test_rule_test_smoke.py::test_rule_test_records_two_assets"]
+real_data = "not yet confirmed; development-machine results are labelled"
+needs = []
+state = "Partial"
+missing = "installed-command synthetic run checked; smoke suite awaits execution outside the sandbox"
+docs = ["docs/reference/project/components/command-line.md"]

@@ -99,9 +99,10 @@ def test_too_few_bars_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_store(tmp_path, symbol="SPY", n=40)
-    path = ParquetStore(tmp_path / "store")._provenance_path("SPY")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text('{"source":"synthetic"}')
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="synthetic", adapter_version="1", parser_version="1"
+    )
     root = typer.Typer()
     root.command()(test_rule)
     result = CliRunner().invoke(
@@ -218,9 +219,10 @@ def test_rule_run_publishes_diagnostics_and_reads_them_back(
 
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_store(tmp_path, symbol="SPY", n=150)
-    provenance = ParquetStore(tmp_path / "store")._provenance_path("SPY")
-    provenance.parent.mkdir(parents=True)
-    provenance.write_text('{"source":"alpaca"}')
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
     idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
     result = run_idea(idea, home=tmp_path, quick=True)["results"][0]
     assert result["error"] is None, result

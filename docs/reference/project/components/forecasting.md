@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-forecast/CONTEXT.md
   - docs/adr/0008-vendored-kronos-and-alpha-forecast-layer.md
-verified: a79d832d
+verified: a0b2ee24
 ---
 
 # Forecasting
@@ -45,6 +45,8 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
 - Decision records: [ADR-0008](../../../adr/0008-vendored-kronos-and-alpha-forecast-layer.md),
   [ADR-0009](../../../adr/0009-forecast-leakage-and-tier2-cost-policy.md),
   [ADR-0010](../../../adr/0010-local-kronos-weights-offline-policy.md).
+- Backlog: [re-check the vendored copy](../../../roadmap/backlog/kronos-vendored-copy-recheck.md)
+  against the [glue rules](../../../adr/0051-glue-rules-for-outside-projects.md).
 
 ## Decisions and open questions
 

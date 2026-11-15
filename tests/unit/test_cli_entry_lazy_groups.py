@@ -127,6 +127,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "chart",
             "crypto-data",
             "data",
+            "diagnose",
             "evidence",
             "figures",
             "forecast",
@@ -141,11 +142,13 @@ def test_full_app_keeps_every_command_group() -> None:
             "provider",
             "report",
             "research",
+            "results",
             "risk",
             "rules",
             "scan",
             "strategy-candidate",
             "suite",
+            "test",
             "validate",
         ]
     )

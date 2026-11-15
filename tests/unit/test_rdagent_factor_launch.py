@@ -491,3 +491,10 @@ def test_exit_reason_names_the_call_cap(tmp_path: Path) -> None:
     )
     assert launch.exit_reason(1, {"this_run": {"calls": 2}}, namespace) == "loop exit 1"
     assert launch.exit_reason(1, {"error": "no output"}, namespace) == "loop exit 1"
+
+
+def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
+    parsed = args(tmp_path)
+    parsed.trial_ledger = Path("relative/trials.jsonl")
+    with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
+        launch.validate(parsed, environ(tmp_path))

@@ -167,6 +167,9 @@ def test_crashed_run_keeps_the_previous_pointer(tmp_path: Path) -> None:
     assert "memory-record-failed" not in codes(result["warnings"])
     assert manifest(tmp_path)["latest_session"]["run_id"] == "one"
     assert len(manifest(tmp_path)["runs"]) == 2
+    # A continued run that finished no new round keeps the lineage's count, not 0.
+    assert result["loops_after"] == 1
+    assert manifest(tmp_path)["runs"][-1]["loops_after"] == 1
 
 
 @pytest.mark.parametrize("location", ["knowledge", "session"])

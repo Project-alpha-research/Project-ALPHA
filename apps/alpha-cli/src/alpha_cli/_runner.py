@@ -28,7 +28,7 @@ import numpy as np
 from alpha_cli._identity import RunIdentity, execution_fingerprint, strategy_fingerprint
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.snapshot import snapshot_manifest_hash
-from alpha_data.timeframe import BarTimeframe, parse_timeframe
+from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe
 from alpha_validation import (
     FloatArray,
     FoldSummary,
@@ -315,12 +315,44 @@ def load_dividends(
     return source.dividends_as_of(symbol, when)
 
 
+def resolve_periods_per_year(
+    bars: Sequence[Bar],
+    *,
+    timeframe: BarTimeframe = DAILY,
+    session: str | None = None,
+    override: int | None = None,
+) -> int:
+    """Bars per year for annualisation: daily keeps 252; intraday follows the bar size.
+
+    Intraday counts come from the timeframe and session, not from the sample: a calendar-time
+    estimate (bars over elapsed years) over-counts a short regular-session sample (one week of 5m
+    bars reads about 1.7 times too high) and would also change vol-target sizing with sample
+    length. Continuous (24/7) markets: 365.25 days of bars; regular stock sessions: 252 sessions
+    of 390 minutes; extended hours: 252 sessions of 960 minutes (04:00-20:00 New York).
+    """
+    if override is not None:
+        return override
+    if timeframe.is_daily:
+        return 252
+    if not bars:
+        raise DataError("annualisation needs at least one bar")
+    minutes = timeframe.minutes
+    if session in (None, "continuous"):
+        return 525_960 // minutes
+    if session == "regular":
+        return 252 * -(-390 // minutes)
+    if session == "extended":
+        return 252 * -(-960 // minutes)
+    raise DataError(f"unknown session {session!r} for annualisation")
+
+
 def run_full_backtest(
     bars: Sequence[Bar],
     spec: RunSpec,
     *,
     dividends: Sequence[CorporateAction] = (),
     warmup_bars: Sequence[Bar] = (),
+    timeframe: BarTimeframe = DAILY,
 ) -> BacktestResult:
     """Run ``spec``'s fixed-parameter strategy over ``bars`` once, net of costs.
 
@@ -332,16 +364,17 @@ def run_full_backtest(
     from nautilus_trader.model.enums import AccountType
 
     from alpha_backtest.engine import run_backtest
-    from alpha_backtest.feed import daily_bar_type, to_execution_feed
+    from alpha_backtest.feed import bar_type_for, to_execution_feed
     from alpha_backtest.instruments import instrument_for
     from alpha_cli import _strategies
 
     symbol = bars[0].symbol
     instrument = instrument_for(symbol)  # slash pairs -> 5-decimal crypto, else equity
-    bar_type = daily_bar_type(symbol)
+    bar_type = bar_type_for(symbol, timeframe)
     feed = to_execution_feed(
         bars,
         bar_type,
+        timeframe=timeframe,
         price_precision=instrument.price_precision,  # sub-dollar tokens need the finer ticks
         size_precision=instrument.size_precision,
         slippage_bps=spec.slippage_bps,
@@ -730,7 +763,9 @@ def run_identity_for(
     )
 
 
-def verified_snapshot_hash(data_dir: Path, snapshot_id: str | None) -> str | None:
+def verified_snapshot_hash(
+    data_dir: Path, snapshot_id: str | None, *, timeframe: str = "1D"
+) -> str | None:
     """Resolve one frozen snapshot to the exact verified manifest digest used by run identity."""
     if snapshot_id is None:
         return None
@@ -751,7 +786,9 @@ def verified_snapshot_hash(data_dir: Path, snapshot_id: str | None) -> str | Non
         return hashlib.sha256(raw).hexdigest()
     from alpha_data.snapshot import resolve_snapshot_dir
 
-    return snapshot_manifest_hash(resolve_snapshot_dir(data_dir / "snapshots", snapshot_id))
+    return snapshot_manifest_hash(
+        resolve_snapshot_dir(data_dir / "snapshots", snapshot_id), timeframe=timeframe
+    )
 
 
 def _fold_metrics(slice_: FloatArray, periods_per_year: int) -> tuple[float, float, float]:

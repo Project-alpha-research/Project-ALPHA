@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 79a8f417ba9b
+verified: 71fe0c60822d
 ---
 
 # Production-ready scope: the one checklist
@@ -50,13 +50,13 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-159 capabilities: 31 working, 52 built but unproven, 74 missing, 1 to rebuild,
+159 capabilities: 31 working, 53 built but unproven, 73 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 2 | 8 | 0 | 0 |
-| 2. Data and context | 3 | 10 | 9 | 0 | 0 |
+| 2. Data and context | 3 | 11 | 8 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 1 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
@@ -67,7 +67,7 @@ gate, before paper or live trading ([decision][thin]).
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **31** | **52** | **74** | **1** | **1** |
+| **All** | **31** | **53** | **73** | **1** | **1** |
 
 ## 1. Idea
 
@@ -106,7 +106,7 @@ Prices, the universe, and the context a trader needs around them.
 | Large names and coins, and products funds cannot trade, both in scope | Unproven | `alpha-data` | Path 3 | [retail] |
 | One price series per source kept apart automatically; differences shown as a label | Unproven | `alpha-data` | Path 1 | [thin] |
 | Benchmarks and sector funds stored for comparison (market, size, sectors, BTC, a basket) | Unproven | `alpha-data` | Path 1 | [partner] |
-| Macro series as first published: rates, inflation, jobs, credit, volatility index | Missing | new adapter | Later | [partner] |
+| Macro series as first published: rates, inflation, jobs, credit, volatility index | Unproven | `alpha-data` `context/` | Later | [partner] |
 | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Missing | small checked files | Later | [partner] |
 | Crypto context: funding rates, open interest, listings | Unproven | `alpha-data` (shelved) | Later | [triage] |
 | Company fundamentals by filing date, for value-plus-quant ideas | Missing | backlog; Qlib | Later | private |

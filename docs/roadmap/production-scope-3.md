@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 79a8f417ba9b
+verified: 71fe0c60822d
 ---
 
 # Production-ready scope, part 3: screens to hygiene, lost features, questions

@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: ccf5b56ad3eb
+verified: 71fe0c60822d
 ---
 
 # Data layer
@@ -41,6 +41,27 @@ bottleneck.
 ## What is real today
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
+
+### Context data
+Daily market series such as Treasury yields and the VIX have no revision history at FRED; each
+value is stored as known from the day after its date and the series is marked `approximate`.
+
+FRED/ALFRED macro series retain values as first published and every returned revision, with publication dates and
+hashed provenance in `data_dir/context/fred/`: reference data for explaining research results, kept apart from the bar
+store, snapshots and backtest inputs. `alpha context` pulls, lists and reads it. The default read takes publications
+with `known_from <= cutoff` and no `known_until` or `known_until >= cutoff` (both ends inclusive). An observation with
+no valid vintage is absent; a valid vintage with a missing value stays null and never falls back to an earlier value,
+while an expired newest observation can leave an earlier still-valid one to carry. Explicit first-release and latest
+views keep their historical and null-ended-only policies. Window endpoints carry the last observation knowable at each
+boundary, capped by `--as-of`; window extrema use observation dates inside the window at that cutoff.
+The key comes only from `FRED_API_KEY`; provider copyright restrictions are recorded in provenance. Live API behavior
+remains unconfirmed. HTTP 400 on the full real-time range retries the same range in windows: one before 1920,
+five-year buckets, and a final bucket ending 9999-12-31, for any cutoff year and without constructing year 10000. The
+schedule follows the UTC date of the explicit aware-UTC `fetched_at` the CLI supplies, validated before transport or
+writes. Identical vintage rows merge; conflicting or overlapping rows fail, comparing adjacent sorted rows of one
+series and observation: an open-ended predecessor or a shared boundary is rejected, gaps remain valid.
+The generic launcher classifies only `context list`, `show` and `window` as safe local reads; bare, unknown and `pull`
+commands remain owner-only. The group appears under the Data menu.
 
 ### Real data on the Dell
 
@@ -140,7 +161,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 
 - **Workspaces:** `packages/alpha-data`
 - **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
-  `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`
+  `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.
 - Tests: `tests/smoke/test_data_smoke.py`, `tests/smoke/test_crypto_data_smoke.py` (crypto downloads through an

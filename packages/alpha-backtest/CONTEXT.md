@@ -3,7 +3,7 @@ owner: backtest engine
 sources:
   - packages/alpha-backtest/src/**
   - packages/alpha-backtest/pyproject.toml
-verified: e2e390ce4d64
+verified: 4cdabf2fb1da8783
 ---
 
 # alpha-backtest workspace

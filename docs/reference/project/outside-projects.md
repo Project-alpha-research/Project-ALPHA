@@ -8,7 +8,7 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 1d883280
+verified: 14f695f3442abf41
 ---
 
 # Outside projects: the register

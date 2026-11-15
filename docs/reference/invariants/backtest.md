@@ -10,7 +10,7 @@ sources:
   - tests/integration/test_frictions.py
   - tests/integration/test_order_rejection.py
   - tests/bias_guards/test_cash_fee_affordability_future_poison.py
-verified: e2e390ce4d64
+verified: be827fe72dc35adb
 ---
 
 # Backtest invariants

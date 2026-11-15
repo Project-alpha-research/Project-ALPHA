@@ -4,7 +4,7 @@ sources:
   - workers/qlib/CONTEXT.md
   - workers/qlib/README.md
   - docs/adr/0016-isolated-qlib-worker.md
-verified: a0b2ee24
+verified: 8abebaea937b1727
 ---
 
 # Qlib

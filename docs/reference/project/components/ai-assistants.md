@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - apps/alpha-mcp/CONTEXT.md
   - docs/reference/invariants/cli-assistant.md
-verified: a79d832d
+verified: e3b0c44298fc1c14
 ---
 
 # AI assistants

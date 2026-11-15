@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/_research_cmd_parts.py
   - apps/alpha-cli/src/alpha_cli/research_d2.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
-verified: bdd1a2a989f8
+verified: b4d44bace52bd48e
 ---
 
 # Stage 04 — confirm: one sealed D2 test

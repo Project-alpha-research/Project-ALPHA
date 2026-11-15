@@ -2,11 +2,10 @@
 owner: documentation
 sources:
   - docs/README.md
-  - docs/adr/README.md
   - scripts/roadmap_index.py
   - scripts/fs_stale.py
   - tests/unit/test_docs_links.py
-verified: 1d883280
+verified: 50cd110ad37c4017
 ---
 
 # docs workspace
@@ -37,8 +36,9 @@ other files link to it.
   `tests/unit/test_filesystem_contract.py`: front matter `owner`, `sources`, `verified`; at most 80
   lines for a CONTEXT file and 200 for a reference file; no line over 160 characters; no paragraph
   repeated across files.
-- When the code a document describes changes, fix the document and set `verified` to the commit
-  you checked it against; `uv run python scripts/fs.py stale` lists the documents to re-check.
+- When the code a document describes changes, re-read the document, fix it and run
+  `uv run python scripts/fs.py verify <document>`; `fs.py stale` lists the documents to re-check
+  and `fs.py owners <path>` names the ones that describe a file. The check fails while one is stale.
 - Generated pages are never edited by hand; their commands are listed in
   [docs/README.md § Generated files](README.md#generated-files).
 - Check: `uv run pytest -q tests/unit/test_docs_links.py tests/unit/test_filesystem_contract.py`,

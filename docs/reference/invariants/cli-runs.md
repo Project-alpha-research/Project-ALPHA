@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 79a8f417ba9b
+verified: 4576d34fc4bcd25f
 ---
 
 # Command line runs invariants
@@ -113,7 +113,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
-- `spec.json` is included before the immutable manifest. Its `spine` key records the test id, spec hash,
+- `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
   name, idea, rule, store and integrity labels; `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts
   without rewriting them and appends a `repeat` trial; the manifest retains its original test association.

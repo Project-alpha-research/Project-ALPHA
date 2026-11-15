@@ -117,3 +117,39 @@ def test_missing_adapter_blocks_safety_and_allows_session_guidance(tmp_path: Pat
                     check=False,
                 )
                 assert result.returncode == expected, result.stderr
+
+
+def _document_reminder(file_path: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+    return _run(
+        "post-edit-documents", {"cwd": str(cwd), "tool_input": {"file_path": file_path}}, cwd
+    )
+
+
+def test_document_reminder_names_the_documents_and_the_stamp_command() -> None:
+    result = _document_reminder(str(REPO_ROOT / "scripts/fs_stale.py"), REPO_ROOT / "scripts")
+    assert result.returncode == 0 and not result.stderr
+    output = json.loads(result.stdout)["hookSpecificOutput"]
+    assert output["hookEventName"] == "PostToolUse"
+    context = output["additionalContext"]
+    assert context.startswith("scripts/fs_stale.py changed.")
+    assert "scripts/fs.py verify docs/CONTEXT.md scripts/CONTEXT.md" in context
+
+
+@pytest.mark.parametrize("file_path", ["docs/CONTEXT.md", "uv.lock", "/etc/hostname"])
+def test_document_reminder_is_silent_when_no_document_describes_the_file(file_path: str) -> None:
+    result = _document_reminder(file_path, REPO_ROOT)
+    assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
+
+
+@pytest.mark.parametrize("payload", [[], {}, {"tool_input": {"file_path": 3}}, "{bad json"])
+def test_document_reminder_never_fails_an_edit(tmp_path: Path, payload: object) -> None:
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "post-edit-documents"],
+        input=payload if isinstance(payload, str) else json.dumps(payload),
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert result.returncode == 0 and not result.stderr
+    assert _document_reminder("a.py", tmp_path).returncode == 0

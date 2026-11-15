@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions.md
-verified: 3eb3f1eb
+verified: e3b0c44298fc1c14
 ---
 
 # Owner decisions log, volume 3
@@ -129,3 +129,17 @@ the rules for entries are in the first. New entries are appended at the end of t
   viewer as a separate pinned install or to skip it (a selection from offered options).
 - **Context:** it runs in its own install, reachable only from the owner's devices.
 - **Governs:** [RD-Agent](components/rd-agent.md).
+
+### 2026-11-15 Documents can never be stale: enforced by the system, not by an AI's memory
+
+- **Said:** "if the file system is working, we should not have any stale documents"; "take out
+  the AI parts where possible"; "we shouldn't ever really have stale files. That's the point of
+  the file system."
+- **Context:** until now a stale document was only listed, and keeping one current relied on an
+  AI remembering. Now each document records a fingerprint of the files it describes. When an AI
+  edits a file it is told at once which documents describe it; the check and the pull request
+  fail while any document's fingerprint is out of date; one command re-stamps a document after
+  it has been re-read. A machine can prove a document is out of date and refuse the work; an AI
+  still has to re-read and correct it. The research paper has no staleness rule: this is ours.
+- **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md); the rule
+  is in [documentation invariants](../invariants/documentation.md#front-matter).

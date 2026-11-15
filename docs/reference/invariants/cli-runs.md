@@ -140,8 +140,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
   source file/field, labels and a reason exactly when their value is null.
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
-  imperative `next` command; JSON under `--json`), including when every asset of a test fails. Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional
-  on older rows and counts sensitivity re-runs separately from the append-only row index.
+  imperative `next` command; JSON under `--json`), including when every asset of a test fails.
+  Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
+  sensitivity re-runs separately from the append-only row index.
 
 ## Suites
 

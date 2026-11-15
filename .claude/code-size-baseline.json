@@ -78,7 +78,7 @@
     "apps/alpha-cli/src/alpha_cli/research_intake.py::draft_exploration_contract": 325,
     "apps/alpha-cli/src/alpha_cli/run_projection.py::portfolio_analytics": 212,
     "apps/alpha-cli/src/alpha_cli/strategy_candidate_runtime.py::_analysis_result": 180,
-    "apps/alpha-cli/src/alpha_cli/validate_cmds.py::validate": 233,
+    "apps/alpha-cli/src/alpha_cli/validate_cmds.py::validate": 198,
     "apps/alpha-web/src/alpha_web/_ml.py::exchange_tearsheet": 159,
     "apps/alpha-web/src/alpha_web/_runs.py::_finish_native_tearsheet": 175,
     "packages/alpha-backtest/src/alpha_backtest/portfolio_replay.py::run_weight_replay": 321,

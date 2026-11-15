@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: b4b36f41caa0
+verified: 3336db6e6456
 ---
 
 # Command line data invariants
@@ -33,6 +33,8 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 - `--timeframe` (default `1D`) selects the bar size on `data pull`, `snapshot`, `symbols`, `source-status`,
   `audit`, `repair` and `rollback-promotion`; each bar size has its own store root. Only Alpaca and CCXT serve
   intraday bars; other sources refuse a non-daily `--timeframe`. Rules: [bar timeframes](data-bar-timeframes.md).
+- `data candles --timeframe --from-timeframe --session` reads intraday bars point-in-time and can resample
+  finer stored bars; `--start`/`--end` take a date or an ISO instant with an offset.
 - `data candles` and `data symbols` read through the same point-in-time loader a backtest uses (`_runner.load_bars`).
 - `data universe` and `--with-actions` are read projections with no authority; the plain `--json` picker output stays
   unchanged.

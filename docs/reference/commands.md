@@ -32,7 +32,7 @@ Run the v1 strategy through the backtest engine.
 - `alpha backtest holdout <SYMBOL>` — Evaluate one frozen fixed-parameter candidate on its revealed final holdout once.
 - `alpha backtest oos <SYMBOL>` — Evaluate one fixed rule over causal walk-forward OOS windows; no model is refit. Options: `--strategy`, `--lookback`, +19 more
 - `alpha backtest portfolio <SYMBOLS>` — Backtest a diversified basket: run the strategy across SYMBOLS and combine the… Options: `--strategy`, +24 more
-- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +18 more
+- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +22 more
 
 ## alpha chart
 
@@ -95,7 +95,7 @@ Provider-native crypto acquisition, qualification, snapshots, and storage.
 Data ingestion, snapshots, and integrity.
 
 - `alpha data audit <PROVIDER> <RECEIPT_ID>` — Read one immutable candidate/quarantine quality report. Options: `--json`, `--timeframe`
-- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +4 more
+- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +7 more
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more

@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 928dfcee
+verified: a5bab0ed0c10
 ---
 
 # Production-ready scope: the one checklist
@@ -63,11 +63,11 @@ gate, before paper or live trading ([decision][thin]).
 | 6. Diagnostics | 2 | 4 | 11 | 0 | 0 |
 | 7. Records and memory | 1 | 5 | 8 | 0 | 1 |
 | 8. AI partner | 1 | 4 | 7 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 3 | 2 | 9 | 0 | 0 |
+| 9. RD-Agent and Qlib engines | 3 | 3 | 8 | 0 | 0 |
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **27** | **44** | **86** | **1** | **1** |
+| **All** | **27** | **45** | **85** | **1** | **1** |
 
 ## 1. Idea
 

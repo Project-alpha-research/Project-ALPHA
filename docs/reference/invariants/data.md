@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: c00d2da9ec85
+verified: ece16d7433e6
 ---
 
 # Data layer invariants

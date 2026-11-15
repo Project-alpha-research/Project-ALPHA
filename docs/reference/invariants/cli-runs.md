@@ -29,7 +29,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b66b5c3a8bd5
+verified: b34139efa2c0
 ---
 
 # Command line runs invariants
@@ -43,7 +43,8 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 - `alpha_cli` is the only layer that composes the engine with the gauntlet; engine imports stay lazy.
   [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md), [engineering § Import layers](engineering.md#import-layers)
-- Strategies read bars only through `_runner.load_bars` with an `as_of` cutoff, and decisions fill at the next open.
+- Strategies read bars only through `_runner.load_bars` with an `as_of` cutoff (any bar timeframe:
+  [bar timeframes](data-bar-timeframes.md#reading-intraday-bars)), and decisions fill at the next open.
   See [research integrity § Point-in-time reads](research-integrity.md#point-in-time-reads) and
   [research integrity § Decide at close, fill at next open](research-integrity.md#decide-at-close-fill-at-next-open).
 - `_gauntlet.py`, `_optim.py`, `_runner.py`, `_synth.py`, `_surrogate.py`, `_seeds.py` and `_identity.py` are

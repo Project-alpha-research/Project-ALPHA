@@ -9,6 +9,7 @@ from pydantic import AwareDatetime, ValidationError
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.pit import PointInTimeReader
 from alpha_data.store import ParquetStore
+from alpha_data.timeframe import DAILY, BarTimeframe
 
 
 class PointInTimeSource:
@@ -23,10 +24,15 @@ class PointInTimeSource:
     """
 
     def __init__(
-        self, store: ParquetStore, actions: Mapping[str, Sequence[CorporateAction]]
+        self,
+        store: ParquetStore,
+        actions: Mapping[str, Sequence[CorporateAction]],
+        *,
+        timeframe: BarTimeframe = DAILY,
+        calendar: str | None = None,
     ) -> None:
         self._store = store
-        self._reader = PointInTimeReader(store, actions)
+        self._reader = PointInTimeReader(store, actions, timeframe=timeframe, calendar=calendar)
 
     def available_symbols(self) -> list[str]:
         return self._store.list_symbols()

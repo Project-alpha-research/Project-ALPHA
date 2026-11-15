@@ -8,6 +8,16 @@ skew with the BCa (bias-corrected and accelerated) adjustment of Efron.
 
 The acceleration is estimated by the leave-one-out jackknife. On serially dependent data this is an
 approximation (a block jackknife would be more faithful); it is a documented v1 choice.
+
+**Hand-written on purpose (checked against arch 8.0.0, 2026-11-15).**
+``arch.bootstrap.StationaryBootstrap`` draws from the same law, but not the same numbers for the
+same seed: it draws one path at a time (start points, then uniforms) and restarts a block when
+``u <= p``, while this module draws the whole uniform matrix, then the whole start-point matrix,
+and restarts when ``u < p``. arch also has no ``length`` other than the series length, raises
+where this module clamps the BCa bias term, and does not check the acceleration denominator that
+this module fails loud on. Every seeded interval, risk-of-ruin and null path stored in a run
+comes from these draws, so a swap would change stored numbers; that is an owner decision.
+``tests/unit/test_stats_library_parity.py`` holds the two within Monte Carlo error of each other.
 """
 
 from __future__ import annotations

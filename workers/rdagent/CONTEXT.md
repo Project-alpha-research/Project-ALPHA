@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: d5aad9cd73bb
+verified: a5bab0ed0c10
 ---
 
 # RD-Agent worker workspace
@@ -16,10 +16,11 @@ fixtures, rule and costed probes, the stock RDLoop) in their own environments fo
 native job supervisor, plus `model_gateway.py`, the local program through which RD-Agent reaches
 a model, and the ALPHA-judged factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`,
 `alpha_factor_judge.py`, `alpha_factor_coder.py`, `alpha_factor_data.py`; ADR-0049) with its
-cross-run research memory (`research_memory.py`). The judge leaves human-authored rule trials
-(`AlphaRuleTrialV1`, written by `alpha_cli.rdagent_rule_family`) out of RD-Agent's proposal summary.
-It is a separate uv project (`package = false`) with its own lock; no ALPHA package imports it,
-though its probes import ALPHA packages inside qualified profile environments. It has
+cross-run research memory (`research_memory.py`), and RD-Agent's own run viewer
+(`rdagent_viewer.py`, `rdagent_ui_entry.py`, `ui-requirements.lock`; local only). The judge leaves
+human-authored rule trials (`AlphaRuleTrialV1`, written by `alpha_cli.rdagent_rule_family`) out of
+RD-Agent's proposal summary. It is a separate uv project (`package = false`) with its own lock; no
+ALPHA package imports it, though its probes import ALPHA packages inside qualified profile environments. It has
 no market, inference or evidence authority.
 
 ## Read first
@@ -36,9 +37,10 @@ no market, inference or evidence authority.
 
 - Code: the scripts in `workers/rdagent/` and the lock files beside them (`model_gateway.py` is standard library only and
   imports neither ALPHA nor RD-Agent; `install_stock_profile.py` and `stock-requirements.lock` build the Python 3.11
-  stock runtime).
+  stock runtime; `--profile ui` records the viewer runtime).
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`,
-  `test_setup_rdagent.py`, `test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py` (the factor-runtime cases need
+  `test_setup_rdagent.py`, `test_rdagent_viewer.py`, `test_rdagent_factor_{eval,judge,launch}.py`,
+  `test_rdagent_research_memory.py` (the factor-runtime cases need
   `ALPHA_FACTOR_PYTHON` as well). Tests that need the RD-Agent source skip unless `ALPHA_RDAGENT_SOURCE` (and, for stock lanes, `ALPHA_STOCK_PYTHON`) is set.
 - There is no CI gate component for this worker; run `uv run python scripts/gate.py check` from
   the repository root.

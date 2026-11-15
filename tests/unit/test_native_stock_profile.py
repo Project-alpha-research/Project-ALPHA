@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+
 from alpha_cli.native_stock_profile import (
     ProfileSelection,
     RecordedProfile,
@@ -363,11 +365,18 @@ class RecordedSchemaTests(unittest.TestCase):
                     read_recorded_profile(connection, JOB, events)
 
 
-def test_factor_profile_records_verifies_and_detects_mutation(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("profile_name", "count", "schema"),
+    [
+        ("factor", 79, "AlphaFactorRuntimeProfileV1"),
+        ("ui", 191, "AlphaViewerRuntimeProfileV1"),
+    ],
+)
+def test_factor_profile_records_verifies_and_detects_mutation(
+    tmp_path: Path, profile_name: str, count: int, schema: str
+) -> None:
     import importlib.util
     import json
-
-    import pytest
 
     worker = Path(__file__).resolve().parents[2] / "workers/rdagent"
     spec = importlib.util.spec_from_file_location(
@@ -380,18 +389,18 @@ def test_factor_profile_records_verifies_and_detects_mutation(tmp_path: Path) ->
     site = bundle / "venv/lib/python3.11/site-packages"
     site.mkdir(parents=True)
     (bundle / "venv/pyvenv.cfg").write_text("version = 3.11.14\n")
-    pins = helper.locked_pins((worker / "factor-requirements.lock").read_text())
-    assert len(pins) == 79
+    pins = helper.locked_pins((worker / f"{profile_name}-requirements.lock").read_text())
+    assert len(pins) == count
     for name, version in pins.items():
         dist = site / f"{name}-{version}.dist-info"
         dist.mkdir()
         (dist / "METADATA").write_text(f"Name: {name}\nVersion: {version}\n")
-    assert helper.main(["--profile", "factor", str(bundle)]) == 0
-    profile = json.loads((bundle / "factor-profile.json").read_bytes())
-    assert profile["schema"] == "AlphaFactorRuntimeProfileV1"
+    assert helper.main(["--profile", profile_name, str(bundle)]) == 0
+    profile = json.loads((bundle / f"{profile_name}-profile.json").read_bytes())
+    assert profile["schema"] == schema
     assert not (bundle / "stock-profile.json").exists()
-    assert helper.main(["--profile", "factor", "--verify", str(bundle)]) == 0
+    assert helper.main(["--profile", profile_name, "--verify", str(bundle)]) == 0
     (site / "changed.py").write_text("changed")
-    assert helper.main(["--profile", "factor", "--verify", str(bundle)]) == 1
+    assert helper.main(["--profile", profile_name, "--verify", str(bundle)]) == 1
     with pytest.raises(ValueError, match="differs from lock"):
         helper.measure(bundle)  # the default is still the stock lock

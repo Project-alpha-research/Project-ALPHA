@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 928dfcee
+verified: a5bab0ed0c10
 ---
 
 # Production-ready scope, part 2: overfit tests to engines
@@ -110,7 +110,7 @@ The pinned upstream engines and how much of each ALPHA uses.
 | That loop started by `alpha` as a watched job that survives a crash | Missing | backlog | Path 3 | [status] |
 | Loop settings chosen per prompt: horizon, rebalance pace, universe, lock date | Missing | `alpha-cli` judge | Path 3 | [any-bar] |
 | RD-Agent's model loop and its combined factor-and-model loop | Missing | `workers/rdagent` | Path 3 | [rd-all] |
-| RD-Agent's own report reader and run viewer used instead of rebuilt | Missing | `workers/rdagent` | Path 3 | [rd-all] |
+| RD-Agent's own report reader and run viewer used instead of rebuilt | Unproven | `workers/rdagent` | Path 3 | [rd-all] |
 | A candidate from the loop handed to the owner's one gate | Missing | backlog | Path 3 | [status] |
 | Qlib's upstream price features (Alpha158) | Working | `workers/qlib` | Now | [status] |
 | Qlib's full model list, with retraining fold by fold | Missing | backlog (shelved start) | Later | [engines] |

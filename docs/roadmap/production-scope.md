@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: f02a41db525f
+verified: 79a8f417ba9b
 ---
 
 # Production-ready scope: the one checklist

@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: af165f50577b
+verified: 79a8f417ba9b
 ---
 
 # Command line runs invariants
@@ -165,6 +165,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   `tests/unit/test_figure_cache.py`.
 - `figures list --json` without `--run` publishes the key environment, so the web computes keys without the renderer.
 - Builders read declared artifacts only and report an honest unavailability reason instead of guessing.
+- A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`,
+  `source_timeframe` and `session` pass to `alpha data candles` as single `--option=value` arguments; a daily
+  manifest has none, so its call is unchanged (`tests/unit/test_run_projection_security.py`).
 
 ## Rules, scans and chart overlays
 

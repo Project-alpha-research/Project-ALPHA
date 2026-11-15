@@ -138,7 +138,9 @@ def _interrupt(signum: int, frame: object) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Run RD-Agent's pinned log viewer in the foreground, on this computer only."
+    )
     serve = parser.add_subparsers(dest="command", required=True).add_parser("serve")
     serve.add_argument("--run-dir", type=Path, action="append", required=True)
     serve.add_argument("--links-dir", type=Path)

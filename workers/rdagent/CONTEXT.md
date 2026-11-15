@@ -16,8 +16,8 @@ fixtures, rule and costed probes, the stock RDLoop) in their own environments fo
 native job supervisor, plus `model_gateway.py`, the local program through which RD-Agent reaches
 a model, and the ALPHA-judged factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`,
 `alpha_factor_judge.py`, `alpha_factor_data.py`; ADR-0049) and RD-Agent's own run viewer
-(`rdagent_viewer.py`, `rdagent_ui_entry.py`, `ui-requirements.lock`; local only). It is a separate uv project (`package = false`) with its own lock; no ALPHA package
-imports it, though its probes import ALPHA packages inside qualified profile environments. It has
+(`rdagent_viewer.py`, `rdagent_ui_entry.py`, `ui-requirements.lock`; local only). It is a separate uv project (`package = false`)
+with its own lock; no ALPHA package imports it, though its probes import ALPHA packages inside qualified profile environments. It has
 no market, inference or evidence authority.
 
 ## Read first

@@ -119,6 +119,8 @@ another package is named.
 
 | Subfolder | Owning module | Purpose |
 |---|---|---|
+| `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
+| `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
 | `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |
 | `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |

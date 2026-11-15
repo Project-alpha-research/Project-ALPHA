@@ -48,7 +48,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
-| Spine foundations | `spine/stores` (store resolution and bar frequency) | `test_spine_stores`, `test_all_in_sizing` |
+| Rule tests | `test_cmds`, `spine/{stores,spec,run,ledger}` (ideas, stores, validation and trial history) | `test_spine_*`, `test_all_in_sizing` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |

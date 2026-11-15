@@ -41,6 +41,7 @@ export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   optim: 'Strategy',
   backtest: 'Backtest',
   validate: 'Backtest',
+  test: 'Backtest',
   'monte-carlo': 'Backtest',
   propfirm: 'Backtest',
   risk: 'Backtest',

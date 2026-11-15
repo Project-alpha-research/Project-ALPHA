@@ -18,13 +18,18 @@ sources:
   - apps/alpha-cli/src/alpha_cli/rules_cmds.py
   - apps/alpha-cli/src/alpha_cli/scan_cmds.py
   - apps/alpha-cli/src/alpha_cli/chart_cmds.py
+  - apps/alpha-cli/src/alpha_cli/validate_cmds.py
+  - apps/alpha-cli/src/alpha_cli/test_cmds.py
+  - apps/alpha-cli/src/alpha_cli/spine/**
+  - tests/unit/test_spine_spec.py
+  - tests/smoke/test_rule_test_smoke.py
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
   - tests/unit/test_suite_*.py
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 70f15b4e80c4
+verified: b66b5c3a8bd5
 ---
 
 # Command line runs invariants
@@ -100,6 +105,22 @@ and how it names and publishes immutable runs. Project-wide rules:
   training-frozen causal volatility boundary, Student-t); Kronos replays its synthetic tails through the full engine.
 - Monte Carlo path risk (`monte_carlo_cmds.py`) answers a different question from the null tests and is not edge proof;
   a warning stage needs the CLI-only owner review. [ADR-0029](../../adr/0029-four-family-monte-carlo-validation.md)
+
+## General rule trials
+
+- `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
+  and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
+- `spec.json` is included before the immutable manifest. Its `spine` key records the test id, spec hash,
+  name, idea, rule, store and integrity labels; `source` identifies the resolved provider.
+- The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts
+  without rewriting them and appends a `repeat` trial; the manifest retains its original test association.
+- `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync;
+  `trial_index` and `total_trials` equal the 1-based line number. Corruption fails loud. Errors count as trials,
+  carry an `error` label and retain unavailable metrics as null; their explanation is in the command output.
+- Quick mode uses 20/4/4 null paths and 50 resamples, with a `quick` label. All runs carry `all-in` and
+  `dev-machine-data`; ambiguous default sources and history shorter than three years receive labels too.
+- Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all
+  remaining history. These exploratory results and trial counts grant no research or owner authority.
 
 ## Suites
 

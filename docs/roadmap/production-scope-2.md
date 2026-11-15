@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: b793ece85d51
+verified: f02a41db525f
 ---
 
 # Production-ready scope, part 2: overfit tests to engines
@@ -24,7 +24,7 @@ Telling a real edge from luck after many tries.
 | Permutation test of a parameter sweep; best-of-many reality checks | Unproven | `alpha-validation` | Path 1 | [grade] |
 | Corrections for testing many ideas at once | Unproven | `alpha-research` | Path 3 | [grade] |
 | Trial ledger for RD-Agent's factors, failures kept | Working | `workers/rdagent` | Now | [status] |
-| Every test, tool and variant counted in one ledger; the count printed on each result | Missing | `alpha-cli` | Path 1 | [partner] |
+| Every test, tool and variant counted in one ledger; the count printed on each result | Unproven | `alpha test`; RD-Agent apart | Path 1 | [partner] |
 | Locked final period, sealed by date; touching it marks the result for good | Unproven | `alpha-cli` judge | Path 1 | [precise] |
 | Log of every look at the locked period | Unproven | pull request 178 | Path 3 | [precise] |
 | Variants of one idea counted as one family, with the effective number of tests shown | Missing | ledger | Path 1 | private |
@@ -40,16 +40,16 @@ Explaining a result: where the profit and the losses came from.
 
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
-| Automatic diagnostic pass after every test: facts and flags in plain sentences | Missing | new `alpha diagnose` | Path 1 | [partner] |
+| Automatic diagnostic pass after every test: facts and flags in plain sentences | Working | `alpha diagnose` | Path 1 | [partner] |
 | Drawdown episodes listed and dated | Working | `alpha-validation` | Now | [status] |
-| Drawdown against market and sector: beta, share of loss on down-market days | Missing | `alpha-validation` | Path 1 | [partner] |
+| Drawdown against market and sector: beta, share of loss on down-market days | Unproven | `alpha diagnose`: same-asset benchmark only | Path 1 | [partner] |
 | Macro picture for the dates of a loss: rates, releases, volatility | Missing | needs macro data | Later | [partner] |
 | Results by market state (volatility, trend, correlation) known on the day | Unproven | `alpha-research` | Path 1 | [partner] |
 | Regime detection and change points, never fitted on the future | Missing | statsmodels, ruptures | Path 1 | [partner] |
 | "Was it knowable that day?" check for macro and regime labels | Missing | `alpha-research` | Later | private |
 | Results by calendar: year, month, weekday, session | Unproven | `alpha-cli` figures | Path 1 | [partner] |
-| Profit concentration: how much comes from a few trades, days or assets | Missing | `alpha-validation` | Path 1 | [partner] |
-| Cheap stress re-runs: double costs, enter one bar late | Missing | `alpha-validation` | Path 1 | [partner] |
+| Profit concentration: how much comes from a few trades, days or assets | Unproven | `alpha diagnose`: trades only | Path 1 | [partner] |
+| Cheap stress re-runs: double costs, enter one bar late | Working | `alpha diagnose` | Path 1 | [partner] |
 | Exposure to simple factors: market, size, momentum, Bitcoin | Missing | statsmodels | Path 1 | [partner] |
 | Signal, sizing, exposure and cost effects told apart | Missing | `alpha-validation` | Later | private |
 | Trade streaks, clustering, lead-lag and stability splits | Unproven | `alpha-research` | Path 2 | [partner] |
@@ -69,7 +69,7 @@ What is kept, how it is labelled, and what the system remembers.
 | One folder per idea linking the question, the spec and every run | Missing | data folder | Path 1 | [partner] |
 | Investigation trail per idea: seen, considered, tested, learned, next | Missing | data folder | Path 1 | [partner] |
 | Lessons written down, searched before each proposal, pruned weekly | Missing | new `research/lessons` | Path 1 | [partner] |
-| Integrity as labels on results, not refusals (exploratory, free data, trial count) | Missing | run records | Path 1 | [any-bar] |
+| Integrity as labels on results, not refusals (exploratory, free data, trial count) | Working | run records and ledger | Path 1 | [any-bar] |
 | Honest status words on findings: read, run, reproduced, validated | Missing | run records | Path 1 | private |
 | Failed and rejected variants stay visible | Unproven | trial ledger | Path 3 | private |
 | RD-Agent's own memory kept between runs | Missing | `workers/rdagent` | Path 3 | [rd-all] |
@@ -93,7 +93,7 @@ The AI as a research partner that drives the toolbox from a prompt.
 | Every number in an answer comes from an executed run | Unproven | playbook; gateway | Path 1 | [precise] |
 | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs | Unproven | `apps/alpha-mcp` | Path 1 | [grade] |
 | Connection for the Claude and ChatGPT apps, not only the terminal | Missing | `apps/alpha-mcp` | Later | [grade] |
-| A review step that audits a result for defects | Missing | playbook | Path 1 | [grade] |
+| A review step that audits a result for defects | Unproven | audit block in `alpha diagnose`; skill missing | Path 1 | [grade] |
 | Ask an in-product assistant about a recorded run | Unproven | `alpha-cli`; `alpha-web` | Later | [status] |
 | Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | was `tools/alpha-eval` | Path 1 | [slim] |
 | Small autonomous research team around RD-Agent | Missing | backlog | Later | [team] |

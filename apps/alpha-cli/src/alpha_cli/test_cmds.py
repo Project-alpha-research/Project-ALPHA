@@ -9,8 +9,10 @@ from pathlib import Path
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.spine.errors import fail, test_error
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
+from alpha_cli.spine.stores import _stores
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -26,6 +28,9 @@ def test_rule(
     slippage_bps: float | None = None,
     quick: bool = typer.Option(
         False, help="Small gauntlet (20/4/4 paths, 50 resamples); labelled quick."
+    ),
+    no_diagnose: bool = typer.Option(
+        False, "--no-diagnose", help="Skip automatic diagnostics; labelled no-diagnostics."
     ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
@@ -44,10 +49,22 @@ def test_rule(
         )
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_idea(
-                parsed, home=settings.data_dir, seed=settings.random_seed, quick=quick
+                parsed,
+                home=settings.data_dir,
+                seed=settings.random_seed,
+                quick=quick,
+                no_diagnose=no_diagnose,
+            )
+        if all(result["error"] is not None for result in output["results"]):
+            fail(
+                test_error(
+                    "; ".join(result["error"] for result in output["results"]),
+                    list(_stores(settings.data_dir)),
+                ),
+                json_out,
             )
     except (ValueError, OSError, DataError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        fail(test_error(str(exc)), json_out)
     lines = [
         f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
         "ASSET\tRUN\tVERDICT\tOOS SHARPE\tLABELS / ERROR",
@@ -66,5 +83,3 @@ def test_rule(
             )
         )
     emit(output, json_out=json_out, fallback="\n".join(lines))
-    if all(result["error"] is not None for result in output["results"]):
-        raise typer.Exit(1)

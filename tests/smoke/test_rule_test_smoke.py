@@ -48,7 +48,10 @@ def test_rule_test_records_two_assets(tmp_path: Path) -> None:
         assert manifest["spine"]["test_id"] == output["test_id"]
         assert manifest["spine"]["spec_sha256"] == output["spec_sha256"]
         assert {"all-in", "dev-machine-data", "short-history", "quick"} <= set(result["labels"])
-        assert "spec.json" in manifest["artifacts"]
+        assert {"spec.json", "diagnostics.json"} <= manifest["artifacts"].keys()
+        assert result["variants_evaluated"] == 5
+        assert result["facts"]
+        assert isinstance(result["flags"], list)
         assert json.loads((rdir / "spec.json").read_text())["spec_sha256"] == output["spec_sha256"]
         assert run_artifacts_readable("runs", run_id, data_dir=data)
         original[run_id] = {

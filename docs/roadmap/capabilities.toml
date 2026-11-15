@@ -969,3 +969,17 @@ needs = []
 state = "Partial"
 missing = "installed-command synthetic run checked; smoke suite awaits execution outside the sandbox"
 docs = ["docs/reference/project/components/command-line.md"]
+
+[[capability]]
+id = "result-diagnostics"
+name = "Automatic diagnostic pass and audit on every rule test"
+what = "Read stored rule-test facts, benchmark comparisons, sensitivity observations and mechanical audit checks."
+see_it = ["alpha results --json", "alpha results show <run_id> --json", "alpha diagnose <run_id> --json"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_results_cmds.py::test_cite_and_no_diagnostics", "tests/unit/test_spine_diagnostics.py::test_drawdown_market_share_and_unrecovered"]
+proof_smoke = ["tests/smoke/test_rule_results_smoke.py::test_rule_results_and_diagnostics"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Partial"
+missing = "end-to-end smoke verification outside the builder sandbox"
+docs = ["docs/reference/invariants/cli-runs.md"]

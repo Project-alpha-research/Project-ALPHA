@@ -20,16 +20,18 @@ sources:
   - apps/alpha-cli/src/alpha_cli/chart_cmds.py
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
+  - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
   - tests/smoke/test_rule_test_smoke.py
+  - tests/smoke/test_rule_*_smoke.py
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
   - tests/unit/test_suite_*.py
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b34139efa2c0
+verified: af165f50577b
 ---
 
 # Command line runs invariants
@@ -122,6 +124,26 @@ and how it names and publishes immutable runs. Project-wide rules:
   `dev-machine-data`; ambiguous default sources and history shorter than three years receive labels too.
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all
   remaining history. These exploratory results and trial counts grant no research or owner authority.
+
+## Stored facts and diagnostics
+
+- Rule tests run a full-sample diagnostic pass, including cost/parameter engine re-runs and a
+  returns-level delay approximation. `--no-diagnose` skips it and labels the run `no-diagnostics`.
+- `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
+  drawdowns, calendar returns, trade concentration, counted variants, trial-adjusted Sharpe, flags and
+  a macro window: stored FRED series at the start and trough of the worst drawdown, as known at the
+  trough (`spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are null
+  with an explicit reason.
+- Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
+  use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
+- `alpha results` lists the ledger; `show` reads facts, flags, audit and available figure names;
+  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
+  The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
+  source file/field, labels and a reason exactly when their value is null.
+- These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
+  imperative `next` command; JSON under `--json`), including when every asset of a test fails.
+  Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
+  sensitivity re-runs separately from the append-only row index.
 
 ## Suites
 

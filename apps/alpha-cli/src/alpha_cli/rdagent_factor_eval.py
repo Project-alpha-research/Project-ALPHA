@@ -11,6 +11,7 @@ import math
 import os
 import re
 import subprocess
+import sys
 from collections.abc import Iterator
 from dataclasses import asdict
 from datetime import UTC, date, datetime, time, timedelta
@@ -93,6 +94,12 @@ CONFIG: dict[str, Any] = {
     "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
 }
 TRIAL_SCHEMA = "AlphaRdagentFactorTrialV3"
+LEDGER_SCHEMAS = {
+    "AlphaRdagentFactorTrialV1",
+    "AlphaRdagentFactorTrialV2",
+    TRIAL_SCHEMA,
+    "AlphaRuleTrialV1",
+}
 LOOP_UNIVERSE = (
     "ADAUSDT",
     "ATOMUSDT",
@@ -470,22 +477,41 @@ def replay(
     }, net
 
 
-def _read_ledger(path: Path) -> list[dict[str, Any]]:
+class LedgerRows(list[dict[str, Any]]):
+    """Physical ledger rows; iteration exposes supported schemas only.
+
+    Length and indices retain physical line numbering for existing appenders. Unknown
+    contents are available separately for conservative counting, never normal row logic.
+    """
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        return (row for row in super().__iter__() if row["schema"] in LEDGER_SCHEMAS)
+
+    @property
+    def unknown_rows(self) -> list[dict[str, Any]]:
+        return [row for row in super().__iter__() if row["schema"] not in LEDGER_SCHEMAS]
+
+
+def _read_ledger(path: Path) -> LedgerRows:
     if not path.exists():
-        return []
+        return LedgerRows()
     raw = path.read_bytes()
     if raw and not raw.endswith(b"\n"):
+        # Writers append under the ledger lock, so a partial last line is a crashed writer;
+        # appending after it would corrupt the next row. Fail loud (research-integrity rule).
         raise DataError("incomplete trial ledger line")
-    records = []
+    records = LedgerRows()
     for index, line in enumerate(raw.splitlines(), 1):
         try:
             row = json.loads(line)
-            if (
-                row["schema"]
-                not in {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", TRIAL_SCHEMA}
-                or row["trial_index"] != index
-                or not re.fullmatch("[0-9a-f]{64}", row["code_sha256"])
-            ):
+            if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
+                raise ValueError("invalid schema or trial identity")
+            if row["trial_index"] != index:
+                raise ValueError("invalid schema or trial identity")
+            if row["schema"] not in LEDGER_SCHEMAS:
+                records.append(row)
+                continue
+            if not re.fullmatch("[0-9a-f]{64}", row["code_sha256"]):
                 raise ValueError("invalid schema or trial identity")
             for key in (
                 "name",
@@ -509,9 +535,18 @@ def _read_ledger(path: Path) -> list[dict[str, Any]]:
                     raise ValueError(f"missing {key}")
             if not 0 <= row["p"] <= 1 or not 0 <= row["q"] <= 1 or row["authority"] != AUTHORITY:
                 raise ValueError("invalid trial metrics or authority")
-            if row["status"] not in STATUSES or row["stage"] not in {"none", "screen", "replay"}:
+            statuses = (
+                {"SUPPORT", "CONTRADICTION", "INSUFFICIENT", "INVALID"}
+                if row["schema"] == "AlphaRuleTrialV1"
+                else STATUSES
+            )
+            if row["status"] not in statuses or row["stage"] not in {"none", "screen", "replay"}:
                 raise ValueError("invalid trial status or stage")
-            if row["schema"] in {"AlphaRdagentFactorTrialV2", TRIAL_SCHEMA} and (
+            if row["schema"] in {
+                "AlphaRdagentFactorTrialV2",
+                TRIAL_SCHEMA,
+                "AlphaRuleTrialV1",
+            } and (
                 not isinstance(row["instruments"], list)
                 or not row["instruments"]
                 or any(not isinstance(s, str) or not s.strip() for s in row["instruments"])
@@ -519,6 +554,8 @@ def _read_ledger(path: Path) -> list[dict[str, Any]]:
                 or not {"previously_exposed", "worst_status", "matches"} <= row["exposure"].keys()
             ):
                 raise ValueError("invalid V2 instruments or exposure")
+            if row["schema"] == "AlphaRuleTrialV1":
+                _validate_rule_row(row)
             if row["schema"] == TRIAL_SCHEMA:
                 validate_clock_row(row)
             if row["status"] == "IMPORTED":
@@ -532,7 +569,54 @@ def _read_ledger(path: Path) -> list[dict[str, Any]]:
         except (ValueError, TypeError, KeyError) as error:
             raise DataError(f"invalid trial ledger line {index}: {error}") from error
         records.append(row)
+    unknown = records.unknown_rows
+    if unknown:
+        schemas = sorted({row["schema"] for row in unknown})
+        print(
+            f"rdagent-factor-eval: warning: {len(unknown)} ledger rows of other kinds "
+            f"were skipped ({', '.join(schemas)}); counted with p = 1.0",
+            file=sys.stderr,
+        )
     return records
+
+
+def _ledger_family(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+    """Unknown rows contribute only a conservative trial, never a factor identity."""
+    family = trial_family(
+        [
+            row
+            for row in rows
+            if row["schema"] in LEDGER_SCHEMAS and row["schema"] != "AlphaRuleTrialV1"
+        ]
+    )
+    for row in rows:
+        if row["schema"] not in LEDGER_SCHEMAS:
+            family[(str(row["trial_index"]), "unknown")] = {"p": 1.0, "replay": {}}
+    return family
+
+
+def _validate_rule_row(row: dict[str, Any]) -> None:
+    for key in ("family_id", "plain_name", "evidence", "warnings"):
+        if key not in row:
+            raise ValueError(f"missing {key}")
+    if (
+        not isinstance(row["family_id"], str)
+        or not row["family_id"]
+        or not isinstance(row["plain_name"], str)
+        or not row["plain_name"]
+        or not isinstance(row["warnings"], list)
+        or any(not isinstance(w, str) for w in row["warnings"])
+        or row["stage"] != "replay"
+        or not isinstance(row["family_size"], int)
+        or row["family_size"] < 1
+        or row["total_trials"] < row["trial_index"]
+        or row["windows"]["reserved_start"] != RESERVED_START
+        or not {"history_start", "scored_start", "scored_end", "exploration_end"}
+        <= row["windows"].keys()
+        or not isinstance(row["evidence"]["trial"], str)
+        or not re.fullmatch("[0-9a-f]{64}", row["evidence"]["sha256"])
+    ):
+        raise ValueError("invalid rule family metadata")
 
 
 def _validate_imported(value: Any) -> None:
@@ -604,7 +688,7 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
     with Path(str(ledger) + ".lock").open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         history = _read_ledger(ledger)
-        identities = {r["code_sha256"] for r in history}
+        identities = {r["code_sha256"] for r in history if r["schema"] in LEDGER_SCHEMAS}
         entries = read_entries(ledger)
         rows: list[dict[str, Any]] = []
         for item in items:
@@ -642,8 +726,14 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
             identities.add(digest)
         for row in rows:
             row.update(
-                family_size=len(trial_family([*history, *rows])),
-                distinct_factors=len(identities),
+                family_size=len(_ledger_family([*history, *history.unknown_rows, *rows])),
+                distinct_factors=len(
+                    {
+                        r["code_sha256"]
+                        for r in [*history, *rows]
+                        if r["schema"] != "AlphaRuleTrialV1"
+                    }
+                ),
                 total_trials=len(history) + len(rows),
             )
         with ledger.open("ab", buffering=0) as stream:
@@ -830,7 +920,7 @@ def _report(
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
         f"{LABEL}. {SURVIVORSHIP}. Ledger trials: {len(family)}; "
-        f"distinct factors: {len({key[0] for key in family})}; "
+        f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction chosen in-sample. Exploration "
         f"{EXPLORATION[0]}..{EXPLORATION[1]}; history 2017-08-17..2020-12-31; panel ends "
@@ -1133,7 +1223,8 @@ def _replay_clocks(
     q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
     qvalues: dict[str, dict[str, float]] = {}
     for (digest, clock), value in zip(family, q, strict=True):
-        qvalues.setdefault(digest, {})[clock] = float(value)
+        if clock != "unknown":
+            qvalues.setdefault(digest, {})[clock] = float(value)
     replay_returns = {}
     for row in rows:
         digest = row["code_sha256"]
@@ -1185,7 +1276,13 @@ def _evaluate_locked(
         **inputs,
         "exposure_log_sha256": sha(exposure_bytes) if exposure_bytes is not None else None,
     }
-    history = _read_ledger(ledger)
+    all_history = _read_ledger(ledger)
+    unknown = all_history.unknown_rows
+    history = [
+        row
+        for row in all_history
+        if row["schema"] in LEDGER_SCHEMAS and row["schema"] != "AlphaRuleTrialV1"
+    ]
     identities: dict[str, dict[str, Any]] = {}
     for row in history:
         if row["status"] != "REPEAT":
@@ -1213,17 +1310,22 @@ def _evaluate_locked(
         open_days,
         series,
     )
-    family = trial_family([*history, *rows])
+    all_count = len(all_history) + len(rows)
+    for index, row in enumerate(rows, len(all_history) + 1):
+        row.update(trial_index=index, ledger_trials_all_families=all_count)
+    family = _ledger_family([*history, *unknown, *rows])
     replay_returns, qvalues = _replay_clocks(
-        rows, panel, signals, days, series, family, len(history) + len(rows)
+        rows, panel, signals, days, series, family, len(history) + len(unknown) + len(rows)
     )
     series_note = _record_series(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
     lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials)
+    feedback += f" ledger_trials_all_families: {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",
+        "ledger_trials_all_families": all_count,
         "iteration": request["iteration"],
         "label": LABEL,
         "authority": AUTHORITY,
@@ -1232,7 +1334,7 @@ def _evaluate_locked(
         "factors": rows,
         "family_size": len(family),
         "distinct_factors": len(identities),
-        "total_trials": len(history) + len(rows),
+        "total_trials": len(history) + len(unknown) + len(rows),
         "replayed_trials": len(trials),
         "qvalues": qvalues,
         "decision": decision,
@@ -1242,6 +1344,9 @@ def _evaluate_locked(
     }
     if series_note is not None:
         record["series_note"] = series_note
+    if unknown:
+        schemas = sorted({row["schema"] for row in unknown})
+        record["ledger_unknown_rows"] = {"count": len(unknown), "schemas": schemas}
     with ledger.open("ab", buffering=0) as stream:
         for row in rows:
             line = canonical(row)
@@ -1292,4 +1397,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except DataError as error:  # a refusal is one plain line, not a traceback
+        print(f"rdagent-factor-eval: {error}", file=sys.stderr)
+        raise SystemExit(2) from None

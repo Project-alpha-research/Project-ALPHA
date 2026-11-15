@@ -838,6 +838,29 @@ triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
+id = "rdagent-run-viewer"
+name = "RD-Agent's run viewer"
+codes = ["RD-Agent"]
+what = "Watch an RD-Agent research run step by step in RD-Agent's own viewer: each idea, the code it wrote, the feedback, and ALPHA's numbers."
+see_it = [
+  ".venv/bin/python workers/rdagent/rdagent_viewer.py serve --run-dir /abs/runs/<date>-<slug>",
+  "http://127.0.0.1:19899",
+]
+entry_points = ["code: workers/rdagent/rdagent_viewer.py"]
+proof_synthetic = [
+  "tests/unit/test_rdagent_viewer.py::test_links_replace_only_symlinks",
+  "tests/unit/test_rdagent_viewer.py::test_shared_memory_key_and_explicit_override",
+  "tests/unit/test_rdagent_viewer.py::test_environment_is_exact_and_command_is_local",
+  "tests/unit/test_rdagent_viewer.py::test_serve_verifies_and_cleans_temporary_home",
+  "tests/unit/test_rdagent_viewer.py::test_busy_port_socket_is_refused",
+]
+real_data = "yes: four RD-Agent runs of 2026-11-15 on Binance daily bars"
+needs = []
+state = "Partial"
+missing = "no end-to-end smoke check; not linked from the Workstation yet"
+docs = ["workers/rdagent/README.md"]
+
+[[capability]]
 id = "native-job-result"
 name = "\"Native job result\" screen"
 codes = ["W04", "W18"]

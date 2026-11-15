@@ -50,24 +50,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-159 capabilities: 27 working, 44 built but unproven, 86 missing, 1 to rebuild,
+159 capabilities: 27 working, 47 built but unproven, 83 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 1 | 2 | 9 | 0 | 0 |
-| 2. Data and context | 3 | 7 | 12 | 0 | 0 |
+| 2. Data and context | 3 | 9 | 10 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 1 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 7 | 3 | 0 | 0 |
 | 6. Diagnostics | 2 | 4 | 11 | 0 | 0 |
 | 7. Records and memory | 1 | 5 | 8 | 0 | 1 |
 | 8. AI partner | 1 | 4 | 7 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 3 | 2 | 9 | 0 | 0 |
+| 9. RD-Agent and Qlib engines | 3 | 3 | 8 | 0 | 0 |
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **27** | **44** | **86** | **1** | **1** |
+| **All** | **27** | **47** | **83** | **1** | **1** |
 
 ## 1. Idea
 

@@ -718,7 +718,7 @@ def _plain(view: dict[str, Any]) -> str:
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="RD-Agent's own persistent knowledge and sessions; ALPHA's ledger is the record."
+        description="RD-Agent's own persistent knowledge and sessions; ALPHA's ledger is the record""
     )
     sub = parser.add_subparsers(dest="command", required=True)
     inspect = sub.add_parser("show")

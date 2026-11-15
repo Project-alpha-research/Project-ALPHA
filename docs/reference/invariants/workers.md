@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3a0098cd96e3
+verified: 371f7136778b
 ---
 
 # Worker invariants
@@ -137,6 +137,15 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.
+- Research memory and verdict feedback (`research_memory.py`, `alpha_factor_coder.py`): RD-Agent's own knowledge and
+  session checkout persist between runs beside the trial ledger; this is working knowledge, never evidence, and nothing is
+  copied between memory and the ledger. ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output shape; never a
+  check that merely errored) demotes that exact code from RD-Agent's successful coding references, keeps its attempt
+  history, and is recorded in `coder-verdicts.jsonl`. A demotion failure is recorded and advisory: it never stops the run.
+  Tests: `tests/unit/test_rdagent_research_memory.py`.
+- Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a counted note, and
+  the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`. Malformed complete
+  lines and malformed known-schema rows still fail loud; under the ledger lock a partial last line fails loud.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
   such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
   `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.

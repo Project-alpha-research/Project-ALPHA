@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 21a8165284fc
+verified: 9df0cf50f5a0
 ---
 
 # Worker invariants
@@ -147,6 +147,12 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
   the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
   family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+  shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
+  recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
+  worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
+  counted note, and the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`.
+  Malformed complete lines and malformed known-schema rows still fail loud.
 - Run viewer (`rdagent_viewer.py serve`, `rdagent_ui_entry.py`): RD-Agent's own unmodified Streamlit log viewer on a
   run folder, foreground and local only. It runs in its own hash-pinned Python 3.11 runtime, built only by
   `--with-ui` from `ui-requirements.lock` and recorded by `install_stock_profile.py --profile ui`; the entry

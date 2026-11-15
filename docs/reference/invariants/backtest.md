@@ -36,9 +36,22 @@ Nautilus harness, its feed encoding, fee model and result schema, and the multi-
   [research integrity § Decide at close, fill at next open](research-integrity.md#decide-at-close-fill-at-next-open).
 - Run the venue with `bar_execution=False` so only quotes fill orders; Nautilus's default fills market
   orders at the bar close. `tests/integration/test_nautilus_engine.py::test_market_order_decided_on_close_fills_at_next_open`.
-- The feed requires strictly increasing bars at least 24h apart and raises `DataError` otherwise: tighter
+- Daily feeds require strictly increasing bars at least 24h apart and raise `DataError` otherwise: tighter
   spacing would make a non-chronological feed that the engine runs silently with zero fills.
-  `tests/unit/test_nautilus_feed.py`.
+- Intraday bars (`timeframe=`, any bar from one minute; `bar_type_for` names `n-MINUTE`/`n-HOUR` types):
+  the quote is at `bar.ts + 1µs` and the decision bar at `bar.ts + duration` (its close), so bar t's
+  decision precedes bar t+1's quote even for back-to-back bars; bars may not overlap, gaps (nights,
+  weekends) are allowed. Stock runs read regular-session bars by default, so no fill falls outside the
+  session unless `--session extended` is chosen; crypto runs are 24/7. Strategies decide in `on_bar` and
+  submit on the next quote (`alpha_strategies.base`); an order submitted inside `on_bar` would fill at the
+  previous quote, and the engine refuses fills that do not land on an opening quote.
+  `tests/unit/test_nautilus_feed.py`, oracle `tests/oracles/test_intraday_fill_oracle.py`.
+- Annualisation: daily runs use 252 unless `--periods-per-year` is given; intraday runs take bars per year
+  from the bar size and session (`_runner.resolve_periods_per_year`: 24/7 = 365.25 days, regular stock
+  sessions = 252 x 390 minutes, extended = 252 x 960 minutes), never from the sample's length, which
+  over-counts short samples and would change vol-target sizing. Dividend entitlement is dated by UTC day,
+  so with `--session extended` a winter after-hours bar after 00:00 UTC counts as the next day. Costs are the same defaults for every asset class
+  (fee 1 bp, slippage 2 bp); pass `--fee-bps` for a venue's real fee (Binance spot taker about 10 bp).
 - `timing="utc_day_end_next_open"` needs UTC-midnight bars: the decision bar is stamped at the next
   midnight and the quote one microsecond later. It models execution; it is not evidence the price was
   executable. The default stays `session_close_23h`. `tests/unit/test_utc_day_execution_feed.py`.

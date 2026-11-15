@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sys
@@ -15,6 +16,7 @@ WORKER = Path(__file__).resolve().parent
 if str(WORKER) not in sys.path:
     sys.path.insert(0, str(WORKER))
 
+from research_memory import open_factor_loop  # noqa: E402
 from source_pin import verify_source  # noqa: E402
 from stock_fixture_entry import SourceFinder  # noqa: E402
 
@@ -78,11 +80,14 @@ def main() -> None:
     if len(sys.argv) != 3 or sys.argv[2] not in {"1", "2", "3"}:
         raise ValueError("usage: factor_loop_entry.py <source> <loop_n: 1..3>")
     install_source(Path(sys.argv[1]))
-    from rdagent.app.qlib_rd_loop.factor import main as factor_main
+    from rdagent.app.qlib_rd_loop.conf import FACTOR_PROP_SETTING
+    from rdagent.app.qlib_rd_loop.factor import FactorRDLoop
     from rdagent.utils.workflow.loop import LoopBase
 
     record_steps(LoopBase)
-    factor_main(loop_n=int(sys.argv[2]))
+    loop, total = open_factor_loop(FactorRDLoop, FACTOR_PROP_SETTING, int(sys.argv[2]), os.environ)
+    loop._init_base_features(None)
+    asyncio.run(loop.run(loop_n=total))
 
 
 if __name__ == "__main__":

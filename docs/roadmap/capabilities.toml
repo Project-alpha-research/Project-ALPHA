@@ -84,7 +84,7 @@ missing = "tested in-process and in a browser against a test server; no end-to-e
 [[capability]]
 id = "stock-data"
 name = "Download and freeze stock and ETF prices"
-what = "Download daily stock or ETF prices, freeze them into a checked snapshot, and verify it later."
+what = "Download stock or ETF prices (daily by default; intraday bars: see intraday-bars), freeze them into a checked snapshot, and verify it later."
 see_it = [
   "uv run alpha data pull SPY --source tiingo --start 2020-01-01 --end 2020-12-31",
   "uv run alpha data snapshot <name> SPY, then uv run alpha data verify <name>",
@@ -108,6 +108,35 @@ real_data_needs = "A Tiingo key for the authoritative source, and confirmation o
 needs = []
 state = "Partial"
 missing = "no offline way to get prices in; snapshot, verify and as-of read are proven end to end"
+
+[[capability]]
+id = "intraday-bars"
+name = "Intraday bars, from one minute to one hour, end to end"
+what = "Download, store, freeze, read point-in-time, resample and backtest stock, ETF and crypto bars of any size from one minute to one day; daily stays the default."
+see_it = [
+  "uv run alpha data pull SPY --source alpaca --asset-class etf --timeframe 5m --start 2026-08-03 --end 2026-11-13",
+  "uv run alpha data candles SPY --timeframe 1h --from-timeframe 5m --json",
+  "uv run alpha backtest run SPY --timeframe 5m --strategy breakout --param window=12, then uv run alpha report <run>",
+  "Workstation: Run Browser lists intraday runs with their bar size (M5, H1)",
+]
+entry_points = [
+  "cli: alpha data pull",
+  "cli: alpha data candles",
+  "cli: alpha backtest run",
+  "code: packages/alpha-data/src/alpha_data/timeframe.py",
+  "code: packages/alpha-data/src/alpha_data/resample.py",
+]
+proof_synthetic = [
+  "tests/integration/test_data_cli.py::test_intraday_pull_store_snapshot_and_status",
+  "tests/integration/test_intraday_backtest.py::test_cli_intraday_determinism_and_report",
+  "tests/integration/test_intraday_backtest.py::test_cli_resamples_stock_sessions",
+]
+real_data = "not yet confirmed (free sources): on 2026-11-14 the Dell holds SPY and AAPL 5-minute and 1-hour bars from Alpaca (3 Aug to 13 Nov 2026) and BTCUSDT and ETHUSDT 1-hour (12 months) and 5-minute (3 months) bars from Binance archives, in /home/hunta/alpha-clean-base/data-intraday; two system-test runs read them (docs/reference/project/components/data-layer.md)"
+real_data_needs = "Confirmation of real data on the Mac."
+needs = []
+state = "Partial"
+missing = "proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily"
+docs = ["docs/reference/invariants/data-bar-timeframes.md"]
 
 [[capability]]
 id = "crypto-data"
@@ -809,6 +838,29 @@ triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
+id = "rdagent-run-viewer"
+name = "RD-Agent's run viewer"
+codes = ["RD-Agent"]
+what = "Watch an RD-Agent research run step by step in RD-Agent's own viewer: each idea, the code it wrote, the feedback, and ALPHA's numbers."
+see_it = [
+  ".venv/bin/python workers/rdagent/rdagent_viewer.py serve --run-dir /abs/runs/<date>-<slug>",
+  "http://127.0.0.1:19899",
+]
+entry_points = ["code: workers/rdagent/rdagent_viewer.py"]
+proof_synthetic = [
+  "tests/unit/test_rdagent_viewer.py::test_links_replace_only_symlinks",
+  "tests/unit/test_rdagent_viewer.py::test_shared_memory_key_and_explicit_override",
+  "tests/unit/test_rdagent_viewer.py::test_environment_is_exact_and_command_is_local",
+  "tests/unit/test_rdagent_viewer.py::test_serve_verifies_and_cleans_temporary_home",
+  "tests/unit/test_rdagent_viewer.py::test_busy_port_socket_is_refused",
+]
+real_data = "yes: four RD-Agent runs of 2026-11-15 on Binance daily bars"
+needs = []
+state = "Partial"
+missing = "no end-to-end smoke check; not linked from the Workstation yet"
+docs = ["workers/rdagent/README.md"]
+
+[[capability]]
 id = "native-job-result"
 name = "\"Native job result\" screen"
 codes = ["W04", "W18"]
@@ -946,3 +998,17 @@ needs = []
 state = "Partial"
 missing = "installed-command synthetic run checked; smoke suite awaits execution outside the sandbox"
 docs = ["docs/reference/project/components/command-line.md"]
+
+[[capability]]
+id = "result-diagnostics"
+name = "Automatic diagnostic pass and audit on every rule test"
+what = "Read stored rule-test facts, benchmark comparisons, sensitivity observations and mechanical audit checks."
+see_it = ["alpha results --json", "alpha results show <run_id> --json", "alpha diagnose <run_id> --json"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_results_cmds.py::test_cite_and_no_diagnostics", "tests/unit/test_spine_diagnostics.py::test_drawdown_market_share_and_unrecovered"]
+proof_smoke = ["tests/smoke/test_rule_results_smoke.py::test_rule_results_and_diagnostics"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Partial"
+missing = "end-to-end smoke verification outside the builder sandbox"
+docs = ["docs/reference/invariants/cli-runs.md"]

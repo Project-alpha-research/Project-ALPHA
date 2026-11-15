@@ -108,9 +108,10 @@ def test_run_records_errors_and_continues(tmp_path: Path, monkeypatch: pytest.Mo
     from tests.fixtures.cli_fixtures import seed_store
 
     seed_store(tmp_path, symbol="SPY", n=100)
-    provenance = ParquetStore(tmp_path / "store")._provenance_path("SPY")
-    provenance.parent.mkdir(parents=True)
-    provenance.write_text('{"source":"alpaca"}')
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
     idea = load_spec(None, rule="tsmom", param=["lookback=20"], asset=["MISSING", "SPY"])
     seen = []
 
@@ -157,7 +158,11 @@ def test_cli_json_partial_and_all_failed(tmp_path: Path, monkeypatch: pytest.Mon
     args = ["--rule", "breakout", "--param", "window=20", "--asset", "MISSING", "--json"]
     failed = runner.invoke(app, args)
     assert failed.exit_code == 1, failed.output
-    assert json.loads(failed.output)["results"][0]["error"]
+    error = json.loads(failed.output)["error"]
+    assert error["code"] == "UNKNOWN_ASSET"
+    assert "not found" in error["message"]
+    assert error["known"] == ["home"]
+    assert "alpha test" in error["next"]
     output = {
         "test_id": "id",
         "name": "name",

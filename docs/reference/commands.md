@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-235 commands in 26 groups. Options marked (required) are
+238 commands in 28 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -32,7 +32,7 @@ Run the v1 strategy through the backtest engine.
 - `alpha backtest holdout <SYMBOL>` — Evaluate one frozen fixed-parameter candidate on its revealed final holdout once.
 - `alpha backtest oos <SYMBOL>` — Evaluate one fixed rule over causal walk-forward OOS windows; no model is refit. Options: `--strategy`, `--lookback`, +19 more
 - `alpha backtest portfolio <SYMBOLS>` — Backtest a diversified basket: run the strategy across SYMBOLS and combine the… Options: `--strategy`, +24 more
-- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +18 more
+- `alpha backtest run <SYMBOL>` — Backtest SYMBOL with the fixed-parameter strategy; write the run artifacts. Options: `--strategy`, `--lookback`, +22 more
 
 ## alpha chart
 
@@ -86,7 +86,7 @@ Provider-native crypto acquisition, qualification, snapshots, and storage.
 Data ingestion, snapshots, and integrity.
 
 - `alpha data audit <PROVIDER> <RECEIPT_ID>` — Read one immutable candidate/quarantine quality report. Options: `--json`, `--timeframe`
-- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +4 more
+- `alpha data candles <SYMBOL>` — Point-in-time OHLCV candles for SYMBOL (split-adjusted; ''--end'' is an as-of cutoff). Options: `--start`, `--end`, +7 more
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more
@@ -100,6 +100,10 @@ Data ingestion, snapshots, and integrity.
 - `alpha data universe import <NAME> <CSV_PATH>` — Import symbol,effective_from,effective_to,delisting_return,reason ro… Options: `--json`
 - `alpha data universe show <NAME>` — List the members of universe NAME as of a date, including names that later left. Options: `--as-of (required)`, `--json`
 - `alpha data verify <SNAPSHOT_ID>` — Re-hash a snapshot and confirm it matches its manifest.
+
+## alpha diagnose
+
+- `alpha diagnose <RUN_ID>` — Read the automatic diagnostic pass and audit stored with a rule test. Options: `--json`
 
 ## alpha evidence
 
@@ -317,6 +321,13 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research status <PROJECT_ID>` — Show the one current phase, execution state, next action, budget, and firewall… Options: `--json`
 - `alpha research verify <PROJECT_ID>` — Regenerate and byte-verify a dossier without parsing Markdown as control state. Options: `--path (required)`, `--json`
 
+## alpha results
+
+List rule tests and quote their stored results.
+
+- `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
+- `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`
+
 ## alpha risk
 
 Risk & scenario analysis over stored runs.
@@ -367,7 +378,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +5 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +6 more
 
 ## alpha validate
 

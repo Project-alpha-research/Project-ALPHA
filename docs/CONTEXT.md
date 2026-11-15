@@ -26,6 +26,7 @@ other files link to it.
 | [documentation index](README.md) | Folders | deciding where a new document goes |
 | [documentation invariants](reference/invariants/documentation.md) | Decision records | writing or superseding an ADR |
 | [documentation invariants](reference/invariants/documentation.md) | Feature plans | writing or closing a plan |
+| [outside projects register](reference/project/outside-projects.md) | — | adding, upgrading or judging a library or outside project |
 | [command reference](reference/commands.md) | — | documenting a command (link here; never copy it) |
 | [what this part is for](reference/project/components/delivery-and-agent-tooling.md) | — | why it exists; before you keep, shelve or remove it |
 

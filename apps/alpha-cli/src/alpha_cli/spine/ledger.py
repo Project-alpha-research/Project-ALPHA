@@ -64,3 +64,13 @@ def append_trial(home: Path, values: dict[str, Any]) -> dict[str, Any]:
                 raise DataError(f"short trial ledger write at {path}")
             os.fsync(stream.fileno())
         return row
+
+
+def read_trials(home: Path) -> list[dict[str, Any]]:
+    """Read a consistent ledger snapshot, accepting older rows without variant counts."""
+    path = home / "ledger" / "trials.jsonl"
+    if not path.exists():
+        return []
+    with path.with_suffix(".jsonl.lock").open("a+b") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_SH)
+        return _history(path)

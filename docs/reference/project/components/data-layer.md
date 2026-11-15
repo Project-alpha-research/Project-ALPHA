@@ -83,6 +83,20 @@ download shows `quality_status: passed`, which means only that the mechanical ch
   lows in Alpaca, volume, missing ETF dividends in Alpaca) are in the verification record.
   Owner steps: [Alpaca runbook](../../../operations/alpaca-stock-data.md).
 
+- **Intraday bars, 2026-11-14** (owner decision 2026-11-15: no daily-only rule; never
+  high-frequency trading, so time bars of one minute or longer only), all in their own folder
+  `/home/hunta/alpha-clean-base/data-intraday`, so the daily data is never rewritten:
+  - Crypto through `alpha crypto-data backfill binance market_bars --category spot`: BTCUSDT and
+    ETHUSDT 1-hour bars, Nov 2025 to Oct 2026 (8,760 each), and 5-minute bars, Aug to Oct 2026
+    (26,496 each), all qualified; crypto snapshot `55870c28d0a3...`, verified.
+  - Stocks through `alpha data pull --source alpaca --timeframe 5m|1h`: SPY and AAPL, 3 Aug to
+    13 Nov 2026, 5-minute (14,184 and 14,168 bars, pre-market and after-hours included) and 1-hour
+    (1,184 each), all passing the quality gate; snapshots `alpaca-intraday-5m-2026-11-14` and
+    `alpaca-intraday-1h-2026-11-14`.
+  - Rules: [bar timeframes](../../invariants/data-bar-timeframes.md). Two system-test backtests
+    read them (BTC 1-hour moving-average run `c5b121832b4e4df9`; SPY 5-minute breakout run
+    `e7554b11b3ccbb4f`, on the snapshot as `2a71a809e51adc11`).
+
 ### Limits
 
 - **Stooq:** since 2026-11-14 the `stooq` downloader no longer answers Stooq's "verify your
@@ -97,6 +111,12 @@ download shows `quality_status: passed`, which means only that the mechanical ch
   One modest sequential download was made (above). The owner's Alpaca key was set the same day,
   so Alpaca replaces Yahoo for new stock downloads; the Yahoo copy stays for comparison. Yahoo's prices are rebuilt from its split-adjusted series
   (the adapter multiplies the splits back), so they carry small rounding.
+- **Alpaca intraday:** bars of 1 to 59 minutes and 1 to 23 hours come from the same free plan and
+  feed; each bar is stamped at its start and covers all hours Alpaca returns (04:00 to 20:00 New
+  York). Hourly bars follow the clock (the 09:00 bar holds 09:00-09:59, half pre-market), so
+  session hours are resampled from minute bars. No bar exists for a minute without qualifying
+  trades, so illiquid names at 1 minute will fail the gap check. A full 2016-onward 1-minute pull
+  exceeds the 200-page cap. Whether Alpaca later revises historical minute bars is not documented.
 - **Alpaca:** free Basic plan only: history since 2016; the latest 15 minutes are not available,
   so ALPHA asks only for completed sessions; 200 calls a minute; personal, non-commercial use, and
   the data must never be published, shared or committed. The corporate-actions list has no
@@ -119,7 +139,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-data`
-- **Capabilities:** `stock-data`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
+- **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
   `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.
@@ -128,6 +148,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 - How to change it: [packages/alpha-data/CONTEXT.md](../../../../packages/alpha-data/CONTEXT.md).
 - Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.
 - Backlog: [offline price import](../../../roadmap/backlog/offline-data-import.md),
+  [one crypto store for backtests](../../../roadmap/backlog/governed-crypto-for-backtests.md),
   [durable acquisition journal](../../../roadmap/backlog/controlstore-durable-acquisition.md).
 - Decision records: [ADR-0004](../../../adr/0004-two-clock-corporate-actions.md),
   [ADR-0005](../../../adr/0005-point-in-time-firewall.md), [ADR-0017](../../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md),

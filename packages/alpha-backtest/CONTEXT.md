@@ -32,10 +32,11 @@ that triggered it.
 
 - Code: `packages/alpha-backtest/src/alpha_backtest/` (`feed.py`, `engine.py`, `frictions.py`,
   `instruments.py`, `results.py`, `portfolio_replay.py`).
-- Tests: `tests/unit/test_nautilus_feed.py`, `tests/unit/test_utc_day_execution_feed.py`,
+- Tests: `tests/unit/test_nautilus_feed.py` (daily and intraday feeds), `tests/unit/test_utc_day_execution_feed.py`,
   `tests/unit/test_portfolio_replay_engine.py`; integration `tests/integration/test_nautilus_engine.py`,
   `test_dividend_credit.py`, `test_frictions.py`, `test_order_rejection.py`; oracles
-  `tests/oracles/test_metamorphic_engine.py`, `tests/oracles/test_pnl_rederivation.py`.
+  `tests/oracles/test_metamorphic_engine.py`, `tests/oracles/test_pnl_rederivation.py`,
+  `tests/oracles/test_intraday_fill_oracle.py`; intraday runs `tests/integration/test_intraday_backtest.py`.
 - Check: `uv run python scripts/gate.py check`. Engine source bytes are part of run identity, so an
   edit changes run ids. Ask for an independent review on the pull request; it is advisory.
 

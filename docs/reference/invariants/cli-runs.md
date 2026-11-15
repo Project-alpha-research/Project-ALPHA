@@ -20,9 +20,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/chart_cmds.py
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
+  - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
   - tests/smoke/test_rule_test_smoke.py
+  - tests/smoke/test_rule_*_smoke.py
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
   - tests/unit/test_suite_*.py
@@ -43,7 +45,8 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 - `alpha_cli` is the only layer that composes the engine with the gauntlet; engine imports stay lazy.
   [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md), [engineering § Import layers](engineering.md#import-layers)
-- Strategies read bars only through `_runner.load_bars` with an `as_of` cutoff, and decisions fill at the next open.
+- Strategies read bars only through `_runner.load_bars` with an `as_of` cutoff (any bar timeframe:
+  [bar timeframes](data-bar-timeframes.md#reading-intraday-bars)), and decisions fill at the next open.
   See [research integrity § Point-in-time reads](research-integrity.md#point-in-time-reads) and
   [research integrity § Decide at close, fill at next open](research-integrity.md#decide-at-close-fill-at-next-open).
 - `_gauntlet.py`, `_optim.py`, `_runner.py`, `_synth.py`, `_surrogate.py`, `_seeds.py` and `_identity.py` are
@@ -122,6 +125,26 @@ and how it names and publishes immutable runs. Project-wide rules:
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all
   remaining history. These exploratory results and trial counts grant no research or owner authority.
 
+## Stored facts and diagnostics
+
+- Rule tests run a full-sample diagnostic pass, including cost/parameter engine re-runs and a
+  returns-level delay approximation. `--no-diagnose` skips it and labels the run `no-diagnostics`.
+- `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
+  drawdowns, calendar returns, trade concentration, counted variants, trial-adjusted Sharpe, flags and
+  a macro window: stored FRED series at the start and trough of the worst drawdown, as known at the
+  trough (`spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are null
+  with an explicit reason.
+- Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
+  use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
+- `alpha results` lists the ledger; `show` reads facts, flags, audit and available figure names;
+  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
+  The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
+  source file/field, labels and a reason exactly when their value is null.
+- These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
+  imperative `next` command; JSON under `--json`), including when every asset of a test fails.
+  Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
+  sensitivity re-runs separately from the append-only row index.
+
 ## Suites
 
 - `alpha suite` runs only the declared actions in `SUITE_ACTIONS` through durable attempt and job lineage; it polls
@@ -142,6 +165,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   `tests/unit/test_figure_cache.py`.
 - `figures list --json` without `--run` publishes the key environment, so the web computes keys without the renderer.
 - Builders read declared artifacts only and report an honest unavailability reason instead of guessing.
+- A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`,
+  `source_timeframe` and `session` pass to `alpha data candles` as single `--option=value` arguments; a daily
+  manifest has none, so its call is unchanged (`tests/unit/test_run_projection_security.py`).
 
 ## Rules, scans and chart overlays
 

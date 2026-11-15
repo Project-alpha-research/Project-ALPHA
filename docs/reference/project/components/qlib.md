@@ -58,6 +58,7 @@ stand-in on the Dell, where its install is not present.
 - Decision records: [ADR-0016](../../../adr/0016-isolated-qlib-worker.md),
   [ADR-0042](../../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md),
   [ADR-0028](../../../adr/0028-governed-market-state-and-model-candidates.md).
+- Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 
 ## Decisions and open questions
 

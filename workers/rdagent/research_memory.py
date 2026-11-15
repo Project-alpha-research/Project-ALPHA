@@ -448,7 +448,7 @@ def _record(
             )
             result["warnings"].append(warning)
             _quarantine(root, [knowledge], warning, delete=True)
-        result["loops_after"] = completed_loops(session)
+        own_loops = completed_loops(session)
         result["knowledge_sha256_after"] = _hash(knowledge)
         events = run_dir / "memory-events.jsonl"
         codes = set()
@@ -469,11 +469,14 @@ def _record(
                     continue
                 codes.add(event["code"])
                 result["warnings"].append(event)
+        # loops_after is the lineage's completed rounds after this run: a continued run that
+        # finished no new round still has the rounds it continued (its own folder holds none);
+        # a run that had to start fresh counts only its own.
+        fresh = plan.continue_from is None or "session-unloadable" in codes
+        result["loops_after"] = own_loops if fresh else max(own_loops, plan.loops_before)
         # Point at this run only when it got further than the lineage it continued (or when it
         # had to start fresh); a run that crashed before finishing a loop keeps the old pointer.
-        progressed = result["loops_after"] > plan.loops_before or (
-            result["loops_after"] > 0 and "session-unloadable" in codes
-        )
+        progressed = own_loops > plan.loops_before or (own_loops > 0 and fresh)
         if not found and progressed:
             manifest["latest_session"] = {
                 "run_id": run_id,

@@ -478,3 +478,10 @@ def test_step_wrapper_records_a_skipped_step(
     asyncio.run(FakeLoop()._run_step(0))
     rows = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
     assert rows[1]["status"] == "skipped" and rows[1]["error_type"] == "KeyError"
+
+
+def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
+    parsed = args(tmp_path)
+    parsed.trial_ledger = Path("relative/trials.jsonl")
+    with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
+        launch.validate(parsed, environ(tmp_path))

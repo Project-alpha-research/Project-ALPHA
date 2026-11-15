@@ -52,7 +52,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data | `_crypto_*` (15; incl. `_crypto_snapshot_members`), `crypto_*` (4), `data_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent factor judging | `rdagent_factor_eval` (ADR-0049; run as a subprocess by the worker), `rdagent_rule_family` (human-authored rule families into the shared ledger) | `test_rdagent_factor_eval`, `test_rdagent_rule_family` |
+| RD-Agent judging | `rdagent_factor_eval` (ADR-0049, a worker subprocess), `rdagent_rule_family` | `test_rdagent_{factor_eval,rule_family}` |
 | Machine learning | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |

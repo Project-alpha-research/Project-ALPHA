@@ -182,7 +182,25 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
                 f"Unknown run or test {run_id!r}.",
                 "Run alpha results --json to list recorded runs.",
             )
-        output = {"runs": [_show(home, value) for value in ids], "failed": failed}
+        if ids == [run_id]:
+            runs = [_show(home, run_id)]  # one named run: an unreadable artifact fails loud
+        else:
+            runs = []
+            for value in ids:
+                try:
+                    runs.append(_show(home, value))
+                except (ValueError, OSError, DataError) as exc:
+                    # One unreadable asset must not hide the others; report it by name.
+                    row = next(item for item in rows if item.get("run_id") == value)
+                    failed.append(
+                        {
+                            "symbol": row.get("symbol"),
+                            "run_id": value,
+                            "trial_index": row["trial_index"],
+                            "reason": f"stored run could not be read: {exc}",
+                        }
+                    )
+        output = {"runs": runs, "failed": failed}
         emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

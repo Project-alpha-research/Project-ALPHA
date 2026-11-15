@@ -255,3 +255,25 @@ def test_show_test_id_keeps_completed_assets_and_reports_failed_ones(
     assert only_failed.exit_code == 0
     assert json.loads(only_failed.stdout)["runs"] == []
     assert len(json.loads(only_failed.stdout)["failed"]) == 1
+
+
+def test_show_test_id_reports_an_unreadable_asset_and_keeps_the_rest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    good, broken = "0123456789abcdef", "fedcba9876543210"
+    for run_id in (good, broken):
+        (tmp_path / "runs" / run_id).mkdir(parents=True)
+        append_trial(tmp_path, {"run_id": run_id, "test_id": "t3", "symbol": run_id[:3], "labels": []})
+    (tmp_path / "runs" / good / "manifest.json").write_text(json.dumps({"command": "validate"}))
+    (tmp_path / "runs" / broken / "manifest.json").write_text("{not json")
+    result = CliRunner().invoke(app(), ["results", "show", "t3", "--json"])
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.stdout)
+    assert [run["run_id"] for run in output["runs"]] == [good]
+    (failed,) = output["failed"]
+    assert failed["run_id"] == broken
+    assert failed["reason"].startswith("stored run could not be read")
+    # Naming the broken run directly still fails loud.
+    direct = CliRunner().invoke(app(), ["results", "show", broken, "--json"])
+    assert direct.exit_code != 0

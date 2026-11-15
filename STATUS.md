@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 21 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 12 working, 22 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 

@@ -986,6 +986,24 @@ recommendation = "DELETE"
 owner_decision = "DELETE"
 
 [[capability]]
+id = "macro-context"
+name = "Macro context data as first published"
+what = "Read rates, inflation, jobs and other macro series using only publications known by a chosen date."
+see_it = ["alpha context list --json", "alpha context show DFF --as-of 2024-01-31 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = [
+  "tests/unit/test_context_fred.py::test_as_known_future_poison_and_leaky_control",
+  "tests/unit/test_context_cmds.py::test_show_list_window_json",
+]
+proof_smoke = ["tests/smoke/test_context_smoke.py::test_context_list_show_window"]
+real_data = "not yet confirmed; synthetic HTTP and local storage only"
+real_data_needs = "FRED_API_KEY in the environment; network"
+needs = []
+state = "Partial"
+missing = "installed-command smoke test written; execution and live FRED behavior await verification"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
 id = "rule-test"
 name = "Test a trading rule on several assets with one command"
 what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger."

@@ -15,11 +15,19 @@ supplies the correction for each:
   ``alpha=0.05`` one in twenty looks "significant" by luck alone. :func:`benjamini_hochberg`
   controls the *false discovery rate* — the expected share of claimed discoveries that are wrong.
 
-:func:`effective_sample_size` addresses a fourth, subtler failure that is specific to forward-return
-studies: when each observation looks ``horizon`` bars into the future but events occur closer
-together than that, consecutive observations share most of their price path and are **not
-independent**. Treating them as independent inflates ``n`` and shrinks every interval, which is how
-a backtest can count one market episode hundreds of times and report false precision.
+:func:`autocorrelation_effective_size` addresses a fourth, subtler failure: when consecutive
+observations are serially correlated they are **not independent**. Treating them as independent
+inflates ``n`` and shrinks every interval, which is how a backtest can count one market episode
+hundreds of times and report false precision.
+
+**Hand-written on purpose (checked against statsmodels, 2026-11-15).** ``statsmodels`` has the
+same Wilson, Newcombe and Benjamini-Hochberg formulas (``proportion_confint``,
+``confint_proportions_2indep``, ``multipletests``). Side by side they agree to about 4e-16 but
+not bit for bit: the library evaluates the same arithmetic in a different order (for example
+``p / (i / m)`` where this module computes ``p * m / i``). These numbers are stored in run
+artefacts and compared with thresholds, so the bits are kept; swapping is an owner decision.
+``tests/unit/test_stats_library_parity.py`` freezes this module's values and holds the library
+to within 1e-15 of them.
 
 Pure ``numpy``/``scipy``; fails loud (``DataError``) on degenerate input.
 """
@@ -203,48 +211,10 @@ def benjamini_hochberg(pvalues: FloatSeq, *, alpha: float = 0.05) -> MultipleTes
     )
 
 
-def effective_sample_size(n_events: int, *, span_bars: int, horizon_bars: int) -> float:
-    """Independent-observation count when forward windows of ``horizon_bars`` overlap.
-
-    Each event is scored over the following ``horizon_bars``. If events recur faster than that,
-    neighbouring observations read largely the *same* price path, so they carry far less than one
-    independent observation each.
-
-    With events spread across ``span_bars``, mean spacing is ``span/n`` and the overlap factor is
-    ``horizon / spacing``. Dividing the event count by that factor gives ``span / horizon`` — which
-    is exactly the number of non-overlapping windows the sample can hold. The two derivations
-    coincide algebraically, which is a useful sanity check: no sampling scheme extracts more
-    independent 90-day observations than the record contains 90-day blocks.
-
-    Returns a float (an effective count need not be an integer), never above ``n_events``.
-    """
-    if n_events < 0:
-        raise DataError(f"effective_sample_size needs n_events >= 0, got {n_events}")
-    if span_bars <= 0:
-        raise DataError(f"effective_sample_size needs span_bars > 0, got {span_bars}")
-    if horizon_bars <= 0:
-        raise DataError(f"effective_sample_size needs horizon_bars > 0, got {horizon_bars}")
-    if n_events == 0:
-        return 0.0
-    return float(min(float(n_events), span_bars / horizon_bars))
-
-
-def overlap_factor(n_events: int, *, span_bars: int, horizon_bars: int) -> float:
-    """How many times the average observation is double-counted (``>= 1``; 1 means no overlap).
-
-    Reported alongside every sample size so an inflated ``n`` is visible rather than implicit.
-    """
-    n_eff = effective_sample_size(n_events, span_bars=span_bars, horizon_bars=horizon_bars)
-    if n_eff <= 0.0:
-        return 1.0
-    return max(1.0, n_events / n_eff)
-
-
 def autocorrelation_effective_size(series: FloatSeq, *, max_lag: int | None = None) -> float:
     """Effective sample size of a serially-correlated series, ``n / (1 + 2*sum rho_k)``.
 
-    The companion to :func:`effective_sample_size` for the case where dependence is not induced by a
-    known window width but is estimated from the data itself. Summation stops at the first negative
+    Dependence is estimated from the data itself. Summation stops at the first negative
     autocorrelation (the standard initial-positive-sequence truncation), which keeps the estimate
     stable when higher lags are pure noise.
     """

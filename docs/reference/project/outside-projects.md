@@ -68,6 +68,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | ruptures | Finds dates where behaviour changed | For `alpha-validation` | Approved, not yet added | New ability; needs only numpy and SciPy |
 | DuckDB | Asks one question across many stored files | For `alpha-cli`, in memory only | Approved, not yet added | A query tool, never the store |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
+| STUMPY | Finds chart stretches that look like an example | To be chosen | Approved, not yet added | Fixed, declared threshold only; see notes |
 | skfolio | Sizes a basket of positions | — | Later | When baskets need real sizing; heavy |
 | alphalens-reloaded | Report pages for mined factors | — (a worker, if adopted) | Later | Leans on pandas; not for the main install |
 | edgartools | Company figures from official filings | — | Later | Needs the owner's contact email; filing dates to check |
@@ -80,6 +81,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | inspect-ai | Scripted checks of an AI's whole journey | — | Later | Not yet studied in depth |
 | apprise | Sends alerts | — | Later | Trading-phase work; not yet studied in depth |
 | Machine Learning for Trading (book code) | A map of the ideas on ALPHA's checklist | — | Reference only | Notebooks for a book, not a library |
+| open-code-review (Alibaba) | A second reader of code changes | — | Reference only | Trial found nothing ALPHA's reviewers missed; see notes |
 | OpenBB | Ideas for a data-provider layer | — | Reference only | Dozens of packages; ADR-0011 decided this |
 | TradingAgents, FinGPT, FinRobot, TensorTrade | Examples of AI trading agents | — | Reference only | Promise results; short tests; no trading authority |
 | TimesFM, Chronos | General forecasting models | — | Reference only | A possible comparison for Kronos, later |
@@ -101,6 +103,19 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
 | mlfinlab | Methods from a well-known textbook | — | Refused | Reported as no longer open source |
+
+## Notes on single rows
+
+- **STUMPY** is a matrix-profile library: it compares every stretch of a price series with an
+  example and scores how alike they are. Its default cut-off for a match is worked out from the
+  whole series, so it uses later data. The adapter must take a fixed threshold stated before the
+  search and must never fall back to the default.
+- **open-code-review** was tried on two ALPHA branches. In the only mode that does not send code
+  to a model provider it mostly filters the list of changed files and attaches a checklist per
+  folder. Against the same branches it found 2 of the 10 and 2 of the 7 defects ALPHA's own
+  reviewers found, and nothing they missed. Its launcher updates itself silently unless that is
+  switched off, which breaks rule 4. Worth borrowing as ideas: checklists aimed at a path, and a
+  required list showing every file was covered. Revisit when its higher-recall mode ships.
 
 ## Changing this file
 

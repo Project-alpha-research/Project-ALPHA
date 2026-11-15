@@ -56,13 +56,17 @@
     "Bash(uv run alpha research approve*)",
     "Bash(uv run alpha research decide*)",
     "Bash(uv run alpha research reject*)",
+    "Edit(./tests/holdout/**)",
+    "Edit(tests/holdout/**)",
+    "Read(./tests/holdout/**)",
     "Read(.env)",
     "Read(.env.*)",
     "Read(tests/holdout/**)",
-    "Edit(tests/holdout/**)",
+    "Write(./tests/holdout/**)",
     "Write(tests/holdout/**)"
   ],
   "hook_events": [
+    "PostToolUse",
     "PreToolUse",
     "SessionStart"
   ],

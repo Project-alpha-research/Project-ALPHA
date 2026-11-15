@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_runtime.py
   - apps/alpha-cli/src/alpha_cli/research_d1.py
   - apps/alpha-cli/src/alpha_cli/research_analysis_plan.py
-verified: bdd1a2a989f8
+verified: 657202b2b4e31cef
 ---
 
 # Stage 03 — screen: D0 pilot, then D1 discovery

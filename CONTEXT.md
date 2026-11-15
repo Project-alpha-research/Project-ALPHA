@@ -4,7 +4,7 @@ sources:
   - packages/*/pyproject.toml
   - apps/*/pyproject.toml
   - workers/*/pyproject.toml
-verified: aa600e57932d
+verified: 8b7f5a348a98dc22
 ---
 
 # Project ALPHA — where to start
@@ -66,7 +66,8 @@ When a fact changes, update its one home and link to it from elsewhere; never co
 
 - `uv run python scripts/fs.py orient` lists the areas and their module counts.
 - `uv run python scripts/fs.py search "<words>"` finds ranked excerpts of the documentation.
-- `uv run python scripts/fs.py stale` lists documents whose sources changed since they were verified.
+- `uv run python scripts/fs.py stale` lists documents whose sources changed since they were verified;
+  `fs.py owners <path>` names the documents that describe a file and `fs.py verify <document>` re-stamps one.
 
 ## How to change it
 

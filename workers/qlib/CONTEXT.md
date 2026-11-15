@@ -4,7 +4,7 @@ sources:
   - workers/qlib/src/**
   - workers/qlib/pyproject.toml
   - workers/qlib/uv.lock
-verified: 3f2e49b56507
+verified: 7b9d7514e67f585b
 ---
 
 # Qlib worker workspace

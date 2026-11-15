@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3a0098cd96e3
+verified: 7d0ef02edf4c4b44
 ---
 
 # Worker invariants
@@ -126,14 +126,16 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   dollar budgets (monthly dollars capped at 50, not raisable) are checked before every attempt and fail closed. There is
   no automatic switch between routes, and the call log holds hashes and lengths, not text. The fixture loops still clear
   all model settings. `tests/unit/test_rdagent_model_gateway.py`.
-- ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md)): the one model-connected
-  real-data route, started by `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs
-  unmodified; only the classes named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`), and they
-  import RD-Agent and pandas, never an ALPHA package: the evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess
-  in ALPHA's environment. The loop is never given data on or after 2024-01-01; every factor goes to the append-only
-  cross-run trial ledger (a repeat by code hash is not new evidence); `decision` is ALPHA's rule, never the model's;
-  every record is `exploratory, not admitted, not yet confirmed` with all authority flags false and the survivorship
-  disclosure. Its runtime is built only by `--with-factor-runtime` from `factor-requirements.lock` and recorded by
+- ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
+  [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
+  `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
+  named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`), and they import RD-Agent and pandas,
+  never an ALPHA package: the evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment.
+  The loop is never given data on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger
+  (a repeat by code hash is not new evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or
+  monthly pass is a candidate (a daily-only pass is `FAST_ONLY`); every record is
+  `exploratory, not admitted, not yet confirmed` with all authority flags false and the survivorship disclosure.
+  Its runtime is built only by `--with-factor-runtime` from `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
-verified: 082b8f476534
+verified: e3b0c44298fc1c14
 ---
 
 # Strategies and signals

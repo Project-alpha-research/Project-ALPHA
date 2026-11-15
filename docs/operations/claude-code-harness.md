@@ -44,18 +44,20 @@ to load at launch (Claude Code 2.1.322), which would put every workspace file in
 
 ## Thin Claude adapter
 
-`scripts/claude_hooks.py` is stdlib-only and has precisely four entrypoints:
+`scripts/claude_hooks.py` is stdlib-only and has precisely five entrypoints:
 
 | Event | Entrypoint | Behavior |
 |---|---|---|
 | SessionStart | `session-start` | Bounded pointers to CLAUDE.md, the root CONTEXT.md, the delivery-pipeline stage commands, `scripts/fs.py orient|search` and the local check. No scanning or telemetry. |
 | PreToolUse: Read/Edit/Write/MultiEdit | `pre-file-guard` | Denies hidden-holdout paths, including resolved symlinks and nested edit paths. |
 | PreToolUse: alpha MCP | `pre-mcp-guard` | Retains denial of owner research decisions, overrides and holdout reveal. |
+| PostToolUse: Edit/Write/MultiEdit | `post-edit-documents` | Names the living documents that describe the edited file and the `fs.py verify` command. Advisory: silent when none does, never blocks or fails an edit. |
 | PreToolUse: Bash/WebFetch/MCP | `pre-owner-action-guard` | Denies tool input naming owner-action routes or owner-auth enrollment/recovery, including decoded references. |
 
 The adapter no longer requires acknowledgments before source edits, checks Stop
 or task/subagent completion, runs prompt judges, reinjects per-turn prose, or writes session/audit
-telemetry. It does not lint each edit or infer shell mutations. The owner-action guard scans
+telemetry. It does not lint each edit or infer shell mutations; the document reminder only looks
+up `sources` lists, and the enforcement is `fs.py stale --strict` in the check and in CI. The owner-action guard scans
 Bash/WebFetch/MCP tool inputs for the existing denied routes and credential ceremonies; it is not
 a shell parser. CI on the pull request owns engineering verification.
 

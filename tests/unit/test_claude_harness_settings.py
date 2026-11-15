@@ -22,7 +22,7 @@ def _settings() -> dict[str, Any]:
 
 def test_only_orientation_and_safety_hooks_are_wired() -> None:
     settings = _settings()
-    assert set(settings["hooks"]) == {"PreToolUse", "SessionStart"}
+    assert set(settings["hooks"]) == {"PreToolUse", "PostToolUse", "SessionStart"}
     wired = {
         match.group(1)
         for groups in settings["hooks"].values()
@@ -31,7 +31,13 @@ def test_only_orientation_and_safety_hooks_are_wired() -> None:
         if (match := re.search(r'python3 "\$h" ([a-z-]+)', hook["command"]))
     }
     assert wired == set(claude_hooks._HOOKS) == set(gate.HOOK_NAMES)
-    assert wired == {"pre-file-guard", "pre-mcp-guard", "pre-owner-action-guard", "session-start"}
+    assert wired == {
+        "pre-file-guard",
+        "pre-mcp-guard",
+        "pre-owner-action-guard",
+        "session-start",
+        "post-edit-documents",
+    }
     assert all(
         hook["type"] == "command"
         for groups in settings["hooks"].values()
@@ -51,6 +57,14 @@ def test_safety_matchers_cover_file_tools_alpha_mcp_and_owner_action_routes() ->
         for hook in group["hooks"]:
             assert "exit 2" in hook["command"], "missing safety adapter must fail closed"
             assert hook["timeout"] <= 15
+
+
+def test_document_reminder_runs_after_edits_and_can_never_block_one() -> None:
+    [group] = _settings()["hooks"]["PostToolUse"]
+    assert group["matcher"] == "Edit|Write|MultiEdit"
+    [hook] = group["hooks"]
+    assert "post-edit-documents" in hook["command"]
+    assert "exit 2" not in hook["command"] and hook["timeout"] <= 15
 
 
 @pytest.mark.parametrize("tool", ["Read", "Edit", "Write"])

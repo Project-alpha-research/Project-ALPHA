@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 3a0098cd96e3
+verified: b00a83e77b8b8f36
 ---
 
 # RD-Agent
@@ -48,7 +48,10 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
 - RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
-  from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
+  from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)). Every factor is
+  judged at daily, weekly and monthly holding, and only a weekly or monthly pass is a candidate,
+  because the owner trades swing, never high frequency
+  ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
 - Later: RD-Agent drives the Qlib worker, and composes studies across all research families.
 - The plain-English walk-through is [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
 
@@ -76,7 +79,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   [candidate to research case](../../../roadmap/backlog/rdagent-candidate-to-research-case.md),
   [gate coverage](../../../roadmap/backlog/gate-coverage-rdagent.md).
 - Decision records: [ADR-0044](../../../adr/0044-rdagent-model-gateway.md) (how it reaches its
-  models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors).
+  models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors),
+  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
 

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: b66b5c3a8bd5
+verified: f788fdf96ccee8d6
 ---
 
 # Command line

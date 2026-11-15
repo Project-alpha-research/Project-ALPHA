@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 3a0098cd96e3
+verified: 1d883280
 ---
 
 # RD-Agent
@@ -49,6 +49,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
+  Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
+  makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
 - Later: RD-Agent drives the Qlib worker, and composes studies across all research families.
 - The plain-English walk-through is [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
 
@@ -79,6 +81,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
+- Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 
 ## Decisions and open questions
 

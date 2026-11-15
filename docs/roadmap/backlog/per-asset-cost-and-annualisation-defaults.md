@@ -8,8 +8,8 @@
 Found on 2026-11-15. `alpha backtest run` uses the same defaults for every asset class: fee 1 bp
 and slippage 2 bp per side. That is near a commission-free US broker for liquid ETFs, but Binance
 spot taker fees are about 10 bp. Daily crypto runs also annualise with 252 periods by default,
-although crypto trades 365 days a year (intraday runs infer bars per year from their timestamps).
-A run made with defaults is therefore optimistic for crypto, and its Sharpe is scaled as if it
+although crypto trades 365 days a year (intraday runs take bars per year from the bar size and
+session: [backtest invariants](../../reference/invariants/backtest.md)). A run made with defaults is therefore optimistic for crypto, and its Sharpe is scaled as if it
 traded on stock days, with nothing on the run saying so.
 
 ## What "done" looks like

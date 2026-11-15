@@ -92,6 +92,8 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Check a coin's whole downloaded daily history in one step — medium (M)
 - ControlStore-owned durable acquisition journal — large (L)
 - Data-directory naming migration — medium (M)
+- Delivery tooling paper cuts found while building the swing-judge stack — small (S)
+- Exposure log: correct entries and match ideas by economic family — medium (M)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
 - Full Qlib model zoo and fold-by-fold counterfactual retraining (W11/W12) — very large (XL)
@@ -104,16 +106,19 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
 - Offline price import from a local file — medium (M)
+- One trial ledger, many code versions — medium (M)
 - Options expression research (W16) — large (L)
 - Overlap-corrected t statistic for the quick screen — small (S)
+- Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
+- RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
 
 ## Housekeeping
 
-- Backlog items: 24
+- Backlog items: 29
 - Staged refactors: 6
 
 ## Where things are

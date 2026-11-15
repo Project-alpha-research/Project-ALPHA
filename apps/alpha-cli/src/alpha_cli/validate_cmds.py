@@ -7,11 +7,14 @@ sheet under ``data_dir/runs/<run_id>/``.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _gauntlet, _runner, rules_cmds
+from alpha_cli._identity import RunIdentity
 from alpha_core import Bar, DataError
 from alpha_core.config import AlphaSettings
 from alpha_validation import render_tearsheet_html, report_to_manifest
@@ -183,7 +186,59 @@ def validate(
     except DataError as exc:  # no bars, unknown strategy/null-model, train < warmup floor, etc.
         raise typer.BadParameter(str(exc)) from exc
 
-    rdir = _artifacts.run_dir(settings.data_dir, run_id)
+    rdir, _ = write_validation_run(
+        settings.data_dir,
+        bars,
+        spec,
+        out,
+        identity,
+        as_of=as_of,
+        research_gate_override=research_gate_override,
+        forecast_meta=forecast_meta,
+        tier2_mode=tier2_mode,
+    )
+
+    status = "PASS" if out.report.passed else "FAIL"
+    sharpe = out.report.oos_metrics["sharpe"]
+    v = out.report.verdict
+    grade = (
+        f"Verdict {v.overall} "
+        f"(edge {v.edge}/robustness {v.robustness}/risk {v.risk}/sample {v.sample}), "
+        if v is not None
+        else ""
+    )
+    typer.echo(
+        f"validate {symbol} -> run {run_id}: {status} "
+        f"({grade}OOS Sharpe {sharpe:.3f}, "
+        f"null pct {'/'.join(f'{n.percentile:.2f}' for n in out.report.nulls)}); "
+        f"tear sheet at {rdir / 'tearsheet.html'}"
+    )
+    if forecast_meta is not None:
+        typer.echo(f"  kronos: cache {forecast_meta['cache_key']}, tier2 policy {tier2_mode}")
+        if forecast_meta["pretrain"]["overlap"]:
+            typer.secho(
+                "WARNING: the forecast windows overlap the assumed Kronos pretraining "
+                f"period (<= {forecast_meta['pretrain']['cutoff']}) — the verdict may "
+                "reflect memorization (ADR-0009)",
+                fg=typer.colors.YELLOW,
+            )
+
+
+def write_validation_run(
+    data_dir: Path,
+    bars: Sequence[Bar],
+    spec: _runner.RunSpec,
+    out: _gauntlet.GauntletOutput,
+    identity: RunIdentity,
+    *,
+    as_of: str | None = None,
+    research_gate_override: bool = False,
+    forecast_meta: dict[str, Any] | None = None,
+    tier2_mode: str = "replay",
+    extra_manifest: dict[str, Any] | None = None,
+) -> tuple[Path, dict[str, Any]]:
+    """Publish the common validation artifact contract, with the manifest always last."""
+    rdir = _artifacts.run_dir(data_dir, identity.run_id)
     equity = list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True))
     manifest = report_to_manifest(out.report)
     manifest["command"] = "validate"
@@ -202,6 +257,11 @@ def validate(
     manifest.update(identity.manifest_fields())
     if forecast_meta is not None:
         manifest["forecast"] = {**forecast_meta, "tier2_policy": tier2_mode}
+    if extra_manifest is not None:
+        manifest.update(extra_manifest)
+    if spec.sizing == "all_in":
+        manifest["metadata"]["sizing"] = "all_in"
+        manifest["metadata"].pop("target_vol", None)
     # raw three-tier null distributions BEFORE the manifest (manifest.json is the run-exists marker)
     _artifacts.write_nulls(
         rdir,
@@ -230,27 +290,4 @@ def validate(
     )
     _artifacts.write_manifest(rdir, manifest)
 
-    status = "PASS" if out.report.passed else "FAIL"
-    sharpe = out.report.oos_metrics["sharpe"]
-    v = out.report.verdict
-    grade = (
-        f"Verdict {v.overall} "
-        f"(edge {v.edge}/robustness {v.robustness}/risk {v.risk}/sample {v.sample}), "
-        if v is not None
-        else ""
-    )
-    typer.echo(
-        f"validate {symbol} -> run {run_id}: {status} "
-        f"({grade}OOS Sharpe {sharpe:.3f}, "
-        f"null pct {'/'.join(f'{n.percentile:.2f}' for n in out.report.nulls)}); "
-        f"tear sheet at {rdir / 'tearsheet.html'}"
-    )
-    if forecast_meta is not None:
-        typer.echo(f"  kronos: cache {forecast_meta['cache_key']}, tier2 policy {tier2_mode}")
-        if forecast_meta["pretrain"]["overlap"]:
-            typer.secho(
-                "WARNING: the forecast windows overlap the assumed Kronos pretraining "
-                f"period (<= {forecast_meta['pretrain']['cutoff']}) — the verdict may "
-                "reflect memorization (ADR-0009)",
-                fg=typer.colors.YELLOW,
-            )
+    return rdir, manifest

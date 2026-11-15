@@ -97,12 +97,6 @@ def _inside_git(path: Path) -> bool:
 def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Path]:
     if not 1 <= args.coder_max_loop <= 3:
         raise LaunchError("--coder-max-loop must be 1, 2 or 3")
-    if not args.no_memory:
-        args.memory_dir = args.memory_dir or args.trial_ledger.parent / "research-memory"
-        if not args.memory_dir.is_absolute():
-            raise LaunchError("--memory-dir must be an absolute path")
-        if _inside_git(args.memory_dir.resolve()):
-            raise LaunchError("--memory-dir must be outside every git work tree")
     if not 1 <= args.loop_n <= 3:
         raise LaunchError("--loop-n must be 1, 2 or 3")
     if not 1 <= args.run_max_calls <= MAX_CALLS:
@@ -130,6 +124,14 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
     for name in ("run_dir", "gateway_data_dir", "trial_ledger"):
         if _inside_git(getattr(args, name)):
             raise LaunchError(f"--{name.replace('_', '-')} must be outside every git work tree")
+    # Memory is checked after the trial ledger, whose folder gives its default location, so a
+    # relative --trial-ledger is reported as such rather than as a bad --memory-dir.
+    if not args.no_memory:
+        args.memory_dir = args.memory_dir or args.trial_ledger.parent / "research-memory"
+        if not args.memory_dir.is_absolute():
+            raise LaunchError("--memory-dir must be an absolute path")
+        if _inside_git(args.memory_dir.resolve()):
+            raise LaunchError("--memory-dir must be outside every git work tree")
     paths = {}
     for key in ("ALPHA_RDAGENT_SOURCE", "ALPHA_FACTOR_PYTHON"):
         value = environ.get(key, "")

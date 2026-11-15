@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: 875057cef16d
+verified: 71fe0c60822d
 ---
 
 # Data layer

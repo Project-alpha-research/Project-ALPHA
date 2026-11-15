@@ -5,7 +5,7 @@ sources:
   - packages/alpha-study/CONTEXT.md
   - research/CONTEXT.md
   - docs/reference/invariants/cli-research.md
-verified: a79d832d
+verified: 0c8b05351952
 ---
 
 # Research cases and owner approval
@@ -48,8 +48,9 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - Code: `packages/alpha-research/src/`, `packages/alpha-study/src/`; cases, decisions and the control
   store in `apps/alpha-cli/src/alpha_cli/` (`research_cmds.py`, `control_store.py`, `owner_auth.py`).
 - Tests: `tests/smoke/test_research_smoke.py`, and the research tests under `tests/unit/`.
-- How to run a case, stage by stage (idea, data, screen, confirm, validate, decide): the
-  [research pipeline](../../../../research/CONTEXT.md) and its [research method](../../research-method.md).
+- How to run a case, phase by phase: [research routing](../../../../research/CONTEXT.md#the-older-staged-lane)
+  and the [research method](../../research-method.md). New ideas go through the playbook instead
+  ([AI assistants](ai-assistants.md)).
 - How to change it: [packages/alpha-research/CONTEXT.md](../../../../packages/alpha-research/CONTEXT.md),
   [packages/alpha-study/CONTEXT.md](../../../../packages/alpha-study/CONTEXT.md).
 - Backlog: [D0 generalisation](../../../roadmap/backlog/d0-generalisation.md).

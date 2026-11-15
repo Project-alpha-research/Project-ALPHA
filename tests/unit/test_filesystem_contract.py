@@ -7,10 +7,12 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
 * Layer 1: the root ``CONTEXT.md`` routes every kind of task to a workspace.
 * Layer 2: every workspace (each project under ``packages/``, ``apps/``, ``workers/``,
   plus ``scripts/``, ``tests/``, ``docs/``, the delivery pipeline ``workflow/`` and the research
-  pipeline ``research/``) has a ``CONTEXT.md`` with the sections Purpose, Read first, How to
-  change it, Outputs. Its Read first table names exact files and sections. Each stage of either
-  pipeline, ``<pipeline>/stages/NN-name/``, has a ``CONTEXT.md`` with Purpose, Inputs, Read
-  first, Process, Outputs, Checkpoint, and the pipeline's ``CONTEXT.md`` links every stage.
+  route ``research/``) has a ``CONTEXT.md`` with the sections Purpose, Read first, How to
+  change it, Outputs. Its Read first table names exact files and sections. Each stage of the
+  delivery pipeline, ``workflow/stages/NN-name/``, has a ``CONTEXT.md`` with Purpose, Inputs,
+  Read first, Process, Outputs, Checkpoint, and the pipeline's ``CONTEXT.md`` links every stage.
+  Research is not staged: ``research/CONTEXT.md`` routes to the playbook, tool cards, skills and
+  lessons, which ``tests/unit/test_research_playbook.py`` checks against the program.
 * Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` exists only on a branch while its
   pull request is open, and holds only stage files and always its ``02-plan.md``.
 * Layer 3: reference documents under ``docs/reference/``: the rules (``invariants/``) and the
@@ -45,7 +47,7 @@ WORKSPACE_PARENTS = ("packages", "apps", "workers")
 EXTRA_WORKSPACES = ("scripts", "tests", "docs", "workflow", "research")
 REFERENCE_DIR = "docs/reference"
 REQUIRED_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
-PIPELINES = ("workflow", "research")  # each has <pipeline>/stages/NN-name/CONTEXT.md
+PIPELINES = ("workflow",)  # each has <pipeline>/stages/NN-name/CONTEXT.md; research is not staged
 STAGES = "stages"
 STAGE_SECTIONS = ("Purpose", "Inputs", "Read first", "Process", "Outputs", "Checkpoint")
 _STAGE_NAME = re.compile(r"^\d{2}-[a-z]+$")
@@ -421,7 +423,7 @@ def test_root_routes_to_every_workspace() -> None:
 
 
 # ---------------------------------------------------------------------------------------------
-# The pipelines (delivery and research): numbered stages, each routed from <pipeline>/CONTEXT.md
+# The staged pipeline (delivery): numbered stages, each routed from <pipeline>/CONTEXT.md
 
 
 @pytest.mark.parametrize("pipeline", PIPELINES)

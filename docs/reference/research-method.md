@@ -4,16 +4,17 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_intake.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
   - apps/alpha-cli/src/alpha_cli/research_gate_packet.py
-verified: f89aa1bb78af
+verified: 0c8b05351952
 ---
 
 # Research method
 
-How to work a research case: the words, limits and habits every stage uses. The stages that
-apply them are in [`research/CONTEXT.md`](../../research/CONTEXT.md); the rules that must never
-break are in [research integrity](invariants/research-integrity.md); the per-step method is the
-protocol file each stage names (`.agents/skills/alpha-research-protocols/`). Moved here from the
-`alpha-research-scientist` skill on 2026-11-14; the skill now points here.
+How to work a governed research case in the older staged lane: the words, limits and habits of
+its phases. New ideas do not start here: they go through
+[the research playbook](../../research/PLAYBOOK.md) and `alpha test`. The staged lane's phases
+and commands are listed in [`research/CONTEXT.md`](../../research/CONTEXT.md#the-older-staged-lane);
+the rules that must never break are in [research integrity](invariants/research-integrity.md);
+the per-step method is the protocol library (`.agents/skills/alpha-research-protocols/`).
 
 ## Phases and evidence zones
 

@@ -8,7 +8,7 @@ import os
 import urllib.error
 import urllib.request
 from collections.abc import Mapping
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, timezone
 from email.message import Message
 from http.client import HTTPMessage
 from pathlib import Path
@@ -27,8 +27,10 @@ from alpha_data.context.fred import (
     latest,
     load_series,
     parse_observations,
+    pull_series,
     store_series,
 )
+from alpha_data.context.views import SCHEMA, validate
 
 META = dict(
     title="Example",
@@ -227,7 +229,7 @@ def test_paging_and_request_contract(key: str) -> None:
             {"count": 4, "offset": 2, "observations": observations()[2:]},
         ]
     )
-    df, metadata = FredAdapter(transport=fake).fetch("X")
+    df, metadata = FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
     assert df.equals(frame()) and metadata == META
     queries = [parse_qs(urlsplit(c[0]).query) for c in fake.calls]
     assert [q.get("offset") for q in queries] == [None, ["0"], ["2"]]
@@ -239,7 +241,13 @@ def test_paging_and_request_contract(key: str) -> None:
     assert queries[1]["limit"] == ["100000"]
 
 
-def test_full_range_400_retries_five_year_windows_and_merges(key: str) -> None:
+@pytest.mark.parametrize(
+    ("as_of", "last_start"),
+    [(date(1998, 12, 31), "1995-01-01"), (date(2024, 4, 1), "2025-01-01")],
+)
+def test_full_range_400_retries_five_year_windows_and_merges(
+    key: str, as_of: date, last_start: str
+) -> None:
     calls: list[dict[str, str]] = []
 
     def transport(
@@ -256,10 +264,11 @@ def test_full_range_400_retries_five_year_windows_and_merges(key: str) -> None:
             body = {"count": 1, "offset": 0, "observations": [observation()]}
         return 200, {}, json.dumps(body).encode()
 
-    df, _ = FredAdapter(transport=transport).fetch("X")
+    df, _ = FredAdapter(transport=transport).fetch("X", as_of=as_of)
     assert df.height == 1
     assert calls[0]["realtime_start"] == "1776-07-04"
     assert calls[-1]["realtime_end"] == "9999-12-31"
+    assert calls[-1]["realtime_start"] == last_start
     assert calls[0]["realtime_end"] == "1919-12-31"
     assert len(calls) < 40  # bounded: one early window, then five-year windows from 1920
     for left, right in zip(calls, calls[1:], strict=False):
@@ -294,11 +303,55 @@ def test_series_without_vintage_history_is_known_the_day_after(key: str) -> None
             body = {"count": 2, "offset": 0, "observations": rows}
         return 200, {}, json.dumps(body).encode()
 
-    df, metadata = FredAdapter(transport=transport).fetch("X")
+    df, metadata = FredAdapter(transport=transport).fetch("X", as_of=NOW.date())
     assert metadata["point_in_time"] == "approximate"
     assert df["known_from"].to_list() == [date(2024, 3, 2), date(2024, 3, 5)]
     assert df["known_until"].to_list() == [None, None]
     assert df["value"].to_list() == [4.2, None]
+
+
+@pytest.mark.parametrize(
+    ("as_of", "last_start", "window_count"),
+    [
+        (date(1800, 1, 1), date(1920, 1, 1), 2),
+        (date(1919, 12, 31), date(1920, 1, 1), 2),
+        (date(1920, 1, 1), date(1920, 1, 1), 2),
+        (date(2026, 11, 15), date(2025, 1, 1), 23),
+        (date(9999, 12, 31), date(9995, 1, 1), 1617),
+    ],
+)
+def test_retry_windows_cover_full_range_at_date_extremes(
+    key: str, as_of: date, last_start: date, window_count: int
+) -> None:
+    windows: list[tuple[date, date]] = []
+
+    def transport(
+        url: str, headers: Mapping[str, str], timeout: float
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        query = parse_qs(urlsplit(url).query)
+        if urlsplit(url).path.endswith("/series"):
+            body: dict[str, Any] = {"seriess": [{"id": "X", **META}]}
+        else:
+            start = date.fromisoformat(query["realtime_start"][0])
+            end = date.fromisoformat(query["realtime_end"][0])
+            if (start, end) == (date(1776, 7, 4), date.max):
+                return 400, {}, b'{"error_message":"too many vintages"}'
+            windows.append((start, end))
+            body = {"count": 1, "offset": 0, "observations": [observation()]}
+        return 200, {}, json.dumps(body).encode()
+
+    df, metadata = FredAdapter(transport=transport).fetch("X", as_of=as_of)
+    assert df.equals(parse_observations("X", [observation()]))
+    assert metadata == META
+    assert windows[0] == (date(1776, 7, 4), date(1919, 12, 31))
+    assert windows[-1] == (last_start, date.max)
+    assert len(windows) == window_count
+    for start, end in windows:
+        assert start <= end
+    for (_, previous_end), (start, _) in zip(windows, windows[1:], strict=False):
+        assert previous_end + timedelta(days=1) == start
+    for start, end in windows[1:-1]:
+        assert end == date(start.year + 4, 12, 31)
 
 
 @pytest.mark.parametrize("status", [200, 301, 400, 403, 429, 500])
@@ -310,7 +363,7 @@ def test_provider_errors_never_expose_key_or_url(
         [(status, {}, json.dumps({"error_message": f"refused {url} {key}"}).encode())]
     )
     with pytest.raises(DataError, match="refused") as exc:
-        FredAdapter(transport=fake).fetch("X")
+        FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
     assert key not in str(exc.value) + caplog.text
     assert "https://" not in str(exc.value) + caplog.text
 
@@ -319,12 +372,14 @@ def test_transport_error_and_missing_key(
     monkeypatch: pytest.MonkeyPatch, key: str, caplog: pytest.LogCaptureFixture
 ) -> None:
     with pytest.raises(DataError, match="transport") as exc:
-        FredAdapter(transport=FakeTransport([urllib.error.URLError(key)])).fetch("X")
+        FredAdapter(transport=FakeTransport([urllib.error.URLError(key)])).fetch(
+            "X", as_of=NOW.date()
+        )
     assert key not in str(exc.value) + caplog.text
     monkeypatch.delenv("FRED_API_KEY")
     fake = FakeTransport([])
     with pytest.raises(DataError, match="FRED_API_KEY"):
-        FredAdapter(transport=fake).fetch("X")
+        FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
     assert not fake.calls
 
 
@@ -340,7 +395,7 @@ def test_transport_error_and_missing_key(
 )
 def test_bad_metadata_fails(key: str, response: Any) -> None:
     with pytest.raises(DataError):
-        FredAdapter(transport=FakeTransport([response])).fetch("X")
+        FredAdapter(transport=FakeTransport([response])).fetch("X", as_of=NOW.date())
 
 
 @pytest.mark.parametrize(
@@ -356,7 +411,7 @@ def test_bad_metadata_fails(key: str, response: Any) -> None:
 def test_bad_pagination_fails(key: str, response: Any) -> None:
     fake = FakeTransport([{"seriess": [{"id": "X", **META}]}, response])
     with pytest.raises(DataError):
-        FredAdapter(transport=fake).fetch("X")
+        FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
 
 
 @pytest.mark.parametrize(
@@ -435,13 +490,13 @@ def test_offset_requires_integer(key: str, offset: object) -> None:
         ]
     )
     with pytest.raises(DataError, match="pagination"):
-        FredAdapter(transport=fake).fetch("X")
+        FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
 
 
 def test_successful_credential_reflection_is_not_stored(key: str, tmp_path: Path) -> None:
     fake = FakeTransport([{"seriess": [{"id": "X", **META, "title": key}]}])
     with pytest.raises(DataError, match="credential"):
-        FredAdapter(transport=fake).fetch("X")
+        FredAdapter(transport=fake).fetch("X", as_of=NOW.date())
     assert not list(tmp_path.iterdir())
 
 
@@ -469,7 +524,7 @@ def test_urllib_transport_refuses_redirects_without_network(
 
     monkeypatch.setattr(urllib.request, "build_opener", build_opener)
     with pytest.raises(DataError, match="HTTP 302") as exc:
-        FredAdapter().fetch("X")
+        FredAdapter().fetch("X", as_of=NOW.date())
     assert key not in str(exc.value)
     assert (
         handlers[0].redirect_request(
@@ -529,6 +584,164 @@ def test_pull_reports_vintages_and_replaces_series(
         ]
     )
     monkeypatch.setattr(fred, "FredAdapter", lambda: FredAdapter(transport=fake))
-    report = fred.pull_series("X", data_dir=tmp_path)
+    report = fred.pull_series("X", data_dir=tmp_path, fetched_at=NOW)
     assert report["rows"] == 4 and report["vintages"] == 4
+    assert report["fetched_at"] == NOW.isoformat()
     assert load_series("X", data_dir=tmp_path).equals(frame())
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize(
+    "prior_end", [None, date(2024, 2, 10), date(2024, 2, 11), date(2024, 2, 12)]
+)
+def test_overlap_validation_with_multiple_groups(prior_end: date | None, reverse: bool) -> None:
+    # Single open-ended rows are first rows, not null-ended predecessors. Both group keys matter.
+    rows = [
+        ("A", date(2024, 1, 1), 1.0, date(2024, 2, 1), None),
+        ("X", date(2024, 1, 1), 2.0, date(2024, 2, 1), prior_end),
+        ("X", date(2024, 1, 1), 3.0, date(2024, 2, 11), None),
+        ("X", date(2024, 2, 1), 4.0, date(2024, 2, 1), None),
+    ]
+    df = pl.DataFrame(rows[::-1] if reverse else rows, schema=SCHEMA, orient="row")
+    if prior_end is None or prior_end >= date(2024, 2, 11):
+        with pytest.raises(DataError, match="overlapping"):
+            validate(df)
+    else:
+        validate(df)
+        assert as_known(df, as_of=date(2024, 2, 11))["value"].to_list() == [1.0, 3.0, 4.0]
+
+
+def test_unsorted_gap_and_group_first_rows() -> None:
+    df = expiry_frame().reverse()
+    validate(df)
+    assert as_known(df, as_of=date(2024, 2, 25)).is_empty()
+    assert as_known(df, as_of=date(2024, 3, 5))["value"].to_list() == [3.0]
+    assert as_known(df, as_of=date(2024, 3, 6)).is_empty()
+    singles = pl.concat(
+        [
+            parse_observations("A", [observation()]),
+            parse_observations("X", [observation(), observation(day="2024-02-01")]),
+        ]
+    ).reverse()
+    validate(singles)
+    assert as_known(singles, as_of=NOW.date()).height == 3
+
+
+@pytest.mark.parametrize(
+    "intervals",
+    [
+        [],
+        [(1, None)],
+        [(1, 1)],
+        [(1, 1), (2, None)],
+        [(1, 1), (3, 4)],
+        [(1, 2), (2, 3)],
+        [(1, 3), (2, 4)],
+        [(1, None), (2, 3)],
+        [(1, 1), (2, None), (3, 4)],
+        [(1, 1), (2, 2), (4, None)],
+    ],
+)
+def test_overlap_validation_matches_inclusive_interval_semantics(
+    intervals: list[tuple[int, int | None]],
+) -> None:
+    # Independent all-pairs contract: two inclusive periods must never share a day.
+    overlaps = any(
+        (left_end is None or right_start <= left_end)
+        and (right_end is None or left_start <= right_end)
+        for index, (left_start, left_end) in enumerate(intervals)
+        for right_start, right_end in intervals[index + 1 :]
+    )
+    rows = [
+        (
+            "X",
+            date(2024, 1, 1),
+            float(start),
+            date(2024, 2, start),
+            None if end is None else date(2024, 2, end),
+        )
+        for start, end in intervals
+    ]
+    for ordered_rows in (rows, rows[::-1]):
+        df = pl.DataFrame(ordered_rows, schema=SCHEMA, orient="row")
+        if overlaps:
+            with pytest.raises(DataError, match="overlapping"):
+                validate(df)
+        else:
+            validate(df)
+            for day in range(1, 6):
+                expected = [
+                    float(start)
+                    for start, end in intervals
+                    if start <= day and (end is None or day <= end)
+                ]
+                assert as_known(df, as_of=date(2024, 2, day))["value"].to_list() == expected
+
+
+@pytest.mark.parametrize(
+    "fetched_at",
+    [
+        None,
+        "2024-04-01T00:00:00+00:00",
+        date(2024, 4, 1),
+        datetime(2024, 4, 1),
+        datetime(2024, 4, 1, tzinfo=timezone(timedelta(hours=1))),
+    ],
+)
+@pytest.mark.parametrize("operation", ["pull", "store"])
+def test_invalid_fetch_timestamp_before_transport_or_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fetched_at: Any, operation: str
+) -> None:
+    import alpha_data.context.fred as fred
+
+    fake = FakeTransport([])
+    monkeypatch.setattr(fred, "FredAdapter", lambda: FredAdapter(transport=fake))
+    with pytest.raises(DataError, match="fetched_at must be aware UTC"):
+        if operation == "pull":
+            fred.pull_series("X", data_dir=tmp_path, fetched_at=fetched_at)
+        else:
+            store_series("X", frame(), META, data_dir=tmp_path, fetched_at=fetched_at)
+    assert not fake.calls
+    assert not list(tmp_path.iterdir())
+
+
+def test_storage_requires_explicit_timestamp(tmp_path: Path) -> None:
+    with pytest.raises(TypeError, match="fetched_at"):
+        store_series("X", frame(), META, data_dir=tmp_path)  # type: ignore[call-arg]
+    assert not list(tmp_path.iterdir())
+
+
+def test_pull_requires_explicit_timestamp_before_transport(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import alpha_data.context.fred as fred
+
+    fake = FakeTransport([])
+    monkeypatch.setattr(fred, "FredAdapter", lambda: FredAdapter(transport=fake))
+    with pytest.raises(TypeError, match="fetched_at"):
+        fred.pull_series("X", data_dir=tmp_path)  # type: ignore[call-arg]
+    assert not fake.calls
+    assert not list(tmp_path.iterdir())
+
+
+def test_pull_passes_timestamp_date_to_fetch_and_preserves_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[date] = []
+    fetched_at = datetime(1998, 12, 31, 23, 59, 59, 123456, tzinfo=UTC)
+
+    def fetch(
+        self: FredAdapter, series_id: str, *, as_of: date
+    ) -> tuple[pl.DataFrame, dict[str, str]]:
+        assert series_id == "X"
+        calls.append(as_of)
+        return frame(), META
+
+    monkeypatch.setattr(FredAdapter, "fetch", fetch)
+    first = pull_series("X", data_dir=tmp_path, fetched_at=fetched_at)
+    second = pull_series("X", data_dir=tmp_path, fetched_at=fetched_at)
+    assert calls == [date(1998, 12, 31), date(1998, 12, 31)]
+    assert first == second
+    stored = json.loads((tmp_path / "context/fred/X.json").read_text())
+    assert stored == {key: value for key, value in first.items() if key != "vintages"}
+    assert stored["fetched_at"] == fetched_at.isoformat()

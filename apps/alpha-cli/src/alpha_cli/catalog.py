@@ -88,6 +88,8 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
         )
     if root == "crypto-data":
         return "safe" if len(argv) > 1 and argv[1] in _CRYPTO_DATA_SAFE else "owner_only"
+    if root == "context":
+        return "safe" if len(argv) > 1 and argv[1] in {"list", "show", "window"} else "owner_only"
     if root == "strategy-candidate":
         # `run` publishes immutable run artifacts, so it needs a server-verified run context.
         return "empirical" if len(argv) > 1 and argv[1] == "run" else "safe"

@@ -125,6 +125,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "assistant",
             "backtest",
             "chart",
+            "context",
             "crypto-data",
             "data",
             "evidence",

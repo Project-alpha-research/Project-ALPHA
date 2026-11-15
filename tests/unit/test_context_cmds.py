@@ -3,7 +3,7 @@
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from typer.testing import CliRunner
@@ -83,14 +83,25 @@ def test_show_list_window_json(stored: Path) -> None:
     ]
 
 
-def test_explicit_views_filters_and_today_default(stored: Path) -> None:
+def test_explicit_views_filters_and_today_default(
+    stored: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import alpha_cli.context_cmds as commands
+
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz: Any = None) -> Self:
+            assert tz is UTC
+            return cls(2024, 4, 1, tzinfo=UTC)
+
+    monkeypatch.setattr(commands, "datetime", FixedDatetime)
     for view, value in [("first", 1.0), ("latest", 9.0)]:
         result = invoke("show", "X", "--view", view, "--end", "2024-01-31", "--json")
         assert result["view"] == {"first": "first_release", "latest": "latest"}[view]
         assert len(result["rows"]) == 1 and result["rows"][0]["value"] == value
     result = invoke("show", "X", "--start", "2024-02-01", "--json")
     assert result["view"] == "as_known" and len(result["rows"]) == 2
-    assert result["as_of"] == datetime.now(UTC).date().isoformat()
+    assert result["as_of"] == "2024-04-01"
     assert "latest" in CliRunner().invoke(context_app, ["show", "X", "--view", "latest"]).stdout
 
 
@@ -306,7 +317,16 @@ def test_window_mixed_frequencies_own_cutoffs_and_extrema(
 def test_pull_partial_and_total_failure(stored: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import alpha_cli.context_cmds as commands
 
-    def pull(series_id: str, *, data_dir: Path) -> dict[str, object]:
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz: Any = None) -> Self:
+            assert tz is UTC
+            return cls(2024, 4, 1, tzinfo=UTC)
+
+    monkeypatch.setattr(commands, "datetime", FixedDatetime)
+
+    def pull(series_id: str, *, data_dir: Path, fetched_at: datetime) -> dict[str, object]:
+        assert fetched_at == datetime(2024, 4, 1, tzinfo=UTC)
         if series_id == "BAD":
             raise DataError("provider refused")
         return dict(rows=4, first_obs="2024-01-01", last_obs="2024-03-01", vintages=4)

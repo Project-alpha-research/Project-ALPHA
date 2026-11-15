@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: 3d05e549f8ef
+verified: 875057cef16d
 ---
 
 # Data layer
@@ -60,6 +60,14 @@ remains null without falling back to an earlier value.
 The key comes only from `FRED_API_KEY`; provider copyright restrictions are recorded in provenance.
 Live API behavior remains unconfirmed. HTTP 400 on the full real-time range retries five-year
 windows over that same range; identical vintage rows merge, conflicting or overlapping rows fail.
+Acquisition and storage require an explicit aware-UTC `fetched_at`, validated before transport or
+writes. The CLI supplies the clock; its UTC date also sets the bounded retry window schedule.
+The pre-1920 window is followed by five-year buckets and a final bucket ending at 9999-12-31,
+including for cutoffs before 1919 or in year 9999, without constructing year 10000.
+Overlap validation pairs adjacent sorted rows and compares only matching series/observation
+groups: an open-ended predecessor or a shared boundary is rejected, while gaps remain valid.
+The generic launcher classifies only `context list`, `show` and `window` as safe local reads;
+bare, unknown and `pull` commands remain owner-only. The group appears under the Data menu.
 
 ### Real data on the Dell
 

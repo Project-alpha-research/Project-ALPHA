@@ -63,7 +63,7 @@ def pull(
     results, errors = [], []
     for series_id in dict.fromkeys(series or DEFAULT_SERIES):
         try:
-            result = pull_series(series_id, data_dir=data_dir)
+            result = pull_series(series_id, data_dir=data_dir, fetched_at=datetime.now(UTC))
             results.append(
                 {
                     "series_id": series_id,

@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 4c249969061e
+verified: c00d2da9ec85
 ---
 
 # Data layer invariants
@@ -144,6 +144,18 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   ([ADR-0018 note](../../adr/0018-quantpad-external-research-data-boundary.md#owner-supersession--2026-11-14)).
   Datasets registered earlier from a QuantPad receipt stay readable and research-only, and the web app
   still files old QuantPad runs under equities (`alpha_web._runs._EQUITY_SOURCES`).
+
+## Macro context (FRED)
+
+- `context/` keeps FRED vintages under `data_dir/context/fred/`, apart from the bar store, snapshots and
+  backtest inputs; only `alpha_cli.context_cmds` reads it. What it is for and the acquisition details:
+  [data layer](../project/components/data-layer.md).
+- The default read is `as_known`: a vintage counts at a cutoff when `known_from <= cutoff` and `known_until`
+  is null or `>= cutoff`. First-release and latest views are explicit and named. Enforced by
+  `tests/unit/test_context_fred.py` (future poison with a must-fail leaky control, plus expiry poison).
+- Invalid schema, null identity dates, non-finite values, reversed, duplicate or overlapping vintage
+  periods, a naive or non-UTC `fetched_at`, and a parquet whose hash or row count disagrees with its
+  provenance raise `DataError`. A missing value stays null.
 
 ## Crypto storage
 

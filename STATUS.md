@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 20 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 12 working, 21 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -39,6 +39,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Paper trading: practice trading with no real money (IBKR Paper)** — no end-to-end test; parts tested with stand-ins. Needs: an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks.
 - **Corrected Alpha158 price features** — no ML run with version 2; superseded by version 3 (kept for stored results).
 - **AI stock research loop (RD-Agent, W02)** — RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved. Needs: an alpha command that starts the model-connected factor loop under the native job supervisor (backlog: rdagent-factor-loop-supervision); an end-to-end smoke check of the factor loop through the installed programs with a scripted model route. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
+- **RD-Agent's run viewer (RD-Agent)** — no end-to-end smoke check; not linked from the Workstation yet. More: [workers/rdagent/README.md](workers/rdagent/README.md).
 - **"Native job result" screen (W04, W18)** — its smoke check now passes here: alpha and the web app read a made-up stock job's result; the browser lane fails here only because the web front end's test packages are not installed; no real job exists yet. Needs: a real (not made-up) stock RD-Agent job, which needs an AI model connection. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **AI-run daily trading-rule study (Packet 3, W08)** — with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired. Needs: the Dell's storage settings, created by you (docs/operations/storage-settings.md; 10 GB reserve per ADR-0043); real Binance daily bars admitted into that storage. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md). More: [docs/operations/storage-settings.md](docs/operations/storage-settings.md).
 - **Running ALPHA on your Mac with real data providers** — one final review and a run on your Mac. Needs: your Mac; access to a real data provider (blocked since 31 August).

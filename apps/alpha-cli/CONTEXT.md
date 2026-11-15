@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 5e2c9dc838af0493
+verified: 68b26602e879d10e
 ---
 
 # alpha-cli workspace
@@ -74,7 +74,7 @@ do not add a private copy.
 
 ## Outputs
 
-- Tests for the changed sub-area (above); a bias guard for any new data read; an integration test
-  through the real command for any new command.
-- The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file; regenerated
-  `docs/reference/commands.md` when commands change.
+- Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
+- The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context`:
+  [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));
+  regenerated `docs/reference/commands.md` when commands change.

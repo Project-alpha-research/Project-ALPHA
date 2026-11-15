@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 1d883280
+verified: a5bab0ed0c10
 ---
 
 # RD-Agent
@@ -64,7 +64,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 ## Where it lives
 
 - **Workspaces:** `workers/rdagent`
-- **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`
+- **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`,
+  `rdagent-run-viewer`
 - Code: [`workers/rdagent/`](../../../../workers/rdagent/README.md) (the model gateway is
   `workers/rdagent/model_gateway.py`); the job supervisor in
   `apps/alpha-cli/src/alpha_cli/native_supervisor.py`. Setup: `scripts/setup_rdagent.sh`.

@@ -532,6 +532,34 @@ session keeps RD-Agent's pickled scenario description from its first run (the da
 the coder's attempt limit come from the current run). RD-Agent's own logs from a memory run are
 signed with the memory key, so its log viewer needs `ARTIFACT_SIGNING_KEY_PATH` pointed there.
 
+### RD-Agent's own log viewer (2026-11-15)
+
+RD-Agent's unmodified Streamlit log viewer shows each loop's hypothesis, the generated code
+per evolve step, feedback, and ALPHA's numbers in RD-Agent's result fields. ALPHA has no
+information ratio, so that field is empty.
+
+```sh
+bash scripts/setup_rdagent.sh --with-ui
+# Set ALPHA_VIEWER_PYTHON and ALPHA_RDAGENT_SOURCE to the exports printed by setup.
+.venv/bin/python workers/rdagent/rdagent_viewer.py serve --run-dir /abs/runs/<date>-<slug>
+```
+
+Setup is needed once: the pinned Python 3.11 viewer runtime contains 191 packages, about
+1.1 GB. The launcher verifies its recorded profile before starting. Open
+http://127.0.0.1:19899; it listens on 127.0.0.1 only and stays in the foreground until Ctrl-C.
+Use `--port` to choose another port if that one is busy.
+
+Repeat `--run-dir` to view several runs. Each must be absolute, outside git and contain
+`work/log/`. The launcher creates symlinks in `rdagent-viewer-links/` beside the first run
+(or `--links-dir DIR`, also outside git); it removes only old symlinks and leaves other files
+alone. Runs sharing one enabled research memory use that memory's signing key. A single run
+otherwise uses its own home key; for other combinations supply `--signing-key PATH`.
+One viewer can read only one signing key. The key is copied into a temporary HOME, removed
+when the viewer exits; model settings and API keys are excluded from its environment.
+
+Runs from before 2026-11-15 lack the result field the viewer reads and stop it with a
+`KeyError`, shown in the page.
+
 ### Evidence recorded per trial
 
 All files below live under the run directory, outside git; they remain exploratory, not admitted.

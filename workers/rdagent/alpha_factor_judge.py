@@ -30,6 +30,9 @@ LEGACY_KEYS = ["IC"] + [
     for cost in ("without", "with")
     for metric in ("annualized_return", "max_drawdown")
 ]
+# RD-Agent's own log viewer (rdagent/log/ui/app.py, QLIB_SELECTED_METRICS) indexes these too;
+# ALPHA does not compute an information ratio, so it is present as NaN, never invented.
+VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
 
 
 SWING_BRIEF = (
@@ -256,7 +259,7 @@ class AlphaFactorRunner(Developer):
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
         if not exp.sub_tasks:
-            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS, float("nan")))
+            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS + VIEWER_KEYS, float("nan")))
             exp.stdout = "baseline: no factors; ALPHA evaluates factors standalone"
             return exp
         run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
@@ -355,7 +358,9 @@ class AlphaFactorRunner(Developer):
                 lines[-1] if lines else f"ALPHA evaluator exit {result.returncode}"
             )
         record = json.loads((folder / "result.json").read_bytes())
-        exp.result = pd.Series(record["legacy_result"])
+        exp.result = pd.Series(
+            {**dict.fromkeys(VIEWER_KEYS, float("nan")), **record["legacy_result"]}
+        )
         exp.stdout = record["feedback_text"]
         exp.alpha_evaluation = record
         if all(f["status"] == "FAILED" for f in factors):

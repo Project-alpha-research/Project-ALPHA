@@ -218,6 +218,7 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "Developer": object,
         "FactorEmptyError": ValueError,
         "LEGACY_KEYS": ["IC"],
+        "VIEWER_KEYS": [],
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<judge-evidence>", "exec"), namespace)
     return namespace

@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_codex_*.py
   - tests/unit/test_investigation_*.py
   - tests/unit/test_comparison_acquisition*.py
-verified: aa600e57932d
+verified: ece16d7433e6
 ---
 
 # Command line assistant invariants

@@ -480,6 +480,19 @@ def test_step_wrapper_records_a_skipped_step(
     assert rows[1]["status"] == "skipped" and rows[1]["error_type"] == "KeyError"
 
 
+def test_exit_reason_names_the_call_cap(tmp_path: Path) -> None:
+    namespace = launch.parser().parse_args(
+        ["run", "--data-dir", "/d", "--run-dir", "/r", "--gateway-data-dir", "/g",
+         "--trial-ledger", "/l", "--run-id", "x", "--run-max-calls", "4"]
+    )  # fmt: skip
+    capped = {"this_run": {"calls": 4, "usd": 0.0}}
+    assert launch.exit_reason(1, capped, namespace) == (
+        "loop exit 1: model call cap reached (4 of 4 calls)"
+    )
+    assert launch.exit_reason(1, {"this_run": {"calls": 2}}, namespace) == "loop exit 1"
+    assert launch.exit_reason(1, {"error": "no output"}, namespace) == "loop exit 1"
+
+
 def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
     parsed = args(tmp_path)
     parsed.trial_ledger = Path("relative/trials.jsonl")

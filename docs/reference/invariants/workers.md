@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3a0098cd96e3
+verified: a5bab0ed0c10
 ---
 
 # Worker invariants
@@ -137,6 +137,13 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.
+- Run viewer (`rdagent_viewer.py serve`, `rdagent_ui_entry.py`): RD-Agent's own unmodified Streamlit log viewer on a
+  run folder, foreground and local only. It runs in its own hash-pinned Python 3.11 runtime, built only by
+  `--with-ui` from `ui-requirements.lock` and recorded by `install_stock_profile.py --profile ui`; the entry
+  verifies the pinned source and imports RD-Agent through the same narrow finder as the factor loop. It binds `127.0.0.1`,
+  refuses a busy port, runs with an exact environment and a temporary home that is removed on exit, and replaces only
+  symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
+  never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
   such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
   `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.

@@ -8,8 +8,7 @@ verified: 0c8b05351952
 
 # Rule test
 
-**Reach for it when** the owner states a price rule or asks "does X work". It is the one route for a new idea:
-data, backtest with costs, walk-forward gauntlet, diagnostics and a ledger row.
+**Reach for it when** the owner states a price rule or asks "does X work": the one route for a new idea.
 
 **Command**
 
@@ -33,8 +32,9 @@ runs a small gauntlet and labels the result `quick`.
 
 **What it cannot tell you**
 
-- Anything about a rule outside the three kinds, short selling or sized positions. Say so; offer the nearest
-  kind, or a saved rule (`alpha rules save`) run through `alpha validate`, which the ledger does not count.
+- Anything about a rule outside the three kinds, short selling, sized positions or intraday bars (it reads the
+  daily store; `alpha data pull <SYMBOL> --timeframe 1h` only downloads). Say so; offer the nearest kind, or a
+  saved rule (`alpha rules save`) run through `alpha validate`, which the ledger does not count.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
 
 **Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.

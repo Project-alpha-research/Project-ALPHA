@@ -40,7 +40,7 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 - an event study and random-date controls as plain commands (they exist only inside the older
   staged lane);
 - an answer checker, recorded comparisons between runs, a lessons search and counted variants;
-- short selling and position sizing in the rule test (it is long or flat, all-in).
+- short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars).
 
 ## How to change it
 

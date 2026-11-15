@@ -21,8 +21,8 @@ something is imperfect, label it and carry on. Nothing here promises a profit, a
    [the lessons](lessons/README.md). Tell the owner what is already known.
 2. **State the idea and what would disprove it.** Quote the owner's sentence. Say in one line
    what result would make you drop it (for example "it does not beat holding the asset").
-3. **Run the test.** `uv run alpha test <spec.toml> --json` ([card](tools/rule-test.md)). Any
-   asset the stores hold, any bar size. If a definition is unclear, ask one question, then run.
+3. **Run the test.** `uv run alpha test <spec.toml> --json` ([card](tools/rule-test.md)). Any asset the stores
+   hold; it reads daily bars today, so label an intraday idea as such. Unclear definition: ask once, then run.
 4. **Read the labels, flags and audit** before saying anything: `uv run alpha diagnose <run_id> --json`.
 5. **Name what is surprising**: a flag, a number far from the benchmark, a result that
    contradicts the owner's hunch or yours.

@@ -422,9 +422,32 @@ judge ([ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md)). RD-Agen
 codes factors; its settings `QLIB_FACTOR_SCEN`, `QLIB_FACTOR_HYPOTHESIS_GEN`, `QLIB_FACTOR_RUNNER`
 and `QLIB_FACTOR_SUMMARIZER` name four classes in `alpha_factor_judge.py`; the runner sends the
 factor values to `alpha_cli.rdagent_factor_eval` in ALPHA's environment, which screens each new
-factor (rank IC against the next-open-to-next-open return, autocorrelation-adjusted inference,
-BH over the cross-run trial ledger) and replays only those that pass through ALPHA's canonical
-synchronized engine with crypto costs. RD-Agent never sees 2024 or later; no Qlib model, Docker
+factor at daily (1-day), weekly (7-day) and monthly (28-day) holding clocks. Decision days
+start at 2021-01-01 and advance by the clock's calendar days; screens use non-overlapping
+next-open-to-open forward returns ending by 2023-12-31, autocorrelation-adjusted inference and
+seeded stationary-bootstrap intervals. Fewer than 20 observations carry a low-sample warning.
+BH counts every factor x clock as a trial across runs; V1, V2 and imported historical results
+each count once at daily. Records disclose both trial count and distinct factor count.
+Only clocks with q < 0.10 replay through ALPHA's canonical synchronized engine. Replays choose
+the top third on clock decision days, then drift holdings by closes between rebalances. Small
+residual trades caused by fill prices and fees are executed and charged. Costs remain 10 bps
+fee plus 6 bps slippage per side; annualisation uses 365 days. Each clock reports net/gross
+metrics, turnover per day, total daily turnover divided by scheduled rebalances (including the
+initial allocation), annual cost (total fees and slippage divided by mean canonical equity,
+annualised over the replay days), and rebalance count. The engine's final liquidation is
+charged and included in turnover and costs.
+
+Only a weekly or monthly PASS (q < 0.10 and positive net annual excess) makes a CANDIDATE.
+A daily-only pass is FAST_ONLY and ALPHA's decision remains false. New evaluations write one
+V3 ledger row per factor with all three clock results; top-level screen/replay/p/q mirror daily.
+The lead is the lowest-q passing swing clock, otherwise the lowest-q clock; RD-Agent's legacy
+IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `mean_ic`,
+`q`, `net_annual_excess` and `mean_turnover`, plus `<factor>.feedback` with the explanation.
+Deflated Sharpe counts every replayed factor x clock. Repeated code hashes
+are not evaluated again. The proposer receives the plain-English swing brief on every context
+call, before the cross-run ledger summary, including when no ledger exists. It asks for slow,
+low-turnover signals with a mechanism and falsifier, and explains the daily ideas that failed
+after costs. All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh
@@ -449,6 +472,48 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   iteration), `feedback.jsonl` (the model's suggestion beside ALPHA's decision), `launch.jsonl`,
   `logs/` and `receipt.json`. The trial ledger is shared by all runs and append-only.
 - Generated factor code runs with the gateway's address and token removed from its environment.
+
+### Evidence recorded per trial
+
+All files below live under the run directory, outside git; they remain exploratory, not admitted.
+Series include a `clock` column; replay and holdings files have one block per replayed clock.
+
+- `evaluations/iter-<n>/series/<code_sha256>.screen.parquet`: per-clock rank IC and finite-name counts.
+- `evaluations/iter-<n>/series/<code_sha256>.buckets.parquet`: direction-adjusted tercile outcomes and observation counts.
+- `evaluations/iter-<n>/series/<code_sha256>.buckets_daily.parquet`: outcomes per day and tercile (bucket 3 is the replay's top third).
+- `evaluations/iter-<n>/series/<code_sha256>.replay.parquet`: canonical period returns, turnover, fees and slippage.
+- `evaluations/iter-<n>/series/<code_sha256>.holdings.parquet`: decision-day instruments, target weights and scores.
+- `evaluations/iter-<n>/series/series.json`: factor hashes and file hashes, bound into evaluation inputs and trial-ledger evidence references; unavailable series carry `series_note`.
+- `code/<code_sha256>.py`: the exact factor code, written once and checked on reuse.
+- `rounds.jsonl`: RD-Agent's hypothesis, tasks and feedback words linked to factor hashes and both decisions; `feedback.jsonl` stays unchanged.
+- `steps.jsonl`: UTC start/end records for each loop step, including error types.
+- `calls-labelled.jsonl`: this run's gateway calls labelled by loop and step; `launch.jsonl` also records launcher step starts.
+- New trial-ledger rows carry a deterministic plain-English `plain_name` beside the original name.
+
+### Exposure log and imported trials
+
+```sh
+.venv/bin/python -m alpha_cli.rdagent_exposure add \
+  --ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl --file /abs/exposures.json
+.venv/bin/python -m alpha_cli.rdagent_exposure list \
+  --ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl --json
+.venv/bin/python -m alpha_cli.rdagent_factor_eval import-historical \
+  --ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl --file /abs/historical-trials.json
+```
+
+`add` appends validated disclosures to `rdagent-exposure-log.jsonl` beside the trial ledger,
+outside git; its input is a JSON list without `schema`, `entry_index` or `label`, and duplicate
+content refuses the whole call. `list` writes nothing and shows the entries and each trial's
+current exposure label (`--json` for canonical JSON, omit it for plain text). `import-historical`
+appends V2 `IMPORTED` trials with hashes of the supplied absolute `code_path` files and their
+original windows and provenance; they count in the distinct-code family with p = 1, are never
+evaluated or replayed, and later identical code is a `REPEAT`.
+
+An exposure matches when its end date reaches the trial's reserved start, its case-insensitive
+Python regex matches the factor name, and its matching instruments overlap the trial's
+instruments (or are `["*"]`); legacy trials use the 15-coin loop universe. Matching `known` or
+`suspected` exposures mark the protected window previously exposed and unable to give fresh
+confirmation; `unknown` stays disclosed, and a missing log leaves exposure unknown.
 
 Choosing the model route (owner decision 2026-11-14: DeepSeek through OpenRouter is allowed for
 RD-Agent, with temperature control; caps unchanged at 60 calls and 10 USD a run, 50 USD a month):

@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: ec6d827da973
+verified: 0937b71e5380
 ---
 
 # RD-Agent worker workspace
@@ -15,8 +15,8 @@ Flat entry scripts and pinned locks that run Microsoft RD-Agent's native loops (
 fixtures, rule and costed probes, the stock RDLoop) in their own environments for the CLI's
 native job supervisor, plus `model_gateway.py`, the local program through which RD-Agent reaches
 a model, and the ALPHA-judged factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`,
-`alpha_factor_judge.py`, `alpha_factor_data.py`; ADR-0049). It is a separate uv project (`package = false`) with its own lock; no ALPHA package
-imports it, though its probes import ALPHA packages inside qualified profile environments. It has
+`alpha_factor_judge.py`, `alpha_factor_data.py`; ADR-0049, swing clocks ADR-0050). It is a separate uv project
+(`package = false`) with its own lock; no ALPHA package imports it, though its probes import ALPHA packages inside qualified profile environments. It has
 no market, inference or evidence authority.
 
 ## Read first

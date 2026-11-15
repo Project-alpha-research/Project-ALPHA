@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3a0098cd96e3
+verified: 0937b71e5380
 ---
 
 # Worker invariants
@@ -137,6 +137,8 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.
+  Each factor is judged at daily, weekly and monthly holding clocks; only a weekly or monthly pass is a candidate
+  ([ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)). Per-trial evidence files stay in the run directory.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
   such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
   `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.

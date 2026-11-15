@@ -823,3 +823,78 @@ def test_bucket_table_keeps_empty_days_and_null_means() -> None:
     assert daily.height == 6
     assert daily.filter(pl.col("date") == days[1])["mean_outcome"].to_list() == [None] * 3
     assert summary["observations"].to_list() == [2, 2, 2]
+
+
+def rule_row(index: int = 1) -> dict[str, Any]:
+    return {
+        "schema": "AlphaRuleTrialV1",
+        "trial_index": index,
+        "name": "own_trend_20d_SPY",
+        "plain_name": "Hold SPY only while its 20-day trend is up",
+        "code_sha256": "f" * 64,
+        "run_id": "human",
+        "iteration": 0,
+        "panel_sha256": "a" * 64,
+        "windows": {
+            "history_start": "2020-01-01",
+            "scored_start": "2021-01-01",
+            "scored_end": "2023-12-31",
+            "exploration_end": "2023-12-31",
+            "reserved_start": "2024-01-01",
+        },
+        "family_id": "human-family",
+        "family_size": 1,
+        "total_trials": index,
+        "stage": "replay",
+        "status": "SUPPORT",
+        "p": 0.001,
+        "q": 0.001,
+        "screen": {},
+        "replay": {},
+        "instruments": ["SPY"],
+        "exposure": {"previously_exposed": None, "worst_status": "no exposure log", "matches": []},
+        "evidence": {"trial": "trials/SPY-N20/trial.json", "sha256": "b" * 64},
+        "label": ev.LABEL,
+        "survivorship": "synthetic",
+        "authority": ev.AUTHORITY,
+        "warnings": [],
+    }
+
+
+def test_rule_ledger_schema_and_statuses(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger"
+    row = rule_row()
+    ledger.write_bytes(ev.canonical(row))
+    assert ev._read_ledger(ledger) == [row]
+    for key in ("family_id", "plain_name", "evidence", "warnings", "instruments", "exposure"):
+        broken = {k: v for k, v in row.items() if k != key}
+        ledger.write_bytes(ev.canonical(broken))
+        with pytest.raises(DataError):
+            ev._read_ledger(ledger)
+    for schema, status in (
+        ("AlphaRuleTrialV1", "CANDIDATE"),
+        ("AlphaRdagentFactorTrialV1", "SUPPORT"),
+    ):
+        ledger.write_bytes(ev.canonical({**row, "schema": schema, "status": status}))
+        with pytest.raises(DataError):
+            ev._read_ledger(ledger)
+
+
+def test_rule_family_excluded_from_factor_statistics_and_repeats(tmp_path: Path) -> None:
+    run = tmp_path / "run"
+    req = fixture(run)
+    clean = evaluate(run, req, tmp_path / "clean")
+    ledger = tmp_path / "mixed"
+    # A hash collision must not make this RD-Agent factor a repeat of a human rule.
+    row = {**rule_row(), "code_sha256": json.loads(req.read_bytes())["factors"][0]["code_sha256"]}
+    ledger.write_bytes(ev.canonical(row))
+    mixed = ev.evaluate(run, req, run / "mixed.json", ledger)
+    assert mixed["qvalues"] == clean["qvalues"]
+    assert mixed["family_size"] == clean["family_size"]
+    assert mixed["factors"][0]["replay"] == clean["factors"][0]["replay"]
+    assert mixed["factors"][0]["status"] == clean["factors"][0]["status"]
+    assert mixed["ledger_trials_all_families"] == 2
+    assert mixed["factors"][0]["ledger_trials_all_families"] == 2
+    assert mixed["factors"][0]["trial_index"] == 2
+    assert "ledger_trials_all_families: 2" in mixed["feedback_text"]
+    assert len(ev._read_ledger(ledger)) == 2

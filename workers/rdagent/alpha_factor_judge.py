@@ -84,7 +84,7 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
     )
     lines, seen = [], set()
-    for row in reversed(rows):
+    for row in (r for r in reversed(rows) if r.get("schema") != "AlphaRuleTrialV1"):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue

@@ -17,8 +17,9 @@ native job supervisor, plus `model_gateway.py`, the local program through which 
 a model, and the ALPHA-judged factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`,
 `alpha_factor_judge.py`, `alpha_factor_coder.py`, `alpha_factor_data.py`; ADR-0049) with its
 cross-run research memory (`research_memory.py`). The judge leaves human-authored rule trials
-(`AlphaRuleTrialV1`, written by `alpha_cli.rdagent_rule_family`) out of RD-Agent's proposal summary. It is a separate uv project (`package = false`) with its own lock; no ALPHA package
-imports it, though its probes import ALPHA packages inside qualified profile environments. It has
+(`AlphaRuleTrialV1`, written by `alpha_cli.rdagent_rule_family`) out of RD-Agent's proposal summary.
+It is a separate uv project (`package = false`) with its own lock; no ALPHA package imports it,
+though its probes import ALPHA packages inside qualified profile environments. It has
 no market, inference or evidence authority.
 
 ## Read first

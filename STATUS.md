@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 22 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 12 working, 23 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -30,6 +30,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 ## Partly working
 
 - **Download and freeze stock and ETF prices** — no offline way to get prices in; snapshot, verify and as-of read are proven end to end.
+- **Intraday bars, from one minute to one hour, end to end** — proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily. More: [docs/reference/invariants/data-bar-timeframes.md](docs/reference/invariants/data-bar-timeframes.md).
 - **Reports, figures and run comparison** — the text and JSON (--json) reports are proven end to end; figures and run comparison are tested in-process only.
 - **Price forecasts with the Kronos model** — proved only with a stand-in model. Needs: the Kronos model files (downloaded on first use; not on this computer).
 - **Research cases from idea to decision (D0, D1, D2)** — proven up to the owner-approval boundary; a full case needs provider data and your approval.
@@ -103,26 +104,32 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Generalise D0 screening to every registered producer (Phase E) — medium (M)
 - Governed storage restore and query for real-data native studies (W19) — large (L)
 - Intraday (1h) equity timeframe — medium (M)
+- Intraday bars in the multi-asset portfolio replay — medium (M)
+- Intraday candles and run charts in the Workstation — medium (M)
 - Live trading phase (private, single owner) — very large (XL)
 - Local vision model and hosted finance reasoning — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
 - Name where NautilusTrader may be imported — small (S)
 - Offline price import from a local file — medium (M)
+- One crypto store for backtests, with receipts — medium (M)
 - One trial ledger, many code versions — medium (M)
 - Options expression research (W16) — large (L)
 - Overlap-corrected t statistic for the quick screen — small (S)
 - Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
+- Per-asset-class cost and annualisation defaults — small (S)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Re-check the vendored Kronos copy against the glue rules — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
+- Rule language: session, time of day, open and volume — medium (M)
+- Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
 
 ## Housekeeping
 
-- Backlog items: 32
+- Backlog items: 38
 - Staged refactors: 6
 
 ## Where things are

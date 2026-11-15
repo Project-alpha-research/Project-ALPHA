@@ -18,6 +18,11 @@ import {
   type Cell,
 } from '../ruleTestModel'
 
+/** A stored basis note shown as a sentence: first letter upper-case; the words are unchanged. */
+function sentence(text: string | null | undefined): string {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
+}
+
 function Num({ cell }: { cell: Cell }) {
   const missing = cell.text === NOT_RECORDED
   return (
@@ -135,7 +140,7 @@ export function RuleTestReport({ test }: { test: RuleTest }) {
               ))}
             </tbody>
             {macroMissing ? null : (
-              <tfoot><tr><td colSpan={4} className="muted">{diagnostics.macro_window?.basis ?? ''}</td></tr></tfoot>
+              <tfoot><tr><td colSpan={4} className="muted">{sentence(diagnostics.macro_window?.basis)}</td></tr></tfoot>
             )}
           </table>
         </>
@@ -173,7 +178,7 @@ export function RuleTestReport({ test }: { test: RuleTest }) {
             </tbody>
             <tfoot>
               <tr><td colSpan={4} className="muted">
-                {diagnostics.sensitivity?.basis ?? NOT_RECORDED}.{variants.filter((row) => row.note).map((row) => ` ${row.label}: ${row.note}.`)}
+                {sentence(diagnostics.sensitivity?.basis) || NOT_RECORDED}.{variants.filter((row) => row.note).map((row) => ` ${row.label}: ${row.note}.`)}
               </td></tr>
             </tfoot>
           </table>
@@ -196,7 +201,7 @@ export function RuleTestReport({ test }: { test: RuleTest }) {
             </tbody>
             <tfoot>
               <tr><td colSpan={5} className="muted">
-                Up years: this rule {byYear?.strategy_positive_years ?? NOT_RECORDED}, buy and hold {byYear?.benchmark_positive_years ?? NOT_RECORDED}, of {years.length}. {byYear?.basis ?? ''}
+                Up years: this rule {byYear?.strategy_positive_years ?? NOT_RECORDED}, buy and hold {byYear?.benchmark_positive_years ?? NOT_RECORDED}, of {years.length}. {sentence(byYear?.basis)}
               </td></tr>
             </tfoot>
           </table>

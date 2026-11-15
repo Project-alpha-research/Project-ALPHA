@@ -243,6 +243,9 @@ describe('rule-test report section', () => {
     expect(html).toContain('Not available: no stored FRED context series.')
     expect(html).toContain('title="strategy or benchmark metric is unavailable"')
     expect(html).not.toContain('LEGACY_CONTEXT_UNKNOWN')
+    // stored basis notes read as sentences; their words are relayed unchanged
+    expect(html).toContain('Full-sample engine re-runs on the same loaded bars.')
+    expect(html).toContain('Full-sample returns grouped by ending calendar year; partial years included')
   })
 
   it('renders the macro table when the window is stored', () => {

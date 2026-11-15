@@ -37,6 +37,7 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
 )
 COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("validate", "alpha_cli.validate_cmds", "validate"),
+    ("test", "alpha_cli.test_cmds", "test_rule"),
     ("report", "alpha_cli.report_cmds", "report"),
 )
 

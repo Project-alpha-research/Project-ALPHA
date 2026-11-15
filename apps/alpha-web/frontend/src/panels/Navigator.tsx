@@ -27,6 +27,7 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
   const [sessions, setSessions] = useState<PaperSession[]>([])
   const [storage, setStorage] = useState<CryptoStorage | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const storeRevision = useActivityField('runsVersion')
   const controlVersion = useAreaVersion('control')
   const paperVersion = useAreaVersion('paper')
@@ -48,6 +49,7 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
         setStrategies(strategyList)
         setSessions(sessionList)
         setStorage(storageStatus)
+        setLoaded(true)
       })
       .catch((cause) => live && setError(String(cause)))
     return () => {
@@ -109,7 +111,7 @@ export function Navigator({ onOpenRun }: { onOpenRun: (runId: string, title: str
               <ul role="group">
                 {group.leaves.length === 0 && group.unknown.length === 0 ? (
                   <li role="treeitem" aria-selected={false} className="tree-leaf empty">
-                    none
+                    {loaded || error ? 'none' : 'loading…'}
                   </li>
                 ) : null}
                 {group.leaves.map(leafButton)}

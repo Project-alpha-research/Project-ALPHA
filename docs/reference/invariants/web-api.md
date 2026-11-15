@@ -100,6 +100,12 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   <8 hex>` from the manifest and omits any part it does not record; `market_of` decides crypto/equities or `unknown`;
   the equity sources include `alpaca`.
   Identity fields (symbol, symbols, label, snapshot id) are read from the manifest top level first, then its `metadata`.
+- A rule test is a run whose manifest has a `spine` key (`alpha test`). `_rule_test.py` projects it as `RunDetail.rule_test`
+  (and `RunListItem.rule_test_labels`) from the run's own `manifest.json` and `diagnostics.json` only: values pass
+  through, nothing is recomputed, a missing part is null and a missing or unreadable file is null with a reason. The
+  rule's one-sentence wording is built server-side from the stored rule and is null for an unknown rule kind. Its
+  display name puts `rule test <spec name>` in the strategy slot. Every other run has `rule_test: null` and is unchanged;
+  `run_context_*` keeps its meaning for all runs. Enforced by `tests/integration/test_web_api_rule_test.py`.
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.
   [ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md)

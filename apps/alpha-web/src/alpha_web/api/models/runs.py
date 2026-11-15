@@ -7,6 +7,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field
 
 from ._base import StrictModel
+from .rule_test import RuleTest
 
 
 class GovernedRunContextV1(StrictModel):
@@ -52,6 +53,8 @@ class RunListItem(StrictModel):
     run_context_kind: Literal["governed_project", "standalone_sandbox", "legacy_context_unknown"]
     run_context_project_id: str | None
     run_context_watermark: str | None
+    # labels of a rule test (`alpha test`); null on every other run
+    rule_test_labels: list[str] | None
     mtime: float
 
 
@@ -72,6 +75,8 @@ class RunDetail(StrictModel):
     run_context_kind: Literal["governed_project", "standalone_sandbox", "legacy_context_unknown"]
     run_context_project_id: str | None
     run_context_watermark: str | None
+    # what a rule test (`alpha test`) recorded; null on every other run
+    rule_test: RuleTest | None
     has_equity: bool
     has_trades: bool
     has_tearsheet: bool

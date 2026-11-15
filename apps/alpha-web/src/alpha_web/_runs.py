@@ -23,6 +23,7 @@ from alpha_cli.run_store import (
     run_context_projection,
 )
 from alpha_core import DataError
+from alpha_web import _rule_test
 
 MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 
@@ -412,10 +413,14 @@ def _manifest_identity_value(manifest: Mapping[str, Any], key: str) -> Any:
 def display_name(kind: str, run_id: str, manifest: dict[str, Any], rdir: Path) -> str:
     """The run's name as a trader reads it (spec 2026-09-01 §4.4):
     `<strategy> D1 — <symbol> · <venue> · <start> → <end> · run <8 hex>`; every engine run is
-    daily, so the timeframe is the constant D1; parts the manifest does not carry are omitted."""
+    daily, so the timeframe is the constant D1; parts the manifest does not carry are omitted.
+    A rule test (`alpha test`) is named `rule test <spec name>` in the strategy slot."""
     params = manifest.get("params")
-    strategy = (params.get("strategy_name") if isinstance(params, dict) else None) or (
-        manifest.get("command") or kind
+    spine = _rule_test.spine_of(manifest)
+    strategy = (
+        (f"rule test {spine['name']}" if spine and spine.get("name") else None)
+        or (params.get("strategy_name") if isinstance(params, dict) else None)
+        or (manifest.get("command") or kind)
     )
     symbols = _manifest_identity_value(manifest, "symbols")
     symbol = _manifest_identity_value(manifest, "symbol") or (
@@ -487,6 +492,7 @@ def run_record(kind: str, run_id: str, *, data_dir: Path) -> dict[str, Any]:
         # owner research-gate override; None for every unmarked run.
         "research_gate_watermark": research_gate_watermark(manifest),
         **run_context_projection(manifest),
+        "rule_test_labels": _rule_test.labels_of(manifest),
         "mtime": mtime,
     }
     _RECORD_CACHE[mpath] = (mtime, record)
@@ -552,6 +558,7 @@ def run_detail(run_id: str, *, data_dir: Path) -> dict[str, Any]:
         "manifest": manifest,
         "research_gate_watermark": research_gate_watermark(manifest),
         **run_context_projection(manifest),
+        "rule_test": _rule_test.rule_test(manifest, rdir),
         "has_equity": (rdir / "equity_curve.parquet").exists(),
         "has_trades": (rdir / "trades.parquet").exists(),
         "has_tearsheet": (rdir / "tearsheet.html").exists(),

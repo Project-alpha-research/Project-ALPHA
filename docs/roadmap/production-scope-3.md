@@ -19,7 +19,7 @@ Every result visible in the Workstation, in a quant style, with text.
 |---|---|---|---|---|
 | The Workstation opens in a browser | Working | `alpha-web` | Now | [ui] |
 | Idea screen: spec, clocks, source card, match gallery | Missing | `alpha-web` | Path 2 | [ui] |
-| Results screen: annotated equity against benchmark, overfit tests, labels | Unproven | `alpha-web` | Path 1 | [ui] |
+| Results screen: annotated equity against benchmark, overfit tests, labels | Unproven | `alpha-web` report: rule-test section built; benchmark not yet drawn on the chart | Path 1 | [ui] |
 | Trail screen: the reasoning from observation to next step | Missing | `alpha-web` | Path 1 | [partner] |
 | Ledger screen: every idea and trial, counts, RD-Agent runs | Missing | `alpha-web` | Path 3 | [ui] |
 | Data screen: what is stored, coverage, quality | Unproven | `alpha-web` | Path 1 | [ui] |

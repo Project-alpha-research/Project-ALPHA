@@ -643,7 +643,7 @@ import alpha_factor_coder
 seen = []
 FactorCoSTEER.develop = lambda self, exp: seen.append(self.rag.current_generated_trace_count) or exp
 coder = alpha_factor_coder.AlphaFactorCoSTEER.__new__(alpha_factor_coder.AlphaFactorCoSTEER)
-coder.rag = SimpleNamespace(current_generated_trace_count=5)
+coder.rag = SimpleNamespace(current_generated_trace_count=5, dump_knowledge_base_path=None)
 assert coder.develop("exp") == "exp" and seen == [0], seen
 """
     subprocess.run(
@@ -675,3 +675,125 @@ def test_inspector_warns_about_unreadable_ledger_lines(tmp_path: Path) -> None:
     ledger.write_text('{"name": "a", "status": "OK"}\nnot json\n')
     view = memory.show(tmp_path / "memory", ledger=ledger)
     assert "1 trial ledger line" in view["ledger_warning"]
+
+
+def test_inspector_reports_alpha_rejected_task_names() -> None:
+    task = SimpleNamespace(factor_name="leaky")
+    knowledge = SimpleNamespace(
+        graph=SimpleNamespace(
+            nodes={"one": SimpleNamespace(label="alpha_rejected_implement", embedding=None)}
+        ),
+        node_to_implementation_knowledge_dict={"one": SimpleNamespace(target_task=task)},
+        success_task_to_knowledge_dict={},
+        working_trace_knowledge={"proposal": [None]},
+        working_trace_error_analysis={},
+    )
+    view = memory._knowledge_view(knowledge)
+    assert view["alpha_rejected"] == ["leaky"]
+    assert "ALPHA rejected the code of: leaky" in memory._plain(
+        {
+            "manifest": {"runs": []},
+            "rounds": [],
+            "memory_dir": "memory",
+            "knowledge": view,
+        }
+    )
+
+
+@RUNTIME
+def test_coder_demotes_real_signed_knowledge_and_refreshes(tmp_path: Path) -> None:
+    script = r"""
+import sys, os
+from pathlib import Path
+from types import SimpleNamespace as NS
+from unittest.mock import patch
+sys.path.insert(0, sys.argv[1])
+from factor_loop_entry import install_source
+install_source(Path(sys.argv[2]))
+import alpha_factor_coder as c
+from rdagent.components.coder.CoSTEER.knowledge_management import (
+ CoSTEERKnowledgeBaseV2, CoSTEERKnowledge,
+)
+from rdagent.components.coder.factor_coder.factor import FactorTask, FactorFBWorkspace
+from rdagent.components.knowledge_management.graph import UndirectedNode
+from rdagent.core.serialization import dump, load
+from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStrategyV2
+k = CoSTEERKnowledgeBaseV2()
+tasks = [FactorTask(n, 'description', 'close') for n in ['leaky', 'correct']]
+infos = [t.get_task_information() for t in tasks]
+def embed(self): self.embedding = [1., 0.]
+with patch.object(UndirectedNode, 'create_embedding', embed):
+ for task, info in zip(tasks, infos):
+  workspace = FactorFBWorkspace(target_task=task)
+  workspace.file_dict = {'factor.py': task.factor_name}
+  unit = CoSTEERKnowledge(task, workspace, 'code ran')
+  k.working_trace_knowledge[info] = [unit]
+  k.success_task_to_knowledge_dict[info] = unit
+  k.task_to_component_nodes[info] = []
+  k.update_success_task(info)
+nodes = {unit.target_task.factor_name: k.graph.nodes[node_id]
+         for node_id, unit in k.node_to_implementation_knowledge_dict.items()}
+description = k.graph.find_node(infos[0], 'task_description')
+def retrieved():
+ return k.graph_query_by_node(description, step=50,
+                              constraint_labels=['task_success_implement'], block=True)
+assert nodes['leaky'] in retrieved()
+path = Path(sys.argv[3]) / 'knowledge.pkl'
+with path.open('wb') as stream: dump(k, stream)
+original = path.read_bytes()
+assert c.demote(k, [infos[0], 'missing', infos[0]]) == [infos[0]]
+assert infos[0] not in k.success_task_to_knowledge_dict
+assert infos[1] in k.success_task_to_knowledge_dict
+assert nodes['leaky'].label == 'alpha_rejected_implement'
+assert nodes['correct'].label == 'task_success_implement'
+assert nodes['leaky'] not in retrieved()
+assert len(k.working_trace_knowledge[infos[0]]) == 1
+assert c.demote(k, [infos[0]]) == []
+env = {'FACTOR_CoSTEER_new_knowledge_base_path': str(path),
+       'FACTOR_CoSTEER_enable_filelock': 'True',
+       'FACTOR_CoSTEER_filelock_path': str(path.with_suffix('.lock'))}
+assert c.demote_in_file(env, [infos[0]]) == ([infos[0]], None)
+assert path.read_bytes() != original
+with path.open('rb') as stream: loaded = load(stream)
+assert infos[0] not in loaded.success_task_to_knowledge_dict
+assert loaded.graph.nodes[nodes['leaky'].id].label == 'alpha_rejected_implement'
+rag = CoSTEERRAGStrategyV2.__new__(CoSTEERRAGStrategyV2)
+rag.dump_knowledge_base_path = path
+rag.knowledgebase = k
+rag.current_generated_trace_count = 8
+coder = c.AlphaFactorCoSTEER.__new__(c.AlphaFactorCoSTEER)
+coder.rag = rag
+coder.settings = NS(enable_filelock=True, filelock_path=env['FACTOR_CoSTEER_filelock_path'])
+with patch.object(c.FactorCoSTEER, 'develop', lambda self, exp: exp):
+ assert coder.develop('experiment') == 'experiment'
+assert rag.current_generated_trace_count == 0
+assert rag.knowledgebase is not k
+assert infos[0] not in rag.knowledgebase.success_task_to_knowledge_dict
+path.write_bytes(b'corrupt')
+demoted, note = c.demote_in_file(env, [infos[0]])
+assert demoted == [] and note
+assert path.read_bytes() == b'corrupt'
+assert c.demote_in_file({}, infos) == ([], 'no persistent coding memory')
+assert not list(path.parent.glob('.coder-verdict-*'))
+"""
+    subprocess.run(
+        [
+            os.environ["ALPHA_FACTOR_PYTHON"],
+            "-I",
+            "-B",
+            "-c",
+            script,
+            str(WORKER),
+            os.environ["ALPHA_RDAGENT_SOURCE"],
+            str(tmp_path),
+        ],
+        check=True,
+        cwd=tmp_path,
+        env={
+            "HOME": str(tmp_path),
+            "PATH": "/usr/bin:/bin",
+            "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+            "ARTIFACT_SIGNING_KEY_PATH": str(tmp_path / "signing.key"),
+        },
+        timeout=120,
+    )

@@ -26,6 +26,9 @@ htmlcov/
 mutants/
 *.log
 
+# RD-Agent writes its default log/ folder in the working directory when run from the repository root
+/log/
+
 # uv
 # (uv.lock IS committed — do not ignore it)
 

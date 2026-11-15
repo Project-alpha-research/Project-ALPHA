@@ -7,6 +7,7 @@ const command = (id: string): CommandDef => ({ id, args: [], options: [], run_ty
 
 const CATALOG_GROUPS = [
   'backtest',
+  'context',
   'crypto-data',
   'data',
   'evidence',

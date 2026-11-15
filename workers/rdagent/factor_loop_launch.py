@@ -25,6 +25,12 @@ from typing import Any
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
+if str(WORKER) not in sys.path:
+    sys.path.insert(0, str(WORKER))
+
+import research_memory  # noqa: E402
+from source_pin import SOURCE_SHA256  # noqa: E402
+
 MAX_CALLS = 60
 LABEL = "exploratory, not admitted, not yet confirmed"
 AUTHORITY = dict.fromkeys(("admitted", "evidence", "approval", "promotion"), False)
@@ -89,6 +95,8 @@ def _inside_git(path: Path) -> bool:
 
 
 def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Path]:
+    if not 1 <= args.coder_max_loop <= 3:
+        raise LaunchError("--coder-max-loop must be 1, 2 or 3")
     if not 1 <= args.loop_n <= 3:
         raise LaunchError("--loop-n must be 1, 2 or 3")
     if not 1 <= args.run_max_calls <= MAX_CALLS:
@@ -116,6 +124,14 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
     for name in ("run_dir", "gateway_data_dir", "trial_ledger"):
         if _inside_git(getattr(args, name)):
             raise LaunchError(f"--{name.replace('_', '-')} must be outside every git work tree")
+    # Memory is checked after the trial ledger, whose folder gives its default location, so a
+    # relative --trial-ledger is reported as such rather than as a bad --memory-dir.
+    if not args.no_memory:
+        args.memory_dir = args.memory_dir or args.trial_ledger.parent / "research-memory"
+        if not args.memory_dir.is_absolute():
+            raise LaunchError("--memory-dir must be an absolute path")
+        if _inside_git(args.memory_dir.resolve()):
+            raise LaunchError("--memory-dir must be outside every git work tree")
     paths = {}
     for key in ("ALPHA_RDAGENT_SOURCE", "ALPHA_FACTOR_PYTHON"):
         value = environ.get(key, "")
@@ -126,7 +142,15 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
 
 
 def loop_environment(
-    *, base_url: str, token: str, run: Path, factor_python: Path, ledger: Path, home: str
+    *,
+    base_url: str,
+    token: str,
+    run: Path,
+    factor_python: Path,
+    ledger: Path,
+    home: str,
+    memory_env: dict[str, str] | None = None,
+    coder_max_loop: int = 2,
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -148,10 +172,11 @@ def loop_environment(
             f"env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE {factor_python}"
         ),
         "ALPHA_FACTOR_CODE_PYTHON": str(factor_python),
-        "FACTOR_CoSTEER_max_loop": "1",
+        "FACTOR_CoSTEER_max_loop": str(coder_max_loop),
         "FACTOR_CoSTEER_data_folder": str(run / "factor_data" / "full"),
         "FACTOR_CoSTEER_data_folder_debug": str(run / "factor_data" / "debug"),
         "QLIB_FACTOR_SCEN": "alpha_factor_judge.AlphaFactorScenario",
+        "QLIB_FACTOR_CODER": "alpha_factor_coder.AlphaFactorCoSTEER",
         "QLIB_FACTOR_RUNNER": "alpha_factor_judge.AlphaFactorRunner",
         "QLIB_FACTOR_SUMMARIZER": "alpha_factor_judge.AlphaFactorFeedback",
         "QLIB_FACTOR_HYPOTHESIS_GEN": "alpha_factor_judge.AlphaFactorHypothesisGen",
@@ -165,11 +190,15 @@ def loop_environment(
         "ALPHA_FACTOR_RUN_DIR": str(run),
         "ALPHA_FACTOR_EVAL_PYTHON": str(REPO / ".venv" / "bin" / "python"),
         "ALPHA_FACTOR_TRIAL_LEDGER": str(ledger),
+        **(memory_env or {}),
     }
 
 
 class Launch:
     def __init__(self, args: argparse.Namespace, paths: dict[str, Path]) -> None:
+        self.memory_plan: research_memory.MemoryPlan | None = None
+        self.token = ""
+        self.api_key = os.environ.get("ALPHA_GATEWAY_API_KEY", "")
         self.args = args
         self.run = args.run_dir
         self.source = paths["ALPHA_RDAGENT_SOURCE"]
@@ -348,6 +377,23 @@ class Launch:
 
     def loop(self, base_url: str, token: str) -> int:
         self.log("loop", event="start")
+        self.token = token
+        if not self.args.no_memory:
+            try:
+                self.memory_plan = research_memory.prepare(
+                    self.args.memory_dir or self.args.trial_ledger.parent / "research-memory",
+                    run_id=self.args.run_id,
+                    run_dir=self.run,
+                    source_sha256=SOURCE_SHA256,
+                    judge_sha256=research_memory.judge_sha256(),
+                )
+            except Exception as error:  # noqa: BLE001 - memory is a warning, never a refusal
+                self.receipt["memory_warning"] = (
+                    f"memory unavailable ({type(error).__name__}); this run starts fresh"
+                )
+                self.log("memory", status="unavailable", error_type=type(error).__name__)
+            else:
+                self.log("memory", warnings=[w["code"] for w in self.memory_plan.warnings])
         work = self.run / "work"
         work.mkdir()
         environment = loop_environment(
@@ -357,6 +403,8 @@ class Launch:
             factor_python=self.factor_python,
             ledger=self.args.trial_ledger,
             home=str(self.run / "home"),
+            memory_env=self.memory_plan.env if self.memory_plan else None,
+            coder_max_loop=self.args.coder_max_loop,
         )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
@@ -469,6 +517,18 @@ class Launch:
             if evaluations.exists()
             else None,
         )
+        self.receipt["memory"] = (
+            research_memory.record(
+                self.memory_plan,
+                run_id=self.args.run_id,
+                run_dir=self.run,
+                started_at=self.receipt["started_at"],
+                ended_at=self.receipt["ended_at"],
+                secrets=(self.token, self.api_key),
+            )
+            if self.memory_plan
+            else {"enabled": False}
+        )
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
 
@@ -478,6 +538,7 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     args.run_dir.mkdir()
     (args.run_dir / "logs").mkdir()
     launch = Launch(args, paths)
+    launch.api_key = environ.get("ALPHA_GATEWAY_API_KEY", "")
 
     def interrupted(signum: int, frame: Any) -> None:
         raise KeyboardInterrupt
@@ -522,6 +583,9 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--trial-ledger", type=Path, required=True)
     r.add_argument("--run-id", required=True)
     r.add_argument("--loop-n", type=int, default=2)
+    r.add_argument("--memory-dir", type=Path)
+    r.add_argument("--no-memory", action="store_true")
+    r.add_argument("--coder-max-loop", type=int, default=2)
     r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)
     r.add_argument("--wall-seconds", type=float, default=5400)
     r.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")

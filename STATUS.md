@@ -93,6 +93,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - ControlStore-owned durable acquisition journal — large (L)
 - Data-directory naming migration — medium (M)
 - Delivery tooling paper cuts found while building the swing-judge stack — small (S)
+- Exact versions for outside projects in the main install's manifests — small (S)
 - Exposure log: correct entries and match ideas by economic family — medium (M)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
@@ -107,6 +108,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Local vision model and hosted finance reasoning — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
+- Name where NautilusTrader may be imported — small (S)
 - Offline price import from a local file — medium (M)
 - One crypto store for backtests, with receipts — medium (M)
 - One trial ledger, many code versions — medium (M)
@@ -117,6 +119,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
+- Re-check the vendored Kronos copy against the glue rules — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Rule language: session, time of day, open and volume — medium (M)
 - Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
@@ -124,7 +127,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 
 ## Housekeeping
 
-- Backlog items: 35
+- Backlog items: 38
 - Staged refactors: 6
 
 ## Where things are

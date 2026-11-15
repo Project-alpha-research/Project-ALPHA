@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: e97f16ba6601
+verified: 3d05e549f8ef
 ---
 
 # Data layer
@@ -49,10 +49,14 @@ value is stored as known from the day after its date and the series is marked `a
 FRED/ALFRED macro series retain values as first published and every returned revision, with
 publication dates and hashed provenance in `data_dir/context/fred/`. They are reference data for
 explaining research results, kept separate from the bar store, snapshots and backtest inputs.
-`alpha context` pulls, lists and reads this store; the default read selects only publications
-known by its cutoff. Explicit first-release and latest views name their revision policy.
+`alpha context` pulls, lists and reads this store; the default read selects publications with
+`known_from <= cutoff` and either no `known_until` or `known_until >= cutoff` (both ends inclusive).
+An observation with no valid vintage is absent; a valid vintage with a missing value remains null.
+Explicit first-release and latest views retain their historical and null-ended-only policies.
 Window endpoints carry the last observation knowable at each boundary, capped by `--as-of`;
 window extrema use observation dates inside the window at that cutoff. Missing values remain null.
+An expired newest observation can leave an earlier still-valid observation to carry; a live null
+remains null without falling back to an earlier value.
 The key comes only from `FRED_API_KEY`; provider copyright restrictions are recorded in provenance.
 Live API behavior remains unconfirmed. HTTP 400 on the full real-time range retries five-year
 windows over that same range; identical vintage rows merge, conflicting or overlapping rows fail.

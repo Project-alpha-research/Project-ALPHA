@@ -106,6 +106,104 @@ def test_as_known_first_and_latest() -> None:
     assert latest(frame())["value"].to_list() == [2.0, None, 4.0]
 
 
+def expiry_frame() -> pl.DataFrame:
+    return parse_observations(
+        "X",
+        [
+            observation(value="1", start="2024-02-01", end="2024-02-10"),
+            observation(value="2", start="2024-02-11", end="2024-02-20"),
+            observation(value="3", start="2024-03-01", end="2024-03-05"),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    ("cutoff", "values"),
+    [
+        ("2024-01-31", []),
+        ("2024-02-01", [1.0]),
+        ("2024-02-10", [1.0]),
+        ("2024-02-11", [2.0]),
+        ("2024-02-20", [2.0]),
+        ("2024-02-21", []),
+        ("2024-02-29", []),
+        ("2024-03-01", [3.0]),
+        ("2024-03-05", [3.0]),
+        ("2024-03-06", []),
+    ],
+)
+def test_as_known_validity_intervals(cutoff: str, values: list[float]) -> None:
+    # Adjacent revisions share no day; the later gap and terminal expiry have no row.
+    result = as_known(expiry_frame(), as_of=date.fromisoformat(cutoff))
+    assert result["value"].to_list() == values
+    assert result.schema == expiry_frame().schema
+
+
+@pytest.mark.parametrize("value", ["7", "."])
+@pytest.mark.parametrize("end", ["2024-02-10", "9999-12-31"])
+@pytest.mark.parametrize("cutoff", ["2024-02-10", "2024-02-11"])
+def test_as_known_null_value_and_open_end_are_distinct(value: str, end: str, cutoff: str) -> None:
+    df = parse_observations("X", [observation(value=value, end=end)])
+    result = as_known(df, as_of=date.fromisoformat(cutoff))
+    expected = [] if end < cutoff else [None if value == "." else 7.0]
+    assert result["value"].to_list() == expected
+
+
+def test_expiry_preserves_explicit_first_release_and_latest_contracts() -> None:
+    df = pl.concat(
+        [
+            expiry_frame(),
+            parse_observations(
+                "X",
+                [
+                    observation("2024-02-01", "4", "2024-02-02", "2024-02-10"),
+                    observation("2024-02-01", ".", "2024-02-11"),
+                ],
+            ),
+        ]
+    )
+    assert first_release(df).select("obs_date", "value", "known_from").rows() == [
+        (date(2024, 1, 1), 1.0, date(2024, 2, 1)),
+        (date(2024, 2, 1), 4.0, date(2024, 2, 2)),
+    ]
+    # Finite-ended rows are excluded even when they end after a historical cutoff.
+    assert latest(df).select("obs_date", "value", "known_from").rows() == [
+        (date(2024, 2, 1), None, date(2024, 2, 11)),
+    ]
+
+
+@pytest.mark.bias_guard
+def test_as_known_expiry_future_poison_and_leaky_control() -> None:
+    cutoff = date(2024, 2, 25)
+    original = pl.concat(
+        [
+            expiry_frame(),
+            parse_observations("X", [observation("2023-12-01", "4", "2024-01-01")]),
+            parse_observations("X", [observation("2024-02-01", "5", "2024-03-01")]),
+        ]
+    )
+    poisoned = original.with_columns(
+        pl.when(pl.col("known_from") > cutoff)
+        .then(999999.0)
+        .otherwise(pl.col("value"))
+        .alias("value")
+    )
+    expected = parse_observations("X", [observation("2023-12-01", "4", "2024-01-01")])
+    assert as_known(original, as_of=cutoff).equals(expected)
+    assert as_known(poisoned, as_of=cutoff).equals(expected)
+    with pytest.raises(AssertionError):
+        assert latest(original).equals(latest(poisoned))
+    # The prior start-only selection leaks an expired vintage even without future values.
+    leaky = (
+        original.filter(pl.col("known_from") <= cutoff)
+        .sort("known_from")
+        .unique(subset=["series_id", "obs_date"], keep="last")
+        .sort("series_id", "obs_date")
+    )
+    with pytest.raises(AssertionError):
+        assert leaky.equals(expected)
+
+
 @pytest.mark.bias_guard
 def test_as_known_future_poison_and_leaky_control() -> None:
     cutoff = date(2024, 3, 10)

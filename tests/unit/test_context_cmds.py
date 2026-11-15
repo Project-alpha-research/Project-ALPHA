@@ -117,6 +117,192 @@ def test_window_cutoff_and_empty_boundaries(stored: Path) -> None:
     }
 
 
+@pytest.fixture
+def expiry_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    # (observation date, value, publication start, inclusive publication end).
+    series_rows = {
+        "ONLY": [("2024-02-01", "90", "2024-02-02", "2024-02-10")],
+        "CARRY": [
+            ("2024-02-08", "4", "2024-02-09", "9999-12-31"),
+            ("2024-02-09", "90", "2024-02-10", "2024-02-10"),
+        ],
+        "LIVE_NULL": [
+            ("2024-01-01", "4", "2024-01-02", "9999-12-31"),
+            ("2024-02-01", ".", "2024-02-02", "9999-12-31"),
+        ],
+        "EXPIRED_NULL": [
+            ("2024-01-01", "4", "2024-01-02", "9999-12-31"),
+            ("2024-02-01", ".", "2024-02-02", "2024-02-10"),
+        ],
+        "MONTHLY": [
+            ("2024-01-01", "1", "2024-01-02", "2024-02-14"),
+            ("2024-01-01", "9", "2024-02-15", "9999-12-31"),
+            ("2024-02-01", "3", "2024-02-02", "2024-02-19"),
+            ("2024-02-01", "30", "2024-02-20", "9999-12-31"),
+            ("2024-03-01", "5", "2024-03-02", "2024-03-14"),
+            ("2024-04-01", "999", "2024-04-02", "9999-12-31"),
+        ],
+        "DAILY": [
+            ("2024-01-14", "2", "2024-01-15", "2024-01-20"),
+            ("2024-01-15", "4", "2024-01-16", "2024-01-31"),
+            ("2024-01-15", "40", "2024-02-01", "9999-12-31"),
+            ("2024-02-09", "-8", "2024-02-10", "2024-02-10"),
+            ("2024-03-09", "6", "2024-03-10", "9999-12-31"),
+            ("2024-03-10", "100", "2024-03-11", "9999-12-31"),
+            ("2024-03-21", "999", "2024-03-22", "9999-12-31"),
+        ],
+    }
+    for series_id, rows in series_rows.items():
+        metadata = dict(
+            title=series_id,
+            units="Percent",
+            frequency="Daily" if series_id in {"DAILY", "CARRY"} else "Monthly",
+            seasonal_adjustment="None",
+            last_updated="2024-04-02",
+        )
+        store_series(
+            series_id,
+            parse_observations(
+                series_id,
+                [
+                    dict(date=day, value=value, realtime_start=start, realtime_end=end)
+                    for day, value, start, end in rows
+                ],
+            ),
+            metadata,
+            data_dir=tmp_path,
+            fetched_at=datetime(2024, 4, 2, tzinfo=UTC),
+        )
+    return tmp_path
+
+
+@pytest.mark.parametrize(
+    ("series_id", "expected"),
+    [
+        ("ONLY", []),
+        (
+            "CARRY",
+            [{"obs_date": "2024-02-08", "value": 4.0, "known_from": "2024-02-09"}],
+        ),
+        (
+            "LIVE_NULL",
+            [
+                {"obs_date": "2024-01-01", "value": 4.0, "known_from": "2024-01-02"},
+                {"obs_date": "2024-02-01", "value": None, "known_from": "2024-02-02"},
+            ],
+        ),
+        (
+            "EXPIRED_NULL",
+            [{"obs_date": "2024-01-01", "value": 4.0, "known_from": "2024-01-02"}],
+        ),
+    ],
+)
+def test_show_expired_and_live_null_observations(
+    expiry_store: Path, series_id: str, expected: list[dict[str, Any]]
+) -> None:
+    result = invoke("show", series_id, "--as-of", "2024-02-11", "--json")
+    assert result["view"] == "as_known" and result["as_of"] == "2024-02-11"
+    assert result["rows"] == expected
+
+
+@pytest.mark.parametrize(
+    ("series_id", "start_value", "end_value", "change"),
+    [
+        ("ONLY", 90.0, None, None),
+        ("CARRY", 90.0, 4.0, -86.0),
+        ("LIVE_NULL", None, None, None),
+        ("EXPIRED_NULL", None, 4.0, None),
+    ],
+)
+def test_window_expiry_missing_and_legitimate_carry(
+    expiry_store: Path,
+    series_id: str,
+    start_value: float | None,
+    end_value: float | None,
+    change: float | None,
+) -> None:
+    result = invoke(
+        "window", "--start", "2024-02-10", "--end", "2024-02-11", "--series", series_id, "--json"
+    )
+    assert result["series"] == [
+        {
+            "series_id": series_id,
+            "start_value": start_value,
+            "end_value": end_value,
+            "change": change,
+            "min": None,
+            "max": None,
+        }
+    ]
+
+
+def test_window_terminal_expiry_has_no_values(expiry_store: Path) -> None:
+    result = invoke(
+        "window", "--start", "2024-02-11", "--end", "2024-02-12", "--series", "ONLY", "--json"
+    )
+    assert result["series"] == [
+        {
+            "series_id": "ONLY",
+            "start_value": None,
+            "end_value": None,
+            "change": None,
+            "min": None,
+            "max": None,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    ("cutoff", "monthly", "daily"),
+    [
+        ("2024-02-10", (3.0, 3.0, 3.0), (-8.0, -8.0, 40.0)),
+        ("2024-03-10", (5.0, 5.0, 30.0), (6.0, 6.0, 40.0)),
+        ("2024-03-20", (30.0, 30.0, 30.0), (100.0, 6.0, 100.0)),
+        ("2024-04-10", (30.0, 30.0, 30.0), (100.0, 6.0, 100.0)),
+        (None, (30.0, 30.0, 30.0), (100.0, 6.0, 100.0)),
+    ],
+)
+def test_window_mixed_frequencies_own_cutoffs_and_extrema(
+    expiry_store: Path,
+    cutoff: str | None,
+    monthly: tuple[float, float, float],
+    daily: tuple[float, float, float],
+) -> None:
+    args = [
+        "window",
+        "--start",
+        "2024-01-15",
+        "--end",
+        "2024-03-20",
+        "--series",
+        "MONTHLY",
+        "--series",
+        "DAILY",
+        "--json",
+    ]
+    if cutoff is not None:
+        args.extend(["--as-of", cutoff])
+    result = invoke(*args)
+    assert result["view"] == "as_known"
+    assert result["as_of"] == (cutoff or "2024-03-20")
+    assert result["start"] == "2024-01-15" and result["end"] == "2024-03-20"
+    assert result["series"] == [
+        {
+            "series_id": series_id,
+            "start_value": start_value,
+            "end_value": end_value,
+            "change": end_value - start_value,
+            "min": minimum,
+            "max": maximum,
+        }
+        for series_id, start_value, (end_value, minimum, maximum) in [
+            ("MONTHLY", 1.0, monthly),
+            ("DAILY", 2.0, daily),
+        ]
+    ]
+
+
 def test_pull_partial_and_total_failure(stored: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import alpha_cli.context_cmds as commands
 

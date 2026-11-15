@@ -55,10 +55,13 @@ def validate(df: pl.DataFrame) -> None:
 
 
 def as_known(df: pl.DataFrame, *, as_of: date) -> pl.DataFrame:
-    """One vintage per observation: greatest publication date no later than as_of."""
+    """One vintage per observation valid at as_of, including both period boundaries."""
     validate(df)
     return (
-        df.filter(pl.col("known_from") <= as_of)
+        df.filter(
+            (pl.col("known_from") <= as_of)
+            & (pl.col("known_until").is_null() | (pl.col("known_until") >= as_of))
+        )
         .sort("known_from")
         .unique(subset=["series_id", "obs_date"], keep="last")
         .sort("series_id", "obs_date")

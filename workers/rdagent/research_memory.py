@@ -541,6 +541,13 @@ def _knowledge_view(knowledge: Any) -> dict[str, Any]:
     errors.update(node.content for node in nodes if node.label == "error")
     return {
         "working_factors": sorted(knowledge.success_task_to_knowledge_dict),
+        "alpha_rejected": sorted(
+            {
+                knowledge.node_to_implementation_knowledge_dict[node_id].target_task.factor_name
+                for node_id, node in knowledge.graph.nodes.items()
+                if node.label == "alpha_rejected_implement"
+            }
+        ),
         "attempts_per_task": {
             task: len(attempts) for task, attempts in knowledge.working_trace_knowledge.items()
         },
@@ -694,6 +701,7 @@ def _plain(view: dict[str, Any]) -> str:
             f"It has {len(knowledge['working_factors'])} working factor programs it can reuse."
         )
         lines.append("Working programs: " + ", ".join(knowledge["working_factors"]))
+        lines.append("ALPHA rejected the code of: " + ", ".join(knowledge["alpha_rejected"]))
         lines.append("Coding attempts per task: " + _json(knowledge["attempts_per_task"]))
         lines.append("Past coding errors: " + ", ".join(knowledge["error_kinds"]))
         lines.append("Knowledge links by kind: " + _json(knowledge["nodes_by_label"]))

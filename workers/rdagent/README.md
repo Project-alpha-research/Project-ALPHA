@@ -481,6 +481,19 @@ It uses RD-Agent's supported knowledge settings and session checkout; earlier ru
 unchanged. This is working knowledge: ALPHA's trial ledger remains the sole evidence authority.
 Nothing is copied between memory and the ledger.
 
+ALPHA's code-level verdict reaches coding memory before evaluation: factors that fail the
+look-ahead check (`LOOKAHEAD`) or run but return the wrong output shape (`FAILED`) lose their
+successful coding-reference status. Their graph nodes become `alpha_rejected_implement` and
+their attempt history stays available for inspection. Screen and replay failures keep their
+correct implementations as coding references. The coder reloads shared knowledge before each
+experiment under the same file lock. Signed knowledge updates replace the file atomically;
+demotion errors are recorded without stopping the run.
+
+`coder-verdicts.jsonl` records each rejected factor's iteration, name, code and task-information
+hashes, status, whether it was demoted, and any memory error. With memory disabled, it records
+`demoted: false` and `no persistent coding memory`. The inspector lists these task names as
+“ALPHA rejected the code of: ...”.
+
 The default location is `research-memory/` beside the trial ledger. Use `--memory-dir /abs/path`
 to choose another location outside every git work tree, or `--no-memory` to run fresh without
 reading or writing memory. `--coder-max-loop` accepts 1–3 (default 2); at 1 the coder cannot learn
@@ -580,6 +593,15 @@ Series include a `clock` column; replay and holdings files have one block per re
 Optional instrument defaults are 0 fee / 5 bps slippage, 252 periods per year, CASH for
 non-crypto and MARGIN for slash pairs; each default is a warning. Reads stop at 2023-12-31.
 Rule trials count in the ledger total but do not enter RD-Agent's factor family or proposal summary.
+
+Unknown ledger schemas are skipped by the proposer with a counted explanation. The evaluator
+keeps their trial indices contiguous, excludes their contents from identity and repeat checks,
+and counts each as one conservative trial with p = 1.0. Evaluations containing such rows add
+`ledger_unknown_rows` (count and distinct schema names) and warn on stderr. Malformed complete
+lines and malformed known-schema rows still fail loud. The proposer, which reads without the
+ledger lock, ignores a final line without a newline (another writer may be appending); the
+evaluator, the exposure command and the rule family read under the lock, so for them a partial
+last line means a crashed writer and they fail loud rather than append after it.
 
 ### Exposure log and imported trials
 

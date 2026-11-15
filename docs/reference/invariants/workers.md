@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 5f6d82800b19
+verified: 21a8165284fc
 ---
 
 # Worker invariants
@@ -128,7 +128,8 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   all model settings. `tests/unit/test_rdagent_model_gateway.py`.
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md)): the one model-connected
   real-data route, started by `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs
-  unmodified; only the classes named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`), and they
+  unmodified; only the classes named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, and
+  `alpha_factor_coder.py`, which only restarts one upstream counter per experiment), and they
   import RD-Agent and pandas, never an ALPHA package: the evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess
   in ALPHA's environment. The loop is never given data on or after 2024-01-01; every factor goes to the append-only
   cross-run trial ledger (a repeat by code hash is not new evidence); `decision` is ALPHA's rule, never the model's;
@@ -136,16 +137,22 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   disclosure. Its runtime is built only by `--with-factor-runtime` from `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`.
-- Research memory and verdict feedback (`research_memory.py`, `alpha_factor_coder.py`): RD-Agent's own knowledge and
-  session checkout persist between runs beside the trial ledger; this is working knowledge, never evidence, and nothing is
-  copied between memory and the ledger. ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output shape; never a
-  check that merely errored) demotes that exact code from RD-Agent's successful coding references, keeps its attempt
-  history, and is recorded in `coder-verdicts.jsonl`. A demotion failure is recorded and advisory: it never stops the run.
-  Tests: `tests/unit/test_rdagent_research_memory.py`.
-- Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a counted note, and
-  the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`. Malformed complete
-  lines and malformed known-schema rows still fail loud; under the ledger lock a partial last line fails loud.
+  A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
+  plain line and exits 2. Research memory is described in the
+  [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
+  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`.
+- Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
+  is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
+  than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger
+  (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
+  the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
+  family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+  shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
+  recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
+  worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
+  counted note, and the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`.
+  Malformed complete lines and malformed known-schema rows still fail loud.
 - Run viewer (`rdagent_viewer.py serve`, `rdagent_ui_entry.py`): RD-Agent's own unmodified Streamlit log viewer on a
   run folder, foreground and local only. It runs in its own hash-pinned Python 3.11 runtime, built only by
   `--with-ui` from `ui-requirements.lock` and recorded by `install_stock_profile.py --profile ui`; the entry

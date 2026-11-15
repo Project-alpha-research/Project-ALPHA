@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 5f6d82800b19
+verified: 21a8165284fc
 ---
 
 # RD-Agent
@@ -51,6 +51,12 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
   makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+- RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
+  [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
+- Human-authored rule families (written by a person, frozen and hash-checked before the run) are
+  backtested on [Nautilus](nautilus.md) without any 2024 data and go into the same trial ledger,
+  so they count toward how many ideas were tried, but never mix into RD-Agent's factor statistics
+  or the summary it proposes from (`alpha_cli.rdagent_rule_family`).
 - Later: RD-Agent drives the Qlib worker, and composes studies across all research families.
 - The plain-English walk-through is [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
 

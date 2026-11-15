@@ -3,7 +3,7 @@ owner: data layer
 sources:
   - packages/alpha-data/src/**
   - packages/alpha-data/pyproject.toml
-verified: 5dde5e108d06180e
+verified: cdedaf5e350d4e8d
 ---
 
 # alpha-data workspace
@@ -35,13 +35,14 @@ import it. It must never let a read see data that was not knowable at the cutoff
 ## How to change it
 
 - Code: `packages/alpha-data/src/alpha_data/`; bar timeframes (one minute to one day, the no-HFT boundary,
-  one store per timeframe) in `timeframe.py`; vendor adapters in `adapters/`, the crypto data
+  one store per timeframe) in `timeframe.py`; exchange sessions, resampling and as-known alignment in
+  `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
   house in `crypto/` and `crypto/providers/`.
 - Tests: `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,
-  `test_bar_timeframe.py`, `test_ingest_pipeline_intraday.py`,
+  `test_bar_timeframe.py`, `test_ingest_pipeline_intraday.py`, `test_sessions.py`, `test_resample.py`, `test_align.py`,
   `test_crypto_*` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
-  `test_survivorship.py`, `test_candles_pit.py`, `test_crypto_*_future_poison.py`; integration
+  `test_survivorship.py`, `test_candles_pit.py`, `test_intraday_future_poison.py`, `test_crypto_*_future_poison.py`; integration
   `tests/integration/test_data_cli.py` and `tests/integration/test_crypto_*`.
 - A new or changed read path needs its future-poison guard with a must-fail leaky twin
   (pattern: `tests/bias_guards/test_future_poison_pattern.py`).

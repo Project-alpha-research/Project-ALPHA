@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: b00a83e77b8b8f36
+verified: 42093e9d40abfd57
 ---
 
 # RD-Agent

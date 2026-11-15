@@ -3,7 +3,7 @@ owner: status page and roadmap
 sources:
   - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 9bf6bec8afaf
+verified: b793ece85d51
 ---
 
 # Production-ready scope: the one checklist
@@ -14,7 +14,7 @@ shown on a screen, or carries an owner decision that drops it. "Production grade
 words is in the [decisions log][grade]; what works today is on [STATUS.md][status]. This file
 changes no capability state: the [capability map](capabilities.toml) stays the source for those.
 Stages 5 to 9 are in [part 2](production-scope-2.md); stages 10 to 12, the lost-feature check
-and the open questions for the owner are in [part 3](production-scope-3.md).
+and the questions put to the owner are in [part 3](production-scope-3.md).
 
 ## How to read a row
 
@@ -98,7 +98,7 @@ Prices, the universe, and the context a trader needs around them.
 | Completeness check on downloaded bars | Working | `alpha-data` | Now | [status] |
 | Check a whole history and freeze a date range in one step each | Missing | backlog | Path 1 | [status] |
 | Daily stock and ETF bars from a free source, frozen and verified | Unproven | `alpha-data` | Path 1 | [free] |
-| Any bar size from one minute up; the daily-only refusal removed | Unproven | `alpha-data`, `alpha-backtest`; PRs #185, #189, #194 (draft) | Path 1 | [any-bar] |
+| Any bar size from one minute up; the daily-only refusal removed | Unproven | `alpha-data`, `alpha-backtest`; PRs #185, #189, #194 (merged) | Path 1 | [any-bar] |
 | Year length taken from the calendar (crypto trades 365 days), not fixed at 252 | Missing | `alpha-cli` | Path 1 | [precise] |
 | Intraday bars on disk: crypto hourly and 5-minute first, stocks after | Unproven | `data-intraday` folder: BTC/ETH 1h and 5m, SPY/AAPL 5m and 1h (2026-11-14) | Path 2 | [any-bar] |
 | Universe as it was on each date, delisted coins included; survivor bias labelled | Missing | `alpha-data` | Path 3 | private |

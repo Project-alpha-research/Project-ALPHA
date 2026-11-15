@@ -725,7 +725,9 @@ def _plain(view: dict[str, Any]) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="RD-Agent's own persistent knowledge and sessions; ALPHA's ledger is the record"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     inspect = sub.add_parser("show")
     inspect.add_argument("--memory-dir", type=Path, required=True)

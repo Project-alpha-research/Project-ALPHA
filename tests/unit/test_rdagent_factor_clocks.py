@@ -11,6 +11,7 @@ import pytest
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_core import DataError
 from tests.unit.test_rdagent_factor_eval import evaluate, fixture, trial_series
+from tests.unit.test_rdagent_factor_eval import recorded_time as recorded_time
 
 
 def arrays() -> tuple[np.ndarray, np.ndarray, list[date], list[date]]:
@@ -115,7 +116,7 @@ def test_low_sample_is_labelled_not_refused() -> None:
     assert result["warnings"] == ["low_sample: n=10"]
 
 
-def test_family_counts_factor_times_clock(tmp_path: Path) -> None:
+def test_family_counts_factor_times_clock(tmp_path: Path, recorded_time: None) -> None:
     run = tmp_path / "run"
     result = evaluate(run, fixture(run), tmp_path / "ledger.jsonl")
     row = result["factors"][0]

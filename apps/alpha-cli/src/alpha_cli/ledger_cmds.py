@@ -46,6 +46,8 @@ def _render(output: dict[str, Any]) -> str:
             "family_id",
             "kind",
             "outcome",
+            "raw_status",
+            "reason",
             "month",
             "asset",
             "rows",
@@ -76,6 +78,8 @@ def _render(output: dict[str, Any]) -> str:
     for source in output.get("sources", []):
         if source["state"] == "missing":
             lines.append(f"{source['source']}: ledger file not found ({source['file']})")
+        else:
+            lines.append(f"{source['source']}: read {source['file']}")
         for reason, count in source["unknown_by_reason"].items():
             lines.append(
                 f"{source['source']}: {count} row(s) not understood yet, counted as trials "

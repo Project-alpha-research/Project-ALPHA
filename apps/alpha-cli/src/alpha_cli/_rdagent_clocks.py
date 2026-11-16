@@ -186,8 +186,9 @@ def clock_feedback(row: dict[str, Any]) -> str:
         ),
         "SPREAD_FAIL": (
             "A clock passed the rank screen, but the top third it would hold did not beat the "
-            "bottom third before costs (top-third-does-not-beat-bottom-third), so it was not "
-            "replayed; only a weekly or monthly pass can be a candidate."
+            "bottom third before costs (top-third-does-not-beat-bottom-third). It was "
+            "replayed only to count the trial; its result is not used. "
+            "Only a weekly or monthly pass can be a candidate."
         ),
         "SCREEN_FAIL": (
             "No swing clock passed both the screen and replay; "
@@ -195,7 +196,10 @@ def clock_feedback(row: dict[str, Any]) -> str:
         ),
         "DEGENERATE": "Every clock has degenerate signal coverage, ties or thin decision days.",
         "ERROR": "Evaluation failed; the recorded clock errors require investigation.",
-        "FAILED": "Factor execution failed.",
+        "FAILED": (
+            f"Factor failed: {row.get('failure_reason', 'reason not recorded')}. "
+            + str(row.get("failure_detail", "")).split("\n")[0]
+        ),
         "LOOKAHEAD": "The factor failed the look-ahead check.",
         "REPEAT": "This code was already evaluated and supplies no new evidence.",
     }

@@ -60,6 +60,7 @@ FAMILY_KEYWORDS = (
     ("illiquidity", ("amihud", "illiquid")),
     ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
     ("skewness and lottery returns", ("skew", "max_return", "up_day")),
+    ("drawdown", ("drawdown",)),
     ("momentum and trend", ("momentum", "mom_", "trend", "sma_distance", "autocorr")),
     ("volatility and beta", ("volatil", "semivariance", "beta", "vol_")),
     ("range and compression", ("range",)),
@@ -68,8 +69,17 @@ FAMILY_KEYWORDS = (
 )
 
 
-def idea_family(name: str) -> str:
+def idea_family(name: str, description: str = "", formulation: str = "") -> str:
     lowered = name.lower()
+    proposal = f"{name} {description} {formulation}".lower().replace("_", " ")
+    if re.search(r"\b(?:composite|ridge|ensemble|blend|ml|machine.learning)\b", proposal):
+        inherited = set()
+        for feature in re.findall(r"[a-z][a-z0-9_]*", f"{description} {formulation}".lower()):
+            for family, keywords in FAMILY_KEYWORDS:
+                if any(re.search(keyword, feature) for keyword in keywords):
+                    inherited.add(family)
+                    break
+        return "; ".join(sorted(inherited)) if inherited else "composite: unknown inputs"
     for family, keywords in FAMILY_KEYWORDS:
         if any(re.search(keyword, lowered) for keyword in keywords):
             return family
@@ -123,7 +133,10 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
     families: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        families.setdefault(idea_family(row["name"]), []).append(row)
+        for family in idea_family(
+            row["name"], row.get("description") or "", row.get("formulation") or ""
+        ).split("; "):
+            families.setdefault(family, []).append(row)
     lines, closed = [], []
     for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         best = min(members, key=_rank)
@@ -144,7 +157,8 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
             f"\nThese families have {switch_after} or more failed tries and no candidate: "
             + "; ".join(closed)
             + ". Do not propose another near-variant of them (a new window, skip or scaling of "
-            "the same idea); move to a different family with a different economic mechanism."
+            "the same idea), including composites using ANY of these families; "
+            "move to a different family with a different economic mechanism."
         )
     return text
 
@@ -176,6 +190,8 @@ def ledger_summary(row: dict[str, Any]) -> str:
         )
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
+    if row.get("failure_reason"):
+        line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
     return line
 
 
@@ -193,7 +209,8 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
         + ")\n"
     )
-    lines, seen = [], set()
+    lines: list[str] = []
+    seen: set[str] = set()
     unknown: list[str] = []
     known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
     for row in rows:
@@ -379,6 +396,57 @@ class AlphaFactorScenario(QlibFactorScenario):
 
 
 class AlphaFactorRunner(Developer):
+    @staticmethod
+    def execute_factor(workspace: Any, feedback: Any) -> tuple[Any, str | None, str]:
+        """Separate execution, critic and output failures before they reach the ledger."""
+        detail = str(getattr(feedback, "execution_feedback", "") or "")
+        if not feedback:
+            if (
+                "budget_exhausted" in detail
+                or "budget exhausted" in detail
+                or "call cap reached" in detail
+            ):
+                return None, "cap_reached", detail.split("\n")[0]
+            if "Traceback" in detail or "Error:" in detail or "Exception:" in detail:
+                return None, "exception", detail.split("\n")[0]
+            return (
+                None,
+                "critic_rejected",
+                detail.split("\n")[0] or "RD-Agent critic did not accept the code",
+            )
+        try:
+            execution, values = workspace.execute("All")
+        except Exception as error:
+            reason = (
+                "cap_reached" if getattr(error, "code", None) == "budget_exhausted" else "exception"
+            )
+            return None, reason, f"{type(error).__name__}: {error}".split("\n")[0]
+        if not isinstance(values, pd.DataFrame):
+            text = str(execution)
+            reason = "exception" if "Traceback" in text or "Error" in text else "bad_output"
+            return None, reason, text.split("\n")[0] or "factor returned no data frame"
+        if (
+            values.empty
+            or len(values.columns) != 1
+            or not isinstance(values.index, pd.MultiIndex)
+            or values.index.nlevels != 2
+        ):
+            return (
+                values,
+                "bad_output",
+                "one output column and a date/instrument index required per factor task",
+            )
+        try:
+            dates = pd.to_datetime(values.index.get_level_values(0), utc=True, errors="raise")
+            pd.to_numeric(values.iloc[:, 0], errors="raise")
+            if dates.hasnans or any(
+                not isinstance(name, str) or not name for name in values.index.get_level_values(1)
+            ):
+                raise ValueError("factor dates and instrument names must be present")
+        except (ValueError, TypeError, OverflowError) as error:
+            return values, "bad_output", f"{type(error).__name__}: {error}".split("\n")[0]
+        return values, None, ""
+
     def develop(self, exp: Any) -> Any:
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
@@ -413,12 +481,19 @@ class AlphaFactorRunner(Developer):
                 "code_sha256": hashlib.sha256(identity).hexdigest(),
                 "status": "FAILED",
                 "lookahead": {"status": "NOT_RUN"},
+                "description": getattr(task, "description", None),
+                "formulation": getattr(task, "factor_formulation", None),
+                "failure_reason": "bad_output",
+                "failure_detail": "factor.py was not produced",
             }
             if code:
                 record_code(run, str(factor["code_sha256"]), code)
-            if code and feedback:
-                execution, values = workspace.execute("All")
-                if values is not None:
+            if code:
+                values, failure, detail = self.execute_factor(workspace, feedback)
+                factor.update(failure_reason=failure, failure_detail=detail)
+                if values is not None and failure is None:
+                    factor.pop("failure_reason")
+                    factor.pop("failure_detail")
                     check = check_prefix_invariance(
                         code,
                         values,
@@ -428,9 +503,6 @@ class AlphaFactorRunner(Developer):
                     )
                     factor["lookahead"] = check
                     factor["status"] = "OK" if check["status"] == "PASS" else "LOOKAHEAD"
-                    if factor["status"] == "OK" and len(values.columns) != 1:
-                        factor["status"] = "FAILED"
-                        factor["failure_detail"] = "one output column required per factor task"
                     if factor["status"] == "OK":
                         frame = values.copy()
                         frame.columns = [task.factor_name]
@@ -441,7 +513,8 @@ class AlphaFactorRunner(Developer):
                         # (timeout, subprocess failure) says nothing about the code.
                         rejected.append((task, factor))
                 else:
-                    factor["failure_detail"] = execution
+                    if failure == "bad_output" and isinstance(values, pd.DataFrame):
+                        rejected.append((task, factor))
             factors.append(factor)
         record_coder_verdicts(run, iteration, rejected)
         if frames:

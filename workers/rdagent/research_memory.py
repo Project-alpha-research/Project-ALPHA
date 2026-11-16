@@ -208,6 +208,44 @@ def completed_loops(session_dir: Path) -> int:
     return max(indexes) + 1 if indexes else 0
 
 
+def close_unfinished_rounds(session: Path) -> None:
+    """Append an idempotent abandonment record beside the previous session, never a trial."""
+    if not session.is_dir():
+        return
+    record = session.parents[2] / "rounds.jsonl"
+    existing = (
+        [json.loads(line) for line in record.read_text().splitlines()] if record.exists() else []
+    )
+    closed = {r["loop"] for r in existing if r.get("status") == "abandoned_at_cap"}
+    pending = [
+        folder
+        for folder in session.iterdir()
+        if folder.is_dir()
+        and folder.name.isdecimal()
+        and int(folder.name) not in closed
+        and any(p.is_file() for p in folder.glob("*_*"))
+        and not any(p.is_file() for p in folder.glob("*_record"))
+    ]
+    if pending:
+        with record.open("a") as stream:
+            for folder in sorted(pending, key=lambda p: int(p.name)):
+                stream.write(
+                    _json(
+                        {
+                            "schema": "AlphaRdagentRoundV1",
+                            "loop": int(folder.name),
+                            "status": "abandoned_at_cap",
+                            "recorded_at": _now(),
+                            "session_dir": str(session),
+                            "trial_created": False,
+                        }
+                    )
+                    + "\n"
+                )
+            stream.flush()
+            os.fsync(stream.fileno())
+
+
 def prepare(
     memory_dir: Path, *, run_id: str, run_dir: Path, source_sha256: str, judge_sha256: str
 ) -> MemoryPlan:
@@ -334,57 +372,41 @@ def open_factor_loop(
             _safe_event(environ, **warning)
     session = environ.get("ALPHA_RDAGENT_CONTINUE_SESSION")
     if session:
-        # RD-Agent writes step dumps with a plain open("wb"): a run killed mid-dump can leave a
-        # truncated newest file. Try the newest few dumps, newest first, before giving up.
+        # A fresh scheduler receives only completed research history; no paid half-round is
+        # resumed. Shared CoSTEER knowledge is loaded by the current coder's normal settings.
+        close_unfinished_rounds(Path(session))
         dumps = sorted(
             (
                 p
-                for p in Path(session).glob("*/*_*")
-                if p.is_file() and p.parent.name.isdecimal() and p.name.split("_")[0].isdecimal()
+                for p in Path(session).glob("*/*_record")
+                if p.is_file() and p.parent.name.isdecimal()
             ),
-            key=lambda p: (int(p.parent.name), int(p.name.split("_")[0])),
+            key=lambda p: int(p.parent.name),
             reverse=True,
         )[:3]
-        error_type = "no step dump"
+        error_type = "no completed round dump"
         for dump in dumps:
             try:
-                loop = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
-                total = int(environ["ALPHA_RDAGENT_CONTINUE_LOOPS"]) + loop_n
-            except Exception as error:  # noqa: BLE001 - try an older dump, then a fresh loop
+                previous = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
+                if getattr(previous, "trace", None) is None:
+                    raise ValueError("completed checkpoint has no research trace")
+                loop = loop_cls(settings)
+                loop.trace = previous.trace
+            except Exception as error:
                 error_type = type(error).__name__
+                _safe_event(
+                    environ,
+                    "checkpoint-unloadable",
+                    f"Completed checkpoint {dump.name}: {error_type}",
+                )
                 continue
-            # The pickled coder carries the earlier run's class and settings (attempt limit, its
-            # in-memory knowledge counter). Build this run's coder from the current settings,
-            # exactly as RDLoop.__init__ does; its knowledge comes from the shared file anyway.
-            if getattr(settings, "coder", None) and getattr(loop, "trace", None) is not None:
-                try:
-                    from rdagent.core.utils import import_class
-
-                    loop.coder = import_class(settings.coder)(loop.trace.scen)
-                except Exception as error:  # noqa: BLE001 - keep the pickled coder, say so
-                    _safe_event(
-                        environ,
-                        "coder-rebuild-failed",
-                        f"This run's coder could not be built ({type(error).__name__}); "
-                        "using the continued session's coder.",
-                    )
-            # RDLoop.__init__ logs the scenario under the tag "scenario"; a loaded session skips
-            # __init__, so this run's log folder would have none and RD-Agent's own viewer could
-            # not tell what kind of run it is (it then stops on its first result). Log it here.
-            if getattr(loop, "trace", None) is not None:
-                try:
-                    from rdagent.log import rdagent_logger
-
-                    rdagent_logger.log_object(loop.trace.scen, tag="scenario")
-                except Exception:  # noqa: BLE001, S110 - a missing viewer tag never stops a run
-                    pass
             _safe_event(
                 environ,
                 "continued",
-                f"Continued session {session} from {dump.parent.name}/{dump.name}; "
-                f"{total - loop_n} completed loops, {loop_n} new loops.",
+                f"Restored completed history from {session}/{dump.parent.name}/{dump.name}; "
+                f"starting {loop_n} new rounds at a fresh scheduler boundary.",
             )
-            return loop, total
+            return loop, loop_n
         _safe_event(
             environ,
             "session-unloadable",
@@ -448,10 +470,9 @@ def _record(
             )
             result["warnings"].append(warning)
             _quarantine(root, [knowledge], warning, delete=True)
-        own_loops = completed_loops(session)
+        last_completed = completed_loops(session)
         result["knowledge_sha256_after"] = _hash(knowledge)
         events = run_dir / "memory-events.jsonl"
-        codes = set()
         if events.exists():
             for line in events.read_text(errors="replace").splitlines():
                 try:
@@ -467,16 +488,23 @@ def _record(
                         _warning("memory-event-corrupt", "A memory event line was unreadable.")
                     )
                     continue
-                codes.add(event["code"])
                 result["warnings"].append(event)
-        # loops_after is the lineage's completed rounds after this run: a continued run that
-        # finished no new round still has the rounds it continued (its own folder holds none);
-        # a run that had to start fresh counts only its own.
-        fresh = plan.continue_from is None or "session-unloadable" in codes
-        result["loops_after"] = own_loops if fresh else max(own_loops, plan.loops_before)
-        # Point at this run only when it got further than the lineage it continued (or when it
-        # had to start fresh); a run that crashed before finishing a loop keeps the old pointer.
-        progressed = own_loops > plan.loops_before or (own_loops > 0 and fresh)
+        # New schedulers number their own rounds from zero. Count completed record files,
+        # not the highest session index (old sessions can still have inherited numbering).
+        completed = (
+            sum(
+                folder.is_dir()
+                and folder.name.isdecimal()
+                and any(p.is_file() for p in folder.glob("*_record"))
+                for folder in session.iterdir()
+            )
+            if last_completed
+            else 0
+        )
+        result["rounds_completed"] = completed
+        result["loops_after"] = plan.loops_before + completed
+        progressed = completed > 0
+        close_unfinished_rounds(session)
         if not found and progressed:
             manifest["latest_session"] = {
                 "run_id": run_id,

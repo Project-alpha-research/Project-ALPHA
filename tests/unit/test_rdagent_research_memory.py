@@ -263,15 +263,21 @@ def test_open_loop_without_memory_and_failed_session(tmp_path: Path) -> None:
         "LOG_TRACE_PATH": str(tmp_path / "checkout"),
         "FACTOR_CoSTEER_max_loop": "2",
     }
-    cls.load.return_value = SimpleNamespace(coder="pickled coder", trace=None)
+    cls.load.return_value = SimpleNamespace(
+        coder="pickled coder", trace=SimpleNamespace(hist=["old"])
+    )
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
-    assert loop is cls.load.return_value and total == 5
+    assert loop is cls.return_value and total == 2
+    assert loop.trace is cls.load.return_value.trace
     cls.load.assert_called_once_with(old / "2/4_record", checkout=tmp_path / "checkout")
-    # A truncated newest dump: the next-older dump is used instead.
+    # A truncated completed dump: only an older completed round can supply history.
     cls.load.reset_mock()
-    cls.load.side_effect = [ValueError("truncated"), SimpleNamespace(coder=None)]
+    cls.load.side_effect = [
+        ValueError("truncated"),
+        SimpleNamespace(trace=SimpleNamespace(hist=[])),
+    ]
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
-    assert total == 5 and cls.load.call_args.args[0] == old / "2/3_feedback"
+    assert total == 2 and cls.load.call_args.args[0] == old / "1/4_record"
     cls.load.side_effect = ValueError("secret key path")
     loop, total = memory.open_factor_loop(cls, "settings", 2, env)
     assert total == 2 and loop is cls.return_value
@@ -503,8 +509,9 @@ def _run_memory_round(root: Path, run_id: str, base_url: str, token: str, deadli
     receipt = record(plan, root, run_id, (token,))
     assert "memory-record-failed" not in codes(receipt["warnings"])
     assert not (run / "evaluations.jsonl").exists()
-    # Loop folders keep RD-Agent's numbering across a continued session.
-    assert memory.completed_loops(run / "work/log/__session__") == plan.loops_before + 1
+    # Each scheduler starts at zero; the memory receipt retains the cumulative count.
+    assert memory.completed_loops(run / "work/log/__session__") == 1
+    assert receipt["loops_after"] == plan.loops_before + 1
     return plan
 
 
@@ -813,8 +820,13 @@ from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStra
 from rdagent.oai.llm_utils import APIBackend
 import alpha_factor_coder as c
 
-def refuse(self, input_content):
-    raise RuntimeError("Failed to create chat completion after 2 retries.")
+from model_gateway import GatewayError
+
+def refuse(self: object, input_content: object) -> None:
+    try:
+        raise GatewayError(400, "embedding_input_refused", "input length exceeds context")
+    except GatewayError as cause:
+        raise RuntimeError("Failed to create chat completion after 2 retries.") from cause
 APIBackend.create_embedding = refuse
 graph = UndirectedGraph.__new__(UndirectedGraph)
 graph.__dict__.update(nodes={}, vector_base=None)
@@ -827,7 +839,8 @@ assert "add_node" not in vars(graph)  # restored: nothing of ALPHA's is pickled 
 pickle.dumps(graph)
 skip = json.loads(record.read_text())
 assert skip["schema"] == "AlphaMemorySkipV1" and skip["content_chars"] == 7394, skip
-assert "Failed to create" in skip["error"]
+assert "input length exceeds context" in skip["error"]
+assert "Failed to create" not in skip["error"]
 # an error that is not a missing embedding still stops the step
 graph.get_node = lambda node_id: (_ for _ in ()).throw(KeyError("broken"))
 embedded = UndirectedNode(content="y", label="x")

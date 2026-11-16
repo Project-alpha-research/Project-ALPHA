@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 9ac4b6bf92a3e50a
+verified: 34ae65e7edbbe147
 ---
 
 # Worker invariants
@@ -23,15 +23,12 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 
 - Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
   (root members are `packages/*` and `apps/*`). Never add a worker dependency to the root `pyproject.toml`
-  or `uv.lock`. For Qlib this is enforced by `tests/unit/test_qlib_isolation.py`.
-  [ADR-0016](../../adr/0016-isolated-qlib-worker.md).
+  or `uv.lock`. For Qlib this is enforced by `tests/unit/test_qlib_isolation.py`. [ADR-0016](../../adr/0016-isolated-qlib-worker.md).
 - No ALPHA package imports worker code. `alpha_cli` launches a worker as a subprocess and exchanges files
   or JSON with it. [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
 - The qlib, literature and afml gates are `uv run python scripts/gate.py component qlib|literature|afml`
-  (CI jobs `qlib-worker`, `literature-worker`, `afml-worker`). From `workers/<name>/` they run:
-  `uv lock --check`, `uv sync --locked`,
-  `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
-  `gate.py check` does not run worker tests.
+  (CI jobs `qlib-worker`, `literature-worker`, `afml-worker`). From `workers/<name>/` they run: `uv lock --check`, `uv sync --locked`,
+  `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`. `gate.py check` does not run worker tests.
 - Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
 
@@ -43,8 +40,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 - Recorder data and fitted model state stay in an ephemeral worker directory deleted when the process exits.
   Native model text or JSON is round-tripped only inside the worker; persistent model reuse is unsupported.
 - The exchange is built and validated by `apps/alpha-cli/src/alpha_cli/ml_input.py` and `ml_contract.py`,
-  and validated again independently by `workers/qlib/src/alpha_qlib_worker/contract.py`. Change both sides
-  together.
+  and validated again independently by `workers/qlib/src/alpha_qlib_worker/contract.py`. Change both sides together.
 - Daily panel rows and predictions are available at the session close, `session_ts + 23h`, never midnight;
   `contract.py` rejects any other `available_at`.
 - Request `schema_version` is 1 (LightGBM), 2 (`rank_ensemble_v1`) or 3 (model selection). Contract
@@ -130,9 +126,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `ALPHA_RDAGENT_SOURCE` at a byte-identical `rdagent/` copy. `source_pin.py` verifies the tree digest before
   any upstream import, and the source root is never put on `sys.path`. Never vendor upstream code here.
 - The project is `package = false` with its own `uv.lock`, a focused import subset, not upstream's full
-  environment. Rule and economics profiles are fresh-only venvs (`.venv-rule-qualified`,
-  `.venv-economics-qualified`) built from hash-pinned requirement locks; list them in the clone's
-  `.git/info/exclude` (`.gitignore` already covers `.venv-*/`) and never rerun the installer over a preserved profile.
+  environment. Rule/economics profiles are fresh-only, hash-pinned venvs; never install over a preserved profile.
 - `measure_rule_environment` hashes the installed profile, the source and `pyproject.toml` of `alpha-core`,
   `alpha-patterns`, `alpha-strategies` (plus `alpha-backtest`, `alpha-data` for the costed profile), the
   requirement lock and the root `uv.lock`. Any byte change in those raises `DataError` until profiles are
@@ -140,8 +134,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).
 - The native fixture loop (`native_fixture.py::NativeFixtureLoop`) is a `LoopMeta` subclass of upstream
   `LoopBase` that never overrides `run`, `_run_step`, `dump` or `load`, so upstream's own loop drives it.
-  Every executed stage is charged to the fixture owner, and interrupted admitted work stays charged
-  (`conformance.py`).
+  Every executed stage is charged to the fixture owner, and interrupted admitted work stays charged (`conformance.py`).
 - Stock RDLoop runtime: built only by `scripts/setup_rdagent.sh --with-stock-runtime` from the hash-pinned
   `stock-requirements.lock` on CPython 3.11 (`--require-hashes --no-deps`); `install_stock_profile.py` proves the installed
   distributions are exactly the locked ones and records an inventory digest. It measures a runtime and grants no authority.
@@ -157,8 +150,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
-  named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, and `alpha_factor_coder.py`, which only
-  restarts one upstream counter per experiment), and they import RD-Agent and pandas, never an ALPHA package: the
+  named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, `alpha_factor_coder.py`);
+  they import RD-Agent and pandas, never an ALPHA package: the
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
   evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
@@ -166,14 +159,23 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file; every record is `exploratory, not admitted, not yet confirmed` with all authority
-  flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from
-  `factor-requirements.lock` and recorded by
+  flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
-  plain line and exits 2. Research memory is described in the
-  [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`.
+  plain line and exits 2. Factor rows carry UTC `recorded_at` and the launch receipt's run id,
+  bound before evaluation in `run-identity.json` (older standalone evaluations use the folder name).
+- Failure reasons are `critic_rejected`, `cap_reached`, `exception` (first error line), or `bad_output`.
+  Only typed local embedding input refusals become memory skips; budget refusals stop the worker.
+  Composites inherit all keyword families referenced in their description/formulation, including drawdown;
+  any exhausted family bars another variant. Unidentified composites use `composite: unknown inputs`.
+- Resume loads only completed-round checkpoints into a fresh scheduler, retaining the trace and shared coding memory.
+  Unfinished rounds append `abandoned_at_cap` to their run's `rounds.jsonl`, without inventing trials.
+  `loops_after` adds this run's completed rounds to `loops_before`; scheduler indexes restart at zero.
+- `call_split` counts local embedding attempts separately and `timeout_retry_attempts` only after reservation.
+  `--coding-reasoning-tokens` defaults unset: no provider request field is confirmed in repository code;
+  setting it explicitly fails loud. Caps and the 180-second timeout are unchanged.
+  Tests: `test_rdagent_fixups_2.py`, `workers/rdagent/tests/test_loop_fixups_2.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
   than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger
@@ -187,12 +189,10 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   counted note, and the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`.
   Malformed complete lines and malformed known-schema rows still fail loud.
 - Run viewer (`rdagent_viewer.py serve`, `rdagent_ui_entry.py`): RD-Agent's own unmodified Streamlit log viewer on a
-  run folder, foreground and local only. It runs in its own hash-pinned Python 3.11 runtime, built only by
-  `--with-ui` from `ui-requirements.lock` and recorded by `install_stock_profile.py --profile ui`; the entry
-  verifies the pinned source and imports RD-Agent through the same narrow finder as the factor loop. It binds `127.0.0.1`,
+  run folder, foreground and local only, in a hash-pinned Python 3.11 runtime built by
+  `--with-ui` from `ui-requirements.lock`; its entry verifies the source pin and binds `127.0.0.1`,
   refuses a busy port, runs with an exact environment and a temporary home that is removed on exit, and replaces only
-  symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
-  never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
+  symlinks it made. The information-ratio key is NaN, never computed; viewer tests: `test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
   such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
   `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.

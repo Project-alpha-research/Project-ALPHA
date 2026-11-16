@@ -125,6 +125,31 @@ def _record_skip(record: Path | None, node: Any, error: BaseException) -> None:
         stream.write(json.dumps(line, sort_keys=True) + "\n")
 
 
+class BudgetExhausted(SystemExit):
+    """Stop the worker cleanly; upstream's model retries must not catch this refusal."""
+
+
+def embedding_failure(error: BaseException) -> BaseException | None:
+    """Find the transport cause without mistaking a missing vector for an input refusal."""
+    seen: set[int] = set()
+    refusal = None
+    cause: BaseException | None = error
+    while cause is not None and id(cause) not in seen:
+        seen.add(id(cause))
+        text = str(cause).lower()
+        if getattr(cause, "code", None) == "budget_exhausted" or any(
+            token in text for token in ("budget exhausted", "call cap reached", "budget_exhausted")
+        ):
+            raise BudgetExhausted(str(cause)) from cause
+        if (
+            getattr(cause, "code", None) == "embedding_input_refused"
+            or "embedding_input_refused" in text
+        ):
+            refusal = cause
+        cause = cause.__cause__ or cause.__context__
+    return refusal
+
+
 @contextmanager
 def tolerant_embeddings(graph: Any, record: Path | None) -> Iterator[None]:
     """Within the block, a graph node whose embedding failed is left out and recorded.
@@ -139,14 +164,15 @@ def tolerant_embeddings(graph: Any, record: Path | None) -> Iterator[None]:
         try:
             return original(node, neighbor, *args, **kwargs)
         except Exception as error:
+            refusal = embedding_failure(error)
             missing = [
                 item
                 for item in (node, neighbor)
                 if item is not None and getattr(item, "embedding", None) is None
             ]
-            if not missing:
+            if not missing or refusal is None:
                 raise
-            _record_skip(record, missing[0], error)
+            _record_skip(record, missing[0], refusal)
             return None
 
     graph.add_node = add_node

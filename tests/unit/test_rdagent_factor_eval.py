@@ -23,6 +23,19 @@ from alpha_data.crypto.providers.binance import parse_binance_klines
 from alpha_data.crypto.storage import Capacity, CryptoBulkStore
 
 
+@pytest.fixture
+def recorded_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fix the recording clock so byte comparisons still check every result field."""
+
+    class Clock:
+        @staticmethod
+        def now(zone: object) -> datetime:
+            assert zone is UTC
+            return datetime(2026, 11, 17, tzinfo=UTC)
+
+    monkeypatch.setattr(ev, "datetime", Clock)
+
+
 def fixture(run: Path, *, seed: int = 42, noise: bool = False) -> Path:
     (run / "panel").mkdir(parents=True)
     dates = pd.date_range("2021-01-01", "2023-12-31", tz="UTC")
@@ -163,7 +176,9 @@ def test_ledger_unknown_rows_kept_and_partial_line_fails_loud(tmp_path: Path) ->
         ev._read_ledger(ledger)
 
 
-def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -> None:
+def test_known_only_evaluation_bytes_match_pre_change_baseline(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "baseline"
     req = fixture(run)
     request, panel, values, _ = ev._inputs(run, req)
@@ -174,6 +189,23 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -
     )
     # ADR-0055 adds exactly one disclosure; without it the record is the pre-change bytes.
     assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
+    # New recording metadata and presentation are checked before projecting onto the old
+    # byte contract; the original metric/decision checksum remains unchanged.
+    assert record["factors"][0].pop("recorded_at") == "2026-11-17T00:00:00+00:00"
+    assert "Factor and clock trials (including unknown attempts): 3" in record["feedback_text"]
+    assert "Ledger rows across all families (including repeats): 1" in record["feedback_text"]
+    assert "Factor failed: reason not recorded." in record["feedback_text"]
+    record["feedback_text"] = (
+        record["feedback_text"]
+        .replace("Factor and clock trials (including unknown attempts)", "Ledger trials")
+        .replace(
+            "Ledger rows across all families (including repeats)", "ledger_trials_all_families"
+        )
+    )
+    for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
+        container[key] = container[key].replace(
+            "Factor failed: reason not recorded. ", "Factor execution failed."
+        )
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )
@@ -217,7 +249,7 @@ def test_import_ignores_unknown_identity_and_counts_unknown_trial(
     assert imported["total_trials"] == imported["family_size"] == 2
 
 
-def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path) -> None:
+def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path, recorded_time: None) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     ledger = tmp_path / "trials.jsonl"
@@ -843,7 +875,9 @@ def test_series_reproduce_metrics_hashes_and_are_byte_identical(tmp_path: Path) 
     }
 
 
-def test_series_failure_changes_no_metrics_or_decisions(tmp_path: Path) -> None:
+def test_series_failure_changes_no_metrics_or_decisions(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     good = evaluate(run, req, tmp_path / "good.jsonl")
@@ -1025,5 +1059,5 @@ def test_rule_family_excluded_from_factor_statistics_and_repeats(tmp_path: Path)
     assert mixed["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["trial_index"] == 2
-    assert "ledger_trials_all_families: 2" in mixed["feedback_text"]
+    assert "Ledger rows across all families (including repeats): 2" in mixed["feedback_text"]
     assert len(ev._read_ledger(ledger)) == 2

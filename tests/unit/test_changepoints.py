@@ -84,18 +84,20 @@ def test_same_breaks_as_ruptures_pelt_with_the_matching_cost(model: str, cost: s
 def test_default_penalties() -> None:
     x = _mean_shifts()
     d = np.diff(x)
-    sigma = 1.4826 * np.median(np.abs(d - np.median(d))) / math.sqrt(2)
-    assert noise_variance(x) == pytest.approx(sigma**2, rel=1e-12)
-    # robust: close to the true noise variance of 1 although the level shifts by 4 and 7
+    robust = (1.4826 * np.median(np.abs(d - np.median(d))) / math.sqrt(2)) ** 2
+    variance = max(robust, np.var(d) / 2)
+    assert noise_variance(x) == pytest.approx(variance, rel=1e-12)
+    # close to the true noise variance of 1 although the level shifts by 4 and 7
     assert noise_variance(x) == pytest.approx(1.0, rel=0.25)
     assert np.var(x) > 5
     assert default_penalty(x, "rbf") == pytest.approx(2 * math.log(400), rel=1e-12)
-    assert default_penalty(x, "l2") == pytest.approx(2 * math.log(400) * sigma**2, rel=1e-12)
+    assert default_penalty(x, "l2") == pytest.approx(2 * math.log(400) * variance, rel=1e-12)
     shifted = np.cumsum(np.ones(50)) + np.tile([0.0, 1.0], 25)
     d2 = np.diff(shifted)
     assert np.median(d2) != 0
     assert noise_variance(shifted) == pytest.approx(
-        (1.4826 * np.median(np.abs(d2 - np.median(d2)))) ** 2 / 2, rel=1e-12
+        max((1.4826 * np.median(np.abs(d2 - np.median(d2)))) ** 2 / 2, np.var(d2) / 2),
+        rel=1e-12,
     )
 
 
@@ -184,3 +186,14 @@ def test_boundary_sizes_are_accepted() -> None:
     assert change_points(x)["n"] == 60
     assert change_points(x[:30], min_size=10)["n"] == 30
     assert change_points(x[:6], min_size=2, max_points=1)["n"] == 6
+
+
+def test_fat_tailed_noise_without_a_change_rarely_breaks() -> None:
+    # Review finding: a Gaussian-only noise scale under-penalised fat-tailed returns, so
+    # Student-t(4) noise with no change at all produced spurious mean breaks.
+    spurious = 0
+    # Measured over these 100 seeds: 15 series broke with the robust-only scale, 3 now.
+    for seed in range(100):
+        x = 0.01 * np.random.default_rng(seed).standard_t(4, 1000)
+        spurious += bool(change_points(x, model="l2")["breaks"])
+    assert spurious <= 5

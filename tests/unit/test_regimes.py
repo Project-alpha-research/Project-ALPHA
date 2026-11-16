@@ -326,3 +326,10 @@ def test_one_period_per_year_and_exact_k_are_allowed() -> None:
     out = returns_by_regime([0.1, 0.2], [0.1, 0.2], [0, 1], periods_per_year=1, k=2)
     assert [row["bars"] for row in out["regimes"]] == [1, 1]
     assert out["regimes"][1]["strategy_annual_mean"] == pytest.approx(0.2)
+
+
+def test_returns_by_regime_with_no_labelled_bar_fails_loud() -> None:
+    # Review finding: all-unlabelled states with an explicit k divided by zero.
+    zeros = np.zeros(5)
+    with pytest.raises(ValueError, match="at least one bar"):
+        returns_by_regime(zeros, zeros, [-1] * 5, periods_per_year=252, k=2)

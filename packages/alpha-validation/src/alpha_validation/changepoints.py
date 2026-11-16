@@ -33,22 +33,25 @@ BASIS = {
     ),
     "l2": (
         "penalised least-squares change-point search (PELT): finds shifts in the mean level; "
-        "default penalty 2 * log(n) * noise variance, the variance estimated robustly from "
-        "first differences; breaks use the whole series (hindsight)"
+        "default penalty 2 * log(n) * noise variance, the variance estimated from first "
+        "differences (the larger of a robust and a plain estimate, so fat tails do not lower "
+        "it); breaks use the whole series (hindsight)"
     ),
 }
 
 
 def noise_variance(x: FloatArray) -> float:
-    """Robust noise variance from first differences, so level shifts do not inflate it.
+    """Noise variance from first differences, so a few level shifts barely inflate it.
 
-    ``sigma = 1.4826 * median(|d - median(d)|) / sqrt(2)`` for ``d = diff(x)``: 1.4826 makes the
-    median absolute deviation consistent for a normal standard deviation, and a difference of
-    two independent bars has twice the variance of one.
+    The larger of two estimates for ``d = diff(x)`` (a difference of two independent bars has
+    twice the variance of one): the robust ``(1.4826 * median(|d - median(d)|))**2 / 2``, which is
+    exact for normal noise, and the plain ``var(d) / 2``. Fat-tailed returns make the robust
+    estimate too small (about 30% low for Student-t with 4 degrees of freedom), which would
+    under-penalise and report spurious breaks; the plain estimate guards against that.
     """
     d = np.diff(x)
-    sigma = 1.4826 * float(np.median(np.abs(d - np.median(d)))) / math.sqrt(2.0)
-    return sigma * sigma
+    robust = (1.4826 * float(np.median(np.abs(d - np.median(d))))) ** 2 / 2.0
+    return max(robust, float(np.var(d)) / 2.0)
 
 
 def default_penalty(x: FloatArray, model: str) -> float:

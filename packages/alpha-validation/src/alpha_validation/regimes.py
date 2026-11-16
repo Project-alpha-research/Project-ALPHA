@@ -35,7 +35,8 @@ SPLIT_BASIS = (
     "each bar is assigned the most probable regime by the filtered probability of the bar "
     "before it, so the label uses only returns available before that bar; the first bar has no "
     "label; annualised mean = per-bar mean * periods_per_year; share of return = the regime's "
-    "sum of log(1 + r) over the total"
+    "sum of log(1 + r) over the total; a regime's Sharpe ignores the risk-free rate and treats "
+    "its bars as one series although they are not contiguous in time"
 )
 HINDSIGHT_BASIS = (
     "each bar is assigned the most probable regime by the smoothed probability, which uses the "
@@ -155,6 +156,8 @@ def returns_by_regime(
     if count < 1 or int(states.max()) >= count:
         raise ValueError("state must label at least one bar with a regime index below k")
     labelled = states >= 0
+    if not bool(np.any(labelled)):
+        raise ValueError("state must label at least one bar with a regime index below k")
     logs = np.log1p(strategy)
     total = float(np.sum(logs[labelled]))
     regimes = []

@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 9ac4b6bf92a3e50a
+verified: 19b58557fdea583b
 ---
 
 # Worker invariants
@@ -171,9 +171,9 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
-  plain line and exits 2. Research memory is described in the
-  [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`.
+  plain line and exits 2. Research memory and round-boundary resume (no invented trials), failure reasons,
+  composite idea families, budget stops and the call split: [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
+  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
   than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger

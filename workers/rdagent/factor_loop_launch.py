@@ -109,6 +109,10 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
         raise LaunchError("--provider-retries must be 0, 1, 2 or 3")
     if args.family_switch_after < 1:
         raise LaunchError("--family-switch-after must be at least 1")
+    if args.coding_reasoning_tokens is not None:
+        raise LaunchError(
+            "--coding-reasoning-tokens is unset until the provider request field is confirmed"
+        )
     if args.universe is not None and not args.universe.is_absolute():
         raise LaunchError("--universe must be an absolute path")
     if args.chat_route == "api":
@@ -250,7 +254,7 @@ class Launch:
             self.log(step, status="failed", exit=result.returncode, detail=tail[0][:300])
             raise LaunchError(f"{step} failed: {tail[0][:300]}")
         self.log(step, status="ok")
-        return result.stdout.strip()
+        return str(result.stdout.strip())
 
     def verify(self) -> None:
         self.log("verify", event="start")
@@ -390,6 +394,7 @@ class Launch:
             "accept_unhonoured": accept,
             "api_timeout_seconds": self.args.api_timeout,
             "provider_retries": self.args.provider_retries,
+            "coding_reasoning_tokens": self.args.coding_reasoning_tokens,
         }
         # Only the gateway inherits the paid route's settings.
         child = self.spawn(command, "gateway", env=dict(os.environ))
@@ -583,6 +588,7 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         "provider_timeouts": 0,
         "empty_or_invalid_replies": 0,
         "retried_attempts": 0,
+        "timeout_retry_attempts": 0,
         "failed_requests": {},
         "chunked_embedding_inputs": 0,
         "embedding_chunks": 0,
@@ -597,10 +603,14 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         errors = call.get("provider_errors") or []
         split["provider_timeouts"] += errors.count("provider_timeout")
         split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
-        if call.get("status") == 200:
-            split["retried_attempts"] += len(errors)
-        else:
-            split["retried_attempts"] += max(0, len(errors) - 1)
+        attempts = int(call.get("attempts") or 0)
+        split["retried_attempts"] += max(0, attempts - 1)
+        split["timeout_retry_attempts"] += int(
+            call.get(
+                "timeout_retry_attempts", errors[: max(0, attempts - 1)].count("provider_timeout")
+            )
+        )
+        if call.get("status") != 200:
             code = str(call.get("error_code"))
             split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
     split["counted_toward_call_cap"] = (
@@ -621,6 +631,8 @@ def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     paths = validate(args, environ)
     args.run_dir.mkdir()
+    with (args.run_dir / "run-identity.json").open("x") as stream:
+        stream.write(json.dumps({"run_id": args.run_id}) + "\n")
     (args.run_dir / "logs").mkdir()
     launch = Launch(args, paths)
     launch.api_key = environ.get("ALPHA_GATEWAY_API_KEY", "")
@@ -684,6 +696,7 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--api-openrouter", action="store_true")
     r.add_argument("--api-timeout", type=float, default=180)
     r.add_argument("--provider-retries", type=int, default=1)
+    r.add_argument("--coding-reasoning-tokens", type=int, default=None)
     r.add_argument("--family-switch-after", type=int, default=3)
     r.add_argument("--universe", type=Path)
     return p

@@ -60,6 +60,7 @@ FAMILY_KEYWORDS = (
     ("illiquidity", ("amihud", "illiquid")),
     ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
     ("skewness and lottery returns", ("skew", "max_return", "up_day")),
+    ("drawdown", ("drawdown",)),
     ("momentum and trend", ("momentum", "mom_", "trend", "sma_distance", "autocorr")),
     ("volatility and beta", ("volatil", "semivariance", "beta", "vol_")),
     ("range and compression", ("range",)),
@@ -68,12 +69,55 @@ FAMILY_KEYWORDS = (
 )
 
 
-def idea_family(name: str) -> str:
+# A proposal that mixes several features (machine learning, a regression, a weighted combination).
+COMPOSITE = re.compile(
+    r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|regression|"
+    r"gradient boost\w*|random forest|neural|lightgbm|xgboost|pca|principal component\w*|"
+    r"linear combination|weighted (?:sum|average|combination)|(?:combination|blend|mix) of)\b"
+)
+
+
+def input_families(*texts: str) -> set[str]:
+    """Families of the features a proposal's own words name, matched at word starts."""
+    found = set()
+    for word in re.findall(r"[a-z][a-z0-9_]*", " ".join(texts).lower()):
+        for family, keywords in FAMILY_KEYWORDS:
+            if any(re.search(rf"(?:^|_)(?:{keyword})", word) for keyword in keywords):
+                found.add(family)
+                break
+    return found
+
+
+def idea_family(
+    name: str, description: str = "", formulation: str = "", variables: Any = None
+) -> str:
+    """One family, or every family a composite draws on joined by "; " (ADR-0055).
+
+    A composite (by its words) or a name with no family keyword is classified by the features
+    its description, formulation and variables name, so renaming cannot leave the family rule;
+    a composite with no identifiable input is "composite: unknown inputs". Over-inclusive by
+    design: a stray family word in the text adds a family, it never removes one.
+    """
     lowered = name.lower()
-    for family, keywords in FAMILY_KEYWORDS:
-        if any(re.search(keyword, lowered) for keyword in keywords):
-            return family
-    return "other: " + lowered.split("_")[0]
+    named = next(
+        (
+            family
+            for family, keywords in FAMILY_KEYWORDS
+            if any(re.search(keyword, lowered) for keyword in keywords)
+        ),
+        None,
+    )
+    words = " ".join(
+        f"{key} {value}"
+        for key, value in (variables.items() if isinstance(variables, dict) else ())
+    )
+    composite = COMPOSITE.search(f"{name} {description} {formulation}".lower().replace("_", " "))
+    if named is not None and not composite:
+        return named
+    families = input_families(description, formulation, words) | ({named} if named else set())
+    if families:
+        return "; ".join(sorted(families))
+    return "composite: unknown inputs" if composite else "other: " + lowered.split("_")[0]
 
 
 def _rounded(value: Any) -> Any:
@@ -123,7 +167,13 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
     families: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        families.setdefault(idea_family(row["name"]), []).append(row)
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            families.setdefault(family, []).append(row)
     lines, closed = [], []
     for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         best = min(members, key=_rank)
@@ -144,7 +194,8 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
             f"\nThese families have {switch_after} or more failed tries and no candidate: "
             + "; ".join(closed)
             + ". Do not propose another near-variant of them (a new window, skip or scaling of "
-            "the same idea); move to a different family with a different economic mechanism."
+            "the same idea), including composites using ANY of these families; "
+            "move to a different family with a different economic mechanism."
         )
     return text
 
@@ -176,6 +227,8 @@ def ledger_summary(row: dict[str, Any]) -> str:
         )
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
+    if row.get("failure_reason"):
+        line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
     return line
 
 
@@ -193,7 +246,8 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
         + ")\n"
     )
-    lines, seen = [], set()
+    lines: list[str] = []
+    seen: set[str] = set()
     unknown: list[str] = []
     known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
     for row in rows:
@@ -379,6 +433,69 @@ class AlphaFactorScenario(QlibFactorScenario):
 
 
 class AlphaFactorRunner(Developer):
+    @staticmethod
+    def text_reason(text: str) -> str | None:
+        """cap_reached or exception when the text says so; otherwise None."""
+        lowered = text.lower()
+        if any(t in lowered for t in ("budget_exhausted", "budget exhausted", "call cap reached")):
+            return "cap_reached"
+        if "Traceback" in text or re.search(r"\b\w*(?:Error|Exception)\b", text):
+            return "exception"
+        return None
+
+    @staticmethod
+    def error_line(text: str) -> str:
+        """The error's own first line: after a traceback, its final "SomeError: ..." line."""
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if "Traceback" in text:
+            errors = [line for line in lines if re.match(r"[\w.]*(?:Error|Exception)\b", line)]
+            if errors:
+                return errors[-1]
+        return lines[0] if lines else ""
+
+    @staticmethod
+    def execute_factor(workspace: Any, feedback: Any) -> tuple[Any, str | None, str]:
+        """Separate execution, critic and output failures before they reach the ledger."""
+        detail = str(getattr(feedback, "execution_feedback", "") or "")
+        if not feedback:
+            reason = AlphaFactorRunner.text_reason(detail) or "critic_rejected"
+            line = AlphaFactorRunner.error_line(detail)
+            return None, reason, line or "RD-Agent critic did not accept the code"
+        try:
+            execution, values = workspace.execute("All")
+        except Exception as error:
+            reason = AlphaFactorRunner.text_reason(f"{getattr(error, 'code', '')} {error}")
+            return None, reason or "exception", f"{type(error).__name__}: {error}".split("\n")[0]
+        if not isinstance(values, pd.DataFrame):
+            text = str(execution)
+            reason = AlphaFactorRunner.text_reason(text) or "bad_output"
+            return (
+                None,
+                reason,
+                AlphaFactorRunner.error_line(text) or "factor returned no data frame",
+            )
+        if (
+            values.empty
+            or len(values.columns) != 1
+            or not isinstance(values.index, pd.MultiIndex)
+            or values.index.nlevels != 2
+        ):
+            return (
+                values,
+                "bad_output",
+                "one output column and a date/instrument index required per factor task",
+            )
+        try:
+            dates = pd.to_datetime(values.index.get_level_values(0), utc=True, errors="raise")
+            pd.to_numeric(values.iloc[:, 0], errors="raise")
+            if dates.hasnans or any(
+                not isinstance(name, str) or not name for name in values.index.get_level_values(1)
+            ):
+                raise ValueError("factor dates and instrument names must be present")
+        except (ValueError, TypeError, OverflowError) as error:
+            return values, "bad_output", f"{type(error).__name__}: {error}".split("\n")[0]
+        return values, None, ""
+
     def develop(self, exp: Any) -> Any:
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
@@ -413,12 +530,25 @@ class AlphaFactorRunner(Developer):
                 "code_sha256": hashlib.sha256(identity).hexdigest(),
                 "status": "FAILED",
                 "lookahead": {"status": "NOT_RUN"},
+                "description": getattr(task, "description", None),
+                "formulation": getattr(task, "factor_formulation", None),
+                # The feature names and meanings a composite is classified by (ADR-0055).
+                "variables": getattr(task, "variables", None),
+                # No code: the coder stopped (the call cap, an error) or produced no file.
+                "failure_reason": self.text_reason(
+                    str(getattr(feedback, "execution_feedback", "") or "")
+                )
+                or "bad_output",
+                "failure_detail": "factor.py was not produced",
             }
             if code:
                 record_code(run, str(factor["code_sha256"]), code)
-            if code and feedback:
-                execution, values = workspace.execute("All")
-                if values is not None:
+            if code:
+                values, failure, detail = self.execute_factor(workspace, feedback)
+                factor.update(failure_reason=failure, failure_detail=detail)
+                if values is not None and failure is None:
+                    factor.pop("failure_reason")
+                    factor.pop("failure_detail")
                     check = check_prefix_invariance(
                         code,
                         values,
@@ -428,9 +558,6 @@ class AlphaFactorRunner(Developer):
                     )
                     factor["lookahead"] = check
                     factor["status"] = "OK" if check["status"] == "PASS" else "LOOKAHEAD"
-                    if factor["status"] == "OK" and len(values.columns) != 1:
-                        factor["status"] = "FAILED"
-                        factor["failure_detail"] = "one output column required per factor task"
                     if factor["status"] == "OK":
                         frame = values.copy()
                         frame.columns = [task.factor_name]
@@ -441,7 +568,8 @@ class AlphaFactorRunner(Developer):
                         # (timeout, subprocess failure) says nothing about the code.
                         rejected.append((task, factor))
                 else:
-                    factor["failure_detail"] = execution
+                    if failure == "bad_output" and isinstance(values, pd.DataFrame):
+                        rejected.append((task, factor))
             factors.append(factor)
         record_coder_verdicts(run, iteration, rejected)
         if frames:

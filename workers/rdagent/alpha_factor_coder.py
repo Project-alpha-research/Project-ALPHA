@@ -15,8 +15,11 @@ A second upstream behaviour (same pin, ``knowledge_management/graph.py``,
 ``UndirectedGraph.add_node``): a node's embedding is created while it is added to the
 coding-memory graph, and a refused embedding ends the whole coding step and so the run
 (2026-11-16: run 2 ended after local Ollama refused one input three times). While RD-Agent turns
-an evolve step into knowledge, ALPHA's strategy leaves out a node whose embedding failed; each
-skip is written to the run's ``memory-skips.jsonl`` and counted on the receipt. Proposed upstream
+an evolve step into knowledge, ALPHA's strategy leaves out a node whose embedding input the
+service refused; each skip is written, with that true cause, to the run's ``memory-skips.jsonl``
+and counted on the receipt. A budget refusal is never a skip: it stops the worker at once as
+``BudgetExhausted`` (2026-11-17: cap refusals were logged as skips and the run died a step
+later). Proposed upstream
 patch: catch the embedding failure in ``add_node`` and leave the node out with a warning.
 """
 
@@ -125,42 +128,92 @@ def _record_skip(record: Path | None, node: Any, error: BaseException) -> None:
         stream.write(json.dumps(line, sort_keys=True) + "\n")
 
 
-@contextmanager
-def tolerant_embeddings(graph: Any, record: Path | None) -> Iterator[None]:
-    """Within the block, a graph node whose embedding failed is left out and recorded.
+class BudgetExhausted(SystemExit):
+    """Stop the worker cleanly; upstream's model retries must not catch this refusal."""
 
-    Only a failure that leaves the node (or its neighbour) without an embedding is caught; any
-    other error is raised. The wrapper is an instance attribute removed on exit, so nothing of
+
+def embedding_failure(error: BaseException) -> BaseException | None:
+    """Find the transport cause without mistaking a missing vector for an input refusal."""
+    seen: set[int] = set()
+    refusal = None
+    cause: BaseException | None = error
+    while cause is not None and id(cause) not in seen:
+        seen.add(id(cause))
+        text = str(cause).lower()
+        if getattr(cause, "code", None) == "budget_exhausted" or any(
+            token in text for token in ("budget exhausted", "call cap reached", "budget_exhausted")
+        ):
+            raise BudgetExhausted(str(cause)) from cause
+        if (
+            getattr(cause, "code", None) == "embedding_input_refused"
+            or "embedding_input_refused" in text
+        ):
+            refusal = cause
+        cause = cause.__cause__ or cause.__context__
+    return refusal
+
+
+@contextmanager
+def tolerant_embeddings(graph: Any, record: Path | None, backend: Any = None) -> Iterator[None]:
+    """Within the block, a graph node whose embedding input was refused is left out and recorded.
+
+    Upstream's retry wrapper (``_try_create_chat_completion_or_embedding``) retries every failure
+    and then raises a fresh ``RuntimeError`` with no cause, so the real error is lost. With
+    ``backend`` (RD-Agent's ``APIBackend`` class) each embedding request's own failure is seen
+    first: a budget refusal stops the worker at once as ``BudgetExhausted``, before upstream's
+    retries, and an input refusal is kept as the true cause of the skip. Only a failure that
+    leaves the node (or its neighbour) without an embedding and whose cause is an input refusal
+    is skipped; any other error is raised. Both wrappers are removed on exit, so nothing of
     ALPHA's is pickled with the knowledge base.
     """
     original = graph.add_node
+    causes: list[BaseException] = []
+    embed: Any = getattr(backend, "_create_embedding_with_cache", None) if backend else None
+
+    def create_embedding(self: Any, *args: Any, **kwargs: Any) -> Any:
+        try:
+            return embed(self, *args, **kwargs)
+        except Exception as error:
+            embedding_failure(error)  # a budget refusal leaves here as BudgetExhausted
+            causes.append(error)
+            raise
 
     def add_node(node: Any, neighbor: Any = None, *args: Any, **kwargs: Any) -> Any:
+        causes.clear()
         try:
             return original(node, neighbor, *args, **kwargs)
         except Exception as error:
+            refusal = embedding_failure(error)
+            for cause in reversed(causes):
+                refusal = refusal or embedding_failure(cause)
             missing = [
                 item
                 for item in (node, neighbor)
                 if item is not None and getattr(item, "embedding", None) is None
             ]
-            if not missing:
+            if not missing or refusal is None:
                 raise
-            _record_skip(record, missing[0], error)
+            _record_skip(record, missing[0], refusal)
             return None
 
     graph.add_node = add_node
+    if embed is not None:
+        backend._create_embedding_with_cache = create_embedding
     try:
         yield
     finally:
         del graph.add_node
+        if embed is not None:
+            backend._create_embedding_with_cache = embed
 
 
 class AlphaRAGStrategyV2(CoSTEERRAGStrategyV2):
     def generate_knowledge(self, evolving_trace: Any, *, return_knowledge: bool = False) -> Any:
+        from rdagent.oai.backend.base import APIBackend
+
         run = os.environ.get("ALPHA_FACTOR_RUN_DIR")
         record = Path(run) / "memory-skips.jsonl" if run else None
-        with tolerant_embeddings(self.knowledgebase.graph, record):
+        with tolerant_embeddings(self.knowledgebase.graph, record, APIBackend):
             return super().generate_knowledge(evolving_trace, return_knowledge=return_knowledge)
 
 

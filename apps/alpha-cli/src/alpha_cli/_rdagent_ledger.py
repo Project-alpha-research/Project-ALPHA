@@ -10,7 +10,7 @@ import os
 import re
 import sys
 from collections.abc import Iterator
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -268,6 +268,7 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                 "plain_name": plain_name(item["name"]),
                 "code_sha256": digest,
                 "run_id": item["run_id"],
+                "recorded_at": datetime.now(UTC).isoformat(),
                 "iteration": item["iteration"],
                 "windows": item["windows"],
                 "status": "IMPORTED",

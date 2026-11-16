@@ -98,7 +98,7 @@ The AI as a research partner that drives the toolbox from a prompt.
 | A review step that audits a result for defects | Unproven | `alpha diagnose` audit; `review-result` skill | Path 1 | [grade] |
 | Ask an in-product assistant about a recorded run | Unproven | `alpha-cli`; `alpha-web` | Later | [status] |
 | Planted honest and dishonest answers prove the checker catches invented numbers (`alpha partner selftest`) | Working | `alpha-cli` partner | Now | [precise] |
-| Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | `alpha partner selftest` covers the answer-honesty part only: 18 planted answers, no model calls; not scheduled weekly | Path 1 | [slim] |
+| Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | `alpha partner selftest` covers the answer-honesty part only: 25 planted answers, no model calls; not scheduled weekly | Path 1 | [slim] |
 | Small autonomous research team around RD-Agent | Missing | backlog | Later | [team] |
 | Text from papers and the web can never run tools or unlock anything | Unproven | `workers/literature` | Later | private |
 | Call and dollar caps on RD-Agent's model use | Working | `workers/rdagent` gateway | Now | [status] |

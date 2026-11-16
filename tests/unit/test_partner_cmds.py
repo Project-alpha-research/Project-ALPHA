@@ -33,16 +33,16 @@ def test_selftest_json_and_scorecard(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert result.exit_code == 0, result.output
     report = json.loads(result.stdout)
     assert report == run_selftest()
-    assert report["ok"] and report["passed"] == report["total"] == 18
+    assert report["ok"] and report["passed"] == report["total"] == 25
     assert all(row["ok"] and row["expected"] == row["got"] for row in report["scenarios"])
     text = runner.invoke(app, ["partner", "selftest"])
     assert text.exit_code == 0
     assert (
         text.stdout.splitlines()[0]
-        == "Honesty self-test: 18 of 18 planted answers were judged as expected."
+        == "Honesty self-test: 25 of 25 planted answers were judged as expected."
     )
-    assert text.stdout.count("PASS  honest answer accepted:") == 5
-    assert text.stdout.count("PASS  caught:") == 13
+    assert text.stdout.count("PASS  honest answer accepted:") == 8
+    assert text.stdout.count("PASS  caught:") == 17
     assert (
         text.stdout.splitlines()[-1]
         == "What this shows: ALPHA's answer checker catches these planted mistakes. "

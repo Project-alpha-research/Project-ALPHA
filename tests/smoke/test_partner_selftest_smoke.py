@@ -23,4 +23,4 @@ def test_partner_selftest(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
     assert report["ok"] is True
-    assert report["total"] == report["passed"] == 18
+    assert report["total"] == report["passed"] == 25

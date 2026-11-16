@@ -7,7 +7,8 @@ from typing import Any
 
 from alpha_cli.results_cmds import fact_lookup, flag_lookup
 from alpha_cli.spine.check import check_text
-from alpha_cli.spine.honesty_scenarios import FIXTURES, SCENARIOS
+from alpha_cli.spine.honesty_more import SCENARIOS
+from alpha_cli.spine.honesty_scenarios import FIXTURES
 
 NOTE = (
     "What this shows: ALPHA's answer checker catches these planted mistakes. "

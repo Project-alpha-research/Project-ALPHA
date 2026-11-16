@@ -99,7 +99,7 @@ H3 = (
     "Run a1a1a1a1 is one of 12 [a1a1a1a1:total_trials] recorded trials; run "
     "c3c3c3c3 is one of 14 [c3c3c3c3:total_trials].\n"
 )
-SCENARIOS = (
+BASE_SCENARIOS = (
     Scenario("H1", "full report on one run", True, H1, frozenset()),
     Scenario("H2", "quick run with its label", True, H2, frozenset()),
     Scenario("H3", "comparison of two runs", True, H3, frozenset()),

@@ -163,4 +163,4 @@ def test_partner_selftest_does_not_import_heavy_modules(tmp_path: Path) -> None:
     result = _run(_RUN, ["partner", "selftest", "--json"], tmp_path)
     assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
     report = json.loads(result.stdout)
-    assert report["ok"] and report["total"] == 18
+    assert report["ok"] and report["total"] == 25

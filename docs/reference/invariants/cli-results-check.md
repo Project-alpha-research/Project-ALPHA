@@ -5,7 +5,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/check.py
   - apps/alpha-cli/src/alpha_cli/spine/compare.py
   - apps/alpha-cli/src/alpha_cli/spine/honesty.py
+  - apps/alpha-cli/src/alpha_cli/spine/check_rules.py
+  - apps/alpha-cli/src/alpha_cli/spine/check_flags.py
+  - apps/alpha-cli/src/alpha_cli/spine/facts.py
   - apps/alpha-cli/src/alpha_cli/spine/honesty_scenarios.py
+  - apps/alpha-cli/src/alpha_cli/spine/honesty_more.py
   - apps/alpha-cli/src/alpha_cli/partner_cmds.py
   - tests/unit/test_honesty_traps.py
   - tests/unit/test_honesty_adversarial.py
@@ -14,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: e18736625dc72c4c
+verified: bce4cb862cce5a18
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -28,6 +32,15 @@ drafted answer against stored run facts, and the computed differences between ru
 - Tag each quoted number as `0.75 [9a99cb94971d54dc:oos_sharpe]`; unique hex prefixes of at least
   eight characters work. `check` reads the same stored facts as `cite`, including diagnostics.
   Percentages scale the stored value by 100; `x`/`×` denotes a ratio. Decimal rounding uses ties-to-even.
+- Each metric has a unit kind in `spine/facts.py:METRIC_UNITS`: ratio (Sharpe-like), fraction (returns, drawdowns,
+  shares, `dsr`), count or other. `%` is valid only on a fraction and `x` only on a ratio (`UNIT_MISMATCH`).
+  The written value must equal the stored value rounded to its precision; a ratio needs one decimal and a
+  fraction a whole percent (or two decimals), else `PRECISION_TOO_LOW`. Hyphen, Unicode minus and an en dash
+  directly before a digit all mean minus. A drawdown (`NEGATIVE_BY_CONVENTION`) may be written as a positive
+  magnitude only after one of: drawdown of, loss of, fall of, fell, fallen, lost, losing, dropped, decline(d),
+  down (`check_rules.py:MAGNITUDE_WORDS`) in the same sentence; otherwise the sign must match.
+- A number spelled in words ("one point eight", "two percent") within 20 characters after a metric word, or
+  before percent, bps or trade(s), is `UNTAGGED_NUMBER`; a lone "one" and counts such as "two assets" pass.
   Unicode minus (U+2212) is normalized before scanning without moving offsets.
 - A matching rounded `dsr` or `trial_dsr` quote cannot turn a stored score below 0.95 into a passing score:
   `ROUNDED_ACROSS_THRESHOLD` reports the stored value and threshold and asks for at least three decimals.
@@ -47,10 +60,12 @@ drafted answer against stored run facts, and the computed differences between ru
 - The CLI supplies stored diagnostic flags for every cited run (`[]` when diagnostics are absent).
   `FLAG_CONTRADICTED` reports each run/flag/sentence once, with the stored detail and a request to report it.
   Visible text has tags blanked and hyphens treated as spaces; sentence breaks are punctuation followed by
-  whitespace or a newline, so a decimal is not a break. General denials (no, zero or without any flags, no major flags, flag-free, no warnings, nothing flagged)
-  contradict every stored flag, except in a sentence that names only a different cited run id.
-  Flag-specific patterns in `spine/check.py:CONTRADICTIONS` catch claims of beating
-  the benchmark, robustness to costs/settings/delay, broadly spread trade profits, or market-independent losses.
+  whitespace or a newline, so a decimal is not a break. A general denial needs the run (it, the test, run id)
+  as subject with a no-flags predicate, or "there were no flags", "no flags were raised", "flag-free",
+  "nothing flagged"; "No flag was missed" is not one. A denial contradicts every stored flag, except in a
+  sentence that names only a different cited run id. Flag-specific patterns in
+  `spine/check_flags.py:CONTRADICTIONS` catch claims of beating the benchmark, robustness to costs/settings/delay,
+  broadly spread trade profits, or market-independent losses.
   Specific patterns ignore sentences containing `not`, `never`, `no longer`, `failed to` or `n't`; general
   denials do not. The optional `flags` lookup keeps existing programmatic checker callers compatible.
 - A registered metric absent from a run's built facts raises `METRIC_NOT_STORED`, with a next step to cite
@@ -64,11 +79,11 @@ drafted answer against stored run facts, and the computed differences between ru
 
 ## Honesty self-test
 
-`alpha partner selftest [--json]` checks 18 fixed answers against three temporary fixture runs using the same
+`alpha partner selftest [--json]` checks 25 fixed answers against three temporary fixture runs using the same
 fact and flag lookups as `alpha results check`, with no network or model call. Each exact set of problem kinds
-must match the scenario's expected set; five honest answers must pass and thirteen planted mistakes must fail.
+must match the scenario's expected set; eight honest answers must pass and seventeen planted mistakes must fail.
 The scorecard reports each scenario and exits 1 if any misbehaves. It proves these planted mistakes are caught,
 not that an AI's reasoning is sound or that every draft will be checked. The installed smoke check runs it through the real program.
 
-Extra adversarial drafts (`tests/unit/test_honesty_adversarial.py`) pin behaviour beyond the 18
+Extra adversarial drafts (`tests/unit/test_honesty_adversarial.py`) pin behaviour beyond the 25
 planted answers.

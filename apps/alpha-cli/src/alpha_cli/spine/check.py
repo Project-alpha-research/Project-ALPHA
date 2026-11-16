@@ -4,39 +4,14 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from decimal import ROUND_HALF_EVEN, Decimal, localcontext
 from typing import Any
 
-from alpha_cli.spine.compare import Fact, Lookup, derived_fact, numeric_fact
+from alpha_cli.spine.check_flags import flag_hits
+from alpha_cli.spine.check_rules import financial_context, match_value, spelled_numbers, unit_kind
+from alpha_cli.spine.compare import Fact, Lookup, derived_fact
 from alpha_cli.spine.errors import SpineError
 
 FlagLookup = Callable[[str], list[dict[str, str]]]
-THRESHOLDS = {"dsr": 0.95, "trial_dsr": 0.95}
-CONTRADICTIONS = {
-    "*": (
-        r"\bno (?:(?:warning|red|major|serious|significant) )?flags?\b|\bno warnings\b"
-        r"|\bnothing (?:was )?flagged\b|\bzero (?:(?:warning|red) )?flags\b"
-        r"|\bwithout (?:any )?(?:(?:warning|red) )?flags\b|\bflag free\b"
-    ),
-    "below-benchmark": (
-        r"\b(?:beat|beats|outperformed|outperforms) (?:the )?(?:benchmark|buy and hold)\b"
-    ),
-    **{
-        f"fragile-to-{kind}": r"\b(?:robust|insensitive|held up|holds up|unaffected)\b[^.\n]{0,40}"
-        + suffix
-        for kind, suffix in (
-            ("costs", r"\bcosts?\b"),
-            ("parameters", r"\b(?:parameters?|settings)\b"),
-            ("delay", r"\bdelay"),
-        )
-    },
-    "concentrated-profit": r"\b(?:spread|evenly|broad)\b[^.\n]{0,40}\btrades\b",
-    "drawdown-with-market": r"\b(?:unrelated to|independent of) (?:the )?market\b",
-}
-_FINANCIAL = re.compile(
-    r"\b(?:sharpe|dsr|cagr|returns?|drawdowns?|beta|exposure|profits?|volatility)\b",
-    re.IGNORECASE,
-)
 
 # Required plain phrases (case insensitive; a hyphen also counts as a space).
 LABEL_PHRASES = {
@@ -108,85 +83,12 @@ def _problem(
     }
 
 
-def _match_value(written: str, fact: Fact) -> tuple[str, str, Any] | None:
-    fact = numeric_fact(fact)
-    if fact["value"] is None:
-        return "VALUE_NOT_COMPUTED", f"The record has no numeric value: {fact['reason']}", fact
-    number = written.rstrip("%x×").replace(",", "")
-    decimals = len(number.partition(".")[2])
-    with localcontext() as context:
-        context.prec = max(50, len(number) + 330)
-        value = Decimal(str(fact["value"])) * (100 if written.endswith("%") else 1)
-        rounded = value.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_EVEN)
-    if rounded != Decimal(number):
-        return (
-            "VALUE_MISMATCH",
-            f"Written {written}; stored {fact['value']}; at written precision {rounded}.",
-            {"value": fact["value"], "rounded": str(rounded)},
-        )
-    threshold = THRESHOLDS.get(fact.get("metric", ""))
-    stated = Decimal(number) / (100 if written.endswith("%") else 1)
-    if threshold is not None and Decimal(str(fact["value"])) < Decimal(str(threshold)) <= stated:
-        return (
-            "ROUNDED_ACROSS_THRESHOLD",
-            f"Stored {fact['value']} is below the pass line {threshold}; written {written} "
-            "reads as passing. Write at least three decimals.",
-            {"value": fact["value"], "threshold": threshold},
-        )
-    return None
-
-
-def _financial_context(visible: str, number: re.Match[str]) -> bool:
-    before = visible[visible.rfind("\n", 0, number.start()) + 1 : number.start()]
-    return any(len(before) - word.end() <= 40 for word in _FINANCIAL.finditer(before)) or bool(
-        re.match(
-            r"\s+(?:trades?|percent|per cent|bps|basis points)\b",
-            visible[number.end() :],
-            re.IGNORECASE,
-        )
-    )
-
-
-def _flag_problems(
-    text: str, phrases: str, run_id: str, flags: FlagLookup, others: list[str]
-) -> list[Fact]:
-    problems = []
-    stored_flags = flags(run_id)
-    offset = 0
-    for sentence in re.split(r"(?<=[.!?])\s+|\n", phrases):
-        start = phrases.find(sentence, offset)
-        offset = start + len(sentence)
-        if run_id[:8] not in sentence and any(other[:8] in sentence for other in others):
-            continue  # the sentence names a different cited run, so it is not about this one
-        denied = re.search(CONTRADICTIONS["*"], sentence)
-        negated = re.search(r"\b(?:not|never|no longer|failed to)\b|n't", sentence)
-        seen = set()
-        for flag in stored_flags:
-            code = flag["flag"]
-            pattern = CONTRADICTIONS.get(code)
-            if code not in seen and (
-                denied or (not negated and pattern and re.search(pattern, sentence))
-            ):
-                seen.add(code)
-                problems.append(
-                    _problem(
-                        text,
-                        start,
-                        "FLAG_CONTRADICTED",
-                        f"Run {run_id} carries the flag {code}: {flag['detail']}",
-                        stored=code,
-                        next_step="Report the flag in plain words; do not contradict it.",
-                    )
-                )
-    return problems
-
-
 def check_text(
     text: str, lookup: Lookup, allow_untagged: int = 0, flags: FlagLookup | None = None
 ) -> Fact:
     if allow_untagged < 0:
         raise ValueError("allow_untagged must be non-negative")
-    visible = visible_text(text).replace("−", "-")
+    visible = re.sub(r"(?<![\w.])\u2013(?=\d)", "-", visible_text(text).replace("\u2212", "-"))
     scanned = _IGNORED.sub(_blank, _TAG.sub(_blank, visible))
     problems: list[Fact] = []
     warnings: list[Fact] = []
@@ -200,7 +102,8 @@ def check_text(
         if tag is None and re.fullmatch(r"\+?\d+", written):
             integer = int(written)
             if 1900 <= integer <= 2100 or (
-                0 <= integer <= 10 and not _financial_context(_TAG.sub(_blank, visible), number)
+                0 <= integer <= 10
+                and not financial_context(_TAG.sub(_blank, visible), number.start(), number.end())
             ):
                 continue
         checked += 1
@@ -229,7 +132,8 @@ def check_text(
                     )
                 )
                 continue
-            mismatch = _match_value(written, fact)
+            before = re.split(r"(?<=[.!?])\s+|\n", visible[: number.start()])[-1]
+            mismatch = match_value(written, fact, unit_kind(metric, operation), before)
             if mismatch:
                 kind, message, stored = mismatch
                 step = f"Run alpha results cite {first} {metric} and copy its value."
@@ -250,11 +154,31 @@ def check_text(
                     next_step=error["next"],
                 )
             )
+    for spelled in spelled_numbers(_TAG.sub(_blank, visible)):
+        checked += 1
+        problem = _problem(
+            text,
+            spelled.start(),
+            "UNTAGGED_NUMBER",
+            f"Number written in words ({spelled.group()!r}) cannot be checked.",
+            next_step="Write the number in digits with its citation tag.",
+        )
+        (warnings if len(warnings) < allow_untagged else problems).append(problem)
     phrases = _TAG.sub(_blank, visible).lower().replace("-", " ")
     for run_id, (fact, offset) in cited.items():
         if flags is not None:
             others = [other for other in cited if other != run_id]
-            problems.extend(_flag_problems(text, phrases, run_id, flags, others))
+            for start, code, detail in flag_hits(phrases, run_id, flags(run_id), others):
+                problems.append(
+                    _problem(
+                        text,
+                        start,
+                        "FLAG_CONTRADICTED",
+                        f"Run {run_id} carries the flag {code}: {detail}",
+                        stored=code,
+                        next_step="Report the flag in plain words; do not contradict it.",
+                    )
+                )
         for label in fact.get("labels", []):
             phrase = LABEL_PHRASES.get(label)
             if phrase and not re.search(r"\b" + re.escape(phrase) + r"\b", phrases):

@@ -10,7 +10,8 @@ from alpha_cli import results_cmds
 from alpha_cli.spine.check import check_text
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.honesty import build_fixture
-from alpha_cli.spine.honesty_scenarios import H1, SCENARIOS, A, Scenario
+from alpha_cli.spine.honesty_more import SCENARIOS
+from alpha_cli.spine.honesty_scenarios import H1, A, Scenario
 
 
 @pytest.fixture
@@ -128,7 +129,7 @@ def test_flag_contradictions_and_negation(home: Path, code: str, sentence: str) 
         "No warnings.",
         "Nothing was flagged.",
         "Nothing flagged.",
-        "Never said no warning flags.",
+        "It never had no warning flags.",
     ],
 )
 def test_flag_denials_report_each_flag_once(home: Path, sentence: str) -> None:

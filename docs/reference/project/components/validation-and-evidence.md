@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: 69e2d5c29065a096
+verified: abad9c24e53dbcbe
 ---
 
 # Validation and evidence
@@ -45,7 +45,7 @@ retain the basis and source for each number, including a reason when it is unava
 `alpha results check <file>` reads a drafted answer and verifies each tagged number, run label,
 the trial count and any sentence that contradicts a stored flag against those stored facts, and `alpha results compare` computes differences
 between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad
-reasoning. `alpha partner selftest` runs 18 planted honest and dishonest answers through the check.
+reasoning. `alpha partner selftest` runs 25 planted honest and dishonest answers through the check.
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 

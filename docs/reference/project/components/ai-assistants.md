@@ -56,7 +56,7 @@ The partner's instructions are four small sets of files, each with one job:
 The playbook, eleven tool cards, the six skills and the lessons folder are written, and the check
 above passes. They are unproven as behaviour: no test yet shows that an AI following them stays
 honest. The report and answer skills now require `alpha results check` before an answer is sent. The
-checker checks tagged numbers, labels and flag contradictions; `alpha partner selftest` exercises 18
+checker checks tagged numbers, labels and flag contradictions; `alpha partner selftest` exercises 25
 planted answers without a model. Its installed smoke check passes, and no lesson has been recorded.
 The research-case protocol library (`.agents/skills/alpha-research-protocols/`) is still loaded
 by the program and the tool server. For the rest see the capabilities below on

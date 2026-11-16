@@ -1106,7 +1106,7 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 [[capability]]
 id = "honesty-selftest"
 name = "Honesty self-test of the answer checker"
-what = "Check planted honest and dishonest answers against temporary stored runs, without a model call."
+what = "Check 25 planted honest and dishonest answers against temporary stored runs, without a model call."
 see_it = ["alpha partner selftest"]
 entry_points = ["cli: alpha partner"]
 proof_synthetic = ["tests/unit/test_honesty_traps.py::test_every_scenario_behaves"]

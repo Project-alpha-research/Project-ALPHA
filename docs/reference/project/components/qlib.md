@@ -59,6 +59,8 @@ stand-in on the Dell, where its install is not present.
   [ADR-0042](../../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md),
   [ADR-0028](../../../adr/0028-governed-market-state-and-model-candidates.md).
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
+- **Plan:** [stage 9](../../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the
+  checklist; [coverage maps](../../../roadmap/backlog/engine-coverage-maps.md).
 
 ## Decisions and open questions
 

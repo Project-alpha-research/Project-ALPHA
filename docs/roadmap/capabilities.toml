@@ -382,6 +382,7 @@ entry_points = [
   "cli: alpha suite plan",
   "cli: alpha suite run",
   "cli: alpha strategy-candidate run",
+  "cli: alpha project create",
   "api: POST /api/projects/{project_id}/experiments/{experiment_id}/suite/{action}/run",
   "panel: apps/alpha-web/frontend/src/panels/V3Workbenches.tsx",
 ]
@@ -521,6 +522,8 @@ entry_points = [
   "cli: alpha research capture",
   "cli: alpha research run",
   "cli: alpha research decide",
+  "cli: alpha evidence add",
+  "cli: alpha owner-auth enroll",
   "api: POST /api/research/cases",
   "panel: apps/alpha-web/frontend/src/panels/ResearchCockpit.tsx",
 ]

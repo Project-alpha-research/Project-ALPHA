@@ -51,7 +51,7 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-185 capabilities: 36 working, 62 built but unproven, 85 missing, 1 to rebuild,
+186 capabilities: 37 working, 63 built but unproven, 84 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-16 after the file-system audit added 22 rows).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
@@ -63,12 +63,12 @@ gate, before paper or live trading ([decision][thin]).
 | 5. Overfit tests | 6 | 8 | 5 | 0 | 0 |
 | 6. Diagnostics | 5 | 6 | 8 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 8 | 0 | 1 |
-| 8. AI partner | 2 | 7 | 4 | 1 | 0 |
+| 8. AI partner | 3 | 8 | 3 | 1 | 0 |
 | 9. RD-Agent and Qlib engines | 3 | 3 | 10 | 0 | 0 |
 | 10. Screens | 1 | 3 | 11 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **36** | **62** | **85** | **1** | **1** |
+| **All** | **37** | **63** | **84** | **1** | **1** |
 
 ## 1. Idea
 

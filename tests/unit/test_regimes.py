@@ -6,7 +6,9 @@ from typing import Any
 
 import numpy as np
 import pytest
-from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
+from statsmodels.tsa.regime_switching.markov_regression import (  # type: ignore[import-untyped]
+    MarkovRegression,
+)
 
 from alpha_validation import regimes
 from alpha_validation.metrics import sharpe_ratio
@@ -38,7 +40,9 @@ def _reference(returns: np.ndarray, seed: int = 0) -> Any:
         return model, model.fit(search_reps=3, rng=np.random.default_rng(seed))
 
 
-def test_planted_blocks_are_classified(fitted: tuple[np.ndarray, np.ndarray, dict]) -> None:
+def test_planted_blocks_are_classified(
+    fitted: tuple[np.ndarray, np.ndarray, dict[str, Any]],
+) -> None:
     returns, truth, out = fitted
     assert out["converged"] is True
     assert out["k"] == 2
@@ -57,7 +61,7 @@ def test_planted_blocks_are_classified(fitted: tuple[np.ndarray, np.ndarray, dic
 
 
 def test_output_matches_statsmodels_reordered_by_variance(
-    fitted: tuple[np.ndarray, np.ndarray, dict],
+    fitted: tuple[np.ndarray, np.ndarray, dict[str, Any]],
 ) -> None:
     returns, _, out = fitted
     model, fit = _reference(returns)
@@ -100,7 +104,7 @@ def test_regime_zero_is_calm_whichever_block_comes_first() -> None:
     assert out["expected_durations"][1] == pytest.approx(1.0 / transition[1, 0], rel=1e-9)
 
 
-def test_same_seed_same_output(fitted: tuple[np.ndarray, np.ndarray, dict]) -> None:
+def test_same_seed_same_output(fitted: tuple[np.ndarray, np.ndarray, dict[str, Any]]) -> None:
     returns, _, out = fitted
     assert volatility_regimes(returns, seed=0) == out
 

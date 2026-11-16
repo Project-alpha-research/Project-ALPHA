@@ -17,7 +17,7 @@ import math
 from typing import Any
 
 import numpy as np
-import statsmodels.api as sm
+import statsmodels.api as sm  # type: ignore[import-untyped]
 
 from alpha_validation.metrics import FloatArray, FloatSeq
 
@@ -33,7 +33,7 @@ BASIS = (
 
 def hac_lags(n: int) -> int:
     """Newey-West (1994) rule-of-thumb lag truncation for ``n`` observations."""
-    return math.floor(4 * (n / 100) ** (2 / 9))
+    return int(math.floor(4 * (n / 100) ** (2 / 9)))
 
 
 def _vector(values: FloatSeq, name: str) -> FloatArray:

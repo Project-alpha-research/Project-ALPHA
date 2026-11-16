@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -242,7 +243,7 @@ def test_performance_hand_computed() -> None:
     assert result["sharpe"] == pytest.approx(0, abs=1e-12)
 
 
-def _flag_sections(base: float | None, delayed: float, variant: float) -> dict:
+def _flag_sections(base: float | None, delayed: float, variant: float) -> dict[str, Any]:
     return {
         "full_sample": {"sharpe": base},
         "benchmark": {"sharpe": None},

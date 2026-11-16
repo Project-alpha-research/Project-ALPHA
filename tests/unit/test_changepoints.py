@@ -1,10 +1,11 @@
 """Change points: planted shifts are found near their true position; the cap and errors hold."""
 
 import math
+from typing import Any
 
 import numpy as np
 import pytest
-import ruptures
+import ruptures  # type: ignore[import-untyped]
 
 from alpha_validation import changepoints
 from alpha_validation.changepoints import change_points, default_penalty, noise_variance
@@ -176,7 +177,7 @@ def test_min_size_is_respected_and_passed_on() -> None:
         (np.arange(80.0), {"penalty": float("nan")}, "penalty must be a positive number"),
     ],
 )
-def test_invalid_input_fails_loud(series: np.ndarray, kwargs: dict, message: str) -> None:
+def test_invalid_input_fails_loud(series: np.ndarray, kwargs: dict[str, Any], message: str) -> None:
     with pytest.raises(ValueError, match=message):
         change_points(series, **kwargs)
 

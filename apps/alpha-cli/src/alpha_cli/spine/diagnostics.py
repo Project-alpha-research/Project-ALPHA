@@ -122,7 +122,8 @@ def delay(returns: FloatSeq, weights: FloatSeq, costs: FloatSeq, ppy: int) -> di
     base, base_reason = score(w * r - c, ppy)
     delayed, delayed_reason = score(np.r_[0.0, w[:-1]] * r - np.r_[0.0, c[:-1]], ppy)
     # A share of the base is only meaningful against a positive base Sharpe.
-    kept, kept_reason = None, "base or delayed Sharpe is unavailable"
+    kept: float | None = None
+    kept_reason: str | None = "base or delayed Sharpe is unavailable"
     if base is not None and delayed is not None:
         comparable = math.isfinite(base) and base > 0
         kept = delayed / base if comparable else None

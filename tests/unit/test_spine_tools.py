@@ -11,12 +11,14 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
+from alpha_cli import _runner
 from alpha_cli.results_cmds import results_app
 from alpha_cli.spine import tool_inputs, tools
 from alpha_cli.spine.errors import SpineError, tool_error
 from alpha_cli.spine.ledger import append_trial, read_trials
 from alpha_cli.tool_cmds import tool_app
 from alpha_core import DataError
+from alpha_validation import regimes as regime_model
 
 RUN = "0123456789abcdef"
 START = datetime(2020, 1, 1, tzinfo=UTC)
@@ -58,7 +60,7 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> None:
+def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> dict[str, Any]:
     """A second asset, QQQ, with bars on every ``keep``-th day only."""
     series = _series(home)
     monkeypatch.setattr(
@@ -75,8 +77,8 @@ def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> None
             for date in series.dates[::keep]
         ], None
 
-    monkeypatch.setattr(tool_inputs._runner, "load_bars", load_bars)
-    monkeypatch.setattr(tool_inputs, "_seen", seen, raising=False)
+    monkeypatch.setattr(_runner, "load_bars", load_bars)
+    return seen
 
 
 def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
@@ -121,7 +123,7 @@ def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
 
 
 def test_cross_asset_join_reports_dropped_bars(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    _other_asset(monkeypatch, home, keep=2)
+    seen = _other_asset(monkeypatch, home, keep=2)
     output = tools.attribution(home, RUN, "QQQ")
     assert output["params"]["benchmark"] == "QQQ@home"
     assert "benchmark-is-same-asset" not in output["labels"]
@@ -134,7 +136,7 @@ def test_cross_asset_join_reports_dropped_bars(home: Path, monkeypatch: pytest.M
     }
     assert output["result"]["n"] == 350
     assert output["result"]["periods_per_year"] == 183  # every second day, inferred from dates
-    assert tool_inputs._seen == {"symbol": "QQQ", "as_of": _series(home).dates[-1]}
+    assert seen == {"symbol": "QQQ", "as_of": _series(home).dates[-1]}
     assert output["file"] != tools.attribution(home, RUN)["file"]
 
 
@@ -212,7 +214,7 @@ def test_regime_flags_and_null_fact() -> None:
 
 def test_regimes_that_do_not_converge(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        tools.regime_model,
+        regime_model,
         "volatility_regimes",
         lambda returns, k, seed: {"converged": False, "reason": "the optimiser did not converge"},
     )

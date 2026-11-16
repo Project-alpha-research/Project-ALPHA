@@ -17,7 +17,7 @@ import math
 from typing import Any
 
 import numpy as np
-import ruptures
+import ruptures  # type: ignore[import-untyped]
 
 from alpha_validation.metrics import FloatArray, FloatSeq
 

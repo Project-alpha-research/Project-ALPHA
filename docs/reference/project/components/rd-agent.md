@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 3a0098cd96e3
+verified: 42093e9d40abfd57
 ---
 
 # RD-Agent
@@ -49,6 +49,14 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
+  Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
+  makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+- RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
+  [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
+- Human-authored rule families (written by a person, frozen and hash-checked before the run) are
+  backtested on [Nautilus](nautilus.md) without any 2024 data and go into the same trial ledger,
+  so they count toward how many ideas were tried, but never mix into RD-Agent's factor statistics
+  or the summary it proposes from (`alpha_cli.rdagent_rule_family`).
 - Later: RD-Agent drives the Qlib worker, and composes studies across all research families.
 - The plain-English walk-through is [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
 
@@ -62,7 +70,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 ## Where it lives
 
 - **Workspaces:** `workers/rdagent`
-- **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`
+- **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`,
+  `rdagent-run-viewer`
 - Code: [`workers/rdagent/`](../../../../workers/rdagent/README.md) (the model gateway is
   `workers/rdagent/model_gateway.py`); the job supervisor in
   `apps/alpha-cli/src/alpha_cli/native_supervisor.py`. Setup: `scripts/setup_rdagent.sh`.
@@ -76,9 +85,11 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   [candidate to research case](../../../roadmap/backlog/rdagent-candidate-to-research-case.md),
   [gate coverage](../../../roadmap/backlog/gate-coverage-rdagent.md).
 - Decision records: [ADR-0044](../../../adr/0044-rdagent-model-gateway.md) (how it reaches its
-  models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors).
+  models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors),
+  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
+- Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 
 ## Decisions and open questions
 

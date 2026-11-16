@@ -388,17 +388,24 @@ def run_artifacts_readable(kind: str, run_id: str, *, data_dir: Path) -> bool:
 
 
 def _curve_period(rdir: Path) -> str | None:
-    """`YYYY-MM-DD → YYYY-MM-DD` from the equity curve's first/last bar; None without a curve."""
+    """Curve bounds, including UTC times whenever a day contains multiple samples."""
     path = rdir / "equity_curve.parquet"
     if not path.exists():
         return None
     bounds = (
         pl.scan_parquet(path)
-        .select(pl.col("ts").min().alias("first"), pl.col("ts").max().alias("last"))
+        .select(
+            pl.col("ts").min().alias("first"),
+            pl.col("ts").max().alias("last"),
+            (pl.col("ts").dt.convert_time_zone("UTC").dt.date().n_unique() < pl.len()).alias(
+                "intraday"
+            ),
+        )
         .collect()
     )
-    first, last = bounds.row(0)
-    return f"{first:%Y-%m-%d} → {last:%Y-%m-%d}"
+    first, last, intraday = bounds.row(0)
+    pattern = "%Y-%m-%d %H:%M" if intraday else "%Y-%m-%d"
+    return f"{first.strftime(pattern)} → {last.strftime(pattern)}"
 
 
 def _manifest_identity_value(manifest: Mapping[str, Any], key: str) -> Any:
@@ -411,8 +418,8 @@ def _manifest_identity_value(manifest: Mapping[str, Any], key: str) -> Any:
 
 def display_name(kind: str, run_id: str, manifest: dict[str, Any], rdir: Path) -> str:
     """The run's name as a trader reads it (spec 2026-09-01 §4.4):
-    `<strategy> D1 — <symbol> · <venue> · <start> → <end> · run <8 hex>`; every engine run is
-    daily, so the timeframe is the constant D1; parts the manifest does not carry are omitted."""
+    `<strategy> <timeframe> — <symbol> · <venue> · <start> → <end> · run <8 hex>`;
+    legacy manifests default to D1; parts the manifest does not carry are omitted."""
     params = manifest.get("params")
     strategy = (params.get("strategy_name") if isinstance(params, dict) else None) or (
         manifest.get("command") or kind
@@ -422,7 +429,10 @@ def display_name(kind: str, run_id: str, manifest: dict[str, Any], rdir: Path) -
         ", ".join(symbols) if symbols else None
     )
     parts = [part for part in (symbol, manifest.get("source"), _curve_period(rdir)) if part]
-    return f"{strategy} D1 — {' · '.join([*parts, f'run {run_id[:8]}'])}"
+    raw_timeframe = manifest.get("timeframe")
+    timeframe = raw_timeframe if isinstance(raw_timeframe, str) and raw_timeframe else "1D"
+    label = timeframe[-1].upper() + timeframe[:-1]
+    return f"{strategy} {label} — {' · '.join([*parts, f'run {run_id[:8]}'])}"
 
 
 _CRYPTO_SOURCES = ("ccxt", "binance", "bybit", "coinbase")

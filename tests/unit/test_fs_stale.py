@@ -1,4 +1,4 @@
-"""`fs.py stale` lists living documents whose sources changed after their verified commit."""
+"""`fs.py stale|owners|verify`: living documents are stamped with a fingerprint of their sources."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ import fs
 import fs_stale
 import pytest
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 def _git(repo: Path, *args: str) -> str:
     return subprocess.run(
@@ -17,11 +19,15 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout.strip()
 
 
-def _commit(repo: Path, files: dict[str, str], message: str) -> str:
+def _write(repo: Path, files: dict[str, str]) -> None:
     for rel, text in files.items():
         target = repo / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
+
+
+def _commit(repo: Path, files: dict[str, str], message: str) -> str:
+    _write(repo, files)
     _git(repo, "add", ".")
     _git(repo, "commit", "-q", "-m", message)
     return _git(repo, "rev-parse", "HEAD")
@@ -34,11 +40,19 @@ def _doc(verified: str, *sources: str) -> str:
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "init", "-q", "-b", "main")
     _git(tmp_path, "config", "user.email", "test@example.invalid")
     _git(tmp_path, "config", "user.name", "Test")
     _git(tmp_path, "config", "commit.gpgsign", "false")
     return tmp_path
+
+
+def _fresh(repo: Path, *sources: str, code: dict[str, str] | None = None) -> None:
+    """A committed repository whose one document, docs/a.md, is verified against its sources."""
+    _commit(repo, code or {"src/a.py": "a = 1\n", "src/b.py": "b = 1\n"}, "code")
+    _commit(repo, {"docs/a.md": _doc("unset", *(sources or ("src/**",)))}, "doc")
+    fs_stale.verify(repo, ["docs/a.md"])
+    _commit(repo, {}, "stamp")
 
 
 def test_front_matter_parses_scalars_and_lists() -> None:
@@ -55,32 +69,54 @@ def test_front_matter_parses_scalars_and_lists() -> None:
         fs_stale.front_matter("---\nowner: x\nowner: y\n---\n")
 
 
-def test_fresh_document_is_not_stale_and_own_edits_do_not_count(repo: Path) -> None:
-    base = _commit(repo, {"src/a.py": "a = 1\n"}, "code")
-    _commit(repo, {"docs/a.md": _doc(base, "src/**", "docs/a.md")}, "doc")
-    _commit(repo, {"docs/a.md": _doc(base, "src/**", "docs/a.md") + "More.\n"}, "doc edit")
+def test_verified_document_is_fresh_and_its_own_edits_do_not_count(repo: Path) -> None:
+    _fresh(repo, "src/**", "docs/a.md")
+    text = (repo / "docs/a.md").read_text(encoding="utf-8")
+    assert "# Doc" in text and "verified: unset" not in text
+    _commit(repo, {"docs/a.md": text + "More.\n"}, "doc edit")
     [report] = fs_stale.stale(repo)
-    assert report.path == "docs/a.md"
-    assert report.changed_files == [] and report.problems == []
+    assert not report.stale and report.problems == []
+    assert len(report.verified) == 16 and report.verified == report.fingerprint
 
 
-def test_source_change_after_verified_is_reported_with_count_and_newest_commit(repo: Path) -> None:
-    base = _commit(repo, {"src/a.py": "a = 1\n", "src/b.py": "b = 1\n", "other.py": ""}, "code")
-    _commit(repo, {"docs/a.md": _doc(base[:8], "src/**")}, "doc")
-    _commit(repo, {"src/a.py": "a = 2\n"}, "change a")
-    newest = _commit(repo, {"src/b.py": "b = 2\n", "other.py": "x = 1\n"}, "change b")
-    [report] = fs_stale.stale(repo)
-    assert report.changed_files == ["src/a.py", "src/b.py"]
-    assert report.newest_commit == newest
-    assert "STALE   docs/a.md: 2 source file(s)" in fs_stale.render_text([report])
+@pytest.mark.parametrize("committed", [True, False])
+def test_edit_add_and_delete_of_a_source_each_make_the_document_stale(
+    repo: Path, committed: bool
+) -> None:
+    _fresh(repo)
+    changes: list[dict[str, str]] = [{"src/a.py": "a = 2\n"}, {"src/new.py": "n = 1\n"}]
+    for files in changes:
+        _write(repo, files)
+        if committed:
+            _commit(repo, {}, "change")
+        [report] = fs_stale.stale(repo)
+        assert report.stale
+        assert report.changed_files == (list(files) if "src/a.py" in files or committed else [])
+        assert "STALE   docs/a.md" in fs_stale.render_text([report])
+        fs_stale.verify(repo, ["docs/a.md"])
+        _commit(repo, {}, "stamp")
+        assert not fs_stale.stale(repo)[0].stale
+    (repo / "src/b.py").unlink()
+    assert fs_stale.stale(repo)[0].stale
 
 
-def test_unmatched_glob_and_unknown_commit_are_problems(repo: Path) -> None:
+def test_unrelated_and_ignored_files_do_not_make_a_document_stale(repo: Path) -> None:
+    _fresh(repo)
+    _commit(repo, {"other.py": "x = 1\n", ".gitignore": "*.pyc\n"}, "elsewhere")
+    _write(repo, {"src/a.pyc": "bytes"})
+    assert not fs_stale.stale(repo)[0].stale
+
+
+def test_unmatched_glob_is_a_problem_and_verify_refuses_it(repo: Path) -> None:
     _commit(repo, {"src/a.py": "a = 1\n"}, "code")
-    _commit(repo, {"docs/a.md": _doc("deadbeef", "src/**", "missing/**")}, "doc")
+    _commit(repo, {"docs/a.md": _doc("unset", "src/**", "missing/**")}, "doc")
     [report] = fs_stale.stale(repo)
-    assert "source glob matches no tracked file: missing/**" in report.problems
-    assert any("not a known commit" in problem for problem in report.problems)
+    assert report.problems == ["source glob matches no file: missing/**"]
+    with pytest.raises(ValueError, match="missing"):
+        fs_stale.verify(repo, ["docs/a.md"])
+    with pytest.raises(ValueError, match="not a living document"):
+        fs_stale.verify(repo, ["src/a.py"])
+    assert "verified: unset" in (repo / "docs/a.md").read_text(encoding="utf-8")
 
 
 def test_generated_and_plain_documents_are_skipped(repo: Path) -> None:
@@ -96,40 +132,71 @@ def test_generated_and_plain_documents_are_skipped(repo: Path) -> None:
     assert fs_stale.stale(repo) == []
 
 
-def test_cli_exit_codes_and_json(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    base = _commit(repo, {"src/a.py": "a = 1\n"}, "code")
-    _commit(repo, {"docs/a.md": _doc(base, "src/**")}, "doc")
-    assert fs.main(["--root", str(repo), "stale"]) == 0
-    _commit(repo, {"src/a.py": "a = 2\n"}, "change")
-    assert fs.main(["--root", str(repo), "stale"]) == 0
-    assert fs.main(["--root", str(repo), "stale", "--strict"]) == 1
-    capsys.readouterr()
-    assert fs.main(["--root", str(repo), "stale", "--format", "json"]) == 0
-    [row] = json.loads(capsys.readouterr().out)
-    assert row["path"] == "docs/a.md" and row["changed_files"] == 1
-    _commit(repo, {"docs/b.md": _doc(base, "nothing/**")}, "broken doc")
-    assert fs.main(["--root", str(repo), "stale"]) == 1
+def test_owners_names_the_documents_that_describe_a_path(repo: Path) -> None:
+    _fresh(repo, "src/*.py", "tools", code={"src/a.py": "", "tools/x.sh": ""})
+    _commit(repo, {"docs/b.md": _doc("unset", "src/**"), "src/deep/c.py": ""}, "second doc")
+    assert fs_stale.owners(repo, ["src/a.py", "src/deep/c.py", "tools/x.sh", "docs/a.md", "z"]) == {
+        "src/a.py": ["docs/a.md", "docs/b.md"],
+        "src/deep/c.py": ["docs/b.md"],
+        "tools/x.sh": ["docs/a.md"],
+        "docs/a.md": [],
+        "z": [],
+    }
 
 
-def test_other_documents_and_foreign_front_matter_do_not_count(repo: Path) -> None:
-    base = _commit(
-        repo,
-        {"workers/a/src/x.py": "", ".claude/agents/r.md": "---\nname: r\n  bad: [\n---\n# R\n"},
-        "code",
+def test_source_globs_match_exactly_what_git_matches() -> None:
+    tracked = [p for p in fs_stale.git(ROOT, "ls-files", "-z").split("\0") if p]
+    patterns = {
+        pattern for meta in fs_stale.living_documents(ROOT).values() for pattern in meta["sources"]
+    }
+    assert patterns
+    for pattern in sorted(patterns):
+        ours = [p for p in tracked if fs_stale.glob_regex(pattern).fullmatch(p)]
+        assert ours == sorted(fs_stale.tracked_matches(ROOT, pattern)), pattern
+
+
+def test_two_branches_that_change_one_documents_sources_conflict_on_merge(repo: Path) -> None:
+    _fresh(repo)
+    for branch, files in (("one", {"src/a.py": "a = 2\n"}), ("two", {"src/b.py": "b = 2\n"})):
+        _git(repo, "checkout", "-q", "-b", branch, "main")
+        _write(repo, files)
+        fs_stale.verify(repo, ["docs/a.md"])
+        _commit(repo, {}, branch)
+    _git(repo, "checkout", "-q", "main")
+    _git(repo, "merge", "-q", "--no-ff", "-m", "one", "one")
+    merge = subprocess.run(
+        ["git", "-C", str(repo), "merge", "--no-ff", "-m", "two", "two"], capture_output=True
     )
-    _commit(repo, {"docs/w.md": _doc(base, "workers/**")}, "doc")
-    _commit(repo, {"workers/a/CONTEXT.md": _doc(base, "workers/a/src/**")}, "routing file")
-    reports = fs_stale.stale(repo)
-    assert [r.path for r in reports] == ["docs/w.md", "workers/a/CONTEXT.md"]
-    assert all(not r.changed_files and not r.problems for r in reports)
+    assert merge.returncode != 0
+    assert "<<<<<<<" in (repo / "docs/a.md").read_text(encoding="utf-8")
+    # Keeping either side's stamp does not hide it: neither names the merged sources.
+    _git(repo, "checkout", "--theirs", "docs/a.md")
+    assert fs_stale.stale(repo)[0].stale
 
 
-def test_workspace_instruction_files_do_not_make_a_document_stale(repo: Path) -> None:
-    base = _commit(repo, {"workers/a/src/x.py": "", "workers/a/CONTEXT.md": "# A\n"}, "code")
-    _commit(repo, {"docs/w.md": _doc(base, "workers/**")}, "doc")
-    _commit(repo, {"workers/a/CLAUDE.md": "@CONTEXT.md\n", "CLAUDE.md": "# Id\n"}, "loaders")
-    (report,) = fs_stale.stale(repo)
-    assert report.changed_files == []
-    _commit(repo, {"workers/a/src/x.py": "x = 1\n"}, "code change")
-    (report,) = fs_stale.stale(repo)
-    assert report.changed_files == ["workers/a/src/x.py"]
+def test_cli_exit_codes_json_owners_and_verify(
+    repo: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _fresh(repo)
+    root = ["--root", str(repo)]
+    assert fs.main([*root, "stale", "--strict"]) == 0
+    _commit(repo, {"src/a.py": "a = 2\n"}, "change")
+    assert fs.main([*root, "stale"]) == 0
+    assert fs.main([*root, "stale", "--strict"]) == 1
+    capsys.readouterr()
+    assert fs.main([*root, "stale", "--format", "json"]) == 0
+    [payload] = json.loads(capsys.readouterr().out)
+    assert payload["path"] == "docs/a.md" and payload["stale"] and payload["files"] == ["src/a.py"]
+    assert fs.main([*root, "owners", "src/a.py", str(repo / "src/b.py"), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "src/a.py": ["docs/a.md"],
+        "src/b.py": ["docs/a.md"],
+    }
+    assert fs.main([*root, "verify", "docs/a.md"]) == 0
+    assert "verified docs/a.md" in capsys.readouterr().out
+    assert fs.main([*root, "verify", "docs/a.md"]) == 0
+    assert "already current docs/a.md" in capsys.readouterr().out
+    assert fs.main([*root, "stale", "--strict"]) == 0
+    assert fs.main([*root, "verify", "src/a.py"]) == 2
+    _commit(repo, {"docs/bad.md": _doc("unset", "missing/**")}, "bad doc")
+    assert fs.main([*root, "stale"]) == 1

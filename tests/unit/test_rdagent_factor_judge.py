@@ -7,6 +7,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -194,7 +195,16 @@ def judge_parts(*names: str) -> dict[str, Any]:
 
     tree = ast.parse((WORKER / "alpha_factor_judge.py").read_text())
     nodes: list[ast.stmt] = [
-        n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in names
+        n
+        for n in tree.body
+        if isinstance(n, (ast.FunctionDef, ast.ClassDef))
+        and (
+            n.name in names
+            or (
+                ("AlphaFactorRunner" in names or "record_coder_verdicts" in names)
+                and n.name in {"record_coder_verdicts", "_record_coder_verdicts"}
+            )
+        )
     ]
     namespace = {
         "Any": Any,
@@ -204,9 +214,11 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "json": json,
         "pd": pd,
         "subprocess": subprocess,
+        "sys": sys,
         "Developer": object,
         "FactorEmptyError": ValueError,
         "LEGACY_KEYS": ["IC"],
+        "VIEWER_KEYS": [],
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<judge-evidence>", "exec"), namespace)
     return namespace
@@ -436,3 +448,133 @@ with patch.object(j.QlibFactorHypothesisGen, 'prepare_context', return_value=({'
         cwd=tmp_path,
         timeout=60,
     )
+
+
+def test_hypothesis_summary_skips_rule_families(tmp_path: Path) -> None:
+    import json
+
+    namespace = swing_parts()
+    ledger = tmp_path / "ledger"
+    ledger.write_text(json.dumps({"schema": "AlphaRuleTrialV1", "name": "human-rule"}) + "\n")
+    context = {"hypothesis_and_feedback": ""}
+    namespace["append_swing_context"](context, str(ledger))
+    assert "human-rule" not in context["hypothesis_and_feedback"]
+
+
+def test_hypothesis_skips_unknown_rows_but_refuses_malformed_known(tmp_path: Path) -> None:
+    import json
+
+    namespace = swing_parts()
+    ledger = tmp_path / "ledger"
+    rows = [{"schema": name} for name in ("FutureB", "FutureA", "FutureB")]
+    ledger.write_text("".join(json.dumps(row) + "\n" for row in rows) + '{"schema":')
+    context = {"hypothesis_and_feedback": ""}
+    namespace["append_swing_context"](context, str(ledger))
+    assert (
+        "3 ledger rows of other kinds were skipped (FutureA, FutureB)"
+        in context["hypothesis_and_feedback"]
+    )
+    malformed_rows: tuple[object, ...] = (
+        {"schema": "AlphaRdagentFactorTrialV1"},
+        [],
+        {"schema": None},
+    )
+    for row in malformed_rows:
+        ledger.write_text(json.dumps(row) + "\n")
+        with pytest.raises((ValueError, KeyError, TypeError)):
+            namespace["append_swing_context"]({"hypothesis_and_feedback": ""}, str(ledger))
+
+
+@pytest.mark.parametrize("persistent", [True, False])
+@pytest.mark.parametrize("evaluator_failure", [True, False])
+def test_runner_records_code_verdicts_before_evaluator_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, persistent: bool, evaluator_failure: bool
+) -> None:
+    import hashlib
+    import json
+    from types import SimpleNamespace as NS
+
+    namespace = judge_parts("record_code", "record_coder_verdicts", "AlphaFactorRunner")
+    for key, value in {
+        "ALPHA_FACTOR_RUN_DIR": str(tmp_path),
+        "ALPHA_FACTOR_CODE_PYTHON": "unused",
+        "ALPHA_FACTOR_EVAL_PYTHON": "unused",
+        "ALPHA_FACTOR_TRIAL_LEDGER": "unused",
+    }.items():
+        monkeypatch.setenv(key, value)
+    calls = []
+
+    def demote(
+        environ: Any, tasks: list[str], digests: list[str] | None = None
+    ) -> tuple[list[str], str | None]:
+        calls.append(tasks)
+        assert digests is not None and len(digests) == len(tasks)  # exact code identity
+        return (tasks, None) if persistent else ([], "no persistent coding memory")
+
+    namespace["demote_in_file"] = demote
+    checks = iter([{"status": "LOOKAHEAD"}, {"status": "PASS"}, {"status": "PASS"}])
+    namespace["check_prefix_invariance"] = lambda *args: next(checks)
+    names = ["leaky", "shape", "screen_fail", "no_code", "not_run", "execution_failed"]
+    tasks = [NS(factor_name=n, get_task_information=lambda n=n: n) for n in names]
+    workspaces: list[NS | None] = [
+        NS(
+            file_dict={"factor.py": n},
+            execute=lambda _, n=n: (
+                "ran",
+                None
+                if n == "execution_failed"
+                else pd.DataFrame(
+                    {"a": [1], **({"b": [2]} if n == "shape" else {})},
+                    index=pd.MultiIndex.from_tuples([("2023-01-01", "A")]),
+                ),
+            ),
+        )
+        for n in names
+    ]
+    workspaces[3] = None
+    exp = NS(
+        based_experiments=[],
+        sub_tasks=tasks,
+        sub_workspace_list=workspaces,
+        prop_dev_feedback=[True, True, True, False, False, True],
+        hypothesis="idea",
+    )
+
+    def evaluator(command: list[str], **kwargs: Any) -> NS:
+        if evaluator_failure:
+            return NS(returncode=1, stderr="evaluation failed")
+        path = Path(command[command.index("--out") + 1])
+        path.write_text(
+            json.dumps(
+                {
+                    "legacy_result": {"IC": 0},
+                    "feedback_text": "screen rejected the idea",
+                    "factors": [{"name": "screen_fail", "status": "SCREEN_FAIL"}],
+                }
+            )
+        )
+        return NS(returncode=0)
+
+    monkeypatch.setattr(subprocess, "run", evaluator)
+    if evaluator_failure:
+        with pytest.raises(ValueError, match="evaluation failed"):
+            namespace["AlphaFactorRunner"]().develop(exp)
+    else:
+        namespace["AlphaFactorRunner"]().develop(exp)
+        assert exp.alpha_evaluation["factors"][0]["status"] == "SCREEN_FAIL"
+    assert calls == [["leaky", "shape"]]
+    rows = [
+        json.loads(line) for line in (tmp_path / "coder-verdicts.jsonl").read_text().splitlines()
+    ]
+    assert [r["status"] for r in rows] == ["LOOKAHEAD", "FAILED"]
+    for row, name in zip(rows, names[:2], strict=True):
+        assert row == {
+            "schema": "AlphaCoderVerdictV1",
+            "iteration": 0,
+            "name": name,
+            "code_sha256": hashlib.sha256(name.encode()).hexdigest(),
+            "status": row["status"],
+            "task_information_sha256": hashlib.sha256(name.encode()).hexdigest(),
+            "demoted": persistent,
+            "note": None if persistent else "no persistent coding memory",
+        }

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: 98592389
+verified: c471d54c14daa489
 ---
 
 # Validation and evidence
@@ -36,10 +36,11 @@ the next round, and the evidence the owner looks at in [research cases](research
 
 ## What is real today
 
-Every plain rule test also stores an automatic diagnostic pass and mechanical audit: benchmark
-comparisons, drawdowns, concentration, sensitivity re-runs and explicitly counted variants. The
-owner can read these through `alpha results` and `alpha diagnose`; flags identify observations to
-examine and grant no research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
+Every plain rule test also stores an automatic diagnostic pass and mechanical audit, unless it is
+run with `--no-diagnose` and labelled `no-diagnostics`: benchmark comparisons, drawdowns,
+concentration, sensitivity re-runs and explicitly counted variants. The owner can read these
+through `alpha results` and `alpha diagnose`; flags identify observations to examine and grant no
+research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
 retain the basis and source for each number, including a reason when it is unavailable.
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).

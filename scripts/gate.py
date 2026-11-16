@@ -51,6 +51,7 @@ HOOK_NAMES = (
     "pre-mcp-guard",
     "pre-owner-action-guard",
     "session-start",
+    "post-edit-documents",
 )
 
 _QUANT_NAME_RE = re.compile(
@@ -313,6 +314,8 @@ def check_steps(root: Path, test_paths: list[str] | None) -> list[tuple[str, lis
     return [
         ("ruff check", ["uv", "run", "ruff", "check", "."]),
         ("ruff format", ["uv", "run", "ruff", "format", "--check", "."]),
+        # A living document whose sources changed without `fs.py verify` fails here and in CI.
+        ("living documents", [sys.executable, "scripts/fs.py", "stale", "--strict"]),
         ("import contracts", ["uv", "run", "lint-imports"]),
         # One mypy run: pyproject's strict config covers the harness scripts too.
         ("mypy", [*FULL_GATE_MYPY_COMMAND, *harness_files]),

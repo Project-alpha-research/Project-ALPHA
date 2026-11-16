@@ -3,7 +3,7 @@ owner: delivery pipeline
 sources:
   - scripts/harness_models.py
   - scripts/harness_awareness.py
-verified: aa600e57932d
+verified: 22cdde4aefb6f1ae
 ---
 
 # Stage 02 — plan: brief to plan

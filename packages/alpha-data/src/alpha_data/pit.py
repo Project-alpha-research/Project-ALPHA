@@ -10,7 +10,9 @@ from pydantic import AwareDatetime
 
 from alpha_core import CorporateAction, DataError
 from alpha_data.corporate import cash_dividends, known_actions, split_factor
+from alpha_data.sessions import session_date_of
 from alpha_data.store import ParquetStore
+from alpha_data.timeframe import DAILY, BarTimeframe
 
 _PRICE_COLS = ("open", "high", "low", "close")
 
@@ -25,18 +27,31 @@ class PointInTimeReader:
     """
 
     def __init__(
-        self, store: ParquetStore, actions: Mapping[str, Sequence[CorporateAction]]
+        self,
+        store: ParquetStore,
+        actions: Mapping[str, Sequence[CorporateAction]],
+        *,
+        timeframe: BarTimeframe = DAILY,
+        calendar: str | None = None,
     ) -> None:
         self._store = store
         self._actions = actions
+        self._timeframe = timeframe
+        self._calendar = calendar
 
     def as_of(self, symbol: str, when: AwareDatetime) -> pl.DataFrame:
         if when.tzinfo is None or when.utcoffset() is None:
             raise DataError("PIT cutoff must be timezone-aware")
         # bars arrive ts-sorted from the store; downstream positional reads depend on it
         when_utc = when.astimezone(UTC)
-        bars = self._store.read_bars(symbol).filter(pl.col("ts") <= when_utc)  # firewall
-        when_date = when_utc.date()
+        if self._timeframe.is_daily:
+            bars = self._store.read_bars(symbol).filter(pl.col("ts") <= when_utc)  # firewall
+            when_date = when_utc.date()
+        else:
+            bars = self._store.read_bars(symbol).filter(
+                pl.col("ts") + self._timeframe.duration <= when_utc
+            )
+            when_date = session_date_of(when_utc, self._calendar)
         known = known_actions(self._actions.get(symbol, []), when_date)  # knowledge gate
         # Price channel: only actions that have already gone ex may rescale prices. A split that
         # is announced but still in the future has not happened yet - every visible bar trades at
@@ -46,7 +61,11 @@ class PointInTimeReader:
         if not occurred:
             return bars
         factor = pl.col("ts").map_elements(
-            lambda ts: split_factor(ts.date(), occurred), return_dtype=pl.Float64
+            lambda ts: split_factor(
+                ts.date() if self._timeframe.is_daily else session_date_of(ts, self._calendar),
+                occurred,
+            ),
+            return_dtype=pl.Float64,
         )
         adjusted = bars.with_columns(
             [(pl.col(c) * factor).alias(c) for c in _PRICE_COLS]
@@ -65,5 +84,10 @@ class PointInTimeReader:
         """
         if when.tzinfo is None or when.utcoffset() is None:
             raise DataError("PIT cutoff must be timezone-aware")
-        known = known_actions(self._actions.get(symbol, []), when.astimezone(UTC).date())
+        when_date = (
+            when.astimezone(UTC).date()
+            if self._timeframe.is_daily
+            else session_date_of(when, self._calendar)
+        )
+        known = known_actions(self._actions.get(symbol, []), when_date)
         return cash_dividends(known)

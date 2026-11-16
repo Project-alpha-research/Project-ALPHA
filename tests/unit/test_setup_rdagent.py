@@ -93,3 +93,23 @@ def test_factor_setup_is_opt_in_and_uses_closed_profile() -> None:
     assert 'install_stock_profile.py --profile factor "$bundle"' in text
     assert 'install_stock_profile.py --profile factor --verify "$bundle"' in text
     assert "export ALPHA_FACTOR_PYTHON=%q" in text
+
+
+def test_ui_setup_is_opt_in_and_uses_closed_profile() -> None:
+    text = SCRIPT.read_text()
+    assert "--with-ui) with_ui=1" in text
+    assert "with_ui=0" in text
+    assert "rdagent-ui-py311.incomplete" in text
+    assert "rdagent-ui-py311.built-$stamp" in text
+    assert "-r workers/rdagent/ui-requirements.lock" in text
+    assert 'install_stock_profile.py --profile ui "$bundle"' in text
+    assert 'install_stock_profile.py --profile ui --verify "$bundle"' in text
+    assert "export ALPHA_VIEWER_PYTHON=%q" in text
+    block = text.split('if [ "$with_ui" = 1 ]; then')[1].split("\nfi")[0]
+    assert 'uv venv --quiet --no-python-downloads --python 3.11 "$bundle/venv"' in block
+    assert "--require-hashes --no-deps" in block
+    assert "# ALPHA_VIEWER_PYTHON: not provisioned (rerun with --with-ui)" in text
+    assert (
+        'identity="$(.venv/bin/python -B workers/rdagent/install_stock_profile.py '
+        '--profile ui --verify "$bundle")"' in block
+    )

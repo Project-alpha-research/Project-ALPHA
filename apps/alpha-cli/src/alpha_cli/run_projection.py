@@ -11,6 +11,7 @@ import json
 import math
 import os
 import subprocess
+from collections.abc import Mapping
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -118,9 +119,23 @@ def _candle_rows(
     start: str | None,
     end: str | None,
     expected_snapshot_hash: str | None = None,
+    bars: Mapping[str, Any] | None = None,
 ) -> list[dict[str, float]]:
-    """Load PIT candles through the canonical CLI without importing the data/engine stack."""
+    """Load PIT candles through the canonical CLI without importing the data/engine stack.
+
+    ``bars`` is the run manifest: an intraday or resampled run records ``timeframe``,
+    ``source_timeframe`` and ``session``, and its candles are read the same way (a daily
+    manifest has none of them, so its call is unchanged).
+    """
     args = ["data", "candles", symbol, "--snapshot", snapshot, "--json"]
+    for key, option in (
+        ("timeframe", "--timeframe"),
+        ("source_timeframe", "--from-timeframe"),
+        ("session", "--session"),
+    ):
+        value = bars.get(key) if bars is not None else None
+        if isinstance(value, str) and value:
+            args.append(f"{option}={value}")  # one argv item: a value is never an option
     if expected_snapshot_hash is not None:
         args.extend(["--expected-snapshot-hash", expected_snapshot_hash])
     if start is not None:
@@ -196,6 +211,7 @@ def _bars(
             data_dir=data_dir,
             start=start,
             end=end,
+            bars=manifest,
             **kwargs,
         )
     except DataError:

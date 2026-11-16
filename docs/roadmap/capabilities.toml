@@ -817,7 +817,7 @@ proof_synthetic = [
 real_data = "run on real daily SPY and BTC labels (2026-11-16, owner/afml outside git)"
 needs = []
 state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet (no alpha command uses it; alpha test still splits with one-day labels)"
+missing = "tested in-process only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "afml-fracdiff"
@@ -832,7 +832,7 @@ proof_synthetic = [
 real_data = "run on real daily SPY and BTC closes (2026-11-16, owner/afml outside git)"
 needs = []
 state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet (no alpha command or feature step uses it)"
+missing = "tested in-process only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "afml-stats-second-opinion"
@@ -847,7 +847,7 @@ proof_synthetic = [
 real_data = "run on real daily SPY and BTC moving-average grids (2026-11-16, owner/afml outside git)"
 needs = []
 state = "Partial"
-missing = "tested in-process only; no end-to-end smoke check yet (result cards do not show minimum track record or strategy risk)"
+missing = "tested in-process only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "qlib-refit"

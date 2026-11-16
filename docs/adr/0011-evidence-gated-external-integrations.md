@@ -1,6 +1,6 @@
 # ADR-0011: Evidence-gated adoption of external integrations
 
-**Status:** Accepted
+**Status:** Accepted; item 5 amended by [ADR-0052](0052-licence-is-not-a-criterion.md) (licence is not a criterion)
 **Date:** 2026-07-19
 **Deciders:** AI build agents (per `CLAUDE.md`)
 

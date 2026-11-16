@@ -156,4 +156,4 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - A check result holds only for the exact tree and environment it ran on, with its command, exit and scope.
   A linked test, a result from another tree or one reported by someone else is not a pass here.
 - Retire local code that duplicates an upstream capability only after a recorded value-level comparison,
-  dependency and licence review, and a tested migration and backout; until then keep the old route.
+  dependency review, and a tested migration and backout; until then keep the old route.

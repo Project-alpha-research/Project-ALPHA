@@ -11722,6 +11722,278 @@ export interface components {
             /** Warmup */
             warmup?: number | null;
         };
+        /**
+         * RuleTest
+         * @description Present on a run whose manifest has a ``spine`` key; null on every other run.
+         */
+        RuleTest: {
+            diagnostics: components["schemas"]["RuleTestDiagnostics"] | null;
+            /** Diagnostics Reason */
+            diagnostics_reason: string | null;
+            /** Fee Bps */
+            fee_bps: number | null;
+            /** First Ts */
+            first_ts: string | null;
+            /** Idea */
+            idea: string | null;
+            /** Labels */
+            labels: string[];
+            /** Last Ts */
+            last_ts: string | null;
+            /** N Bars */
+            n_bars: number | null;
+            /** Name */
+            name: string | null;
+            /** Rule Kind */
+            rule_kind: string | null;
+            /** Rule Params */
+            rule_params: {
+                [key: string]: number;
+            };
+            /** Rule Sentence */
+            rule_sentence: string | null;
+            /** Slippage Bps */
+            slippage_bps: number | null;
+            /** Source */
+            source: string | null;
+            /** Store */
+            store: string | null;
+            /** Symbol */
+            symbol: string | null;
+            /** Test Id */
+            test_id: string | null;
+            /** Total Trials */
+            total_trials: number | null;
+        };
+        /** RuleTestAuditItem */
+        RuleTestAuditItem: {
+            /** Check */
+            check: string;
+            /** Detail */
+            detail: string;
+            /** Status */
+            status: string;
+        };
+        /** RuleTestBenchmark */
+        RuleTestBenchmark: {
+            /** Basis */
+            basis: string | null;
+            /** Cagr */
+            cagr: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Sharpe */
+            sharpe: number | null;
+            strategy_minus_benchmark: components["schemas"]["RuleTestDifference"] | null;
+            /** Total Return */
+            total_return: number | null;
+        };
+        /** RuleTestByYear */
+        RuleTestByYear: {
+            /** Basis */
+            basis: string | null;
+            /** Benchmark Positive Years */
+            benchmark_positive_years: number | null;
+            /** Strategy Positive Years */
+            strategy_positive_years: number | null;
+            /** Years */
+            years: components["schemas"]["RuleTestYear"][];
+        };
+        /** RuleTestConcentration */
+        RuleTestConcentration: {
+            /** Basis */
+            basis: string | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Top 1 */
+            top_1: number | null;
+            /** Top 3 */
+            top_3: number | null;
+        };
+        /** RuleTestDelay */
+        RuleTestDelay: {
+            /** Base Sharpe */
+            base_sharpe: number | null;
+            /** Basis */
+            basis: string | null;
+            /** Delayed Sharpe */
+            delayed_sharpe: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * RuleTestDiagnostics
+         * @description ``diagnostics.json`` as stored; a part the file does not carry is null.
+         */
+        RuleTestDiagnostics: {
+            /** Audit */
+            audit: components["schemas"]["RuleTestAuditItem"][];
+            benchmark: components["schemas"]["RuleTestBenchmark"] | null;
+            by_year: components["schemas"]["RuleTestByYear"] | null;
+            concentration: components["schemas"]["RuleTestConcentration"] | null;
+            delay: components["schemas"]["RuleTestDelay"] | null;
+            /** Flags */
+            flags: components["schemas"]["RuleTestFlag"][];
+            full_sample: components["schemas"]["RuleTestFullSample"] | null;
+            macro_window: components["schemas"]["RuleTestMacroWindow"] | null;
+            sensitivity: components["schemas"]["RuleTestSensitivity"] | null;
+            trials: components["schemas"]["RuleTestTrials"] | null;
+            /** Variants Evaluated */
+            variants_evaluated: number | null;
+            worst_drawdown: components["schemas"]["RuleTestDrawdown"] | null;
+        };
+        /** RuleTestDifference */
+        RuleTestDifference: {
+            /** Cagr */
+            cagr: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Sharpe */
+            sharpe: number | null;
+            /** Total Return */
+            total_return: number | null;
+        };
+        /** RuleTestDrawdown */
+        RuleTestDrawdown: {
+            /** Benchmark Return */
+            benchmark_return: number | null;
+            /** Depth */
+            depth: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Recovery */
+            recovery: string | null;
+            /** Share Explained */
+            share_explained: number | null;
+            /** Start */
+            start: string | null;
+            /** Trough */
+            trough: string | null;
+        };
+        /** RuleTestFlag */
+        RuleTestFlag: {
+            /** Detail */
+            detail: string;
+            /** Flag */
+            flag: string;
+        };
+        /** RuleTestFullSample */
+        RuleTestFullSample: {
+            /** Basis */
+            basis: string | null;
+            /** Cagr */
+            cagr: number | null;
+            /** Exposure */
+            exposure: number | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Sharpe */
+            sharpe: number | null;
+            /** Total Return */
+            total_return: number | null;
+            /** Trades */
+            trades: number | null;
+        };
+        /** RuleTestMacroSeries */
+        RuleTestMacroSeries: {
+            /** Change */
+            change: number | null;
+            /** Reason */
+            reason: string | null;
+            /** Series Id */
+            series_id: string;
+            /** Start Value */
+            start_value: number | null;
+            /** Trough Value */
+            trough_value: number | null;
+        };
+        /** RuleTestMacroWindow */
+        RuleTestMacroWindow: {
+            /** As Of */
+            as_of: string | null;
+            /** Available */
+            available: boolean;
+            /** Basis */
+            basis: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Series */
+            series: components["schemas"]["RuleTestMacroSeries"][];
+            /** Start */
+            start: string | null;
+            /** Trough */
+            trough: string | null;
+        };
+        /** RuleTestSensitivity */
+        RuleTestSensitivity: {
+            /** Basis */
+            basis: string | null;
+            /** Variants */
+            variants: components["schemas"]["RuleTestVariant"][];
+        };
+        /** RuleTestTrials */
+        RuleTestTrials: {
+            /** Available Sharpes */
+            available_sharpes: number | null;
+            /** Basis */
+            basis: string | null;
+            /** Dsr */
+            dsr: number | null;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Total Trials */
+            total_trials: number | null;
+        };
+        /** RuleTestVariant */
+        RuleTestVariant: {
+            /** Basis */
+            basis: string | null;
+            /** Cagr */
+            cagr: number | null;
+            /** Kind */
+            kind: string | null;
+            /** Max Drawdown */
+            max_drawdown: number | null;
+            /** Name */
+            name: string;
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+            /** Sharpe */
+            sharpe: number | null;
+            /** Total Return */
+            total_return: number | null;
+        };
+        /** RuleTestYear */
+        RuleTestYear: {
+            /** Benchmark Return */
+            benchmark_return: number | null;
+            /** Strategy Return */
+            strategy_return: number | null;
+            /** Year */
+            year: number;
+        };
         /** RuleValidateRequest */
         RuleValidateRequest: {
             /** Spec */
@@ -11827,6 +12099,7 @@ export interface components {
             mtime: number;
             /** Research Gate Watermark */
             research_gate_watermark: string | null;
+            rule_test: components["schemas"]["RuleTest"] | null;
             /**
              * Run Context Kind
              * @enum {string}
@@ -11867,6 +12140,8 @@ export interface components {
             passed: boolean | null;
             /** Research Gate Watermark */
             research_gate_watermark: string | null;
+            /** Rule Test Labels */
+            rule_test_labels: string[] | null;
             /**
              * Run Context Kind
              * @enum {string}

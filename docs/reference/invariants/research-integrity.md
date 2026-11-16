@@ -9,7 +9,7 @@ sources:
   - scripts/claude_hooks.py
   - tests/bias_guards/**
   - tests/oracles/**
-verified: 1ec6b9e0dccff072
+verified: 53326c7a92eb69bf
 ---
 
 # Research integrity
@@ -29,6 +29,7 @@ an ADR, never a quiet code change.
 - Every data or strategy unit gets a `@pytest.mark.bias_guard` future-poison test: corrupt the data
   after the cutoff and prove the output does not change. Each guard has a must-fail leaky twin, so a
   guard that tests nothing is itself caught. Pattern: `tests/bias_guards/test_future_poison_pattern.py`.
+  Filings and Binance funding or metrics have their own: `tests/bias_guards/test_pit_edgar_events.py`, `test_pit_binance_context.py`.
 - Universe membership and survivorship are point-in-time too: a symbol is only in the universe on
   dates it was listed. `tests/bias_guards/test_survivorship.py`.
 - Never add a bias guard without its leaky control, and never delete or loosen an existing guard.

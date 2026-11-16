@@ -47,6 +47,7 @@ order today.
 - Decision records: [ADR-0012](../../../adr/0012-operational-paper-sessions.md),
   [ADR-0017](../../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md),
   [ADR-0031](../../../adr/0031-provider-readiness-and-paper-acceptance-v2.md).
+- **Plan:** [stage 11](../../../roadmap/production-scope-3.md#11-paper-and-live) of the checklist.
 
 ## Decisions and open questions
 

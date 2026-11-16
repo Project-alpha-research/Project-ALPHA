@@ -35,7 +35,7 @@ This is where the project is going; [STATUS.md](../../../STATUS.md) says what wo
 |---|---|---|
 | Partner | Claude or ChatGPT, in an app or a terminal | Thinks, suggests, interprets, learns; guided by a playbook and tool cards |
 | Toolbox | ALPHA, kept thin | Data, backtests with costs, overfit tests, diagnostics, records, lessons |
-| Engines | [RD-Agent](components/rd-agent.md), [Qlib](components/qlib.md), [Nautilus](components/nautilus.md) | Called at pinned versions |
+| Engines | [RD-Agent](components/rd-agent.md), [Qlib](components/qlib.md), [Nautilus](components/nautilus.md), [AFML](components/afml-worker.md) | Pinned |
 | Screens | The [Workstation](components/web-workstation.md) | How the owner sees and understands; never the place the AI is driven from |
 
 One pipeline serves every idea, at any bar timeframe except high-frequency trading:
@@ -45,11 +45,14 @@ gate is before paper or live trading.
 
 The spine is built clean inside this repository, one golden path at a time. Each path runs from
 a plain-English prompt to a result on a screen, and the old lane it replaces is deleted when it
-works. At most two streams of work are in flight.
+works. At most two streams of work are in flight. Path 1 runs from a prompt to a recorded,
+audited result through the playbook and `alpha test`, and a first report screen shows it; what
+remains is the benchmark on that screen's chart and the honesty traps, the check that an AI
+following the playbook stays honest.
 
 | Golden path | The prompt it must serve | State |
 |---|---|---|
-| 1. Rule test | "Test this trend rule on these assets" | next |
+| 1. Rule test | "Test this trend rule on these assets" | built ([route](../../../research/CONTEXT.md)), first report screen; honesty traps remain |
 | 2. Chart setup | "Show every match of this setup and what happened after" | after 1 |
 | 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | after 2 |
 
@@ -127,7 +130,7 @@ Each step needs the owner's approval before the next starts.
 | [Literature worker](components/literature-worker.md) | Finds papers and screens their claims |
 | [Command line](components/command-line.md) | The `alpha` command, the control store and the shared core |
 | [Web workstation](components/web-workstation.md) | The browser screens |
-| [AI assistants](components/ai-assistants.md) | The in-product assistant and the tool server for AI clients |
+| [AI assistants](components/ai-assistants.md) | The research partner's playbook, tool cards, skills and lessons; the assistant and tool server |
 | [Paper and live trading](components/paper-and-live.md) | The route from research to practice trading to real money |
 | [Delivery and agent tooling](components/delivery-and-agent-tooling.md) | How changes are made and checked: the gate, tests, this file system |
 
@@ -135,6 +138,7 @@ Each step needs the owner's approval before the next starts.
 
 Any recommendation to shelve, delete or cut the scope of a part must first cite that part's
 component file (its "Why it exists" and "Never" sections) and the
-[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md) and [3](owner-decisions-3.md)). If the two disagree with the recommendation, say so
-and ask the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a
-task to finish, not a reason to shelve it.
+[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md), [3](owner-decisions-3.md)
+and [4](owner-decisions-4.md)). If the two disagree with the recommendation, say so and ask
+the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a task to finish, not a
+reason to shelve it.

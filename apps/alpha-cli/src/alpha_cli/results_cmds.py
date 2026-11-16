@@ -4,15 +4,24 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.run_store import find_run_dir, read_manifest
-from alpha_cli.spine.errors import SpineError, fail
+from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
+from alpha_cli.spine.check import FlagLookup, check_text, render_check
+from alpha_cli.spine.compare import (
+    DEFAULT_METRICS,
+    Lookup,
+    compare_runs,
+    render_compare,
+    resolve_run,
+)
+from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import build_facts, read_json, require_metric
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -112,7 +121,21 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
 
     rdir, manifest = _run(home, run_id)
     diagnostics = read_json(rdir / "diagnostics.json")
+    rule = manifest.get("spine", {}).get("rule", {}).get("kind")
+    family_id = f"spine:{rule}" if rule else None
+    counts = family_counts(spine_snapshot(home))
+    current = next(
+        (row for row in counts if row["family_id"] == family_id),
+        {"reader_trials": 0, "rows": 0, "outcomes": {}},
+    )
+    at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     return {
+        "family": {
+            "family_id": family_id,
+            "trials_at_run": at_run,
+            "now": {key: current[key] for key in ("reader_trials", "rows", "outcomes")},
+            "reason": None if at_run is not None else "recorded before family counts were used",
+        },
         "run_id": run_id,
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
@@ -140,7 +163,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             ids = list(
                 dict.fromkeys(
                     row["run_id"]
-                    for row in read_trials(home)
+                    for row in spine_snapshot(home).raw_rows.values()
                     if row.get("test_id") == run_id and row.get("run_id")
                 )
             )
@@ -181,5 +204,90 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             )
         output = read_json(rdir / "diagnostics.json")
         emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
+    except (ValueError, OSError, DataError) as exc:
+        _error(exc, json_out)
+
+
+def _run_paths(home: Path) -> dict[str, Path]:
+    """Discover completed runs in the same precedence order as run lookup."""
+    paths: dict[str, Path] = {}
+    for directory in RUN_DIRS:
+        for manifest in (home / directory).glob("*/manifest.json"):
+            if valid_run_id(manifest.parent.name):
+                paths.setdefault(manifest.parent.name, manifest.parent)
+    return paths
+
+
+def flag_lookup(home: Path) -> FlagLookup:
+    """Read stored diagnostic flags for cited runs; missing diagnostics have none."""
+    paths = _run_paths(home)
+
+    def lookup(run_id: str) -> list[dict[str, str]]:
+        flags: list[dict[str, str]] = read_json(
+            paths[resolve_run(run_id, paths)] / "diagnostics.json"
+        ).get("flags", [])
+        return flags
+
+    return lookup
+
+
+def fact_lookup(home: Path) -> Lookup:
+    """Discover completed runs; read each cited run's facts once, on demand."""
+    paths = _run_paths(home)
+    cache: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def lookup(prefix: str, metric: str) -> dict[str, Any]:
+        require_metric(metric)
+        run_id = resolve_run(prefix, paths)
+        if run_id not in cache:
+            cache[run_id] = {fact["metric"]: fact for fact in build_facts(paths[run_id])}
+        if metric not in cache[run_id]:
+            raise SpineError(
+                "METRIC_NOT_STORED",
+                f"Run {run_id} has no stored fact {metric} in its run folder.",
+                "Cite tool facts with alpha results cite <run_id> <metric> --tool-output <id>.",
+            )
+        return cache[run_id][metric]
+
+    return lookup
+
+
+@results_app.command("check")
+def check_answer(
+    path: Path,
+    json_out: bool = typer.Option(False, "--json"),
+    allow_untagged: int = typer.Option(
+        0, min=0, help="Tolerate this many untagged numbers as warnings."
+    ),
+) -> None:
+    """Check a draft's tagged numbers, required labels and flags against stored facts."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        fail(unreadable_file(path, exc), json_out)
+    try:
+        home = AlphaSettings().data_dir
+        result = check_text(text, fact_lookup(home), allow_untagged, flag_lookup(home))
+        emit(result, json_out=json_out, fallback=render_check(result))
+        if not result["ok"]:
+            raise typer.Exit(1)
+    except (ValueError, OSError, DataError) as exc:
+        _error(exc, json_out)
+
+
+@results_app.command("compare")
+def compare_results(
+    run_ids: Annotated[list[str], typer.Argument(help="Two to eight runs; first is base.")],
+    metric: Annotated[
+        list[str] | None, typer.Option("--metric", help="Metric; repeatable.")
+    ] = None,
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compare stored values, differences and ratios, with bases and run labels."""
+    try:
+        result = compare_runs(
+            run_ids, fact_lookup(AlphaSettings().data_dir), metric or DEFAULT_METRICS
+        )
+        emit(result, json_out=json_out, fallback=render_compare(result))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

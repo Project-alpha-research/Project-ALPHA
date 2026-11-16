@@ -21901,6 +21901,1275 @@
         "title": "RuleSummary",
         "type": "object"
       },
+      "RuleTest": {
+        "additionalProperties": false,
+        "description": "Present on a run whose manifest has a ``spine`` key; null on every other run.",
+        "properties": {
+          "diagnostics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "diagnostics_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnostics Reason"
+          },
+          "fee_bps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fee Bps"
+          },
+          "first_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Ts"
+          },
+          "idea": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idea"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "last_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ts"
+          },
+          "n_bars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Bars"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "rule_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Kind"
+          },
+          "rule_params": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rule Params",
+            "type": "object"
+          },
+          "rule_sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Sentence"
+          },
+          "slippage_bps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slippage Bps"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "total_trials": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Trials"
+          }
+        },
+        "required": [
+          "name",
+          "idea",
+          "rule_kind",
+          "rule_params",
+          "rule_sentence",
+          "symbol",
+          "source",
+          "store",
+          "labels",
+          "test_id",
+          "first_ts",
+          "last_ts",
+          "n_bars",
+          "fee_bps",
+          "slippage_bps",
+          "total_trials",
+          "diagnostics",
+          "diagnostics_reason"
+        ],
+        "title": "RuleTest",
+        "type": "object"
+      },
+      "RuleTestAuditItem": {
+        "additionalProperties": false,
+        "properties": {
+          "check": {
+            "title": "Check",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "check",
+          "status",
+          "detail"
+        ],
+        "title": "RuleTestAuditItem",
+        "type": "object"
+      },
+      "RuleTestBenchmark": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "cagr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "strategy_minus_benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestDifference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Return"
+          }
+        },
+        "required": [
+          "basis",
+          "total_return",
+          "cagr",
+          "sharpe",
+          "max_drawdown",
+          "reasons",
+          "strategy_minus_benchmark"
+        ],
+        "title": "RuleTestBenchmark",
+        "type": "object"
+      },
+      "RuleTestByYear": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "benchmark_positive_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Positive Years"
+          },
+          "strategy_positive_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Positive Years"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTestYear"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "basis",
+          "strategy_positive_years",
+          "benchmark_positive_years",
+          "years"
+        ],
+        "title": "RuleTestByYear",
+        "type": "object"
+      },
+      "RuleTestConcentration": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "top_1": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top 1"
+          },
+          "top_3": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top 3"
+          }
+        },
+        "required": [
+          "basis",
+          "top_1",
+          "top_3",
+          "reasons"
+        ],
+        "title": "RuleTestConcentration",
+        "type": "object"
+      },
+      "RuleTestDelay": {
+        "additionalProperties": false,
+        "properties": {
+          "base_sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Sharpe"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "delayed_sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delayed Sharpe"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          }
+        },
+        "required": [
+          "basis",
+          "base_sharpe",
+          "delayed_sharpe",
+          "reasons"
+        ],
+        "title": "RuleTestDelay",
+        "type": "object"
+      },
+      "RuleTestDiagnostics": {
+        "additionalProperties": false,
+        "description": "``diagnostics.json`` as stored; a part the file does not carry is null.",
+        "properties": {
+          "audit": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTestAuditItem"
+            },
+            "title": "Audit",
+            "type": "array"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestBenchmark"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "by_year": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestByYear"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "concentration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestConcentration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestDelay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTestFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "full_sample": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestFullSample"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "macro_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestMacroWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestSensitivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestTrials"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "variants_evaluated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variants Evaluated"
+          },
+          "worst_drawdown": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestDrawdown"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "full_sample",
+          "benchmark",
+          "flags",
+          "audit",
+          "by_year",
+          "concentration",
+          "sensitivity",
+          "delay",
+          "trials",
+          "worst_drawdown",
+          "macro_window",
+          "variants_evaluated"
+        ],
+        "title": "RuleTestDiagnostics",
+        "type": "object"
+      },
+      "RuleTestDifference": {
+        "additionalProperties": false,
+        "properties": {
+          "cagr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Return"
+          }
+        },
+        "required": [
+          "total_return",
+          "cagr",
+          "sharpe",
+          "max_drawdown",
+          "reasons"
+        ],
+        "title": "RuleTestDifference",
+        "type": "object"
+      },
+      "RuleTestDrawdown": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Return"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "recovery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery"
+          },
+          "share_explained": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Explained"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "trough": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trough"
+          }
+        },
+        "required": [
+          "start",
+          "trough",
+          "recovery",
+          "depth",
+          "benchmark_return",
+          "share_explained",
+          "reasons"
+        ],
+        "title": "RuleTestDrawdown",
+        "type": "object"
+      },
+      "RuleTestFlag": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "flag": {
+            "title": "Flag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "flag",
+          "detail"
+        ],
+        "title": "RuleTestFlag",
+        "type": "object"
+      },
+      "RuleTestFullSample": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "cagr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr"
+          },
+          "exposure": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Return"
+          },
+          "trades": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trades"
+          }
+        },
+        "required": [
+          "basis",
+          "total_return",
+          "cagr",
+          "sharpe",
+          "max_drawdown",
+          "reasons",
+          "trades",
+          "exposure"
+        ],
+        "title": "RuleTestFullSample",
+        "type": "object"
+      },
+      "RuleTestMacroSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "series_id": {
+            "title": "Series Id",
+            "type": "string"
+          },
+          "start_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Value"
+          },
+          "trough_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trough Value"
+          }
+        },
+        "required": [
+          "series_id",
+          "start_value",
+          "trough_value",
+          "change",
+          "reason"
+        ],
+        "title": "RuleTestMacroSeries",
+        "type": "object"
+      },
+      "RuleTestMacroWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTestMacroSeries"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "trough": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trough"
+          }
+        },
+        "required": [
+          "available",
+          "reason",
+          "basis",
+          "start",
+          "trough",
+          "as_of",
+          "series"
+        ],
+        "title": "RuleTestMacroWindow",
+        "type": "object"
+      },
+      "RuleTestSensitivity": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/RuleTestVariant"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "basis",
+          "variants"
+        ],
+        "title": "RuleTestSensitivity",
+        "type": "object"
+      },
+      "RuleTestTrials": {
+        "additionalProperties": false,
+        "properties": {
+          "available_sharpes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Sharpes"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "dsr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dsr"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "total_trials": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Trials"
+          }
+        },
+        "required": [
+          "basis",
+          "total_trials",
+          "available_sharpes",
+          "dsr",
+          "reasons"
+        ],
+        "title": "RuleTestTrials",
+        "type": "object"
+      },
+      "RuleTestVariant": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "cagr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "object"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Return"
+          }
+        },
+        "required": [
+          "basis",
+          "total_return",
+          "cagr",
+          "sharpe",
+          "max_drawdown",
+          "reasons",
+          "name",
+          "kind"
+        ],
+        "title": "RuleTestVariant",
+        "type": "object"
+      },
+      "RuleTestYear": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Return"
+          },
+          "strategy_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Return"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "strategy_return",
+          "benchmark_return"
+        ],
+        "title": "RuleTestYear",
+        "type": "object"
+      },
       "RuleValidateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -22288,6 +23557,16 @@
             ],
             "title": "Research Gate Watermark"
           },
+          "rule_test": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "run_context_kind": {
             "enum": [
               "governed_project",
@@ -22335,6 +23614,7 @@
           "run_context_kind",
           "run_context_project_id",
           "run_context_watermark",
+          "rule_test",
           "has_equity",
           "has_trades",
           "has_tearsheet",
@@ -22438,6 +23718,20 @@
               }
             ],
             "title": "Research Gate Watermark"
+          },
+          "rule_test_labels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Test Labels"
           },
           "run_context_kind": {
             "enum": [
@@ -22550,6 +23844,7 @@
           "run_context_kind",
           "run_context_project_id",
           "run_context_watermark",
+          "rule_test_labels",
           "mtime"
         ],
         "title": "RunListItem",

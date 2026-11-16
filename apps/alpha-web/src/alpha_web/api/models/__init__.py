@@ -5,6 +5,7 @@ semantic_reads: verified and blind semantic reads.
 errors: api error responses.
 runs: run contexts, listings, details and job status.
 rules: rules and daily rule evidence.
+rule_test: what a rule test (alpha test) recorded.
 charts: run charts, analytics, candles and overlays.
 scans_strategies: scans and strategy definitions.
 data_sources: data sources, providers and kronos.
@@ -326,6 +327,24 @@ from .risk import RiskMetricBasis as RiskMetricBasis
 from .risk import RiskProvenance as RiskProvenance
 from .risk import RiskReport as RiskReport
 from .risk import RiskScenario as RiskScenario
+from .rule_test import RuleTest as RuleTest
+from .rule_test import RuleTestAuditItem as RuleTestAuditItem
+from .rule_test import RuleTestBenchmark as RuleTestBenchmark
+from .rule_test import RuleTestByYear as RuleTestByYear
+from .rule_test import RuleTestConcentration as RuleTestConcentration
+from .rule_test import RuleTestDelay as RuleTestDelay
+from .rule_test import RuleTestDiagnostics as RuleTestDiagnostics
+from .rule_test import RuleTestDifference as RuleTestDifference
+from .rule_test import RuleTestDrawdown as RuleTestDrawdown
+from .rule_test import RuleTestFlag as RuleTestFlag
+from .rule_test import RuleTestFullSample as RuleTestFullSample
+from .rule_test import RuleTestMacroSeries as RuleTestMacroSeries
+from .rule_test import RuleTestMacroWindow as RuleTestMacroWindow
+from .rule_test import RuleTestPerformance as RuleTestPerformance
+from .rule_test import RuleTestSensitivity as RuleTestSensitivity
+from .rule_test import RuleTestTrials as RuleTestTrials
+from .rule_test import RuleTestVariant as RuleTestVariant
+from .rule_test import RuleTestYear as RuleTestYear
 from .rules import DailyRuleAccountingPage as DailyRuleAccountingPage
 from .rules import DailyRuleEvidenceResponse as DailyRuleEvidenceResponse
 from .rules import DailyRuleRoleSummary as DailyRuleRoleSummary

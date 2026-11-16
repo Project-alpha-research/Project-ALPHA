@@ -19,6 +19,8 @@ import { RecordedPanel } from '../RecordedPanel'
 import { FigureCard } from '../../components/FigureCard'
 import { FigureSection } from '../FigureReport'
 import { reportTree, summaryRows, tradesCsv, watermarkChip } from '../reportModel'
+import { labelChips, RULE_TEST_TITLE } from '../ruleTestModel'
+import { RuleTestReport } from './RuleTestReport'
 import { Icon } from '../../shell/icons'
 import { setSettings, useSettings } from '../../state/settings'
 import { openCompare, openStrategyLab } from '../actions'
@@ -140,8 +142,11 @@ export function RunDetail(props: PanelHandleProps) {
   const command = asStr(manifest.command)
   const dailyStudy = command === 'research_daily_rule_native_v1' || command === 'research_daily_rule_projection_v1'
   const isValidate = detail.kind === 'runs' && manifest.verdict !== undefined
-  const kindLabel =
-    command ?? (detail.kind === 'runs' ? (isValidate ? 'validate' : 'backtest') : detail.kind)
+  // A rule test (`alpha test`) says what it is; its labels replace the launch-context watermark.
+  const ruleTest = detail.rule_test ?? null
+  const kindLabel = ruleTest
+    ? 'rule test'
+    : command ?? (detail.kind === 'runs' ? (isValidate ? 'validate' : 'backtest') : detail.kind)
   const leak = asStr(manifest.leakage_warning)
   const tree = reportTree({
     kind: detail.kind,
@@ -157,7 +162,7 @@ export function RunDetail(props: PanelHandleProps) {
     leaves.push(dailyLeaf)
   }
   const leaf = leaves.find((item) => item.id === view) ?? leaves[0]
-  const chip = watermarkChip(gateWatermark, detail.run_context_watermark)
+  const chip = watermarkChip(gateWatermark, ruleTest ? null : detail.run_context_watermark)
   const rerun = rerunCommand(command, detail.kind, isValidate)
   // Identity lives at the top level on some manifests and under `metadata` on others.
   const metadata = (manifest.metadata ?? {}) as Record<string, unknown>
@@ -172,7 +177,7 @@ export function RunDetail(props: PanelHandleProps) {
         return <DailyRuleReport key={runId} runId={runId} panelApi={props.api}/>
       case 'summary':
         return (
-          <div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">
+          <>{ruleTest ? <RuleTestReport key={runId} test={ruleTest}/> : null}<div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">
             <caption>Summary — what this run recorded</caption>
             <tbody>
               {summaryRows(manifest as Record<string, unknown>).map((row) => (
@@ -182,7 +187,7 @@ export function RunDetail(props: PanelHandleProps) {
                 </tr>
               ))}
             </tbody>
-          </table>}<div><RecordedPanel runId={runId} kind="equity" panelId="report-equity"/><RecordedPanel runId={runId} kind="drawdown" panelId="report-drawdown"/></div><div className="report-summary-figures">{(catalogue?.items ?? []).filter(item => item.available && !item.figure_id.includes('equity') && !item.figure_id.includes('price')).slice(0, 2).map(item => <FigureCard key={`${runId}:${item.figure_id}`} runId={runId} runName={detail.display_name} item={item}/>)}</div></div>
+          </table>}<div><RecordedPanel runId={runId} kind="equity" panelId="report-equity"/><RecordedPanel runId={runId} kind="drawdown" panelId="report-drawdown"/></div><div className="report-summary-figures">{(catalogue?.items ?? []).filter(item => item.available && !item.figure_id.includes('equity') && !item.figure_id.includes('price')).slice(0, 2).map(item => <FigureCard key={`${runId}:${item.figure_id}`} runId={runId} runName={detail.display_name} item={item}/>)}</div></div></>
         )
       case 'gates':
         return <Gates manifest={manifest as ValidateManifest} />
@@ -268,7 +273,10 @@ export function RunDetail(props: PanelHandleProps) {
             Run again
           </button>
         ) : null}
-        <span className="chip kind">{kindLabel}</span>
+        <span className="chip kind" title={ruleTest ? RULE_TEST_TITLE : undefined}>{kindLabel}</span>
+        {ruleTest ? labelChips(ruleTest.labels).map((label) => (
+          <span key={label.text} className="chip kind" title={label.title}>{label.text}</span>
+        )) : null}
         {chip ? (
           <span className="chip warn rg-watermark-chip" title={chip.title}>
             {chip.text}

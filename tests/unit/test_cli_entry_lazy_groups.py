@@ -134,6 +134,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "forecast",
             "info",
             "labels",
+            "ledger",
             "lookalike",
             "ml",
             "monte-carlo",
@@ -158,6 +159,13 @@ def test_full_app_keeps_every_command_group() -> None:
         ]
     )
     assert "import-pdf" in group.commands["research"].commands  # type: ignore[attr-defined]
+
+
+def test_ledger_summary_keeps_query_engine_lazy(tmp_path: Path) -> None:
+    script = _RUN.replace('"alpha_cli.backtest_cmds",', '"duckdb", "alpha_cli.backtest_cmds",')
+    result = _run(script, ["ledger", "summary", "--json"], tmp_path)
+    assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
+    assert json.loads(result.stdout)["sources"][0]["state"] == "missing"
 
 
 def test_partner_selftest_does_not_import_heavy_modules(tmp_path: Path) -> None:

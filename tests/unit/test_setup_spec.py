@@ -146,3 +146,9 @@ def test_daily_only_and_suffix(tmp_path):
         SetupSpec.load(data)
     with pytest.raises(DataError, match="suffix"):
         SetupSpec.load(tmp_path / "setup.yaml")
+
+
+@pytest.mark.parametrize("name", ["warm-up", "no-trigger", "no-next-bar", "pending-trigger"])
+def test_filter_names_cannot_impersonate_built_in_reasons(name):
+    with pytest.raises((ValidationError, DataError), match="reserved"):
+        SetupSpec.load(minimal(filters={name: "close > 1"}))

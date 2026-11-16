@@ -122,7 +122,6 @@ def test_rejected_syntax(text):
         "(close < 0) and (close / 0 > 1)",
         "abs(close / 0)",
         "sma(close / 0, 2)",
-        "within_bars(close / 0 > 1, 2)",
     ],
 )
 def test_null_operands_propagate(text):
@@ -167,3 +166,45 @@ def test_rolling_null_window_does_not_skip_missing_values():
         values = source.select(compile_expr(f"{fn}(volume, 3)").expr.alias("v"))["v"].to_list()
         assert values[:5] == [None] * 5
         assert values[5] is not None
+
+
+def test_null_inside_a_window_counts_as_false_not_unknown():
+    # Review finding: one missing volume must not turn within_bars/for_bars null for n bars.
+    source = frame().with_columns(pl.Series("volume", [60.0] * 6 + [None] + [60.0] * 5))
+    within = source.select(compile_expr("within_bars(volume > 50, 5)").expr)["volume"]
+    assert within.to_list()[6:] == [True] * 6
+    for_all = source.select(compile_expr("for_bars(volume > 50, 2)").expr)["volume"]
+    assert for_all.to_list()[5:9] == [True, False, False, True]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "-" * 5000 + "close",
+        "not " * 3000 + "(close > 1)",
+        "close" + " + close" * 5000,
+        "close" + " + close" * 200,
+        "sma(" * 40 + "close" + ", 2)" * 40,
+    ],
+)
+def test_oversized_expressions_fail_loud_not_hang(text):
+    with pytest.raises(DataError, match="too large|too deep"):
+        compile_expr(text)
+
+
+def test_largest_allowed_expression_evaluates_quickly():
+    import time
+
+    # Every wrapped node is cheap: the tree must not double per level.
+    text = "close" + " + close" * 30
+    started = time.perf_counter()
+    values = frame().select(compile_expr(text).expr)["close"].to_list()
+    assert time.perf_counter() - started < 2
+    assert values[0] == 31
+
+
+def test_event_operators_count_a_null_condition_as_false():
+    # The decision: a null boolean counts as false. Only the static window warm-up is null.
+    for text in ["within_bars(close / 0 > 1, 2)", "for_bars(close / 0 > 1, 2)"]:
+        values = frame().with_columns(compile_expr(text).expr.alias("v"))["v"].to_list()
+        assert values == [None] + [False] * 11

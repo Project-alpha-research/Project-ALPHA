@@ -25,6 +25,8 @@ from pydantic import (
 from alpha_core import DataError
 from alpha_study.setup.expr import Kind, compile_expr
 
+RESERVED = frozenset({"warm-up", "no-trigger", "no-next-bar", "pending-trigger"})
+
 PositiveInt = Annotated[int, Field(strict=True, ge=1)]
 Text = Annotated[str, Field(strict=True, min_length=1)]
 
@@ -145,6 +147,8 @@ class SetupSpec(_Frozen):
     def _freeze(cls, value: Mapping[str, str]) -> Mapping[str, str]:
         if any(not key.strip() for key in value):
             raise ValueError("filter/reference names must not be empty")
+        if clash := RESERVED.intersection(value):
+            raise ValueError(f"{sorted(clash)}: reserved for built-in rejection reasons")
         return MappingProxyType(dict(value))
 
     @model_validator(mode="after")

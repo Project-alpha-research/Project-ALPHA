@@ -95,12 +95,15 @@ def test_next_bar_warmup_nulls_and_empty_schema():
     for extra in [
         {"filters": {"f": "close / 0 > 1"}},
         {"reference": {"r": "close / 0"}},
-        {"trigger": {"when": "close / 0 > 1", "within": 1}},
     ]:
         rejected = find_candidates(
             SetupSpec.load(minimal(**extra)), bars([1, 2]), symbol="BTC/USDT"
         )
         assert rejected["reason"].to_list() == ["warm-up"] * 2
+    # A null trigger value is false, not warm-up: the window is searched to its end.
+    never = minimal(trigger={"when": "close / 0 > 1", "within": 1})
+    searched = find_candidates(SetupSpec.load(never), bars([1, 2]), symbol="BTC/USDT")
+    assert searched["reason"].to_list() == ["no-trigger", "pending-trigger"]
     data = minimal()
     data["setup"]["event"] = "close / 0 > 1"
     assert find_candidates(SetupSpec.load(data), bars([1, 2]), symbol="BTC/USDT").is_empty()
@@ -201,3 +204,24 @@ def test_pending_candidate_resolves_when_later_bars_arrive():
     assert find_candidates(spec, frame.head(3), symbol="BTC/USDT")["reason"][0] == "no-next-bar"
     done = find_candidates(spec, frame, symbol="BTC/USDT").row(0, named=True)
     assert done["status"] == "accepted" and done["entry_price"] == pytest.approx(5)
+
+
+def test_missing_volume_mid_series_is_not_relabelled_warm_up():
+    # Review finding: a null filter operand after warm-up is a false condition.
+    data = minimal(filters={"active": "within_bars(volume > 50, 5)"})
+    frame = bars(list(range(1, 13))).with_columns(
+        pl.Series("volume", [60.0] * 6 + [None] + [60.0] * 5)
+    )
+    result = find_candidates(SetupSpec.load(data), frame, symbol="BTC/USDT")
+    assert "warm-up" not in result["reason"].to_list()
+
+
+def test_null_trigger_on_event_bar_keeps_searching_the_window():
+    # Review finding: a missing value on the event bar is not a warm-up rejection.
+    data = minimal(trigger={"when": "volume > 50", "within": 3})
+    data["setup"]["event"] = "close == 7"
+    frame = bars(list(range(1, 13))).with_columns(
+        pl.Series("volume", [10.0] * 6 + [None] + [60.0] * 5)
+    )
+    row = find_candidates(SetupSpec.load(data), frame, symbol="BTC/USDT").row(0, named=True)
+    assert row["status"] == "accepted" and row["trigger_ts"] == frame["ts"][7]

@@ -1,20 +1,43 @@
 """Prefix causality, including the one explicitly future-dependent entry bar."""
 
+import math
 import random
 import tomllib
+from datetime import UTC, datetime, timedelta
 
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from alpha_study.setup import SetupSpec, compile_expr, find_candidates
+from alpha_study.setup import SetupSpec, compile_expr, evaluate, find_candidates
 from tests.unit.test_setup_evaluate import bars, worked_bars
 from tests.unit.test_setup_spec import EXAMPLE, minimal
 
 pytestmark = pytest.mark.bias_guard
 
 
-def variants(frame, k):
+OHLCV = ("open", "high", "low", "close", "volume")
+
+
+def rich_bars(n, seed=7):
+    """A random walk where open, close and volume all differ: no degenerate comparisons."""
+    rng = random.Random(seed)
+    close, rows = 100.0, []
+    for _ in range(n):
+        open_ = close * (1 + rng.uniform(-0.02, 0.02))
+        close = open_ * (1 + rng.uniform(-0.03, 0.03))
+        high = max(open_, close) * (1 + rng.uniform(0, 0.02))
+        low = min(open_, close) * (1 - rng.uniform(0, 0.02))
+        rows.append((open_, high, low, close, float(rng.randint(50, 500))))
+    frame = pl.DataFrame(rows, schema=list(OHLCV), orient="row")
+    stamps = [datetime(2026, 1, 1, tzinfo=UTC) + timedelta(days=i) for i in range(n)]
+    return frame.with_columns(pl.Series("ts", stamps))
+
+
+def variants(frame, k, *, evaluator=False):
+    """(a) full, (b) truncated after k, (c) x1000 after k, (d) huge but valid after k,
+    (e) volume missing after k, and for raw expressions (f) NaN everywhere after k
+    (the evaluator itself refuses non-finite bars, so (f) is expression-only)."""
     after = pl.col("ts") > frame["ts"][k]
     multiplied = frame.with_columns(
         [
@@ -34,7 +57,16 @@ def variants(frame, k):
             }.items()
         ]
     )
-    return [frame, frame.head(k + 1), multiplied, huge]
+    missing = frame.with_columns(
+        pl.when(after).then(None).otherwise(pl.col("volume")).alias("volume")
+    )
+    out = [frame, frame.head(k + 1), multiplied, huge, missing]
+    if not evaluator:
+        nan = frame.with_columns(
+            [pl.when(after).then(math.nan).otherwise(pl.col(c)).alias(c) for c in OHLCV]
+        )
+        out.append(nan)
+    return out
 
 
 def assert_prefix(expr, frame, k):
@@ -51,14 +83,19 @@ def generated_expressions():
 
     def number(depth):
         if depth == 0:
-            return rng.choice(["open", "high", "low", "close", "volume", "2"])
-        x, n = number(depth - 1), rng.randint(1, 8)
-        choice = rng.randrange(12)
+            # 0 is in the leaves so division by zero is generated too.
+            return rng.choice(["open", "high", "low", "close", "volume", "2", "0", "1.5"])
+        x, n = number(depth - 1), rng.randint(1, 30)
+        choice = rng.randrange(15)
         if choice < 7:
             fn = ["prev", "sma", "ema", "highest", "lowest", "pct_change", "abs"][choice]
             return f"{fn}({x})" if fn == "abs" else f"{fn}({x}, {n})"
         if choice == 7:
             return f"atr({n})"
+        if choice == 8:
+            return f"(-{x})"
+        if choice == 9:
+            return f"{rng.choice(['prev', 'pct_change'])}({x}, n={rng.randint(1, 5)})"
         return f"({x} {rng.choice(['+', '-', '*', '/'])} {number(depth - 1)})"
 
     def boolean(depth):
@@ -69,20 +106,35 @@ def generated_expressions():
             fn = ["prev", "for_bars", "within_bars"][choice]
             return f"{fn}({boolean(depth - 1)}, {rng.randint(1, 5)})"
         if choice < 5:
-            return f"{['crosses_above', 'crosses_below'][choice - 3]}({number(1)}, {number(1)})"
+            # The second argument is sometimes a bare literal level.
+            b = rng.choice([number(1), str(rng.randint(0, 200))])
+            return f"{['crosses_above', 'crosses_below'][choice - 3]}({number(1)}, {b})"
         if choice == 5:
             return f"not ({boolean(depth - 1)})"
         return f"({boolean(depth - 1)} {rng.choice(['and', 'or'])} {boolean(depth - 1)})"
 
-    return [number(2) if i % 2 else boolean(2) for i in range(220)]
+    return [number(3) if i % 2 else boolean(2) for i in range(220)]
 
 
 def test_generated_expression_prefixes():
     expressions = generated_expressions()
     assert len(set(expressions)) >= 200
-    frame = bars([50 + ((i * 17) % 23) for i in range(80)])
+    # Every vocabulary term and operator appears in the generated set.
+    joined = " ".join(expressions)
+    for term in [*OHLCV, "prev(", "sma(", "ema(", "atr(", "highest(", "lowest(", "pct_change("]:
+        assert term in joined, term
+    for term in ["abs(", "crosses_above(", "crosses_below(", "for_bars(", "within_bars("]:
+        assert term in joined, term
+    for term in [" + ", " - ", " * ", " / ", "(-", "n=", " < ", " <= ", " > ", " >= "]:
+        assert term in joined, term
+    for term in [" == ", " != ", " and ", " or ", "not ", "/ 0)"]:
+        assert term in joined, term
+    frame = rich_bars(120).with_columns(
+        # A missing volume mid-series is legal input; it must not leak either.
+        pl.when(pl.int_range(pl.len()) == 30).then(None).otherwise(pl.col("volume")).alias("volume")
+    )
     for text in expressions:
-        for k in [11, 39, 63]:
+        for k in [11, 39, 63, 100]:
             assert_prefix(compile_expr(text).expr, frame, k)
 
 
@@ -105,9 +157,10 @@ def assert_candidates_causal(spec, source, k):
     index = {ts: i for i, ts in enumerate(stamps)}
     within = spec.trigger.within if spec.trigger is not None else 0
     full = find_candidates(spec, source, symbol="BTC/USDT")
+    assert_next_open(full, source)
     known = full.filter(pl.col("event_ts") <= stamps[k])
     counts = {"full": 0, "edge": 0, "open": 0}
-    for number, variant in enumerate(variants(source, k)[1:]):
+    for number, variant in enumerate(variants(source, k, evaluator=True)[1:]):
         truncated = number == 0
         actual = find_candidates(spec, variant, symbol="BTC/USDT")
         seen = actual.filter(pl.col("event_ts") <= stamps[k])
@@ -149,6 +202,21 @@ def assert_candidates_causal(spec, source, k):
     return counts
 
 
+def assert_next_open(candidates, source):
+    """Entry is always the open of the bar after the trigger: never the trigger bar itself
+    (decided at its close) and never later. Prefix poisoning cannot see this, so check it."""
+    stamps, opens = source["ts"].to_list(), source["open"].to_list()
+    index = {ts: i for i, ts in enumerate(stamps)}
+    for row in candidates.iter_rows(named=True):
+        if row["entry_ts"] is None:
+            assert row["status"] != "accepted"
+            continue
+        trigger = index[row["trigger_ts"]]
+        assert index[row["event_ts"]] <= trigger
+        assert index[row["entry_ts"]] == trigger + 1
+        assert row["entry_price"] == opens[trigger + 1]
+
+
 def breakout_case():
     breakout = minimal(
         filters={"volume": "volume > prev(volume)"},
@@ -174,7 +242,15 @@ def delayed_trigger_case():
 def test_example_and_breakout_candidate_prefixes():
     totals = {"full": 0, "edge": 0, "open": 0}
     example = SetupSpec.load(tomllib.loads(EXAMPLE))
-    for spec, source in [(example, worked_bars()), breakout_case(), delayed_trigger_case()]:
+    rich = rich_bars(90, seed=11)
+    cases = [
+        (example, worked_bars()),
+        breakout_case(),
+        delayed_trigger_case(),
+        (breakout_case()[0], rich),
+        (delayed_trigger_case()[0], rich),
+    ]
+    for spec, source in cases:
         texts = [
             spec.setup.event,
             *spec.filters.values(),
@@ -196,3 +272,54 @@ def test_example_and_breakout_candidate_prefixes():
 def test_guard_catches_deliberately_leaky_twin():
     with pytest.raises(AssertionError):
         assert_prefix(pl.col("close").shift(-1), bars(list(range(20))), 8)
+
+
+def _leaky_decision(reach):
+    """A twin of the real decision whose trigger search reaches `reach` bars past the window."""
+    real = evaluate._decision
+
+    def decision(i, spec, values, length):
+        if spec.trigger is None:
+            return real(i, spec, values, length)
+        widened = spec.model_copy(
+            update={
+                "trigger": spec.trigger.model_copy(update={"within": spec.trigger.within + reach})
+            }
+        )
+        reason, detail, trigger = real(i, widened, values, length)
+        if reason == "pending-trigger" and i + spec.trigger.within < length:
+            return "no-trigger", detail, None  # looks decided although it peeked ahead
+        return reason, detail, trigger
+
+    return decision
+
+
+def test_guard_catches_an_evaluator_that_searches_past_the_window(monkeypatch):
+    monkeypatch.setattr(evaluate, "_decision", _leaky_decision(1))
+    spec, source = delayed_trigger_case()
+    with pytest.raises(AssertionError):
+        for k in range(1, source.height - 1):
+            assert_candidates_causal(spec, source, k)
+
+
+def test_guard_catches_entry_at_the_trigger_bar_open():
+    spec, source = breakout_case()
+    honest = find_candidates(spec, source, symbol="BTC/USDT")
+    assert_next_open(honest, source)
+    stamps, opens = source["ts"].to_list(), source["open"].to_list()
+    index = {ts: i for i, ts in enumerate(stamps)}
+    leaky = honest.with_columns(
+        pl.col("trigger_ts").alias("entry_ts"),
+        pl.col("trigger_ts")
+        .map_elements(lambda ts: opens[index[ts]] if ts is not None else None, pl.Float64)
+        .alias("entry_price"),
+    )
+    with pytest.raises(AssertionError):
+        assert_next_open(leaky, source)
+
+
+def test_guard_catches_a_leak_hidden_behind_nan_and_null():
+    # A leak that reads a later row only through a null/NaN path is still caught.
+    frame = rich_bars(40)
+    with pytest.raises(AssertionError):
+        assert_prefix(pl.col("volume").shift(-3).is_null(), frame, 20)

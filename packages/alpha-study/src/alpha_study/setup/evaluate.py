@@ -55,8 +55,8 @@ def _decision(
             return "warm-up", f"{name}: null", None
     trigger = i
     if spec.trigger is not None:
-        if values["trigger"][i] is None:
-            return "warm-up", "trigger: null", None
+        # A null trigger value (a missing volume, say) is false; the static warm-up
+        # already excludes bars where the trigger cannot be computed yet.
         found = next(
             (
                 j

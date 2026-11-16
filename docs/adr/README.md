@@ -57,6 +57,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0049](0049-alpha-judges-rdagent-factors.md) | ALPHA, not RD-Agent's built-in Qlib backtest, judges RD-Agent's factors (ALPHA classes through RD-Agent's settings; reserved 2024+ window) | Accepted; amended by 0050 | 2026-11-14 |
 | [0050](0050-swing-clocks-in-the-factor-judge.md) | The factor judge tests every idea at daily, weekly and monthly holding; only a swing pass is a candidate | Accepted | 2026-11-15 |
 | [0051](0051-glue-rules-for-outside-projects.md) | Glue rules for outside projects: how a library or engine is chosen, pinned and joined; a register of every one used or judged | Accepted | 2026-11-15 |
+| [0055](0055-spread-check-family-brief-and-universe-file.md) | The factor judge checks that the top third beats the bottom third before the replay; the proposer sees idea families; the universe is a file; model calls have a time limit | Accepted | 2026-11-16 |
 
 ## Conventions
 

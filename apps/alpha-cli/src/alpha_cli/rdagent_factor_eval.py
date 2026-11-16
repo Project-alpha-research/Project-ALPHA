@@ -22,6 +22,7 @@ import numpy as np
 import polars as pl
 
 from alpha_backtest.portfolio_replay import run_weight_replay
+from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
 )
@@ -63,6 +64,7 @@ FEE_BPS, SLIPPAGE_BPS = 10.0, 6.0
 TOP_FRACTION, ANNUAL_DAYS, MIN_NAMES = 1 / 3, 365, 5
 Q_THRESHOLD, BOOTSTRAP_RESAMPLES = 0.10, 2000
 LABEL = "exploratory, not admitted, not yet confirmed"
+SPREAD_REASON = "top-third-does-not-beat-bottom-third"
 SURVIVORSHIP = (
     "15 coins chosen in 2026-11 from today's survivors; coins that were delisted or collapsed "
     "(for example LUNA, FTT) are absent, which biases results upward"
@@ -92,6 +94,14 @@ CONFIG: dict[str, Any] = {
     "min_names": MIN_NAMES,
     "q_threshold": Q_THRESHOLD,
     "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
+    "spread_check": (
+        "ADR-0055: before a screened clock is replayed, the mean over its decision days of the "
+        "top third's minus the bottom third's forward return (before costs, claimed direction) "
+        "must be positive under both tie orders, or the clock is SPREAD_FAIL "
+        f"({SPREAD_REASON}) and is not replayed. The bar is the sign only, not significance; "
+        "the t-statistic and interval are reported, not applied. Deflated Sharpe counts only "
+        "replayed trials, so trials removed by the spread check are stated beside it"
+    ),
 }
 TRIAL_SCHEMA = "AlphaRdagentFactorTrialV3"
 LEDGER_SCHEMAS = {
@@ -124,6 +134,7 @@ STATUSES = frozenset(
         "DEGENERATE",
         "ERROR",
         "SCREEN_FAIL",
+        "SPREAD_FAIL",
         "REPLAY_FAIL",
         "CANDIDATE",
         "FAST_ONLY",
@@ -243,7 +254,37 @@ def validate_panel(frame: pl.DataFrame) -> pl.DataFrame:
     return frame
 
 
-def freeze(data_dir: Path, out: Path) -> dict[str, Any]:
+def _alpaca_viability(data_dir: Path, spec: dict[str, Any]) -> None:
+    """Read-only count of a stock universe's names in the Alpaca store; refuses too few."""
+    import tomllib
+
+    registry = data_dir / "stores.toml"
+    try:
+        stores = tomllib.loads(registry.read_text()) if registry.exists() else {}
+    except (OSError, ValueError) as error:
+        raise DataError(f"unreadable stores.toml: {error}") from error
+    if not isinstance(stores.get("alpaca"), str):
+        raise DataError("no 'alpaca' store is registered in stores.toml")
+    bars = (data_dir / stores["alpaca"]).resolve() / "store" / "bars"
+    wanted = spec["instruments"]
+    present = sorted(
+        p.stem for p in bars.glob("*.parquet") if wanted == "all-in-store" or p.stem in wanted
+    )
+    if len(present) < spec["min_universe"]:
+        raise DataError(
+            f"universe {spec['name']!r}: the Alpaca store has {len(present)} of its names "
+            f"({', '.join(present) or 'none'}); cross-sectional thirds need at least "
+            f"{spec['min_universe']}"
+        )
+
+
+def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str, Any]:
+    spec = universes.load(universe)
+    if spec["source"] == "alpaca-us-equities":
+        _alpaca_viability(data_dir, spec)
+    universes.evaluable(spec)
+    if spec["source"] != "binance-spot":
+        raise DataError(f"universe source {spec['source']!r} has no panel reader yet")
     store = configured_crypto_bulk_store(data_dir)
     frames: list[pl.DataFrame] = []
     manifests, hashes = [], set()
@@ -266,6 +307,11 @@ def freeze(data_dir: Path, out: Path) -> dict[str, Any]:
         if quality["state"] != "qualified" or quality["failures"]:
             raise DataError(f"unqualified normalized artifact: {path.stem}")
         digest = str(verified["artifact_sha256"])
+        if (
+            spec["instruments"] != "all-in-store"
+            and dataset["instrument"] not in spec["instruments"]
+        ):
+            continue
         manifests.append({"manifest_id": path.stem, "artifact_sha256": digest})
         if digest in hashes:
             continue
@@ -288,6 +334,19 @@ def freeze(data_dir: Path, out: Path) -> dict[str, Any]:
     if not frames:
         raise DataError("no qualified Binance spot daily bars")
     panel = validate_panel(pl.concat(frames))
+    if universe is not None:
+        present = panel["instrument"].n_unique()
+        missing = (
+            sorted(set(spec["instruments"]) - set(panel["instrument"].to_list()))
+            if spec["instruments"] != "all-in-store"
+            else []
+        )
+        if missing or present < spec["min_universe"]:
+            raise DataError(
+                f"universe {spec['name']!r}: the store has {present} of its instruments"
+                + (f" (missing {', '.join(missing)})" if missing else "")
+                + f"; cross-sectional thirds need at least {spec['min_universe']}"
+            )
     summary = panel.group_by("instrument").agg(
         pl.len().alias("rows"),
         pl.col("date").min().alias("first"),
@@ -309,6 +368,9 @@ def freeze(data_dir: Path, out: Path) -> dict[str, Any]:
         "rows": panel.height,
         "panel_sha256": sha(payload),
     }
+    if universe is not None:
+        receipt["universe_sha256"] = sha(canonical(spec))
+        exclusive(out / "universe.json", canonical(spec))
     exclusive(out / "panel-receipt.json", canonical(receipt))
     return receipt
 
@@ -335,18 +397,27 @@ def screen(
     *,
     series: dict[str, Any] | None = None,
     n_resamples: int | None = None,
+    eligible: np.ndarray | None = None,
 ) -> dict[str, Any]:
     values = np.asarray(signal, dtype=float)
     finite = np.isfinite(values)
-    coverage = float(finite.mean())
+    # With a liquidity rule (ADR-0055) coverage is judged over the names the universe let rank;
+    # without one every cell counts, as before.
+    coverage = (
+        float(finite.mean()) if eligible is None else float(finite.sum() / max(1, eligible.sum()))
+    )
     ties = sum(
         bool(row.size and np.ptp(row) == 0) for row in (r[np.isfinite(r)] for r in values)
     ) / len(values)
     thin_days = int((finite.sum(axis=1) < MIN_NAMES).sum())
     result: dict[str, Any] = {"coverage": coverage, "tie_share": ties, "thin_days": thin_days}
+    if eligible is not None:
+        result["universe_thin_days"] = int((eligible.sum(axis=1) < MIN_NAMES).sum())
     if coverage < 0.8 or ties > 0.05 or thin_days:
         # thin_days: the canonical replay needs a full weight cross-section every day and
         # cannot hold cash, so a factor with any day under MIN_NAMES names cannot be replayed.
+        if result.get("universe_thin_days"):
+            result["reason"] = "the universe's liquidity rule left fewer than 5 names on some days"
         return {**result, "status": "DEGENERATE", "p": 1.0}
     ic = cross_sectional_ic(values, np.asarray(outcome, dtype=float), min_names=MIN_NAMES)
     if series is not None:
@@ -386,12 +457,16 @@ def screen_at_clock(
     open_days: list[date],
     series: dict[str, Any] | None = None,
     n_resamples: int | None = None,
+    eligible: np.ndarray | None = None,
 ) -> dict[str, Any]:
     data = clock_samples(signal, opens, days, open_days, clock)
     if series is not None:
         series.update(data)
     seed_digest = digest if clock == "daily" else sha((digest + clock).encode())
-    options = {} if n_resamples is None else {"n_resamples": n_resamples}
+    options: dict[str, Any] = {} if n_resamples is None else {"n_resamples": n_resamples}
+    if eligible is not None:
+        index = {day: i for i, day in enumerate(days)}
+        options["eligible"] = eligible[[index[day] for day in data["days"]]]
     return screen(data["signal"], data["outcome"], seed_digest, series=series, **options)
 
 
@@ -475,6 +550,125 @@ def replay(
             "UTC day)"
         ),
     }, net
+
+
+def _thirds(
+    row: np.ndarray, direction: int, symbols: list[str], *, reverse_ties: bool
+) -> tuple[list[int], list[int]]:
+    """Top and bottom third by the claimed direction among names with a value at decision time.
+
+    The replay's own order: k = round(n / 3) names, ties broken by instrument name ascending;
+    ``reverse_ties`` breaks them descending instead, so a spread that only exists because of the
+    tie order can be seen.
+    """
+    available = [j for j, value in enumerate(row) if math.isfinite(value)]
+    by_name = sorted(available, key=lambda j: symbols[j], reverse=reverse_ties)
+    ranked = sorted(by_name, key=lambda j: -direction * row[j])  # stable: name order breaks ties
+    k = max(1, round(TOP_FRACTION * len(available)))
+    return ranked[:k], ranked[len(ranked) - k :]
+
+
+def spread(
+    signal: np.ndarray,
+    outcome: np.ndarray,
+    direction: int,
+    symbols: list[str],
+    digest: str,
+    *,
+    horizon: int,
+    annual: int = ANNUAL_DAYS,
+    n_resamples: int | None = None,
+) -> dict[str, Any]:
+    """Does the top third the factor would hold beat its bottom third, before costs (ADR-0055)?
+
+    One observation per decision day: the mean forward return of the top third minus that of the
+    bottom third, ranked at the decision day's close, returns from the next open (the screen's own
+    non-overlapping windows, so consecutive observations share no return day). Passing needs a
+    positive mean spread in the claimed direction under both tie orders; this only adds a way to
+    fail before the replay. Uncertainty reuses the screen's estimators: the autocorrelation-adjusted
+    effective sample size (t-statistic) and the seeded stationary-bootstrap interval.
+    """
+    if direction not in (1, -1):
+        raise DataError("spread check needs a claimed direction")
+    observed: dict[bool, list[float]] = {False: [], True: []}
+    tops, bottoms, members = [], [], []
+    for scores, returns in zip(np.asarray(signal, float), np.asarray(outcome, float), strict=True):
+        for reverse in (False, True):
+            top, bottom = _thirds(scores, direction, symbols, reverse_ties=reverse)
+            if len(top) + len(bottom) > np.isfinite(scores).sum() or not top:
+                raise DataError("spread check needs a top and a bottom third that do not overlap")
+            held = returns[[*top, *bottom]]
+            if not np.isfinite(held).all():
+                # The replay needs every held name's bars too; dropping the name would keep only
+                # the names that survived the holding period.
+                raise DataError("spread check needs a forward return for every ranked name")
+            high = math.fsum(returns[top]) / len(top)
+            low = math.fsum(returns[bottom]) / len(bottom)
+            observed[reverse].append(high - low)
+            if not reverse:
+                tops.append(high)
+                bottoms.append(low)
+                members.append(set(top))
+    values = np.asarray(observed[False], dtype=float)
+    if values.size < 2 or float(values.std(ddof=1)) <= 0:
+        raise DataError("spread check needs at least two decision days with varying spreads")
+    effective = autocorrelation_effective_size(values)
+    mean = math.fsum(values) / values.size
+    alternate = math.fsum(observed[True]) / len(observed[True])
+    t = mean / (float(values.std(ddof=1)) / math.sqrt(effective))
+    interval = block_bootstrap_ci(
+        values,
+        lambda x: float(np.mean(x)),
+        seed=int(sha((digest + "spread").encode())[:8], 16),
+        n_resamples=BOOTSTRAP_RESAMPLES if n_resamples is None else n_resamples,
+    )
+    changed = [len(b - a) / len(b) for a, b in zip(members, members[1:], strict=False)]
+    turnover = math.fsum(changed) / len(changed)
+    passed = mean > 0 and alternate > 0
+    result = {
+        "status": "PASS" if passed else "FAIL",
+        "decision_days": int(values.size),
+        "horizon_days": horizon,
+        "top_third_mean_return": math.fsum(tops) / len(tops),
+        "bottom_third_mean_return": math.fsum(bottoms) / len(bottoms),
+        "mean_spread": mean,
+        "annualized_spread": mean * annual / horizon,
+        "alternate_tie_order_mean_spread": alternate,
+        "effective_n": effective,
+        "t": t,
+        "mean_ci_95": asdict(interval),
+        "top_share_changed_per_rebalance": turnover,
+        "estimated_annual_cost": turnover * 2 * (FEE_BPS + SLIPPAGE_BPS) / 1e4 * annual / horizon,
+        "warnings": [f"low_sample: n={values.size}"] if values.size < 20 else [],
+        "basis": "before costs; mean over decision days; non-overlapping forward windows",
+    }
+    if not passed:
+        result["reason"] = SPREAD_REASON
+    return result
+
+
+def spread_at_clock(
+    signal: np.ndarray,
+    opens: np.ndarray,
+    days: list[date],
+    digest: str,
+    clock: str,
+    *,
+    open_days: list[date],
+    direction: int,
+    symbols: list[str],
+    n_resamples: int | None = None,
+) -> dict[str, Any]:
+    data = clock_samples(signal, opens, days, open_days, clock)
+    return spread(
+        data["signal"],
+        data["outcome"],
+        direction,
+        symbols,
+        sha((digest + clock).encode()),
+        horizon=CLOCKS[clock],
+        n_resamples=n_resamples,
+    )
 
 
 class LedgerRows(list[dict[str, Any]]):
@@ -772,6 +966,12 @@ def _inputs(
         raise DataError("panel sha256 differs from receipt")
     if any(item["last_day"] >= RESERVED_START for item in receipt["instruments"].values()):
         raise DataError("panel receipt reaches reserved window")
+    if (run / "panel/universe.json").exists() and receipt.get("universe_sha256") != sha(
+        canonical(universes.frozen(run / "panel"))
+    ):
+        # A universe chosen or edited after the freeze is a researcher choice made after seeing
+        # data; only the file the freeze bound into its receipt is accepted.
+        raise DataError("panel universe file differs from the one bound in the panel receipt")
     panel = validate_panel(pl.read_parquet(io.BytesIO(panel_bytes)))
     value_path = request_path.parent / request["values_file"]
     value_bytes = value_path.read_bytes()
@@ -787,6 +987,7 @@ def _inputs(
     fingerprint = sha(
         Path(__file__).read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
     )
     return (
@@ -799,6 +1000,7 @@ def _inputs(
             "factors_sha256": sha(value_bytes),
             "evaluator_fingerprint": fingerprint,
             "configuration_sha256": sha(canonical(CONFIG)),
+            "universe_sha256": sha(canonical(universes.frozen(run / "panel"))),
         },
     )
 
@@ -821,6 +1023,11 @@ def _deflate(
             identities.setdefault(row["code_sha256"], row)
     for row in rows:
         row["replayed_trials"] = len(trials)
+        # ADR-0055: trials the spread check stopped before the replay used outcome data too, but
+        # have no replay Sharpe; the deflated Sharpe states how many were left out of its count.
+        row["spread_rejected_trials"] = sum(
+            trial.get("status") == "SPREAD_FAIL" for trial in family.values()
+        )
         if row["status"] == "REPEAT":
             earliest = identities[row["code_sha256"]]
             row["first_trial"] = {
@@ -828,7 +1035,11 @@ def _deflate(
             }
             for clock, trial in trial_clocks(earliest).items():
                 row["clocks"][clock].update(
-                    {k: trial[k] for k in ("status", "p", "screen", "replay")}
+                    {
+                        k: trial[k]
+                        for k in ("status", "p", "screen", "replay", "spread")
+                        if k in trial
+                    }
                 )
             row["lead_clock"] = earliest.get("lead_clock", "daily")
             row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
@@ -862,6 +1073,7 @@ def _report(
     history: list[dict[str, Any]],
     family: dict[tuple[str, str], dict[str, Any]],
     trials: list[float],
+    spec: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], dict[str, Any], bool, str]:
     """Lead factor, RD-Agent's result keys, disclosures, ALPHA's decision and feedback text."""
     # The lead is the best candidate when there is one, so RD-Agent's stored result matches the
@@ -899,8 +1111,9 @@ def _report(
                 }
             )
         legacy[f"{row['name']}.feedback"] = clock_feedback(row)
+    spec = spec or universes.DEFAULT
     disclosures = {
-        "survivorship": SURVIVORSHIP,
+        "survivorship": spec["survivorship"],
         "multiple_testing": "screening only, adaptive family, no error rate claimed",
         "direction": "chosen in-sample",
         "replay_engine": "ALPHA canonical synchronized replay, not Nautilus",
@@ -917,9 +1130,11 @@ def _report(
         ),
         **CONFIG,
     }
+    if spec != universes.DEFAULT:
+        disclosures["universe"] = spec
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
-        f"{LABEL}. {SURVIVORSHIP}. Ledger trials: {len(family)}; "
+        f"{LABEL}. {spec['survivorship']}. Ledger trials: {len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction chosen in-sample. Exploration "
@@ -1138,6 +1353,8 @@ def _screen_factors(
     opens: np.ndarray,
     open_days: list[date],
     series: dict[str, dict[str, Any]],
+    eligible: np.ndarray | None = None,
+    survivorship: str = SURVIVORSHIP,
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     from alpha_cli.rdagent_exposure import label_for
 
@@ -1162,7 +1379,7 @@ def _screen_factors(
             "replay": {},
             "lead_clock": "daily",
             "label": LABEL,
-            "survivorship": SURVIVORSHIP,
+            "survivorship": survivorship,
             "authority": AUTHORITY,
             "clocks": {
                 c: {"status": "ERROR", "p": 1.0, "q": 1.0, "screen": {}, "replay": {}}
@@ -1178,7 +1395,11 @@ def _screen_factors(
             }
             # Copy: repeats must never mutate the original trial or create replay evidence.
             for c, trial in trial_clocks(earliest).items():
-                row["clocks"][c] = {k: trial[k] for k in ("status", "p", "q", "screen", "replay")}
+                row["clocks"][c] = {
+                    k: trial[k]
+                    for k in ("status", "p", "q", "screen", "replay", "spread")
+                    if k in trial
+                }
             row["lead_clock"] = earliest.get("lead_clock", "daily")
         else:
             if factor["status"] == "OK":
@@ -1189,7 +1410,14 @@ def _screen_factors(
                         if factor["name"] not in values.columns:
                             raise DataError(f"no value column for factor {factor['name']!r}")
                         if digest not in signals:
-                            signals[digest] = matrix(values, factor["name"], days, symbols)
+                            values_matrix = matrix(values, factor["name"], days, symbols)
+                            # ADR-0055: a name outside the point-in-time liquid universe on a
+                            # decision day has no rank that day.
+                            signals[digest] = (
+                                values_matrix
+                                if eligible is None
+                                else np.where(eligible, values_matrix, np.nan)
+                            )
                         stats = screen_at_clock(
                             signals[digest],
                             opens,
@@ -1198,6 +1426,7 @@ def _screen_factors(
                             clock,
                             open_days=open_days,
                             series=block,
+                            **({} if eligible is None else {"eligible": eligible}),  # type: ignore[arg-type]
                         )
                     except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                         stats = {
@@ -1206,9 +1435,38 @@ def _screen_factors(
                             "error": f"{type(error).__name__}: {error}",
                         }
                     row["clocks"][clock].update(status=stats["status"], p=stats["p"], screen=stats)
+                    if stats["status"] == "OK":
+                        row["clocks"][clock]["spread"] = _spread_or_error(
+                            signals[digest], opens, days, digest, clock, open_days, stats, symbols
+                        )
             identities[digest] = row
         rows.append(row)
     return rows, signals
+
+
+def _spread_or_error(
+    signal: np.ndarray,
+    opens: np.ndarray,
+    days: list[date],
+    digest: str,
+    clock: str,
+    open_days: list[date],
+    stats: dict[str, Any],
+    symbols: list[str],
+) -> dict[str, Any]:
+    try:
+        return spread_at_clock(
+            signal,
+            opens,
+            days,
+            digest,
+            clock,
+            open_days=open_days,
+            direction=stats["direction"],
+            symbols=symbols,
+        )
+    except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
+        return {"status": "ERROR", "error": f"{type(error).__name__}: {error}"}
 
 
 def _replay_clocks(
@@ -1235,6 +1493,15 @@ def _replay_clocks(
                 continue
             trial["status"] = "SCREEN_FAIL"
             if trial["q"] < Q_THRESHOLD:
+                # ADR-0055: a screened clock must first show its top third beating its bottom
+                # third; only then is it replayed. A stricter, cheaper failure, never a pass.
+                checked = trial.get("spread", {"status": "ERROR", "error": "spread not computed"})
+                if checked["status"] == "ERROR":
+                    trial.update(status="ERROR", replay={"error": checked["error"]})
+                    continue
+                if checked["status"] != "PASS":
+                    trial["status"] = "SPREAD_FAIL"
+                    continue
                 row["stage"] = "replay"
                 try:
                     metrics, net = replay(
@@ -1295,6 +1562,23 @@ def _evaluate_locked(
     ]
     opens = matrix(panel, "open", open_days, symbols)
     outcome = opens[2 : len(days) + 2] / opens[1 : len(days) + 1] - 1
+    spec = universes.frozen(run / "panel")
+    universes.evaluable(spec)
+    if spec["min_names"] != MIN_NAMES or spec["annual_periods"] != ANNUAL_DAYS:
+        raise DataError(
+            f"universe {spec['name']!r}: min_names {MIN_NAMES} and {ANNUAL_DAYS} days a year are "
+            "the only values the evaluator applies yet"
+        )
+    eligible = None
+    if spec["liquidity"] is not None:
+        start: date = panel["date"].min()  # type: ignore[assignment]
+        volume_days = [start + timedelta(days=n) for n in range((last - start).days + 1)]
+        eligible = universes.eligibility(
+            matrix(panel, "quote_volume", volume_days, symbols),
+            volume_days,
+            days,
+            spec["liquidity"],
+        )
     series: dict[str, dict[str, Any]] = {}
     rows, signals = _screen_factors(
         run,
@@ -1309,6 +1593,8 @@ def _evaluate_locked(
         opens,
         open_days,
         series,
+        eligible,
+        spec["survivorship"],
     )
     all_count = len(all_history) + len(rows)
     for index, row in enumerate(rows, len(all_history) + 1):
@@ -1321,7 +1607,7 @@ def _evaluate_locked(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
-    lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials)
+    lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
     feedback += f" ledger_trials_all_families: {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",
@@ -1336,6 +1622,9 @@ def _evaluate_locked(
         "distinct_factors": len(identities),
         "total_trials": len(history) + len(unknown) + len(rows),
         "replayed_trials": len(trials),
+        "spread_rejected_trials": sum(
+            trial.get("status") == "SPREAD_FAIL" for trial in family.values()
+        ),
         "qvalues": qvalues,
         "decision": decision,
         "lead_factor": lead["name"] if lead else None,
@@ -1381,6 +1670,7 @@ def main() -> None:
     freezing = sub.add_parser("freeze")
     freezing.add_argument("--data-dir", type=Path, required=True)
     freezing.add_argument("--out", type=Path, required=True)
+    freezing.add_argument("--universe", type=Path, help="universe file (ADR-0055)")
     evaluating = sub.add_parser("evaluate")
     for name in ("run-dir", "request", "out", "ledger"):
         evaluating.add_argument(f"--{name}", type=Path, required=True)
@@ -1389,7 +1679,7 @@ def main() -> None:
     importing.add_argument("--file", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "freeze":
-        freeze(args.data_dir, args.out)
+        freeze(args.data_dir, args.out, args.universe)
     elif args.command == "import-historical":
         import_historical(args.ledger, args.file)
     else:

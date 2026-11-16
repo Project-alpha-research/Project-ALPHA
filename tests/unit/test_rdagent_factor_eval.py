@@ -171,6 +171,11 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -
     record = ev._evaluate_locked(
         run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
     )
+    # ADR-0055 adds exactly one disclosure and one count; without them the record is the
+    # pre-change bytes.
+    assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
+    assert record.pop("spread_rejected_trials") == 0
+    assert record["factors"][0].pop("spread_rejected_trials") == 0
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )

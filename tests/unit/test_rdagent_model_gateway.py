@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import threading
+import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -593,7 +594,9 @@ def test_api_forwarding_and_actual_prices(
     )
     captured: list[tuple[str, dict[str, Any], str | None]] = []
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         captured.append((url, body, api_key))
         return {
             "id": "provider-id",
@@ -708,7 +711,9 @@ def test_openrouter_requires_parameters_and_settles_the_charged_cost(
     bodies: list[dict[str, Any]] = []
     usage: dict[str, Any] = {"prompt_tokens": 1000, "completion_tokens": 100, "cost": 0.0007}
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         bodies.append(body)
         return {"choices": [{"message": {"content": '{"ok": true}'}}], "usage": dict(usage)}
 
@@ -739,7 +744,9 @@ def test_plain_api_route_adds_no_openrouter_fields(
     )
     bodies: list[dict[str, Any]] = []
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         bodies.append(body)
         return {
             "choices": [{"message": {"content": "x"}}],
@@ -757,7 +764,9 @@ def test_gateway_settles_the_budget_on_openrouter_cost_and_logs_the_estimate(
     monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         return {
             "choices": [{"message": {"content": '{"ok": true}'}}],
             "usage": {"prompt_tokens": 1000, "completion_tokens": 100, "cost": 0.0007},
@@ -783,3 +792,94 @@ def test_gateway_settles_the_budget_on_openrouter_cost_and_logs_the_estimate(
     assert row["usd"] == pytest.approx(0.0007)
     assert row["estimated_usd"] == pytest.approx(0.0012)
     assert "temperature" in row["honoured"] and "temperature" not in row["waived"]
+
+
+def _api_gateway(mod: ModuleType, tmp_path: Path, **extra: Any) -> Gateway:
+    return cast(
+        "Gateway",
+        mod.Gateway(
+            mod.Settings(
+                data_dir=tmp_path,
+                run_id="r",
+                chat_route="api",
+                embedding_route="fake",
+                api_model="deepseek/test-model",
+                api_price_in_per_mtok=1,
+                api_price_out_per_mtok=2,
+                api_openrouter=True,
+                **extra,
+            )
+        ),
+    )
+
+
+def _reply(text: object = '{"ok": true}') -> dict[str, Any]:
+    return {
+        "choices": [{"message": {"content": text}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "cost": 0.0001},
+    }
+
+
+def test_a_stuck_provider_call_ends_as_provider_timeout_and_is_retried_within_the_caps(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A reply that 'thinks' for minutes is cut at the per-call limit, retried once, counted."""
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    calls: list[float] = []
+
+    def stuck(url: str, body: dict[str, Any], key: str | None, timeout: float) -> dict[str, Any]:
+        calls.append(timeout)
+        time.sleep(5)  # longer than the limit; the gateway must not wait for it
+        return _reply()
+
+    monkeypatch.setattr(mod, "_post_json", stuck)
+    gw = _api_gateway(mod, tmp_path, api_timeout=0.2)
+    started = time.monotonic()
+    with pytest.raises(mod.GatewayError) as error:
+        gw.chat(request(response_format={"type": "json_object"}))
+    assert time.monotonic() - started < 2
+    assert error.value.code == "provider_timeout" and error.value.status == 504
+    assert calls == [0.2, 0.2]  # one call and one bounded retry
+    row = logged(gw)[-1]
+    assert row["attempts"] == 2
+    assert row["provider_errors"] == ["provider_timeout", "provider_timeout"]
+    assert row["error_code"] == "provider_timeout"
+    budget = json.loads((tmp_path / "model-gateway" / "budget.json").read_text())
+    assert budget["runs"]["r"]["calls"] == 2  # both attempts count toward the 60-call cap
+    assert budget["runs"]["r"]["usd"] > 0  # abandoned reservations stay charged
+
+
+def test_an_empty_reply_is_retried_once_then_succeeds(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    replies = [_reply(None), _reply()]
+    monkeypatch.setattr(mod, "_post_json", lambda *args: replies.pop(0))
+    gw = _api_gateway(mod, tmp_path)
+    gw.chat(request(response_format={"type": "json_object"}))
+    row = logged(gw)[-1]
+    assert row["status"] == 200 and row["attempts"] == 2
+    assert row["provider_errors"] == ["invalid_provider_response"]
+
+
+def test_retries_stop_at_the_call_cap(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    monkeypatch.setattr(mod, "_post_json", lambda *args: _reply(None))
+    gw = _api_gateway(mod, tmp_path, run_max_calls=1, provider_retries=3)
+    with pytest.raises(mod.GatewayError) as error:
+        gw.chat(request())
+    assert error.value.code == "budget_exhausted"
+    assert logged(gw)[-1]["attempts"] == 1
+
+
+def test_provider_timeout_settings_are_validated(mod: ModuleType, tmp_path: Path) -> None:
+    for bad in ({"api_timeout": 0}, {"provider_retries": -1}, {"provider_retries": 4}):
+        with pytest.raises(ValueError):
+            mod.Settings(data_dir=tmp_path, run_id="x", chat_route="fake", **bad).validate()
+    assert mod.Settings(data_dir=tmp_path, run_id="x").api_timeout == 180
+    assert mod.Settings(data_dir=tmp_path, run_id="x").provider_retries == 1

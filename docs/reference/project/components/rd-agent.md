@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 394e4fe43eb3a9aa
+verified: 82e6f277dcdb1d8b
 ---
 
 # RD-Agent
@@ -51,6 +51,10 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
   makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+  Before a screened factor is replayed, the top third it would hold must beat its bottom third
+  before costs; the proposer is shown every idea family and told to leave one that keeps failing;
+  the universe is a frozen file; each paid model call has a time limit
+  ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are
@@ -86,7 +90,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   [gate coverage](../../../roadmap/backlog/gate-coverage-rdagent.md).
 - Decision records: [ADR-0044](../../../adr/0044-rdagent-model-gateway.md) (how it reaches its
   models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors),
-  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods).
+  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods),
+  [ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md) (spread check, families).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).

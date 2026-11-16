@@ -106,7 +106,9 @@ def test_loop_environment_is_exact_and_names_alpha_classes(tmp_path: Path) -> No
     assert env["FACTOR_CoSTEER_max_loop"] == "2"
     assert env["CONDA_DEFAULT_ENV"] == "alpha-no-conda"
     assert not any(k.startswith(("OPENAI", "ALPHA_GATEWAY", "MODEL_CoSTEER")) for k in env)
-    assert len(env) == 32
+    assert len(env) == 34
+    assert env["ALPHA_FACTOR_FAMILY_SWITCH_AFTER"] == "3"
+    assert env["ALPHA_FACTOR_UNIVERSE_TEXT"] == "15 surviving coins only"
     assert env["FACTOR_CoSTEER_python_bin"].startswith(
         "env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE "
     )
@@ -543,3 +545,71 @@ def test_runs_sharing_one_gateway_state_each_get_their_own_gateway(tmp_path: Pat
         for job in jobs:
             job.stop()
     assert not list((tmp_path / "gateway" / "model-gateway").glob("session*.json"))
+
+
+def test_receipt_splits_paid_model_calls_from_free_local_embeddings() -> None:
+    calls = [
+        {"endpoint": "/v1/chat/completions", "attempts": 1, "usd": 0.002, "status": 200},
+        {
+            "endpoint": "/v1/chat/completions",
+            "attempts": 2,
+            "usd": 0.004,
+            "status": 504,
+            "error_code": "provider_timeout",
+            "provider_errors": ["provider_timeout", "provider_timeout"],
+        },
+        {
+            "endpoint": "/v1/chat/completions",
+            "attempts": 2,
+            "usd": 0.003,
+            "status": 200,
+            "provider_errors": ["invalid_provider_response"],
+        },
+        {"endpoint": "/v1/embeddings", "attempts": 1, "usd": 0.0, "status": 200},
+        {"endpoint": "/v1/embeddings", "attempts": 1, "usd": 0.0, "status": 200},
+    ]
+    split = launch.call_split(calls)
+    assert split["model_chat"] == {"requests": 3, "attempts": 5, "usd": pytest.approx(0.009)}
+    assert split["local_embedding"] == {"requests": 2, "attempts": 2, "usd": 0.0}
+    assert split["counted_toward_call_cap"] == 7
+    assert split["provider_timeouts"] == 2
+    assert split["empty_or_invalid_replies"] == 1
+    assert split["retried_attempts"] == 2
+    assert split["failed_requests"] == {"provider_timeout": 1}
+
+
+def test_gateway_gets_the_per_call_limit_and_retries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parsed = args(tmp_path, "--api-timeout", "90", "--provider-retries", "2")
+    job = launch.Launch(
+        parsed, {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/py"}
+    )
+    seen: list[list[str]] = []
+
+    def spawn(command: Sequence[str], log: str, **kwargs: Any) -> Any:
+        seen.append(list(command))
+        raise launch.LaunchError("stop here")
+
+    monkeypatch.setattr(job, "spawn", spawn)
+    job.run.mkdir()
+    with pytest.raises(launch.LaunchError):
+        job.gateway()
+    command = seen[0]
+    assert command[command.index("--api-timeout") + 1] == "90.0"
+    assert command[command.index("--provider-retries") + 1] == "2"
+    assert job.receipt["route"]["api_timeout_seconds"] == 90.0
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        (["--api-timeout", "0"], "--api-timeout"),
+        (["--provider-retries", "4"], "--provider-retries"),
+        (["--family-switch-after", "0"], "--family-switch-after"),
+        (["--universe", "relative.json"], "--universe"),
+    ],
+)
+def test_new_options_are_bounded(tmp_path: Path, extra: list[str], message: str) -> None:
+    with pytest.raises(launch.LaunchError, match=message):
+        launch.validate(args(tmp_path, *extra), environ(tmp_path))

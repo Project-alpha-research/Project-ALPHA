@@ -82,6 +82,9 @@ def importance(
         raise ContractError("features, labels and spans must have one row per label")
     if not bool(np.all(np.isfinite(x.to_numpy()))):
         raise ContractError("features must be finite (fill or drop missing factor values first)")
+    flat = [str(c) for c in x.columns if float(x[c].std(ddof=0)) == 0.0]
+    if flat:
+        raise ContractError(f"factors with one value carry no information: {', '.join(flat)}")
     if set(np.unique(y).tolist()) - {0, 1} or np.unique(y).size < 2:
         raise ContractError("labels must be 0/1 with both classes present")
     w = None if weights is None else np.asarray(weights, dtype=np.float64)
@@ -93,7 +96,10 @@ def importance(
     # quantowl gets the very trees RiskLabAI fitted, so the two summaries must agree.
     trees = np.vstack([tree.feature_importances_ for tree in strategy.classifier.estimators_])
     q_mdi = qi.mdi_from_matrix(trees, names=list(x.columns))
-    gap = float(np.max(np.abs(q_mdi["mean"].to_numpy() - r_mdi["Mean"].to_numpy())))
+    q_mean, r_mean = q_mdi["mean"].to_numpy(), r_mdi["Mean"].to_numpy()
+    if not np.array_equal(np.isnan(q_mean), np.isnan(r_mean)):
+        raise AgreementError("MDI: the libraries disagree on which factors no tree used")
+    gap = float(np.nanmax(np.abs(q_mean - r_mean))) if np.isfinite(q_mean).any() else 0.0
     if gap > TOLERANCE:
         raise AgreementError(f"MDI means differ by {gap:.3e}")
 

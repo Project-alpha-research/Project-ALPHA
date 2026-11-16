@@ -25,7 +25,7 @@ import polars as pl
 from alpha_afml_worker.contract import validate_bars
 from alpha_afml_worker.cv import purged_splits
 from alpha_afml_worker.figure import draw, summarise
-from alpha_afml_worker.fracdiff import ffd, fit_min_d
+from alpha_afml_worker.fracdiff import SEARCH_THRES, ffd, fit_min_d
 from alpha_afml_worker.importance import importance
 from alpha_afml_worker.labels import LabelParams, label_events
 from alpha_afml_worker.stats import pbo, sharpe_stats, strategy_risk
@@ -126,7 +126,9 @@ def run_cv(
 ) -> dict[str, Any]:
     """Purged splits for label spans given as integer bar positions ``start`` and ``end``."""
     spans = pl.read_parquet(spans_path)
-    if not {"start", "end"} <= set(spans.columns) or spans.schema["start"] not in INTEGER:
+    if not {"start", "end"} <= set(spans.columns) or not all(
+        spans.schema[c] in INTEGER for c in ("start", "end")
+    ):
         raise ValueError("cv needs integer columns 'start' and 'end' (bar positions)")
     result = purged_splits(
         spans["start"].to_numpy(), spans["end"].to_numpy(), n_groups, test_groups, embargo
@@ -148,20 +150,21 @@ def run_cv(
     }
 
 
-def run_fracdiff(bars_path: Path, out: Path, fit_end: datetime, thres: float) -> dict[str, Any]:
+def run_fracdiff(bars_path: Path, out: Path, fit_end: datetime) -> dict[str, Any]:
     """Choose d on bars up to ``fit_end`` only, freeze it, apply FFD to every bar's log close."""
     bars = validate_bars(pl.read_parquet(bars_path))
     if fit_end.tzinfo is None:
         raise ValueError("fit_end must be time-zone aware")
     ts = pd.DatetimeIndex(bars["ts"].to_numpy()).tz_localize("UTC")
     close = pd.Series(bars["close"].to_numpy(), index=ts)
-    fitted = fit_min_d(close[close.index <= fit_end], thres=thres)
+    fitted = fit_min_d(close[close.index <= fit_end])
     summary: dict[str, Any] = {
         "d": fitted.d, "pvalue": fitted.pvalue, "corr": fitted.corr,
         "train_bars": fitted.train_bars, "fit_end": fit_end.isoformat(), "table": fitted.table,
+        "thres": SEARCH_THRES,
     }  # fmt: skip
     if fitted.d is not None:
-        values = ffd(np.log(close.to_numpy()), fitted.d, thres)
+        values = ffd(np.log(close.to_numpy()), fitted.d, SEARCH_THRES)
         bars.select("ts").with_columns(ffd=pl.Series(values).fill_nan(None)).write_parquet(out)
     return summary
 
@@ -241,7 +244,6 @@ def _parser() -> argparse.ArgumentParser:
     frac.add_argument("bars", type=Path)
     frac.add_argument("--out", type=Path, required=True)
     frac.add_argument("--fit-end", type=datetime.fromisoformat, required=True)
-    frac.add_argument("--thres", type=float, default=0.01)
     imp = commands.add_parser("importance")
     imp.add_argument("table", type=Path)
     imp.add_argument("--out", type=Path, required=True)
@@ -287,7 +289,7 @@ def main(argv: list[str] | None = None) -> None:
                 args.bars, args.out, args.basis, params, args.figure, args.theme, args.title
             )
         elif args.command == "fracdiff":
-            summary = run_fracdiff(args.bars, args.out, args.fit_end, args.thres)
+            summary = run_fracdiff(args.bars, args.out, args.fit_end)
         elif args.command == "importance":
             summary = run_importance(
                 args.table, args.out, args.n_groups, args.embargo, args.seed, args.n_trees

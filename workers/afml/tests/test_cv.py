@@ -98,3 +98,37 @@ def test_bad_input_fails_loud() -> None:
         purged_splits(np.array([0, 1, 2]), np.array([0, 0, 2]), n_groups=2)
     with pytest.raises(ContractError):
         purged_splits(*dense(20, 1), n_groups=4, n_test_groups=4)
+
+
+def test_kfold_with_labels_of_varying_length_does_not_leak() -> None:
+    """Review finding: RiskLabAI's PurgedKFold ends the test window at the LAST test label."""
+    result = purged_splits(np.arange(8), np.array([0, 1, 5, 3, 4, 5, 6, 7]), 2, 1, 0)
+    for train, test in result.splits:
+        assert leaks(np.arange(8), np.array([0, 1, 5, 3, 4, 5, 6, 7]), train, test, 0) == []
+    rng = np.random.default_rng(SEED)
+    starts = np.arange(500)
+    ends = starts + rng.integers(1, 10, 500)
+    for k in (1, 2):
+        purged_splits(starts, ends, n_groups=5, n_test_groups=k, embargo=2)
+
+
+def test_empty_training_set_is_refused() -> None:
+    with pytest.raises(ContractError, match="training rows"):
+        purged_splits(np.arange(9), np.full(9, 8), n_groups=4, n_test_groups=2)
+
+
+@pytest.mark.parametrize(
+    ("starts", "ends"),
+    [
+        (np.array([0, 1, 2]), np.array([0.9, 1.9, 2.9])),
+        (np.array([0.0, 1.0, 2.0]), np.array([0, 1, 2])),
+    ],
+)
+def test_non_integer_spans_are_refused(starts: np.ndarray, ends: np.ndarray) -> None:
+    with pytest.raises(ContractError, match="integer"):
+        purged_splits(starts, ends, n_groups=2)
+
+
+def test_embargo_as_long_as_the_sample_is_refused() -> None:
+    with pytest.raises(ContractError, match="embargo"):
+        purged_splits(*dense(20, 1), n_groups=4, embargo=20)

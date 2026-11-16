@@ -21,6 +21,9 @@ from alpha_afml_worker.contract import AgreementError, ContractError
 
 TOLERANCE = 1e-10
 GRID = np.round(np.linspace(0.0, 1.0, 11), 10)
+# Snippet 5.4's weight cut-off. RiskLabAI's search hard-codes it, so the search always uses it and
+# the chosen d is applied with the same cut-off (a different one would pick d for another window).
+SEARCH_THRES = 0.01
 
 
 def ffd_weights(d: float, thres: float) -> np.ndarray:
@@ -37,7 +40,9 @@ def ffd(values: np.ndarray, d: float, thres: float) -> np.ndarray:
     x = np.asarray(values, dtype=np.float64)
     if x.ndim != 1 or x.size < 2 or not bool(np.all(np.isfinite(x))):
         raise ContractError("ffd needs a finite 1-D series of at least 2 values")
-    ffd_weights(d, thres)
+    width = ffd_weights(d, thres).size - 1
+    if width >= x.size:
+        raise ContractError(f"series of {x.size} values is shorter than the FFD window ({width})")
     q = np.asarray(qf.frac_diff_ffd(x, d, thres), dtype=np.float64)
     r = rd.fractional_difference_fixed_single(pd.Series(x), d, thres).to_numpy(dtype=np.float64)
     if not np.array_equal(np.isnan(q), np.isnan(r)):
@@ -63,7 +68,7 @@ class MinD:
     train_bars: int
 
 
-def fit_min_d(close_train: pd.Series, pvalue: float = 0.05, thres: float = 0.01) -> MinD:
+def fit_min_d(close_train: pd.Series, pvalue: float = 0.05) -> MinD:
     """Snippet 5.4 on the training closes only; both libraries must pick the same d.
 
     ``close_train`` is a price Series on a DatetimeIndex (RiskLabAI takes logs and calendar days
@@ -75,7 +80,7 @@ def fit_min_d(close_train: pd.Series, pvalue: float = 0.05, thres: float = 0.01)
     if not bool(np.all(np.isfinite(values))) or bool(np.any(values <= 0.0)):
         raise ContractError("training closes must be finite and > 0")
     log = np.log(values)
-    q = qf.find_min_d(log, pvalue, adf_test=_adf_pvalue, d_grid=GRID, thres=thres)
+    q = qf.find_min_d(log, pvalue, adf_test=_adf_pvalue, d_grid=GRID, thres=SEARCH_THRES)
     index = close_train.index.tz_convert("UTC").tz_localize(None).normalize()
     if index.has_duplicates:
         raise ContractError("fit_min_d expects one close per calendar day")
@@ -89,6 +94,8 @@ def fit_min_d(close_train: pd.Series, pvalue: float = 0.05, thres: float = 0.01)
         raise AgreementError(f"minimum d differs: quantowl {q.d}, RiskLabAI {r_d}")
     if q.pvalue is not None and abs(q.pvalue - float(table.loc[passing[0], "pVal"])) > 1e-8:
         raise AgreementError("ADF p-values differ between the libraries at the chosen d")
-    rows = [{"d": float(d), "pvalue": float(row["pVal"]), "corr": float(row["corr"])}
+    if q.corr is not None and abs(q.corr - float(table.loc[passing[0], "corr"])) > TOLERANCE:
+        raise AgreementError("memory-kept correlations differ between the libraries")
+    rows = [{"d": round(float(d), 10), "pvalue": float(row["pVal"]), "corr": float(row["corr"])}
             for d, row in table.iterrows()]  # fmt: skip
     return MinD(q.d, q.pvalue, q.corr, rows, int(values.size))

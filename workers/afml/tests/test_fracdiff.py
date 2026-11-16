@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -72,3 +74,34 @@ def test_bad_input_fails_loud() -> None:
     short = closes(synthetic_daily_bars(n=60)).iloc[:30]
     with pytest.raises(ContractError):
         fit_min_d(short)
+
+
+def test_command_fits_d_before_fit_end_and_ignores_later_bars(tmp_path: Path) -> None:
+    """Review finding: exercise the real fit_end filter, not a slice made by the test."""
+    from datetime import datetime
+
+    from alpha_afml_worker.__main__ import run_fracdiff
+
+    bars = synthetic_daily_bars(n=600)
+    fit_end = datetime.fromisoformat(str(bars["ts"][399]))
+    trend = np.r_[np.ones(400), np.exp(np.linspace(0.0, 3.0, 200))]
+    poisoned = bars.with_columns(
+        pl.col(c) * pl.Series(trend) for c in ("open", "high", "low", "close")
+    )
+    outputs = []
+    for name, frame in (("clean", bars), ("poisoned", poisoned)):
+        frame.write_parquet(tmp_path / f"{name}.parquet")
+        summary = run_fracdiff(
+            tmp_path / f"{name}.parquet", tmp_path / f"{name}-ffd.parquet", fit_end
+        )
+        assert summary["train_bars"] == 400 and summary["thres"] == 0.01
+        outputs.append((summary, pl.read_parquet(tmp_path / f"{name}-ffd.parquet")))
+    assert outputs[0][0]["table"] == outputs[1][0]["table"]
+    assert outputs[0][1].head(400).equals(outputs[1][1].head(400))
+    assert all(row["d"] == round(row["d"], 10) for row in outputs[0][0]["table"])
+
+
+def test_a_series_shorter_than_the_window_fails_loud() -> None:
+    x = np.log(closes(synthetic_daily_bars(n=60)).to_numpy())[:50]
+    with pytest.raises(ContractError, match="window"):
+        ffd(x, 0.1, 1e-4)

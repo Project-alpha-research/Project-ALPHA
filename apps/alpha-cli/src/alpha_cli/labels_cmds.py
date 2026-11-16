@@ -440,18 +440,24 @@ def _factor_table(parent: Path, factors_path: Path, staging: Path) -> tuple[Path
         else pl.col("ts").dt.convert_time_zone("UTC"),
         *names,
     ).with_columns(pl.col("ts").dt.cast_time_unit("us"))
-    table = (
+    joined = (
         events.select(
             "ts",
             pl.col("pos").alias("start"),
             pl.col("end_pos").alias("end"),
             pl.col("meta_label").cast(pl.Int64).alias("label"),
-        )  # fmt: skip
+        )
         .join(weights, on="ts", how="inner")
         .join(factors, on="ts", how="inner")
         .drop_nulls()
-        .drop("ts")
     )
+    if joined.height != events.height:
+        # A dropped row is not random (warm-up, coverage gaps, a shifted clock): refuse it.
+        raise ValueError(
+            f"{joined.height} of {events.height} events matched a complete factor row at the "
+            "event bar's timestamp; the factor file must cover every labelled bar (UTC, no gaps)"
+        )
+    table = joined.sort("start").drop("ts")
     path = staging / "importance-input.parquet"
     table.write_parquet(path)
     return path, names

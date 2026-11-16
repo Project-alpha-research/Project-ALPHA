@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: bf5323ad39c34a51
+verified: 95f5981ee17bac18
 ---
 
 # Worker invariants
@@ -109,7 +109,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 - Nothing is fitted on the whole sample: barrier widths and CUSUM thresholds use closes strictly before the event; the
   vertical barrier is a bar count; an undecided event gets no label; fractional-differencing `d` is chosen on the
   training span (`fracdiff --fit-end`) and frozen; weights take `uniqueness --train-end`.
-- Splits (`cv.py`) are RiskLabAI's, each passed through ALPHA's brute-force leak checker and compared with ALPHA's
+- Splits (`cv.py`) are RiskLabAI's combinatorial splitter (also for k-fold: its `PurgedKFold` under-purges labels
+  of varying length), each passed through ALPHA's brute-force leak checker and compared with ALPHA's
   reference rule; a library may drop more rows (reported), never fewer. Importance (MDI, MDA, SFI) runs quantowl's
   functions on those checked folds only, never RiskLabAI's unpurged MDA or SFI; it is a report, no gate reads it.
 - Root checks that need the worker skip elsewhere and run in the `afml-worker` job (`AFML_ROOT_TESTS` in

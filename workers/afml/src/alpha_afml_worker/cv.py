@@ -5,7 +5,9 @@ Observations are rows in time order; row ``i`` is a label running from bar ``sta
 interval, and *embargoed* when it is among the first ``embargo`` rows that start after the end of a
 contiguous test block's labels. ALPHA's brute-force reference below states that rule directly.
 
-RiskLabAI gives the splits. Every split must pass :func:`leaks` (no overlap, embargo respected).
+RiskLabAI's combinatorial splitter gives the splits, with one test group for k-fold (its own
+``PurgedKFold`` ends each test window at the last test label, so labels of varying length would
+under-purge). Every split must pass :func:`leaks` (no overlap, embargo respected).
 Both libraries are also compared with the reference; each may drop *more* rows than the reference
 (conservative), never fewer. The numbers of extra rows are reported, not hidden:
 
@@ -29,7 +31,6 @@ import pandas as pd
 from quantowl.cv import CombinatorialPurgedCV as QCPCV
 from quantowl.cv import PurgedKFold as QPurgedKFold
 from RiskLabAI.backtest.validation.combinatorial_purged import CombinatorialPurged
-from RiskLabAI.backtest.validation.purged_kfold import PurgedKFold as RPurgedKFold
 
 from alpha_afml_worker.contract import AgreementError, ContractError, require_int_at_least
 
@@ -37,8 +38,12 @@ Split = tuple[np.ndarray, np.ndarray]
 
 
 def _check_spans(starts: np.ndarray, ends: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    s = np.asarray(starts, dtype=np.int64)
-    e = np.asarray(ends, dtype=np.int64)
+    raw_s, raw_e = np.asarray(starts), np.asarray(ends)
+    if raw_s.dtype.kind not in "iu" or raw_e.dtype.kind not in "iu":
+        # A float end of 1.9 cast to 1 would shorten the label and under-purge.
+        raise ContractError("label starts and ends must be integer bar positions")
+    s = raw_s.astype(np.int64)
+    e = raw_e.astype(np.int64)
     if s.ndim != 1 or s.shape != e.shape or s.size < 2:
         raise ContractError("starts and ends must be equal-length 1-D arrays of at least 2 rows")
     if bool(np.any(np.diff(s) <= 0)):
@@ -138,14 +143,19 @@ def purged_splits(
     require_int_at_least(embargo, "embargo", 0)
     if not 1 <= n_test_groups < n_groups or n < n_groups:
         raise ContractError("need 1 <= n_test_groups < n_groups <= rows")
+    if embargo >= n:
+        raise ContractError(f"embargo ({embargo} rows) must be shorter than the sample ({n} rows)")
     fraction = _embargo_fraction(n, embargo)
     data = pd.DataFrame(index=pd.Index(s))
     times = pd.Series(e, index=pd.Index(s))
+    # RiskLabAI's PurgedKFold ends each test window at the LAST test label, not the latest one,
+    # so labels of varying length under-purge; its combinatorial splitter with one test group
+    # takes the latest end of each block and is used for k-fold too (review finding).
+    r_iter = CombinatorialPurged(n_groups, n_test_groups, times, fraction).split(data)
+    q_cv: QPurgedKFold | QCPCV
     if n_test_groups == 1:
-        r_iter = RPurgedKFold(n_groups, times, fraction).split(data)
-        q_cv: QPurgedKFold | QCPCV = QPurgedKFold(n_groups, embargo_pct=fraction)
+        q_cv = QPurgedKFold(n_groups, embargo_pct=fraction)
     else:
-        r_iter = CombinatorialPurged(n_groups, n_test_groups, times, fraction).split(data)
         q_cv = QCPCV(n_groups, n_test_groups, embargo_pct=fraction, min_train_size=0)
     r_splits = [(np.sort(np.asarray(tr, dtype=np.int64)), np.asarray(te, dtype=np.int64))
                 for tr, te in r_iter]  # fmt: skip
@@ -155,6 +165,11 @@ def purged_splits(
     for (train, test), combo in zip(r_splits, combos, strict=True):
         if not np.array_equal(test, np.concatenate([parts[g] for g in combo])):
             raise AgreementError(f"RiskLabAI's test rows for groups {combo} are not the groups")
+        if train.size == 0:
+            raise ContractError(
+                f"folds testing groups {combo} keep no training rows after purge and embargo; "
+                "use fewer test groups, a shorter embargo or more labels"
+            )
         found = leaks(s, e, train, test, embargo)
         if found:
             raise AgreementError("RiskLabAI split leaks: " + "; ".join(found[:3]))

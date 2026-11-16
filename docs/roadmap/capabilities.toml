@@ -827,7 +827,7 @@ see_it = ["cd workers/afml && uv run alpha-afml-worker fracdiff BARS.parquet --f
 entry_points = ["code: workers/afml/src/alpha_afml_worker/fracdiff.py"]
 proof_synthetic = [
   "workers/afml/tests/test_fracdiff.py::test_hand_weights_for_half_and_one",
-  "workers/afml/tests/test_fracdiff.py::test_min_d_uses_only_the_training_span",
+  "workers/afml/tests/test_fracdiff.py::test_command_fits_d_before_fit_end_and_ignores_later_bars",
 ]
 real_data = "run on real daily SPY and BTC closes (2026-11-16, owner/afml outside git)"
 needs = []

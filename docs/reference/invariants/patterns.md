@@ -8,7 +8,10 @@ sources:
   - tests/bias_guards/test_pattern_no_lookahead.py
   - tests/bias_guards/test_indicator_no_lookahead.py
   - tests/bias_guards/test_oscillator_no_lookahead.py
-verified: 4ecd832428b8f5c4
+  - tests/bias_guards/test_lookalike_future_poison.py
+  - tests/unit/test_lookalike.py
+  - apps/alpha-cli/src/alpha_cli/*lookalike*.py
+verified: 574b1c728741b1c7
 ---
 
 # Pattern geometry invariants
@@ -21,6 +24,8 @@ geometry, swing structure and causal indicators over OHLCV bars. Project-wide lo
 
 - Import only `alpha_core` (numpy allowed; nothing here imports polars or pandas) — import-linter contract
   `alpha_patterns depends only on core`. See [engineering § Import layers](engineering.md#import-layers).
+  The one outside library is STUMPY, imported lazily inside `lookalike.py` and nowhere else
+  ([outside projects](../project/outside-projects.md)); `alpha_patterns/__init__.py` does not import that module.
 - Report what was found and when it was knowable — never whether it "works". Intervals, controls against
   the null, multiplicity and significance belong to `alpha_validation` / `alpha_research`, composed by a
   driver above both.
@@ -79,6 +84,36 @@ General rule: [research integrity § Decide at close, fill at next open](researc
   `MAX_VG_LOOKBACK` (500).
 - A harmonic pattern completes on its D bar (`confirmed_index == d`) and its position holds until the next
   extreme is confirmed.
+
+## Lookalikes and novelty
+
+`lookalike.py` is the STUMPY adapter (glue rules: [ADR-0051](../../adr/0051-glue-rules-for-outside-projects.md)).
+
+- Both functions cut the series at their as-of bar before STUMPY sees it. `find_lookalikes` searches only
+  `close[:query_start]`, so a match can overlap neither the query nor anything after it; matches are at
+  least `exclusion >= window` bars apart. "What happened next" uses only bars up to the query's last bar.
+- The threshold is the caller's fixed `max_distance`, recorded in the result. `stumpy.match` is never called:
+  its default threshold comes from the whole distance profile and lets later bars change earlier matches.
+  Distances come from `stumpy.mass`; flat candidate windows are skipped and counted. "Flat" is a high-low range
+  within `NEAR_CONSTANT_RELATIVE` (1e-9) of the window's largest price, passed to STUMPY as its
+  `*_subseq_isconstant` array: STUMPY's exact-zero test lets one-ulp jitter rescale to a perfect match.
+  Outcome windows that reach the query's own bars are counted (`outcomes_into_query`) and labelled.
+- `novelty_score` uses STUMPY's left matrix profile (`stump(...).left_I_`, exclusion zone `ceil(window/4)`)
+  and recomputes each left distance from the z-normalised windows; parity with `stumpy.stumpi(...).left_P_`
+  is pinned in `tests/unit/test_lookalike.py`. The percentile ranks the latest score against earlier scored
+  windows after a declared warm-up (default five windows).
+- Outcome summaries (`describe_outcomes`) are descriptive and withheld below `MIN_MATCHES_FOR_SUMMARY` (5).
+- The commands (`apps/alpha-cli/src/alpha_cli/lookalike_cmds.py`): `lookalike` searches before the latest
+  `--last` bars with `--max-distance` or the declared default (shape correlation 0.80, turned into a
+  distance from the window length alone; the basis is stored beside it). Result folders are keyed by the
+  settings and the bars' source fingerprint and never rewritten. Every output carries `N=`,
+  "descriptive, not a forecast" and a multiple-looks label. Each folder (`lookalike/<id>/`, `unusual/<id>/`)
+  holds `figure.png`, then `result.json` with spine-shaped facts. A lookalike run appends an exploratory
+  `AlphaTrialV1` row (`rule = "lookalike"`, `run_id` null, no Sharpe, so it never enters a deflated Sharpe);
+  `unusual` shows no outcome and records no trial.
+- Enforced by `tests/bias_guards/test_lookalike_future_poison.py`: poisoning or cutting every bar after the
+  as-of bar leaves matches, outcomes and novelty unchanged; each novelty score equals the score computed with
+  as-of at its own last bar; a whole-series search and a two-sided profile (the leaky twins) are caught.
 
 ## Ports and provenance
 

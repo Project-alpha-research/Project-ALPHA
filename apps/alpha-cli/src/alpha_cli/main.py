@@ -42,6 +42,8 @@ COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("diagnose", "alpha_cli.results_cmds", "diagnose_run"),
     ("validate", "alpha_cli.validate_cmds", "validate"),
     ("test", "alpha_cli.test_cmds", "test_rule"),
+    ("lookalike", "alpha_cli.lookalike_cmds", "lookalike"),
+    ("unusual", "alpha_cli.lookalike_cmds", "unusual"),
     ("report", "alpha_cli.report_cmds", "report"),
 )
 

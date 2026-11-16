@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-249 commands in 30 groups. Options marked (required) are
+251 commands in 32 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -155,6 +155,10 @@ Resolved settings + machine-readable catalogs.
 - `alpha info providers` — List provider capabilities, limitations, and redacted local configuration state. Options: `--json`
 - `alpha info strategies` — List registered strategies and their tunable ''--param'' axes. Options: `--json`
 - `alpha info system` — Report local readiness only; no provider endpoint is contacted. Options: `--json`
+
+## alpha lookalike
+
+- `alpha lookalike` — Has price action like the latest N bars happened before? Options: `--asset (required)`, `--last`, `--timeframe`, `--top`, +3 more
 
 ## alpha ml
 
@@ -400,6 +404,10 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 ## alpha test
 
 - `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +6 more
+
+## alpha unusual
+
+- `alpha unusual` — How unlike every earlier stretch are the latest N bars? Options: `--asset (required)`, `--window`, `--timeframe`, `--json`
 
 ## alpha validate
 

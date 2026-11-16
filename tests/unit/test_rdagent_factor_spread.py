@@ -275,7 +275,8 @@ def test_a_spread_error_still_counts_its_clock_as_a_trial(tmp_path: Path) -> Non
     def weekly_error(*args: Any, **kwargs: Any) -> dict[str, Any]:
         if kwargs.get("horizon") == 7:
             raise DataError("spread check needs at least two decision days with varying spreads")
-        return _forced("PASS")(*args, **kwargs)
+        result: dict[str, Any] = _forced("PASS")(*args, **kwargs)
+        return result
 
     records = {}
     for name, side_effect in (("pass", _forced("PASS")), ("error", weekly_error)):

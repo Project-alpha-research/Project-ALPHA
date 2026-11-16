@@ -1,0 +1,3 @@
+create_time,symbol,sum_open_interest,sum_open_interest_value,count_toptrader_long_short_ratio,sum_toptrader_long_short_ratio,count_long_short_ratio,sum_taker_long_short_vol_ratio
+2024-01-02 00:00:00,BTCUSDT,76608.79800000,3388422457.29960000,1.02072986,1.25576533,1.08284578,1.16475026
+2024-01-02 00:05:00,BTCUSDT,76613.43400000,3395029686.75497700,1.02826047,1.24900759,1.08620459,0.88995449

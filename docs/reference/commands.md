@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-244 commands in 29 groups. Options marked (required) are
+248 commands in 29 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -42,11 +42,15 @@ Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
 ## alpha context
 
-Macro reference data as first published, separate from bars.
+Point-in-time macro, SEC filings and Binance derivatives context.
 
 - `alpha context list` — List locally stored series and their provenance (no network). Options: `--json`
 - `alpha context pull` — Pull FRED vintages using FRED_API_KEY; default to the macro starter set. Options: `--series`, `--json`
+- `alpha context pull-binance` — Pull checksum-verified funding months or metrics days (at most 400 days). Options: `--symbol (required)`, +4 more
+- `alpha context pull-edgar` — Pull filings and insider transactions with the declared ALPHA_SEC_USER_AGENT. Options: `--ticker`, `--cik`, `--forms`, +2 more
 - `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +3 more
+- `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +5 more
+- `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, `--json`
 - `alpha context window` — Summarise the macro window; endpoints use values knowable at each boundary. Options: `--start (required)`, +4 more
 
 ## alpha crypto-data

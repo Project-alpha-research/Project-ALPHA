@@ -332,7 +332,13 @@ def swing_parts() -> dict[str, Any]:
     import json
 
     tree = ast.parse((WORKER / "alpha_factor_judge.py").read_text())
-    names = {"append_swing_context", "ledger_summary", "AlphaFactorHypothesisGen"}
+    names = {
+        "append_swing_context",
+        "ledger_summary",
+        "replay_note",
+        "_rounded",
+        "AlphaFactorHypothesisGen",
+    }
     nodes: list[ast.stmt] = [
         n
         for n in tree.body
@@ -412,6 +418,69 @@ def test_swing_brief_always_precedes_ledger(
         assert context["hypothesis_and_feedback"].index(brief) < context[
             "hypothesis_and_feedback"
         ].index("ALPHA trial ledger")
+
+
+def _v3_row(name: str, digest: str, replay: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema": "AlphaRdagentFactorTrialV3",
+        "name": name,
+        "code_sha256": digest,
+        "status": "REPLAY_FAIL",
+        "lead_clock": "daily",
+        "clocks": {
+            c: {
+                "status": "REPLAY_FAIL" if c == "daily" else "SCREEN_FAIL",
+                "screen": {"mean_ic": -0.026404332182201326},
+                "q": 5.8109182375914446e-08,
+                "replay": replay if c == "daily" else {},
+            }
+            for c in ("daily", "weekly", "monthly")
+        },
+        "exposure": {"previously_exposed": False},
+    }
+
+
+def test_ledger_summary_says_why_a_replay_lost() -> None:
+    """A replay failure tells the proposer whether it lost before or only after costs."""
+    replay = {
+        "gross": {"annualized_return": -0.2771},
+        "net": {"annualized_return": -0.3125},
+        "annual_cost": 0.0368,
+        "mean_turnover": 0.0612,
+    }
+    line = swing_parts()["ledger_summary"](_v3_row("volatility_60d", "a" * 64, replay))
+    assert line == (
+        "volatility_60d: REPLAY_FAIL (daily REPLAY_FAIL, weekly SCREEN_FAIL, monthly SCREEN_FAIL); "
+        "lead daily IC -0.026; q 0.0; daily replay: -28%/yr before costs, -31%/yr after "
+        "4%/yr costs, turnover 6%/day"
+    )
+    malformed = _v3_row("broken", "b" * 64, {"gross": {}})
+    with pytest.raises(KeyError):
+        swing_parts()["ledger_summary"](malformed)
+
+
+def test_ledger_summary_keeps_whole_lines_and_counts_the_rest(tmp_path: Path) -> None:
+    """The 4000-character budget never cuts a trial in half and says how many were left out."""
+    import json
+
+    ledger = tmp_path / "ledger.jsonl"
+    replay = {
+        "gross": {"annualized_return": 0.1},
+        "net": {"annualized_return": 0.05},
+        "annual_cost": 0.05,
+        "mean_turnover": 0.1,
+    }
+    rows = [_v3_row(f"factor_{i:02d}_" + "x" * 60, f"{i:064x}", replay) for i in range(40)]
+    ledger.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    context = {"hypothesis_and_feedback": ""}
+    namespace = swing_parts()
+    namespace["append_swing_context"](context, str(ledger))
+    summary = context["hypothesis_and_feedback"].split("ALPHA trial ledger", 1)[1]
+    shown = [line for line in summary.splitlines()[1:] if line.startswith("factor_")]
+    assert len(summary) <= 4000
+    assert all(line.endswith("turnover 10%/day") for line in shown)
+    assert shown[0].startswith("factor_39_")  # newest first
+    assert summary.rstrip().endswith(f"({40 - len(shown)} older distinct factors not shown)")
 
 
 @RUNTIME

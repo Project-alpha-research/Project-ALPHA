@@ -143,3 +143,16 @@ the rules for entries are in the first. New entries are appended at the end of t
   still has to re-read and correct it. The research paper has no staleness rule: this is ours.
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md); the rule
   is in [documentation invariants](../invariants/documentation.md#front-matter).
+
+### 2026-11-16 Licences are never a criterion for outside projects
+
+- **Said:** "this project is non commercial and private so licensing and things DO NOT MATTER.
+  never make a decision based off that"
+- **Context:** until now an outside library, model or data source could be refused, delayed or
+  marked down for its licence (for example scikit-survival, pypbo, Arize Phoenix and TimesFM's
+  newest weights). From now on licence is never a reason, a risk, a tie-breaker or a footnote.
+  What still decides: fit for a retail swing trader, upkeep, weight, and conflict with ALPHA's
+  pinned versions. Those earlier verdicts were judged again on merit. The earlier entry above
+  that lists licence among the things a project is judged on is superseded by this one.
+- **Governs:** [outside projects register](outside-projects.md);
+  [ADR-0052](../../adr/0052-licence-is-not-a-criterion.md).

@@ -379,13 +379,15 @@ here changes them.
 
 ```sh
 python3 workers/rdagent/model_gateway.py serve --data-dir /absolute/data/dir --run-id <id> \
-  --accept-unhonoured temperature          # writes model-gateway/session.json; logs to stderr
+  --accept-unhonoured temperature          # writes model-gateway/session-<pid>.json and session.json
 python3 workers/rdagent/model_gateway.py status --data-dir /absolute/data/dir
 ```
 
 RD-Agent is pointed at it with `CHAT_MODEL=lm_studio/alpha-chat`,
 `EMBEDDING_MODEL=lm_studio/alpha-embed`, `LM_STUDIO_API_BASE=<base_url>/v1`,
-`LM_STUDIO_API_KEY=<token>` (both from `session.json`, a per-start local token, mode 0600) and
+`LM_STUDIO_API_KEY=<token>` (both from the session file, a per-start local token, mode 0600; the
+launcher reads `session-<pid>.json`, so runs that share one state folder, and so one monthly cap,
+can start together; `session.json` names the latest gateway and is removed only by it) and
 `LITELLM_LOCAL_MODEL_COST_MAP=True` (otherwise LiteLLM downloads its price list at import). The
 `lm_studio/` prefix is LiteLLM's generic OpenAI-compatible provider: unlike `openai/<unknown
 name>` it forwards `response_format`, so the gateway can enforce RD-Agent's JSON mode.
@@ -446,8 +448,12 @@ IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `m
 Deflated Sharpe counts every replayed factor x clock. Repeated code hashes
 are not evaluated again. The proposer receives the plain-English swing brief on every context
 call, before the cross-run ledger summary, including when no ledger exists. It asks for slow,
-low-turnover signals with a mechanism and falsifier, and explains the daily ideas that failed
-after costs. All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
+low-turnover signals with a mechanism and falsifier, explains the daily ideas that failed
+after costs and the slow ranks whose held top third lost before costs. The summary lists the
+newest distinct factors (at most 30) as whole lines within 4000 characters, rounds IC and q to
+three decimals, gives each replayed clock's annual return before and after costs, its annual
+cost and daily turnover, and states how many older factors it left out (2026-11-16: it had cut
+the 23rd line in half and showed no replay numbers). All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh
@@ -658,6 +664,14 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   mostly short-term reversal: five failed the screen, one failed to run, three passed the screen
   and failed the replay after costs (daily turnover 0.52-0.79). No candidate. One run per route
   is not a quality comparison.
+- Prices change: re-read 2026-11-16, the same snapshot lists USD 0.15 / 0.60 per million (weekday
+  windows at 0.30 / 1.20), and OpenRouter charged up to twice the gateway's estimate on one call;
+  the budget settles on the charged cost, so caps hold. Four system-test runs that day (one with
+  memory, three without, comparing `deepseek/deepseek-v4-pro-0813` at 0.111 / 4.44 and
+  `deepseek/deepseek-v4-flash-0731` at 0.06 / 0.18) cost USD 0.66 in all, judged 18 factors and
+  found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
+  calls count toward it), one after a stuck call; replies that reason for 8-12 minutes and return
+  no text (`invalid_provider_response`) occurred in every run.
 - Embeddings stay on local Ollama on both routes.
 - Not yet: supervision by `alpha`'s native job supervisor
   ([backlog](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md)); a Nautilus replay;

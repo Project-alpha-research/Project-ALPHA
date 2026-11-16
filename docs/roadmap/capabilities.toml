@@ -1032,6 +1032,34 @@ missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
+id = "price-lookalikes"
+name = "Has price action like this happened before?"
+codes = ["STUMPY matrix profile"]
+what = "Find every earlier stretch shaped like the latest bars of one asset, see what followed each on one figure, and record the look as an exploratory trial."
+see_it = ["uv run alpha lookalike --asset SPY@alpaca --last 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha lookalike", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_repeated_motif_is_found", "tests/bias_guards/test_lookalike_future_poison.py::test_lookalikes_ignore_every_bar_after_the_query_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "price-novelty"
+name = "What is unusual right now?"
+codes = ["STUMPY left matrix profile"]
+what = "Score how unlike every earlier stretch the latest bars of one asset are, ranked against all earlier scores, on one figure."
+see_it = ["uv run alpha unusual --asset BTC/USDT --window 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha unusual", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_novel_window_scores_as_unusual", "tests/bias_guards/test_lookalike_future_poison.py::test_each_novelty_score_uses_only_bars_up_to_its_own_window_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
 id = "filing-events"
 name = "Company filings, earnings dates and insider trades as filed"
 what = "Read SEC filings, earnings-related 8-Ks and Form 4 transactions known by an acceptance cutoff."

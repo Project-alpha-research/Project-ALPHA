@@ -9,7 +9,7 @@ sources:
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
   - docs/adr/0052-licence-is-not-a-criterion.md
-verified: 623ab44866955fbf
+verified: cb04b3e56c463ee5
 ---
 
 # Outside projects: the register
@@ -74,10 +74,11 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |
 | ruptures | Finds dates where behaviour changed | For `alpha-validation` | Approved, not yet added | New ability; needs only numpy and SciPy |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
-| STUMPY | Finds chart stretches that look like an example | To be chosen | Approved, not yet added | Fixed, declared threshold only; see notes |
 | TimesFM 3.0, Chronos | General forecasting models | — | Later | Compare with Kronos on the Dell, scored by ALPHA; re-judged 2026-11-16 |
 | scikit-survival | Survival models: target or stop first | — (worker or root) | Later | Re-judged 2026-11-16; ties lifelines; needs sklearn 1.9 |
 | Arize Phoenix | Traces RD-Agent's model calls | — (own install, dev only) | Later | Re-judged 2026-11-16; LiteLLM has a hook; heavy; own install |
+| STUMPY | Finds earlier lookalikes of the latest bars; scores novelty | `alpha-patterns`, `lookalike.py` only | In use | Fixed threshold; notes |
+| numba, llvmlite | The compiler STUMPY runs on | Imported by STUMPY only | In use | Come with STUMPY; ALPHA never imports them |
 | skfolio | Sizes a basket of positions | — | Later | When baskets need real sizing; heavy |
 | alphalens-reloaded | Report pages for mined factors | — (a worker, if adopted) | Later | Leans on pandas; not for the main install |
 | edgartools | Company figures from official filings | — | Later | Needs the owner's contact email; filing dates to check |
@@ -118,8 +119,13 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 
 - **STUMPY** is a matrix-profile library: it compares every stretch of a price series with an
   example and scores how alike they are. Its default cut-off for a match is worked out from the
-  whole series, so it uses later data. The adapter must take a fixed threshold stated before the
-  search and must never fall back to the default.
+  whole series, so it uses later data. The adapter (`alpha_patterns/lookalike.py`, behind
+  `alpha lookalike` and `alpha unusual`) takes a fixed threshold stated before the search, never
+  calls the function with that default, and searches only bars before the query. The first call
+  in a new process takes about half a minute while numba compiles STUMPY's code; numba's disk
+  cache is not switched on. Contract and parity tests: `tests/unit/test_lookalike.py`; look-ahead
+  guard: `tests/bias_guards/test_lookalike_future_poison.py`; smoke test:
+  `tests/smoke/test_lookalike_smoke.py`. It replaces no ALPHA code.
 - **open-code-review** was tried on two ALPHA branches. In the only mode that does not send code
   to a model provider it mostly filters the list of changed files and attaches a checklist per
   folder. Against the same branches it found 2 of the 10 and 2 of the 7 defects ALPHA's own

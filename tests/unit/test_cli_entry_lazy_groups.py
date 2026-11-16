@@ -133,6 +133,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "figures",
             "forecast",
             "info",
+            "lookalike",
             "ml",
             "monte-carlo",
             "optim",
@@ -150,6 +151,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "strategy-candidate",
             "suite",
             "test",
+            "unusual",
             "validate",
         ]
     )

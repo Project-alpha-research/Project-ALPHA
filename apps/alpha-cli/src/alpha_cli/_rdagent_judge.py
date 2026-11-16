@@ -296,7 +296,10 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
         verified, payload = store.read_verified_normalized(path.stem, max_bytes=32 * 1024 * 1024)
         quality: Any = verified["quality"]
         dataset: Any = verified["dataset"]
-        if quality["state"] != "qualified" or quality["failures"]:
+        # Missing days inside a month are the gaps the panel receipt records (decision 1), so a
+        # month whose only warning is its cadence gap is accepted; anything else still fails.
+        gap_only = quality["state"] == "warning" and list(quality["warnings"]) == ["cadence_gap"]
+        if (quality["state"] != "qualified" and not gap_only) or quality["failures"]:
             raise DataError(f"unqualified normalized artifact: {path.stem}")
         digest = str(verified["artifact_sha256"])
         if (

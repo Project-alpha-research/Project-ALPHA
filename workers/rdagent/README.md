@@ -804,6 +804,12 @@ position/cash snapshots are persisted with the diagnostic series.
 Receipts without a gap policy retain the earlier evaluation path; they remain readable and
 are never rewritten. Gap-free, warmed-up panels preserve the old screen, spread and replay
 numbers, checked against the retained canonical replay path. Costs, clocks, thresholds, trial
-counting and the reserved window are unchanged. Synthetic checks cover these rules; running
-against the wide real store and serializing HDF in the isolated factor runtime still require
-verification outside the builder sandbox.
+counting and the reserved window are unchanged. A month whose only quality warning is its
+cadence gap is accepted at freeze; any other warning or failure still refuses the panel.
+
+**Known limit: identity across a gap.** The resume rule assumes the same asset in the same
+units on both sides of a gap. The 2026-11-17 system check on the wide store found three pairs
+where that is false: LUNAUSDT restarts as LUNA 2.0 (last close 0.00005, resume close 8.87),
+DREPUSDT and COCOSUSDT were redenominated (about 100x and 1,300x). A factor holding them books
+a fake gain of that size. Until the data layer splits such pairs, do not judge factors on that
+store as is. Serializing HDF in the isolated factor runtime still needs an outside check.

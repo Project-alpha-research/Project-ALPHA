@@ -527,3 +527,52 @@ def test_frozen_universe_reloads_after_its_store_is_gone(tmp_path: Path) -> None
     assert universes.frozen(panel_dir)["data_dir"] == str(store)
     with pytest.raises(DataError, match="data_dir"):
         judge.freeze(tmp_path / "unused", tmp_path / "out", panel_dir / "universe.json")
+
+
+@pytest.mark.parametrize(("warnings", "accepted"), [(["cadence_gap"], True), (["other"], False)])
+def test_freeze_accepts_a_month_whose_only_warning_is_its_gap(
+    tmp_path: Path, warnings: list[str], accepted: bool
+) -> None:
+    """A real store marks a month with missing days `warning: cadence_gap`; that is the gap
+    this policy records, so it must not block the freeze. Any other warning still does."""
+    from unittest.mock import patch
+
+    from tests.unit.test_rdagent_factor_eval import _bulk_store, _publish
+
+    store = _bulk_store(tmp_path)
+    _publish(store, "BTCUSDT", (10.0, 11.0, 12.0, 13.0), skip=1)
+    read = store.read_verified_normalized
+
+    def warned(manifest_id: str, *, max_bytes: int) -> tuple[dict[str, Any], bytes]:
+        verified, payload = read(manifest_id, max_bytes=max_bytes)
+        original = verified["quality"]
+        assert isinstance(original, dict)
+        quality = {**original, "state": "warning", "warnings": warnings}
+        return {**verified, "quality": quality}, payload
+
+    with (
+        patch.object(judge, "configured_crypto_bulk_store", lambda _: store),
+        patch.object(store, "read_verified_normalized", warned),
+    ):
+        if accepted:
+            receipt = judge.freeze(tmp_path / "control", tmp_path / "out")
+            assert receipt["missing_instrument_days"] == 1
+        else:
+            with pytest.raises(DataError, match="unqualified"):
+                judge.freeze(tmp_path / "control", tmp_path / "out")
+
+
+def test_label_fallback_counts_only_names_that_were_ranked() -> None:
+    """Counts describe ranked names; a coin not yet listed is not an 'unfilled entry'."""
+    from alpha_cli._rdagent_clocks import clock_samples
+
+    days = [date(2021, 1, 1) + timedelta(days=i) for i in range(5)]
+    open_days = [date(2021, 1, 1) + timedelta(days=i) for i in range(8)]
+    opens = np.full((8, 6), 100.0)
+    opens[:, 5] = np.nan  # listed after the window: never ranked, never counted
+    opens[4:, 4] = np.nan  # ranked on day 3, then stops: its entry on day 4 cannot fill
+    signal = np.tile(np.arange(6.0), (5, 1))
+    signal[:, 5] = np.nan
+    signal[4:, 4] = np.nan
+    data = clock_samples(signal, opens, days, open_days, "daily", closes=opens, gap_policy=True)
+    assert data["gap_counts"]["unfilled_entries"] == 1

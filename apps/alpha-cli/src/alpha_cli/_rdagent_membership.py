@@ -67,13 +67,20 @@ def membership(prices: np.ndarray, price_days: list[date], days: list[date]) -> 
 
 
 def forward_returns(
-    opens: np.ndarray, closes: np.ndarray, days: list[date], starts: list[int], ends: list[int]
+    opens: np.ndarray,
+    closes: np.ndarray,
+    days: list[date],
+    starts: list[int],
+    ends: list[int],
+    *,
+    counted: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict[str, int]]:
     """Keep normal open-to-open windows; unresolved exits use the waiting rule's close.
 
     An order without its next open never entered (cash return zero). For a missing exit, use
     the first close through endpoint + 30 days, or last close times 0.7. An unresolved label
-    whose search would enter the reserved window stays null.
+    whose search would enter the reserved window stays null. Counts cover ``counted`` cells
+    (the names ranked that day) when given.
     """
     if (
         opens.shape != closes.shape
@@ -85,9 +92,10 @@ def forward_returns(
     counts = {"gap_forward_returns": 0, "haircut_forward_returns": 0, "unfilled_entries": 0}
     for row, (start, end) in enumerate(zip(starts, ends, strict=True)):
         for j in range(opens.shape[1]):
+            count = int(counted is None or counted[row, j])
             if not math.isfinite(opens[start, j]):
                 result[row, j] = 0.0
-                counts["unfilled_entries"] += 1
+                counts["unfilled_entries"] += count
                 continue
             if math.isfinite(opens[end, j]):
                 result[row, j] = opens[end, j] / opens[start, j] - 1
@@ -103,14 +111,14 @@ def forward_returns(
             )
             if resumed is not None:
                 result[row, j] = closes[resumed, j] / opens[start, j] - 1
-                counts["gap_forward_returns"] += 1
+                counts["gap_forward_returns"] += count
             elif deadline < RESERVED_DAY and deadline <= days[-1]:
                 known = [k for k in range(end) if math.isfinite(closes[k, j])]
                 if known:
                     result[row, j] = (
                         closes[known[-1], j] * (1 - DELISTING_HAIRCUT) / opens[start, j] - 1
                     )
-                    counts["haircut_forward_returns"] += 1
+                    counts["haircut_forward_returns"] += count
     return result, counts
 
 

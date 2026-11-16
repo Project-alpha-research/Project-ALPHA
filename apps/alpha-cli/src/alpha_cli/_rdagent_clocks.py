@@ -69,7 +69,7 @@ def clock_samples(
         if closes is None:
             raise DataError("gap labels require closes")
         result["outcome"], result["gap_counts"] = membership.forward_returns(
-            opens, closes, open_days, start, end
+            opens, closes, open_days, start, end, counted=np.isfinite(signal[selected])
         )
     return result
 

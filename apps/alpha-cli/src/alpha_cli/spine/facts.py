@@ -36,6 +36,35 @@ METRICS = {
     "trial_dsr": "Deflated Sharpe using available symbol trials and sensitivity variants.",
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
+# Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
+# 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
+# valid on a fraction.
+METRIC_UNITS = {
+    "verdict": "other",
+    "oos_sharpe": "ratio",
+    "dsr": "fraction",
+    "trades": "count",
+    "exposure": "fraction",
+    "top_1_profit_share": "fraction",
+    "top_3_profit_share": "fraction",
+    "delay_base_sharpe": "ratio",
+    "delayed_sharpe": "ratio",
+    "total_trials": "count",
+    "trial_dsr": "fraction",
+    "variants_evaluated": "count",
+    **{
+        f"{prefix}_{metric}": kind
+        for prefix in ("full_sample", "benchmark")
+        for metric, kind in (
+            ("total_return", "fraction"),
+            ("cagr", "fraction"),
+            ("sharpe", "ratio"),
+            ("max_drawdown", "fraction"),
+        )
+    },
+}
+# Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
+NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
 _FIELDS = {
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),

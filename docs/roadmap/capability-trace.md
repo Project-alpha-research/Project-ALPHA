@@ -73,7 +73,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `rule-test` | Integrity as labels on results, not refusals (exploratory, free data, trial count) |
 | `result-diagnostics` | Automatic diagnostic pass after every test: facts and flags in plain sentences |
 | `result-diagnostics` | Cheap stress re-runs: double costs, enter one bar late |
-| `answer-check` | A drafted answer's tagged numbers and run labels checked against the stored records (`alpha results check`; not the reasoning) |
+| `answer-check` | A drafted answer's tagged numbers and run labels checked against the stored records and flags (`alpha results check`; not the reasoning) |
+| `honesty-selftest` | Planted honest and dishonest answers prove the checker catches invented numbers (`alpha partner selftest`) |
 | `answer-check` | Runs compared side by side, differences computed by code (`alpha results compare`) |
 
 ## Working rows that are not a workflow

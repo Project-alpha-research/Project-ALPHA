@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-253 commands in 32 groups. Options marked (required) are
+254 commands in 33 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -224,6 +224,12 @@ Nautilus paper trading: local crypto sandbox and fail-closed IBKR Paper.
 - `alpha paper show <SESSION_ID>` — Show one durable paper session (never signals its recorded PID). Options: `--json`
 - `alpha paper stop <SESSION_ID>` — Request safe cooperative stop: cancel ALPHA orders, never flatten positions.
 
+## alpha partner
+
+Self-checks of the AI research partner's honesty tools.
+
+- `alpha partner selftest` — Check planted honest and dishonest answers against temporary stored runs. Options: `--json`
+
 ## alpha project
 
 Strategy projects, immutable versions, experiments, and audit links.
@@ -350,7 +356,7 @@ Governed research cases, contracts, sources, and bounded runs.
 
 List rule tests and quote their stored results.
 
-- `alpha results check <PATH>` — Check a draft's tagged numbers and required labels against stored facts. Options: `--json`, `--allow-untagged`
+- `alpha results check <PATH>` — Check a draft's tagged numbers, required labels and flags against stored facts. Options: `--json`, `--allow-untagged`
 - `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
 - `alpha results compare <RUN_IDS>` — Compare stored values, differences and ratios, with bases and run labels. Options: `--metric`, `--json`
 - `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`

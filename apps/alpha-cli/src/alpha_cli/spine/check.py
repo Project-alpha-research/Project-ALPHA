@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import re
-from decimal import ROUND_HALF_EVEN, Decimal, localcontext
+from collections.abc import Callable
 from typing import Any
 
-from alpha_cli.spine.compare import Fact, Lookup, derived_fact, numeric_fact
+from alpha_cli.spine.check_flags import flag_hits
+from alpha_cli.spine.check_rules import financial_context, match_value, spelled_numbers, unit_kind
+from alpha_cli.spine.compare import Fact, Lookup, derived_fact
 from alpha_cli.spine.errors import SpineError
+
+FlagLookup = Callable[[str], list[dict[str, str]]]
 
 # Required plain phrases (case insensitive; a hyphen also counts as a space).
 LABEL_PHRASES = {
@@ -79,29 +83,12 @@ def _problem(
     }
 
 
-def _match_value(written: str, fact: Fact) -> tuple[str, str, Any] | None:
-    fact = numeric_fact(fact)
-    if fact["value"] is None:
-        return "VALUE_NOT_COMPUTED", f"The record has no numeric value: {fact['reason']}", fact
-    number = written.rstrip("%x×").replace(",", "")
-    decimals = len(number.partition(".")[2])
-    with localcontext() as context:
-        context.prec = max(50, len(number) + 330)
-        value = Decimal(str(fact["value"])) * (100 if written.endswith("%") else 1)
-        rounded = value.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_EVEN)
-    if rounded != Decimal(number):
-        return (
-            "VALUE_MISMATCH",
-            f"Written {written}; stored {fact['value']}; at written precision {rounded}.",
-            {"value": fact["value"], "rounded": str(rounded)},
-        )
-    return None
-
-
-def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
+def check_text(
+    text: str, lookup: Lookup, allow_untagged: int = 0, flags: FlagLookup | None = None
+) -> Fact:
     if allow_untagged < 0:
         raise ValueError("allow_untagged must be non-negative")
-    visible = visible_text(text)
+    visible = re.sub(r"(?<![\w.])\u2013(?=\d)", "-", visible_text(text).replace("\u2212", "-"))
     scanned = _IGNORED.sub(_blank, _TAG.sub(_blank, visible))
     problems: list[Fact] = []
     warnings: list[Fact] = []
@@ -114,7 +101,10 @@ def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
         tag = _TAG.match(suffix, len(suffix) - len(suffix.lstrip(" \t")))
         if tag is None and re.fullmatch(r"\+?\d+", written):
             integer = int(written)
-            if 0 <= integer <= 10 or 1900 <= integer <= 2100:
+            if 1900 <= integer <= 2100 or (
+                0 <= integer <= 10
+                and not financial_context(_TAG.sub(_blank, visible), number.start(), number.end())
+            ):
                 continue
         checked += 1
         if tag is None:
@@ -142,7 +132,8 @@ def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
                     )
                 )
                 continue
-            mismatch = _match_value(written, fact)
+            before = re.split(r"(?<=[.!?])\s+|\n", visible[: number.start()])[-1]
+            mismatch = match_value(written, fact, unit_kind(metric, operation), before)
             if mismatch:
                 kind, message, stored = mismatch
                 step = f"Run alpha results cite {first} {metric} and copy its value."
@@ -163,8 +154,31 @@ def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
                     next_step=error["next"],
                 )
             )
+    for spelled in spelled_numbers(_TAG.sub(_blank, visible)):
+        checked += 1
+        problem = _problem(
+            text,
+            spelled.start(),
+            "UNTAGGED_NUMBER",
+            f"Number written in words ({spelled.group()!r}) cannot be checked.",
+            next_step="Write the number in digits with its citation tag.",
+        )
+        (warnings if len(warnings) < allow_untagged else problems).append(problem)
     phrases = _TAG.sub(_blank, visible).lower().replace("-", " ")
     for run_id, (fact, offset) in cited.items():
+        if flags is not None:
+            others = [other for other in cited if other != run_id]
+            for start, code, detail in flag_hits(phrases, run_id, flags(run_id), others):
+                problems.append(
+                    _problem(
+                        text,
+                        start,
+                        "FLAG_CONTRADICTED",
+                        f"Run {run_id} carries the flag {code}: {detail}",
+                        stored=code,
+                        next_step="Report the flag in plain words; do not contradict it.",
+                    )
+                )
         for label in fact.get("labels", []):
             phrase = LABEL_PHRASES.get(label)
             if phrase and not re.search(r"\b" + re.escape(phrase) + r"\b", phrases):
@@ -208,5 +222,5 @@ def render_check(result: Fact) -> str:
                 f"{level}: line {problem['line']} {problem['kind']}: {problem['message']} "
                 f"Excerpt: {problem['excerpt']} Next: {problem['next']}"
             )
-    lines.append("This heuristic checks tagged numbers and labels, not the reasoning.")
+    lines.append("This heuristic checks tagged numbers, labels and flags, not the reasoning.")
     return "\n".join(lines)

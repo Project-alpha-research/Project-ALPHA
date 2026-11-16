@@ -1189,7 +1189,7 @@ docs = ["docs/reference/project/components/data-layer.md"]
 [[capability]]
 id = "answer-check"
 name = "Check an answer's numbers against the records"
-what = "Check drafted numbers and required run labels against stored facts, and compare runs with computed differences."
+what = "Check drafted numbers, required run labels and flag contradictions against stored facts, and compare runs with computed differences."
 see_it = ["alpha results check answer.md --json", "alpha results compare <run_id> <run_id> --json"]
 entry_points = ["cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_check.py::test_correct_answer", "tests/unit/test_spine_compare.py::test_comparison_arithmetic_and_provenance"]
@@ -1198,3 +1198,17 @@ real_data = "not yet confirmed; synthetic data only"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+
+[[capability]]
+id = "honesty-selftest"
+name = "Honesty self-test of the answer checker"
+what = "Check 25 planted honest and dishonest answers against temporary stored runs, without a model call."
+see_it = ["alpha partner selftest"]
+entry_points = ["cli: alpha partner"]
+proof_synthetic = ["tests/unit/test_honesty_traps.py::test_every_scenario_behaves"]
+proof_smoke = ["tests/smoke/test_partner_selftest_smoke.py::test_partner_selftest"]
+real_data = "synthetic fixture runs only; no model calls"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-results-check.md"]

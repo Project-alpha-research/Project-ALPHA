@@ -21,6 +21,7 @@ const CATALOG_GROUPS = [
   'optim',
   'owner-auth',
   'paper',
+  'partner',
   'project',
   'propfirm',
   'provider',
@@ -36,6 +37,12 @@ const CATALOG_GROUPS = [
 ]
 
 describe('menuModel', () => {
+  it('places the honesty self-test under Research', () => {
+    expect(assignCommands([command('partner selftest')]).Research).toEqual([
+      { kind: 'command', id: 'partner selftest', label: 'partner selftest' },
+    ])
+  })
+
   it('lists the eleven menus in spec order', () => {
     expect([...MENUS]).toEqual([
       'File',

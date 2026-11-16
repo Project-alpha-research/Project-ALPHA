@@ -26,8 +26,9 @@ promise or imply a profit.
    - Tried so far: "trial N of M recorded", the re-runs, and any runs the ledger does not count.
    - Next: one to three steps, each with a reason, what it would tell us, and its cost.
 4. Mark every sentence that is not a recorded fact "My reading:" or "Hypothesis:".
-5. Read it back against the facts once; there is no automatic answer checker yet. Say so if
-   the owner asks how the numbers were checked.
+5. Save the draft to a file and run `uv run alpha results check <file>`; fix every problem and
+   re-run until it says OK; never send a draft that fails. Asked how numbers were checked, say
+   so and offer `uv run alpha partner selftest`.
 
 Keep in mind:
 

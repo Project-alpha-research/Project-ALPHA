@@ -51,24 +51,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-202 capabilities: 39 working, 66 built but unproven, 95 missing, 1 to rebuild,
-1 dropped by decision (recounted 2026-11-17 after rows for plans recovered from earlier material).
+212 capabilities: 39 working, 66 built but unproven, 105 missing, 1 to rebuild,
+1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 4 | 9 | 0 | 0 |
+| 1. Idea | 2 | 4 | 10 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
-| 3. Look before testing | 1 | 7 | 5 | 0 | 0 |
+| 3. Look before testing | 1 | 7 | 6 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
-| 5. Overfit tests | 6 | 8 | 7 | 0 | 0 |
-| 6. Diagnostics | 5 | 6 | 10 | 0 | 0 |
+| 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
+| 6. Diagnostics | 5 | 6 | 12 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 9 | 0 | 1 |
-| 8. AI partner | 3 | 8 | 4 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 5 | 6 | 10 | 0 | 0 |
-| 10. Screens | 1 | 3 | 12 | 0 | 0 |
+| 8. AI partner | 3 | 8 | 5 | 1 | 0 |
+| 9. RD-Agent and Qlib engines | 5 | 6 | 12 | 0 | 0 |
+| 10. Screens | 1 | 3 | 14 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **39** | **66** | **95** | **1** | **1** |
+| **All** | **39** | **66** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -91,6 +91,7 @@ How a question, a chart observation or a paper becomes something testable.
 | The AI frames a loose question: the decision it serves, horizon, baseline, kind of method | Missing | playbook; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
 | Data that cannot answer a question reported as a gap, never as a failed idea | Missing | `research/` route; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
 | Verified source library: papers, books and tools checked to exist, grouped by topic, rules of thumb traced to their origin | Missing | `research/` source cards; [note](backlog/rescued-research-ideas.md) | Later | private |
+| A paper's edge checked on the stretch after its publication date, apart from the stretch before | Missing | literature claim model; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 2. Data and context
 
@@ -143,6 +144,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
 | Which came first after each match, target or stop, with still-open trades counted | Unproven | lifelines; pull request 213 | Path 2 | private |
 | A pattern detector checked against a hand-labelled set of examples before it is trusted | Missing | new Setup Lab; [note](backlog/rescued-test-fixtures.md) | Path 2 | private |
+| What winners and losers looked like before entry, beside a random-date control | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 
 ## 4. Backtest
 

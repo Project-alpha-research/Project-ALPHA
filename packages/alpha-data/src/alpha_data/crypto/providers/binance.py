@@ -395,6 +395,10 @@ def parse_binance_exchange_info(
     return pl.DataFrame(parsed).sort("symbol")
 
 
+# data.binance.vision labels its ZIPs and sidecars binary/octet-stream (checked live 2026-11-16).
+_ARCHIVE_MIME = frozenset({"application/zip", "application/octet-stream", "binary/octet-stream"})
+
+
 def archive_csv_member(payload: bytes) -> bytes:
     """Extract one bounded flat official CSV member without path writes."""
     if not isinstance(payload, bytes) or not payload or len(payload) > 512 * 1024 * 1024:
@@ -687,7 +691,7 @@ def _resume_binance_archive(
             if not str(response.geturl()).startswith("https://data.binance.vision/data/"):
                 raise DataError("Binance archive redirect host is invalid")
             content_type = str(response.headers.get("Content-Type", "")).split(";", 1)[0]
-            if content_type not in {"application/zip", "application/octet-stream"}:
+            if content_type not in _ARCHIVE_MIME:
                 raise DataError("Binance archive response MIME is invalid")
             if str(response.headers.get("Content-Encoding", "identity")).lower() != "identity":
                 raise DataError("Binance archive response encoding is invalid")
@@ -779,7 +783,7 @@ def fetch_binance_archive(
         url,
         timeout_seconds=timeout_seconds,
         max_bytes=512 * 1024 * 1024,
-        content_types=frozenset({"application/zip", "application/octet-stream"}),
+        content_types=_ARCHIVE_MIME,
     )
 
 
@@ -790,9 +794,10 @@ def fetch_binance_checksum(url: str, *, timeout_seconds: int = 30) -> bytes:
         url,
         timeout_seconds=timeout_seconds,
         max_bytes=4_096,
-        # Binance currently serves its ASCII CHECKSUM sidecars as application/zip. The
-        # 4 KiB bound plus strict SHA-256 sidecar parser still rejects archive bytes.
-        content_types=frozenset({"text/plain", "application/octet-stream", "application/zip"}),
+        # Binance serves ASCII CHECKSUM sidecars as binary/octet-stream (seen live 2026-11-16;
+        # older runs saw application/zip). The 4 KiB bound plus strict SHA-256 sidecar parser
+        # still rejects archive bytes.
+        content_types=_ARCHIVE_MIME | {"text/plain"},
     )
 
 

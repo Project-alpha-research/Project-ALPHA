@@ -11,7 +11,13 @@ import polars as pl
 import pytest
 
 from alpha_core import DataError
-from alpha_data.context.edgar import earnings, map_form4, map_submission_arrays, pull_edgar
+from alpha_data.context.edgar import (
+    CLOCK_MARGIN,
+    earnings,
+    map_form4,
+    map_submission_arrays,
+    pull_edgar,
+)
 from alpha_data.context.events import FILINGS_SCHEMA, as_known_events, load_events, store_events
 from alpha_data.context.sec_http import SecClient
 
@@ -81,7 +87,12 @@ def test_pull_pages_cache_acceptance_earnings_and_provenance(tmp_path: Path, ide
     assert all(b[1] - a[1] >= 0.2 - 1e-12 for a, b in zip(wire.calls, wire.calls[1:], strict=False))
     path = tmp_path / "context/edgar/0000000001/filings.parquet"
     df = load_events(path, source="edgar", schema=FILINGS_SCHEMA)
-    assert df["accepted_at"].equals(df["known_from"])
+    # Time zone of acceptanceDateTime is unconfirmed: known_from is never earlier than accepted_at.
+    assert (df["known_from"] - df["accepted_at"]).to_list() == [CLOCK_MARGIN] * df.height
+    assert (
+        "time zone unconfirmed"
+        in json.loads(path.with_suffix(".json").read_text())["known_from_rule"]
+    )
     assert earnings(df).height == 2
     assert identity not in path.with_suffix(".json").read_text()
     assert json.loads(path.with_suffix(".json").read_text())["user_agent_declared"] is True
@@ -157,6 +168,19 @@ def test_form4_and_xml_defenses() -> None:
     for raw in [b"<!DOCTYPE x><ownershipDocument/>", b'<!ENTITY x "a">', b"<broken>"]:
         with pytest.raises(DataError):
             map_form4(raw)
+
+
+def test_form4_derivative_may_report_total_value_instead_of_shares() -> None:
+    raw = (FIX / "form4_sample.xml").read_bytes()
+    derivative = b"<transactionShares><value>20</value></transactionShares>"
+    assert derivative in raw
+    rows = map_form4(
+        raw.replace(derivative, b"<transactionTotalValue><value>5</value></transactionTotalValue>")
+    )
+    assert rows[1]["derivative"] and rows[1]["shares"] is None
+    plain = b"<transactionShares><value>10</value></transactionShares>"
+    with pytest.raises(DataError):
+        map_form4(raw.replace(plain, b""))
 
 
 def test_parallel_arrays_fail_loud() -> None:

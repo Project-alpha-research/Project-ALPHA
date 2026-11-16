@@ -28,7 +28,7 @@ def zipped(raw: bytes) -> bytes:
 class Wire:
     def __init__(self, kind: str = "funding") -> None:
         self.raw = (
-            FIX / ("funding_2024-01.csv" if kind == "funding" else "metrics_2024-01-01.csv")
+            FIX / ("funding_2024-01.csv" if kind == "funding" else "metrics_2024-01-02.csv")
         ).read_bytes()
         self.calls: list[str] = []
         self.bad_checksum = False
@@ -63,14 +63,15 @@ class Wire:
 def test_mapping_clocks_nullable_and_legacy() -> None:
     funding = map_binance_csv("funding", (FIX / "funding_2024-01.csv").read_bytes())
     assert funding["funding_time"].equals(funding["known_from"])
-    assert funding["funding_rate"].to_list() == pytest.approx([0.0001, -0.0002])
+    assert funding["funding_rate"].to_list() == pytest.approx([0.00037409, 0.00027213])
     legacy = map_binance_csv("funding", b"calc_time,last_funding_rate\n1704067200000,0.1\n")
     assert legacy["interval_hours"].to_list() == [None]
-    metrics = map_binance_csv("metrics", (FIX / "metrics_2024-01-01.csv").read_bytes())
-    assert metrics["top_trader_account_ratio"].to_list()[1] is None
+    metrics = map_binance_csv("metrics", (FIX / "metrics_2024-01-02.csv").read_bytes())
+    gap = (FIX / "metrics_2024-01-02.csv").read_bytes().replace(b"1.02826047", b"")
+    assert map_binance_csv("metrics", gap)["top_trader_account_ratio"].to_list()[1] is None
     assert metrics["known_from"].to_list() == [ts + timedelta(minutes=5) for ts in metrics["ts"]]
-    assert as_known_events(metrics, as_of=datetime(2024, 1, 1, 0, 4, 59, tzinfo=UTC)).is_empty()
-    assert as_known_events(metrics, as_of=datetime(2024, 1, 1, 0, 5, tzinfo=UTC)).height == 1
+    assert as_known_events(metrics, as_of=datetime(2024, 1, 2, 0, 4, 59, tzinfo=UTC)).is_empty()
+    assert as_known_events(metrics, as_of=datetime(2024, 1, 2, 0, 5, tzinfo=UTC)).height == 1
 
 
 @pytest.mark.parametrize(
@@ -105,7 +106,7 @@ def test_cache_missing_and_overlap(tmp_path: Path) -> None:
     assert all(url.endswith(".CHECKSUM") for url in wire.calls)
     path = tmp_path / "context/binance/um/funding/BTCUSDT.parquet"
     before = path.read_bytes()
-    wire.raw = wire.raw.replace(b"0.0001", b"0.0009")
+    wire.raw = wire.raw.replace(b"0.00037409", b"0.00099999")
     with pytest.raises(DataError, match="Binance revised funding BTCUSDT at"):
         wire.pull(tmp_path)
     assert path.read_bytes() == before
@@ -178,8 +179,8 @@ def test_metrics_pull_cache_and_revisions(tmp_path: Path) -> None:
             data_dir=tmp_path,
             symbol="BTCUSDT",
             kind="metrics",
-            start="2024-01-01",
-            end="2024-01-01",
+            start="2024-01-02",
+            end="2024-01-02",
             fetched_at=NOW,
             fetch_checksum=wire.checksum,
             fetch_archive=wire.archive,
@@ -189,9 +190,9 @@ def test_metrics_pull_cache_and_revisions(tmp_path: Path) -> None:
     assert pull()["cached"] == 1
     path = tmp_path / "context/binance/um/metrics/BTCUSDT.parquet"
     frame = load_events(path, source="binance", schema=METRICS_SCHEMA)
-    assert frame["known_from"][0] == datetime(2024, 1, 1, 0, 5, tzinfo=UTC)
+    assert frame["known_from"][0] == datetime(2024, 1, 2, 0, 5, tzinfo=UTC)
     original = path.read_bytes()
-    wire.raw = wire.raw.replace(b",100,", b",999,")
+    wire.raw = wire.raw.replace(b",76608.79800000,", b",99999.0,")
     with pytest.raises(DataError, match="Binance revised metrics BTCUSDT at"):
         pull()
     assert path.read_bytes() == original

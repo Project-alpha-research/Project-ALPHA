@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +14,11 @@ import polars as pl
 from alpha_core import DataError
 from alpha_data.context import events as ev
 from alpha_data.context.sec_http import SecClient, archive_document_url, resolve_company
+
+# SEC's documentation does not say whether acceptanceDateTime is UTC or US Eastern with a "Z"
+# label. Until a live check against an EDGAR index "Accepted" time settles it, known_from is the
+# value plus 5 hours: exact if Eastern (EST), late (never early) if UTC. Set to 0 once confirmed.
+CLOCK_MARGIN = timedelta(hours=5)
 
 
 def map_submission_arrays(arrays: dict[str, Any]) -> list[dict[str, Any]]:
@@ -76,7 +81,7 @@ def map_submission_arrays(arrays: dict[str, Any]) -> list[dict[str, Any]]:
                 filing_date=ev.day(row["filing_date"]),
                 report_date=ev.day(row["report_date"]) if row["report_date"] else None,
                 accepted_at=accepted,
-                known_from=accepted,
+                known_from=accepted + CLOCK_MARGIN,
             )
             for key in ("items", "primary_document"):
                 if row[key] is not None and not isinstance(row[key], str):
@@ -145,7 +150,10 @@ def map_form4(xml_bytes: bytes) -> list[dict[str, Any]]:
                         "postTransactionAmounts/sharesOwnedFollowingTransaction/value",
                     ),
                 ):
-                    row[key] = ev.number(transaction.findtext(field), nullable=key != "shares")
+                    # Spec: a derivative row may give a total value instead of shares.
+                    row[key] = ev.number(
+                        transaction.findtext(field), nullable=key != "shares" or derivative
+                    )
                 rows.append(row)
     return rows
 
@@ -228,6 +236,7 @@ def pull_edgar(
         "fetched_at": fetched_at.isoformat(),
         "cik": identifier,
         "user_agent_declared": True,
+        "known_from_rule": f"acceptanceDateTime + {CLOCK_MARGIN} (time zone unconfirmed)",
     }
     directory = data_dir / "context/edgar" / identifier
     df = ev.retain_partitions(directory / "filings.parquet", df, source="edgar", key="accession")

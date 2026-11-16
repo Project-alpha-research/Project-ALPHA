@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_crypto_defillama*.py
   - tests/bias_guards/test_defillama_availability.py
   - tests/bias_guards/test_crypto_profiles_future_poison.py
-verified: 03bd7adfae129dcc
+verified: b7926b5f5ee862d4
 ---
 
 # Crypto provider invariants
@@ -36,6 +36,7 @@ the commands that drive these modules are in [command line crypto data](cli-cryp
   transport interruption says "rerun to resume".
 - Archives are checksum-first: the cache is keyed by the expected SHA-256, a resume uses an exact HTTP `Range`
   from verified resume metadata, and a mismatched checksum, unsafe path or refused range fails loud.
+  data.binance.vision labels ZIPs and `.CHECKSUM` sidecars `binary/octet-stream` (seen live 2026-11-16); that MIME is accepted.
 - Kline parsing accepts millisecond and microsecond timestamps and keeps every native field. A REST tail joins
   an archive only when every overlapping provider value is identical (`reconcile_archive_tail`).
 - Provider symbols are preserved exactly, Unicode included. The liquid universe is chosen from the last fully

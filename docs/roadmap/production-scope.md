@@ -49,13 +49,13 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-161 capabilities: 33 working, 54 built but unproven, 72 missing, 1 to rebuild,
+161 capabilities: 33 working, 55 built but unproven, 71 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 2 | 8 | 0 | 0 |
-| 2. Data and context | 3 | 11 | 8 | 0 | 0 |
+| 2. Data and context | 3 | 12 | 7 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 6 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
@@ -66,7 +66,7 @@ gate, before paper or live trading ([decision][thin]).
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **33** | **54** | **72** | **1** | **1** |
+| **All** | **33** | **55** | **71** | **1** | **1** |
 
 ## 1. Idea
 

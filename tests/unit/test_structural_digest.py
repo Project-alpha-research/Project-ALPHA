@@ -667,6 +667,9 @@ _REVIEWED_READERS = {
     # Registers typer commands (typer reads their docstrings) from local_pdf_cmds,
     # native_stock_cmds, validate_cmds and report_cmds; none of them is bound.
     "apps/alpha-cli/src/alpha_cli/main.py",
+    # Registers typer commands from context_sources_cmds (typer reads their docstrings); that
+    # module is not bound.
+    "apps/alpha-cli/src/alpha_cli/context_cmds.py",
     # The digest itself names the readers it guards against.
     "apps/alpha-cli/src/alpha_cli/_structural_digest.py",
 }

@@ -40,6 +40,20 @@ def _cutoff(raw: str | None) -> datetime:
         raise typer.BadParameter("expected YYYY-MM-DD or YYYY-MM-DDTHH:MM (UTC)") from None
 
 
+def _fail(exc: Exception, *, pull: str) -> typer.BadParameter:
+    """Say what went wrong and the one thing to do next."""
+    text = str(exc)
+    if "ALPHA_SEC_USER_AGENT" in text:
+        step = "set ALPHA_SEC_USER_AGENT to your name and e-mail, as the SEC asks, then retry"
+    elif "not found" in text:
+        step = f"nothing is stored yet; run `alpha context {pull}` first"
+    elif "BAD_RANGE" in text or "invalid" in text:
+        step = f"check the values and run `alpha context {pull} --help`"
+    else:
+        step = "check your network and wait a minute; nothing was stored, so it is safe to retry"
+    return typer.BadParameter(f"{text}. Next: {step}.")
+
+
 def _rows(df: pl.DataFrame) -> list[dict[str, Any]]:
     return [
         {k: v.isoformat() if isinstance(v, date) else v for k, v in row.items()}
@@ -66,7 +80,7 @@ def pull_edgar(
             fetched_at=datetime.now(UTC),
         )
     except (DataError, OSError) as exc:
-        raise typer.BadParameter(str(exc)) from None
+        raise _fail(exc, pull="pull-edgar") from None
     _emit(report, json_out)
 
 
@@ -88,7 +102,7 @@ def pull_binance(
             fetched_at=datetime.now(UTC),
         )
     except (DataError, OSError) as exc:
-        raise typer.BadParameter(str(exc)) from None
+        raise _fail(exc, pull="pull-binance") from None
     _emit(report, json_out)
 
 
@@ -117,7 +131,7 @@ def show_edgar(
         if view == "earnings":
             df = edgar.earnings(df)
     except (DataError, OSError) as exc:
-        raise typer.BadParameter(str(exc)) from None
+        raise _fail(exc, pull="pull-edgar --ticker <T>") from None
     _emit(
         dict(
             cik=identifier, dataset=view, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)
@@ -144,7 +158,7 @@ def show_binance(
         schema = FUNDING_SCHEMA if kind == "funding" else METRICS_SCHEMA
         df = as_known_events(load_events(path, source="binance", schema=schema), as_of=cutoff)
     except (DataError, OSError) as exc:
-        raise typer.BadParameter(str(exc)) from None
+        raise _fail(exc, pull="pull-binance --symbol <S> --kind <K>") from None
     key = "funding_time" if kind == "funding" else "ts"
     if lower is not None:
         df = df.filter(pl.col(key).dt.date() >= lower)

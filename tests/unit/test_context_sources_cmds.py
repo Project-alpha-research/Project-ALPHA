@@ -35,7 +35,7 @@ def seed(path: Path) -> None:
     )
     for kind, filename, schema in [
         ("funding", "funding_2024-01.csv", FUNDING_SCHEMA),
-        ("metrics", "metrics_2024-01-01.csv", METRICS_SCHEMA),
+        ("metrics", "metrics_2024-01-02.csv", METRICS_SCHEMA),
     ]:
         df = map_binance_csv(kind, (FIX / "binance" / filename).read_bytes()).with_columns(
             pl.lit("BTCUSDT").alias("symbol")
@@ -77,7 +77,7 @@ def test_show_sources_and_future_poison(tmp_path: Path, monkeypatch: pytest.Monk
             "--kind",
             "metrics",
             "--as-of",
-            "2024-01-01T00:05",
+            "2024-01-02T00:05",
             "--json",
         ),
     ]
@@ -88,6 +88,8 @@ def test_show_sources_and_future_poison(tmp_path: Path, monkeypatch: pytest.Monk
         cutoff = (
             datetime(2024, 1, 26, tzinfo=UTC)
             if "edgar" in str(path)
+            else datetime(2024, 1, 2, 0, 5, tzinfo=UTC)
+            if "metrics" in str(path)
             else datetime(2024, 1, 1, 0, 5, tzinfo=UTC)
         )
         column, value = (
@@ -201,3 +203,15 @@ def test_show_bounds_and_missing_table(tmp_path: Path, monkeypatch: pytest.Monke
         context_app, ["show-edgar", "--cik", "2", "--view", "filings", "--json"]
     )
     assert missing.exit_code != 0 and "not found" in missing.output
+
+
+def test_errors_say_the_next_step(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("ALPHA_SEC_USER_AGENT", raising=False)
+    result = CliRunner().invoke(context_app, ["pull-edgar", "--cik", "1"])
+    assert result.exit_code != 0 and "Next: set ALPHA_SEC_USER_AGENT" in result.output
+    result = CliRunner().invoke(
+        context_app, ["show-binance", "--symbol", "BTCUSDT", "--kind", "funding"]
+    )
+    flat = " ".join(result.output.replace("│", " ").split())
+    assert result.exit_code != 0 and "Next: nothing is stored yet; run" in flat

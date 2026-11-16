@@ -48,6 +48,7 @@ Explaining a result: where the profit and the losses came from.
 | Macro picture for the dates of a loss: rates, releases, volatility | Missing | needs macro data | Later | [partner] |
 | Results by market state (volatility, trend, correlation) known on the day | Unproven | `alpha-research` | Path 1 | [partner] |
 | Regime detection and change points, never fitted on the future | Missing | statsmodels, ruptures | Path 1 | [partner] |
+| "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day | Working | `alpha unusual` (STUMPY); no screen yet | Now | private |
 | "Was it knowable that day?" check for macro and regime labels | Missing | `alpha-research` | Later | private |
 | Results by calendar: year, month, weekday, session | Unproven | `alpha-cli` figures | Path 1 | [partner] |
 | Profit concentration: how much comes from a few trades, days or assets | Unproven | `alpha diagnose`: trades only | Path 1 | [partner] |

@@ -21,6 +21,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `funding-download` | Crypto context: funding rates, open interest, listings |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
+| `price-lookalikes` | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure |
+| `price-novelty` | "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day |
 | `retained-coverage` | Completeness check on downloaded bars |
 | `crypto-snapshots` | Reads see only what was known then; snapshots and receipts never change |
 | `backtest` | One-asset rule backtest with costs: decide at a close, fill at the next open |

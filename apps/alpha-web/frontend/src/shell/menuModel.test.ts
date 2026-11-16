@@ -14,6 +14,7 @@ const CATALOG_GROUPS = [
   'evidence',
   'forecast',
   'info',
+  'lookalike',
   'ml',
   'monte-carlo',
   'optim',
@@ -29,6 +30,7 @@ const CATALOG_GROUPS = [
   'strategy-candidate',
   'suite',
   'test',
+  'unusual',
   'validate',
 ]
 

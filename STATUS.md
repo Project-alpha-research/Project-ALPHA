@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 13 working, 24 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 13 working, 25 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -48,6 +48,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Macro context data as first published** — installed-command smoke test written; execution and live FRED behavior await verification. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **One trial ledger across rule tests, tools and RD-Agent** — smoke test written, not yet run outside the sandbox. More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 

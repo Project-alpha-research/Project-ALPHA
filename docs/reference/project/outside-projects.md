@@ -67,7 +67,7 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | lightweight-charts | Price charts in the Workstation | Browser code in `alpha-web/frontend` | In use | Use more: mark every setup match on the chart |
 | BokehJS | Other charts in the Workstation | Browser code in `alpha-web/frontend` | In use | A second chart library; one per chart kind is the aim |
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
-| DuckDB 2.0.0 | Asks one question across many stored files | Pinned in `alpha-cli`; in memory only | In use | A query tool, never the store |
+| DuckDB 2.0.0 | Asks one question across many stored files | Imported in `alpha-cli`, in memory only | In use | A query tool, never the store |
 | lifelines 0.30.3 | Which exit comes first, with censoring | Pinned in `alpha-cli` | In use | Proven estimator; replaces a biased hand count |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
 | statsmodels | Regression, factor exposure, regimes | For `alpha-validation` | Approved, not yet added | Closes missing rows; replaces hand-written code |

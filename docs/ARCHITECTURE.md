@@ -120,6 +120,7 @@ another package is named.
 | Subfolder | Owning module | Purpose |
 |---|---|---|
 | `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
+| `ledger/sources.toml` | `spine/trial_reader` | Optional absolute RD-Agent ledger path for the unified read-only view. |
 | `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
 | `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |

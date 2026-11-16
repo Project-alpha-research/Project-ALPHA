@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-244 commands in 29 groups. Options marked (required) are
+249 commands in 30 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -151,6 +151,16 @@ Resolved settings + machine-readable catalogs.
 - `alpha info providers` — List provider capabilities, limitations, and redacted local configuration state. Options: `--json`
 - `alpha info strategies` — List registered strategies and their tunable ''--param'' axes. Options: `--json`
 - `alpha info system` — Report local readiness only; no provider endpoint is contacted. Options: `--json`
+
+## alpha ledger
+
+Read all recorded trials through one unchanged-ledger view.
+
+- `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
+- `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
+- `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
 
 ## alpha ml
 

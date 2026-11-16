@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b7139b4be8b9cd83
+verified: 0ac4b91c4e0dc864
 ---
 
 # Command line runs invariants
@@ -111,6 +111,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## General rule trials
 
+- The unified read-only view is specified in [one trial ledger](cli-trial-ledger.md).
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
@@ -147,8 +148,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## Draft checks and run comparisons
 
-`alpha results check` and `alpha results compare` have their own file:
-[command line draft checks and run comparisons](cli-results-check.md).
+`alpha results check` and `compare`: [draft checks and run comparisons](cli-results-check.md).
 
 ## Suites
 

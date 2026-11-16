@@ -14,6 +14,7 @@ const CATALOG_GROUPS = [
   'evidence',
   'forecast',
   'info',
+  'ledger',
   'ml',
   'monte-carlo',
   'optim',
@@ -146,4 +147,10 @@ describe('chart windows', () => {
       checked: false,
     })
   })
+})
+
+it('puts the trial ledger in Research', () => {
+  expect(assignCommands([command('ledger summary')]).Research).toEqual([
+    { kind: 'command', id: 'ledger summary', label: 'ledger summary' },
+  ])
 })

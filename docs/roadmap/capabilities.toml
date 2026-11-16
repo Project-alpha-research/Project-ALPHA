@@ -1043,3 +1043,17 @@ real_data = "not yet confirmed; synthetic data only"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "one-trial-ledger"
+name = "One trial ledger across rule tests, tools and RD-Agent"
+what = "Read all recorded trials, their outcomes, families and evidence through one unchanged-ledger view."
+see_it = ["alpha ledger summary --json", "alpha ledger families --json"]
+entry_points = ["cli: alpha ledger"]
+proof_synthetic = ["tests/unit/test_trial_reader.py::test_worked_example", "tests/unit/test_ledger_cmds.py::test_commands"]
+proof_smoke = ["tests/smoke/test_ledger_smoke.py::test_ledger_reads_rule_and_factor_trials"]
+real_data = "not yet confirmed; synthetic ledger fixtures only"
+needs = []
+state = "Partial"
+missing = "smoke test written, not yet run outside the sandbox"
+docs = ["docs/reference/invariants/cli-trial-ledger.md"]

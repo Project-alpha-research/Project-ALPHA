@@ -1,0 +1,169 @@
+"""Read existing append-only ledgers without creating files or changing writers."""
+
+from __future__ import annotations
+
+import fcntl
+import json
+import tomllib
+from collections import Counter
+from contextlib import nullcontext
+from dataclasses import dataclass, field, replace
+from pathlib import Path
+from typing import Any
+
+from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.trial_record import TrialRecord, map_row
+
+
+@dataclass(frozen=True)
+class LedgerSource:
+    source: str
+    file: str
+    state: str = "missing"
+    rows: int = 0
+    mapped: int = 0
+    unknown: int = 0
+    unknown_by_reason: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class UnknownRow:
+    source: str
+    file: str
+    line: int
+    schema: str | None
+    reason: str
+
+
+@dataclass(frozen=True)
+class LedgerSnapshot:
+    records: list[TrialRecord]
+    unknown: list[UnknownRow]
+    sources: list[LedgerSource]
+    raw_rows: dict[tuple[str, int], dict[str, Any]] = field(default_factory=dict)
+
+
+def ledger_sources(home: Path, rdagent: Path | None = None) -> list[LedgerSource]:
+    """Explicit RD-Agent paths take precedence over local source configuration."""
+    config = home / "ledger/sources.toml"
+    if rdagent is None and config.exists():
+        try:
+            settings = tomllib.loads(config.read_text(encoding="utf-8"))
+            section = settings.get("rdagent", {})
+            if not isinstance(section, dict):
+                raise ValueError("rdagent must be a table")
+            value = section.get("factor_ledger")
+            if value is not None:
+                if not isinstance(value, str) or not Path(value).is_absolute():
+                    raise ValueError("factor_ledger must be an absolute path")
+                rdagent = Path(value)
+        except (ValueError, OSError) as exc:
+            raise SpineError(
+                "LEDGER_SOURCE_INVALID",
+                f"{config}: {exc}",
+                "Correct ledger/sources.toml or use --rdagent-ledger PATH.",
+            ) from exc
+    paths = [("spine", home / "ledger/trials.jsonl")]
+    if rdagent is not None:
+        paths.append(("rdagent", rdagent))
+    return [LedgerSource(source, str(path.resolve())) for source, path in paths]
+
+
+def _read_bytes(path: Path) -> bytes:
+    lock = path.with_suffix(path.suffix + ".lock")
+    with lock.open("rb") if lock.exists() else nullcontext() as stream:
+        if stream is not None:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_SH)
+        return path.read_bytes()
+
+
+def read_ledgers(sources: list[LedgerSource]) -> LedgerSnapshot:
+    records: list[TrialRecord] = []
+    unknown: list[UnknownRow] = []
+    reports: list[LedgerSource] = []
+    raw_rows: dict[tuple[str, int], dict[str, Any]] = {}
+    for source in sources:
+        path = Path(source.file)
+        if not path.exists():
+            reports.append(replace(source, state="missing"))
+            continue
+        lines = _read_bytes(path).splitlines(keepends=True)
+        reasons: Counter[str] = Counter()
+        mapped = 0
+        for number, line in enumerate(lines, 1):
+            schema = None
+            try:
+                if number == len(lines) and not line.endswith(b"\n"):
+                    raise ValueError("incomplete last line (a writer may be mid-append)")
+                row = json.loads(line)
+                if not isinstance(row, dict):
+                    raise ValueError("not a JSON object")
+                schema = row.get("schema") if isinstance(row.get("schema"), str) else None
+                record = map_row(source.source, path, number, row)
+            except (ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
+                reason = f"missing field: {exc.args[0]}" if isinstance(exc, KeyError) else str(exc)
+                unknown.append(UnknownRow(source.source, str(path), number, schema, reason))
+                reasons[reason] += 1
+            else:
+                records.append(record)
+                raw_rows[(record.source_file, number)] = row
+                mapped += 1
+        reports.append(
+            replace(
+                source,
+                state="present",
+                rows=len(lines),
+                mapped=mapped,
+                unknown=sum(reasons.values()),
+                unknown_by_reason=dict(reasons),
+            )
+        )
+    return LedgerSnapshot(records, unknown, reports, raw_rows)
+
+
+def family_counts(snapshot: LedgerSnapshot) -> list[dict[str, Any]]:
+    """Use RD-Agent's existing clock/identity count and preserve unknown attempts."""
+    groups: dict[str, list[TrialRecord]] = {}
+    for record in snapshot.records:
+        groups.setdefault(record.family_id, []).append(record)
+    rd_unknown = sum(row.source == "rdagent" for row in snapshot.unknown)
+    if rd_unknown:
+        groups.setdefault("rdagent-factors", [])
+    result = []
+    for family, records in sorted(groups.items()):
+        count = sum(
+            r.counts_for_deflation
+            and not (r.kind == "rule_test" and {"repeat", "error"}.intersection(r.labels))
+            for r in records
+        )
+        if family == "rdagent-factors":
+            from alpha_cli._rdagent_clocks import trial_family
+
+            raw = [snapshot.raw_rows[(r.source_file, r.source_line)] for r in records]
+            count = len(trial_family(raw)) + rd_unknown
+        latest = records[-1] if records else None
+        result.append(
+            dict(
+                family_id=family,
+                kind=latest.kind if latest else "factor",
+                source=latest.source if latest else "rdagent",
+                rows=len(records),
+                reader_trials=count,
+                family_size_recorded=latest.family_size_recorded if latest else None,
+                outcomes=dict(Counter(r.outcome for r in records)),
+            )
+        )
+    return result
+
+
+def trials_for_deflation(snapshot: LedgerSnapshot, family_id: str) -> dict[str, Any]:
+    counts = family_counts(snapshot)
+    return {
+        "family_id": family_id,
+        "family_trials": next(
+            (r["reader_trials"] for r in counts if r["family_id"] == family_id), 0
+        ),
+        "all_trials": sum(r["reader_trials"] for r in counts) + len(snapshot.unknown),
+        "basis": "Reader family counts plus every unknown row; RD-Agent factor counts also "
+        "include unknown RD-Agent rows conservatively.",
+    }

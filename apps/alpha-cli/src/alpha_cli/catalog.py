@@ -27,7 +27,7 @@ _EMPIRICAL_ROOTS = frozenset(
 )
 _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})
 _SAFE_ROOTS = frozenset(
-    {"info", "risk", "report", "figures", "chart", "rules", "scan", "results", "diagnose"}
+    {"info", "risk", "report", "figures", "chart", "rules", "scan", "results", "diagnose", "ledger"}
 )
 # Governed crypto data house (ADR-0032): reads and verifications are safe; anything that
 # acquires, freezes, selects, batches, creates or cleans is owner authority.

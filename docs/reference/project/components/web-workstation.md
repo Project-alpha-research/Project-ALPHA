@@ -31,9 +31,7 @@ start supported actions. It never does the work itself: each action is a call to
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md). Start it with `uv run alpha-web`.
 
-## What a rule-test report shows
-
-A run made by `alpha test` opens with its own first section, above the summary:
+A run made by `alpha test` (a rule test) opens with its own first section, above the summary:
 
 - **What was tested**: the idea in the owner's words, the rule as one plain sentence, the asset,
   data source, period, costs, the trial count at the time and the run's labels.
@@ -44,12 +42,13 @@ A run made by `alpha test` opens with its own first section, above the summary:
 
 Every number comes from the run's stored `manifest.json` and `diagnostics.json`; a missing one
 reads `not recorded` with the stored reason. The toolbar says `rule test` and lists the labels,
-and the Run library names the run `rule test <name> D1 — <asset> · …`.
+and the Run library names the run `rule test <name> <bar size> — <asset> · …` (for example `D1`).
+The rule-test capability itself belongs to the [command line](command-line.md); this part shows it.
 
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-web`
-- **Capabilities:** `workstation`, `price-charts`; the rule-test report section belongs to `rule-test`
+- **Capabilities:** `workstation`, `price-charts`
 - Code: `apps/alpha-web/src/alpha_web/` (server), `apps/alpha-web/frontend/` (browser app).
 - Tests: `tests/smoke/test_web_smoke.py`, `apps/alpha-web/frontend/e2e/`.
 - How to change it: [apps/alpha-web/CONTEXT.md](../../../../apps/alpha-web/CONTEXT.md).

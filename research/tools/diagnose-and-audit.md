@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: 5ab45430c1133ff7
+verified: c25febf77f0f3629
 ---
 
 # Diagnose and audit
@@ -13,7 +13,6 @@ verified: 5ab45430c1133ff7
 **Command** `uv run alpha diagnose <run_id> --json` (reads the pass stored with the run; costs nothing).
 
 **How to read it**
-
 - `flags`: observations, each with a `detail` sentence: `below-benchmark`, `drawdown-with-market`,
   `concentrated-profit`, `fragile-to-costs`, `fragile-to-parameters`, `fragile-to-delay`.
 - `audit`: each line has `check`, `status` (`PASS`, `FLAG` or `NOT-CHECKED`) and `detail`.
@@ -30,7 +29,8 @@ verified: 5ab45430c1133ff7
 | `quick-run` | the run carries the `quick` label (`variants-counted` never flags: it counts the re-runs) |
 
 - Other blocks: `full_sample`, `benchmark`, `drawdowns`, `by_year`, `concentration`, `sensitivity`, `delay`,
-  `trials`, and `macro_window` (stored macro series around the worst drawdown, or `available: false` and a `reason`).
+  `inverted_signal`, `walk_forward_efficiency`, `trials`, and `macro_window` (stored macro series around
+  the worst drawdown, or `available: false` and a `reason`).
 
 **What it cannot tell you**
 

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: c6d8e4e331fb94cf
+verified: 6f97fe9e4bc04f59
 ---
 
 # Deflated Sharpe and trial counting
@@ -25,7 +25,7 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
   was found. Pass line 0.95. Variants count in N but stay out of the spread: full-sample, neighbouring, correlated.
 - Cite `family_trials` for the count at the run: prior family trials, this run, scored variants and unknown
   rows, never below the available Sharpes. `alpha results show` also shows live family counts.
-- `total_trials` is the ledger count when the run was made; `variants_evaluated` counts its re-runs. Report
+- `total_trials` is the ledger count when the run was made; `variants_evaluated` counts sensitivity re-runs only; the inverted control is not a trial. Report
   "trial N of M recorded", and where this run ranks among the rows for the same rule and asset.
 - `alpha optim grid` sweeps declared settings and prints the best one with its deflated Sharpe, `PBO` (the
   probability that the in-sample winner is below the middle out of sample; high is bad), and the `SPA` and

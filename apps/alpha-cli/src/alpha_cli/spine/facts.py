@@ -26,6 +26,17 @@ METRICS = {
             ("max_drawdown", "maximum drawdown"),
         )
     },
+    "inverted_sharpe": "Net Sharpe of the opposite-direction research control.",
+    "inverted_sharpe_se": "Annualised IID-normal approximate standard error of the control Sharpe.",
+    "inverted_total_return": "Net total return of the opposite-direction research control.",
+    "inverted_trades": "Closed trades in the opposite-direction research control.",
+    "inverted_label": "The recorded inverted-signal control reading.",
+    "wfe": (
+        "Median annualised OOS / IS return; a practitioner rule of thumb, not a statistical test."
+    ),
+    "wfe_fold_count": (
+        "Recorded WFE fold count; a practitioner rule of thumb, not a statistical test."
+    ),
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
@@ -47,6 +58,13 @@ METRIC_UNITS = {
     "verdict": "other",
     "oos_sharpe": "ratio",
     "dsr": "fraction",
+    "inverted_sharpe": "ratio",
+    "inverted_sharpe_se": "ratio",
+    "inverted_total_return": "fraction",
+    "inverted_trades": "count",
+    "inverted_label": "other",
+    "wfe": "fraction",
+    "wfe_fold_count": "count",
     "trades": "count",
     "exposure": "fraction",
     "top_1_profit_share": "fraction",
@@ -70,7 +88,21 @@ METRIC_UNITS = {
 }
 # Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
 NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
+_CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
+_WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
+    **{
+        name: ("diagnostics.json", f"inverted_signal.{name}", _CONTROL_BASIS)
+        for name in (
+            "inverted_sharpe",
+            "inverted_sharpe_se",
+            "inverted_total_return",
+            "inverted_trades",
+        )
+    },
+    "inverted_label": ("diagnostics.json", "inverted_signal.label", _CONTROL_BASIS),
+    "wfe": ("diagnostics.json", "walk_forward_efficiency.wfe", _WFE_BASIS),
+    "wfe_fold_count": ("diagnostics.json", "walk_forward_efficiency.fold_count", _WFE_BASIS),
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),

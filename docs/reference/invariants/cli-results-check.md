@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 405b99a96dacdafd
+verified: 3c7cd785960e2cf1
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -33,7 +33,8 @@ drafted answer against stored run facts, and the computed differences between ru
   eight characters work. `check` reads the same stored facts as `cite`, including diagnostics.
   Percentages scale the stored value by 100; `x`/`×` denotes a ratio. Decimal rounding uses ties-to-even.
 - Each metric has a unit kind in `spine/facts.py:METRIC_UNITS`: ratio (Sharpe-like), fraction (returns, drawdowns,
-  shares, `dsr`), count or other. `%` is valid only on a fraction and `x` only on a ratio (`UNIT_MISMATCH`).
+  shares, `dsr`, WFE), count or other. Inverted Sharpe and its SE are ratios; control returns are fractions.
+  WFE is a practitioner rule of thumb, not a statistical test. `%` is valid only on a fraction; `x` only on a ratio (`UNIT_MISMATCH`).
   The written value must equal the stored value rounded to its precision; a ratio needs one decimal and a
   fraction a whole percent (or two decimals), else `PRECISION_TOO_LOW`. Hyphen, Unicode minus and an en dash
   directly before a digit all mean minus. A drawdown (`NEGATIVE_BY_CONVENTION`) may be written as a positive

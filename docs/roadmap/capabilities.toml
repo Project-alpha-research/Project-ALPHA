@@ -1126,6 +1126,64 @@ missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
+id = "price-lookalikes"
+name = "Has price action like this happened before?"
+codes = ["STUMPY matrix profile"]
+what = "Find every earlier stretch shaped like the latest bars of one asset, see what followed each on one figure, and record the look as an exploratory trial."
+see_it = ["uv run alpha lookalike --asset SPY@alpaca --last 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha lookalike", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_repeated_motif_is_found", "tests/bias_guards/test_lookalike_future_poison.py::test_lookalikes_ignore_every_bar_after_the_query_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "price-novelty"
+name = "What is unusual right now?"
+codes = ["STUMPY left matrix profile"]
+what = "Score how unlike every earlier stretch the latest bars of one asset are, ranked against all earlier scores, on one figure."
+see_it = ["uv run alpha unusual --asset BTC/USDT --window 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha unusual", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_novel_window_scores_as_unusual", "tests/bias_guards/test_lookalike_future_poison.py::test_each_novelty_score_uses_only_bars_up_to_its_own_window_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "filing-events"
+name = "Company filings, earnings dates and insider trades as filed"
+what = "Read SEC filings, earnings-related 8-Ks and Form 4 transactions known by an acceptance cutoff."
+see_it = ["alpha context show-edgar --ticker TEST --view earnings --as-of 2024-01-26 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_edgar.py::test_pull_pages_cache_acceptance_earnings_and_provenance", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "not yet confirmed; no live SEC call made; acceptanceDateTime time zone unconfirmed (known_from carries a 5-hour margin)"
+real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
+needs = []
+state = "Partial"
+missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "crypto-derivatives-context"
+name = "Crypto funding rates and open interest as known"
+what = "Read verified Binance USD-M funding and derivatives metrics at a UTC knowledge cutoff."
+see_it = ["alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known"
+real_data_needs = "network"
+needs = []
+state = "Partial"
+missing = "no pull-to-screen path or research use yet; only one symbol tried"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
 id = "answer-check"
 name = "Check an answer's numbers against the records"
 what = "Check drafted numbers and required run labels against stored facts, and compare runs with computed differences."

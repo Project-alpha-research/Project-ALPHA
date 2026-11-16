@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-247 commands in 30 groups. Options marked (required) are
+253 commands in 32 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -42,11 +42,15 @@ Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
 ## alpha context
 
-Macro reference data as first published, separate from bars.
+Point-in-time macro, SEC filings and Binance derivatives context.
 
 - `alpha context list` — List locally stored series and their provenance (no network). Options: `--json`
 - `alpha context pull` — Pull FRED vintages using FRED_API_KEY; default to the macro starter set. Options: `--series`, `--json`
+- `alpha context pull-binance` — Pull checksum-verified funding months or metrics days (at most 400 days). Options: `--symbol (required)`, +4 more
+- `alpha context pull-edgar` — Pull filings and insider transactions with the declared ALPHA_SEC_USER_AGENT. Options: `--ticker`, `--cik`, `--forms`, +2 more
 - `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +3 more
+- `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +5 more
+- `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, `--json`
 - `alpha context window` — Summarise the macro window; endpoints use values knowable at each boundary. Options: `--start (required)`, +4 more
 
 ## alpha crypto-data
@@ -159,6 +163,10 @@ Triple-barrier labels and overlap weights (López de Prado), from the AFML worke
 - `alpha labels barrier` — Label what happened after each event: target, stop or time limit first. Options: `--asset (required)`, `--target`, `--stop`, +7 more
 - `alpha labels importance <RESULT_ID>` — Report which factors the labels lean on (MDI, purged MDA and SFI). Options: `--factors (required)`, +5 more
 - `alpha labels weights <RESULT_ID>` — Weight labels by how much they overlap (uniqueness), with time decay. Options: `--train-end`, `--last-weight`, +3 more
+
+## alpha lookalike
+
+- `alpha lookalike` — Has price action like the latest N bars happened before? Options: `--asset (required)`, `--last`, `--timeframe`, `--top`, +3 more
 
 ## alpha ml
 
@@ -398,6 +406,10 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 ## alpha test
 
 - `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +6 more
+
+## alpha unusual
+
+- `alpha unusual` — How unlike every earlier stretch are the latest N bars? Options: `--asset (required)`, `--window`, `--timeframe`, `--json`
 
 ## alpha validate
 

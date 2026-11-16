@@ -18,6 +18,10 @@ def test_empty_generic_command_is_unknown() -> None:
     ("argv", "expected"),
     [
         (["context", "list"], "safe"),
+        (["context", "show-edgar"], "safe"),
+        (["context", "show-binance"], "safe"),
+        (["context", "pull-edgar"], "owner_only"),
+        (["context", "pull-binance"], "owner_only"),
         (["context", "show", "X"], "safe"),
         (["context", "window"], "safe"),
         (["context"], "owner_only"),

@@ -50,24 +50,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-166 capabilities: 35 working, 63 built but unproven, 66 missing, 1 to rebuild,
+168 capabilities: 37 working, 64 built but unproven, 65 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 4 | 6 | 0 | 0 |
-| 2. Data and context | 3 | 11 | 8 | 0 | 0 |
-| 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
+| 2. Data and context | 3 | 12 | 7 | 0 | 0 |
+| 3. Look before testing | 1 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 6 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
-| 6. Diagnostics | 4 | 6 | 7 | 0 | 0 |
+| 6. Diagnostics | 5 | 6 | 7 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 6 | 0 | 1 |
 | 8. AI partner | 2 | 7 | 4 | 1 | 0 |
 | 9. RD-Agent and Qlib engines | 5 | 6 | 8 | 0 | 0 |
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **35** | **63** | **66** | **1** | **1** |
+| **All** | **37** | **64** | **65** | **1** | **1** |
 
 ## 1. Idea
 
@@ -107,8 +107,8 @@ Prices, the universe, and the context a trader needs around them.
 | One price series per source kept apart automatically; differences shown as a label | Unproven | `alpha-data` | Path 1 | [thin] |
 | Benchmarks and sector funds stored for comparison (market, size, sectors, BTC, a basket) | Unproven | `alpha-data` | Path 1 | [partner] |
 | Macro series as first published: rates, inflation, jobs, credit, volatility index | Unproven | `alpha-data` `context/` | Later | [partner] |
-| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Missing | small checked files | Later | [partner] |
-| Crypto context: funding rates, open interest, listings | Unproven | `alpha-data` (shelved) | Later | [triage] |
+| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Unproven | `alpha context pull-edgar` (8-K item 2.02) | Later | [partner] |
+| Crypto context: funding rates, open interest, listings | Unproven | `alpha context pull-binance` | Later | [triage] |
 | Company fundamentals by filing date, for value-plus-quant ideas | Missing | backlog; Qlib | Later | private |
 | Fund and coin flow data with honest accounting (flows are not asset growth) | Missing | none yet | Later | private |
 | News and social text as dated, sourced evidence | Missing | none yet | Later | private |
@@ -124,6 +124,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed | Missing | new Setup Lab | Path 2 | private |
+| "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure | Working | `alpha lookalike` (STUMPY); no screen yet | Now | private |
 | Pattern and indicator detectors that use only bars already seen | Unproven | `alpha-patterns` | Path 2 | [status] |
 | Scan many markets for a rule | Unproven | `alpha scan` | Path 2 | [status] |
 | What happened after each match (event study) | Unproven | `alpha-research` | Path 2 | private |

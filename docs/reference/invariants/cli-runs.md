@@ -21,6 +21,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
+  - apps/alpha-cli/src/alpha_cli/*lookalike*.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
   - tests/smoke/test_rule_test_smoke.py
@@ -31,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b7139b4be8b9cd83
+verified: afb4632f7283ef25
 ---
 
 # Command line runs invariants
@@ -145,10 +146,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
   sensitivity re-runs separately from the append-only row index.
 
-## Draft checks and run comparisons
+## Draft checks, lookalikes and novelty
 
-`alpha results check` and `alpha results compare` have their own file:
-[command line draft checks and run comparisons](cli-results-check.md).
+- `alpha results check|compare`: [draft checks](cli-results-check.md). `alpha lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 
 ## Suites
 

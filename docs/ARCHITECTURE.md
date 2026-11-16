@@ -122,6 +122,8 @@ another package is named.
 | `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
 | `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
+| `context/edgar/` | `context_sources_cmds` over `alpha_data.context` | SEC filings, insider events, hashed provenance and immutable XML cache. |
+| `context/binance/` | `context_sources_cmds` over `alpha_data.context` | USD-M funding/metrics events, hashed provenance and verified ZIP cache. |
 | `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |
 | `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
 | `runs/` | `_artifacts` (backtest/validate runs; listed in `run_store.RUN_DIRS`) | Immutable single-strategy run directories with manifest-pinned artifacts. |
@@ -138,6 +140,8 @@ another package is named.
 | `diagnostics/` | `research_diagnostic_cmds` | Digest-keyed research diagnostic outputs. |
 | `scans/` | `scan_cmds` | Pattern/hypothesis scan outputs. |
 | `labels/` | `labels_cmds` | Immutable `alpha labels` result folders (AFML worker labels and weights), keyed by input hash. |
+| `lookalike/` | `lookalike_cmds` | One folder per `alpha lookalike` result (`result.json`, `figure.png`), keyed by settings and bars. |
+| `unusual/` | `lookalike_cmds` | One folder per `alpha unusual` result, same layout. |
 | `rules/` | `rules_cmds` | Rule definitions and rule-run records. |
 | `strategy-workspaces/` | `project_workspace` | Disposable hash-only per-project workspace projections. |
 | `crypto/` | `crypto_data_cmds`, `_crypto_panel` | Crypto manifests, asset masters, coverage profiles/batches, backfill ledgers and `storage-config.json`. |

@@ -49,12 +49,12 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-159 capabilities: 31 working, 53 built but unproven, 73 missing, 1 to rebuild,
+159 capabilities: 31 working, 54 built but unproven, 72 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 2 | 8 | 0 | 0 |
+| 1. Idea | 2 | 3 | 7 | 0 | 0 |
 | 2. Data and context | 3 | 11 | 8 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 1 | 8 | 0 | 0 |
@@ -66,7 +66,7 @@ gate, before paper or live trading ([decision][thin]).
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **31** | **53** | **73** | **1** | **1** |
+| **All** | **31** | **54** | **72** | **1** | **1** |
 
 ## 1. Idea
 
@@ -78,7 +78,7 @@ How a question, a chart observation or a paper becomes something testable.
 | Any idea may proceed: no stop for an unknown idea type, no approval before a research run | Missing | `research/` route | Path 1 | [thin] |
 | Simple rule language ("close above X and Y"), saved and rerun exactly | Unproven | `alpha-strategies` | Path 1 | [status] |
 | Plain rules tested as written, with no hidden sizing or rebalancing defaults | Working | `alpha test`, all-in sizing | Path 1 | [precise] |
-| Setup spec: event, context, reference, label, eligibility, trigger, exit, sizing, sessions | Missing | new, from rules | Path 2 | private |
+| Setup spec: event, context, reference, label, eligibility, trigger, exit, sizing, sessions | Unproven | `alpha-study` setup: daily event, filters, trigger, references; exits parsed, not run | Path 2 | private |
 | Four clocks on each idea: signal lookback, decision pace, holding period, execution delay | Missing | idea spec | Path 1 | private |
 | Source card and translation card: the original paper beside the adapted rule | Missing | idea folder | Path 1 | private |
 | Find papers, screen their claims, tie a claim to its test, keep the PDF | Unproven | `workers/literature` | Later | [papers] |

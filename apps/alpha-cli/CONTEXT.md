@@ -27,7 +27,7 @@ did not give, and never route live capital.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | gate packets, case projections or dossiers |
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, owner decisions, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, suites, figures, rules, scans |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, `alpha tool`, suites, figures, rules |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | Read-only queries | a read-only report or query, such as bar coverage |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | — | `alpha data` or `alpha crypto-data` acquisition, storage or backfill |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
@@ -48,7 +48,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
-| Rule tests | `test_cmds`, `results_cmds`, `tool_cmds`, `spine/` (rule trials, sourced facts, diagnostics, audit; `tools` and `tool_inputs` run the investigation tools) | `test_spine_*`, `test_all_in_sizing` |
+| Rule tests | `test_cmds`, `results_cmds`, `tool_cmds`, `spine/` (trials, facts, diagnostics, audit, tools) | `test_spine_*`, `test_all_in_sizing` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |

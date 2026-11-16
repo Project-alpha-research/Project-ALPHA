@@ -1042,4 +1042,4 @@ proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_o
 real_data = "yes, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data)"
 needs = []
 state = "Working"
-docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-runs.md"]
+docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]

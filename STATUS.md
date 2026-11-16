@@ -26,7 +26,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
 - **Upstream Alpha158 price features** — set feature_recipe_version: 3 in an ML stage config, or version 3 in an alpha ml prepare spec
-- **Investigation tools: market attribution, regimes, change points** — alpha tool attribution <run_id> --json (a real run is recorded) More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **Investigation tools: market attribution, regimes, change points** — alpha tool attribution <run_id> --json (a real run is recorded) More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-investigation-tools.md](docs/reference/invariants/cli-investigation-tools.md).
 
 ## Partly working
 

@@ -43,7 +43,7 @@ through `alpha results` and `alpha diagnose`; flags identify observations to exa
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
 retain the basis and source for each number, including a reason when it is unavailable.
 
-Three follow-up [investigation tools](../../invariants/cli-runs.md#investigation-tools) answer
+Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
 questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
 return is market exposure, with Newey-West uncertainty), `alpha tool regimes` (calm versus
 turbulent markets from a Markov-switching model) and `alpha tool changepoints` (dates where the

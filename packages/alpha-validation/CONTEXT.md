@@ -28,6 +28,7 @@ statsmodels and ruptures. It imports only `alpha_core` plus numpy, scipy, statsm
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Quant tier | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | changing splits, embargo or out-of-sample stitching |
 | [command line runs](../../docs/reference/invariants/cli-runs.md) | Validation and optimisation | changing how a gate is composed or reported |
+| [investigation tools](../../docs/reference/invariants/cli-investigation-tools.md) | — | changing attribution, regimes or change points |
 | [testing invariants](../../docs/reference/invariants/testing.md) | Quant sweeps | a mutation or semgrep check fails |
 | [four-family Monte Carlo guide](../../docs/operations/monte-carlo/README.md) | Read the outputs | changing or explaining a path-risk family |
 | [what this part is for](../../docs/reference/project/components/validation-and-evidence.md) | — | why it exists; before you keep, shelve or remove it |

@@ -22,9 +22,10 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     data = home / "data"
     for symbol, seed, sigma in (("SPY", 0, 0.01), ("QQQ", 1, 0.02)):
         seed_store(data, symbol=symbol, n=500, seed=seed, sigma=sigma)
-        provenance = ParquetStore(data / "store")._provenance_path(symbol)
-        provenance.parent.mkdir(parents=True, exist_ok=True)
-        provenance.write_text(json.dumps({"source": "synthetic"}))
+        # Strict pull provenance: bar reads reject a partial provenance file.
+        ParquetStore(data / "store").write_provenance(
+            symbol, source="alpaca", adapter_version="1", parser_version="1"
+        )
     result = alpha(
         home,
         "test",

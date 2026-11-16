@@ -25,7 +25,7 @@ it points to, never here.
 | [packages/alpha-patterns/CONTEXT.md](packages/alpha-patterns/CONTEXT.md) | — | chart-pattern geometry and indicators |
 | [packages/alpha-strategies/CONTEXT.md](packages/alpha-strategies/CONTEXT.md) | — | trading signals, sizing, strategy rules |
 | [packages/alpha-backtest/CONTEXT.md](packages/alpha-backtest/CONTEXT.md) | — | the Nautilus backtest harness, fills, fees |
-| [packages/alpha-validation/CONTEXT.md](packages/alpha-validation/CONTEXT.md) | — | statistics: walk-forward, nulls, bootstrap, Deflated Sharpe, CPCV, market attribution, regimes, change points |
+| [packages/alpha-validation/CONTEXT.md](packages/alpha-validation/CONTEXT.md) | — | statistics: walk-forward, nulls, bootstrap, Deflated Sharpe, CPCV |
 | [packages/alpha-research/CONTEXT.md](packages/alpha-research/CONTEXT.md) | — | phase split, event studies, gate packet values (assembly: alpha-cli) |
 | [packages/alpha-forecast/CONTEXT.md](packages/alpha-forecast/CONTEXT.md) | — | the Kronos forecasting model |
 | [packages/alpha-study/CONTEXT.md](packages/alpha-study/CONTEXT.md) | — | study projections over research data (no authority) |

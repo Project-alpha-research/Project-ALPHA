@@ -1174,16 +1174,16 @@ docs = ["docs/reference/project/components/data-layer.md"]
 [[capability]]
 id = "crypto-derivatives-context"
 name = "Crypto funding rates and open interest as known"
-what = "Read verified Binance USD-M funding and derivatives metrics at a UTC knowledge cutoff."
-see_it = ["alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+what = "Read verified Binance USD-M context and offline-imported Bybit linear funding and hourly open interest at a UTC knowledge cutoff."
+see_it = ["alpha context import-bybit --from <restored-store> --json", "alpha context show-bybit --symbol BTCUSDT --kind open-interest --as-of 2024-01-01T01:05 --json", "alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
 entry_points = ["cli: alpha context"]
-proof_synthetic = ["tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
-proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
-real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known"
-real_data_needs = "network"
+proof_synthetic = ["tests/unit/test_context_bybit_import.py::test_open_interest_future_poison_and_leaky_clock", "tests/unit/test_context_sources_cmds.py::test_bybit_import_show_and_future_poison", "tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_bybit_smoke.py::test_context_bybit_offline_import_and_read", "tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known; 2026-11-17: restored Bybit store imported offline, 50 symbols funding (287,857 rows) and 51 hourly open interest (2,027,681 rows) Jan 2022-Sep 2026, 0 conflicts, read as known"
+real_data_needs = "network for Binance; restored crypto store for offline Bybit import"
 needs = []
 state = "Partial"
-missing = "no pull-to-screen path or research use yet; only one symbol tried"
+missing = "no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks"
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]

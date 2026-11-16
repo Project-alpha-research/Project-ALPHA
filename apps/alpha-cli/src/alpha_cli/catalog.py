@@ -117,7 +117,8 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
     if root == "context":
         return (
             "safe"
-            if len(argv) > 1 and argv[1] in {"list", "show", "window", "show-edgar", "show-binance"}
+            if len(argv) > 1
+            and argv[1] in {"list", "show", "window", "show-edgar", "show-binance", "show-bybit"}
             else "owner_only"
         )
     if root == "strategy-candidate":

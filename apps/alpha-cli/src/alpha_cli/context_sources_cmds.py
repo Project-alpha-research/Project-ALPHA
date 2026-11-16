@@ -1,10 +1,11 @@
-"""EDGAR and Binance context commands; local reads always apply a UTC cutoff."""
+"""EDGAR, Binance and Bybit context commands; local reads always apply a UTC cutoff."""
 
 from __future__ import annotations
 
 import json
 from datetime import UTC, date, datetime
-from typing import Any
+from pathlib import Path
+from typing import Annotated, Any
 
 import polars as pl
 import typer
@@ -12,12 +13,13 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
-from alpha_data.context import binance_bulk, edgar
+from alpha_data.context import binance_bulk, bybit_import, edgar
 from alpha_data.context.events import (
     FILINGS_SCHEMA,
     FUNDING_SCHEMA,
     INSIDER_SCHEMA,
     METRICS_SCHEMA,
+    OPEN_INTEREST_SCHEMA,
     as_known_events,
     load_events,
 )
@@ -170,6 +172,53 @@ def show_binance(
         df = df.filter(pl.col(key).dt.date() >= lower)
     if upper is not None:
         df = df.filter(pl.col(key).dt.date() <= upper)
+    _emit(
+        dict(symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)),
+        json_out,
+    )
+
+
+@sources_app.command("import-bybit")
+def import_bybit(
+    source_dir: Annotated[
+        Path, typer.Option("--from", help="Restored crypto store root; offline.")
+    ],
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Import verified Bybit funding and hourly open interest from a restored store."""
+    try:
+        report = bybit_import.import_bybit(source_dir=source_dir, data_dir=AlphaSettings().data_dir)
+    except bybit_import.BybitImportError as exc:
+        _emit(exc.report, json_out)
+        raise typer.BadParameter(
+            f"{exc}. Next: repair the listed source artifacts and retry."
+        ) from None
+    except (DataError, OSError) as exc:
+        raise typer.BadParameter(
+            f"{exc}. Next: check --from points to the restored store."
+        ) from None
+    _emit(report, json_out)
+
+
+@sources_app.command("show-bybit")
+def show_bybit(
+    symbol: str = typer.Option(...),
+    kind: str = typer.Option(..., help="funding or open-interest."),
+    as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show imported Bybit context known at the UTC cutoff."""
+    cutoff = _cutoff(as_of)
+    try:
+        if kind not in {"funding", "open-interest"}:
+            raise DataError("--kind must be funding or open-interest")
+        path = bybit_import.table_path(AlphaSettings().data_dir, kind.replace("-", "_"), symbol)
+        schema = FUNDING_SCHEMA if kind == "funding" else OPEN_INTEREST_SCHEMA
+        df = as_known_events(load_events(path, source="bybit", schema=schema), as_of=cutoff)
+    except (DataError, OSError) as exc:
+        raise typer.BadParameter(
+            f"{exc}. Next: check options or run alpha context import-bybit --from <store>."
+        ) from None
     _emit(
         dict(symbol=symbol, kind=kind, view="as_known", as_of=cutoff.isoformat(), rows=_rows(df)),
         json_out,

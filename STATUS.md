@@ -56,7 +56,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
-- **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one symbol tried. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
+- **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 

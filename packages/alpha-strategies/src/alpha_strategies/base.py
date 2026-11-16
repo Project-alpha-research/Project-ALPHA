@@ -24,6 +24,7 @@ from nautilus_trader.model.data import BarType, QuoteTick
 from nautilus_trader.model.enums import AccountType, OrderSide, TimeInForce
 from nautilus_trader.model.events import OrderCanceled, OrderExpired, OrderFilled
 from nautilus_trader.model.identifiers import AccountId, ClientOrderId, InstrumentId
+from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.model.objects import Money, Quantity
 from nautilus_trader.trading.strategy import Strategy
 
@@ -198,6 +199,7 @@ class VolTargetStrategy(Strategy):  # type: ignore[misc]  # nautilus Strategy is
         self._target_units: float | None = None
         self.net_units = 0.0
         self.fills = 0
+        self.resized_entries = 0
         self.rejections = 0  # orders denied (risk/buying-power) or rejected by the venue
         self.execution_rejections: list[ExecutionRejectionTrace] = []
         self._cash_fee_rate: float | None = None
@@ -619,62 +621,9 @@ class VolTargetStrategy(Strategy):  # type: ignore[misc]  # nautilus Strategy is
         )
         if quantity is None:
             return
-        if (
-            side == OrderSide.BUY
-            and self._backtest_account_type == AccountType.CASH
-            and self._cash_fee_rate is not None
-            and self._cash_fee_rate > 0.0
-        ):
-            # The order executes against this t+1 ask (already includes modeled slippage). CASH
-            # buying-power checks in Nautilus account for principal but not commission, so reject
-            # the whole order when principal plus the same currency-rounded fee would exceed free
-            # cash. The close-time target remains intact and no next-open price leaks into it.
-            price = float(quote.ask_price)
-            notional = float(quantity) * price
-            currency = instrument.quote_currency
-            principal = Money(notional, currency)
-            commission = Money(notional * self._cash_fee_rate, currency)
-            account = self.portfolio.account(self._iid.venue)
-            available = account.balance_free(currency) if account is not None else None
-            if available is None:
-                raise DataError(
-                    f"CASH fee affordability requires a free {currency} balance for {self._iid}"
-                )
-            required_cash_money = principal + commission
-            available_cash = available.as_double()
-            if required_cash_money > available:
-                reason = (
-                    "cash_notional_exceeds_free_balance"
-                    if principal > available
-                    else "cash_plus_commission_exceeds_free_balance"
-                )
-                self.rejections += 1
-                required_cash = required_cash_money.as_double()
-                self.execution_rejections.append(
-                    ExecutionRejectionTrace(
-                        ts=datetime.fromtimestamp(int(quote.ts_event) / 1_000_000_000, tz=UTC),
-                        instrument_id=str(self._iid),
-                        side="BUY",
-                        requested_quantity=float(quantity),
-                        reference_price=price,
-                        available_cash=available_cash,
-                        estimated_fee=commission.as_double(),
-                        required_cash=required_cash,
-                        reason=reason,
-                    )
-                )
-                self._emit(
-                    "order_rejected",
-                    {
-                        "instrument_id": str(self._iid),
-                        "side": "BUY",
-                        "quantity": float(quantity),
-                        "reason": reason,
-                        "required_cash": required_cash,
-                        "available_cash": available_cash,
-                    },
-                    ts_event_ns=int(quote.ts_event),
-                )
+        if side == OrderSide.BUY:
+            quantity = self._cash_buy_quantity(quantity, quote, instrument)
+            if quantity is None:
                 return
         intent_id = None
         if risk is not None:
@@ -720,6 +669,104 @@ class VolTargetStrategy(Strategy):  # type: ignore[misc]  # nautilus Strategy is
             },
             ts_event_ns=int(quote.ts_event),
         )
+
+    def _cash_buy_quantity(
+        self, quantity: Quantity, quote: QuoteTick, instrument: Instrument
+    ) -> Quantity | None:
+        """Keep affordable targets; cap equity-sized CASH longs at the actual opening ask."""
+        can_resize = (
+            self._paper_risk is None
+            and self._fixed_quantity is None
+            and self.net_units >= 0.0
+            and (self._sizing == "all_in" or self._size_on_equity)
+        )
+        if (
+            self._backtest_account_type != AccountType.CASH
+            or self._cash_fee_rate is None
+            or (self._cash_fee_rate == 0.0 and not can_resize)
+        ):
+            return quantity
+        price = float(quote.ask_price)
+        notional = float(quantity) * price
+        currency = instrument.quote_currency
+        principal = Money(notional, currency)
+        commission = Money(notional * self._cash_fee_rate, currency)
+        account = self.portfolio.account(self._iid.venue)
+        available = account.balance_free(currency) if account is not None else None
+        if available is None:
+            raise DataError(
+                f"CASH fee affordability requires a free {currency} balance for {self._iid}"
+            )
+        required_cash_money = principal + commission
+        available_cash = available.as_double()
+        if required_cash_money > available:
+            if can_resize:
+                resized = self._affordable_entry(quantity, instrument, price, available)
+                if resized is not None:
+                    self.resized_entries += 1
+                    return resized
+            # With no affordable lot, retain the previous refusal path, including venue denial
+            # for zero-fee orders. Fixed-unit orders and short covers keep their old behavior.
+            if self._cash_fee_rate == 0.0:
+                return quantity
+            reason = (
+                "cash_notional_exceeds_free_balance"
+                if principal > available
+                else "cash_plus_commission_exceeds_free_balance"
+            )
+            self.rejections += 1
+            required_cash = required_cash_money.as_double()
+            self.execution_rejections.append(
+                ExecutionRejectionTrace(
+                    ts=datetime.fromtimestamp(int(quote.ts_event) / 1_000_000_000, tz=UTC),
+                    instrument_id=str(self._iid),
+                    side="BUY",
+                    requested_quantity=float(quantity),
+                    reference_price=price,
+                    available_cash=available_cash,
+                    estimated_fee=commission.as_double(),
+                    required_cash=required_cash,
+                    reason=reason,
+                )
+            )
+            self._emit(
+                "order_rejected",
+                {
+                    "instrument_id": str(self._iid),
+                    "side": "BUY",
+                    "quantity": float(quantity),
+                    "reason": reason,
+                    "required_cash": required_cash,
+                    "available_cash": available_cash,
+                },
+                ts_event_ns=int(quote.ts_event),
+            )
+            return None
+        return quantity
+
+    def _affordable_entry(
+        self, requested: Quantity, instrument: Instrument, price: float, available: Money
+    ) -> Quantity | None:
+        """Largest whole size step affordable under the existing rounded principal/fee model.
+
+        Quote-quantity market orders convert notional to units without reserving commission.
+        Search the size steps instead: both currency rounding and non-unit increments matter.
+        Only the current quote and account balance enter this calculation.
+        """
+        assert self._cash_fee_rate is not None
+        increment = Decimal(str(instrument.size_increment))
+        low, high = 0, int(Decimal(str(requested)) / increment)
+        while low < high:
+            steps = (low + high + 1) // 2
+            notional = float(steps * increment) * price
+            cost = Money(notional, instrument.quote_currency) + Money(
+                notional * self._cash_fee_rate, instrument.quote_currency
+            )
+            if cost <= available:
+                low = steps
+            else:
+                high = steps - 1
+        return Quantity(float(low * increment), instrument.size_precision) if low else None
 
     def on_stop(self) -> None:
         """Cancel this strategy's open orders; safe stop intentionally never flattens positions."""

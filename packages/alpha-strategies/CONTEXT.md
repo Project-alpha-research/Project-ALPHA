@@ -3,7 +3,7 @@ owner: strategy layer
 sources:
   - packages/alpha-strategies/src/**
   - packages/alpha-strategies/pyproject.toml
-verified: e0e9500b2c84c7c4
+verified: 3a851238cfa4e4de
 ---
 
 # alpha-strategies workspace
@@ -33,7 +33,7 @@ the next open, never earlier.
 - Code: `packages/alpha-strategies/src/alpha_strategies/` (`base.py`, `signals.py`, `sizing.py`,
   one module per strategy, `rule_strategy.py` for rule specs).
 - Tests: `tests/unit/test_*strategy*.py`, `tests/unit/test_signals*.py`, `tests/unit/test_sizing*.py`,
-  `tests/unit/test_rules_*.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
+  `tests/unit/test_rules_*.py`, `tests/unit/test_entry_gap_sizing.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
   `test_signal_window_boundary.py`; integration `tests/integration/test_nautilus_engine.py`.
 - A new strategy is registered in `apps/alpha-cli/src/alpha_cli/_strategies.py`; regenerate the
   command page if its options appear there (`uv run python scripts/commands_reference.py`).

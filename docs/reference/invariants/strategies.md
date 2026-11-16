@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: eb34047dc8c8cd58
+verified: acb906e729c38083
 ---
 
 # Strategy invariants
@@ -31,7 +31,8 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 ## Decide at close, fill at next open
 
 - `VolTargetStrategy.on_bar` (the close of t) fixes the target; `on_quote_tick` (the open of t+1) only
-  turns the pending target into an order. Never compute or change a target from the opening quote.
+  turns the pending target into an order. The recorded close-time target never changes; an unaffordable
+  CASH equity-sized long order may be reduced using only the current opening ask and free cash.
   [research integrity § Decide at close, fill at next open](research-integrity.md#decide-at-close-fill-at-next-open).
   Enforced by `tests/bias_guards/test_cash_fee_affordability_future_poison.py`.
 - Record a `DecisionTrace` with a reason for every decision taken (rebalance or halt), including flat,
@@ -57,6 +58,11 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   the target is net liquidation value less a 0.2% buffer, divided by close times fee and slippage,
   rounded down to the instrument increment; units are held while long and zero when flat. Long
   only. The Tier-1 surrogate models it as weight 1 or 0. `tests/unit/test_all_in_sizing.py`.
+- If an all-in or `size_on_equity` long BUY exceeds free CASH including rounded fees, reduce it to the
+  largest affordable instrument size step at the opening ask, with no extra buffer. Affordable orders,
+  fixed-unit/fixed-capital orders, shorts, exits, MARGIN and paper execution retain their behavior.
+  `resized_entries` counts reductions; no affordable lot retains the existing refusal path.
+  `tests/unit/test_entry_gap_sizing.py` pins gap timing, causal sizing and unchanged execution bytes.
 
 ## Rule specs
 
@@ -82,7 +88,8 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 
 - CASH affordability: on a CASH backtest account with a positive fee, a BUY is rejected whole when
   principal at the t+1 ask plus the currency-rounded commission (same `bps_rate`) exceeds the free quote
-  balance. The close-time target is kept and an `ExecutionRejectionTrace` is appended. Sells and MARGIN
+  balance and the equity-sizing reduction above cannot apply. The close-time target is kept and an
+  `ExecutionRejectionTrace` is appended. Sells and MARGIN
   orders are not limited by this check. `tests/integration/test_order_rejection.py`.
 - `prime_history` is for paper warm-up only: the caller first enforces snapshot provenance and the
   knowledge cutoff; timestamps must strictly increase; it creates no target and no order.

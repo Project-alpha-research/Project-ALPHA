@@ -54,6 +54,7 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
 - Code: [`workers/afml/`](../../../../workers/afml/README.md).
 - Tests: `workers/afml/tests/`; CI job `afml-worker`.
 - How to change it: [workers/afml/CONTEXT.md](../../../../workers/afml/CONTEXT.md).
+- **Plan:** the textbook-methods rows of [stage 9](../../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the checklist.
 - Decision records: [ADR-0054](../../../adr/0054-afml-worker.md).
 
 ## Decisions and open questions

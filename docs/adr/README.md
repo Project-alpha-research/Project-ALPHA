@@ -40,7 +40,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0032](0032-governed-crypto-data-house.md) | Govern crypto data by dataset family | Accepted; storage reserve made owner-settable by 0043; snapshot members defined by 0046 | 2026-08-14 |
 | [0033](0033-governed-crypto-crowding-research-and-sandbox-basis.md) | Govern crypto crowding research separately from sandbox basis development | Accepted | 2026-08-15 |
 | [0034](0034-agent-operating-system-v2.md) | Agent operating system v2 — owner-token authorization, oracle test tiers, second-model review seam | Accepted; engineering ceremony superseded by 0037, local stamps by 0039, hidden suite by 0041 | 2026-08-19 |
-| [0035](0035-generic-study-composition-and-external-capability-adapters.md) | Govern generic study composition as a projection layer | Accepted | 2026-08-21 |
+| [0035](0035-generic-study-composition-and-external-capability-adapters.md) | Govern generic study composition as a projection layer | Accepted; RD-Agent row superseded by 0044, 0049 | 2026-08-21 |
 | [0036](0036-defillama-tvl-supplemental-research-family.md) | Add DefiLlama chain TVL as a supplemental crypto research family | Accepted | 2026-09-14 |
 | [0037](0037-agent-neutral-research-engineering.md) | Agent-neutral engineering, shared component gates and reproducible research | Accepted; local stamps superseded by 0039, Atlas views by 0040, hidden suite by 0041 | 2026-09-16 |
 | [0038](0038-local-confirmation-and-terminal-archive-charts.md) | Local action confirmation and terminal archive charts | Accepted | 2026-09-30 |

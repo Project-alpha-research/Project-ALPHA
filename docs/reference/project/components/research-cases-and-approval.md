@@ -59,6 +59,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
   [ADR-0027](../../../adr/0027-tiered-research-readiness-semantics.md),
   [ADR-0030](../../../adr/0030-touch-id-owner-presence-for-research-actions.md),
   [ADR-0038](../../../adr/0038-local-confirmation-and-terminal-archive-charts.md).
+- **Plan:** [stage 7](../../../roadmap/production-scope-2.md#7-records-and-memory) and the one gate
+  in [stage 11](../../../roadmap/production-scope-3.md#11-paper-and-live).
 
 ## Decisions and open questions
 

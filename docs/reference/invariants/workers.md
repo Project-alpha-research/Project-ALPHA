@@ -5,11 +5,12 @@ sources:
   - workers/literature/**
   - workers/rdagent/**
   - workers/afml/**
+  - apps/alpha-cli/src/alpha_cli/labels_cmds.py
   - scripts/gate_components.py
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 19aafc6bfa19e6cc
+verified: 0a2b4a9a826d882b
 ---
 
 # Worker invariants
@@ -114,6 +115,12 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 - Only finished labels are weighted. Uniqueness and time decay depend on every label used, so
   training weights are built with `uniqueness --train-end` (labels ended by then only; tested to
   ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.
+- `alpha labels barrier|weights` (`labels_cmds.py`) reads bars point in time, starts the worker with
+  `uv run --locked --no-sync` and a minimal environment, and publishes one immutable folder under
+  `data_dir/labels/` per hash of bars, parameters and worker code (lock and source): bars, worker files,
+  the picture and `result.json` (spine-shaped facts, labels).
+  A missing worker fails with `WORKER_NOT_INSTALLED` and the one setup step; the smoke check runs in the
+  `afml-worker` job.
 
 ## RD-Agent worker
 

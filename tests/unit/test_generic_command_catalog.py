@@ -33,6 +33,8 @@ def test_empty_generic_command_is_unknown() -> None:
         (["provider", "check", "tiingo"], "owner_only"),
         (["strategy-candidate", "paper-preflight"], "safe"),
         (["strategy-candidate", "run"], "empirical"),
+        (["labels", "barrier"], "empirical"),
+        (["labels", "weights"], "empirical"),
         (["chart", "overlays"], "safe"),
         (["rules", "save"], "safe"),
         (["scan", "check"], "safe"),

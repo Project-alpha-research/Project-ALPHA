@@ -95,3 +95,27 @@ def test_weights_up_to_train_end_ignore_every_later_bar(tmp_path: Path, bars_fil
         tmp_path / "full-e.parquet", tmp_path / "full-b.parquet", tmp_path / "w.parquet", 0.5, 0, 7
     )
     assert whole["weights_scope"].startswith("every finished label")
+
+
+THEME = {
+    "bg": "#000000", "line": "#e0e0e0", "grid": "#2a2a2a", "ink": "#e0e0e0",
+    "ink_dim": "#c8c8c8", "muted": "#c8c8c8", "faint": "#767676", "accent": "#316ac5",
+    "up": "#2fc36a", "down": "#e5484d", "gold": "#ffd400", "substrate": "#4a4a4a",
+    "categorical": ["#4f8dff", "#a14206", "#ed4f8d", "#584dc5"],
+    "font_family": "DejaVu Sans", "base_font_pt": 8.5,
+}  # fmt: skip
+
+
+def test_labels_command_draws_the_figure(tmp_path: Path, bars_file: Path) -> None:
+    theme = tmp_path / "theme.json"
+    theme.write_text(json.dumps(THEME), "utf-8")
+    figure = tmp_path / "labels.png"
+    result = run(
+        "labels", bars_file, "--out", tmp_path / "e.parquet", "--figure", figure,
+        "--theme", theme, "--title", "Synthetic daily",
+    )  # fmt: skip
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["figure"] == "labels.png"
+    assert sum(summary["outcomes"].values()) == summary["events"]
+    assert figure.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"

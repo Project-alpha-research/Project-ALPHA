@@ -10,6 +10,7 @@ name = "alpha-afml-worker"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "polars" },
@@ -25,12 +26,10 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
-figure = [
-    { name = "matplotlib" },
-]
 
 [package.metadata]
 requires-dist = [
+    { name = "matplotlib", specifier = "==3.11.0" },
     { name = "numpy", specifier = "==2.4.6" },
     { name = "pandas", specifier = "==2.3.3" },
     { name = "polars", specifier = "==1.41.2" },
@@ -46,7 +45,6 @@ dev = [
     { name = "pytest", specifier = "==9.1.0" },
     { name = "ruff", specifier = "==0.15.17" },
 ]
-figure = [{ name = "matplotlib", specifier = "==3.11.0" }]
 
 [[package]]
 name = "ast-serialize"

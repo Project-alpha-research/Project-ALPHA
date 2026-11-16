@@ -44,7 +44,12 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
         "uv.lock",
     ),
     "literature": ("workers/literature/",),
-    "afml": ("workers/afml/",),
+    # The worker job also runs the `alpha labels` smoke check, which needs the installed worker.
+    "afml": (
+        "workers/afml/",
+        "apps/alpha-cli/src/alpha_cli/labels_cmds.py",
+        "tests/smoke/test_afml_labels_smoke.py",
+    ),
 }
 
 
@@ -275,7 +280,7 @@ def component_steps(
         ]
     if component in {"afml", "literature", "qlib"}:
         cwd = root / f"workers/{component}"
-        return [
+        steps: list[Step] = [
             ("lock", cwd, ["uv", "lock", "--check"]),
             ("install", cwd, ["uv", "sync", "--locked"]),
             ("lint", cwd, ["uv", "run", "ruff", "check", "."]),
@@ -283,6 +288,19 @@ def component_steps(
             ("types", cwd, ["uv", "run", "mypy"]),
             ("tests", cwd, ["uv", "run", "pytest", "-q", "-m", "not network"]),
         ]
+        if component == "afml":
+            smoke = [
+                "uv",
+                "run",
+                "pytest",
+                "-q",
+                "-n",
+                "0",
+                "tests/smoke/test_afml_labels_smoke.py",
+            ]
+            owned = ["uv", "run", "python", "scripts/run_owned_test.py", "--timeout", "900", "--"]
+            steps.append(("alpha labels smoke", root, [*owned, *smoke]))
+        return steps
     raise ValueError(f"Unknown gate component: {component}")
 
 

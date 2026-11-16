@@ -22,6 +22,7 @@ import numpy as np
 import polars as pl
 
 from alpha_afml_worker.contract import validate_bars
+from alpha_afml_worker.figure import draw, summarise
 from alpha_afml_worker.labels import LabelParams, label_events
 from alpha_afml_worker.uniqueness import average_uniqueness, sequential_bootstrap, time_decay
 
@@ -35,16 +36,37 @@ def capabilities() -> dict[str, Any]:
     }
 
 
-def run_labels(bars_path: Path, out: Path, basis: str, params: LabelParams) -> dict[str, Any]:
-    events = label_events(pl.read_parquet(bars_path), params, basis)  # type: ignore[arg-type]
+def run_labels(
+    bars_path: Path,
+    out: Path,
+    basis: str,
+    params: LabelParams,
+    figure: Path | None = None,
+    theme: Path | None = None,
+    title: str = "Daily bars",
+) -> dict[str, Any]:
+    """Label the events; with ``figure`` (and a ``theme`` document) also draw the picture."""
+    bars = pl.read_parquet(bars_path)
+    events = label_events(bars, params, basis)  # type: ignore[arg-type]
     events.write_parquet(out)
     summary: dict[str, Any] = {"basis": basis, "events": events.height}
     if basis == "high_low":
-        counts = events["outcome"].value_counts().sort("outcome").rows()
-        summary["outcomes"] = {str(k): int(v) for k, v in counts}
+        counts = dict(events["outcome"].value_counts().rows())
+        summary["outcomes"] = {
+            name: int(counts.get(name, 0)) for name in ("target", "stop", "vertical", "open")
+        }
+        summary["decided"] = int(events["end"].is_not_null().sum())
         summary["ambiguous"] = int(events["ambiguous"].sum())
+        summary["optimistic_flips"] = int((events["outcome"] != events["outcome_optimistic"]).sum())
     else:
+        summary["decided"] = int((events["close_end_pos"] >= 0).sum())
         summary["libraries_disagree_explained"] = int((~events["close_libraries_agree"]).sum())
+    if figure is not None:
+        if theme is None:
+            raise ValueError("--figure needs --theme (ALPHA's theme document, as JSON)")
+        numbers, frames = summarise(bars, params)
+        draw(bars, numbers, frames, json.loads(theme.read_text("utf-8")), figure, title)
+        summary["figure"] = figure.name
     return summary
 
 
@@ -100,6 +122,9 @@ def _parser() -> argparse.ArgumentParser:
     labels.add_argument("bars", type=Path)
     labels.add_argument("--out", type=Path, required=True)
     labels.add_argument("--basis", choices=("high_low", "close"), default="high_low")
+    labels.add_argument("--figure", type=Path, default=None, help="also write this PNG")
+    labels.add_argument("--theme", type=Path, default=None, help="figure theme document (JSON)")
+    labels.add_argument("--title", default="Daily bars", help="figure title prefix")
     defaults = LabelParams()
     for name in ("vol_span", "vol_min_bars", "momentum_bars", "horizon"):
         labels.add_argument(
@@ -140,7 +165,9 @@ def main(argv: list[str] | None = None) -> None:
                 sl=args.sl,
                 horizon=args.horizon,
             )
-            summary = run_labels(args.bars, args.out, args.basis, params)
+            summary = run_labels(
+                args.bars, args.out, args.basis, params, args.figure, args.theme, args.title
+            )
         else:
             summary = run_uniqueness(
                 args.events,

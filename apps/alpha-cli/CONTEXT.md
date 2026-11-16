@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 7774665928f6e6bd
+verified: 25ccae723d9babc7
 ---
 
 # alpha-cli workspace
@@ -53,7 +53,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
 | RD-Agent ledger | `rdagent_factor_eval` (ADR-0049), `_rdagent_clocks` (0050), `rdagent_exposure`, `rdagent_rule_family` (`python -m`) | `test_rdagent_*` |
-| Machine learning | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds` | `test_ml_*`, `test_forecast_*` |
+| Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |
 

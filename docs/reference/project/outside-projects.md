@@ -8,7 +8,7 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 5efbab81025daaa0
+verified: 4be27286a617a963
 ---
 
 # Outside projects: the register
@@ -48,7 +48,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | pandas | Tables at three named edges only | Imported in `alpha-data`, `alpha-validation`, `alpha-forecast` | In use | Some libraries speak only pandas |
 | numpy, SciPy | The arithmetic under the statistics | Imported in the numeric packages | In use | Standard, well tested |
 | PyArrow | Reads and writes Parquet data files | Imported in `alpha-cli` | In use | The file format of the store |
-| Matplotlib | Fixed, repeatable charts in reports | Imported in `alpha-research`, `alpha-validation`, `alpha-cli` | In use | Same picture every run |
+| Matplotlib | Fixed, repeatable charts | Imported in `alpha-research`, `alpha-validation`, `alpha-cli`; AFML worker | In use | Same picture every run |
 | quantstats-lumi | Draws one HTML performance report | Imported in `alpha-validation` (one file) | In use | Pictures only; never a judged number |
 | exchange_calendars | Knows each market's trading days | Imported in `alpha-data`, `alpha-cli` | In use | Use more: year length from the calendar |
 | yfinance | Free daily stock prices from Yahoo | Imported in `alpha-data` | In use | Free source for the Dell phase |

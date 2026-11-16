@@ -11,6 +11,7 @@ dependencies = [
     "pandas==2.3.3",
     "polars==1.41.2",
     "scipy==1.17.1",
+    "matplotlib==3.11.0",
 ]
 
 [tool.uv]
@@ -22,8 +23,6 @@ exclude-newer = "2026-11-02T00:00:00Z"
 alpha-afml-worker = "alpha_afml_worker.__main__:main"
 
 [dependency-groups]
-# Only the owner's picture (examples/owner_figure.py) needs this; the worker itself does not.
-figure = ["matplotlib==3.11.0"]
 dev = [
     "mypy==2.1.0",
     "pytest==9.1.0",

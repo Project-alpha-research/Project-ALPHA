@@ -5,7 +5,7 @@ sources:
   - workers/afml/examples/**
   - workers/afml/pyproject.toml
   - workers/afml/uv.lock
-verified: c67932e4c551b79a
+verified: 27911e5135d98acf
 ---
 
 # AFML worker workspace
@@ -41,7 +41,8 @@ project with its own lock; no ALPHA package imports it and it imports no ALPHA p
 - From `workers/afml`: `uv lock --check`, `uv sync --locked`, `uv run ruff check .`,
   `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
 - Or CI's job from the repository root: `uv run python scripts/gate.py component afml`.
-- The owner's picture: `uv run --group figure python examples/owner_figure.py --help`.
+- `alpha labels barrier|weights` calls this worker; its picture is `figure.py`. Real-data example:
+  `uv run python examples/owner_figure.py --help` (writes outside git).
 
 ## Outputs
 

@@ -14,6 +14,7 @@ const CATALOG_GROUPS = [
   'evidence',
   'forecast',
   'info',
+  'labels',
   'ml',
   'monte-carlo',
   'optim',

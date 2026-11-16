@@ -121,7 +121,7 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Nautilus as the pinned backtest engine | Working | `alpha-backtest` | Now | [engines] |
 | Kronos with real model files, not a stand-in | Unproven | `alpha-forecast` | Later | [kronos] |
 | Automatic checks covering the RD-Agent worker, with a scripted-model smoke run | Missing | backlog | Path 3 | [status] |
-| Textbook labels and overlap weights from two pinned libraries that must agree | Unproven | `workers/afml` | Now | [status] |
+| Textbook labels and overlap weights from two pinned libraries that must agree | Working | `alpha labels`, `workers/afml` | Now | [status] |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [engines]: ../reference/project/owner-decisions.md#2026-11-14-the-architecture-in-one-line

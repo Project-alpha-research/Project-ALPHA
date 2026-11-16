@@ -137,6 +137,7 @@ another package is named.
 | `research_executions/` | `research_execution` | Per-execution directories for governed research runs, keyed by execution digest. |
 | `diagnostics/` | `research_diagnostic_cmds` | Digest-keyed research diagnostic outputs. |
 | `scans/` | `scan_cmds` | Pattern/hypothesis scan outputs. |
+| `labels/` | `labels_cmds` | Immutable `alpha labels` result folders (AFML worker labels and weights), keyed by input hash. |
 | `rules/` | `rules_cmds` | Rule definitions and rule-run records. |
 | `strategy-workspaces/` | `project_workspace` | Disposable hash-only per-project workspace projections. |
 | `crypto/` | `crypto_data_cmds`, `_crypto_panel` | Crypto manifests, asset masters, coverage profiles/batches, backfill ledgers and `storage-config.json`. |

@@ -256,6 +256,7 @@ def test_shard_spec_rejects_out_of_range(bad: str) -> None:
         (["apps/alpha-web/frontend/src/App.tsx"], {"qlib": False, "literature": False}),
         (["workers/literature/src/x.py"], {"qlib": False, "literature": True, "afml": False}),
         (["workers/afml/src/alpha_afml_worker/labels.py"], {"qlib": False, "afml": True}),
+        (["apps/alpha-cli/src/alpha_cli/labels_cmds.py"], {"qlib": True, "afml": True}),
         (["apps/alpha-cli/src/alpha_cli/x.py"], {"qlib": True, "literature": False, "afml": False}),
         (["scripts/gate_components.py"], {"qlib": True, "literature": True, "afml": True}),
         ([".github/workflows/ci.yml"], {"qlib": True, "literature": True, "afml": True}),
@@ -330,3 +331,11 @@ def test_changed_line_floor_lives_in_pyproject_and_is_guarded() -> None:
     assert config["tool"]["diff_cover"]["fail_under"] == 85
     assert "fail_under" not in config["tool"]["coverage"]["report"]
     assert gate.harness_metrics(ROOT)["coverage_fail_under"] == 85
+
+
+def test_afml_component_ends_with_the_alpha_labels_smoke_check() -> None:
+    steps = gate_components.component_steps(ROOT, "afml")
+    name, cwd, command = steps[-1]
+    assert (name, cwd) == ("alpha labels smoke", ROOT)
+    assert "scripts/run_owned_test.py" in command
+    assert command[-1] == "tests/smoke/test_afml_labels_smoke.py"

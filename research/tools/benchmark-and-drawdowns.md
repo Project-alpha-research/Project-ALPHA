@@ -23,8 +23,8 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --figure drawdow
 - `benchmark` is buy and hold of the same asset on the same bars, with no costs. `strategy_minus_benchmark`
   holds the recorded differences. A rule that does not beat holding the asset: say that first.
 - `drawdowns.episodes` lists the five deepest falls: `start`, `trough`, `recovery`, `depth`,
-  `benchmark_return` over the same dates and `share_explained` (how much of the fall the asset itself
-  explains). A `null` there has a `reason`, such as "not recovered by the last bar".
+  `benchmark_return` over the same dates and `share_explained` (the asset's own fall divided by the rule's
+  fall; 0.5 or more raises `drawdown-with-market`). A `null` there has a reason under `reasons`.
 - `by_year` gives strategy and benchmark return per calendar year, partial years included, and
   `strategy_positive_years`. Profit that sits in one or two years is a finding.
 - Flags to expect: `below-benchmark`, `drawdown-with-market`.

@@ -40,7 +40,9 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 - an event study and random-date controls as plain commands (they exist only inside the older
   staged lane);
 - an answer checker, recorded comparisons between runs, a lessons search and counted variants;
-- short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars).
+- short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
+- the planned plain verbs that would wrap these tools (get, idea, tool, vary, learn, promote, and a
+  context command): none is a command yet, so never type one; use the cards above.
 
 ## How to change it
 

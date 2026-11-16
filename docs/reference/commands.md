@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-242 commands in 29 groups. Options marked (required) are
+244 commands in 29 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -334,7 +334,9 @@ Governed research cases, contracts, sources, and bounded runs.
 
 List rule tests and quote their stored results.
 
+- `alpha results check <PATH>` — Check a draft's tagged numbers and required labels against stored facts. Options: `--json`, `--allow-untagged`
 - `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
+- `alpha results compare <RUN_IDS>` — Compare stored values, differences and ratios, with bases and run labels. Options: `--metric`, `--json`
 - `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`
 
 ## alpha risk

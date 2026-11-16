@@ -148,7 +148,7 @@ this file holds the command-line specifics.
   data dimension. [ADR-0023](../../adr/0023-research-dataset-registration-and-quantpad-lane.md)
 - D1 and D2 load stock data only through `research_d1.load_registered_research_bars`: registered session-daily
   (1440-minute) bars, each available at its session end. Duplicates, disorder, incoherent OHLC or a non-daily
-  registration fail loud, and QuantPad intraday loading is refused until retention and licensing evidence exist.
+  registration fail loud, and QuantPad intraday loading is refused until retention evidence exists.
 - The crypto crowding lane re-verifies the bound qualified snapshot before every use (`research_crypto_binding.py`)
   and keeps the same mechanical-classification discipline as D1/D2. [ADR-0033](../../adr/0033-governed-crypto-crowding-research-and-sandbox-basis.md)
 - The hedged-basis development candidate is sandbox-only: `hedged_basis_paper_preflight` always returns BLOCKED with

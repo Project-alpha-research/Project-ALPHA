@@ -18,7 +18,7 @@ from alpha_cli.spine.audit import audit
 from alpha_cli.spine.diagnose import _publish
 from alpha_cli.spine.facts import build_facts
 from alpha_cli.spine.spec import IdeaSpec, Rule
-from alpha_cli.spine.stores import periods_per_year
+from alpha_cli.spine.stores import annualisation, periods_per_year
 from alpha_core import Bar, CorporateAction
 from alpha_data.timeframe import DAILY, parse_timeframe
 
@@ -282,3 +282,74 @@ def test_crash_after_staged_manifest_leaves_final_run_absent(
         run._execute(idea, prepared, home, _gauntlet.GauntletParams(), "test-id", result)
     assert not final.exists()
     assert result["run_dir"] == str(final)
+
+
+def test_one_weekend_bar_does_not_make_a_stock_trade_weekends() -> None:
+    stamps = [
+        START + timedelta(days=day, hours=hour)
+        for day in range(56)
+        if (START + timedelta(days=day)).weekday() < 5
+        for hour in range(8)
+    ]
+    stamps.append(stamps[-1] + timedelta(days=1))  # one stray Saturday bar
+    stamps = sorted(set(stamps))
+    ppy, basis = annualisation(stamps, bar_size=parse_timeframe("1h"))
+    assert ppy == 8 * 252
+    assert "weekdays" not in basis and "2% of bar dates fall on weekends" in basis
+
+
+def test_hourly_crypto_stays_365_and_records_weekend_share() -> None:
+    stamps = [START + timedelta(hours=i) for i in range(24 * 60)]
+    ppy, basis = annualisation(stamps, bar_size=parse_timeframe("1h"))
+    assert ppy == 24 * 365
+    assert "27% of bar dates fall on weekends" in basis
+
+
+@pytest.mark.parametrize(
+    "profits,wording",
+    [
+        ([9.0, 8.0, 7.0, -8.0], "made 1.5 times the total profit; the rest lost money overall"),
+        ([5.0, 4.0, 3.0, 1.0], "contributed 92% of total profit"),
+    ],
+)
+def test_top_trades_flag_never_calls_a_multiple_a_share(profits: list[float], wording: str) -> None:
+    concentration = diagnostics.concentration(profits)
+    sections = {
+        "full_sample": {"sharpe": 1},
+        "benchmark": {"sharpe": 1},
+        "drawdowns": {"episodes": []},
+        "concentration": concentration,
+        "sensitivity": {"variants": []},
+        "delay": {"base_sharpe": None, "delayed_sharpe": None},
+    }
+    detail = diagnostics.flags(sections)[0]["detail"]
+    assert wording in detail
+    assert concentration["top_3"] == pytest.approx(sum(sorted(profits)[-3:]) / sum(profits))
+
+
+def test_no_printed_or_stored_path_names_the_staging_folder(
+    publication: Publication, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    home, idea, prepared, result, final = publication
+
+    def write(
+        home: Path,
+        bars: list[Bar],
+        spec: _runner.RunSpec,
+        out: SimpleNamespace,
+        identity: RunIdentity,
+        *,
+        extra_manifest: dict[str, Any],
+    ) -> tuple[Path, dict[str, Any]]:
+        directory = home / "runs" / identity.run_id
+        print(f"HTML report saved to: {directory}/.tearsheet.html.x.tmp")
+        manifest = {"run_id": identity.run_id, **extra_manifest}
+        (directory / "manifest.json").write_text(json.dumps(manifest))
+        return directory, manifest
+
+    monkeypatch.setattr(run, "write_validation_run", write)
+    run._execute(idea, prepared, home, _gauntlet.GauntletParams(), "test-id", result)
+    printed = capsys.readouterr().out
+    assert f"HTML report saved to: {final}/tearsheet.html" in printed
+    stored = json.dumps(result) + (final / "manifest.json").read_text()
+    assert ".pending-" not in printed + stored

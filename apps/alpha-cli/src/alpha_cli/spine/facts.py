@@ -31,7 +31,7 @@ METRICS = {
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
-    "top_3_profit_share": "Share of total closed profit from the largest three trades.",
+    "top_3_profit_share": "Top three trades vs total profit; above 1 if the rest lost.",
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
     "total_trials": "Ledger trial count observed for this diagnostic pass.",

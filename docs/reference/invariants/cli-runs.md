@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: ec630bf03bca905a
+verified: fe32a8f69620f501
 ---
 
 # Command line runs invariants
@@ -115,8 +115,8 @@ and how it names and publishes immutable runs. Project-wide rules:
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
   name, idea, rule, store and integrity labels; `source` identifies the resolved provider. Annualisation records a basis:
-  daily bars retain elapsed-year inference and 252/365 snaps; intraday uses median bars per occupied date times 365
-  if weekends occur, otherwise 252. Known bar sizes are explicit. These descriptive manifest fields are outside identity.
+  daily bars retain elapsed-year inference and 252/365 snaps; intraday uses median bars per trading date times 365
+  when 20% or more of bar dates are weekends, otherwise 252 (weekdays only); the basis records the weekend share (outside identity).
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts
   without rewriting them and appends a `repeat` trial; the manifest retains its original test association.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync;
@@ -134,7 +134,7 @@ and how it names and publishes immutable runs. Project-wide rules:
   `diagnostics.json` stores benchmarks, drawdowns, calendar returns, concentration, counted variants, trial-adjusted Sharpe and flags.
   The macro window uses stored FRED series at the drawdown start and trough, as known at the trough (`spine/macro.py`).
   Unavailability has a plain-English reason and separate technical detail. Flags are observations; unavailable numbers are null with reasons.
-  The retained `share_explained` field is benchmark fall / strategy fall on the same dates; flag wording calls it a ratio.
+  The retained `share_explained` field is benchmark fall / strategy fall on the same dates; flags call it a ratio; a top-three profit above 1 is a multiple.
 - Audits have independent PASS / FLAG / NOT-CHECKED entries, no overall grade, and walk-forward traces.
   Fill ranges allow recorded slippage, or are NOT-CHECKED when cost settings are absent.
   The final manifest verifies all sidecars. Spine `data_period` and `traded_period` facts name loaded-bar and stored-equity endpoints.

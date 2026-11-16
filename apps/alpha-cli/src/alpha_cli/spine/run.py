@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import hashlib
+import io
 import json
 import math
 from dataclasses import dataclass, replace
@@ -16,7 +18,7 @@ from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
-from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.timeframe import DAILY
@@ -84,9 +86,9 @@ def _prepare(
     )
     if (bars[-1].ts - bars[0].ts).total_seconds() < 3 * 365.25 * 86400:
         result["labels"].append("short-history")
-    ppy = periods_per_year([bar.ts for bar in bars], bar_size=DAILY)
+    ppy, basis = annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
-    result["periods_per_year_basis"] = "elapsed calendar years; daily snap to 252 or 365"
+    result["periods_per_year_basis"] = basis
     spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars))
     identity = _runner.run_identity_for(
         {
@@ -120,8 +122,14 @@ def _execute(
         manifest = _artifacts.read_manifest(rdir)
         result["labels"].append("repeat")
     else:
-        with staged_run(result) as staged_home:
+        printed = io.StringIO()
+        with staged_run(result) as staged_home, contextlib.redirect_stdout(printed):
             manifest = _write_run(idea, prepared, home, staged_home, knobs, test_id, result)
+        # The report library names the staging folder; say only where the run really is.
+        for line in printed.getvalue().splitlines():
+            if not line.startswith("HTML report saved to:"):
+                print(line)
+        print(f"HTML report saved to: {rdir / 'tearsheet.html'}")
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(

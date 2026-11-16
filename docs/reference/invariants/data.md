@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 4c249969061e
+verified: fbd2d49ca3ad0595
 ---
 
 # Data layer invariants
@@ -27,7 +27,7 @@ stated once in [research integrity](research-integrity.md); this file holds the 
   `crypto/features.py` re-implements `alpha_patterns.vsa.rolling_ols_residual`; parity is pinned in
   `tests/unit/test_crypto_defi_tvl_feature.py`.
 - pandas appears only in `adapters/yfinance_adapter.py` — [engineering § Polars by default](engineering.md#polars-by-default).
-- No commands or composition here; `alpha_cli` composes data operations.
+- Commands and composition live in `alpha_cli`, not here. FRED vintages (`context/`) stay apart from bars: [data layer](../project/components/data-layer.md).
 
 ## Point-in-time store
 

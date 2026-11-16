@@ -4,7 +4,7 @@ sources:
   - .github/pull_request_template.md
   - scripts/handoff.py
   - scripts/status.py
-verified: af0137c5fd74
+verified: 72dcc9fd47166abd
 ---
 
 # Stage 05 — land: pull request to merged and closed
@@ -36,8 +36,8 @@ record of the task.
    Fix every failing job on the branch; mark the pull request ready only when CI is green. Review
    by another model goes on the pull request and is advisory.
 4. The orchestrating session merges once `ci-ok` is green and the branch is up to date:
-   `gh pr merge <n> --merge` (a merge commit, never squash or rebase: documents pin `verified:`
-   commits). The owner delegated routine merging on 2026-11-14. It grants nothing else: research
+   `gh pr merge <n> --merge` (a merge commit, never squash or rebase).
+   The owner delegated routine merging on 2026-11-14. It grants nothing else: research
    approvals, branch protection, required checks and credentials stay with the owner. When the
    change altered what a capability does, update its block in `docs/roadmap/capabilities.toml`
    and run `uv run python scripts/status.py` on the branch before merging.

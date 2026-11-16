@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_gate_packet.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
-verified: bdd1a2a989f8
+verified: f1e49fa0a52a0a2d
 ---
 
 # Stage 06 — decide: the owner's outcome and disposition

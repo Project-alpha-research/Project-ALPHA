@@ -1,9 +1,8 @@
 ---
 owner: status page and roadmap
 sources:
-  - docs/roadmap/capabilities.toml
   - docs/reference/project/owner-decisions-3.md
-verified: 6d941562006a
+verified: e3b0c44298fc1c14
 ---
 
 # Production-ready scope: the one checklist
@@ -14,7 +13,7 @@ shown on a screen, or carries an owner decision that drops it. "Production grade
 words is in the [decisions log][grade]; what works today is on [STATUS.md][status]. This file
 changes no capability state: the [capability map](capabilities.toml) stays the source for those.
 Stages 5 to 9 are in [part 2](production-scope-2.md); stages 10 to 12, the lost-feature check
-and the open questions for the owner are in [part 3](production-scope-3.md).
+and the questions put to the owner are in [part 3](production-scope-3.md).
 
 ## How to read a row
 
@@ -50,24 +49,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-159 capabilities: 31 working, 51 built but unproven, 75 missing, 1 to rebuild,
+159 capabilities: 31 working, 55 built but unproven, 71 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 2 | 8 | 0 | 0 |
-| 2. Data and context | 3 | 8 | 11 | 0 | 0 |
+| 2. Data and context | 3 | 11 | 8 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 6 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
 | 6. Diagnostics | 4 | 6 | 7 | 0 | 0 |
 | 7. Records and memory | 2 | 5 | 7 | 0 | 1 |
 | 8. AI partner | 1 | 5 | 6 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 3 | 2 | 9 | 0 | 0 |
+| 9. RD-Agent and Qlib engines | 3 | 3 | 8 | 0 | 0 |
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **31** | **51** | **75** | **1** | **1** |
+| **All** | **31** | **55** | **71** | **1** | **1** |
 
 ## 1. Idea
 
@@ -98,15 +97,15 @@ Prices, the universe, and the context a trader needs around them.
 | Completeness check on downloaded bars | Working | `alpha-data` | Now | [status] |
 | Check a whole history and freeze a date range in one step each | Missing | backlog | Path 1 | [status] |
 | Daily stock and ETF bars from a free source, frozen and verified | Unproven | `alpha-data` | Path 1 | [free] |
-| Any bar size from one minute up; the daily-only refusal removed | Missing | `alpha-data` adapters | Path 1 | [any-bar] |
-| Year length taken from the calendar (crypto trades 365 days), not fixed at 252 | Unproven | `alpha test` only; elsewhere still 252 | Path 1 | [precise] |
-| Intraday bars on disk: crypto hourly and 5-minute first, stocks after | Missing | `alpha-data`; backlog | Path 2 | [any-bar] |
+| Any bar size from one minute up; the daily-only refusal removed | Unproven | `alpha-data`, `alpha-backtest`; PRs #185, #189, #194 (merged) | Path 1 | [any-bar] |
+| Year length taken from the calendar (crypto trades 365 days), not fixed at 252 | Unproven | `alpha test`; intraday backtests from bar size and session; daily backtests still 252 | Path 1 | [precise] |
+| Intraday bars on disk: crypto hourly and 5-minute first, stocks after | Unproven | `data-intraday` folder: BTC/ETH 1h and 5m, SPY/AAPL 5m and 1h (2026-11-14) | Path 2 | [any-bar] |
 | Universe as it was on each date, delisted coins included; survivor bias labelled | Missing | `alpha-data` | Path 3 | private |
 | Reads see only what was known then; snapshots and receipts never change | Working | `alpha-data` | Now | [precise] |
 | Large names and coins, and products funds cannot trade, both in scope | Unproven | `alpha-data` | Path 3 | [retail] |
 | One price series per source kept apart automatically; differences shown as a label | Unproven | `alpha-data` | Path 1 | [thin] |
 | Benchmarks and sector funds stored for comparison (market, size, sectors, BTC, a basket) | Unproven | `alpha-data` | Path 1 | [partner] |
-| Macro series as first published: rates, inflation, jobs, credit, volatility index | Missing | new adapter | Later | [partner] |
+| Macro series as first published: rates, inflation, jobs, credit, volatility index | Unproven | `alpha-data` `context/` | Later | [partner] |
 | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Missing | small checked files | Later | [partner] |
 | Crypto context: funding rates, open interest, listings | Unproven | `alpha-data` (shelved) | Later | [triage] |
 | Company fundamentals by filing date, for value-plus-quant ideas | Missing | backlog; Qlib | Later | private |
@@ -148,7 +147,7 @@ Simulating the idea with costs, against the right comparison.
 | Plain answer to "is this mostly the market?" beside every result | Unproven | rule-test report: buy-and-hold table and drawdown flag | Path 1 | [partner] |
 | Twins of a test: sizing changed only, or one filter removed | Missing | new `alpha vary` | Path 1 | private |
 | Variants compared at the same capital and risk | Missing | `alpha-backtest` | Later | private |
-| Daily decision with intraday entry timing | Missing | Nautilus or Qlib | Path 2 | [any-bar] |
+| Daily decision with intraday entry timing | Missing | `align_as_known` exists (PR #189); not yet usable from rules or strategies | Path 2 | [any-bar] |
 | Machine-learning models trained by Qlib and replayed with costs | Working | `workers/qlib` | Now | [status] |
 | Strategy development workspace (fixed approved steps) | Unproven | `alpha-strategies` | Later | [status] |
 

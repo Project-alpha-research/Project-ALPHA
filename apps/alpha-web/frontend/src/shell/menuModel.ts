@@ -25,12 +25,12 @@ export type MenuName = (typeof MENUS)[number]
 /** CLI command group → menu. Every group `alpha info commands` can emit must appear here. */
 export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   report: 'File',
-  results: 'File',
   'owner-auth': 'File',
   project: 'Edit',
   suite: 'Edit',
   evidence: 'Insert',
   data: 'Data',
+  context: 'Data',
   'crypto-data': 'Data',
   provider: 'Data',
   research: 'Research',
@@ -43,6 +43,7 @@ export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   backtest: 'Backtest',
   validate: 'Backtest',
   test: 'Backtest',
+  results: 'Backtest',
   diagnose: 'Backtest',
   'monte-carlo': 'Backtest',
   propfirm: 'Backtest',

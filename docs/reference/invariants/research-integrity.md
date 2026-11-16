@@ -9,7 +9,7 @@ sources:
   - scripts/claude_hooks.py
   - tests/bias_guards/**
   - tests/oracles/**
-verified: f60347e45cef
+verified: 1ec6b9e0dccff072
 ---
 
 # Research integrity
@@ -23,6 +23,9 @@ an ADR, never a quiet code change.
 - Every data or strategy read goes through a point-in-time `as_of` accessor with a timezone-aware
   UTC cutoff — a result must only use what was knowable at that moment.
   [ADR-0005](../../adr/0005-point-in-time-firewall.md)
+- A bar is known only at its close: a stored bar's `ts` is its interval start, so an intraday read
+  keeps `ts + duration <= as_of`, and a coarser bar joins a finer one only once it has closed
+  ([bar timeframes](data-bar-timeframes.md#reading-intraday-bars)).
 - Every data or strategy unit gets a `@pytest.mark.bias_guard` future-poison test: corrupt the data
   after the cutoff and prove the output does not change. Each guard has a must-fail leaky twin, so a
   guard that tests nothing is itself caught. Pattern: `tests/bias_guards/test_future_poison_pattern.py`.

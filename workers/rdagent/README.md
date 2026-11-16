@@ -616,13 +616,23 @@ carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself sub
 limit. The match is approximate and over-inclusive: a stray family word adds a family, never
 removes one.
 
-Local embedding calls still count toward the 60-call cap. When a coding-memory embedding fails,
+Local embeddings are free and are not counted toward the 60-call cap (owner decision 2026-11-17).
+Only the gateway's built-in local embedding backends are exempt, never a caller flag or model name.
+Their attempts, including chunk retries, have a separate per-run limit of 2,000
+(`LOCAL_EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted` and stops the run.
+All chat calls (including Codex), provider embeddings and paid retries remain counted; the
+60-call, USD 10 per-run and USD 50 monthly limits keep their values. When a coding-memory embedding fails,
 the coder looks at that request's own error (RD-Agent's retry wrapper otherwise hides it): a
 budget refusal stops the worker at once (`BudgetExhausted`) and the receipt names the cap; only
 an input the local embedding model refused is skipped and logged with that cause in
 `memory-skips.jsonl`; any other error stops the run. The receipt's `call_split` shows
-`local_embedding` and `model_chat` attempts (summing to `counted_toward_call_cap`) and
-`timeout_retry_attempts`, the reserved attempts that retried a provider timeout.
+`local_embedding`, `model_chat` and `provider_embedding` attempts and `timeout_retry_attempts`,
+the reserved attempts that retried a provider timeout. Receipt fields `counted_calls` and
+`local_embedding_calls` come from the reserved budget, even if a call was not logged. Monthly
+status separates them too; `calls` remains the compatible alias for counted calls. Unavailable
+receipt counts are null. Old state and logs without the new fields keep past embeddings counted;
+old receipts remain readable and unchanged. The split's `counted_toward_call_cap` aliases
+`counted_calls`, and `local_embedding_calls` counts only exempt attempts.
 `--coding-reasoning-tokens` exists but must stay unset: OpenRouter documents `reasoning.max_tokens`,
 but whether the pinned model's providers honour it (the gateway sends `require_parameters`) is
 unconfirmed without a paid call, and the gateway cannot yet tell a coding call from others, so
@@ -760,7 +770,7 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   memory, three without, comparing `deepseek/deepseek-v4-pro-0813` at 0.111 / 4.44 and
   `deepseek/deepseek-v4-flash-0731` at 0.06 / 0.18) cost USD 0.66 in all, judged 18 factors and
   found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
-  calls count toward it), one after a stuck call; replies that reason for 8-12 minutes and return
+  calls counted toward it at the time), one after a stuck call; replies that reason for 8-12 minutes and return
   no text (`invalid_provider_response`) occurred in every run.
 - Embeddings stay on local Ollama on both routes.
 - Not yet: supervision by `alpha`'s native job supervisor

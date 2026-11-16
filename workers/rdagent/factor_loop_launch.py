@@ -561,6 +561,12 @@ class Launch:
             if evaluations.exists()
             else None,
         )
+        counters = self.receipt["gateway_status"].get("this_run") or {}
+        self.receipt.update(
+            counted_calls=counters.get("counted_calls", counters.get("calls")),
+            local_embedding_calls=counters.get("local_embedding_calls", 0) if counters else None,
+            call_cap_note="Local embeddings are free and are not counted toward the 60-call cap.",
+        )
         self.receipt["memory"] = (
             research_memory.record(
                 self.memory_plan,
@@ -578,13 +584,13 @@ class Launch:
 
 
 def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
-    """Paid model calls versus free local embedding calls, as the gateway logged them.
-
-    Every attempt counts toward the run's call cap (unchanged); this only shows the owner the split.
-    """
+    """Separate exempt attempts; old logs retain their original counted-call accounting."""
     split: dict[str, Any] = {
         "model_chat": {"requests": 0, "attempts": 0, "usd": 0.0},
         "local_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "provider_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "counted_calls": 0,
+        "local_embedding_calls": 0,
         "provider_timeouts": 0,
         "empty_or_invalid_replies": 0,
         "retried_attempts": 0,
@@ -595,6 +601,8 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
     }
     for call in calls:
         kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
+        if kind == "local_embedding" and call.get("local_embedding") is False:
+            kind = "provider_embedding"
         split[kind]["requests"] += 1
         split[kind]["attempts"] += int(call.get("attempts") or 0)
         split[kind]["usd"] += float(call.get("usd") or 0.0)
@@ -604,6 +612,9 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         split["provider_timeouts"] += errors.count("provider_timeout")
         split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
         attempts = int(call.get("attempts") or 0)
+        split[
+            "local_embedding_calls" if call.get("local_embedding") is True else "counted_calls"
+        ] += attempts
         split["retried_attempts"] += max(0, attempts - 1)
         split["timeout_retry_attempts"] += int(
             call.get(
@@ -613,16 +624,22 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         if call.get("status") != 200:
             code = str(call.get("error_code"))
             split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
-    split["counted_toward_call_cap"] = (
-        split["model_chat"]["attempts"] + split["local_embedding"]["attempts"]
-    )
+    split["counted_toward_call_cap"] = split["counted_calls"]
     return split
 
 
 def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
     """A plain reason for a failed loop; names the call cap when the run used all of it."""
+    from model_gateway import LOCAL_EMBEDDING_CALLS_PER_RUN
+
     this_run = gateway_state.get("this_run") if isinstance(gateway_state, dict) else None
-    calls = (this_run or {}).get("calls") or 0
+    local = (this_run or {}).get("local_embedding_calls", 0)
+    if local >= LOCAL_EMBEDDING_CALLS_PER_RUN:
+        return (
+            f"loop exit {code}: local embedding limit reached "
+            f"(LOCAL_EMBEDDING_CALLS_PER_RUN: {local})"
+        )
+    calls = (this_run or {}).get("counted_calls", (this_run or {}).get("calls")) or 0
     if calls >= args.run_max_calls:
         return f"loop exit {code}: model call cap reached ({calls} of {args.run_max_calls} calls)"
     return f"loop exit {code}"

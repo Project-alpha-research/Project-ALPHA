@@ -1,7 +1,4 @@
-"""Local, budgeted model boundary for the isolated RD-Agent worker.
-
-Run directly; neither RD-Agent nor ALPHA is imported into this process.
-"""
+"""Local RD-Agent model boundary; run directly without importing RD-Agent or ALPHA."""
 
 from __future__ import annotations
 
@@ -54,6 +51,7 @@ GATEWAY_DISABLED_FEATURES = (
     "workspace_dependencies",
     "code_mode_host",
 )
+LOCAL_EMBEDDING_CALLS_PER_RUN = 2000
 MAX_BODY = 4 * 1024 * 1024
 
 
@@ -88,18 +86,16 @@ class GatewayError(Exception):
         self.tool_events = tool_events
 
     def body(self) -> dict[str, Any]:
-        return (
-            self.payload
-            if self.payload is not None
-            else {
-                "error": {
-                    "message": self.message,
-                    "type": "invalid_request_error" if self.status < 500 else "gateway_error",
-                    "code": self.code,
-                    "param": self.param,
-                }
+        if self.payload is not None:
+            return self.payload
+        return {
+            "error": {
+                "message": self.message,
+                "type": "invalid_request_error" if self.status < 500 else "gateway_error",
+                "code": self.code,
+                "param": self.param,
             }
-        )
+        }
 
 
 def unsupported(param: str, reason: str) -> GatewayError:
@@ -263,7 +259,10 @@ class Budget:
                     if (
                         not key
                         or not isinstance(entry, dict)
-                        or set(entry) != {"calls", "usd"}
+                        or set(entry)
+                        not in ({"calls", "usd"}, {"calls", "usd", "local_embedding_calls"})
+                        or type(entry.get("local_embedding_calls", 0)) is not int
+                        or entry.get("local_embedding_calls", 0) < 0
                         or type(entry["calls"]) is not int
                         or entry["calls"] < 0
                         or type(entry["usd"]) not in (int, float)
@@ -296,14 +295,32 @@ class Budget:
 
     def status(self) -> dict[str, Any]:
         with self.locked():
-            return self.read()
+            state = self.read()
+            for group in ("runs", "months"):
+                for entry in state[group].values():
+                    entry.update(counted_calls=entry["calls"])
+                    entry.setdefault("local_embedding_calls", 0)
+            return state
 
-    def reserve(self, usd: float) -> tuple[str, str, float]:
+    def reserve(self, usd: float, *, local_embedding: bool = False) -> tuple[str, str, float]:
+        if local_embedding and usd != 0:
+            raise ValueError("local embeddings must have zero provider cost")
         current_month, run = month(), self.settings.run_id
         with self.locked():
             state = self.read()
             for group, key, prefix in (("runs", run, "run"), ("months", current_month, "month")):
                 entry = state[group].setdefault(key, {"calls": 0, "usd": 0.0})
+                entry.setdefault("local_embedding_calls", 0)
+                if local_embedding:
+                    limit = LOCAL_EMBEDDING_CALLS_PER_RUN
+                    if prefix == "run" and entry["local_embedding_calls"] >= limit:
+                        raise GatewayError(
+                            429,
+                            "budget_exhausted",
+                            f"local embedding limit LOCAL_EMBEDDING_CALLS_PER_RUN ({limit})",
+                        )
+                    entry["local_embedding_calls"] += 1
+                    continue
                 for field, increment in (("calls", 1), ("usd", usd)):
                     cap = f"{prefix}_max_{field}"
                     if entry[field] + increment > getattr(self.settings, cap):
@@ -345,6 +362,7 @@ class EmbeddingResult:
     vectors: list[list[float]]
     model: str
     tokens: int | None = None
+    usd: float = 0.0
 
 
 class ChatBackend(Protocol):
@@ -622,12 +640,8 @@ PROVIDER_RETRYABLE = ("provider_timeout", "invalid_provider_response")
 def post_json(
     url: str, body: dict[str, Any], key: str | None = None, timeout: float = 900
 ) -> dict[str, Any]:
-    """POST and read the whole reply within ``timeout`` seconds in all, or provider_timeout.
-
-    A socket timeout alone bounds each read, not the call: a provider that keeps the connection
-    alive while it thinks could hold it for many minutes. The call runs in a daemon thread and is
-    abandoned at the deadline (its connection closes when the process ends or the reply arrives).
-    """
+    """Bound the whole call; abandon its daemon thread at the deadline.
+    The connection closes when the process ends or the reply arrives."""
     box: dict[str, Any] = {}
 
     def call() -> None:
@@ -712,9 +726,7 @@ class ApiChat:
                 **{k: v for k, v in request.items() if k != "stream_options"},
                 "model": s.api_model,
                 "stream": False,
-                # OpenRouter: route only to providers that honour every parameter sent (so
-                # temperature and response_format are not dropped silently) and return the
-                # charged cost in usage.
+                # Require parameter fidelity and the provider's charged cost in usage.
                 **(
                     {"provider": {"require_parameters": True}, "usage": {"include": True}}
                     if s.api_openrouter
@@ -812,7 +824,6 @@ class Gateway:
         embedding_backend: EmbeddingBackend | None = None,
     ) -> None:
         self.settings = settings
-        settings.validate()
         self.budget = Budget(settings)
         self.chat_backend: ChatBackend
         if chat_backend is not None:
@@ -849,6 +860,7 @@ class Gateway:
             run_id=s.run_id,
             endpoint=endpoint,
             route=route,
+            local_embedding=False,
             requested_model=request.get("model"),
             model_used=model,
             effort=None,
@@ -1175,6 +1187,21 @@ class Gateway:
             owners += [index] * len(parts)
         return pieces, owners
 
+    def embedding_attempt(self, inputs: list[str], row: dict[str, Any]) -> EmbeddingResult:
+        local = type(self.embedding_backend) in (OllamaEmbeddings, FakeEmbeddings)
+        row["local_embedding"] = local
+        reserve = 0.0
+        if not local:
+            reserve = sum(map(len, inputs)) * (self.settings.api_price_in_per_mtok or 0) / 4e6
+        ticket = self.budget.reserve(reserve, local_embedding=local)
+        row["attempts"] += 1
+        row["usd"] += reserve
+        result = self.embedding_backend.embed(inputs)
+        if not local:
+            self.budget.settle(ticket, result.usd)
+            row["usd"] += result.usd - reserve
+        return result
+
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
         row = self.record("/v1/embeddings", request)
         start = time.monotonic()
@@ -1197,10 +1224,8 @@ class Gateway:
             prompt = json.dumps(inputs, ensure_ascii=False)
             row.update(prompt_sha256=digest(prompt), prompt_chars=sum(map(len, inputs)))
             with self.slot(row):
-                ticket = self.budget.reserve(0)
-                row["attempts"] += 1
                 try:
-                    result = self.embedding_backend.embed(inputs)
+                    result = self.embedding_attempt(inputs, row)
                     pieces = None
                 except GatewayError as exc:
                     if exc.status != 400 or not any(
@@ -1209,15 +1234,8 @@ class Gateway:
                         raise
                     row["provider_errors"].append(exc.code)
                     pieces, owners = self.chunked(inputs, row)
-                finally:
-                    self.budget.settle(ticket, 0)
                 if pieces is not None:
-                    ticket = self.budget.reserve(0)  # the second attempt counts like any other
-                    row["attempts"] += 1
-                    try:
-                        result = self.embedding_backend.embed(pieces)
-                    finally:
-                        self.budget.settle(ticket, 0)
+                    result = self.embedding_attempt(pieces, row)
                     result.vectors = mean_by_owner(result.vectors, owners, len(inputs))
             reply = json.dumps(result.vectors)
             row.update(
@@ -1289,23 +1307,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         self.dispatch()
 
-    def do_POST(self) -> None:
-        self.dispatch()
-
-    def do_PUT(self) -> None:
-        self.dispatch()
-
-    def do_DELETE(self) -> None:
-        self.dispatch()
-
-    def do_PATCH(self) -> None:
-        self.dispatch()
-
-    def do_HEAD(self) -> None:
-        self.dispatch()
-
-    def do_OPTIONS(self) -> None:
-        self.dispatch()
+    do_POST = do_PUT = do_DELETE = do_PATCH = do_HEAD = do_OPTIONS = do_GET
 
     def dispatch(self) -> None:
         gateway = self.server.gateway

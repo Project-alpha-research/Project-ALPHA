@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: c8b30e3f7bebd260
+verified: d0ba8aeb2785d0b0
 ---
 
 # RD-Agent
@@ -127,9 +127,10 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials;
   two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
-  candidate. Open for the owner: whether free local embeddings should count toward the 60-call cap
-  (they were 21 of 60 and 16 of 47 calls), and a data pull to widen the universe (the stores hold
-  15 coins and 9 single stocks). Long memory embeddings are now chunked, never truncated.
+  candidate. Embeddings were 21 of 60 and 16 of 47 counted calls in those runs. Decided by the owner
+  2026-11-17: free local embeddings are exempt, with their own 2,000-attempt guard; the other caps
+  keep their values. Historical counts stay as recorded. A wider universe still needs a data pull
+  (the stores hold 15 coins and 9 single stocks). Long memory embeddings are chunked, never truncated.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

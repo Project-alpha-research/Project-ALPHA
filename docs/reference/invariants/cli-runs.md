@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 744017ae25c25fc1
+verified: 8721de7f02d2e616
 ---
 
 # Command line runs invariants
@@ -146,8 +146,8 @@ and how it names and publishes immutable runs. Project-wide rules:
   sensitivity re-runs separately from the append-only row index.
 - `results show <test_id>` shows every asset that completed and lists each one that did not, or
   whose stored run could not be read, under `failed` with a reason; naming one run still fails loud.
-- `alpha tool attribution|regimes|changepoints` describe one recorded rule test without changing it:
-  [investigation tools](cli-investigation-tools.md).
+- `alpha tool attribution|regimes|changepoints` describe a recorded rule test: [investigation tools](cli-investigation-tools.md).
+- `alpha results check|compare`: [draft checks and run comparisons](cli-results-check.md).
 
 ## Suites
 

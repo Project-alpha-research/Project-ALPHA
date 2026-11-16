@@ -1007,8 +1007,8 @@ docs = ["docs/reference/project/components/data-layer.md"]
 id = "rule-test"
 name = "Test a trading rule on several assets with one command"
 what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger."
-see_it = ["uv run alpha test spec.toml --quick --json", "Workstation: Run Browser"]
-entry_points = ["cli: alpha test"]
+see_it = ["uv run alpha test spec.toml --quick --json", "Workstation: Results, open the run's Report"]
+entry_points = ["cli: alpha test", "panel: apps/alpha-web/frontend/src/panels/rundetail/RuleTestReport.tsx"]
 proof_synthetic = ["tests/unit/test_spine_spec.py::test_run_records_errors_and_continues"]
 proof_smoke = ["tests/smoke/test_rule_test_smoke.py::test_rule_test_records_two_assets"]
 real_data = "not yet confirmed; development-machine results are labelled"
@@ -1043,3 +1043,16 @@ real_data = "yes, development machine: SPY and BTC/USDT 50/200 moving-average ru
 needs = []
 state = "Working"
 docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
+
+[[capability]]
+id = "answer-check"
+name = "Check an answer's numbers against the records"
+what = "Check drafted numbers and required run labels against stored facts, and compare runs with computed differences."
+see_it = ["alpha results check answer.md --json", "alpha results compare <run_id> <run_id> --json"]
+entry_points = ["cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_check.py::test_correct_answer", "tests/unit/test_spine_compare.py::test_comparison_arithmetic_and_provenance"]
+proof_smoke = ["tests/smoke/test_rule_check_smoke.py::test_rule_answer_check_and_compare"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md"]

@@ -11,6 +11,7 @@ export type RunContextV1 =
 export type RunListItem = Schema['RunListItem']
 export type RunList = Schema['RunList']
 export type RunDetail = Schema['RunDetail']
+export type RuleTest = Schema['RuleTest']
 export type EquitySeries = Schema['EquitySeries']
 export type ForecastSeries = Schema['ForecastSeries']
 export type NullTiers = Schema['NullTiers']

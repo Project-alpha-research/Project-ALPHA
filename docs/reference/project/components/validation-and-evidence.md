@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: 0edde840ecf6f2af
+verified: d5c9404da1f2ff93
 ---
 
 # Validation and evidence
@@ -42,6 +42,10 @@ concentration, sensitivity re-runs and explicitly counted variants. The owner ca
 through `alpha results` and `alpha diagnose`; flags identify observations to examine and grant no
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
 retain the basis and source for each number, including a reason when it is unavailable.
+`alpha results check <file>` reads a drafted answer and verifies each tagged number, run label
+and the trial count against those stored facts, and `alpha results compare` computes differences
+between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad
+reasoning.
 
 Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
 questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
@@ -55,7 +59,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `investigation-tools`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
+  `investigation-tools`, `answer-check`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

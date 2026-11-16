@@ -66,7 +66,8 @@ What is kept, how it is labelled, and what the system remembers.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | Reopen any stored run with its report | Working | `alpha-cli` reports | Now | [status] |
-| Figures exported and runs compared side by side | Unproven | `alpha-cli` reports | Path 1 | [status] |
+| Runs compared side by side, differences computed by code (`alpha results compare`) | Working | `alpha-cli` results | Now | [status] |
+| Figures exported for a run | Unproven | `alpha-cli` reports | Path 1 | [status] |
 | One folder per idea linking the question, the spec and every run | Missing | data folder | Path 1 | [partner] |
 | Investigation trail per idea: seen, considered, tested, learned, next | Missing | data folder | Path 1 | [partner] |
 | Lessons written down, searched before each proposal, pruned weekly | Missing | new `research/lessons` | Path 1 | [partner] |
@@ -91,7 +92,8 @@ The AI as a research partner that drives the toolbox from a prompt.
 | One-page research playbook that teaches a method, not a script | Missing | new `research/` | Path 1 | [partner] |
 | Tool cards indexed by symptom, so the AI finds a tool it was never told about | Missing | new `research/tools` | Path 1 | [partner] |
 | The AI proposes next steps with reason, value and cost; says when evidence disagrees | Missing | playbook | Path 1 | [partner] |
-| Every number in an answer comes from an executed run | Unproven | playbook; gateway | Path 1 | [precise] |
+| A drafted answer's tagged numbers and run labels checked against the stored records (`alpha results check`; not the reasoning) | Working | `alpha-cli` results | Now | [precise] |
+| The AI must run that check on every draft before sending it | Missing | playbook; gateway | Path 1 | [precise] |
 | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs | Unproven | `apps/alpha-mcp` | Path 1 | [grade] |
 | Connection for the Claude and ChatGPT apps, not only the terminal | Missing | `apps/alpha-mcp` | Later | [grade] |
 | A review step that audits a result for defects | Unproven | audit block in `alpha diagnose`; skill missing | Path 1 | [grade] |

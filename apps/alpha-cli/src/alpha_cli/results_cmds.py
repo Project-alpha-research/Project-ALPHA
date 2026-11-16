@@ -4,13 +4,21 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.run_store import find_run_dir, read_manifest
-from alpha_cli.spine.errors import SpineError, fail
+from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
+from alpha_cli.spine.check import check_text, render_check
+from alpha_cli.spine.compare import (
+    DEFAULT_METRICS,
+    Lookup,
+    compare_runs,
+    render_compare,
+    resolve_run,
+)
+from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import (
     TOOL_METRICS,
     build_facts,
@@ -242,5 +250,64 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             )
         output = read_json(rdir / "diagnostics.json")
         emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
+    except (ValueError, OSError, DataError) as exc:
+        _error(exc, json_out)
+
+
+def fact_lookup(home: Path) -> Lookup:
+    """Discover completed runs; read each cited run's facts once, on demand."""
+    paths: dict[str, Path] = {}
+    for directory in RUN_DIRS:
+        for manifest in (home / directory).glob("*/manifest.json"):
+            if valid_run_id(manifest.parent.name):
+                paths.setdefault(manifest.parent.name, manifest.parent)
+    cache: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def lookup(prefix: str, metric: str) -> dict[str, Any]:
+        require_metric(metric)
+        run_id = resolve_run(prefix, paths)
+        if run_id not in cache:
+            cache[run_id] = {fact["metric"]: fact for fact in build_facts(paths[run_id])}
+        return cache[run_id][metric]
+
+    return lookup
+
+
+@results_app.command("check")
+def check_answer(
+    path: Path,
+    json_out: bool = typer.Option(False, "--json"),
+    allow_untagged: int = typer.Option(
+        0, min=0, help="Tolerate this many untagged numbers as warnings."
+    ),
+) -> None:
+    """Check a draft's tagged numbers and required labels against stored facts."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        fail(unreadable_file(path, exc), json_out)
+    try:
+        result = check_text(text, fact_lookup(AlphaSettings().data_dir), allow_untagged)
+        emit(result, json_out=json_out, fallback=render_check(result))
+        if not result["ok"]:
+            raise typer.Exit(1)
+    except (ValueError, OSError, DataError) as exc:
+        _error(exc, json_out)
+
+
+@results_app.command("compare")
+def compare_results(
+    run_ids: Annotated[list[str], typer.Argument(help="Two to eight runs; first is base.")],
+    metric: Annotated[
+        list[str] | None, typer.Option("--metric", help="Metric; repeatable.")
+    ] = None,
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compare stored values, differences and ratios, with bases and run labels."""
+    try:
+        result = compare_runs(
+            run_ids, fact_lookup(AlphaSettings().data_dir), metric or DEFAULT_METRICS
+        )
+        emit(result, json_out=json_out, fallback=render_compare(result))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

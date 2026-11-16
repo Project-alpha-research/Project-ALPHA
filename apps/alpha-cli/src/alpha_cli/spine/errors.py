@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, NoReturn
 
 import typer
@@ -23,6 +24,14 @@ class SpineError(ValueError):
 def fail(error: SpineError, json_out: bool) -> NoReturn:
     emit({"error": error.payload}, json_out=json_out, fallback=f"{error}\n{error.payload['next']}")
     raise typer.Exit(1)
+
+
+def unreadable_file(path: Path, exc: OSError | UnicodeError) -> SpineError:
+    return SpineError(
+        "UNREADABLE_FILE",
+        f"Cannot read answer file {path}: {exc}",
+        "Run alpha results check with a readable UTF-8 Markdown or plain-text file.",
+    )
 
 
 def test_error(message: str, stores: list[str] | None = None) -> SpineError:

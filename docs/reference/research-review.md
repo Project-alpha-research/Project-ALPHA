@@ -9,9 +9,10 @@ verified: cd8004eb95f0514a
 # Adversarial review of research artefacts
 
 How to attack a research thesis, source pack, protocol, empirical result, chart bundle or Research
-Gate Packet before the owner decides. It is used at [stage 05 — validate](../../research/stages/05-validate/CONTEXT.md)
-of the research pipeline (and on any artefact the owner asks about); that stage names what to read
-and which commands produce the records reviewed here. The `reviewer` agent follows it; anyone may.
+Gate Packet before the owner decides. It is used in the `research_decision` phase of the
+[older staged lane](../../research/CONTEXT.md#the-older-staged-lane) and on any artefact the owner
+asks about; a rule-test result is reviewed with the `review-result` skill instead. The `reviewer`
+agent follows it; anyone may.
 Moved here from the `alpha-adversarial-reviewer` skill on 2026-11-14 with its review order and
 finding format unchanged.
 

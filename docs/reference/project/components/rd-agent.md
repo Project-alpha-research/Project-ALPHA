@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 82e6f277dcdb1d8b
+verified: d2fca153ae1f126a
 ---
 
 # RD-Agent
@@ -120,6 +120,11 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   candidate; 15 of 18 replayed swing-judge screen passes lost money before costs, so the rank screen
   and the held top third disagree on 15 coins. Runs sharing one gateway can now start together,
   and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
+- Measured 2026-11-16 with the spread check (ADR-0055): offline it stops 16 of those 18 replays;
+  two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
+  candidate. Open for the owner: whether free local embeddings should count toward the 60-call cap
+  (they were 21 of 60 and 16 of 47 calls), and a data pull to widen the universe (the stores hold
+  15 coins and 9 single stocks).
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

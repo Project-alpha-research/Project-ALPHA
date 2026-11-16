@@ -482,7 +482,16 @@ Spread check, idea families, universe file and call limit
   `provider_timeout`, and it or an empty reply is retried `--provider-retries` times (1); every
   attempt counts toward the caps. The receipt's `call_split` separates model chat calls (requests,
   attempts, dollars) from free local embedding calls, with provider timeouts, empty replies and
-  retries. RD-Agent never sees 2024 or later; no Qlib model, Docker
+  retries.
+- Measured 2026-11-16: offline, on the 18 factor × clock trials that had reached the replay, the
+  spread check rejects 16 (all 15 that lost before costs and one daily-only pass); no model calls.
+  Two fresh runs (DeepSeek V4.1 Flash, 3 loops each, USD 0.085 and 0.138): 11 factors judged, 3
+  passed the rank screen, 1 passed the spread check (daily-only), none a swing candidate. Proposals
+  moved from "price near its high" to intraday/overnight drift, return predictability, trend
+  efficiency, co-skewness and drawdown. Five calls hit the 180 s limit; four retries succeeded, one
+  request failed after two attempts and the run went on. Run 2 stopped in its third loop because
+  local Ollama refused a 7,394-character embedding (HTTP 400), not a model timeout; its receipt was
+  written. Embeddings were 21 of 60 and 16 of 47 counted calls. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh

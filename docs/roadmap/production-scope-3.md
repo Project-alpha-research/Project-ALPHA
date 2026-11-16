@@ -93,6 +93,11 @@ counted), the old daily-rule study lane (into Path 1), and the literature worker
 feeder). Rules, scans and patterns are reshaped into the Setup Lab, never cut: they are the
 only route to "show every match first".
 
+Made on 2026-11-15 with Path 1: the staged lane's instruction files (six stage files and its
+routing skill) were replaced by the research playbook, tool cards and six skills. The lane's
+commands, screens and protocol library are untouched; the stage files can be read at commit
+`0c8b0535`.
+
 ## Questions put to the owner
 
 The owner answered all five on 2026-11-15; the answers are in the [decisions log][answers].

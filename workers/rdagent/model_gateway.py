@@ -1282,7 +1282,10 @@ def main(argv: list[str] | None = None) -> int:
         token = secrets.token_urlsafe(32)
         with GatewayServer(port, gateway, token) as server:
             actual_port = server.server_address[1]
-            session = settings.state_dir / "session.json"
+            # Runs share one state folder so the monthly cap covers them all; each gateway also
+            # publishes under its own pid so a launcher finds its own when several start at once.
+            latest = settings.state_dir / "session.json"
+            session = settings.state_dir / f"session-{os.getpid()}.json"
             session_data = dict(
                 port=actual_port,
                 token=token,
@@ -1293,11 +1296,12 @@ def main(argv: list[str] | None = None) -> int:
                 embedding_model_alias=settings.embedding_model_alias,
                 started_at=now(),
             )
-            fd = os.open(session, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             try:
-                os.fchmod(fd, 0o600)
-                with os.fdopen(fd, "w") as file:
-                    json.dump(session_data, file)
+                for path in (session, latest):
+                    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                    os.fchmod(fd, 0o600)
+                    with os.fdopen(fd, "w") as file:
+                        json.dump(session_data, file)
 
                 def stop(signum: int, frame: Any) -> None:
                     raise KeyboardInterrupt
@@ -1311,6 +1315,12 @@ def main(argv: list[str] | None = None) -> int:
                     signal.signal(signal.SIGTERM, previous)
             finally:
                 session.unlink(missing_ok=True)
+                # Remove the shared pointer only while it is still ours, never another run's.
+                try:
+                    if json.loads(latest.read_text()).get("pid") == os.getpid():
+                        latest.unlink(missing_ok=True)
+                except (OSError, ValueError):
+                    pass
     except (ValueError, OSError, GatewayError) as exc:
         print(str(exc), file=sys.stderr)
         return 1

@@ -6,7 +6,7 @@ sources:
   - scripts/gate.py
   - tests/_tiers.py
   - .codex/config.toml
-verified: 9e1108ccb195925e
+verified: 0cd38c26b1a818c7
 ---
 
 # Stage 03 — build: plan to code

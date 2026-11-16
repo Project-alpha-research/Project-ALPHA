@@ -30,7 +30,7 @@ Telling a real edge from luck after many tries.
 | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) | Working | `alpha-validation` | Now | [kronos] |
 | Sensitivity to nearby parameter values | Unproven | `alpha-cli` optim | Path 1 | [grade] |
 | Sample-size check: is there enough data to say anything | Unproven | `alpha-research` | Path 2 | private |
-| Quick-screen score corrected for overlapping windows | Missing | backlog | Later | [status] |
+| Quick-screen score corrected for overlapping windows (the weights exist; nothing uses them yet) | Missing | `workers/afml` | Later | [status] |
 | Prop-firm challenge check, as an optional tool and never the goal | Unproven | `alpha-validation` | Later | [status] |
 | Labels with a target, a stop and a time limit; splits that respect multi-day labels | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
 | Second-opinion overfitting numbers and the minimum track record a result needs | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
@@ -129,7 +129,11 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Nautilus as the pinned backtest engine | Working | `alpha-backtest` | Now | [engines] |
 | Kronos with real model files, not a stand-in | Unproven | `alpha-forecast` | Later | [kronos] |
 | Automatic checks covering the RD-Agent worker, with a scripted-model smoke run | Missing | backlog | Path 3 | [status] |
-| Which of RD-Agent's factors a model really leans on (purged importance) | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
+| Textbook labels and overlap weights from two pinned libraries that must agree | Working | `alpha labels`, `workers/afml` | Now | [status] |
+| Factor importance on purged folds (MDI, MDA, SFI), a report for RD-Agent's factors | Working | `alpha labels importance` | Now | [status] |
+| Purged splits by label end time, with embargo, backtest paths and a leak checker | Unproven | `workers/afml` | Path 3 | [status] |
+| Fractional differencing with d chosen on training data only | Unproven | `workers/afml` | Path 3 | [status] |
+| Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
 | A map of everything Qlib and RD-Agent offer, each item with a state | Missing | [coverage maps](backlog/engine-coverage-maps.md) | Path 3 | [rd-all] |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules

@@ -139,6 +139,7 @@ another package is named.
 | `research_executions/` | `research_execution` | Per-execution directories for governed research runs, keyed by execution digest. |
 | `diagnostics/` | `research_diagnostic_cmds` | Digest-keyed research diagnostic outputs. |
 | `scans/` | `scan_cmds` | Pattern/hypothesis scan outputs. |
+| `labels/` | `labels_cmds` | Immutable `alpha labels` result folders (AFML worker labels and weights), keyed by input hash. |
 | `lookalike/` | `lookalike_cmds` | One folder per `alpha lookalike` result (`result.json`, `figure.png`), keyed by settings and bars. |
 | `unusual/` | `lookalike_cmds` | One folder per `alpha unusual` result, same layout. |
 | `rules/` | `rules_cmds` | Rule definitions and rule-run records. |

@@ -9,7 +9,7 @@ sources:
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
   - docs/adr/0052-licence-is-not-a-criterion.md
-verified: cb04b3e56c463ee5
+verified: fa24fd80b19a6b53
 ---
 
 # Outside projects: the register
@@ -53,7 +53,7 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | pandas | Tables at three named edges only | Imported in `alpha-data`, `alpha-validation`, `alpha-forecast` | In use | Some libraries speak only pandas |
 | numpy, SciPy | The arithmetic under the statistics | Imported in the numeric packages | In use | Standard, well tested |
 | PyArrow | Reads and writes Parquet data files | Imported in `alpha-cli` | In use | The file format of the store |
-| Matplotlib | Fixed, repeatable charts in reports | Imported in `alpha-research`, `alpha-validation`, `alpha-cli` | In use | Same picture every run |
+| Matplotlib | Fixed, repeatable charts | Imported in `alpha-research`, `alpha-validation`, `alpha-cli`; AFML worker | In use | Same picture every run |
 | quantstats-lumi | Draws one HTML performance report | Imported in `alpha-validation` (one file) | In use | Pictures only; never a judged number |
 | exchange_calendars | Knows each market's trading days | Imported in `alpha-data`, `alpha-cli` | In use | Use more: year length from the calendar |
 | yfinance | Free daily stock prices from Yahoo | Imported in `alpha-data` | In use | Free source for the Dell phase |
@@ -67,6 +67,9 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | lightweight-charts | Price charts in the Workstation | Browser code in `alpha-web/frontend` | In use | Use more: mark every setup match on the chart |
 | BokehJS | Other charts in the Workstation | Browser code in `alpha-web/frontend` | In use | A second chart library; one per chart kind is the aim |
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
+| RiskLabAI 3.2.0 | Textbook label and weight methods | Own worker, `workers/afml` | In use | Primary; must agree with quantowl |
+| quantowl 0.1.6 | A second writing of the same methods | AFML worker, commit `37a17de` | In use | Not on PyPI; young, never trusted alone |
+| statsmodels 0.14.6, numba 0.68.1, scikit-learn | ADF test, compiled loops, forests | AFML worker only | In use | RiskLabAI needs statsmodels below 0.15 |
 | DuckDB 2.0.0 | Asks one question across many stored files | Pinned in `alpha-cli`; in memory only | In use | A query tool, never the store |
 | lifelines 0.30.3 | Which exit comes first, with censoring | Pinned in `alpha-cli` | In use | Proven estimator; replaces a biased hand count |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
@@ -113,7 +116,7 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | fredapi | Downloads macro series | — | Refused | Stale; ALPHA keeps its own dated store |
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
-| mlfinlab | Methods from a well-known textbook | — | Refused | Re-judged 2026-11-16; the public repo is an issue tracker, code cannot be read or pinned |
+| mlfinlab 0.12.3 (public archive) | The textbook methods, older code | — | Reference only | Answer key for the AFML worker; never installed |
 
 ## Judged in the November follow-up studies
 

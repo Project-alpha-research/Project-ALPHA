@@ -133,6 +133,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "figures",
             "forecast",
             "info",
+            "labels",
             "lookalike",
             "ml",
             "monte-carlo",

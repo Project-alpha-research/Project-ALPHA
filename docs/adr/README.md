@@ -58,6 +58,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0050](0050-swing-clocks-in-the-factor-judge.md) | The factor judge tests every idea at daily, weekly and monthly holding; only a swing pass is a candidate | Accepted | 2026-11-15 |
 | [0051](0051-glue-rules-for-outside-projects.md) | Glue rules for outside projects: how a library or engine is chosen, pinned and joined; a register of every one used or judged | Accepted; rules 2 and 11 amended by 0052 | 2026-11-15 |
 | [0052](0052-licence-is-not-a-criterion.md) | Licence is never a criterion for an outside project (owner decision 2026-11-16) | Accepted | 2026-11-16 |
+| [0054](0054-afml-worker.md) | A pinned AFML worker runs RiskLabAI and quantowl side by side; they must agree; ALPHA's high/low barrier convention is the headline | Accepted | 2026-11-16 |
 
 ## Conventions
 

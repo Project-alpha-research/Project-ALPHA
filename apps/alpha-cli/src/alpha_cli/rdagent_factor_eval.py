@@ -95,12 +95,12 @@ CONFIG: dict[str, Any] = {
     "q_threshold": Q_THRESHOLD,
     "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
     "spread_check": (
-        "ADR-0055: before a screened clock is replayed, the mean over its decision days of the "
-        "top third's minus the bottom third's forward return (before costs, claimed direction) "
-        "must be positive under both tie orders, or the clock is SPREAD_FAIL "
-        f"({SPREAD_REASON}) and is not replayed. The bar is the sign only, not significance; "
-        "the t-statistic and interval are reported, not applied. Deflated Sharpe counts only "
-        "replayed trials, so trials removed by the spread check are stated beside it"
+        "ADR-0055: a screened clock passes only if the mean over its decision days of the top "
+        "third's minus the bottom third's forward return (before costs, claimed direction) is "
+        "positive under both tie orders; otherwise it is SPREAD_FAIL "
+        f"({SPREAD_REASON}) whatever its replay shows. The bar is the sign only, not "
+        "significance; the t-statistic and interval are reported, not applied. A spread failure "
+        "is still replayed and counted as a trial, so the Deflated Sharpe's trials are unchanged"
     ),
 }
 TRIAL_SCHEMA = "AlphaRdagentFactorTrialV3"
@@ -966,9 +966,8 @@ def _inputs(
         raise DataError("panel sha256 differs from receipt")
     if any(item["last_day"] >= RESERVED_START for item in receipt["instruments"].values()):
         raise DataError("panel receipt reaches reserved window")
-    if (run / "panel/universe.json").exists() and receipt.get("universe_sha256") != sha(
-        canonical(universes.frozen(run / "panel"))
-    ):
+    bound = (run / "panel/universe.json").exists() or "universe_sha256" in receipt
+    if bound and receipt.get("universe_sha256") != sha(canonical(universes.frozen(run / "panel"))):
         # A universe chosen or edited after the freeze is a researcher choice made after seeing
         # data; only the file the freeze bound into its receipt is accepted.
         raise DataError("panel universe file differs from the one bound in the panel receipt")
@@ -1023,11 +1022,6 @@ def _deflate(
             identities.setdefault(row["code_sha256"], row)
     for row in rows:
         row["replayed_trials"] = len(trials)
-        # ADR-0055: trials the spread check stopped before the replay used outcome data too, but
-        # have no replay Sharpe; the deflated Sharpe states how many were left out of its count.
-        row["spread_rejected_trials"] = sum(
-            trial.get("status") == "SPREAD_FAIL" for trial in family.values()
-        )
         if row["status"] == "REPEAT":
             earliest = identities[row["code_sha256"]]
             row["first_trial"] = {
@@ -1068,6 +1062,12 @@ def _deflate(
     return trials
 
 
+def shown(trial: dict[str, Any]) -> dict[str, Any]:
+    """A trial's replay as a result; a counted-only replay (ADR-0055) shows nothing."""
+    replay: dict[str, Any] = trial["replay"]
+    return {} if "counted_only" in replay else replay
+
+
 def _report(
     rows: list[dict[str, Any]],
     history: list[dict[str, Any]],
@@ -1086,6 +1086,8 @@ def _report(
         else None
     )
     lead_trial = lead["clocks"][lead["lead_clock"]] if lead else None
+    if lead_trial is not None and "counted_only" in lead_trial["replay"]:
+        lead_trial = {**lead_trial, "replay": {}}  # a failed clock's replay is not a result
     legacy = {
         "IC": lead_trial["screen"].get("mean_ic", float("nan")) if lead_trial else float("nan")
     }
@@ -1104,10 +1106,10 @@ def _report(
                     prefix + "status": trial["status"],
                     prefix + "mean_ic": trial["screen"].get("mean_ic", float("nan")),
                     prefix + "q": trial["q"],
-                    prefix + "net_annual_excess": trial["replay"]
+                    prefix + "net_annual_excess": shown(trial)
                     .get("net", {})
                     .get("annualized_return", float("nan")),
-                    prefix + "mean_turnover": trial["replay"].get("mean_turnover", float("nan")),
+                    prefix + "mean_turnover": shown(trial).get("mean_turnover", float("nan")),
                 }
             )
         legacy[f"{row['name']}.feedback"] = clock_feedback(row)
@@ -1496,12 +1498,10 @@ def _replay_clocks(
                 # ADR-0055: a screened clock must first show its top third beating its bottom
                 # third; only then is it replayed. A stricter, cheaper failure, never a pass.
                 checked = trial.get("spread", {"status": "ERROR", "error": "spread not computed"})
-                if checked["status"] == "ERROR":
-                    trial.update(status="ERROR", replay={"error": checked["error"]})
-                    continue
-                if checked["status"] != "PASS":
-                    trial["status"] = "SPREAD_FAIL"
-                    continue
+                # A clock whose spread failed or could not be computed is still replayed, only so
+                # the Deflated Sharpe counts it as a trial exactly as before ADR-0055; that replay
+                # can never turn it into a pass.
+                verdict = {"PASS": None, "ERROR": "ERROR"}.get(checked["status"], "SPREAD_FAIL")
                 row["stage"] = "replay"
                 try:
                     metrics, net = replay(
@@ -1517,10 +1517,15 @@ def _replay_clocks(
                         status="ERROR", replay={"error": f"{type(error).__name__}: {error}"}
                     )
                     continue
-                trial.update(
-                    replay=metrics,
-                    status="PASS" if metrics["net"]["annualized_return"] > 0 else "REPLAY_FAIL",
-                )
+                if verdict is not None:
+                    metrics["counted_only"] = (
+                        f"spread check {checked['status']}; replayed only to count the trial, "
+                        "not a result"
+                    )
+                    status = verdict
+                else:
+                    status = "PASS" if metrics["net"]["annualized_return"] > 0 else "REPLAY_FAIL"
+                trial.update(replay=metrics, status=status)
                 replay_returns[(digest, clock)] = net
         if row["status"] == "OK":
             row["status"], row["lead_clock"] = overall_status(row["clocks"])
@@ -1622,9 +1627,6 @@ def _evaluate_locked(
         "distinct_factors": len(identities),
         "total_trials": len(history) + len(unknown) + len(rows),
         "replayed_trials": len(trials),
-        "spread_rejected_trials": sum(
-            trial.get("status") == "SPREAD_FAIL" for trial in family.values()
-        ),
         "qvalues": qvalues,
         "decision": decision,
         "lead_factor": lead["name"] if lead else None,

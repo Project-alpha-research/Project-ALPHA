@@ -161,11 +161,16 @@ def clock_feedback(row: dict[str, Any]) -> str:
     parts = [f"{row['name']}: {row['status']}."]
     for clock, trial in trial_clocks(row).items():
         screen, replay = trial["screen"], trial["replay"]
+        if "counted_only" in replay:  # ADR-0055: replayed only to count the trial
+            outcome = "net annual excess counted only, not a result"
+        else:
+            outcome = (
+                f"net annual excess {replay.get('net', {}).get('annualized_return')}, "
+                f"turnover per day {replay.get('mean_turnover')}"
+            )
         parts.append(
             f"{clock}: {trial['status']}, mean rank IC {screen.get('mean_ic')}, "
-            f"q={trial['q']:.6g}, net annual excess "
-            f"{replay.get('net', {}).get('annualized_return')}, turnover per day "
-            f"{replay.get('mean_turnover')}."
+            f"q={trial['q']:.6g}, {outcome}."
         )
         parts.extend(screen.get("warnings", []))
         if trial.get("spread", {}).get("status") in ("PASS", "FAIL"):

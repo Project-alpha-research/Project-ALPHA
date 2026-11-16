@@ -48,7 +48,7 @@ SWING_BRIEF = (
     "return-volume ranks then passed the daily rank screen, yet the top third they would hold "
     "lost 28%-43% a year before costs: on 15 coins a few volatile coins' rallies dominate the "
     "mean, so rank order and the top third's return can disagree. ALPHA now rejects such a "
-    "factor before the replay unless the top third it would hold beat the bottom third "
+    "factor unless the top third it would hold beat the bottom third "
     "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
 )
 # Idea families by name pattern (regular expressions), first match wins (ADR-0055). Approximate
@@ -85,6 +85,8 @@ def replay_note(clock: str, replay: Any) -> str:
     """Why a replayed clock won or lost: before costs, after costs, the costs and the turnover."""
     if not replay:
         return ""
+    if "counted_only" in replay:  # ADR-0055: a failed clock's replay only counts the trial
+        return f"; {clock} replay counted only, not a result"
     gross = replay["gross"]["annualized_return"]
     net = replay["net"]["annualized_return"]
     return (
@@ -354,7 +356,7 @@ class AlphaFactorScenario(QlibFactorScenario):
             "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
             "365 days/year. Direction chosen in-sample. BH q < 0.10 screens the cross-run trial "
-            "ledger, counting each factor x clock as a trial; a screened clock is replayed only "
+            "ledger, counting each factor x clock as a trial; a screened clock can pass only "
             "if the top third it would hold beat its bottom third before costs. "
             "Hold drifted weights between rebalances; residual trades are executed and charged. "
             "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "

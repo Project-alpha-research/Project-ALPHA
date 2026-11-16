@@ -86,24 +86,21 @@ def test_spread_selection_matches_the_replays_top_third() -> None:
         assert top == ranked[:5]
 
 
-def test_spread_failure_is_recorded_and_never_replayed(tmp_path: Path) -> None:
+def test_spread_failure_is_recorded_and_never_passes(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
 
     def failing(*args: Any, **kwargs: Any) -> dict[str, Any]:
         return {**_real(*args, **kwargs), "status": "FAIL", "reason": ev.SPREAD_REASON}
 
-    replayed = AssertionError("replayed")
-    with (
-        patch.object(ev, "spread", side_effect=failing),
-        patch.object(ev, "run_weight_replay", side_effect=replayed),
-    ):
+    with patch.object(ev, "spread", side_effect=failing):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
     assert factor["status"] == "SPREAD_FAIL"
     assert record["decision"] is False
+    # The planted factor's replays are profitable, yet no clock may pass once its spread failed.
     assert {t["status"] for t in factor["clocks"].values()} == {"SPREAD_FAIL"}
-    assert all(t["replay"] == {} for t in factor["clocks"].values())
+    assert all(t["replay"]["net"]["annualized_return"] > 0 for t in factor["clocks"].values())
     assert "top-third-does-not-beat-bottom-third" in record["feedback_text"]
     row = json.loads((tmp_path / "ledger.jsonl").read_text().splitlines()[0])
     assert row["clocks"]["weekly"]["spread"]["reason"] == ev.SPREAD_REASON
@@ -237,15 +234,77 @@ def test_universe_values_the_evaluator_does_not_apply_are_refused(tmp_path: Path
         evaluate(run, req, tmp_path / "ledger.jsonl")
 
 
-def test_spread_rejected_trials_are_stated_beside_the_deflated_sharpe(tmp_path: Path) -> None:
+def _forced(status: str) -> Any:
+    def forced(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        result = _real(*args, **kwargs)
+        if status == "FAIL":
+            return {**result, "status": "FAIL", "reason": ev.SPREAD_REASON}
+        return {k: v for k, v in result.items() if k != "reason"} | {"status": "PASS"}
+
+    return forced
+
+
+def test_spread_stopped_factors_still_count_as_trials_exactly_as_before(tmp_path: Path) -> None:
+    """An earlier, cheaper rejection must never lower the attempts the Deflated Sharpe counts.
+
+    The same run with every spread check failing must give the same trial count, the same trial
+    Sharpes and the same deflated values as with every check passing (the judge before ADR-0055,
+    where every screened clock was replayed); only the statuses differ.
+    """
+    records = {}
+    for status in ("PASS", "FAIL"):
+        run = tmp_path / status
+        req = fixture(run)
+        with patch.object(ev, "spread", side_effect=_forced(status)):
+            records[status] = evaluate(run, req, tmp_path / f"ledger-{status}.jsonl")
+    before, after = records["PASS"], records["FAIL"]
+    assert after["replayed_trials"] == before["replayed_trials"] == 3
+    assert after["family_size"] == before["family_size"]
+    for clock in ev.CLOCKS:
+        old, new = before["factors"][0]["clocks"][clock], after["factors"][0]["clocks"][clock]
+        assert new["status"] == "SPREAD_FAIL" and old["status"] in ("PASS", "REPLAY_FAIL")
+        for key in ("deflated_sharpe", "deflated_sharpe_family"):
+            assert new["replay"][key] == old["replay"][key]
+        assert new["replay"]["net"] == old["replay"]["net"]
+    assert after["decision"] is False and after["factors"][0]["status"] == "SPREAD_FAIL"
+
+
+def test_a_spread_error_still_counts_its_clock_as_a_trial(tmp_path: Path) -> None:
+    """Review finding: a spread check that cannot be computed must not lower the trial count."""
+
+    def weekly_error(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        if kwargs.get("horizon") == 7:
+            raise DataError("spread check needs at least two decision days with varying spreads")
+        return _forced("PASS")(*args, **kwargs)
+
+    records = {}
+    for name, side_effect in (("pass", _forced("PASS")), ("error", weekly_error)):
+        run = tmp_path / name
+        req = fixture(run)
+        with patch.object(ev, "spread", side_effect=side_effect):
+            records[name] = evaluate(run, req, tmp_path / f"ledger-{name}.jsonl")
+    assert records["error"]["replayed_trials"] == records["pass"]["replayed_trials"] == 3
+    weekly = records["error"]["factors"][0]["clocks"]["weekly"]
+    assert weekly["status"] == "ERROR" and "counted_only" in weekly["replay"]
+    for clock in ("daily", "monthly"):
+        new = records["error"]["factors"][0]["clocks"][clock]["replay"]["deflated_sharpe"]
+        assert new == records["pass"]["factors"][0]["clocks"][clock]["replay"]["deflated_sharpe"]
+
+
+def test_a_receipt_bound_universe_file_cannot_be_removed(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
+    _bind_universe(run, _universe())
+    (run / "panel" / "universe.json").unlink()
+    with pytest.raises(DataError, match="bound in the panel receipt"):
+        evaluate(run, req, tmp_path / "ledger.jsonl")
 
-    def failing(*args: Any, **kwargs: Any) -> dict[str, Any]:
-        return {**_real(*args, **kwargs), "status": "FAIL", "reason": ev.SPREAD_REASON}
 
-    with patch.object(ev, "spread", side_effect=failing):
+def test_feedback_never_shows_a_failed_clocks_replay_as_a_result(tmp_path: Path) -> None:
+    run = tmp_path / "run"
+    req = fixture(run)
+    with patch.object(ev, "spread", side_effect=_forced("FAIL")):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
-    assert record["spread_rejected_trials"] == 3
-    assert record["factors"][0]["spread_rejected_trials"] == 3
-    assert record["replayed_trials"] == 0
+    text = record["feedback_text"]
+    assert "net annual excess counted only, not a result" in text
+    assert "net annual excess 5." not in text

@@ -136,6 +136,13 @@ class Settings:
     # attempt is reserved against the call and dollar caps like any other.
     api_timeout: float = 180
     provider_retries: int = 1
+    # A local embedding model refuses inputs past its context (Ollama nomic-embed-text answered
+    # HTTP 400 to 2,994- and 7,394-character inputs on 2026-11-16; its window is 2,048 tokens).
+    # After such a refusal the request is sent once more with every input longer than this split
+    # at sentence ends into pieces of at most this many characters, each piece embedded and the
+    # input's vector the mean; never truncated (ADR-0055). Inputs the service accepts whole are
+    # embedded whole, exactly as before.
+    embed_max_chars: int = 2000
     accept_unhonoured: tuple[str, ...] = ()
     api_model: str | None = None
     api_price_in_per_mtok: float | None = None
@@ -183,6 +190,8 @@ class Settings:
             raise ValueError("json_retries and api_reserve_output_tokens must be nonnegative")
         if type(self.provider_retries) is not int or not 0 <= self.provider_retries <= 3:
             raise ValueError("provider_retries must be 0, 1, 2 or 3")
+        if type(self.embed_max_chars) is not int or self.embed_max_chars < 100:
+            raise ValueError("embed_max_chars must be an integer of at least 100")
         if not loopback_url(self.ollama_url):
             raise ValueError("ollama-url must be loopback")
         if self.chat_route not in ("codex", "api", "fake"):
@@ -390,6 +399,50 @@ class FakeChat:
             self.remaining_bad -= int(bad)
         reply = "not json" if bad else json.dumps({"fake": True, "prompt_sha256": digest(prompt)})
         return ChatResult(reply, "fake", len(prompt) // 4, completion_tokens=len(reply) // 4)
+
+
+def split_for_embedding(text: str, limit: int) -> list[str]:
+    """Pieces of at most ``limit`` characters, cut at sentence ends, then at spaces, then hard.
+
+    Only the whitespace between pieces is dropped; every other character is kept in order.
+    """
+    if len(text) <= limit:
+        return [text]
+    pieces: list[str] = []
+    current = ""
+    for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):
+        units = [sentence] if len(sentence) <= limit else sentence.split()
+        for unit in units:
+            while len(unit) > limit:  # a single word longer than the limit
+                if current:
+                    pieces.append(current)
+                    current = ""
+                pieces.append(unit[:limit])
+                unit = unit[limit:]
+            candidate = f"{current} {unit}" if current else unit
+            if len(candidate) <= limit:
+                current = candidate
+            else:
+                pieces.append(current)
+                current = unit
+    if current:
+        pieces.append(current)
+    return [piece for piece in pieces if piece]
+
+
+def mean_by_owner(vectors: list[Any], owners: list[int], count: int) -> list[list[float]]:
+    """Each input's vector: the mean of its pieces' vectors (one piece: unchanged)."""
+    if len(vectors) != len(owners):
+        raise GatewayError(502, "invalid_provider_response", "embedding count differs")
+    grouped: list[list[list[float]]] = [[] for _ in range(count)]
+    for owner, vector in zip(owners, vectors, strict=True):
+        grouped[owner].append(vector)
+    return [
+        [math.fsum(column) / len(group) for column in zip(*group, strict=True)]
+        if len(group) > 1
+        else group[0]
+        for group in grouped
+    ]
 
 
 class FakeEmbeddings:
@@ -802,6 +855,8 @@ class Gateway:
             refused=[],
             attempts=0,
             provider_errors=[],
+            chunked_inputs=0,
+            chunks=0,
             json_valid=None,
             prompt_tokens=None,
             cached_tokens=None,
@@ -1100,6 +1155,18 @@ class Gateway:
             row["latency_ms"] = (time.monotonic() - start) * 1000
             self.log(row, prompt, reply, instructions)
 
+    def chunked(self, inputs: list[str], row: dict[str, Any]) -> tuple[list[str], list[int]]:
+        pieces: list[str] = []
+        owners: list[int] = []
+        for index, text in enumerate(inputs):
+            parts = split_for_embedding(text, self.settings.embed_max_chars)
+            if len(parts) > 1:
+                row["chunked_inputs"] += 1
+                row["chunks"] += len(parts)
+            pieces += parts
+            owners += [index] * len(parts)
+        return pieces, owners
+
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
         row = self.record("/v1/embeddings", request)
         start = time.monotonic()
@@ -1124,8 +1191,26 @@ class Gateway:
             with self.slot(row):
                 ticket = self.budget.reserve(0)
                 row["attempts"] += 1
-                result = self.embedding_backend.embed(inputs)
-                self.budget.settle(ticket, 0)
+                try:
+                    result = self.embedding_backend.embed(inputs)
+                    pieces = None
+                except GatewayError as exc:
+                    if exc.status != 400 or not any(
+                        len(text) > self.settings.embed_max_chars for text in inputs
+                    ):
+                        raise
+                    row["provider_errors"].append(exc.code)
+                    pieces, owners = self.chunked(inputs, row)
+                finally:
+                    self.budget.settle(ticket, 0)
+                if pieces is not None:
+                    ticket = self.budget.reserve(0)  # the second attempt counts like any other
+                    row["attempts"] += 1
+                    try:
+                        result = self.embedding_backend.embed(pieces)
+                    finally:
+                        self.budget.settle(ticket, 0)
+                    result.vectors = mean_by_owner(result.vectors, owners, len(inputs))
             reply = json.dumps(result.vectors)
             row.update(
                 model_used=result.model,
@@ -1307,6 +1392,7 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--json-retries", type=int, default=2)
         p.add_argument("--api-timeout", type=float, default=180)
         p.add_argument("--provider-retries", type=int, default=1)
+        p.add_argument("--embed-max-chars", type=int, default=2000)
         p.add_argument("--accept-unhonoured", default="")
         p.add_argument("--api-model")
         p.add_argument("--api-price-in-per-mtok", type=float)

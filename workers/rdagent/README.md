@@ -461,11 +461,19 @@ Spread check, idea families, universe file and call limit
 - Before a screened clock (q < 0.10) is replayed, the evaluator checks on the same decision days that
   the top third the factor would hold beat its bottom third before costs (mean over decision days,
   positive under both tie orders). If not, the clock is `SPREAD_FAIL`
-  (`top-third-does-not-beat-bottom-third`) and is not replayed. Each screened clock records a
+  (`top-third-does-not-beat-bottom-third`) whatever its replay shows. Each screened clock records a
   `spread` object: top- and bottom-third mean returns, spread per hold and per year, t-statistic
   (autocorrelation-adjusted), bootstrap interval, decision days, the share of the top third replaced
-  per rebalance and the yearly cost that implies. A stricter gate, never a pass. Records state
-  `spread_rejected_trials` beside the Deflated Sharpe, which counts replayed trials only.
+  per rebalance and the yearly cost that implies. A stricter gate, never a pass. A spread-stopped
+  clock, or one whose spread could not be computed (`ERROR`), is still replayed (marked
+  `counted_only`) so the Deflated Sharpe counts every screened clock as a trial, exactly as before
+  the check; feedback and RD-Agent's result keys show such a replay as "counted only, not a
+  result", never as returns. A universe hash in the panel receipt requires the file.
+- Embeddings: after the local service refuses an input (HTTP 400), the gateway retries once with
+  inputs over `--embed-max-chars` (2,000) split at sentence ends and averages the pieces' vectors
+  (logged as `chunked_inputs`, `chunks`); never truncated. If it still fails, the coding step
+  leaves that memory entry out (`memory-skips.jsonl`) and the receipt counts
+  `memory_entries_skipped`; `call_split` adds `chunked_embedding_inputs` and `embedding_chunks`.
 - The proposer's context starts with every idea family in the ledger (name-keyword groups: tries,
   best result, failures by status), names the families with `--family-switch-after` (3) or more
   failed tries and no candidate, and tells it to move to a different family. Ledger lines add the

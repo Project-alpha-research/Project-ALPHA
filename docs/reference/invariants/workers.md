@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: e6fe548d8ef828a1
+verified: 9d121aac71cdb7d6
 ---
 
 # Worker invariants
@@ -136,12 +136,13 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
   evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
-  daily-only pass is `FAST_ONLY`); a screened clock is replayed only if its top third beat its bottom third before
-  costs, else it is `SPREAD_FAIL` ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md); a stricter
-  gate, never a pass); the proposer sees every idea family and is told to leave one after `--family-switch-after`
-  failed tries; the universe, calendar and year length come from a frozen universe file; every record is
-  `exploratory, not admitted, not yet confirmed` with all authority
-  flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from
+  daily-only pass is `FAST_ONLY`); a screened clock whose top third did not beat its bottom third before costs is
+  `SPREAD_FAIL` whatever its replay shows (still replayed, so it counts as a trial;
+  [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md); a stricter gate, never a pass);
+  the proposer sees every idea family and is told to leave one after `--family-switch-after` failed tries;
+  the universe, calendar and year length come from a frozen universe file; every record is
+  `exploratory, not admitted, not yet confirmed` with all authority flags false and the survivorship
+  disclosure. Its runtime is built only by `--with-factor-runtime` from
   `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
   but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).

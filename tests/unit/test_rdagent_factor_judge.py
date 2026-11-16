@@ -740,3 +740,16 @@ def test_idea_family_keywords_on_the_health_check_names() -> None:
     # 2026-11-16 run: the model abbreviated "high proximity" as hp126
     assert family("hp126_skip10_lowvol") == "price near its high / range position"
     assert family("hp126_skip10_lowskew") == "price near its high / range position"
+
+
+def test_a_counted_only_replay_is_never_shown_to_the_proposer_as_a_result() -> None:
+    replay = {
+        "gross": {"annualized_return": 0.5},
+        "net": {"annualized_return": 0.4},
+        "annual_cost": 0.01,
+        "mean_turnover": 0.01,
+        "counted_only": "spread check FAIL; replayed only to count the trial, not a result",
+    }
+    note = swing_parts()["replay_note"]("weekly", replay)
+    assert note == "; weekly replay counted only, not a result"
+    assert "%" not in note

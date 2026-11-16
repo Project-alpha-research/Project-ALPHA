@@ -797,3 +797,71 @@ assert not list(path.parent.glob('.coder-verdict-*'))
         },
         timeout=120,
     )
+
+
+@RUNTIME
+def test_a_refused_memory_embedding_is_skipped_counted_and_never_pickled(tmp_path: Path) -> None:
+    """The coder keeps going without that memory entry; other errors still fail loud."""
+    script = r"""
+import json, pickle, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from factor_loop_entry import install_source
+install_source(Path(sys.argv[2]))
+from rdagent.components.knowledge_management.graph import UndirectedGraph, UndirectedNode
+from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStrategyV2
+from rdagent.oai.llm_utils import APIBackend
+import alpha_factor_coder as c
+
+def refuse(self, input_content):
+    raise RuntimeError("Failed to create chat completion after 2 retries.")
+APIBackend.create_embedding = refuse
+graph = UndirectedGraph.__new__(UndirectedGraph)
+graph.__dict__.update(nodes={}, vector_base=None)
+record = Path(sys.argv[3]) / "memory-skips.jsonl"
+node = UndirectedNode(content="x" * 7394, label="task_success_implement")
+with c.tolerant_embeddings(graph, record):
+    graph.add_nodes(node=node, neighbors=[])
+assert graph.nodes == {}, graph.nodes
+assert "add_node" not in vars(graph)  # restored: nothing of ALPHA's is pickled with the graph
+pickle.dumps(graph)
+skip = json.loads(record.read_text())
+assert skip["schema"] == "AlphaMemorySkipV1" and skip["content_chars"] == 7394, skip
+assert "Failed to create" in skip["error"]
+# an error that is not a missing embedding still stops the step
+graph.get_node = lambda node_id: (_ for _ in ()).throw(KeyError("broken"))
+embedded = UndirectedNode(content="y", label="x")
+embedded.embedding = [1.0]
+try:
+    with c.tolerant_embeddings(graph, record):
+        graph.add_node(embedded)
+except KeyError:
+    pass
+else:
+    raise AssertionError("a non-embedding error was swallowed")
+assert issubclass(c.AlphaRAGStrategyV2, CoSTEERRAGStrategyV2)
+print("ok")
+"""
+    result = subprocess.run(
+        [
+            os.environ["ALPHA_FACTOR_PYTHON"],
+            "-I",
+            "-B",
+            "-c",
+            script,
+            str(WORKER),
+            os.environ["ALPHA_RDAGENT_SOURCE"],
+            str(tmp_path),
+        ],
+        check=True,
+        cwd=tmp_path,
+        env={
+            "HOME": str(tmp_path),
+            "PATH": "/usr/bin:/bin",
+            "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+        },
+        timeout=120,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.strip().endswith("ok")

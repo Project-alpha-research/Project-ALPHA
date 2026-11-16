@@ -548,6 +548,10 @@ class Launch:
             loop_reason=self.receipt.get("loop_reason", reason),
             gateway_status=self.gateway_status(),
             calls_labelled=self.write_call_labels(),
+            # Coding-memory entries left out because their embedding was refused (ADR-0055).
+            memory_entries_skipped=len((self.run / "memory-skips.jsonl").read_text().splitlines())
+            if (self.run / "memory-skips.jsonl").exists()
+            else 0,
             evaluations_sha256=hashlib.sha256(evaluations.read_bytes()).hexdigest()
             if evaluations.exists()
             else None,
@@ -580,12 +584,16 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         "empty_or_invalid_replies": 0,
         "retried_attempts": 0,
         "failed_requests": {},
+        "chunked_embedding_inputs": 0,
+        "embedding_chunks": 0,
     }
     for call in calls:
         kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
         split[kind]["requests"] += 1
         split[kind]["attempts"] += int(call.get("attempts") or 0)
         split[kind]["usd"] += float(call.get("usd") or 0.0)
+        split["chunked_embedding_inputs"] += int(call.get("chunked_inputs") or 0)
+        split["embedding_chunks"] += int(call.get("chunks") or 0)
         errors = call.get("provider_errors") or []
         split["provider_timeouts"] += errors.count("provider_timeout")
         split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")

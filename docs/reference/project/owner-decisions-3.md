@@ -172,7 +172,11 @@ the rules for entries are in the first. New entries are appended at the end of t
   coins already in the store, and wire US stocks if the Alpaca store can support thirds; (4) a
   180-second limit per model call with one bounded retry, counted against the caps; (5) leave the
   60-call, USD 10 per run and USD 50 per month caps and what counts toward them unchanged, and show
-  paid model calls and free local embedding calls separately on the run receipt.
+  paid model calls and free local embedding calls separately on the run receipt. Corrected the
+  same day: a factor stopped by the spread check is still a trial, counted in the Deflated Sharpe
+  exactly as before the check existed; long embedding inputs are chunked at sentence ends and
+  averaged, never truncated, and a memory entry whose embedding still fails is left out, counted
+  and reported on the receipt.
 - **Left to the owner:** whether free local embedding calls should count toward the 60-call cap.
 - **Governs:** [RD-Agent](components/rd-agent.md);
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md).

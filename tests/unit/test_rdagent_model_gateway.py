@@ -883,3 +883,83 @@ def test_provider_timeout_settings_are_validated(mod: ModuleType, tmp_path: Path
             mod.Settings(data_dir=tmp_path, run_id="x", chat_route="fake", **bad).validate()
     assert mod.Settings(data_dir=tmp_path, run_id="x").api_timeout == 180
     assert mod.Settings(data_dir=tmp_path, run_id="x").provider_retries == 1
+
+
+class _LimitedEmbeddings:
+    """A fake local embedding service that refuses any input over its limit, like Ollama's 400."""
+
+    def __init__(self, mod: ModuleType, limit: int) -> None:
+        self.mod, self.limit = mod, limit
+        self.seen: list[list[str]] = []
+
+    def embed(self, inputs: list[str]) -> Any:
+        self.seen.append(list(inputs))
+        if any(len(text) > self.limit for text in inputs):
+            raise self.mod.GatewayError(400, "provider_error", "input length exceeds context")
+        return self.mod.FakeEmbeddings().embed(inputs)
+
+
+def _sentences(n: int) -> str:
+    return " ".join(
+        f"Sentence {i} explains the factor and its evidence in plain words." for i in range(n)
+    )
+
+
+def test_a_long_embedding_input_is_chunked_at_sentences_and_averaged(
+    mod: ModuleType, tmp_path: Path
+) -> None:
+    text = _sentences(160)[:10_000]
+    assert len(text) == 10_000
+    service = _LimitedEmbeddings(mod, 3000)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    result = gw.embeddings({"model": "alpha-embed", "input": ["short text", text]})
+    chunks = service.seen[-1]
+    assert service.seen[0] == ["short text", text]  # first sent whole, as before; refused
+    assert len(chunks) > 5 and all(len(c) <= 2000 for c in chunks)
+    assert "".join(c.replace(" ", "") for c in chunks[1:]) == text.replace(" ", "")  # nothing lost
+    assert all(c.rstrip().endswith(".") for c in chunks[1:-1])  # cut at sentence ends
+    fake = mod.FakeEmbeddings().embed(chunks[1:]).vectors
+    expected = [sum(column) / len(fake) for column in zip(*fake, strict=True)]
+    assert result["data"][1]["embedding"] == pytest.approx(expected)
+    assert result["data"][0]["embedding"] == mod.FakeEmbeddings().embed(["short text"]).vectors[0]
+    row = logged(gw)[-1]
+    assert row["chunked_inputs"] == 1 and row["chunks"] == len(chunks) - 1
+    assert row["attempts"] == 2 and row["provider_errors"] == ["provider_error"]
+    budget = json.loads((tmp_path / "model-gateway" / "budget.json").read_text())
+    assert budget["runs"]["r"]["calls"] == 2  # both attempts count toward the cap
+
+
+def test_an_input_the_service_accepts_whole_is_embedded_whole(
+    mod: ModuleType, tmp_path: Path
+) -> None:
+    text = _sentences(160)[:10_000]
+    service = _LimitedEmbeddings(mod, 20_000)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    result = gw.embeddings({"model": "alpha-embed", "input": [text]})
+    assert service.seen == [[text]]
+    assert result["data"][0]["embedding"] == mod.FakeEmbeddings().embed([text]).vectors[0]
+    assert logged(gw)[-1]["chunks"] == 0
+
+
+def test_an_embedding_the_service_still_refuses_fails_loud(mod: ModuleType, tmp_path: Path) -> None:
+    service = _LimitedEmbeddings(mod, 10)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    with pytest.raises(mod.GatewayError) as error:
+        gw.embeddings({"model": "alpha-embed", "input": [_sentences(3)]})
+    assert error.value.status == 400
+    assert logged(gw)[-1]["status"] == 400
+
+
+def test_chunking_settings_are_validated(mod: ModuleType, tmp_path: Path) -> None:
+    assert mod.Settings(data_dir=tmp_path, run_id="x").embed_max_chars == 2000
+    with pytest.raises(ValueError):
+        mod.Settings(data_dir=tmp_path, run_id="x", embed_max_chars=0).validate()

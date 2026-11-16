@@ -613,3 +613,28 @@ def test_gateway_gets_the_per_call_limit_and_retries(
 def test_new_options_are_bounded(tmp_path: Path, extra: list[str], message: str) -> None:
     with pytest.raises(launch.LaunchError, match=message):
         launch.validate(args(tmp_path, *extra), environ(tmp_path))
+
+
+def test_receipt_counts_chunked_embeddings_and_skipped_memory_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    split = launch.call_split(
+        [
+            {"endpoint": "/v1/embeddings", "attempts": 2, "status": 200, "chunked_inputs": 1,
+             "chunks": 5, "provider_errors": ["provider_error"]},
+            {"endpoint": "/v1/embeddings", "attempts": 1, "status": 200},
+        ]
+    )  # fmt: skip
+    assert split["chunked_embedding_inputs"] == 1 and split["embedding_chunks"] == 5
+    assert split["local_embedding"]["attempts"] == 3
+    job = launch.Launch(
+        args(tmp_path),
+        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+    )
+    job.run.mkdir()
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    job.finish(0, "test")
+    assert job.receipt["memory_entries_skipped"] == 0
+    (job.run / "memory-skips.jsonl").write_text('{"a": 1}\n{"b": 2}\n')
+    job.finish(0, "test")
+    assert job.receipt["memory_entries_skipped"] == 2

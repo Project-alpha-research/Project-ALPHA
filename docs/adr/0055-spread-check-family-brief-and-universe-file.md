@@ -32,8 +32,8 @@ The 2026-11-16 health check of RD-Agent's factor loop (pull request #212) found:
    later, before costs (`rdagent_factor_eval.spread`). The thirds are the replay's own selection
    (k = round(n/3), ties by instrument name). The clock passes only if the mean spread is positive
    **and** stays positive when ties are broken in the reverse name order. Otherwise the clock is
-   `SPREAD_FAIL` with reason `top-third-does-not-beat-bottom-third` and its numbers, and it is not
-   replayed. A held name with no forward return fails loud (it is never dropped). Reported: mean
+   `SPREAD_FAIL` with reason `top-third-does-not-beat-bottom-third` and its numbers, whatever its
+   replay shows. A held name with no forward return fails loud (it is never dropped). Reported: mean
    spread per hold and per year, top-third and bottom-third mean returns, decision days, a
    t-statistic with the autocorrelation-adjusted effective sample size and a seeded
    stationary-bootstrap interval (the screen's own estimators from `alpha_validation`, reused; no
@@ -41,7 +41,17 @@ The 2026-11-16 health check of RD-Agent's factor loop (pull request #212) found:
    The spread is computed and recorded for every screened clock so the proposer can see it; only
    the q-passing clocks are gated by it. The replay and the candidate rule are unchanged: a
    candidate still needs a swing clock with q < 0.10, a positive spread **and** positive net excess
-   in the replay. This is a stricter judge and a cheaper failure; it adds no way to pass.
+   in the replay. This is a stricter judge; it adds no way to pass.
+   **A spread-stopped clock is still a trial** (decided by the orchestrator under the owner's
+   delegation, 2026-11-16, correcting this record's first version, which skipped its replay and
+   so left it out of the Deflated Sharpe's trials). It is still replayed, only so that every
+   screened clock is counted exactly as before this check existed: the Deflated Sharpe's trial
+   count, trial Sharpes and benchmark are unchanged, and the replay can never make it pass
+   (`tests/unit/test_rdagent_factor_spread.py::test_spread_stopped_factors_still_count_as_trials_exactly_as_before`).
+   The same holds when the spread cannot be computed (the clock stays `ERROR`). Such a replay is
+   shown to the proposer and in RD-Agent's result keys only as "counted only, not a result".
+   An earlier rejection must never lower the number of attempts counted, or passing gets easier
+   for the survivors.
 2. **The proposer is told the truth in detail** (ALPHA's brief layer only; RD-Agent's source is not
    edited, ADR-0051). Each ledger line gives, for every clock that reached the spread check, the
    top- and bottom-third returns, the yearly spread before costs, its t-statistic, the share of the
@@ -76,7 +86,15 @@ The 2026-11-16 health check of RD-Agent's factor loop (pull request #212) found:
    `--provider-retries` times (default 1, at most 3). Every attempt is reserved against the run
    and monthly call and dollar caps like any other, and an abandoned attempt's reservation stays
    charged.
-5. **Caps unchanged.** What counts toward the 60-call, USD 10 per run and USD 50 per month caps,
+5. **Long embedding inputs.** Local Ollama refused 2,994- and 7,394-character inputs (HTTP 400).
+   After such a refusal the gateway sends the request once more with every input over
+   `--embed-max-chars` (2,000) split at sentence ends, embeds each piece and uses the mean vector;
+   the call log records how many inputs were chunked and into how many pieces. Nothing is
+   truncated, and an input the service accepts whole is embedded whole as before. If the service
+   still refuses, the coding step leaves that memory entry out instead of ending the run
+   (`alpha_factor_coder.AlphaRAGStrategyV2`), writes it to `memory-skips.jsonl`, and the receipt
+   counts it (`memory_entries_skipped`). Both attempts count toward the call cap.
+6. **Caps unchanged.** What counts toward the 60-call, USD 10 per run and USD 50 per month caps,
    and their values, are unchanged. The run receipt gains `call_split`: model chat requests,
    attempts and dollars versus free local embedding requests and attempts, provider timeouts,
    empty replies and retried attempts. Whether embeddings should count is left to the owner.
@@ -91,11 +109,13 @@ The 2026-11-16 health check of RD-Agent's factor loop (pull request #212) found:
 | Let a universe file choose clocks or year length freely | Rejected: a new way to search clocks; the calendar fixes both |
 | A per-read socket timeout only | Rejected: a provider that keeps the connection alive while it reasons never trips it |
 | Exclude embeddings from the call cap | Not decided here: left to the owner; the receipt shows the split |
+| Skip the replay of a spread-stopped clock (first version) | Rejected: it lowered the Deflated Sharpe's trial count, easing the survivors' pass |
+| Truncate long embedding inputs | Rejected: silent loss of memory content; chunk and average instead |
 
 ## Consequences
 
 - Re-judging the ledger offline: the spread check rejects 16 of the 18 replayed factor × clock
-  trials before the replay (all 15 that lost before costs and one daily `FAST_ONLY` whose top
+  trials (all 15 that lost before costs and one daily `FAST_ONLY` whose top
   third beat the basket but not the bottom third). Neither of the two that pass it is a swing
   clock.
 - Ledger rows from this change may carry `SPREAD_FAIL` (overall and per clock) and a `spread`

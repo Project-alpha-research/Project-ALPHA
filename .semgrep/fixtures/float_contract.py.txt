@@ -23,3 +23,29 @@ class OtherProtocol:
 def statistic(value):
     # finding
     return value == 0.95
+
+
+def lookahead_contract(s, n):
+    # alpha-negative-shift: trailing (positive) lags are exempt, every negative form is a finding.
+    ok = [s.shift(1), s.shift(0), s.shift(2), s.shift(n), s.shift(g()), s.shift(n=1)]
+    ok += [s.shift(periods=1), s.shift(1, fill_value=0), s.shift(n=n)]
+    # finding
+    bad = s.shift(-1)
+    # finding
+    bad = s.shift(-1.5)
+    # finding
+    bad = s.shift(-n)
+    # finding
+    bad = s.shift(-abs(n))
+    # finding
+    bad = s.shift(-(n + 1))
+    # finding
+    bad = s.shift(n=-1)
+    # finding
+    bad = s.shift(periods=-1)
+    # finding
+    bad = s.shift(periods=-n)
+    # finding
+    bad = s.shift(-1, fill_value=0)
+    # finding
+    bad = s.shift(-n, fill_value=0)

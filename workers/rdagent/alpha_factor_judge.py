@@ -44,8 +44,28 @@ SWING_BRIEF = (
     "Every trade costs 10 bps fee plus 6 bps slippage on each side; turning over half the book "
     "every day costs about 29% a year. Fast daily reversal, gap and range ideas already passed "
     "the daily screen but lost money after costs because they traded 19%-79% of the portfolio "
-    "per day; avoid re-proposing them. Exploratory, not admitted."
+    "per day; avoid re-proposing them. Slow volatility, illiquidity, max-return and "
+    "return-volume ranks then passed the daily rank screen, yet the top third they would hold "
+    "lost 28%-43% a year before costs: on 15 coins a few volatile coins' rallies dominate the "
+    "mean, so rank order and the top third's return can disagree. Exploratory, not admitted."
 )
+
+
+def _rounded(value: Any) -> Any:
+    # Seventeen digits tell the proposer nothing and crowd other trials out of its budget.
+    return round(value, 3) if isinstance(value, float) else value
+
+
+def replay_note(clock: str, replay: Any) -> str:
+    """Why a replayed clock won or lost: before costs, after costs, the costs and the turnover."""
+    if not replay:
+        return ""
+    gross = replay["gross"]["annualized_return"]
+    net = replay["net"]["annualized_return"]
+    return (
+        f"; {clock} replay: {gross:+.0%}/yr before costs, {net:+.0%}/yr after "
+        f"{replay['annual_cost']:.0%}/yr costs, turnover {replay['mean_turnover']:.0%}/day"
+    )
 
 
 def ledger_summary(row: dict[str, Any]) -> str:
@@ -61,12 +81,15 @@ def ledger_summary(row: dict[str, Any]) -> str:
         lead = clocks[row["lead_clock"]]
         line = (
             f"{row['name']}: {row['status']} ({statuses}); lead {row['lead_clock']} "
-            f"IC {lead['screen'].get('mean_ic')}; q {lead['q']}"
+            f"IC {_rounded(lead['screen'].get('mean_ic'))}; q {_rounded(lead['q'])}"
         )
+        for clock in ("daily", "weekly", "monthly"):
+            line += replay_note(clock, clocks[clock].get("replay"))
     else:
         line = (
-            f"{row['name']}: {row['status']}; mean rank IC {row['screen'].get('mean_ic')}; "
-            f"q {row['q']}; run {row['run_id']}"
+            f"{row['name']}: {row['status']}; "
+            f"mean rank IC {_rounded(row['screen'].get('mean_ic'))}; "
+            f"q {_rounded(row['q'])}; run {row['run_id']}"
         )
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
@@ -95,15 +118,22 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
             unknown.append(row["schema"])
         elif row["schema"] in known:
             ledger_summary(row)  # Validate known rows even outside the 30-row summary.
+    # Newest first, whole lines only, within 4000 characters; the count of the rest is stated so
+    # the proposer knows the list is partial instead of reading a line cut in half.
+    used, omitted = len(heading), 0
     for row in (r for r in reversed(rows) if r["schema"] in known):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
         seen.add(row["code_sha256"])
+        if omitted or len(lines) == 30 or used + len(line) + 1 > 4000 - 80:
+            omitted += 1
+            continue
         lines.append(line)
-        if len(lines) == 30:
-            break
-    context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+        used += len(line) + 1
+    if omitted:
+        lines.append(f"({omitted} older distinct factors not shown)")
+    context["hypothesis_and_feedback"] += heading + "\n".join(lines)
     if unknown:
         context["hypothesis_and_feedback"] += (
             f"\n{len(unknown)} ledger rows of other kinds were skipped "

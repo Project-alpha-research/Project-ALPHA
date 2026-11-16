@@ -5,7 +5,7 @@ sources:
   - scripts/roadmap_index.py
   - scripts/handoff.py
   - tests/unit/test_filesystem_contract.py
-verified: 0937b71e5380
+verified: cda3de21b7d74f71
 ---
 
 # Delivery pipeline — how a change gets made

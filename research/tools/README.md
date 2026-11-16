@@ -4,7 +4,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 0c8b05351952
+  - apps/alpha-cli/src/alpha_cli/context_cmds.py
+verified: 3e155c2fd3c1d29f
 ---
 
 # Research tools, by symptom
@@ -27,7 +28,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
-| Need the macro picture | `macro_window` in [diagnose and audit](diagnose-and-audit.md): `available: false` and a reason until context data is stored |
+| Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
 
 ## Not available yet
 
@@ -36,13 +37,13 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 - regime detection and change-point detection;
 - factor and beta attribution (market, size, momentum, Bitcoin);
 - capacity and size-aware costs (costs are flat basis points today);
-- a macro context window as a command of its own, and an event calendar;
+- an event calendar (scheduled releases and earnings dates);
 - an event study and random-date controls as plain commands (they exist only inside the older
   staged lane);
 - an answer checker, recorded comparisons between runs, a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
-- the planned plain verbs that would wrap these tools (get, idea, tool, vary, learn, promote, and a
-  context command): none is a command yet, so never type one; use the cards above.
+- the planned plain verbs that would wrap these tools (get, idea, tool, vary, learn, promote): none is a
+  command yet, so never type one; use the cards above.
 
 ## How to change it
 

@@ -2,7 +2,7 @@
 owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 0c8b05351952
+verified: 4b3d4ac3aba3c5ad
 ---
 
 # Lessons

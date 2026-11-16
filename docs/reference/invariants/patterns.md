@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_pattern_no_lookahead.py
   - tests/bias_guards/test_indicator_no_lookahead.py
   - tests/bias_guards/test_oscillator_no_lookahead.py
-verified: 1ac86fc02443
+verified: 4ecd832428b8f5c4
 ---
 
 # Pattern geometry invariants

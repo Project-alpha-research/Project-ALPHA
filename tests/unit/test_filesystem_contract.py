@@ -23,8 +23,8 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
   rules link instead of importing).
 
 Every routing and reference document declares who owns it, which files it describes and the
-commit it was verified against (``scripts/fs.py stale`` uses these). The "always read" set of a
-workspace must stay within 32 KB. Failure messages say what to change.
+fingerprint of those files it was verified against (``scripts/fs.py stale`` uses these). The
+"always read" set of a workspace must stay within 32 KB. Failure messages say what to change.
 """
 
 from __future__ import annotations
@@ -289,11 +289,11 @@ def _front_matter_problems(rel: str, *, allow_generated: bool) -> list[str]:
         ]
     verified = meta.get("verified")
     if "verified" in keys and not (
-        isinstance(verified, str) and fs_stale.known_commit(ROOT, verified)
+        isinstance(verified, str) and re.fullmatch(r"[0-9a-f]{16}", verified)
     ):
         problems.append(
-            f"{rel}: verified {verified!r} is not a commit in this repository; set it "
-            "to the commit you checked the document against"
+            f"{rel}: verified {verified!r} is not a fingerprint of the sources; re-read the "
+            f"document against them, then run `uv run python scripts/fs.py verify {rel}`"
         )
     return problems
 

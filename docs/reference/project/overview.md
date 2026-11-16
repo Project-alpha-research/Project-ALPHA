@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - README.md
-verified: 0c8b05351952
+verified: 09b516ad0cd8ad30
 ---
 
 # ALPHA: what it is for and how the parts fit
@@ -83,6 +83,9 @@ above refine this: the AI partner leads, and RD-Agent is one engine it calls.
 - RD-Agent, Qlib and the literature tools run as separate worker programs with their own
   installs. ALPHA installs and calls the real upstream packages at fixed versions; it does not
   copy or rebuild them ([owner decision](owner-decisions.md#2026-11-14-install-and-call-real-qlib)).
+- A new outside project (any library or engine ALPHA did not write) is chosen and joined by the
+  [glue rules](../../adr/0051-glue-rules-for-outside-projects.md); every one used or judged is in
+  the [outside projects register](outside-projects.md).
 - The layers and data folders are drawn in [ARCHITECTURE.md](../../ARCHITECTURE.md).
 
 ## Phases

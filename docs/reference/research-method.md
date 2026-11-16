@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_intake.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
   - apps/alpha-cli/src/alpha_cli/research_gate_packet.py
-verified: 0c8b05351952
+verified: afc34c4772a9adcd
 ---
 
 # Research method

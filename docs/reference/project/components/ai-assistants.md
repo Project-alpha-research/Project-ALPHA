@@ -5,7 +5,7 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: 0937b71e5380
+verified: 8571023272e49e21
 ---
 
 # AI assistants
@@ -53,7 +53,7 @@ The partner's instructions are four small sets of files, each with one job:
 
 ## What is real today
 
-The playbook, ten tool cards, the six skills and the lessons folder are written, and the check
+The playbook, eleven tool cards, the six skills and the lessons folder are written, and the check
 above passes. They are unproven as behaviour: no test yet shows that an AI following them stays
 honest (the planned honesty traps), there is no answer checker, and no lesson has been recorded.
 The research-case protocol library (`.agents/skills/alpha-research-protocols/`) is still loaded
@@ -80,8 +80,8 @@ by the program and the tool server. For the rest see the capabilities below on
   all communication with the AI is through Claude or ChatGPT
   ([log](../owner-decisions-3.md#2026-11-15-what-production-grade-means)). Earlier entries are in
   the [owner decisions log](../owner-decisions.md).
-- Open: whether the in-product assistant panel is removed once the Trail screen exists
-  ([question 3](../../../roadmap/production-scope-3.md#open-questions-for-the-owner)).
+- 2026-11-15: the in-product assistant panel is removed once the investigation trail screen
+  exists ([log](../owner-decisions-3.md#2026-11-15-five-scope-answers), answer 3).
 
 ## Never
 

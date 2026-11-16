@@ -14,7 +14,8 @@ The middle of [the playbook](../../../research/PLAYBOOK.md): surprise, rivals, c
 4. Open [the tool cards](../../../research/tools/README.md) by symptom. Pick the cheapest test
    that separates the two leading explanations and say its cost ("free: already in diagnose",
    "one re-run, about a minute"). Much is already there: `drawdowns`, `by_year`,
-   `concentration`, `sensitivity`, `delay` and `macro_window` in `alpha diagnose`.
+   `concentration`, `sensitivity`, `delay` and `macro_window` in `alpha diagnose`; rates, curve
+   and volatility for any dates in `alpha context window`.
 5. Run it. A new `alpha test` is a counted trial: say so.
 6. Say what changed: which explanation is now more or less likely, with the new number cited.
 7. Decide: next test, stop, or ask the owner. Ask when a definition or a judgement call

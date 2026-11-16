@@ -8,7 +8,9 @@ import json
 import os
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -99,11 +101,12 @@ def test_loop_environment_is_exact_and_names_alpha_classes(tmp_path: Path) -> No
     assert env["QLIB_FACTOR_RUNNER"] == "alpha_factor_judge.AlphaFactorRunner"
     assert env["QLIB_FACTOR_SUMMARIZER"] == "alpha_factor_judge.AlphaFactorFeedback"
     assert env["QLIB_FACTOR_SCEN"] == "alpha_factor_judge.AlphaFactorScenario"
+    assert env["QLIB_FACTOR_CODER"] == "alpha_factor_coder.AlphaFactorCoSTEER"
     assert env["QLIB_FACTOR_HYPOTHESIS_GEN"] == "alpha_factor_judge.AlphaFactorHypothesisGen"
-    assert env["FACTOR_CoSTEER_max_loop"] == "1"
+    assert env["FACTOR_CoSTEER_max_loop"] == "2"
     assert env["CONDA_DEFAULT_ENV"] == "alpha-no-conda"
     assert not any(k.startswith(("OPENAI", "ALPHA_GATEWAY", "MODEL_CoSTEER")) for k in env)
-    assert len(env) == 31
+    assert len(env) == 32
     assert env["FACTOR_CoSTEER_python_bin"].startswith(
         "env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE "
     )
@@ -392,6 +395,61 @@ def test_launcher_logs_start_before_work(
     assert row["step"] == method and row["event"] == "start"
 
 
+@pytest.mark.parametrize("value", ["0", "4"])
+def test_coder_max_loop_bounds(tmp_path: Path, value: str) -> None:
+    with pytest.raises(launch.LaunchError, match="--coder-max-loop"):
+        launch.validate(args(tmp_path, "--coder-max-loop", value), environ(tmp_path))
+
+
+def test_memory_path_inside_git_refused(tmp_path: Path) -> None:
+    with pytest.raises(launch.LaunchError, match="--memory-dir.*outside"):
+        launch.validate(
+            args(tmp_path, "--memory-dir", str(WORKER / "never-memory")), environ(tmp_path)
+        )
+
+
+@pytest.mark.parametrize("disabled", [False, True])
+def test_launcher_memory_default_opt_out_and_determinism(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, disabled: bool
+) -> None:
+    from types import SimpleNamespace
+
+    parsed = args(tmp_path, *(["--no-memory"] if disabled else []))
+    paths = launch.validate(parsed, environ(tmp_path))
+    job = launch.Launch(parsed, paths)
+    job.run.mkdir()
+    captured: dict[str, str] = {}
+
+    def spawn(command: Sequence[str], log: str, **kwargs: Any) -> SimpleNamespace:
+        captured.update(kwargs["env"])
+        return SimpleNamespace(wait=lambda timeout: 0)
+
+    monkeypatch.setattr(job, "spawn", spawn)
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    assert job.loop("http://unused", "token") == 0
+    assert job.finish(0, "test") == 0
+    assert job.receipt["memory"]["enabled"] is (not disabled)
+    base = launch.loop_environment(
+        base_url="http://unused",
+        token="token",
+        run=job.run,
+        factor_python=job.factor_python,
+        ledger=parsed.trial_ledger,
+        home=str(job.run / "home"),
+    )
+    assert {k: captured[k] for k in base} == base
+    assert captured["ALPHA_FACTOR_EVAL_PYTHON"] == base["ALPHA_FACTOR_EVAL_PYTHON"]
+    assert captured["ALPHA_FACTOR_TRIAL_LEDGER"] == str(parsed.trial_ledger)
+    memory_dir = parsed.trial_ledger.parent / "research-memory"
+    if disabled:
+        assert captured == base
+        assert not memory_dir.exists()
+    else:
+        assert (memory_dir / "memory.json").exists()
+        assert len(captured.keys() - base.keys()) == 7
+        assert captured["ARTIFACT_SIGNING_KEY_PATH"].startswith(str(memory_dir))
+
+
 def test_step_wrapper_records_a_skipped_step(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -420,3 +478,23 @@ def test_step_wrapper_records_a_skipped_step(
     asyncio.run(FakeLoop()._run_step(0))
     rows = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
     assert rows[1]["status"] == "skipped" and rows[1]["error_type"] == "KeyError"
+
+
+def test_exit_reason_names_the_call_cap(tmp_path: Path) -> None:
+    namespace = launch.parser().parse_args(
+        ["run", "--data-dir", "/d", "--run-dir", "/r", "--gateway-data-dir", "/g",
+         "--trial-ledger", "/l", "--run-id", "x", "--run-max-calls", "4"]
+    )  # fmt: skip
+    capped = {"this_run": {"calls": 4, "usd": 0.0}}
+    assert launch.exit_reason(1, capped, namespace) == (
+        "loop exit 1: model call cap reached (4 of 4 calls)"
+    )
+    assert launch.exit_reason(1, {"this_run": {"calls": 2}}, namespace) == "loop exit 1"
+    assert launch.exit_reason(1, {"error": "no output"}, namespace) == "loop exit 1"
+
+
+def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
+    parsed = args(tmp_path)
+    parsed.trial_ledger = Path("relative/trials.jsonl")
+    with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
+        launch.validate(parsed, environ(tmp_path))

@@ -432,15 +432,8 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
 
 # --------------------------------------------------------------------------- signals
 def price_signal(ctx: BuildContext) -> FigureSpec:
-    rows, reason = src.bars(
-        {
-            "symbol": ctx.field("symbol"),
-            "snapshot_id": ctx.field("snapshot_id"),
-            "start": ctx.field("start"),
-            "end": ctx.field("end"),
-        },
-        data_dir=ctx.data_dir,
-    )
+    keys = ("symbol", "snapshot_id", "start", "end", "timeframe", "source_timeframe", "session")
+    rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
     if reason is not None or not rows:
         raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
     ts = tuple(row["t"] for row in rows)

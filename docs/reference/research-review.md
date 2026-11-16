@@ -3,7 +3,7 @@ owner: research review
 sources:
   - docs/adr/0019-governed-research-cases-before-strategy-development.md
   - apps/alpha-cli/src/alpha_cli/research_gate_packet.py
-verified: 0c8b05351952
+verified: cd8004eb95f0514a
 ---
 
 # Adversarial review of research artefacts

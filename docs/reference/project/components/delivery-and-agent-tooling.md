@@ -6,7 +6,7 @@ sources:
   - tests/CONTEXT.md
   - docs/CONTEXT.md
   - docs/reference/model-routing.md
-verified: fbfecd65355d
+verified: e3b0c44298fc1c14
 ---
 
 # Delivery and agent tooling

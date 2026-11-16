@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/literature/CONTEXT.md
   - docs/adr/0024-literature-acquisition-worker-and-claim-model.md
-verified: 00c406280779
+verified: 36dca67ce96b5701
 ---
 
 # Literature worker

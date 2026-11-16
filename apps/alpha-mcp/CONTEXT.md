@@ -3,7 +3,7 @@ owner: model context protocol server
 sources:
   - apps/alpha-mcp/src/**
   - apps/alpha-mcp/pyproject.toml
-verified: 1ac86fc02443
+verified: f2d05fc9277bd166
 ---
 
 # alpha-mcp workspace

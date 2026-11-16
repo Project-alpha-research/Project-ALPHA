@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 0c8b05351952
+verified: 6098573ac739ac2a
 ---
 
 # Rule test
@@ -32,9 +32,9 @@ runs a small gauntlet and labels the result `quick`.
 
 **What it cannot tell you**
 
-- Anything about a rule outside the three kinds, short selling, sized positions or intraday bars (it reads the
-  daily store; `alpha data pull <SYMBOL> --timeframe 1h` only downloads). Say so; offer the nearest kind, or a
-  saved rule (`alpha rules save`) run through `alpha validate`, which the ledger does not count.
+- A rule outside the three kinds, short selling, sized positions or intraday bars: it reads daily bars only.
+  Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h` (intraday, or a saved rule
+  with `--strategy rules`): a plain backtest with no diagnostics, not counted in the ledger. Label it so.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
 
 **Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.

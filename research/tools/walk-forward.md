@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
-verified: 0c8b05351952
+verified: d87a3fd4632cfa21
 ---
 
 # Walk-forward (out of sample)

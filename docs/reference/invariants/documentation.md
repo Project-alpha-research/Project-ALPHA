@@ -2,14 +2,13 @@
 owner: documentation set
 sources:
   - docs/README.md
-  - docs/adr/README.md
   - scripts/roadmap_index.py
   - scripts/harness_awareness.py
   - scripts/harness_models.py
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: 0937b71e5380
+verified: 887103520b45aef9
 ---
 
 # Documentation invariants
@@ -39,8 +38,13 @@ delivery states, the generated roadmap index, append-only records, and relative 
 ## Front matter
 
 - Every `CONTEXT.md` and hand-written `docs/reference/` file starts with `owner` (a role, never a person),
-  `sources` and `verified` (the commit it was last checked against); `tests/unit/test_filesystem_contract.py`
-  enforces the shape and `uv run python scripts/fs.py stale` lists documents whose sources changed since.
+  `sources` and `verified` (a fingerprint of the content of those sources when the document was last checked
+  against them); `tests/unit/test_filesystem_contract.py` enforces the shape.
+- A document is stale when any source was edited, added or removed since: its fingerprint no longer matches.
+  `uv run python scripts/fs.py stale` lists stale documents, and `gate.py check` and the CI `static` job fail
+  while one exists, so no pull request merges with a stale document and none can stay stale on `main`.
+- `uv run python scripts/fs.py owners <path>...` names the documents that describe a file. Claude Code is told
+  them after every edit by the `post-edit-documents` hook; any other agent learns them from the failing check.
 - `sources` lists only files whose change can make the document wrong: the code, scripts, templates,
   schemas and configuration whose behaviour it states. It never lists data the document tells the reader to
   open or edit (`docs/roadmap/capabilities.toml`, backlog items, plans,
@@ -48,8 +52,12 @@ delivery states, the generated roadmap index, append-only records, and relative 
   the script that reads them (`scripts/capabilities.py`, `scripts/status.py`, `scripts/roadmap_index.py`).
 - Never copy a value from a data file (a count, a cap, a list of names) into a document; name the field
   and link the file or the generated page that shows it.
-- After re-reading a stale document against its changed sources, fix it and set `verified` to that commit,
-  even when nothing needed fixing.
+- After re-reading a stale document against its changed sources, fix it, then run
+  `uv run python scripts/fs.py verify <document>...`, even when nothing needed fixing. Never type a
+  fingerprint by hand, and never verify a document you have not re-read: the stamp is your statement that it
+  is true of the sources as they are now.
+- Two branches that change sources of one document both rewrite its `verified` line, so the second to merge
+  gets a git conflict there: take either side, re-read the document against the merged sources, verify again.
 
 ## Decision records
 

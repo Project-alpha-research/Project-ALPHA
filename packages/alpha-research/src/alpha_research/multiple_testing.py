@@ -77,7 +77,9 @@ def holm_adjust_secondary_family(
 ) -> tuple[HolmAdjustedHypothesis, ...]:
     """Return Holm-adjusted p-values in the family's original registered order."""
     # Imported here so that importing alpha_research does not load statsmodels.
-    from statsmodels.stats.multitest import multipletests
+    from statsmodels.stats.multitest import (  # type: ignore[import-untyped]  # statsmodels has no stubs
+        multipletests,
+    )
 
     raw = np.array([item.p_value for item in family.hypotheses], dtype=np.float64)
     adjusted = multipletests(raw, alpha=family.alpha, method="holm")[1]

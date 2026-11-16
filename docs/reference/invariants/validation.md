@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: af03ecd465736f1d
+verified: cfb6a102f76b0e8c
 ---
 
 # Validation statistics invariants
@@ -98,6 +98,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   against the expected maximum Sharpe of `N` trials using the cross-trial variance.
 - PBO via CSCV runs on a `(T × S)` performance matrix and is deterministic (no RNG).
 - Reality Check and SPA judge the best of `S` strategies with stationary-bootstrap means.
+  They, the stationary bootstrap and the proportion statistics stay hand-written: `arch` and `statsmodels` differ
+  by random draws, test statistic or last digits (`tests/unit/test_stats_library_parity.py`).
 
 ## Path risk and scenarios
 

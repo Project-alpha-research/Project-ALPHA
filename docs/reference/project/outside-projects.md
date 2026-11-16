@@ -8,7 +8,7 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 14f695f3442abf41
+verified: 0f2a499a357d6209
 ---
 
 # Outside projects: the register
@@ -63,8 +63,8 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | BokehJS | Other charts in the Workstation | Browser code in `alpha-web/frontend` | In use | A second chart library; one per chart kind is the aim |
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
-| statsmodels | Regression, factor exposure, regimes | For `alpha-validation` | Approved, not yet added | Closes missing rows; replaces hand-written code |
-| arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |
+| statsmodels | Regression, Holm adjustment | `alpha-validation`, `alpha-research` | In use | Holm matches the old code exactly; the rest stays hand-written |
+| arch | Side-by-side checks of bootstrap and SPA | `alpha-validation` tests only | In use (checks) | Replaces nothing: different draws and SPA statistic |
 | ruptures | Finds dates where behaviour changed | For `alpha-validation` | Approved, not yet added | New ability; needs only numpy and SciPy |
 | DuckDB | Asks one question across many stored files | For `alpha-cli`, in memory only | Approved, not yet added | A query tool, never the store |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |

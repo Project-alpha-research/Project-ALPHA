@@ -37,9 +37,15 @@ from collections.abc import Iterator
 import numpy as np
 import pytest
 from arch.bootstrap import SPA, StationaryBootstrap
-from statsmodels.stats.multitest import multipletests
-from statsmodels.stats.power import normal_power_het, normal_sample_size_one_tail
-from statsmodels.stats.proportion import confint_proportions_2indep, proportion_confint
+from statsmodels.stats.multitest import multipletests  # type: ignore[import-untyped]
+from statsmodels.stats.power import (  # type: ignore[import-untyped]
+    normal_power_het,
+    normal_sample_size_one_tail,
+)
+from statsmodels.stats.proportion import (  # type: ignore[import-untyped]
+    confint_proportions_2indep,
+    proportion_confint,
+)
 
 from alpha_research import (
     FrozenSecondaryFamily,
@@ -488,7 +494,7 @@ def _arch_spa(perf: np.ndarray, resamples: int, seed: int, *, studentize: bool) 
         seed=seed,
     )
     spa.compute()
-    return {key: float(value) for key, value in spa.pvalues.items()}
+    return {str(key): float(value) for key, value in spa.pvalues.items()}
 
 
 def _p_value_tolerance(p_ours: float, p_theirs: float, resamples: int) -> float:

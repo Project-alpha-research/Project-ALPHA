@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 
 from alpha_backtest.portfolio_replay import WeightTarget
+from alpha_cli import _rdagent_membership as membership
 from alpha_core import DataError
 
 CLOCKS = {"daily": 1, "weekly": 7, "monthly": 28}
@@ -24,6 +25,9 @@ def clock_samples(
     days: list[date],
     open_days: list[date],
     clock: str,
+    *,
+    closes: np.ndarray | None = None,
+    gap_policy: bool = False,
 ) -> dict[str, Any]:
     """Non-overlapping decide-close/next-open windows, with explicit dated endpoints."""
     h = CLOCKS[clock]
@@ -60,7 +64,14 @@ def clock_samples(
     # drops it for that day, as the daily screen always did, instead of failing the whole clock.
     with np.errstate(invalid="ignore"):
         outcome = opens[end] / opens[start] - 1
-    return {"days": chosen, "signal": signal[selected], "outcome": outcome}
+    result = {"days": chosen, "signal": signal[selected], "outcome": outcome}
+    if gap_policy:
+        if closes is None:
+            raise DataError("gap labels require closes")
+        result["outcome"], result["gap_counts"] = membership.forward_returns(
+            opens, closes, open_days, start, end, counted=np.isfinite(signal[selected])
+        )
+    return result
 
 
 def clock_targets(

@@ -413,6 +413,10 @@ class AlphaFactorScenario(QlibFactorScenario):
             "ledger, counting each factor x clock as a trial; a screened clock can pass only "
             "if the top third it would hold beat its bottom third before costs. "
             "Hold drifted weights between rebalances; residual trades are executed and charged. "
+            "New frozen panels require 20 consecutive daily bars and a non-null factor to rank. "
+            "Missing rows are null. Held missing names wait at last close, exit at the first "
+            "resuming close, or lose 30% after 30 calendar days without a bar. Outstanding "
+            "waits at panel end also lose 30%; this haircut is an assumption, not a measurement. "
             "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "
             "a daily-only pass is FAST_ONLY, never admission, evidence, approval or promotion."
         )

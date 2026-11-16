@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: c8b30e3f7bebd260
+verified: f510e5789c631637
 ---
 
 # RD-Agent
@@ -55,6 +55,10 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
   the universe is a frozen file; each paid model call has a time limit
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+- New frozen panels allow missing days and delisted names with causal membership and explicit losses;
+  [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
+  This supports the wide store; it does not establish that its data are survivorship-free, and three of its pairs
+  change identity across a gap (LUNA reused, DREP and COCOS redenominated) and must be split before use.
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
@@ -127,9 +131,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials;
   two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
-  candidate. Open for the owner: whether free local embeddings should count toward the 60-call cap
-  (they were 21 of 60 and 16 of 47 calls), and a data pull to widen the universe (the stores hold
-  15 coins and 9 single stocks). Long memory embeddings are now chunked, never truncated.
+  candidate. The stores then held 15 coins and 9 single stocks. Open: whether free local embeddings should count toward the 60-call cap
+  (they were 21 of 60 and 16 of 47 calls). Long memory embeddings are now chunked, never truncated.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

@@ -32,9 +32,25 @@ rules:
     message: "Negative shift reads the FUTURE row into the present (look-ahead). Only trailing windows are allowed in packages."
     paths:
       include: ["/packages/"]
+    # `-$N` is NOT used: Semgrep binds `-$N` to positive literals too (`shift(1)`, `shift(0)`), so
+    # it flagged every trailing shift. The count is matched as a metavariable and tested by source
+    # text instead: any argument that begins with a minus sign (literal int/float, name, call,
+    # parenthesised expression) is flagged, positive literals and plain names are not. The count
+    # is the first positional argument, or `n=` (polars) / `periods=` (pandas); extra arguments
+    # such as `fill_value=` no longer hide a negative count.
     pattern-either:
-      - pattern: $X.shift(-$N)
-      - pattern: $X.shift(n=-$N)
+      - patterns:
+          - pattern: $X.shift($A, ...)
+          - metavariable-regex:
+              metavariable: $A
+              regex: '^\(*\s*-'
+      - patterns:
+          - pattern-either:
+              - pattern: $X.shift(..., n=$A, ...)
+              - pattern: $X.shift(..., periods=$A, ...)
+          - metavariable-regex:
+              metavariable: $A
+              regex: '^\(*\s*-'
 
   # ---- determinism (spec §11.4 / ADR-0013): no wall clock, no unseeded RNG in the platform ---
   - id: alpha-wall-clock-in-packages

@@ -129,7 +129,7 @@ def _execute(
             run_id=prepared.identity.run_id,
             snapshot_id=None,
             dividends=prepared.dividends,
-            trial_sharpes=family_sharpes(snapshot, count.family_id),
+            trial_sharpes=family_sharpes(snapshot, count.family_id, prepared.spec.periods_per_year),
             trial_family=count.family_id,
             trial_count=count.prior_trials + 1 + count.unknown_rows,
         )
@@ -155,6 +155,7 @@ def _execute(
                 prepared.identity,
                 home,
                 result,
+                snapshot=snapshot,
             )
         _, manifest = write_validation_run(
             home,

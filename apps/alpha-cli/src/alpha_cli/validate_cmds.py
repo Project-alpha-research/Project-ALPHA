@@ -182,7 +182,7 @@ def validate(
             snapshot_id=snapshot_id,
             dividends=dividends,
             tier2_spec_for_path=tier2_spec_for_path,
-            **validation_family(settings.data_dir, strategy),
+            **validation_family(settings.data_dir, strategy, spec.periods_per_year, run_id),
         )
     except DataError as exc:  # no bars, unknown strategy/null-model, train < warmup floor, etc.
         raise typer.BadParameter(str(exc)) from exc

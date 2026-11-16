@@ -145,6 +145,8 @@ def write_diagnostics(
     identity: RunIdentity,
     home: Path,
     result: dict[str, Any],
+    *,
+    snapshot: LedgerSnapshot | None = None,
 ) -> _gauntlet.GauntletOutput:
     rdir = Path(result["run_dir"])
     # These exact sidecars are reused by write_validation_run's idempotent publication seam.
@@ -208,15 +210,15 @@ def write_diagnostics(
     returns = to_returns([float(bar.close) for bar in bars])
     weights, costs = surrogate_for(spec).weights_and_costs(returns)
     document["delay"] = d.delay(returns, weights, costs, ppy)
-    snapshot = spine_snapshot(home)
+    # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
+    snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     document["trials"] = trials(
         home, bars[0].symbol, out.oos.oos_returns, ppy, variants, idea.rule.kind, snapshot=snapshot
     )
     result["deflation"] = document["trials"]["family"]
-    sharpes = family_sharpes(snapshot, result["deflation"]["family_id"])
-    current, _ = d.score(out.oos.oos_returns, ppy)
-    if current is not None:
-        sharpes.append(current / math.sqrt(ppy))
+    # The verdict's prior trials: the family's same-frequency Sharpes and this run's variants (the
+    # gauntlet adds this run's own OOS Sharpe); N is the family count recorded above.
+    sharpes = family_sharpes(snapshot, result["deflation"]["family_id"], ppy)
     sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
     out = _gauntlet.apply_trial_deflation(
         out, sharpes, result["deflation"]["family_id"], result["deflation"]["n_trials_used"]

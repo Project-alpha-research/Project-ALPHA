@@ -10,6 +10,8 @@ from typing import Any
 
 import numpy as np
 
+from alpha_cli._artifacts import read_manifest
+from alpha_cli._artifacts import run_dir as run_dir_for
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.trial_reader import (
     READER_VERSION,
@@ -59,7 +61,22 @@ def family_count(home: Path, rule_kind: str) -> FamilyCount:
     return count_snapshot(spine_snapshot(home), rule_kind)
 
 
-def family_sharpes(snapshot: LedgerSnapshot, family_id: str) -> list[float]:
+_DAILY = frozenset({252, 365})
+
+
+def _same_bar_size(row_periods: object, periods_per_year: int) -> bool:
+    """Daily bars match daily bars on either calendar (252 trading or 365 crypto days)."""
+    return row_periods == periods_per_year or (row_periods in _DAILY and periods_per_year in _DAILY)
+
+
+def family_sharpes(snapshot: LedgerSnapshot, family_id: str, periods_per_year: int) -> list[float]:
+    """Per-bar Sharpes of the family's counted trials that use the run's bar size.
+
+    Each row's annual Sharpe is divided by its own periods per year (per-bar units, as the
+    package's formulas require). A per-bar Sharpe of another bar size is on another scale (an
+    hourly bar's is far smaller than a daily bar's), so those trials still count in N but never
+    enter the variance.
+    """
     rows = [
         snapshot.raw_rows[(record.source_file, record.source_line)]
         for record in snapshot.records
@@ -70,12 +87,31 @@ def family_sharpes(snapshot: LedgerSnapshot, family_id: str) -> list[float]:
     return [
         row["oos_sharpe"] / math.sqrt(row["periods_per_year"])
         for row in rows
-        if row.get("oos_sharpe") is not None and row.get("periods_per_year")
+        if row.get("oos_sharpe") is not None
+        and row.get("periods_per_year")
+        and _same_bar_size(row["periods_per_year"], periods_per_year)
     ]
 
 
-def validation_family(home: Path, strategy: str) -> dict[str, Any]:
-    """Only registered spine rule strategies can identify a validate run's family."""
+def validation_family(
+    home: Path, strategy: str, periods_per_year: int, run_id: str
+) -> dict[str, Any]:
+    """Family inputs for an ``alpha validate`` run, fixed at the run's first publication.
+
+    Only registered spine rule strategies identify a family. A run already published keeps the
+    family it recorded then: the ledger only grows, and re-running an existing run id must
+    reproduce its stored verdict, never recount it against today's bigger family.
+    """
+    run_dir = run_dir_for(home, run_id)
+    if (run_dir / "manifest.json").exists():
+        recorded = read_manifest(run_dir).get("dsr") or {}
+        if not isinstance(recorded.get("family_id"), str):
+            return {}
+        return {
+            "trial_sharpes": [float(value) for value in recorded["prior_sharpes"]],
+            "trial_family": recorded["family_id"],
+            "trial_count": int(recorded["n_trials"]),
+        }
     rule = {"ma_crossover": "ma_cross", "breakout": "breakout", "ts_momentum": "tsmom"}.get(
         strategy
     )
@@ -86,7 +122,7 @@ def validation_family(home: Path, strategy: str) -> dict[str, Any]:
     if not any(record.family_id == count.family_id for record in snapshot.records):
         return {}
     return {
-        "trial_sharpes": family_sharpes(snapshot, count.family_id),
+        "trial_sharpes": family_sharpes(snapshot, count.family_id, periods_per_year),
         "trial_family": count.family_id,
         "trial_count": count.prior_trials + 1 + count.unknown_rows,
     }

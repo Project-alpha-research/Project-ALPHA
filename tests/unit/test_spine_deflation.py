@@ -15,6 +15,7 @@ from alpha_cli.spine.deflation import deflate, family_count
 from alpha_cli.spine.diagnose import trials
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts
+from alpha_cli.spine.trial_reader import LedgerSnapshot
 from alpha_validation.dsr import deflated_sharpe
 
 
@@ -170,9 +171,14 @@ def test_gauntlet_count_and_explicit_basis() -> None:
     returns, sharpes = sample()
     alone = _gauntlet._dsr_summary(returns, 0.95)
     assert alone.trial_basis == "no ledger family: counted as one trial"
-    counted = _gauntlet._dsr_summary(returns, 0.95, sharpes, "spine:ma_cross", 40)
-    assert counted.dsr == pytest.approx(0.5265926343748291, abs=1e-12, rel=0)
+    # The gauntlet adds this run's own per-bar Sharpe to the family's prior Sharpes.
+    own = float(np.mean(returns) / np.std(returns, ddof=1))
+    counted = _gauntlet._dsr_summary(returns, 0.95, sharpes[:4], "spine:ma_cross", 40)
+    expected = deflate(returns, [*sharpes[:4], own], 40)["dsr"]
+    assert counted.dsr == pytest.approx(expected, abs=1e-12, rel=0)
     assert counted.n_trials == 40
+    assert counted.prior_sharpes == tuple(sharpes[:4])
+    assert counted.family_id == "spine:ma_cross" and alone.family_id is None
     assert counted.trial_basis == "ledger family spine:ma_cross, 40 trials"
     assert not counted.passed and alone.passed
 
@@ -212,13 +218,13 @@ def test_rule_run_records_family_beside_verdict(
 def test_validate_family_inputs(tmp_path: Path) -> None:
     from alpha_cli.spine.deflation import validation_family
 
-    assert validation_family(tmp_path, "ma_crossover") == {}
+    assert validation_family(tmp_path, "ma_crossover", 252, "none") == {}
     ledger(tmp_path)
-    inputs = validation_family(tmp_path, "ma_crossover")
+    inputs = validation_family(tmp_path, "ma_crossover", 252, "none")
     assert inputs["trial_family"] == "spine:ma_cross"
     assert inputs["trial_count"] == 38
     assert len(inputs["trial_sharpes"]) == 36
-    assert validation_family(tmp_path, "kronos") == {}
+    assert validation_family(tmp_path, "kronos", 252, "none") == {}
 
 
 def test_explicit_bar_size(tmp_path: Path) -> None:
@@ -309,8 +315,120 @@ def test_validate_passes_existing_family_to_verdict(
 
 def test_insufficient_family_sharpes_cannot_pass() -> None:
     returns, _ = sample()
-    summary = _gauntlet._dsr_summary(returns, 0.95, [0.1], "spine:ma_cross", 40)
+    summary = _gauntlet._dsr_summary(returns, 0.95, [], "spine:ma_cross", 40)
     assert summary.n_trials == 40
     assert not summary.passed
     assert math.isnan(summary.dsr)
     assert summary.reason == "fewer than two available trial Sharpes"
+
+
+def validate_args() -> list[str]:
+    return [
+        "SPY",
+        "--strategy",
+        "ma_crossover",
+        "--param",
+        "fast=5",
+        "--param",
+        "slow=20",
+        "--train-size",
+        "64",
+        "--test-size",
+        "30",
+        "--tier1-paths",
+        "20",
+        "--tier2-paths",
+        "4",
+        "--tier3-paths",
+        "4",
+        "--n-resamples",
+        "50",
+        "--max-workers",
+        "1",
+    ]
+
+
+def test_validate_rerun_keeps_the_family_recorded_at_first_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A grown ledger must neither break a re-run nor silently change the stored verdict."""
+    import typer
+
+    from alpha_cli.validate_cmds import validate
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    path = ledger(tmp_path)
+    seed_store(tmp_path, symbol="SPY", n=150)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    app = typer.Typer()
+    app.command()(validate)
+    first = CliRunner().invoke(app, validate_args())
+    assert first.exit_code == 0, (first.output, first.exception)
+    manifest_path = next((tmp_path / "runs").glob("*/manifest.json"))
+    stored = manifest_path.read_bytes()
+    assert json.loads(stored)["dsr"]["n_trials"] == 38
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    for i in range(41, 61):
+        rows.append({**rows[0], "trial_index": i, "total_trials": i, "oos_sharpe": -i / 50})
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    again = CliRunner().invoke(app, validate_args())
+    assert again.exit_code == 0, (again.output, again.exception)
+    assert manifest_path.read_bytes() == stored
+
+
+def test_family_sharpes_keep_only_the_run_frequency(tmp_path: Path) -> None:
+    """Per-bar Sharpes of other bar sizes are on another scale: they count, but not in variance."""
+    from alpha_cli.spine.deflation import count_snapshot, family_sharpes, spine_snapshot
+
+    path = ledger(tmp_path)
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    rows[0]["periods_per_year"] = 252 * 78
+    rows[1]["periods_per_year"] = 365
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    snapshot = spine_snapshot(tmp_path)
+    assert count_snapshot(snapshot, "ma_cross").prior_trials == 36
+    daily = family_sharpes(snapshot, "spine:ma_cross", 252)
+    assert len(daily) == 35
+    assert daily[0] == pytest.approx(0.02 / math.sqrt(365), abs=1e-15, rel=0)
+    assert daily[1] == pytest.approx(0.03 / math.sqrt(252), abs=1e-15, rel=0)
+    assert len(family_sharpes(snapshot, "spine:ma_cross", 365)) == 35
+    assert len(family_sharpes(snapshot, "spine:ma_cross", 252 * 78)) == 1
+
+
+def test_one_ledger_snapshot_per_rule_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The verdict and diagnostics must count the same point-in-time ledger."""
+    from alpha_cli.spine import deflation, diagnose, run
+    from alpha_cli.spine.run import run_idea
+    from alpha_cli.spine.spec import load_spec
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    ledger(tmp_path)
+    seed_store(tmp_path, symbol="SPY", n=150)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    reads: list[Path] = []
+    original = deflation.spine_snapshot
+
+    def counted(home: Path) -> LedgerSnapshot:
+        reads.append(home)
+        return original(home)
+
+    monkeypatch.setattr(run, "spine_snapshot", counted)
+    monkeypatch.setattr(diagnose, "spine_snapshot", counted)
+    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    result = run_idea(idea, home=tmp_path, quick=True)["results"][0]
+    assert result["error"] is None, result["error"]
+    assert len(reads) == 1
+
+
+def test_one_trial_basis_reads_singular() -> None:
+    returns, _ = sample()
+    summary = _gauntlet._dsr_summary(returns, 0.95, [], "spine:ma_cross", 1)
+    assert summary.trial_basis == "ledger family spine:ma_cross, 1 trial"

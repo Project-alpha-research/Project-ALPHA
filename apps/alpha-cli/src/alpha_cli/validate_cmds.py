@@ -16,6 +16,7 @@ import typer
 from alpha_cli import _artifacts, _forecast_cache, _gauntlet, _runner, rules_cmds
 from alpha_cli._identity import RunIdentity
 from alpha_cli.spine.deflation import validation_family
+from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import Bar, DataError
 from alpha_core.config import AlphaSettings
 from alpha_validation import render_tearsheet_html, report_to_manifest
@@ -182,7 +183,7 @@ def validate(
             snapshot_id=snapshot_id,
             dividends=dividends,
             tier2_spec_for_path=tier2_spec_for_path,
-            **validation_family(settings.data_dir, strategy, spec.periods_per_year, run_id),
+            **_ledger_family(settings.data_dir, strategy, spec.periods_per_year, run_id),
         )
     except DataError as exc:  # no bars, unknown strategy/null-model, train < warmup floor, etc.
         raise typer.BadParameter(str(exc)) from exc
@@ -223,6 +224,14 @@ def validate(
                 "reflect memorization (ADR-0009)",
                 fg=typer.colors.YELLOW,
             )
+
+
+def _ledger_family(data_dir: Path, strategy: str, periods_per_year: int, run_id: str) -> Any:
+    """The run's ledger family inputs; an unreadable ledger stops with its typed error."""
+    try:
+        return validation_family(data_dir, strategy, periods_per_year, run_id)
+    except SpineError as exc:
+        fail(exc, json_out=False)
 
 
 def write_validation_run(

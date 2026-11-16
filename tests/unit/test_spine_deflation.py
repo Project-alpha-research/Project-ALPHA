@@ -11,7 +11,7 @@ import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import _gauntlet, results_cmds
-from alpha_cli.spine.deflation import deflate, family_count
+from alpha_cli.spine.deflation import TrialFamily, deflate, family_count
 from alpha_cli.spine.diagnose import trials
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts
@@ -173,7 +173,8 @@ def test_gauntlet_count_and_explicit_basis() -> None:
     assert alone.trial_basis == "no ledger family: counted as one trial"
     # The gauntlet adds this run's own per-bar Sharpe to the family's prior Sharpes.
     own = float(np.mean(returns) / np.std(returns, ddof=1))
-    counted = _gauntlet._dsr_summary(returns, 0.95, sharpes[:4], "spine:ma_cross", 40)
+    family = TrialFamily("spine:ma_cross", family_count=40, count=40, comparable=5)
+    counted = _gauntlet._dsr_summary(returns, 0.95, sharpes[:4], family)
     expected = deflate(returns, [*sharpes[:4], own], 40)["dsr"]
     assert counted.dsr == pytest.approx(expected, abs=1e-12, rel=0)
     assert counted.n_trials == 40
@@ -221,8 +222,7 @@ def test_validate_family_inputs(tmp_path: Path) -> None:
     assert validation_family(tmp_path, "ma_crossover", 252, "none") == {}
     ledger(tmp_path)
     inputs = validation_family(tmp_path, "ma_crossover", 252, "none")
-    assert inputs["trial_family"] == "spine:ma_cross"
-    assert inputs["trial_count"] == 38
+    assert inputs["trial_family"] == TrialFamily("spine:ma_cross", 38, 38, 37, 0)
     assert len(inputs["trial_sharpes"]) == 36
     assert validation_family(tmp_path, "kronos", 252, "none") == {}
 
@@ -315,7 +315,9 @@ def test_validate_passes_existing_family_to_verdict(
 
 def test_insufficient_family_sharpes_cannot_pass() -> None:
     returns, _ = sample()
-    summary = _gauntlet._dsr_summary(returns, 0.95, [], "spine:ma_cross", 40)
+    # Five comparable trials claimed (no floor) but only this run's Sharpe available.
+    family = TrialFamily("spine:ma_cross", family_count=40, count=40, comparable=5)
+    summary = _gauntlet._dsr_summary(returns, 0.95, [], family)
     assert summary.n_trials == 40
     assert not summary.passed
     assert math.isnan(summary.dsr)
@@ -371,6 +373,7 @@ def test_validate_rerun_keeps_the_family_recorded_at_first_publication(
     manifest_path = next((tmp_path / "runs").glob("*/manifest.json"))
     stored = manifest_path.read_bytes()
     assert json.loads(stored)["dsr"]["n_trials"] == 38
+    assert json.loads(stored)["dsr"]["deflation_rule"] == "family-dedup-floor-1"
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     for i in range(41, 61):
         rows.append({**rows[0], "trial_index": i, "total_trials": i, "oos_sharpe": -i / 50})
@@ -430,5 +433,141 @@ def test_one_ledger_snapshot_per_rule_run(tmp_path: Path, monkeypatch: pytest.Mo
 
 def test_one_trial_basis_reads_singular() -> None:
     returns, _ = sample()
-    summary = _gauntlet._dsr_summary(returns, 0.95, [], "spine:ma_cross", 1)
-    assert summary.trial_basis == "ledger family spine:ma_cross, 1 trial"
+    family = TrialFamily("spine:ma_cross", family_count=1, count=1, comparable=1)
+    summary = _gauntlet._dsr_summary(returns, 0.95, [], family)
+    assert summary.trial_basis.startswith("ledger family spine:ma_cross, 1 trial,")
+    assert summary.dsr == pytest.approx(summary.psr, abs=1e-15)
+
+
+def keyed_ledger(home: Path, keys: list[tuple[str, str, str]]) -> Path:
+    """Valid rule-test rows of ``ma_cross`` with a spec hash, symbol and window start each."""
+    path = home / "ledger/trials.jsonl"
+    path.parent.mkdir(parents=True)
+    rows = [
+        dict(
+            schema="AlphaTrialV1",
+            trial_index=i,
+            total_trials=i,
+            recorded_at="2026-11-16T00:00:00+00:00",
+            symbol=symbol,
+            rule="ma_cross",
+            verdict="B",
+            labels=[],
+            spec_sha256=spec,
+            first_ts=start,
+            last_ts="2026-11-13T00:00:00+00:00",
+            oos_sharpe=i / 10,
+            periods_per_year=252,
+        )
+        for i, (spec, symbol, start) in enumerate(keys, 1)
+    ]
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    return path
+
+
+def test_same_test_repeats_count_once_keeping_the_earliest(tmp_path: Path) -> None:
+    from alpha_cli.spine.deflation import (
+        count_snapshot,
+        family_sharpes,
+        spine_snapshot,
+        spine_test_key,
+    )
+
+    same = ("a" * 64, "SPY", "2016-01-04T00:00:00+00:00")
+    keyed_ledger(tmp_path, [same, ("b" * 64, "SPY", same[2]), same, same])
+    snapshot = spine_snapshot(tmp_path)
+    count = count_snapshot(snapshot, "ma_cross")
+    assert (count.prior_trials, count.repeats, count.this_run) == (2, 2, 1)
+    sharpes = family_sharpes(snapshot, "spine:ma_cross", 252)
+    assert sharpes == pytest.approx([0.1 / math.sqrt(252), 0.2 / math.sqrt(252)], abs=1e-15)
+    # This run repeating the earlier "b" test is not counted again, and its own Sharpe stands in.
+    current = spine_test_key("b" * 64, "SPY", same[2], "2026-11-13T00:00:00+00:00", 252)
+    count = count_snapshot(snapshot, "ma_cross", current)
+    assert (count.prior_trials, count.repeats, count.this_run) == (2, 3, 0)
+    assert family_sharpes(snapshot, "spine:ma_cross", 252, current) == pytest.approx(
+        [0.1 / math.sqrt(252)], abs=1e-15
+    )
+
+
+def test_trial_basis_names_repeats_floor_and_wider_count() -> None:
+
+    returns, sharpes = sample()
+    family = TrialFamily("spine:ma_cross", family_count=9, count=13, comparable=3, repeats=3)
+    summary = _gauntlet._dsr_summary(returns, 0.95, sharpes[:2], family)
+    assert summary.trial_basis == (
+        "ledger family spine:ma_cross, 13 trials (the wider count of same-asset tests of any "
+        "rule; the family alone has 9), 3 repeats of earlier tests not counted, "
+        "spread floored: fewer than 5 comparable trials"
+    )
+    assert summary.spread_floored and summary.repeats == 3 and summary.family_count == 9
+
+
+def sampling_variance(returns: np.ndarray) -> float:
+    from scipy import stats
+
+    sr = float(np.mean(returns) / np.std(returns, ddof=1))
+    skew = float(stats.skew(returns, bias=True))
+    kurt = float(stats.kurtosis(returns, fisher=False, bias=True))
+    return (1.0 - skew * sr + (kurt - 1.0) / 4.0 * sr * sr) / (returns.size - 1)
+
+
+def test_spread_floored_below_five_comparable_trials() -> None:
+
+    returns, sharpes = sample()
+    own = float(np.mean(returns) / np.std(returns, ddof=1))
+    floor = sampling_variance(returns)
+    assert floor > float(np.var([*sharpes[:2], own], ddof=1))
+    tiny = TrialFamily("spine:ma_cross", family_count=3, count=3, comparable=3)
+    summary = _gauntlet._dsr_summary(returns, 0.95, sharpes[:2], tiny)
+    expected = deflate(returns, [*sharpes[:2], own], 3, variance_floor=floor)
+    assert summary.dsr == pytest.approx(expected["dsr"], abs=1e-12, rel=0)
+    assert expected["trial_sharpe_variance"] == pytest.approx(floor, abs=1e-15, rel=0)
+    assert summary.spread_floored
+    wide = TrialFamily("spine:ma_cross", family_count=6, count=6, comparable=6)
+    summary = _gauntlet._dsr_summary(returns, 0.95, sharpes, wide)
+    assert summary.dsr == pytest.approx(
+        deflate(returns, [*sharpes, own], 6)["dsr"], abs=1e-12, rel=0
+    )
+    assert not summary.spread_floored
+    assert "floored" not in summary.trial_basis
+
+
+def test_floored_spread_needs_only_this_runs_sharpe() -> None:
+
+    returns, _ = sample()
+    family = TrialFamily("spine:ma_cross", family_count=40, count=40, comparable=1)
+    summary = _gauntlet._dsr_summary(returns, 0.95, [], family)
+    assert math.isfinite(summary.dsr) and summary.dsr < summary.psr
+    assert summary.reason is None
+
+
+def test_validate_reports_an_unreadable_ledger_cleanly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import typer
+
+    from alpha_cli.validate_cmds import validate
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    path = ledger(tmp_path)
+    seed_store(tmp_path, symbol="SPY", n=150)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    original = Path.read_bytes
+
+    def denied(self: Path) -> bytes:
+        if self == path:
+            raise PermissionError("denied")
+        return original(self)
+
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    app = typer.Typer()
+    app.command()(validate)
+    result = CliRunner().invoke(app, validate_args())
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
+    assert "Cannot read the trial ledger" in result.output
+    assert "Fix the file's permissions" in result.output

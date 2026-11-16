@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy import stats
 
 from alpha_cli._artifacts import read_manifest
 from alpha_cli._artifacts import run_dir as run_dir_for
@@ -20,9 +21,19 @@ from alpha_cli.spine.trial_reader import (
     read_ledgers,
     trials_for_deflation,
 )
+from alpha_cli.spine.trial_record import TrialRecord
 from alpha_core import DataError
 from alpha_validation.dsr import expected_max_sharpe, probabilistic_sharpe_ratio
 from alpha_validation.metrics import FloatSeq
+
+# Recorded in every gauntlet DSR summary (outside run-id hashing), so a stored verdict names the
+# counting rule it used: same-test repeats collapsed, spread floored below FLOOR_BELOW trials.
+DEFLATION_RULE = "family-dedup-floor-1"
+FLOOR_BELOW = 5
+_DAILY = frozenset({252, 365})
+
+# A test is identified by its spec hash, assets, data window and bar size.
+TestKey = tuple[str, tuple[str, ...], str | None, str | None, str | None]
 
 
 @dataclass(frozen=True)
@@ -32,6 +43,77 @@ class FamilyCount:
     unknown_rows: int
     ledger_rows: int
     reader_version: int
+    repeats: int = 0
+    this_run: int = 1
+
+
+@dataclass(frozen=True)
+class TrialFamily:
+    """What the gauntlet needs to deflate by a ledger family, and to say how it counted.
+
+    ``family_count`` is N from the family alone; ``count`` is the N used, larger when the wider
+    count of same-asset tests of any rule is larger; ``comparable`` counts the distinct family
+    trials of the run's bar size with a Sharpe, this run included; ``repeats`` are same-test
+    repeats not counted.
+    """
+
+    family_id: str
+    family_count: int
+    count: int
+    comparable: int
+    repeats: int = 0
+
+
+def spine_test_key(
+    spec_hash: str | None,
+    symbol: str | None,
+    first_ts: str | None,
+    last_ts: str | None,
+    periods_per_year: int | None,
+) -> TestKey | None:
+    """A spine run's test identity, built the way the reader maps its ledger row."""
+    if not spec_hash or not symbol:
+        return None
+    bar_size = "1D" if periods_per_year in _DAILY else None
+    return (spec_hash, (symbol,), first_ts, last_ts, bar_size)
+
+
+def _record_key(record: TrialRecord) -> TestKey | None:
+    if not record.spec_hash or not record.assets:
+        return None
+    windows = record.windows
+    return (
+        record.spec_hash,
+        record.assets,
+        windows.get("data_start"),
+        windows.get("data_end"),
+        record.bar_size,
+    )
+
+
+def _distinct_tests(snapshot: LedgerSnapshot, family_id: str) -> tuple[list[TrialRecord], int]:
+    """The family's counted trials, earliest of each same test first; and the repeats dropped.
+
+    Rows without a spec hash or asset cannot be matched and each count as their own test.
+    """
+    kept: list[TrialRecord] = []
+    seen: set[TestKey] = set()
+    repeats = 0
+    for record in snapshot.records:
+        if (
+            record.family_id != family_id
+            or not record.counts_for_deflation
+            or {"repeat", "error"}.intersection(record.labels)
+        ):
+            continue
+        key = _record_key(record)
+        if key is not None and key in seen:
+            repeats += 1
+            continue
+        if key is not None:
+            seen.add(key)
+        kept.append(record)
+    return kept, repeats
 
 
 def spine_snapshot(home: Path) -> LedgerSnapshot:
@@ -46,14 +128,21 @@ def spine_snapshot(home: Path) -> LedgerSnapshot:
         ) from exc
 
 
-def count_snapshot(snapshot: LedgerSnapshot, rule_kind: str) -> FamilyCount:
+def count_snapshot(
+    snapshot: LedgerSnapshot, rule_kind: str, current: TestKey | None = None
+) -> FamilyCount:
+    """The reader's family count less same-test repeats; this run counts 0 if it repeats one."""
     family_id = f"spine:{rule_kind}"
+    kept, repeats = _distinct_tests(snapshot, family_id)
+    this_run = 0 if current is not None and any(_record_key(r) == current for r in kept) else 1
     return FamilyCount(
         family_id,
-        trials_for_deflation(snapshot, family_id)["family_trials"],
+        trials_for_deflation(snapshot, family_id)["family_trials"] - repeats,
         sum(row.source == "spine" for row in snapshot.unknown),
         snapshot.sources[0].rows,
         READER_VERSION,
+        repeats + 1 - this_run,
+        this_run,
     )
 
 
@@ -61,28 +150,30 @@ def family_count(home: Path, rule_kind: str) -> FamilyCount:
     return count_snapshot(spine_snapshot(home), rule_kind)
 
 
-_DAILY = frozenset({252, 365})
-
-
 def _same_bar_size(row_periods: object, periods_per_year: int) -> bool:
     """Daily bars match daily bars on either calendar (252 trading or 365 crypto days)."""
     return row_periods == periods_per_year or (row_periods in _DAILY and periods_per_year in _DAILY)
 
 
-def family_sharpes(snapshot: LedgerSnapshot, family_id: str, periods_per_year: int) -> list[float]:
-    """Per-bar Sharpes of the family's counted trials that use the run's bar size.
+def family_sharpes(
+    snapshot: LedgerSnapshot,
+    family_id: str,
+    periods_per_year: int,
+    current: TestKey | None = None,
+) -> list[float]:
+    """Per-bar Sharpes of the family's distinct tests that use the run's bar size.
 
     Each row's annual Sharpe is divided by its own periods per year (per-bar units, as the
     package's formulas require). A per-bar Sharpe of another bar size is on another scale (an
     hourly bar's is far smaller than a daily bar's), so those trials still count in N but never
-    enter the variance.
+    enter the variance. A same-test repeat adds no second Sharpe, and the earlier test this run
+    repeats is left out because this run's own Sharpe stands for it.
     """
+    kept, _ = _distinct_tests(snapshot, family_id)
     rows = [
         snapshot.raw_rows[(record.source_file, record.source_line)]
-        for record in snapshot.records
-        if record.family_id == family_id
-        and record.counts_for_deflation
-        and not {"repeat", "error"}.intersection(record.labels)
+        for record in kept
+        if current is None or _record_key(record) != current
     ]
     return [
         row["oos_sharpe"] / math.sqrt(row["periods_per_year"])
@@ -109,8 +200,13 @@ def validation_family(
             return {}
         return {
             "trial_sharpes": [float(value) for value in recorded["prior_sharpes"]],
-            "trial_family": recorded["family_id"],
-            "trial_count": int(recorded["n_trials"]),
+            "trial_family": TrialFamily(
+                recorded["family_id"],
+                int(recorded["family_count"]),
+                int(recorded["n_trials"]),
+                int(recorded["comparable_trials"]),
+                int(recorded["repeats"]),
+            ),
         }
     rule = {"ma_crossover": "ma_cross", "breakout": "breakout", "ts_momentum": "tsmom"}.get(
         strategy
@@ -121,15 +217,47 @@ def validation_family(
     count = count_snapshot(snapshot, rule)
     if not any(record.family_id == count.family_id for record in snapshot.records):
         return {}
+    sharpes = family_sharpes(snapshot, count.family_id, periods_per_year)
+    n = count.prior_trials + count.this_run + count.unknown_rows
     return {
-        "trial_sharpes": family_sharpes(snapshot, count.family_id, periods_per_year),
-        "trial_family": count.family_id,
-        "trial_count": count.prior_trials + 1 + count.unknown_rows,
+        "trial_sharpes": sharpes,
+        "trial_family": TrialFamily(count.family_id, n, n, len(sharpes) + 1, count.repeats),
     }
 
 
-def deflate(returns: FloatSeq, trial_sharpes: Sequence[float], n_trials: int) -> dict[str, Any]:
-    """Bailey & López de Prado (2014), via the public expected-max and PSR functions."""
+def sharpe_sampling_variance(returns: FloatSeq) -> float:
+    """Sampling variance of the per-bar Sharpe estimate, with skew and kurtosis.
+
+    The standard error behind ``alpha_validation.dsr.probabilistic_sharpe_ratio`` (Mertens;
+    Bailey & López de Prado), squared: (1 - skew·SR + (kurt - 1)/4·SR²) / (T - 1), with the same
+    biased skew and non-excess kurtosis. The package does not expose it, so it is computed from
+    the same inputs here.
+    """
+    r = np.asarray(returns, dtype=np.float64)
+    std = float(np.std(r, ddof=1)) if r.size >= 2 else 0.0
+    if r.size < 2 or not np.all(np.isfinite(r)) or std <= 0.0:
+        raise DataError("Sharpe sampling variance needs >= 2 finite, varying returns")
+    sr = float(np.mean(r)) / std
+    skew = float(stats.skew(r, bias=True))
+    kurt = float(stats.kurtosis(r, fisher=False, bias=True))
+    variance = 1.0 - skew * sr + (kurt - 1.0) / 4.0 * sr * sr
+    if variance <= 0.0:
+        raise DataError(f"Sharpe standard error is non-positive (variance={variance})")
+    return variance / (r.size - 1)
+
+
+def deflate(
+    returns: FloatSeq,
+    trial_sharpes: Sequence[float],
+    n_trials: int,
+    *,
+    variance_floor: float = 0.0,
+) -> dict[str, Any]:
+    """Bailey & López de Prado (2014), via the public expected-max and PSR functions.
+
+    ``variance_floor`` (0 = none) is the least cross-trial variance used; with a floor, one
+    available Sharpe is enough because the floor stands for the spread.
+    """
     result: dict[str, Any] = {
         "dsr": None,
         "expected_max_sharpe": None,
@@ -137,13 +265,14 @@ def deflate(returns: FloatSeq, trial_sharpes: Sequence[float], n_trials: int) ->
         "trial_sharpe_variance": None,
         "reasons": {},
     }
-    if len(trial_sharpes) < 2:
+    if len(trial_sharpes) < 2 and variance_floor <= 0.0:
         result["reasons"]["dsr"] = "fewer than two available trial Sharpes"
         return result
     try:
         if not np.all(np.isfinite(trial_sharpes)):
             raise DataError("trial_sharpes must all be finite")
-        variance = float(np.var(trial_sharpes, ddof=1))
+        sample = float(np.var(trial_sharpes, ddof=1)) if len(trial_sharpes) >= 2 else 0.0
+        variance = max(sample, variance_floor)
         sr0 = expected_max_sharpe(variance, result["n_trials_used"])
         result.update(trial_sharpe_variance=variance, expected_max_sharpe=sr0)
         result["dsr"] = probabilistic_sharpe_ratio(returns, benchmark_sr=sr0)

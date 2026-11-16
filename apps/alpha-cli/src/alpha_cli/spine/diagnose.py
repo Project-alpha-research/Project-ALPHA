@@ -17,7 +17,15 @@ from alpha_cli._strategies import surrogate_for
 from alpha_cli.artifact_contract import artifact_contract, verify_manifest_artifacts
 from alpha_cli.spine import diagnostics as d
 from alpha_cli.spine.audit import audit
-from alpha_cli.spine.deflation import count_snapshot, deflate, family_sharpes, spine_snapshot
+from alpha_cli.spine.deflation import (
+    TestKey,
+    TrialFamily,
+    count_snapshot,
+    deflate,
+    family_sharpes,
+    spine_snapshot,
+    spine_test_key,
+)
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot
@@ -66,9 +74,10 @@ def trials(
     rule_kind: str,
     *,
     snapshot: LedgerSnapshot | None = None,
+    current_test: TestKey | None = None,
 ) -> dict[str, Any]:
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
-    count = count_snapshot(snapshot, rule_kind)
+    count = count_snapshot(snapshot, rule_kind, current_test)
     rows = list(snapshot.raw_rows.values())
     sharpes = [
         row["oos_sharpe"] / math.sqrt(row["periods_per_year"])
@@ -82,7 +91,7 @@ def trials(
         sharpes.append(current / math.sqrt(ppy))
     sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
     variants_scored = sum(v["sharpe"] is not None for v in variants)
-    n_trials = count.prior_trials + 1 + count.unknown_rows + variants_scored
+    n_trials = count.prior_trials + count.this_run + count.unknown_rows + variants_scored
     value = deflate(returns, sharpes, n_trials)
     return {
         "basis": (
@@ -95,7 +104,8 @@ def trials(
         "family": {
             "family_id": count.family_id,
             "prior_trials": count.prior_trials,
-            "this_run": 1,
+            "this_run": count.this_run,
+            "repeats_not_counted": count.repeats,
             "variants_scored": variants_scored,
             "unknown_rows": count.unknown_rows,
             "n_trials": n_trials,
@@ -212,16 +222,35 @@ def write_diagnostics(
     document["delay"] = d.delay(returns, weights, costs, ppy)
     # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
-    document["trials"] = trials(
-        home, bars[0].symbol, out.oos.oos_returns, ppy, variants, idea.rule.kind, snapshot=snapshot
+    current = spine_test_key(
+        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
     )
-    result["deflation"] = document["trials"]["family"]
+    document["trials"] = trials(
+        home,
+        bars[0].symbol,
+        out.oos.oos_returns,
+        ppy,
+        variants,
+        idea.rule.kind,
+        snapshot=snapshot,
+        current_test=current,
+    )
+    family = result["deflation"] = document["trials"]["family"]
     # The verdict's prior trials: the family's same-frequency Sharpes and this run's variants (the
     # gauntlet adds this run's own OOS Sharpe); N is the family count recorded above.
-    sharpes = family_sharpes(snapshot, result["deflation"]["family_id"], ppy)
+    sharpes = family_sharpes(snapshot, family["family_id"], ppy, current)
+    comparable = len(sharpes) + 1
     sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
     out = _gauntlet.apply_trial_deflation(
-        out, sharpes, result["deflation"]["family_id"], result["deflation"]["n_trials_used"]
+        out,
+        sharpes,
+        TrialFamily(
+            family["family_id"],
+            family["n_trials"],
+            family["n_trials_used"],
+            comparable,
+            family["repeats_not_counted"],
+        ),
     )
     document["macro_window"] = macro_window(home, document["drawdowns"]["episodes"])
     document["flags"] = d.flags(document)

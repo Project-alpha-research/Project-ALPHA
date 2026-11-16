@@ -12,7 +12,13 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine.deflation import count_snapshot, family_sharpes, spine_snapshot
+from alpha_cli.spine.deflation import (
+    TrialFamily,
+    count_snapshot,
+    family_sharpes,
+    spine_snapshot,
+    spine_test_key,
+)
 from alpha_cli.spine.diagnose import write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
@@ -121,7 +127,13 @@ def _execute(
         result["labels"].append("repeat")
     else:
         snapshot = spine_snapshot(home)
-        count = count_snapshot(snapshot, idea.rule.kind)
+        bars, ppy = prepared.bars, prepared.spec.periods_per_year
+        current = spine_test_key(
+            idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        )
+        count = count_snapshot(snapshot, idea.rule.kind, current)
+        sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
+        n = count.prior_trials + count.this_run + count.unknown_rows
         out = _gauntlet.run_gauntlet(
             prepared.bars,
             prepared.spec,
@@ -129,9 +141,8 @@ def _execute(
             run_id=prepared.identity.run_id,
             snapshot_id=None,
             dividends=prepared.dividends,
-            trial_sharpes=family_sharpes(snapshot, count.family_id, prepared.spec.periods_per_year),
-            trial_family=count.family_id,
-            trial_count=count.prior_trials + 1 + count.unknown_rows,
+            trial_sharpes=sharpes,
+            trial_family=TrialFamily(count.family_id, n, n, len(sharpes) + 1, count.repeats),
         )
         _artifacts.publish_artifact(
             rdir / "spec.json",

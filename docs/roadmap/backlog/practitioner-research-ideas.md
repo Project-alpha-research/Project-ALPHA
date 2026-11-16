@@ -66,3 +66,8 @@ Pull request 209 (playbook).
 ## Sources
 
 - [Checklist stage 1](../production-scope.md#1-idea), [stage 7](../production-scope-2.md#7-records-and-memory)
+
+## More recovered from the second pass
+
+- An earlier intraday order-flow study exists privately. Its general lesson: very short-horizon edges
+  vanish at realistic latency. Import it as history and as a lesson.

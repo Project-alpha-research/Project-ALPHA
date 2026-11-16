@@ -51,7 +51,7 @@ the area's row says what to read.
 | Fact | Its one home |
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
-| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 3](docs/reference/project/owner-decisions-3.md) |
+| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 4](docs/reference/project/owner-decisions-4.md) |
 | Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |

@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 7304798f0910dca0
+verified: d29118477a1273ed
 ---
 
 # RD-Agent worker workspace
@@ -16,7 +16,7 @@ fixtures, rule and costed probes, the stock RDLoop) in their own environments fo
 native job supervisor, plus `model_gateway.py`, the local program through which RD-Agent reaches
 a model, and the ALPHA-judged factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`,
 `alpha_factor_judge.py`, `alpha_factor_coder.py`, `alpha_factor_data.py`; ADR-0049) with its
-cross-run research memory (`research_memory.py`), and RD-Agent's own run viewer
+cross-run research memory (`research_memory.py`) and its universe files (`universes/*.json`, ADR-0055), and RD-Agent's own run viewer
 (`rdagent_viewer.py`, `rdagent_ui_entry.py`, `ui-requirements.lock`; local only). The judge leaves
 human-authored rule trials (`AlphaRuleTrialV1`, written by `alpha_cli.rdagent_rule_family`) out of
 RD-Agent's proposal summary. It is a separate uv project (`package = false`) with its own lock; no

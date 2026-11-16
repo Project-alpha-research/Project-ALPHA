@@ -37,6 +37,7 @@ Telling a real edge from luck after many tries.
 | Combined signals never count the same input twice as evidence | Missing | ledger; [practice](backlog/practitioner-research-ideas.md) | Later | private |
 | Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
 | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
+| Robustness to noise added to the price series, re-running the rule on perturbed prices | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 6. Diagnostics
 
@@ -65,6 +66,8 @@ Explaining a result: where the profit and the losses came from.
 | Process, market exposure and chance told apart; capital tied up and for how long | Missing | `alpha diagnose` | Later | private |
 | Named crisis replays (2008, March 2020, the 2022 crypto bear, flash crashes) with settings unchanged | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
 | Synthetic crisis stress: correlations pushed toward one, liquidity that dries up, partial fills | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
+| A "too good to be true" label for results far above what a retail swing book plausibly earns after costs | Missing | `alpha diagnose`; [note](backlog/rescued-research-ideas.md) | Path 1 | private |
+| Automatic scan of many candidate context features against each trade's loss, run-up and profit, with the number scanned counted | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 7. Records and memory
 
@@ -114,6 +117,7 @@ The AI as a research partner that drives the toolbox from a prompt.
 | Text from papers and the web can never run tools or unlock anything | Unproven | `workers/literature` | Later | private |
 | Sources an answer actually used recorded, apart from sources only retrieved | Missing | `alpha-cli` results; [note](backlog/rescued-partner-ideas.md) | Later | private |
 | Call and dollar caps on RD-Agent's model use | Working | `workers/rdagent` gateway | Now | [status] |
+| An advisor that reads whole books and papers from the owner's library into context, with claim-level checks on what it says | Missing | `workers/literature`; [note](backlog/rescued-partner-ideas.md) | Later | private |
 
 ## 9. RD-Agent and Qlib engines
 
@@ -142,6 +146,8 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
 | A map of everything Qlib and RD-Agent offer, each item with a state | Missing | [coverage maps](backlog/engine-coverage-maps.md) | Path 3 | [rd-all] |
 | Feature attribution (SHAP-style) for tree models, tracked over time as an early drift warning | Missing | `workers/qlib`; [note](backlog/engine-coverage-maps.md) | Later | private |
+| Automated loops scored on out-of-sample result, complexity and trade count, not return alone | Missing | `workers/rdagent`; [note](backlog/rescued-research-ideas.md) | Path 3 | private |
+| An overnight batch of experiments ending in a short morning list of top candidates for the owner | Missing | `workers/rdagent`; [note](backlog/rdagent-autonomous-research.md) | Path 3 | private |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [engines]: ../reference/project/owner-decisions.md#2026-11-14-the-architecture-in-one-line

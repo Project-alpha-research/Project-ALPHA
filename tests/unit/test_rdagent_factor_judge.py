@@ -338,6 +338,10 @@ def swing_parts() -> dict[str, Any]:
         "replay_note",
         "_rounded",
         "AlphaFactorHypothesisGen",
+        "idea_family",
+        "spread_line",
+        "_rank",
+        "family_summary",
     }
     nodes: list[ast.stmt] = [
         n
@@ -345,7 +349,10 @@ def swing_parts() -> dict[str, Any]:
         if (isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in names)
         or (
             isinstance(n, ast.Assign)
-            and any(isinstance(t, ast.Name) and t.id == "SWING_BRIEF" for t in n.targets)
+            and any(
+                isinstance(t, ast.Name) and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS")
+                for t in n.targets
+            )
         )
     ]
 
@@ -353,7 +360,16 @@ def swing_parts() -> dict[str, Any]:
         def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
             return {"hypothesis_and_feedback": "Existing context"}, True
 
-    namespace = {"Any": Any, "Path": Path, "os": os, "json": json, "QlibFactorHypothesisGen": Base}
+    import re
+
+    namespace = {
+        "Any": Any,
+        "Path": Path,
+        "os": os,
+        "re": re,
+        "json": json,
+        "QlibFactorHypothesisGen": Base,
+    }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<swing-context>", "exec"), namespace)
     return namespace
 
@@ -647,3 +663,93 @@ def test_runner_records_code_verdicts_before_evaluator_failure(
             "demoted": persistent,
             "note": None if persistent else "no persistent coding memory",
         }
+
+
+def _spread(status: str) -> dict[str, Any]:
+    return {
+        "status": status,
+        "top_third_mean_return": -0.004,
+        "bottom_third_mean_return": 0.003,
+        "annualized_spread": -0.36,
+        "t": -1.6,
+        "top_share_changed_per_rebalance": 0.12,
+        "estimated_annual_cost": 0.05,
+    }
+
+
+def test_rejected_factor_line_gives_spread_turnover_and_cost() -> None:
+    row = _v3_row("volatility_60d", "a" * 64, {})
+    row["status"] = "SPREAD_FAIL"
+    row["clocks"]["daily"].update(status="SPREAD_FAIL", spread=_spread("FAIL"), replay={})
+    row["clocks"]["weekly"]["spread"] = _spread("PASS")  # screen failed: not repeated
+    line = swing_parts()["ledger_summary"](row)
+    assert line.endswith(
+        "daily spread FAIL: top third -0.40% vs bottom +0.30% per hold (-36%/yr before costs, "
+        "t -1.6), top third changes 12% per rebalance, about 5%/yr costs"
+    )
+    assert "weekly spread" not in line
+
+
+def test_family_summary_groups_all_families_and_says_when_to_move_on(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+
+    names = [
+        "high_prox_126d_skip5",
+        "high_prox_126d_skip10",
+        "stoch_252d_rangepos",
+        "amihud_illiquidity_28d",
+        "amihud_illiquidity_60d",
+        "skewness_60d",
+    ]
+    rows = [_v3_row(n, f"{i:064x}", {}) for i, n in enumerate(names)]
+    for row in rows:
+        row["status"] = "SCREEN_FAIL"
+    ledger = tmp_path / "ledger.jsonl"
+    ledger.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    namespace = swing_parts()
+    for switch_after, closed in ((3, ["price near its high / range position"]), (2, None)):
+        monkeypatch.setenv("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", str(switch_after))
+        context = {"hypothesis_and_feedback": ""}
+        namespace["append_swing_context"](context, str(ledger))
+        text = context["hypothesis_and_feedback"]
+        assert "- price near its high / range position: 3 tries; best " in text
+        assert "- illiquidity: 2 tries" in text
+        assert "- skewness and lottery returns: 1 tries" in text
+        assert text.index("ALPHA idea families") < text.index("ALPHA trial ledger")
+        moved = text.split("no candidate: ", 1)[1].split(". Do not propose", 1)[0]
+        if closed:
+            assert moved.split("; ") == closed
+        else:
+            assert set(moved.split("; ")) == {
+                "price near its high / range position",
+                "illiquidity",
+            }
+        assert "move to a different family" in text
+
+
+def test_idea_family_keywords_on_the_health_check_names() -> None:
+    family = swing_parts()["idea_family"]
+    assert family("vol_scaled_high_prox_252d") == "price near its high / range position"
+    assert family("beta_hedged_momentum_28d_btc") == "momentum and trend"
+    assert family("downside_semivariance_120d") == "volatility and beta"
+    assert family("ret_vol_corr_28d") == "return-volume relation"
+    assert family("max_return_28d") == "skewness and lottery returns"
+    assert family("mystery_signal") == "other: mystery"
+    # 2026-11-16 run: the model abbreviated "high proximity" as hp126
+    assert family("hp126_skip10_lowvol") == "price near its high / range position"
+    assert family("hp126_skip10_lowskew") == "price near its high / range position"
+
+
+def test_a_counted_only_replay_is_never_shown_to_the_proposer_as_a_result() -> None:
+    replay = {
+        "gross": {"annualized_return": 0.5},
+        "net": {"annualized_return": 0.4},
+        "annual_cost": 0.01,
+        "mean_turnover": 0.01,
+        "counted_only": "spread check FAIL; replayed only to count the trial, not a result",
+    }
+    note = swing_parts()["replay_note"]("weekly", replay)
+    assert note == "; weekly replay counted only, not a result"
+    assert "%" not in note

@@ -138,6 +138,7 @@ Each step needs the owner's approval before the next starts.
 
 Any recommendation to shelve, delete or cut the scope of a part must first cite that part's
 component file (its "Why it exists" and "Never" sections) and the
-[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md) and [3](owner-decisions-3.md)). If the two disagree with the recommendation, say so
-and ask the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a
-task to finish, not a reason to shelve it.
+[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md), [3](owner-decisions-3.md)
+and [4](owner-decisions-4.md)). If the two disagree with the recommendation, say so and ask
+the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a task to finish, not a
+reason to shelve it.

@@ -60,6 +60,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0052](0052-licence-is-not-a-criterion.md) | Licence is never a criterion for an outside project (owner decision 2026-11-16) | Accepted | 2026-11-16 |
 | [0053](0053-one-trial-ledger-read-model.md) | One trial ledger, read as one model | Accepted | 2026-11-16 |
 | [0054](0054-afml-worker.md) | A pinned AFML worker runs RiskLabAI and quantowl side by side; they must agree; ALPHA's high/low barrier convention is the headline | Accepted | 2026-11-16 |
+| [0055](0055-spread-check-family-brief-and-universe-file.md) | The factor judge checks that the top third beats the bottom third before the replay; the proposer sees idea families; the universe is a file; model calls have a time limit | Accepted | 2026-11-16 |
 
 ## Conventions
 

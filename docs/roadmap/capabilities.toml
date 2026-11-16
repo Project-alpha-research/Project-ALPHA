@@ -1030,3 +1030,16 @@ needs = []
 state = "Partial"
 missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "answer-check"
+name = "Check an answer's numbers against the records"
+what = "Check drafted numbers and required run labels against stored facts, and compare runs with computed differences."
+see_it = ["alpha results check answer.md --json", "alpha results compare <run_id> <run_id> --json"]
+entry_points = ["cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_check.py::test_correct_answer", "tests/unit/test_spine_compare.py::test_comparison_arithmetic_and_provenance"]
+proof_smoke = ["tests/smoke/test_rule_check_smoke.py::test_rule_answer_check_and_compare"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md"]

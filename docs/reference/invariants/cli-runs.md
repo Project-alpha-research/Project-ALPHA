@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 4576d34fc4bcd25f
+verified: b7139b4be8b9cd83
 ---
 
 # Command line runs invariants
@@ -144,6 +144,11 @@ and how it names and publishes immutable runs. Project-wide rules:
   imperative `next` command; JSON under `--json`), including when every asset of a test fails.
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
   sensitivity re-runs separately from the append-only row index.
+
+## Draft checks and run comparisons
+
+`alpha results check` and `alpha results compare` have their own file:
+[command line draft checks and run comparisons](cli-results-check.md).
 
 ## Suites
 

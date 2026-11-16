@@ -100,10 +100,14 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Catalyst, expectations and fundamentals research (W15) — large (L)
 - Check a coin's whole downloaded daily history in one step — medium (M)
 - ControlStore-owned durable acquisition journal — large (L)
+- Coverage maps for Qlib and RD-Agent — medium (M)
+- Data provider limits not yet written down — small (S)
+- Data questions from the November repository studies — medium (M)
 - Data-directory naming migration — medium (M)
 - Delivery tooling paper cuts found while building the swing-judge stack — small (S)
 - Exact versions for outside projects in the main install's manifests — small (S)
 - Exposure log: correct entries and match ideas by economic family — medium (M)
+- File-system freshness gaps — small (S)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
 - Full Qlib model zoo and fold-by-fold counterfactual retraining (W11/W12) — very large (XL)
@@ -115,6 +119,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Intraday candles and run charts in the Workstation — medium (M)
 - Live trading phase (private, single owner) — very large (XL)
 - Local vision model and hosted finance reasoning — medium (M)
+- Lookalikes and novelty: what comes after the first commands — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
 - Name where NautilusTrader may be imported — small (S)
@@ -125,18 +130,24 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Overlap-corrected t statistic for the quick screen — small (S)
 - Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
 - Per-asset-class cost and annualisation defaults — small (S)
+- Platform journey check: planted causes the AI partner must find — medium (M)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Re-check the vendored Kronos copy against the glue rules — small (S)
+- Research-practice ideas from the owner's private research — medium (M)
+- Reviewer: checklists by folder and a required coverage list — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Rule language: session, time of day, open and volume — medium (M)
+- Rule-test report: wording and basis papercuts — small (S)
+- Textbook machine-learning methods in their own pinned worker — large (L)
 - Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
+- What the research partner borrows from QuantPad — medium (M)
 
 ## Housekeeping
 
-- Backlog items: 38
+- Backlog items: 49
 - Staged refactors: 6
 
 ## Where things are

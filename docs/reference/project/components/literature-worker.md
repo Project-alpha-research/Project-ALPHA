@@ -44,6 +44,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - How to change it: [workers/literature/CONTEXT.md](../../../../workers/literature/CONTEXT.md).
 - Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.
 - Decision records: [ADR-0024](../../../adr/0024-literature-acquisition-worker-and-claim-model.md).
+- **Plan:** paper rows in [stage 1](../../../roadmap/production-scope.md#1-idea) of the checklist.
 
 ## Decisions and open questions
 

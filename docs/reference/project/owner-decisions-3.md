@@ -144,6 +144,36 @@ the rules for entries are in the first. New entries are appended at the end of t
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md); the rule
   is in [documentation invariants](../invariants/documentation.md#front-matter).
 
+### 2026-11-15 More of the suggested outside projects approved
+
+- **Said:** "I approve adding and using more of your suggestions for the repos" (as quoted in
+  pull request 201, which found it missing from this log on 2026-11-16).
+- **Context:** this is the approval behind the "Approved, not yet added" rows of the register.
+  Each project still arrives in its own pull request with its adapter and tests, under the glue
+  rules; approval is not adoption.
+- **Governs:** [outside projects register](outside-projects.md).
+
+### 2026-11-15 Test ideas are system tests until ALPHA is production grade
+
+- **Said:** exact words not recorded in this log; noted by the orchestrating session that day.
+- **Context:** until ALPHA is production grade, every research idea, loop and strategy run is an
+  end-to-end test of the system, not research. Ideas are chosen to exercise as many parts as
+  possible (data, horizons, asset kinds, model routes, judge stages, paper path, screens). A run
+  is reported first by what worked, broke, was slow, confusing or missing, and only briefly by
+  what the idea showed; its outcome is never presented as a market finding, and no effort goes
+  into rescuing an idea. The integrity machinery must still work, because it is being tested.
+  Defects and friction from each run are kept in a running list.
+- **Governs:** the [research route](../../../research/CONTEXT.md) and every report to the owner.
+
+### 2026-11-15 The orchestrating session delegates; every agent names its model
+
+- **Said:** exact words not recorded in this log; reinforced on 2026-11-16 (use Codex heavily).
+- **Context:** to protect the owner's usage limits, the session the owner talks to plans, briefs,
+  reviews hand-backs and lands pull requests; it does not run as a sub-agent. Every delegated
+  agent states its model: a heavier one for judgement, a lighter one for mechanical work. Any
+  build that can be written as a brief goes to Codex through the hand-off tool.
+- **Governs:** [model routing](../model-routing.md).
+
 ### 2026-11-16 Licences are never a criterion for outside projects
 
 - **Said:** "this project is non commercial and private so licensing and things DO NOT MATTER.

@@ -6,9 +6,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-from statsmodels.tsa.regime_switching.markov_regression import (  # type: ignore[import-untyped]
-    MarkovRegression,
-)
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 
 from alpha_validation import regimes
 from alpha_validation.metrics import sharpe_ratio

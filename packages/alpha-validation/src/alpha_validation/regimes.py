@@ -17,9 +17,7 @@ import warnings
 from typing import Any
 
 import numpy as np
-from statsmodels.tsa.regime_switching.markov_regression import (  # type: ignore[import-untyped]
-    MarkovRegression,
-)
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 
 from alpha_validation.metrics import FloatArray, FloatSeq, sharpe_ratio
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING, Any
@@ -179,7 +180,8 @@ def _reading(
     if min(original["trades"], trades) < 30:
         return (
             "This check cannot tell either way: fewer than 30 closed trades "
-            f"(rule {original['trades']}, opposite {trades})."
+            f"(rule {original['trades']}, opposite {trades}) is too few to judge. For the record, "
+            f"the opposite had {pair}."
         )
     if sharpe is None or original["sharpe"] is None:
         return "This check cannot tell either way: a Sharpe ratio is unavailable."
@@ -327,6 +329,15 @@ def in_sample_rows(
     return rows
 
 
+_SHORT_REASON = {
+    "in-sample window is warm-up only; the rule could not trade yet": "still warming up",
+    "in-sample return is zero or negative": "with no in-sample gain",
+    "in-sample equity reached zero": "with no in-sample gain",
+    "this fold recorded no usable out-of-sample return": "with no usable out-of-sample figure",
+    "this run recorded no in-sample segment": "with no in-sample segment",
+}
+
+
 def _fold_reason(fold: Mapping[str, Any]) -> str | None:
     ins, oos = fold.get("is_cagr"), fold.get("oos_cagr")
     if fold.get("is_reason"):
@@ -374,14 +385,13 @@ def walk_forward_efficiency(folds: Sequence[Mapping[str, Any]]) -> dict[str, Any
     if median is None:
         sentence = f"Walk-forward efficiency is unavailable: {reason}."
     else:
-        left_out = len(rows) - len(defined)
-        scope = (
-            f"median of {len(rows)} folds"
-            if not left_out
-            else f"median of {len(defined)} of {len(rows)} folds; {left_out} fold"
-            f"{'s' if left_out > 1 else ''} left out because the rule was still warming up, its "
-            "in-sample return was not positive, or a figure was missing"
-        )
+        scope = f"median of {len(rows)} folds"
+        if len(defined) < len(rows):
+            counts = Counter(
+                _SHORT_REASON.get(row["reason"], row["reason"]) for row in rows if row["reason"]
+            )
+            left = ", ".join(f"{n} {why}" for why, n in counts.items())
+            scope = f"median of {len(defined)} of {len(rows)} folds; left out: {left}"
         sentence = (
             f"Out of sample the rule's yearly return was {median:.0%} of its in-sample yearly "
             f"return ({scope})."

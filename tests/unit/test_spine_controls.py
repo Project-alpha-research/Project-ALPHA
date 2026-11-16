@@ -149,6 +149,7 @@ def test_failed_and_few_trade_sentences() -> None:
     assert few["label"] == "inconclusive"
     assert "fewer than 30 closed trades" in few["sentence"]
     assert "rule 30, opposite 12" in few["sentence"]
+    assert "For the record, the opposite had Sharpe" in few["sentence"]
 
 
 def test_unavailable_control_is_recorded_not_raised() -> None:
@@ -190,7 +191,7 @@ def test_wfe_reads_the_recorded_train_window_after_warm_up() -> None:
     assert result["wfe"] == pytest.approx(0.05 / (1.01**10 - 1))
     assert result["fold_count"] == 1 and result["folds_total"] == 2
     assert "median of 1 of 2 folds" in result["sentence"]
-    assert "1 fold left out" in result["sentence"]
+    assert "left out: 1 still warming up" in result["sentence"]
 
 
 def test_wfe_two_folds() -> None:
@@ -241,6 +242,7 @@ def test_wfe_median_uses_defined_folds_and_names_the_rest() -> None:
     assert result["folds"][1]["wfe"] is None
     assert result["folds"][1]["reason"] == "in-sample return is zero or negative"
     assert result["fold_count"] == 2 and result["folds_total"] == 3
+    assert "left out: 1 with no in-sample gain" in result["sentence"]
 
 
 def _rising(n: int) -> list[Bar]:

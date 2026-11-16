@@ -8,7 +8,8 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: e4621909b7b610af
+  - docs/adr/0052-licence-is-not-a-criterion.md
+verified: 2ef3ba8c3cdfadde
 ---
 
 # Outside projects: the register
@@ -16,7 +17,8 @@ verified: e4621909b7b610af
 Every open-source project ALPHA uses or has judged, in one table. An *outside project* is any
 library, engine or tool ALPHA did not write. How one is chosen and joined is decided in
 [ADR-0051](../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules); what a proposal
-must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations.md).
+must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations.md). Licence is
+not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-criterion.md)).
 
 ## How to read it
 
@@ -29,6 +31,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
   down; ask again only with new facts.
 - Judgements of projects not in ALPHA were made on 2026-11-15 from their public package pages.
   None of those projects was installed or run against ALPHA.
+- Rows marked *re-judged 2026-11-16* were first turned down or delayed partly for licence; they
+  were judged again on fit, upkeep, weight and conflict with pins. The full study is an owner-facing
+  study kept outside the repository.
 
 ## The register
 
@@ -48,7 +53,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | pandas | Tables at three named edges only | Imported in `alpha-data`, `alpha-validation`, `alpha-forecast` | In use | Some libraries speak only pandas |
 | numpy, SciPy | The arithmetic under the statistics | Imported in the numeric packages | In use | Standard, well tested |
 | PyArrow | Reads and writes Parquet data files | Imported in `alpha-cli` | In use | The file format of the store |
-| Matplotlib | Fixed, repeatable charts in reports | Imported in `alpha-research`, `alpha-validation`, `alpha-cli` | In use | Same picture every run |
+| Matplotlib | Fixed, repeatable charts | Imported in `alpha-research`, `alpha-validation`, `alpha-cli`; AFML worker | In use | Same picture every run |
 | quantstats-lumi | Draws one HTML performance report | Imported in `alpha-validation` (one file) | In use | Pictures only; never a judged number |
 | exchange_calendars | Knows each market's trading days | Imported in `alpha-data`, `alpha-cli` | In use | Use more: year length from the calendar |
 | yfinance | Free daily stock prices from Yahoo | Imported in `alpha-data` | In use | Free source for the Dell phase |
@@ -62,13 +67,21 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | lightweight-charts | Price charts in the Workstation | Browser code in `alpha-web/frontend` | In use | Use more: mark every setup match on the chart |
 | BokehJS | Other charts in the Workstation | Browser code in `alpha-web/frontend` | In use | A second chart library; one per chart kind is the aim |
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
+| RiskLabAI 3.2.0 | Textbook label and weight methods | Own worker, `workers/afml` | In use | Primary; must agree with quantowl |
+| quantowl 0.1.6 | A second writing of the same methods | AFML worker, commit `37a17de` | In use | Not on PyPI; young, never trusted alone |
+| statsmodels 0.14.6, numba 0.68.1, scikit-learn | ADF test, compiled loops, forests | AFML worker only | In use | RiskLabAI needs statsmodels below 0.15 |
+| DuckDB 2.0.0 | Asks one question across many stored files | Pinned in `alpha-cli`; in memory only | In use | A query tool, never the store |
+| lifelines 0.30.3 | Which exit comes first, with censoring | Pinned in `alpha-cli` | In use | Proven estimator; replaces a biased hand count |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
 | statsmodels | Regression, factor exposure, regimes | Imported in `alpha-validation` | In use | Closes missing rows; replaces hand-written code |
 | arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |
 | ruptures | Finds dates where behaviour changed | Imported in `alpha-validation` | In use | New ability; needs only numpy and SciPy |
-| DuckDB | Asks one question across many stored files | For `alpha-cli`, in memory only | Approved, not yet added | A query tool, never the store |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
-| STUMPY | Finds chart stretches that look like an example | To be chosen | Approved, not yet added | Fixed, declared threshold only; see notes |
+| TimesFM 3.0, Chronos | General forecasting models | — | Later | Compare with Kronos on the Dell, scored by ALPHA; re-judged 2026-11-16 |
+| scikit-survival | Survival models: target or stop first | — (worker or root) | Later | Re-judged 2026-11-16; ties lifelines; needs sklearn 1.9 |
+| Arize Phoenix | Traces RD-Agent's model calls | — (own install, dev only) | Later | Re-judged 2026-11-16; LiteLLM has a hook; heavy; own install |
+| STUMPY | Finds earlier lookalikes of the latest bars; scores novelty | `alpha-patterns`, `lookalike.py` only | In use | Fixed threshold; notes |
+| numba, llvmlite | The compiler STUMPY runs on | Imported by STUMPY only | In use | Come with STUMPY; ALPHA never imports them |
 | skfolio | Sizes a basket of positions | — | Later | When baskets need real sizing; heavy |
 | alphalens-reloaded | Report pages for mined factors | — (a worker, if adopted) | Later | Leans on pandas; not for the main install |
 | edgartools | Company figures from official filings | — | Later | Needs the owner's contact email; filing dates to check |
@@ -84,8 +97,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | open-code-review (Alibaba) | A second reader of code changes | — | Reference only | Trial found nothing ALPHA's reviewers missed; see notes |
 | OpenBB | Ideas for a data-provider layer | — | Reference only | Dozens of packages; ADR-0011 decided this |
 | TradingAgents, FinGPT, FinRobot, TensorTrade | Examples of AI trading agents | — | Reference only | Promise results; short tests; no trading authority |
-| TimesFM, Chronos | General forecasting models | — | Reference only | A possible comparison for Kronos, later |
-| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA already has with tests | — | Reference only | Too small or restricted to depend on |
+| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA has with tests | — | Reference only | Too small; RiskLabAI superseded 2026-11-16 ([note][toolkit]) |
+| pypbo | Overfitting maths (PBO, deflated Sharpe) | — | Reference only | Re-judged 2026-11-16; no release or packaging; write our own, cross-check |
+| expectation | Tests you may peek at without false alarms | — | Reference only | Re-judged 2026-11-16; young; river covers it; revisit at paper phase |
 | FinRL | Trains trial-and-error trading agents | — | Refused | A teaching framework; heavy; closes no row |
 | vectorbt | A fast backtest engine | — | Refused | Conflicts with ALPHA's pandas pin; a second engine |
 | bt, backtesting.py, zipline-reloaded, backtrader, Lean | Backtest engines | — | Refused | ALPHA has one engine and must judge with it |
@@ -102,14 +116,57 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | fredapi | Downloads macro series | — | Refused | Stale; ALPHA keeps its own dated store |
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
-| mlfinlab | Methods from a well-known textbook | — | Refused | Reported as no longer open source |
+| mlfinlab 0.12.3 (public archive) | The textbook methods, older code | — | Reference only | Answer key for the AFML worker; never installed |
+
+## Judged in the November follow-up studies
+
+Judged on 2026-11-16 from public package pages; none installed. Added by the file-system audit
+so no verdict lives only in a private study. Rows already in a pull request are not repeated.
+
+| Project | What it does for ALPHA | How it is glued | State | Reason |
+|---|---|---|---|---|
+| MAPIE | Forecast ranges with measured coverage; drift alarm | — | Later | For the Kronos view; needs a parity test against a hand-made split |
+| river | Drift alarms on a live stream | — | Later | Paper-trading phase alerts |
+| statsforecast | Plain forecasts every model must beat | — | Later | A baseline gauntlet for Kronos and Qlib forecasts |
+| polars-ds | Rolling regressions inside Polars | — | Later | Only if ALPHA's own rolling regression stays |
+| dtaidistance | Lookalikes allowed to stretch in time | — | Later | Only if STUMPY proves too rigid; fixed warping window and cap |
+| tsdownsample, great-tables | Thin long series for screens; report tables | — | Later | Intraday charts; reports outside the Workstation |
+| PyMC, Bambi | Shrink many small, noisy edges together | — (a worker) | Later | Heavy; only in its own install |
+| scoringrules, pyextremes | Score forecasts; size tail losses | — | Later | Kronos scoring; "how bad can a day be" |
+| RiskLabAI, quantowl | Textbook methods: labels, weights, purged checks | — (a worker) | Later | Under study ([note][toolkit]) |
+| SEC EDGAR bulk files | Company filings dated by filing time | — (data source) | Later | Free; filing time is the known-from date |
+| Binance public bulk files | Funding and open-interest history | — (data source) | Later | Free, with checksums; re-hash on every pull |
+| CFTC and FINRA files | Futures positioning; short interest | — (data source) | Later | Free; publication delay must be checked first |
+| aeon, tslearn, wildboar | Time-series shapes and distances | — | Reference only | Overlap STUMPY; small or pin clashes |
+| darts, puncc, skchange | Forecasting, ranges, change points | — | Reference only | Overlap MAPIE, ruptures or a second framework |
+| PyPortfolioOpt, pyfixest, CausalPy | Baskets, panel regressions, event impact | — | Reference only | Overlap skfolio, linearmodels, the event study |
+| instructor, plotly-resampler, DVC, mem0 | AI output, charts, data versions, memory | — | Reference only | ALPHA has each already, or a second record |
+| finmlkit, mlfinpy, fracdiff, timeseriescv | Textbook pieces | — | Reference only | Pin clashes or idle; the toolkit study covers them |
+| Riskfolio-Lib | Portfolio risk models | — | Refused | Requires vectorbt, already refused |
+| DoWhy, tfcausalimpact, pycausalimpact | Cause-and-effect estimates | — | Refused | Pin clashes (SciPy, pandas, TensorFlow) or idle since 2020 |
+| granite-tsfm, polars-ols, mplfinance | Forecast models; regressions; charts | — | Refused | Unmaintained by their own account, or stale |
+| cot_reports, fluke, overfit, confseq | Positioning reader; overfitting tests | — | Refused | Stale or brand new with no users; read CFTC files directly |
+| PySR | Searches for formulas | — | Refused | A trial multiplier; installs a second language |
+| Vibe-Trading, StockSharp, Qbot, myhhub stock, two script collections | Ideas on grounding, fills, layout | — | Reference only | Read 2026-10-03 |
+| Moirai 2.0, TimeGPT, Lag-Llama, FinText, FinCast, Chronos-2, TimesFM 2.5 | More forecasting models | — | Later | Beside Kronos |
+| FinBERT family, Fin-R1, FinGPT, Qwen3 embedding and reranker | Finance text and retrieval models | — | Later | Only after a measured gap; Codex first |
+| PyOD, Ledoit-Wolf, CVXPY, cvxportfolio, EconML | Outliers, covariance, allocation, causal effects | — | Later | Each needs a named task first |
+| Docling, BM25 | Reads filings and papers | — | Later | Native structured data first |
+| investpy, findatapy, Twelve Data, QTPyLib, Moonshot, pybotters | Data and test helpers | — | Reference only | Overlap ALPHA |
+
+[toolkit]: ../../roadmap/backlog/afml-toolkit-worker.md
 
 ## Notes on single rows
 
 - **STUMPY** is a matrix-profile library: it compares every stretch of a price series with an
   example and scores how alike they are. Its default cut-off for a match is worked out from the
-  whole series, so it uses later data. The adapter must take a fixed threshold stated before the
-  search and must never fall back to the default.
+  whole series, so it uses later data. The adapter (`alpha_patterns/lookalike.py`, behind
+  `alpha lookalike` and `alpha unusual`) takes a fixed threshold stated before the search, never
+  calls the function with that default, and searches only bars before the query. The first call
+  in a new process takes about half a minute while numba compiles STUMPY's code; numba's disk
+  cache is not switched on. Contract and parity tests: `tests/unit/test_lookalike.py`; look-ahead
+  guard: `tests/bias_guards/test_lookalike_future_poison.py`; smoke test:
+  `tests/smoke/test_lookalike_smoke.py`. It replaces no ALPHA code.
 - **open-code-review** was tried on two ALPHA branches. In the only mode that does not send code
   to a model provider it mostly filters the list of changed files and attaches a checklist per
   folder. Against the same branches it found 2 of the 10 and 2 of the 7 defects ALPHA's own
@@ -123,6 +180,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 - A project moves to *In use* only with its adapter, its contract test and its smoke test
   (rule 6 of the glue rules), and to *Refused* with a reason a later session can check.
 - Versions are not repeated here: the exact ones are in each `pyproject.toml` and lock file.
-- Licences of what is installed are in the
-  [dependency and licence matrix](../../governance/2026-07-19-dependency-license-matrix.md);
-  the Qlib worker also keeps a [notices file](../../../workers/qlib/THIRD_PARTY_NOTICES.md).
+- Licences of what is installed are listed in the
+  [dependency and licence matrix](../../governance/2026-07-19-dependency-license-matrix.md) and the
+  Qlib worker's [notices file](../../../workers/qlib/THIRD_PARTY_NOTICES.md). That is information,
+  not a criterion: licence never decides whether a project is used.

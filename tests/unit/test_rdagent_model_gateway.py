@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import threading
+import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -593,7 +594,9 @@ def test_api_forwarding_and_actual_prices(
     )
     captured: list[tuple[str, dict[str, Any], str | None]] = []
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         captured.append((url, body, api_key))
         return {
             "id": "provider-id",
@@ -708,7 +711,9 @@ def test_openrouter_requires_parameters_and_settles_the_charged_cost(
     bodies: list[dict[str, Any]] = []
     usage: dict[str, Any] = {"prompt_tokens": 1000, "completion_tokens": 100, "cost": 0.0007}
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         bodies.append(body)
         return {"choices": [{"message": {"content": '{"ok": true}'}}], "usage": dict(usage)}
 
@@ -739,7 +744,9 @@ def test_plain_api_route_adds_no_openrouter_fields(
     )
     bodies: list[dict[str, Any]] = []
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         bodies.append(body)
         return {
             "choices": [{"message": {"content": "x"}}],
@@ -757,7 +764,9 @@ def test_gateway_settles_the_budget_on_openrouter_cost_and_logs_the_estimate(
     monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
 
-    def provider(url: str, body: dict[str, Any], api_key: str | None) -> dict[str, Any]:
+    def provider(
+        url: str, body: dict[str, Any], api_key: str | None, timeout: float = 900
+    ) -> dict[str, Any]:
         return {
             "choices": [{"message": {"content": '{"ok": true}'}}],
             "usage": {"prompt_tokens": 1000, "completion_tokens": 100, "cost": 0.0007},
@@ -783,3 +792,174 @@ def test_gateway_settles_the_budget_on_openrouter_cost_and_logs_the_estimate(
     assert row["usd"] == pytest.approx(0.0007)
     assert row["estimated_usd"] == pytest.approx(0.0012)
     assert "temperature" in row["honoured"] and "temperature" not in row["waived"]
+
+
+def _api_gateway(mod: ModuleType, tmp_path: Path, **extra: Any) -> Gateway:
+    return cast(
+        "Gateway",
+        mod.Gateway(
+            mod.Settings(
+                data_dir=tmp_path,
+                run_id="r",
+                chat_route="api",
+                embedding_route="fake",
+                api_model="deepseek/test-model",
+                api_price_in_per_mtok=1,
+                api_price_out_per_mtok=2,
+                api_openrouter=True,
+                **extra,
+            )
+        ),
+    )
+
+
+def _reply(text: object = '{"ok": true}') -> dict[str, Any]:
+    return {
+        "choices": [{"message": {"content": text}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "cost": 0.0001},
+    }
+
+
+def test_a_stuck_provider_call_ends_as_provider_timeout_and_is_retried_within_the_caps(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A reply that 'thinks' for minutes is cut at the per-call limit, retried once, counted."""
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    calls: list[float] = []
+
+    def stuck(url: str, body: dict[str, Any], key: str | None, timeout: float) -> dict[str, Any]:
+        calls.append(timeout)
+        time.sleep(5)  # longer than the limit; the gateway must not wait for it
+        return _reply()
+
+    monkeypatch.setattr(mod, "_post_json", stuck)
+    gw = _api_gateway(mod, tmp_path, api_timeout=0.2)
+    started = time.monotonic()
+    with pytest.raises(mod.GatewayError) as error:
+        gw.chat(request(response_format={"type": "json_object"}))
+    assert time.monotonic() - started < 2
+    assert error.value.code == "provider_timeout" and error.value.status == 504
+    assert calls == [0.2, 0.2]  # one call and one bounded retry
+    row = logged(gw)[-1]
+    assert row["attempts"] == 2
+    assert row["provider_errors"] == ["provider_timeout", "provider_timeout"]
+    assert row["error_code"] == "provider_timeout"
+    budget = json.loads((tmp_path / "model-gateway" / "budget.json").read_text())
+    assert budget["runs"]["r"]["calls"] == 2  # both attempts count toward the 60-call cap
+    assert budget["runs"]["r"]["usd"] > 0  # abandoned reservations stay charged
+
+
+def test_an_empty_reply_is_retried_once_then_succeeds(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    replies = [_reply(None), _reply()]
+    monkeypatch.setattr(mod, "_post_json", lambda *args: replies.pop(0))
+    gw = _api_gateway(mod, tmp_path)
+    gw.chat(request(response_format={"type": "json_object"}))
+    row = logged(gw)[-1]
+    assert row["status"] == 200 and row["attempts"] == 2
+    assert row["provider_errors"] == ["invalid_provider_response"]
+
+
+def test_retries_stop_at_the_call_cap(
+    mod: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+    monkeypatch.setattr(mod, "_post_json", lambda *args: _reply(None))
+    gw = _api_gateway(mod, tmp_path, run_max_calls=1, provider_retries=3)
+    with pytest.raises(mod.GatewayError) as error:
+        gw.chat(request())
+    assert error.value.code == "budget_exhausted"
+    assert logged(gw)[-1]["attempts"] == 1
+
+
+def test_provider_timeout_settings_are_validated(mod: ModuleType, tmp_path: Path) -> None:
+    for bad in ({"api_timeout": 0}, {"provider_retries": -1}, {"provider_retries": 4}):
+        with pytest.raises(ValueError):
+            mod.Settings(data_dir=tmp_path, run_id="x", chat_route="fake", **bad).validate()
+    assert mod.Settings(data_dir=tmp_path, run_id="x").api_timeout == 180
+    assert mod.Settings(data_dir=tmp_path, run_id="x").provider_retries == 1
+
+
+class _LimitedEmbeddings:
+    """A fake local embedding service that refuses any input over its limit, like Ollama's 400."""
+
+    def __init__(self, mod: ModuleType, limit: int) -> None:
+        self.mod, self.limit = mod, limit
+        self.seen: list[list[str]] = []
+
+    def embed(self, inputs: list[str]) -> Any:
+        self.seen.append(list(inputs))
+        if any(len(text) > self.limit for text in inputs):
+            raise self.mod.GatewayError(400, "provider_error", "input length exceeds context")
+        return self.mod.FakeEmbeddings().embed(inputs)
+
+
+def _sentences(n: int) -> str:
+    return " ".join(
+        f"Sentence {i} explains the factor and its evidence in plain words." for i in range(n)
+    )
+
+
+def test_a_long_embedding_input_is_chunked_at_sentences_and_averaged(
+    mod: ModuleType, tmp_path: Path
+) -> None:
+    text = _sentences(160)[:10_000]
+    assert len(text) == 10_000
+    service = _LimitedEmbeddings(mod, 3000)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    result = gw.embeddings({"model": "alpha-embed", "input": ["short text", text]})
+    chunks = service.seen[-1]
+    assert service.seen[0] == ["short text", text]  # first sent whole, as before; refused
+    assert len(chunks) > 5 and all(len(c) <= 2000 for c in chunks)
+    assert "".join(c.replace(" ", "") for c in chunks[1:]) == text.replace(" ", "")  # nothing lost
+    assert all(c.rstrip().endswith(".") for c in chunks[1:-1])  # cut at sentence ends
+    fake = mod.FakeEmbeddings().embed(chunks[1:]).vectors
+    expected = [sum(column) / len(fake) for column in zip(*fake, strict=True)]
+    assert result["data"][1]["embedding"] == pytest.approx(expected)
+    assert result["data"][0]["embedding"] == mod.FakeEmbeddings().embed(["short text"]).vectors[0]
+    row = logged(gw)[-1]
+    assert row["chunked_inputs"] == 1 and row["chunks"] == len(chunks) - 1
+    assert row["attempts"] == 2 and row["provider_errors"] == ["provider_error"]
+    budget = json.loads((tmp_path / "model-gateway" / "budget.json").read_text())
+    assert budget["runs"]["r"]["calls"] == 2  # both attempts count toward the cap
+
+
+def test_an_input_the_service_accepts_whole_is_embedded_whole(
+    mod: ModuleType, tmp_path: Path
+) -> None:
+    text = _sentences(160)[:10_000]
+    service = _LimitedEmbeddings(mod, 20_000)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    result = gw.embeddings({"model": "alpha-embed", "input": [text]})
+    assert service.seen == [[text]]
+    assert result["data"][0]["embedding"] == mod.FakeEmbeddings().embed([text]).vectors[0]
+    assert logged(gw)[-1]["chunks"] == 0
+
+
+def test_an_embedding_the_service_still_refuses_fails_loud(mod: ModuleType, tmp_path: Path) -> None:
+    service = _LimitedEmbeddings(mod, 10)
+    gw = mod.Gateway(
+        mod.Settings(data_dir=tmp_path, run_id="r", chat_route="fake", embedding_route="fake"),
+        embedding_backend=service,
+    )
+    with pytest.raises(mod.GatewayError) as error:
+        gw.embeddings({"model": "alpha-embed", "input": [_sentences(3)]})
+    assert error.value.status == 400
+    assert logged(gw)[-1]["status"] == 400
+
+
+def test_chunking_settings_are_validated(mod: ModuleType, tmp_path: Path) -> None:
+    assert mod.Settings(data_dir=tmp_path, run_id="x").embed_max_chars == 2000
+    with pytest.raises(ValueError):
+        mod.Settings(data_dir=tmp_path, run_id="x", embed_max_chars=0).validate()

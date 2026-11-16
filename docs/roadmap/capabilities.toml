@@ -382,6 +382,7 @@ entry_points = [
   "cli: alpha suite plan",
   "cli: alpha suite run",
   "cli: alpha strategy-candidate run",
+  "cli: alpha project create",
   "api: POST /api/projects/{project_id}/experiments/{experiment_id}/suite/{action}/run",
   "panel: apps/alpha-web/frontend/src/panels/V3Workbenches.tsx",
 ]
@@ -521,6 +522,8 @@ entry_points = [
   "cli: alpha research capture",
   "cli: alpha research run",
   "cli: alpha research decide",
+  "cli: alpha evidence add",
+  "cli: alpha owner-auth enroll",
   "api: POST /api/research/cases",
   "panel: apps/alpha-web/frontend/src/panels/ResearchCockpit.tsx",
 ]
@@ -756,6 +759,100 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "afml-labels-and-weights"
+name = "Textbook labels and overlap weights (López de Prado)"
+what = "Label what happened after each event (target, stop or time limit first, on highs and lows) and measure how much overlapping labels repeat the same days, with two independent libraries that must agree."
+see_it = [
+  "uv run alpha labels barrier --asset SPY@alpaca (result folder with facts and a picture)",
+  "uv run alpha labels weights <result-id> --train-end 2024-12-31",
+]
+entry_points = [
+  "cli: alpha labels barrier",
+  "cli: alpha labels weights",
+  "code: workers/afml/src/alpha_afml_worker/labels.py",
+  "code: workers/afml/src/alpha_afml_worker/uniqueness.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_uniqueness.py::test_chapter4_indicator_concurrency_and_uniqueness",
+  "workers/afml/tests/test_uniqueness.py::test_both_libraries_draw_the_hand_sequence",
+  "workers/afml/tests/test_labels.py::test_hand_path_long_first_touch_both_bases",
+  "workers/afml/tests/test_labels.py::test_truncation_labels_decided_by_bar_k_do_not_move",
+  "workers/afml/tests/test_cli.py::test_labels_then_uniqueness_end_to_end",
+]
+proof_smoke = [
+  "tests/smoke/test_afml_labels_smoke.py::test_labels_and_weights_end_to_end",
+]
+real_data = "run on real daily SPY and BTC bars (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "afml-factor-importance"
+name = "Which factors the labels lean on (purged MDI, MDA, SFI)"
+what = "Report how much each candidate factor (RD-Agent's among them) helps predict the labels, on purged folds and with overlap weights; a report that no gate reads."
+see_it = ["uv run alpha labels importance <result-id> --factors <factors.parquet>"]
+entry_points = [
+  "cli: alpha labels importance",
+  "code: workers/afml/src/alpha_afml_worker/importance.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_importance.py::test_informative_columns_outrank_noise",
+  "workers/afml/tests/test_importance.py::test_folds_are_the_leak_checked_purged_ones",
+]
+proof_smoke = [
+  "tests/smoke/test_afml_labels_smoke.py::test_importance_report_over_factors",
+]
+real_data = "run on real daily SPY and BTC labels with simple features (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "afml-purged-cv"
+name = "Purged cross-validation for labels that last several days"
+what = "Split labelled events into purged k-fold or combinatorial folds by label end time, with an embargo and backtest paths, every fold checked for leaks."
+see_it = ["cd workers/afml && uv run alpha-afml-worker cv SPANS.parquet --out splits.json --n-groups 6 --test-groups 2 --embargo 5"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/cv.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_cv.py::test_dense_labels_all_three_agree_exactly",
+  "workers/afml/tests/test_cv.py::test_leak_checker_catches_a_plain_unpurged_kfold",
+  "tests/integration/test_afml_cv_parity.py::test_one_day_labels_equal_alpha_cpcv",
+]
+real_data = "run on real daily SPY and BTC labels (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+
+[[capability]]
+id = "afml-fracdiff"
+name = "Fractional differencing with d chosen on training data only"
+what = "Make a price series steadier for a model while keeping its memory, choosing the smallest passing d on the training span and freezing it."
+see_it = ["cd workers/afml && uv run alpha-afml-worker fracdiff BARS.parquet --fit-end 2023-12-29T00:00:00+00:00 --out ffd.parquet"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/fracdiff.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_fracdiff.py::test_hand_weights_for_half_and_one",
+  "workers/afml/tests/test_fracdiff.py::test_command_fits_d_before_fit_end_and_ignores_later_bars",
+]
+real_data = "run on real daily SPY and BTC closes (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+
+[[capability]]
+id = "afml-stats-second-opinion"
+name = "Second opinions on luck-adjusted scores, minimum track record and strategy risk"
+what = "Compute PSR, DSR and PBO with two outside libraries beside ALPHA's own, plus how long a track record must be and the chance a win rate falls short."
+see_it = ["cd workers/afml && uv run alpha-afml-worker stats INPUTS.json --out stats.json"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/stats.py"]
+proof_synthetic = [
+  "tests/integration/test_afml_stats_parity.py::test_alpha_and_both_libraries",
+  "workers/afml/tests/test_stats.py::test_min_track_record_length_hits_the_target_psr",
+]
+real_data = "run on real daily SPY and BTC moving-average grids (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+
+[[capability]]
 id = "qlib-refit"
 name = "Qlib model refit evidence"
 codes = ["W11"]
@@ -832,7 +929,7 @@ needs = [
   "an end-to-end smoke check of the factor loop through the installed programs with a scripted model route",
 ]
 state = "Partial"
-missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
+missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; the universe file is wired but the local stores hold only 15 coins and 9 single stocks, so neither universe can widen without a data pull; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
@@ -1045,9 +1142,67 @@ state = "Working"
 docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
 
 [[capability]]
+id = "price-lookalikes"
+name = "Has price action like this happened before?"
+codes = ["STUMPY matrix profile"]
+what = "Find every earlier stretch shaped like the latest bars of one asset, see what followed each on one figure, and record the look as an exploratory trial."
+see_it = ["uv run alpha lookalike --asset SPY@alpaca --last 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha lookalike", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_repeated_motif_is_found", "tests/bias_guards/test_lookalike_future_poison.py::test_lookalikes_ignore_every_bar_after_the_query_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "price-novelty"
+name = "What is unusual right now?"
+codes = ["STUMPY left matrix profile"]
+what = "Score how unlike every earlier stretch the latest bars of one asset are, ranked against all earlier scores, on one figure."
+see_it = ["uv run alpha unusual --asset BTC/USDT --window 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha unusual", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_novel_window_scores_as_unusual", "tests/bias_guards/test_lookalike_future_poison.py::test_each_novelty_score_uses_only_bars_up_to_its_own_window_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "filing-events"
+name = "Company filings, earnings dates and insider trades as filed"
+what = "Read SEC filings, earnings-related 8-Ks and Form 4 transactions known by an acceptance cutoff."
+see_it = ["alpha context show-edgar --ticker TEST --view earnings --as-of 2024-01-26 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_edgar.py::test_pull_pages_cache_acceptance_earnings_and_provenance", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "not yet confirmed; no live SEC call made; acceptanceDateTime time zone unconfirmed (known_from carries a 5-hour margin)"
+real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
+needs = []
+state = "Partial"
+missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "crypto-derivatives-context"
+name = "Crypto funding rates and open interest as known"
+what = "Read verified Binance USD-M context and offline-imported Bybit linear funding and hourly open interest at a UTC knowledge cutoff."
+see_it = ["alpha context import-bybit --from <restored-store> --json", "alpha context show-bybit --symbol BTCUSDT --kind open-interest --as-of 2024-01-01T01:05 --json", "alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_bybit_import.py::test_open_interest_future_poison_and_leaky_clock", "tests/unit/test_context_sources_cmds.py::test_bybit_import_show_and_future_poison", "tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_bybit_smoke.py::test_context_bybit_offline_import_and_read", "tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known; 2026-11-17: restored Bybit store imported offline, 50 symbols funding (287,857 rows) and 51 hourly open interest (2,027,681 rows) Jan 2022-Sep 2026, 0 conflicts, read as known"
+real_data_needs = "network for Binance; restored crypto store for offline Bybit import"
+needs = []
+state = "Partial"
+missing = "no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
 id = "answer-check"
 name = "Check an answer's numbers against the records"
-what = "Check drafted numbers and required run labels against stored facts, and compare runs with computed differences."
+what = "Check drafted numbers, required run labels and flag contradictions against stored facts, and compare runs with computed differences."
 see_it = ["alpha results check answer.md --json", "alpha results compare <run_id> <run_id> --json"]
 entry_points = ["cli: alpha results"]
 proof_synthetic = ["tests/unit/test_spine_check.py::test_correct_answer", "tests/unit/test_spine_compare.py::test_comparison_arithmetic_and_provenance"]
@@ -1056,3 +1211,68 @@ real_data = "not yet confirmed; synthetic data only"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "one-trial-ledger"
+name = "One trial ledger across rule tests, tools and RD-Agent"
+what = "Read all recorded trials, their outcomes, families and evidence through one unchanged-ledger view."
+see_it = ["alpha ledger summary --json", "alpha ledger families --json"]
+entry_points = ["cli: alpha ledger"]
+proof_synthetic = ["tests/unit/test_trial_reader.py::test_worked_example", "tests/unit/test_ledger_cmds.py::test_commands"]
+proof_smoke = ["tests/smoke/test_ledger_smoke.py::test_ledger_reads_rule_and_factor_trials"]
+real_data = "Read-only run on 2026-11-16 against copies of the Dell ledgers: 14 spine rows and 117 RD-Agent rows, 243 trials counted, 2 rows with a status this reader does not map yet (SPREAD_FAIL) shown and counted; evidence checks run on the real runs folder; not yet confirmed on the Mac."
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-trial-ledger.md"]
+
+[[capability]]
+id = "honesty-selftest"
+name = "Honesty self-test of the answer checker"
+what = "Check 25 planted honest and dishonest answers against temporary stored runs, without a model call."
+see_it = ["alpha partner selftest"]
+entry_points = ["cli: alpha partner"]
+proof_synthetic = ["tests/unit/test_honesty_traps.py::test_every_scenario_behaves"]
+proof_smoke = ["tests/smoke/test_partner_selftest_smoke.py::test_partner_selftest"]
+real_data = "synthetic fixture runs only; no model calls"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-results-check.md"]
+
+[[capability]]
+id = "family-deflated-sharpe"
+name = "Deflated Sharpe counted over the idea's family"
+what = "Record the family trial count behind diagnostic Sharpe and the verdict, and show live family totals."
+see_it = ["alpha results cite <run_id> family_trials"]
+entry_points = ["cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_deflation.py::test_worked_example", "tests/unit/test_spine_deflation.py::test_ledger_fixture", "tests/unit/test_spine_deflation.py::test_validate_rerun_keeps_the_family_recorded_at_first_publication", "tests/unit/test_spine_deflation.py::test_family_sharpes_keep_only_the_run_frequency", "tests/unit/test_spine_deflation.py::test_same_test_repeats_count_once_keeping_the_earliest", "tests/unit/test_spine_deflation.py::test_spread_floored_below_five_comparable_trials", "tests/unit/test_spine_deflation.py::test_variants_count_in_n_but_not_in_the_spread"]
+proof_smoke = ["tests/smoke/test_family_deflation_smoke.py::test_family_deflation_grows"]
+real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a copy of the Dell's data folder: family count 10 then 11 (2 repeats of earlier tests not counted); the verdict's deflated Sharpe 0.985 then 0.953 (equal to trial_dsr), against 0.999 and 0.997 counted as one trial"
+needs = []
+state = "Working"
+docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]
+
+[[capability]]
+id = "inverted-signal-control"
+name = "Opposite-direction research control"
+what = "Compare a rule with its opposite direction on the same bars and costs without counting another trial."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> inverted_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_inversion_next_open_known_pnl_and_ledger_unchanged", "tests/unit/test_spine_controls.py::test_short_is_resized_on_equity_net_of_its_dividend_debit", "tests/unit/test_spine_controls.py::test_a_shrinking_short_book_keeps_trading_whole_units", "tests/unit/test_spine_controls.py::test_label_order", "tests/unit/test_spine_diagnostics.py::test_rule_test_publishes_controls_without_counting_them"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder, ledger unchanged by alpha diagnose: ma_cross 50/200 SPY Sharpe 0.76, opposite -0.75, 15 trades each, inconclusive; same on BTC/USDT 0.63 against -0.61, 9 trades, inconclusive; tsmom 252/21 BTC/USDT 0.72 against -0.70, 20 trades, inconclusive; ma_cross 10/50 SPY 0.55 against -0.59, 107 trades, control passed with the rising-market caveat"
+needs = []
+state = "Working"
+docs = ["research/tools/inverted-signal-control.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "walk-forward-efficiency"
+name = "Walk-forward efficiency with explicit limits"
+what = "Read the median annualised out-of-sample to in-sample return ratio as a practitioner rule of thumb, not a statistical test."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> wfe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_wfe_reads_the_recorded_train_window_after_warm_up", "tests/unit/test_spine_controls.py::test_wfe_two_folds", "tests/unit/test_spine_controls.py::test_wfe_null", "tests/unit/test_spine_controls.py::test_wfe_median_uses_defined_folds_and_names_the_rest"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder: ma_cross 50/200 SPY median 65% over 31 of 33 folds; same on BTC/USDT 0% over 7 of 9; tsmom 252/21 BTC/USDT -11% over 6 of 9; ma_cross 10/50 SPY 99% over 33 of 34"
+needs = []
+state = "Working"
+docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]

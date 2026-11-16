@@ -29,3 +29,8 @@ W10 controls, admitted capability contracts, the native stock plans now pending 
 - [Checklist: Master acceptance scenarios T01 to T36](../../archive/research-notes/feature-readiness-checklist-2026-10-27.md#master-acceptance-scenarios-t01-to-t36) (T07)
 - [Native stock inspection plan](https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/2026-11-08-native-stock-inspection/02-plan.md) (T07 boundary)
 - [README: Implemented scope and limits](../../../README.md#implemented-scope-and-limits)
+
+## More recovered from the second pass
+
+- An overnight batch of about a hundred experiments with a morning list of the best few.
+- Keep-or-revert scoring that includes complexity and a trade-count floor.

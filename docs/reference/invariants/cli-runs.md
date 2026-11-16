@@ -21,6 +21,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
+  - apps/alpha-cli/src/alpha_cli/*lookalike*.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
   - tests/smoke/test_rule_test_smoke.py
@@ -31,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 8721de7f02d2e616
+verified: 410ccc9460fc33a2
 ---
 
 # Command line runs invariants
@@ -66,8 +67,8 @@ and how it names and publishes immutable runs. Project-wide rules:
   `alpha_strategies`, `alpha_patterns`, `alpha_validation`, `alpha_forecast` and `alpha_cli`. Any byte edit there,
   including this CLI, gives new runs a new id. Old runs are never rewritten.
 - Execution-only knobs stay out of identity: `max_workers` is removed before hashing (`validate_cmds.py`).
-- Seeds come from `_seeds.semantic_seed(master, namespace)`; adding or reordering namespaces must not shift any
-  other seed. [ADR-0007](../../adr/0007-deterministic-run-id-and-seeds.md) is superseded for v3 by ADR-0013.
+- Seeds: `_seeds.semantic_seed(master, namespace)`; adding/reordering namespaces must not shift other seeds.
+  [ADR-0007](../../adr/0007-deterministic-run-id-and-seeds.md) is superseded for v3 by ADR-0013.
 - A rule strategy's canonical spec bytes go into `params.rules_spec`, so changing a saved rule makes a new run id and
   overwriting a rule name never changes a past run. The `rules` strategy fingerprint covers `rules.py` and
   `rule_strategy.py` (`_identity.py`).
@@ -82,17 +83,14 @@ and how it names and publishes immutable runs. Project-wide rules:
   web and MCP import them cheaply (`tests/unit/test_public_seams.py`).
 - Publish each artifact once (`_artifacts.publish_artifact`): an identical rewrite is a no-op, different bytes fail,
   and nothing may be added after the manifest exists.
-- The manifest is the completion marker. `write_manifest` hashes every sidecar (schema, sha256, size, rows) and is
-  published last; a different manifest at the same path fails.
-- V1 and v2 runs stay readable and report `trace_unavailable`; never migrate or rewrite them.
-- Mutable state (paper sessions, jobs, figures, workspaces, UUIDs, PIDs, heartbeats) never goes into a run directory.
+- The manifest is the completion marker: `write_manifest` hashes every sidecar (schema, sha256, size, rows), publishes last and refuses different bytes.
+- V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
 
 ## Validation and optimisation
 
 - The gauntlet and optimiser refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model
   equity-path-dependent sizing (`_gauntlet.py`, `_optim.py`).
-- An explicit `--allow-short` on a CASH account fails loud; the default is short-allowed on MARGIN and long-flat on CASH.
-- `train_size` below the strategy warm-up floor fails loud.
+- `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
 - `--snapshot` verifies and reads the frozen snapshot, never the live store.
 - The headline null must be beaten in every null tier that runs. [ADR-0006](../../adr/0006-two-tier-null-model.md);
   method rules in [research integrity § Statistical evidence](research-integrity.md#statistical-evidence).
@@ -127,27 +125,30 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## Stored facts and diagnostics
 
-- Rule tests run a full-sample diagnostic pass, including cost/parameter engine re-runs and a
-  returns-level delay approximation. `--no-diagnose` skips it and labels the run `no-diagnostics`.
+- Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
 - `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
-  drawdowns, calendar returns, trade concentration, counted variants, trial-adjusted Sharpe, flags and
-  a macro window: stored FRED series at the start and trough of the worst drawdown, as known at the
-  trough (`spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are null
-  with an explicit reason.
+  drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict (see [counting](cli-trial-ledger.md)), flags and
+  a macro window: stored FRED at the worst drawdown start/trough, as known at the trough (`spine/macro.py`).
+  Flags are observations, never a verdict; unavailable numbers are null with an explicit reason.
+- `inverted_signal` shorts where the rule was long (same engine, bars, costs, next-open fills), re-sized to
+  100% of equity net of short dividends each bar; CASH shorts are hypothetical, no borrow or funding cost.
+  No ledger, variant or family count. Labels, SE, limits: [control card](../../../research/tools/inverted-signal-control.md).
+- `walk_forward_efficiency`: per fold, OOS CAGR over the full-sample CAGR on its recorded train window (warm-up
+  trimmed); median of defined folds. Rule of thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
 - Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
   use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
-- `alpha results` lists the ledger; `show` reads facts, flags, audit and available figure names;
-  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
-  The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
-  source file/field, labels and a reason exactly when their value is null.
+- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figure names and
+  [`alpha tool`](cli-investigation-tools.md) outputs; for a test id, assets not completed or unreadable are under `failed` with a reason.
+  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`;
+  facts include run id, basis, source file/field, labels and a reason exactly when their value is null.
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
   imperative `next` command; JSON under `--json`), including when every asset of a test fails.
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
   sensitivity re-runs separately from the append-only row index.
-- `results show <test_id>` shows every asset that completed and lists each one that did not, or
-  whose stored run could not be read, under `failed` with a reason; naming one run still fails loud.
-- `alpha tool attribution|regimes|changepoints` describe a recorded rule test: [investigation tools](cli-investigation-tools.md).
-- `alpha results check|compare`: [draft checks and run comparisons](cli-results-check.md).
+
+## Draft checks, lookalikes and novelty
+
+- `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 
 ## Suites
 

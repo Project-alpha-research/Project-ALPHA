@@ -1,0 +1,12 @@
+{
+  "schema": "AlphaRdagentUniverseV1",
+  "name": "alpaca-us-stocks",
+  "source": "alpaca-us-equities",
+  "instruments": ["AAPL", "AMZN", "GOOGL", "JNJ", "JPM", "META", "MSFT", "NVDA", "XOM"],
+  "calendar": "exchange-sessions",
+  "annual_periods": 252,
+  "liquidity": null,
+  "min_names": 5,
+  "min_universe": 15,
+  "survivorship": "nine 2026 US mega-cap survivors chosen by hand; not a point-in-time stock universe"
+}

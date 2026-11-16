@@ -107,7 +107,9 @@ def _pvalue_families() -> list[list[float]]:
         if i % 3 == 0:
             p = np.round(p, 2)  # many ties
         if i % 5 == 0:
-            p = p**6  # crowd near zero
+            # Crowd near zero. Python's scalar pow, not numpy's: numpy's vectorised power differs in
+            # the last digit on AVX-512 machines, which would change the frozen corpus digests.
+            p = np.array([float(v) ** 6 for v in p])
         if i % 7 == 0:
             p[int(rng.integers(0, p.size))] = 0.0
         if i % 11 == 0:

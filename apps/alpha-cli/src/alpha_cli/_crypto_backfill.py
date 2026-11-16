@@ -30,6 +30,7 @@ from alpha_cli._crypto_backfill_accounting import (
     FixtureAccountingBlocked,
     FixtureBackfillAccounting,
 )
+from alpha_cli._crypto_backfill_state import RetainedRanges, progress_identity
 from alpha_cli._crypto_http_accounting import FixtureHttpAccounting
 from alpha_cli._crypto_http_replay import FixtureBoundHttpAccounting
 from alpha_core import DataError
@@ -163,6 +164,8 @@ class Ledger:
         self._baseline = baseline
         self._scope = {key: body[key] for key in ("provider", "family", "category", "frequency")}
         self._owner: tuple[int, int, int] | None = None
+        self._identity = None if baseline is None else progress_identity(path)
+        self._ranges: RetainedRanges | None = None
 
     @staticmethod
     def _read_raw(path: Path, *, max_bytes: int | None = None) -> bytes | None:
@@ -252,10 +255,11 @@ class Ledger:
             token = (fd, pid, threading.get_ident())
             self._owner = token
             self._check_owner()
-            latest = type(self).open(self.path, **self._scope)
             if refresh:
+                latest = type(self).open(self.path, **self._scope)
                 self.body, self._baseline = latest.body, latest._baseline
-            elif latest._baseline != self._baseline:
+                self._identity, self._ranges = latest._identity, None
+            elif progress_identity(self.path) != self._identity:
                 raise DataError("backfill progress snapshot is stale; reopen before mutation")
             yield
         finally:
@@ -278,6 +282,7 @@ class Ledger:
         category: str,
         frequency: str,
         max_bytes: int | None = None,
+        defer_read: bool = False,
     ) -> Ledger:
         if max_bytes is not None and (type(max_bytes) is not int or max_bytes < 1):
             raise DataError("backfill inspection ledger byte limit must be positive")
@@ -288,7 +293,10 @@ class Ledger:
             "category": category,
             "frequency": frequency,
         }
-        raw = cls._read_raw(path, max_bytes=max_bytes)
+        before = progress_identity(path)
+        raw = None if defer_read else cls._read_raw(path, max_bytes=max_bytes)
+        if progress_identity(path) != before:
+            raise DataError("backfill progress changed during read")
         if raw is not None:
             try:
                 body = json.loads(raw.decode("utf-8"))
@@ -305,8 +313,12 @@ class Ledger:
                 raise DataError(
                     f"ledger {path} has scope {existing}, not {scope}; use a different ledger name"
                 )
-            return cls(path, body, raw)
-        return cls(path, {"schema_version": 1, **scope, "windows": {}}, None)
+        else:
+            body = {"schema_version": 1, **scope, "windows": {}}
+        result = cls(path, body, raw)
+        if not defer_read and progress_identity(path) != before:
+            raise DataError("backfill progress changed during read")
+        return result
 
     @property
     def source_sha256(self) -> str | None:
@@ -323,20 +335,13 @@ class Ledger:
         state = self.state(key)
         if state != "split":
             if state != "done" and window.start is not None and window.end is not None:
-                prefix = f"{symbol}|"
-                for retained_key in self.body["windows"]:
-                    if retained_key == key or not retained_key.startswith(prefix):
-                        continue
-                    parts = retained_key[len(prefix) :].split("|")
-                    if (
-                        len(parts) == 3
-                        and parts[2] == "None"
-                        and window.start <= parts[0] < parts[1] <= window.end
-                    ):
-                        raise DataError(
-                            "retained backfill child progress has no split parent; "
-                            "reconcile retained topology before resume"
-                        )
+                if self._ranges is None:
+                    self._ranges = RetainedRanges(self.body["windows"])
+                if self._ranges.has_child(symbol, window.start, window.end, key):
+                    raise DataError(
+                        "retained backfill child progress has no split parent; "
+                        "reconcile retained topology before resume"
+                    )
             return [window]
         halves = split_window(window)
         if halves is None:
@@ -364,12 +369,14 @@ class Ledger:
     def record(self, key: str, entry: dict[str, Any]) -> None:
         with self.exclusive():
             self.body["windows"][key] = entry
+            self._ranges = None
             self.save()
 
     def save(self) -> None:
         with self.exclusive():
             self._check_owner()
-            if self._read_raw(self.path) != self._baseline:
+            self._ranges = None
+            if progress_identity(self.path) != self._identity:
                 raise DataError("backfill progress snapshot is stale; reopen before mutation")
             encoded = (json.dumps(self.body, indent=2, sort_keys=True) + "\n").encode("utf-8")
             tmp: Path | None = None
@@ -383,11 +390,23 @@ class Ledger:
                 ) as stream:
                     tmp = Path(stream.name)
                     stream.write(encoded)
+                    stream.flush()
+                    os.fsync(stream.fileno())
                 self._check_owner()
-                if self._read_raw(self.path) != self._baseline:
+                if progress_identity(self.path) != self._identity:
                     raise DataError("backfill progress changed before replacement")
+                written = progress_identity(tmp)
                 os.replace(tmp, self.path)
+                published = progress_identity(self.path)
+                if written is None or published is None or written[:4] != published[:4]:
+                    raise DataError("backfill progress changed during replacement")
+                self._identity = published
                 self._baseline = encoded
+                directory = os.open(self.path.parent, os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    os.fsync(directory)
+                finally:
+                    os.close(directory)
             finally:
                 if tmp is not None:
                     tmp.unlink(missing_ok=True)
@@ -435,19 +454,20 @@ def run_backfill(
         fixture_accounting.check_idle_owner()
     windows = plan_windows(provider, family, frequency, start=start, end=end, now=now)
     ledger = Ledger.open(
-        ledger_path, provider=provider, family=family, category=category, frequency=frequency
+        ledger_path,
+        provider=provider,
+        family=family,
+        category=category,
+        frequency=frequency,
+        defer_read=not dry_run,
     )
-    # All current executing writers own the whole progress resource before reload,
-    # preflight, deduplication, acquisition and replacement. Dry-run is read-only.
+    # Own progress before loading, preflight and acquisition; dry-run remains read-only.
     with ledger.exclusive(refresh=True) if not dry_run else nullcontext():
         counts = {"windows_total": 0, "done": 0, "failed": 0, "skipped": 0, "split": 0}
         failures: list[dict[str, str]] = []
         awaiting_publication: list[str] = []
         identities = [(symbol, *split_symbol(symbol, quote=quote)) for symbol in symbols]
         verified: set[str] = set()
-
-        def leaves(symbol: str, window: BackfillWindow) -> list[BackfillWindow]:
-            return ledger.requested_leaves(symbol, window)
 
         def verify(symbol: str, window: BackfillWindow) -> None:
             key = f"{symbol}|{window.key}"
@@ -492,11 +512,10 @@ def run_backfill(
                 )
             verified.add(key)
 
-        # Verify every requested completed leaf BEFORE any new acquisition, including
-        # children below retained splits. Unrelated symbols/ranges are not this request.
+        # Verify all requested completed leaves, including split children, before acquisition.
         for symbol, _base, _quote in identities:
             for window in windows:
-                for leaf in leaves(symbol, window):
+                for leaf in ledger.requested_leaves(symbol, window):
                     if ledger.state(f"{symbol}|{leaf.key}") == "done" and not dry_run:
                         verify(symbol, leaf)
 

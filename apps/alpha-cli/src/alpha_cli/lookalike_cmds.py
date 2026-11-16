@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -117,6 +118,216 @@ def _error(exc: Exception, command: str) -> SpineError:
     )
 
 
+def _lookalike_labels(result: Any, resolved: Any, labels_base: tuple[str, ...]) -> list[str]:
+    return [
+        f"N={len(result.matches)} matches",
+        *labels_base,
+        "exploratory",
+        "price only, no costs",
+        *(["source-defaulted"] if resolved.defaulted else []),
+        *(["too few to summarise"] if len(result.matches) < 5 else []),
+        *(
+            [f"outcomes overlap for {result.overlapping_outcomes} pairs"]
+            if result.overlapping_outcomes
+            else []
+        ),
+        *(
+            [f"outcomes of {result.outcomes_into_query} matches run into the query's own bars"]
+            if result.outcomes_into_query
+            else []
+        ),
+    ]
+
+
+def _lookalike_trial_row(
+    resolved: Any,
+    last: int,
+    timeframe: str,
+    result_id: str,
+    settings: dict[str, Any],
+    labels: list[str],
+) -> dict[str, Any]:
+    return {
+        "test_id": result_id,
+        "name": f"lookalike {resolved.symbol} last {last} {timeframe}",
+        "idea": "has price action like this happened before?",
+        "rule": "lookalike",
+        "symbol": resolved.symbol,
+        "store": resolved.store_name,
+        "source": resolved.source,
+        "run_id": None,
+        "result_id": result_id,
+        "params": settings,
+        "labels": labels,
+    }
+
+
+def _match_items(result: Any) -> list[dict[str, Any]]:
+    return [
+        {
+            "start": _iso(match.start_ts),
+            "end": _iso(match.end_ts),
+            "distance": match.distance,
+            "correlation": match.correlation,
+            "what_happened_next": {
+                str(outcome.horizon): {"value": outcome.value, "reason": outcome.reason}
+                for outcome in match.what_happened_next
+            },
+        }
+        for match in result.matches
+    ]
+
+
+def _lookalike_facts(
+    result: Any,
+    summaries: Sequence[Any],
+    *,
+    top: int,
+    threshold: float,
+    declared: str,
+    looks: int,
+    result_id: str,
+    labels: list[str],
+) -> list[dict[str, Any]]:
+    def fact(
+        metric: str, value: Any, basis: str, source: str, reason: Any = None
+    ) -> dict[str, Any]:
+        return _fact(metric, value, basis, source, result_id, labels, reason)
+
+    facts = [
+        fact(
+            "matches",
+            len(result.matches),
+            f"lookalikes within the threshold, at most {top}, searched before the query",
+            "search.matches",
+        ),
+        fact(
+            "matches_within_threshold",
+            result.matches_within_threshold,
+            "every non-overlapping lookalike within the threshold, before the top cap",
+            "search.matches_within_threshold",
+        ),
+        fact("max_distance", threshold, declared, "search.max_distance"),
+        fact(
+            "max_distance_correlation",
+            result.max_distance_correlation,
+            "the shape correlation equal to max_distance for this window length",
+            "search.max_distance_correlation",
+        ),
+        fact(
+            "lookalike_looks",
+            looks,
+            "lookalike trials in the ledger, this one included",
+            "trial.looks",
+        ),
+    ]
+    for summary in summaries:
+        for name, value in (
+            ("median", summary.median),
+            ("mean", summary.mean),
+            ("share_up", summary.share_up),
+        ):
+            facts.append(
+                fact(
+                    f"next_{summary.horizon}_{name}",
+                    value,
+                    f"what happened next: close-to-close change {summary.horizon} bars "
+                    f"after each match completed, over {summary.count} matches; "
+                    "descriptive, not a forecast",
+                    f"what_happened_next.{summary.horizon}.{name}",
+                    summary.reason,
+                )
+            )
+    return facts
+
+
+def _lookalike_document(
+    result: Any,
+    summaries: Sequence[Any],
+    *,
+    resolved: Any,
+    settings: dict[str, Any],
+    result_id: str,
+    threshold: float,
+    declared: str,
+    trial_index: Any,
+    looks: int,
+    labels: list[str],
+    facts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema": "AlphaLookalikeV1",
+        "result_id": result_id,
+        "question": "Has price action like this happened before?",
+        "settings": settings,
+        "source": resolved.source,
+        "query": {
+            "start": _iso(result.query_start_ts),
+            "end": _iso(result.query_end_ts),
+        },
+        "search": {
+            "searched": "every stretch ending before the query starts",
+            "candidates_searched": result.candidates_searched,
+            "constant_candidates_skipped": result.constant_candidates_skipped,
+            "matches": len(result.matches),
+            "matches_within_threshold": result.matches_within_threshold,
+            "max_distance": threshold,
+            "max_distance_basis": declared,
+            "max_distance_correlation": result.max_distance_correlation,
+            "exclusion_bars": result.exclusion,
+            "items": _match_items(result),
+        },
+        "what_happened_next": {
+            str(summary.horizon): {
+                "count": summary.count,
+                "median": summary.median,
+                "mean": summary.mean,
+                "share_up": summary.share_up,
+                "reason": summary.reason,
+            }
+            for summary in summaries
+        },
+        "trial": {"trial_index": trial_index, "looks": looks},
+        "labels": labels,
+        "facts": facts,
+    }
+
+
+def _lookalike_text(
+    result: Any,
+    summaries: Sequence[Any],
+    *,
+    resolved: Any,
+    last: int,
+    timeframe: str,
+    result_id: str,
+    declared: str,
+    labels: list[str],
+    rdir: Path,
+) -> str:
+    lines = [
+        f"Lookalike {result_id} — {resolved.symbol}, last {last} {timeframe} bars "
+        f"({_iso(result.query_start_ts)[:10]} to {_iso(result.query_end_ts)[:10]})",
+        f"Matches: {len(result.matches)} (threshold: shape correlation "
+        f"{result.max_distance_correlation:.2f}+; {declared})",
+        "START\tEND\tCORRELATION",
+        *(
+            f"{_iso(match.start_ts)[:10]}\t{_iso(match.end_ts)[:10]}\t{match.correlation:.3f}"
+            for match in result.matches
+        ),
+        "What happened next (descriptive, not a forecast):",
+        *(
+            f"  {s.horizon} bars: median {s.median:+.2%}, {s.share_up:.0%} rose, of {s.count}"
+            if s.median is not None and s.share_up is not None
+            else f"  {s.horizon} bars: {s.reason}"
+            for s in summaries
+        ),
+        f"Labels: {', '.join(labels)}",
+        f"Figure: {rdir / 'figure.png'}",
+    ]
+    return "\n".join(lines)
+
+
 def lookalike(
     asset: str = typer.Option(..., help="Symbol or symbol@store, e.g. SPY@alpaca."),
     last: int = typer.Option(30, min=5, help="The query: the latest N bars."),
@@ -179,160 +390,37 @@ def lookalike(
             "exclusion": last,
         }
         result_id = _identity("lookalike", settings, bars)
-        labels = [
-            f"N={len(result.matches)} matches",
-            *LABELS,
-            "exploratory",
-            "price only, no costs",
-            *(["source-defaulted"] if resolved.defaulted else []),
-            *(["too few to summarise"] if len(result.matches) < 5 else []),
-            *(
-                [f"outcomes overlap for {result.overlapping_outcomes} pairs"]
-                if result.overlapping_outcomes
-                else []
-            ),
-            *(
-                [f"outcomes of {result.outcomes_into_query} matches run into the query's own bars"]
-                if result.outcomes_into_query
-                else []
-            ),
-        ]
+        labels = _lookalike_labels(result, resolved, tuple(LABELS))
         rdir = home / "lookalike" / result_id
-        repeat = (rdir / "result.json").exists()
-        if repeat:
+        if (rdir / "result.json").exists():
             labels.append("repeat")
         trial = append_trial(
-            home,
-            {
-                "test_id": result_id,
-                "name": f"lookalike {resolved.symbol} last {last} {timeframe}",
-                "idea": "has price action like this happened before?",
-                "rule": "lookalike",
-                "symbol": resolved.symbol,
-                "store": resolved.store_name,
-                "source": resolved.source,
-                "run_id": None,
-                "result_id": result_id,
-                "params": settings,
-                "labels": labels,
-            },
+            home, _lookalike_trial_row(resolved, last, timeframe, result_id, settings, labels)
         )
         looks = sum(1 for row in read_trials(home) if row.get("rule") == "lookalike")
-        matches = [
-            {
-                "start": _iso(match.start_ts),
-                "end": _iso(match.end_ts),
-                "distance": match.distance,
-                "correlation": match.correlation,
-                "what_happened_next": {
-                    str(outcome.horizon): {"value": outcome.value, "reason": outcome.reason}
-                    for outcome in match.what_happened_next
-                },
-            }
-            for match in result.matches
-        ]
-        facts = [
-            _fact(
-                "matches",
-                len(result.matches),
-                f"lookalikes within the threshold, at most {top}, searched before the query",
-                "search.matches",
-                result_id,
-                labels,
-                None,
-            ),
-            _fact(
-                "matches_within_threshold",
-                result.matches_within_threshold,
-                "every non-overlapping lookalike within the threshold, before the top cap",
-                "search.matches_within_threshold",
-                result_id,
-                labels,
-                None,
-            ),
-            _fact(
-                "max_distance",
-                threshold,
-                declared,
-                "search.max_distance",
-                result_id,
-                labels,
-                None,
-            ),
-            _fact(
-                "max_distance_correlation",
-                result.max_distance_correlation,
-                "the shape correlation equal to max_distance for this window length",
-                "search.max_distance_correlation",
-                result_id,
-                labels,
-                None,
-            ),
-            _fact(
-                "lookalike_looks",
-                looks,
-                "lookalike trials in the ledger, this one included",
-                "trial.looks",
-                result_id,
-                labels,
-                None,
-            ),
-        ]
-        for summary in summaries:
-            for name, value in (
-                ("median", summary.median),
-                ("mean", summary.mean),
-                ("share_up", summary.share_up),
-            ):
-                facts.append(
-                    _fact(
-                        f"next_{summary.horizon}_{name}",
-                        value,
-                        f"what happened next: close-to-close change {summary.horizon} bars "
-                        f"after each match completed, over {summary.count} matches; "
-                        "descriptive, not a forecast",
-                        f"what_happened_next.{summary.horizon}.{name}",
-                        result_id,
-                        labels,
-                        summary.reason,
-                    )
-                )
-        document = {
-            "schema": "AlphaLookalikeV1",
-            "result_id": result_id,
-            "question": "Has price action like this happened before?",
-            "settings": settings,
-            "source": resolved.source,
-            "query": {
-                "start": _iso(result.query_start_ts),
-                "end": _iso(result.query_end_ts),
-            },
-            "search": {
-                "searched": "every stretch ending before the query starts",
-                "candidates_searched": result.candidates_searched,
-                "constant_candidates_skipped": result.constant_candidates_skipped,
-                "matches": len(result.matches),
-                "matches_within_threshold": result.matches_within_threshold,
-                "max_distance": threshold,
-                "max_distance_basis": declared,
-                "max_distance_correlation": result.max_distance_correlation,
-                "exclusion_bars": result.exclusion,
-                "items": matches,
-            },
-            "what_happened_next": {
-                str(summary.horizon): {
-                    "count": summary.count,
-                    "median": summary.median,
-                    "mean": summary.mean,
-                    "share_up": summary.share_up,
-                    "reason": summary.reason,
-                }
-                for summary in summaries
-            },
-            "trial": {"trial_index": trial["trial_index"], "looks": looks},
-            "labels": labels,
-            "facts": facts,
-        }
+        facts = _lookalike_facts(
+            result,
+            summaries,
+            top=top,
+            threshold=threshold,
+            declared=declared,
+            looks=looks,
+            result_id=result_id,
+            labels=labels,
+        )
+        document = _lookalike_document(
+            result,
+            summaries,
+            resolved=resolved,
+            settings=settings,
+            result_id=result_id,
+            threshold=threshold,
+            declared=declared,
+            trial_index=trial["trial_index"],
+            looks=looks,
+            labels=labels,
+            facts=facts,
+        )
         figure = _render(
             lookalike_figure(
                 series,
@@ -348,27 +436,18 @@ def lookalike(
     except (ValueError, OSError, DataError) as exc:
         fail(_error(exc, "lookalike"), json_out)
     output = {**document, "result_dir": str(rdir), "figure": str(rdir / "figure.png")}
-    lines = [
-        f"Lookalike {result_id} — {resolved.symbol}, last {last} {timeframe} bars "
-        f"({_iso(result.query_start_ts)[:10]} to {_iso(result.query_end_ts)[:10]})",
-        f"Matches: {len(result.matches)} (threshold: shape correlation "
-        f"{result.max_distance_correlation:.2f}+; {declared})",
-        "START\tEND\tCORRELATION",
-        *(
-            f"{_iso(match.start_ts)[:10]}\t{_iso(match.end_ts)[:10]}\t{match.correlation:.3f}"
-            for match in result.matches
-        ),
-        "What happened next (descriptive, not a forecast):",
-        *(
-            f"  {s.horizon} bars: median {s.median:+.2%}, {s.share_up:.0%} rose, of {s.count}"
-            if s.median is not None and s.share_up is not None
-            else f"  {s.horizon} bars: {s.reason}"
-            for s in summaries
-        ),
-        f"Labels: {', '.join(labels)}",
-        f"Figure: {rdir / 'figure.png'}",
-    ]
-    emit(output, json_out=json_out, fallback="\n".join(lines))
+    text = _lookalike_text(
+        result,
+        summaries,
+        resolved=resolved,
+        last=last,
+        timeframe=timeframe,
+        result_id=result_id,
+        declared=declared,
+        labels=labels,
+        rdir=rdir,
+    )
+    emit(output, json_out=json_out, fallback=text)
 
 
 def unusual(

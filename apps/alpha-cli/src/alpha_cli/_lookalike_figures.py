@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from alpha_patterns.lookalike import LookalikeResult, NoveltyResult, OutcomeSummary
     from alpha_patterns.series import OHLCV
-    from alpha_research.figures import FigureSpec
+    from alpha_research.figures import FigureSpec, LineMark, Mark
 
 
 def _pct(value: float) -> str:
@@ -43,24 +43,14 @@ def _bars_word(timeframe: str) -> str:
     return "daily" if timeframe == "1D" else timeframe
 
 
-def lookalike_figure(
-    bars: OHLCV,
-    result: LookalikeResult,
-    summaries: tuple[OutcomeSummary, ...],
-    *,
-    asset: str,
-    timeframe: str,
-    result_id: str,
-    looks: int,
-) -> FigureSpec:
-    import numpy as np
+def _shape_and_path_marks(
+    bars: OHLCV, result: LookalikeResult, intraday: bool
+) -> tuple[list[LineMark], list[LineMark]]:
+    """The rescaled outline of every match plus the query, and each match's path afterwards."""
+    from alpha_patterns.lookalike import znorm
+    from alpha_research.figures import LineMark
 
-    from alpha_patterns.lookalike import MIN_MATCHES_FOR_SUMMARY, znorm
-    from alpha_research.figures import FigureSpec, LineMark, Mark, Panel, RuleMark, ValueLabel
-
-    window = result.window
-    intraday = timeframe != "1D"
-    shape_x = tuple(float(step) for step in range(-(window - 1), 1))
+    shape_x = tuple(float(step) for step in range(-(result.window - 1), 1))
     close = bars.close
     shapes = []
     paths = []
@@ -97,33 +87,41 @@ def lookalike_figure(
             alpha=0.55,
             label=f"{len(result.matches)} past lookalikes",
         )
+    return shapes, paths
+
+
+def _lookalike_answer(result: LookalikeResult, summaries: tuple[OutcomeSummary, ...]) -> str:
     count = len(result.matches)
-    longest = max(result.horizons, default=0)
     shown = [summary for summary in summaries if summary.median is not None]
     if count == 0:
-        answer = (
-            f"No earlier {window}-bar stretch was within the declared threshold "
+        return (
+            f"No earlier {result.window}-bar stretch was within the declared threshold "
             f"(shape correlation {result.max_distance_correlation:.2f} or more)."
         )
-    elif not shown:
-        answer = (
+    if not shown:
+        return (
             f"{count} earlier stretch{'es' if count != 1 else ''} looked like this; "
             f"fewer than 5 with a known outcome, so no summary is given (too few to say anything)."
         )
-    else:
-        parts = "; ".join(
-            f"after {s.horizon} bars median {_pct(s.median or 0.0)}, "
-            f"{(s.share_up or 0.0) * 100:.0f}% rose (of {s.count})"
-            for s in shown
-        )
-        answer = f"What followed the {count} past lookalikes: {parts}."
-    rules: list[Mark] = [
-        RuleMark(orientation="vertical", position=0.0, role="reference", dashed=True, width=0.8)
-    ]
+    parts = "; ".join(
+        f"after {s.horizon} bars median {_pct(s.median or 0.0)}, "
+        f"{(s.share_up or 0.0) * 100:.0f}% rose (of {s.count})"
+        for s in shown
+    )
+    return f"What followed the {count} past lookalikes: {parts}."
+
+
+def _median_marks(result: LookalikeResult) -> list[Mark]:
+    """The median path of the lookalikes, only while enough of them have a known outcome."""
+    import numpy as np
+
+    from alpha_patterns.lookalike import MIN_MATCHES_FOR_SUMMARY
+    from alpha_research.figures import LineMark, ValueLabel
+
     median: list[Mark] = []
     if len(result.matches) >= MIN_MATCHES_FOR_SUMMARY:
         steps = []
-        for step in range(longest + 1):
+        for step in range(max(result.horizons, default=0) + 1):
             known = [m.path_after[step] for m in result.matches if len(m.path_after) > step]
             if len(known) < MIN_MATCHES_FOR_SUMMARY:
                 break
@@ -139,6 +137,30 @@ def lookalike_figure(
                     end_label=ValueLabel(text=f"{steps[-1]:+.1f}%"),
                 )
             )
+    return median
+
+
+def lookalike_figure(
+    bars: OHLCV,
+    result: LookalikeResult,
+    summaries: tuple[OutcomeSummary, ...],
+    *,
+    asset: str,
+    timeframe: str,
+    result_id: str,
+    looks: int,
+) -> FigureSpec:
+    from alpha_research.figures import FigureSpec, Panel, RuleMark
+
+    window = result.window
+    shapes, paths = _shape_and_path_marks(bars, result, timeframe != "1D")
+    count = len(result.matches)
+    longest = max(result.horizons, default=0)
+    answer = _lookalike_answer(result, summaries)
+    rules: list[Mark] = [
+        RuleMark(orientation="vertical", position=0.0, role="reference", dashed=True, width=0.8)
+    ]
+    median = _median_marks(result)
     shape_values = [value for mark in shapes for value in mark.y]
     path_values = [value for mark in paths for value in mark.y] + [0.0]
     next_marks: tuple[Mark, ...] = (
@@ -215,7 +237,6 @@ def unusual_figure(
     from alpha_research.figures import (
         FigureSpec,
         LineMark,
-        Mark,
         Panel,
         RuleMark,
         ScatterMark,

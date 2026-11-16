@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: f383abd65faee087
+verified: 3b324ac28fa4a72c
 ---
 
 # One trial ledger invariants
@@ -61,7 +61,8 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   neighbouring settings, another basis and strongly correlated, and would narrow the spread.
   Below 5 comparable trials (distinct same-bar-size family tests with a Sharpe, this run included)
   the variance is the larger of the sample variance and the sampling variance of this run's
-  per-bar Sharpe (the PSR's non-normal standard error, squared); from 5 the sample variance stands. `trial_basis` says in plain words when the count is the wider same-asset count of any
+  per-bar Sharpe (the PSR's non-normal standard error, squared); from 5 the sample variance stands.
+  `trial_basis` says in plain words when the count is the wider same-asset count of any
   rule, how many repeats were not counted and when the spread was floored. `dsr` also records
   `family_id`, `prior_sharpes`, `family_count`, `comparable_trials`, `repeats`, `spread_floored`
   and `deflation_rule` (`family-dedup-floor-2`, not part of the run id). A rule test reads the

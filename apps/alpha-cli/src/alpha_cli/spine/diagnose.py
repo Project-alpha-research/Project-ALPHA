@@ -22,12 +22,11 @@ from alpha_cli.spine.deflation import (
     count_snapshot,
     family_deflation,
     family_sharpes,
-    spine_snapshot,
     spine_test_key,
 )
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.spec import IdeaSpec, Rule
-from alpha_cli.spine.trial_reader import LedgerSnapshot
+from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_core import Bar, CorporateAction
 from alpha_validation.metrics import to_returns
 

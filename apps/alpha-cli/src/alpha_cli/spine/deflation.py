@@ -13,12 +13,10 @@ from scipy import stats
 
 from alpha_cli._artifacts import read_manifest
 from alpha_cli._artifacts import run_dir as run_dir_for
-from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.trial_reader import (
     READER_VERSION,
     LedgerSnapshot,
-    LedgerSource,
-    read_ledgers,
+    spine_snapshot,
     trials_for_deflation,
 )
 from alpha_cli.spine.trial_record import TrialRecord
@@ -115,18 +113,6 @@ def _distinct_tests(snapshot: LedgerSnapshot, family_id: str) -> tuple[list[Tria
             seen.add(key)
         kept.append(record)
     return kept, repeats
-
-
-def spine_snapshot(home: Path) -> LedgerSnapshot:
-    path = (home / "ledger/trials.jsonl").resolve()
-    try:
-        return read_ledgers([LedgerSource("spine", str(path))])
-    except OSError as exc:
-        raise SpineError(
-            "LEDGER_UNREADABLE",
-            f"Cannot read the trial ledger {path}: {exc}",
-            "Fix the file's permissions; never edit or delete ledger rows.",
-        ) from exc
 
 
 def count_snapshot(

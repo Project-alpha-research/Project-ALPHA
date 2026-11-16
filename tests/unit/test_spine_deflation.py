@@ -228,7 +228,7 @@ def test_validate_family_inputs(tmp_path: Path) -> None:
 
 
 def test_explicit_bar_size(tmp_path: Path) -> None:
-    from alpha_cli.spine.deflation import spine_snapshot
+    from alpha_cli.spine.trial_reader import spine_snapshot
 
     path = ledger(tmp_path)
     rows = [json.loads(line) for line in path.read_text().splitlines()]
@@ -385,7 +385,8 @@ def test_validate_rerun_keeps_the_family_recorded_at_first_publication(
 
 def test_family_sharpes_keep_only_the_run_frequency(tmp_path: Path) -> None:
     """Per-bar Sharpes of other bar sizes are on another scale: they count, but not in variance."""
-    from alpha_cli.spine.deflation import count_snapshot, family_sharpes, spine_snapshot
+    from alpha_cli.spine.deflation import count_snapshot, family_sharpes
+    from alpha_cli.spine.trial_reader import spine_snapshot
 
     path = ledger(tmp_path)
     rows = [json.loads(line) for line in path.read_text().splitlines()]
@@ -404,7 +405,7 @@ def test_family_sharpes_keep_only_the_run_frequency(tmp_path: Path) -> None:
 
 def test_one_ledger_snapshot_per_rule_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The verdict and diagnostics must count the same point-in-time ledger."""
-    from alpha_cli.spine import deflation, diagnose, run
+    from alpha_cli.spine import diagnose, run, trial_reader
     from alpha_cli.spine.run import run_idea
     from alpha_cli.spine.spec import load_spec
     from alpha_data.store import ParquetStore
@@ -417,7 +418,7 @@ def test_one_ledger_snapshot_per_rule_run(tmp_path: Path, monkeypatch: pytest.Mo
         "SPY", source="alpaca", adapter_version="1", parser_version="1"
     )
     reads: list[Path] = []
-    original = deflation.spine_snapshot
+    original = trial_reader.spine_snapshot
 
     def counted(home: Path) -> LedgerSnapshot:
         reads.append(home)
@@ -466,12 +467,8 @@ def keyed_ledger(home: Path, keys: list[tuple[str, str, str]]) -> Path:
 
 
 def test_same_test_repeats_count_once_keeping_the_earliest(tmp_path: Path) -> None:
-    from alpha_cli.spine.deflation import (
-        count_snapshot,
-        family_sharpes,
-        spine_snapshot,
-        spine_test_key,
-    )
+    from alpha_cli.spine.deflation import count_snapshot, family_sharpes, spine_test_key
+    from alpha_cli.spine.trial_reader import spine_snapshot
 
     same = ("a" * 64, "SPY", "2016-01-04T00:00:00+00:00")
     keyed_ledger(tmp_path, [same, ("b" * 64, "SPY", same[2]), same, same])

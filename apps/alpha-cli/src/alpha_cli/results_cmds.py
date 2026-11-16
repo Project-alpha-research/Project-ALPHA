@@ -18,11 +18,10 @@ from alpha_cli.spine.compare import (
     render_compare,
     resolve_run,
 )
-from alpha_cli.spine.deflation import spine_snapshot
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import build_facts, read_json, require_metric
 from alpha_cli.spine.ledger import read_trials
-from alpha_cli.spine.trial_reader import family_counts
+from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 

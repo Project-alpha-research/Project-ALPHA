@@ -16,7 +16,6 @@ from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
     family_sharpes,
-    spine_snapshot,
     spine_test_key,
 )
 from alpha_cli.spine.diagnose import write_diagnostics
@@ -25,6 +24,7 @@ from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
 

@@ -3,7 +3,7 @@ owner: study projections
 sources:
   - packages/alpha-study/src/**
   - packages/alpha-study/pyproject.toml
-verified: aa600e57932d
+verified: a0b2ee248a82
 ---
 
 # alpha-study workspace
@@ -31,6 +31,7 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 ## How to change it
 
 - Code: `packages/alpha-study/src/alpha_study/`.
+- `setup/`: frozen daily idea specs, causal expressions and candidate inspection; no exits simulated.
 - Tests: `tests/unit/study/` (its own folder), `tests/unit/test_study_*.py`; bias guards
   `tests/bias_guards/test_study_double_bottom_future_poison.py`,
   `tests/bias_guards/test_verified_semantic_read_future_poison.py`.

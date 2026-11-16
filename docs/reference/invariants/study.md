@@ -5,7 +5,7 @@ sources:
   - tests/unit/study/test_*.py
   - tests/bias_guards/test_study_double_bottom_future_poison.py
   - tests/bias_guards/test_verified_semantic_read_future_poison.py
-verified: aa600e57932d
+verified: a0b2ee248a82
 ---
 
 # Study invariants
@@ -50,6 +50,12 @@ registry, and the blind semantic-read contract. The package is a projection laye
 - Timestamps must be timezone-aware and serialise as UTC; floats must be finite; key sets must match
   exactly. Hash with `canonical_study_sha256`, the `alpha_research` canonical JSON convention.
   [research integrity § Immutable, hash-bound artefacts](research-integrity.md#immutable-hash-bound-artefacts).
+
+## Setup causality
+
+Daily `setup/` expressions read only the current and earlier rows; null operands stay null.
+Candidates use ordered filters and causal triggers, with entry only at the next open.
+`tests/bias_guards/test_setup_future_poison.py` checks prefix invariance and a leaky control.
 
 ## Operator registry
 

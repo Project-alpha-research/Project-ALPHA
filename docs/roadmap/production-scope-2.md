@@ -72,7 +72,7 @@ What is kept, how it is labelled, and what the system remembers.
 | Figures exported for a run | Unproven | `alpha-cli` reports | Path 1 | [status] |
 | One folder per idea linking the question, the spec and every run | Missing | data folder | Path 1 | [partner] |
 | Investigation trail per idea: seen, considered, tested, learned, next | Missing | data folder | Path 1 | [partner] |
-| Lessons written down, searched before each proposal, pruned weekly | Missing | new `research/lessons` | Path 1 | [partner] |
+| Lessons written down, searched before each proposal, pruned weekly | Unproven | `research/lessons`: format only, none yet | Path 1 | [partner] |
 | Integrity as labels on results, not refusals (exploratory, free data, trial count) | Working | run records and ledger | Path 1 | [any-bar] |
 | Honest status words on findings: read, run, reproduced, validated | Missing | run records | Path 1 | private |
 | Failed and rejected variants stay visible | Unproven | trial ledger | Path 3 | private |
@@ -93,14 +93,14 @@ The AI as a research partner that drives the toolbox from a prompt.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | About nine plain verbs in front of today's long command list | Missing | `alpha-cli` | Path 1 | [partner] |
-| One-page research playbook that teaches a method, not a script | Missing | new `research/` | Path 1 | [partner] |
-| Tool cards indexed by symptom, so the AI finds a tool it was never told about | Missing | new `research/tools` | Path 1 | [partner] |
-| The AI proposes next steps with reason, value and cost; says when evidence disagrees | Missing | playbook | Path 1 | [partner] |
+| One-page research playbook that teaches a method, not a script | Unproven | `research/PLAYBOOK.md` | Path 1 | [partner] |
+| Tool cards indexed by symptom, so the AI finds a tool it was never told about | Unproven | `research/tools` | Path 1 | [partner] |
+| The AI proposes next steps with reason, value and cost; says when evidence disagrees | Unproven | playbook and skills: text only | Path 1 | [partner] |
 | A drafted answer's tagged numbers and run labels checked against the stored records (`alpha results check`; not the reasoning) | Working | `alpha-cli` results | Now | [precise] |
 | The AI must run that check on every draft before sending it | Missing | playbook; gateway | Path 1 | [precise] |
 | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs | Unproven | `apps/alpha-mcp` | Path 1 | [grade] |
 | Connection for the Claude and ChatGPT apps, not only the terminal | Missing | `apps/alpha-mcp` | Later | [grade] |
-| A review step that audits a result for defects | Unproven | audit block in `alpha diagnose`; skill missing | Path 1 | [grade] |
+| A review step that audits a result for defects | Unproven | `alpha diagnose` audit; `review-result` skill | Path 1 | [grade] |
 | Ask an in-product assistant about a recorded run | Unproven | `alpha-cli`; `alpha-web` | Later | [status] |
 | Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | was `tools/alpha-eval` | Path 1 | [slim] |
 | Small autonomous research team around RD-Agent | Missing | backlog | Later | [team] |

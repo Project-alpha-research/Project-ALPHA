@@ -19,8 +19,9 @@ and the questions put to the owner are in [part 3](production-scope-3.md).
 
 - **State.** *Working*: run from start to finish through the installed program (often still on
   made-up data). *Unproven*: built, but never run end to end, or shelved, or waiting in an open
-  pull request. *Missing*: not built. *Rebuild*: removed in the thin-out, to be rebuilt slimmer.
-  *Dropped*: dropped by an owner decision once its replacement works.
+  pull request; instructions for the AI that exist only as text stay Unproven until a check
+  shows an AI following them. *Missing*: not built. *Rebuild*: removed in the thin-out, to be
+  rebuilt slimmer. *Dropped*: dropped by an owner decision once its replacement works.
 - **Where.** The package, folder or screen that holds it, or will. "backlog" means an item in
   [the backlog](README.md); "new" means no home exists yet.
 - **By.** *Now*: already there. *Path 1, 2, 3*: the golden path that delivers it (below).
@@ -50,24 +51,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-183 capabilities: 34 working, 55 built but unproven, 92 missing, 1 to rebuild,
+183 capabilities: 34 working, 62 built but unproven, 85 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-16 after the file-system audit added 22 rows).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 2 | 10 | 0 | 0 |
-| 2. Data and context | 3 | 11 | 9 | 0 | 0 |
+| 1. Idea | 2 | 4 | 8 | 0 | 0 |
+| 2. Data and context | 3 | 12 | 8 | 0 | 0 |
 | 3. Look before testing | 0 | 7 | 4 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 5 | 0 | 0 |
 | 6. Diagnostics | 4 | 6 | 8 | 0 | 0 |
-| 7. Records and memory | 3 | 5 | 9 | 0 | 1 |
-| 8. AI partner | 2 | 4 | 7 | 1 | 0 |
+| 7. Records and memory | 3 | 6 | 8 | 0 | 1 |
+| 8. AI partner | 2 | 7 | 4 | 1 | 0 |
 | 9. RD-Agent and Qlib engines | 3 | 3 | 10 | 0 | 0 |
 | 10. Screens | 1 | 3 | 11 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **34** | **55** | **92** | **1** | **1** |
+| **All** | **34** | **62** | **85** | **1** | **1** |
 
 ## 1. Idea
 
@@ -75,8 +76,8 @@ How a question, a chart observation or a paper becomes something testable.
 
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
-| Say an idea in plain English to Claude or ChatGPT and the whole pipeline runs it | Missing | new verbs in `alpha` | Path 1 | [grade] |
-| Any idea may proceed: no stop for an unknown idea type, no approval before a research run | Missing | `research/` route | Path 1 | [thin] |
+| Say an idea in plain English to Claude or ChatGPT and the whole pipeline runs it | Unproven | playbook and `alpha test`: three rule kinds | Path 1 | [grade] |
+| Any idea may proceed: no stop for an unknown idea type, no approval before a research run | Unproven | `research/` route: text only | Path 1 | [thin] |
 | Simple rule language ("close above X and Y"), saved and rerun exactly | Unproven | `alpha-strategies` | Path 1 | [status] |
 | Plain rules tested as written, with no hidden sizing or rebalancing defaults | Working | `alpha test`, all-in sizing | Path 1 | [precise] |
 | Setup spec: event, context, reference, label, eligibility, trigger, exit, sizing, sessions | Missing | new, from rules | Path 2 | private |
@@ -109,8 +110,8 @@ Prices, the universe, and the context a trader needs around them.
 | One price series per source kept apart automatically; differences shown as a label | Unproven | `alpha-data` | Path 1 | [thin] |
 | Benchmarks and sector funds stored for comparison (market, size, sectors, BTC, a basket) | Unproven | `alpha-data` | Path 1 | [partner] |
 | Macro series as first published: rates, inflation, jobs, credit, volatility index | Unproven | `alpha-data` `context/` | Later | [partner] |
-| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Missing | small checked files | Later | [partner] |
-| Crypto context: funding rates, open interest, listings | Unproven | `alpha-data` (shelved) | Later | [triage] |
+| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Unproven | `alpha context pull-edgar` (8-K item 2.02) | Later | [partner] |
+| Crypto context: funding rates, open interest, listings | Unproven | `alpha context pull-binance` | Later | [triage] |
 | Company fundamentals by filing date, for value-plus-quant ideas | Missing | backlog; Qlib | Later | private |
 | Fund and coin flow data with honest accounting (flows are not asset growth) | Missing | none yet | Later | private |
 | News and social text as dated, sourced evidence | Missing | none yet | Later | private |

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 42093e9d40abfd57
+verified: 394e4fe43eb3a9aa
 ---
 
 # RD-Agent
@@ -113,6 +113,10 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   [worker README](../../../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14).
   First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine factors tried, no candidate;
   one run per route is not a quality comparison (numbers in the worker README).
+- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors judged across all runs, no
+  candidate; 15 of 18 replayed swing-judge screen passes lost money before costs, so the rank screen
+  and the held top third disagree on 15 coins. Runs sharing one gateway can now start together,
+  and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

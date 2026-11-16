@@ -12,7 +12,11 @@ Tiingo SPY daily double bottom and the Bybit BTCUSDT crowding reversal. So "clos
 20-day low, rebound over five sessions" stops at stage 01 of the research pipeline with no
 governed way forward; the only executable alternative is the discovery-only
 `alpha research diagnostic run-plan` baseline, which is never case evidence. Found by the
-research-pipeline walk-through on 2026-11-14 (`research/stages/01-idea/CONTEXT.md`).
+research-pipeline walk-through on 2026-11-14.
+
+Since 2026-11-15 such an idea is no longer stuck: it goes through the research playbook and
+`alpha test` (`research/PLAYBOOK.md`), outside the staged lane. This item remains only for the
+staged lane's own operators.
 
 ## What "done" looks like
 
@@ -28,6 +32,6 @@ for D1 ([offline import](offline-data-import.md) covers only offline testing).
 
 ## Sources
 
-- [Research pipeline, stage 01](../../../research/stages/01-idea/CONTEXT.md)
+- [Research routing, the older staged lane](../../../research/CONTEXT.md#the-older-staged-lane)
 - [Command line research invariants](../../reference/invariants/cli-research.md)
 - [ADR-0019](../../adr/0019-governed-research-cases-before-strategy-development.md)

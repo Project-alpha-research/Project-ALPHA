@@ -9,9 +9,10 @@ verified: cd8004eb95f0514a
 # Adversarial review of research artefacts
 
 How to attack a research thesis, source pack, protocol, empirical result, chart bundle or Research
-Gate Packet before the owner decides. It is used at [stage 05 — validate](../../research/stages/05-validate/CONTEXT.md)
-of the research pipeline (and on any artefact the owner asks about); that stage names what to read
-and which commands produce the records reviewed here. The `reviewer` agent follows it; anyone may.
+Gate Packet before the owner decides. It is used in the `research_decision` phase of the
+[older staged lane](../../research/CONTEXT.md#the-older-staged-lane) and on any artefact the owner
+asks about; a rule-test result is reviewed with the `review-result` skill instead. The `reviewer`
+agent follows it; anyone may.
 Moved here from the `alpha-adversarial-reviewer` skill on 2026-11-14 with its review order and
 finding format unchanged.
 
@@ -55,7 +56,7 @@ recomputation; a manifest or prose `passed` flag is never acceptance authority.
   later knowledge?
 - Are session, timezone, DST, holiday, early-close, equal-duration, halt, correction, split, and
   dividend semantics explicit, and are mixed 240/150-minute "four-hour" observations rejected?
-- Does provider authority/license/retention permit the claimed use?
+- Does provider authority/retention permit the claimed use?
 - Can later data or source revisions poison an earlier as-of result?
 
 ### 3. Sampling and estimator

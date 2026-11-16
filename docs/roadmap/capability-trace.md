@@ -19,6 +19,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `crypto-backfill` | Daily crypto bars: download, resume, freeze into a snapshot, verify |
 | `download-bookkeeping` | Download receipts and quota bookkeeping |
 | `funding-download` | Crypto context: funding rates, open interest, listings |
+| `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
+| `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
 | `retained-coverage` | Completeness check on downloaded bars |
 | `crypto-snapshots` | Reads see only what was known then; snapshots and receipts never change |
 | `backtest` | One-asset rule backtest with costs: decide at a close, fill at the next open |

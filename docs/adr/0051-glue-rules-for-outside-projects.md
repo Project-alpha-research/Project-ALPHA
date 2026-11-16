@@ -1,6 +1,6 @@
 # ADR-0051: Glue rules for outside projects
 
-**Status:** Accepted
+**Status:** Accepted; rules 2 and 11 amended by [ADR-0052](0052-licence-is-not-a-criterion.md) (licence is not a criterion)
 **Date:** 2026-11-15
 **Deciders:** AI build agents, under the owner's direction of 2026-11-15: "I want ti add more
 robust repos that are built well and not vibe coded like mine and have the glue like we do with

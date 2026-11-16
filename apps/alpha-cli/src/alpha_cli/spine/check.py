@@ -13,7 +13,11 @@ from alpha_cli.spine.errors import SpineError
 FlagLookup = Callable[[str], list[dict[str, str]]]
 THRESHOLDS = {"dsr": 0.95, "trial_dsr": 0.95}
 CONTRADICTIONS = {
-    "*": r"\bno (?:warning |red )?flags?\b|\bno warnings\b|\bnothing (?:was )?flagged\b",
+    "*": (
+        r"\bno (?:(?:warning|red|major|serious|significant) )?flags?\b|\bno warnings\b"
+        r"|\bnothing (?:was )?flagged\b|\bzero (?:(?:warning|red) )?flags\b"
+        r"|\bwithout (?:any )?(?:(?:warning|red) )?flags\b|\bflag free\b"
+    ),
     "below-benchmark": (
         r"\b(?:beat|beats|outperformed|outperforms) (?:the )?(?:benchmark|buy and hold)\b"
     ),
@@ -135,17 +139,25 @@ def _match_value(written: str, fact: Fact) -> tuple[str, str, Any] | None:
 def _financial_context(visible: str, number: re.Match[str]) -> bool:
     before = visible[visible.rfind("\n", 0, number.start()) + 1 : number.start()]
     return any(len(before) - word.end() <= 40 for word in _FINANCIAL.finditer(before)) or bool(
-        re.match(r"\s+trades?\b", visible[number.end() :], re.IGNORECASE)
+        re.match(
+            r"\s+(?:trades?|percent|per cent|bps|basis points)\b",
+            visible[number.end() :],
+            re.IGNORECASE,
+        )
     )
 
 
-def _flag_problems(text: str, phrases: str, run_id: str, flags: FlagLookup) -> list[Fact]:
+def _flag_problems(
+    text: str, phrases: str, run_id: str, flags: FlagLookup, others: list[str]
+) -> list[Fact]:
     problems = []
     stored_flags = flags(run_id)
     offset = 0
     for sentence in re.split(r"(?<=[.!?])\s+|\n", phrases):
         start = phrases.find(sentence, offset)
         offset = start + len(sentence)
+        if run_id[:8] not in sentence and any(other[:8] in sentence for other in others):
+            continue  # the sentence names a different cited run, so it is not about this one
         denied = re.search(CONTRADICTIONS["*"], sentence)
         negated = re.search(r"\b(?:not|never|no longer|failed to)\b|n't", sentence)
         seen = set()
@@ -241,7 +253,8 @@ def check_text(
     phrases = _TAG.sub(_blank, visible).lower().replace("-", " ")
     for run_id, (fact, offset) in cited.items():
         if flags is not None:
-            problems.extend(_flag_problems(text, phrases, run_id, flags))
+            others = [other for other in cited if other != run_id]
+            problems.extend(_flag_problems(text, phrases, run_id, flags, others))
         for label in fact.get("labels", []):
             phrase = LABEL_PHRASES.get(label)
             if phrase and not re.search(r"\b" + re.escape(phrase) + r"\b", phrases):

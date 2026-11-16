@@ -12,6 +12,7 @@ Your memory of earlier chats is not a source. The records are.
 2. Quote the number: `uv run alpha results cite <run_id> <metric>`
    ([metric names](../../../research/tools/results-and-cite.md)).
 3. Answer with the number, its tag, its labels in plain words, and the date in `recorded_at`.
+   Save the draft and run `uv run alpha results check <file>` before sending; fix every problem.
 
 What to say when:
 

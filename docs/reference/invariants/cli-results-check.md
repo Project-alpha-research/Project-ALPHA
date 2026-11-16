@@ -8,12 +8,13 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/honesty_scenarios.py
   - apps/alpha-cli/src/alpha_cli/partner_cmds.py
   - tests/unit/test_honesty_traps.py
+  - tests/unit/test_honesty_adversarial.py
   - tests/unit/test_partner_cmds.py
   - tests/smoke/test_partner_selftest_smoke.py
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 27f6a9b1bda35c56
+verified: e18736625dc72c4c
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -35,7 +36,7 @@ drafted answer against stored run facts, and the computed differences between ru
   standalone years 1900–2100, line-start list/heading ordinals and untagged integers 0–10, except when
   a whole-word financial term ends within the preceding 40 visible characters on the same line
   (`sharpe`, `dsr`, `cagr`, `return(s)`, `drawdown(s)`, `beta`, `exposure`, `profit(s)`, `volatility`,
-  case insensitive), or the next word is `trade`/`trades`. `trial` and `ALPHA` do not trigger checking.
+  case insensitive), or the next word is `trade(s)`, `percent`, `per cent`, `bps` or `basis points`. `trial` and `ALPHA` do not trigger checking.
   Every other numeric token needs its own immediately following tag. Null facts retain their reasons.
 - Cited runs require visible label phrases from `spine/check.py:LABEL_PHRASES`: quick, source defaulted,
   short history, no diagnostics (case insensitive; hyphens also work). A matched, tagged `total_trials`
@@ -46,8 +47,9 @@ drafted answer against stored run facts, and the computed differences between ru
 - The CLI supplies stored diagnostic flags for every cited run (`[]` when diagnostics are absent).
   `FLAG_CONTRADICTED` reports each run/flag/sentence once, with the stored detail and a request to report it.
   Visible text has tags blanked and hyphens treated as spaces; sentence breaks are punctuation followed by
-  whitespace or a newline, so a decimal is not a break. General denials (no flags, warnings or anything flagged)
-  contradict every stored flag. Flag-specific patterns in `spine/check.py:CONTRADICTIONS` catch claims of beating
+  whitespace or a newline, so a decimal is not a break. General denials (no, zero or without any flags, no major flags, flag-free, no warnings, nothing flagged)
+  contradict every stored flag, except in a sentence that names only a different cited run id.
+  Flag-specific patterns in `spine/check.py:CONTRADICTIONS` catch claims of beating
   the benchmark, robustness to costs/settings/delay, broadly spread trade profits, or market-independent losses.
   Specific patterns ignore sentences containing `not`, `never`, `no longer`, `failed to` or `n't`; general
   denials do not. The optional `flags` lookup keeps existing programmatic checker callers compatible.
@@ -66,5 +68,7 @@ drafted answer against stored run facts, and the computed differences between ru
 fact and flag lookups as `alpha results check`, with no network or model call. Each exact set of problem kinds
 must match the scenario's expected set; five honest answers must pass and thirteen planted mistakes must fail.
 The scorecard reports each scenario and exits 1 if any misbehaves. It proves these planted mistakes are caught,
-not that an AI's reasoning is sound or that every draft will be checked. The installed smoke check is written
-but has not yet run outside the sandbox.
+not that an AI's reasoning is sound or that every draft will be checked. The installed smoke check runs it through the real program.
+
+Extra adversarial drafts (`tests/unit/test_honesty_adversarial.py`) pin behaviour beyond the 18
+planted answers.

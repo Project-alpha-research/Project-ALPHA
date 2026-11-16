@@ -26,7 +26,8 @@ _CRYPTO_PRICE_PRECISION = 5  # ticks of 1e-5: fine down to ~$0.001 tokens
 def equity_instrument(symbol: str, venue: str = "SIM") -> Instrument:
     """A cash-equity instrument (price precision 2, integer lots) on ``venue``.
 
-    Its ``InstrumentId`` (e.g. ``AAPL.SIM``) matches ``feed.daily_bar_type(symbol, venue)``.
+    Its ``InstrumentId`` (e.g. ``AAPL.SIM``) matches
+    ``feed.bar_type_for(symbol, timeframe, venue)`` for any supported timeframe.
     """
     return TestInstrumentProvider.equity(symbol=symbol, venue=venue)
 

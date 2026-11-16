@@ -1,10 +1,13 @@
 """Hand-computed diagnostic contracts; no engine or network."""
 
-from datetime import UTC, datetime
+from collections.abc import Callable
+from datetime import UTC, date, datetime
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import polars as pl
 import pytest
 
 from alpha_cli.spine.diagnostics import (
@@ -13,6 +16,7 @@ from alpha_cli.spine.diagnostics import (
     drawdowns,
     flags,
     performance,
+    score,
     yearly,
 )
 
@@ -236,3 +240,164 @@ def test_performance_hand_computed() -> None:
     assert result["cagr"] == pytest.approx(-0.01)
     assert result["max_drawdown"] == pytest.approx(-0.1)
     assert result["sharpe"] == pytest.approx(0, abs=1e-12)
+
+
+def test_variants_skip_unchanged_neighbour_and_move_tsmom_lookback() -> None:
+    from alpha_cli.spine.diagnose import variant_specs
+    from alpha_cli.spine.run import assemble_run_spec
+    from alpha_cli.spine.spec import load_spec
+
+    idea = load_spec(None, rule="tsmom", param=["lookback=20"], asset=["SPY"])
+    spec = assemble_run_spec(idea, "SPY", 252, 100)
+    variants = variant_specs(idea, spec)
+    # skip=0 scales to itself, so it contributes no neighbour.
+    assert [name for name, _, _ in variants] == ["costs_x2", "lookback=16", "lookback=24"]
+    assert [(changed.lookback, changed.skip) for _, _, changed in variants[1:]] == [
+        (16, 0),
+        (24, 0),
+    ]
+
+
+def test_trials_report_a_refused_dsr_as_its_reason(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine import diagnose
+    from alpha_core import DataError
+
+    def refuse(returns: object, *, trial_sharpes: list[float]) -> None:
+        raise DataError("degenerate trial Sharpes")
+
+    monkeypatch.setattr(diagnose, "deflated_sharpe", refuse)
+    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}])
+    assert result["available_sharpes"] == 2
+    assert result["dsr"] is None
+    assert result["reasons"] == {"dsr": "degenerate trial Sharpes"}
+
+
+_DAYS = [datetime(2020, 1, day, tzinfo=UTC) for day in range(1, 4)]
+
+
+@pytest.mark.parametrize(
+    "call,message",
+    [
+        (lambda: score([0.1, float("nan")], 252), "finite vector"),
+        (lambda: drawdowns([100, 90], [100, 95, 90], _DAYS[:2]), "matching dates"),
+        (lambda: yearly([100, 90, 95], [100, 95], _DAYS), "matching dates"),
+        (lambda: concentration([1.0, float("inf")]), "finite vector"),
+        (lambda: delay(np.zeros(3), np.zeros(2), np.zeros(3), 1), "aligned vectors"),
+        (lambda: delay(np.array([0.1, np.nan]), np.zeros(2), np.zeros(2), 1), "must be finite"),
+    ],
+    ids=["score", "drawdowns", "yearly", "concentration", "delay-shape", "delay-finite"],
+)
+def test_invalid_diagnostic_inputs_fail_loud(call: Callable[[], object], message: str) -> None:
+    from alpha_core import DataError
+
+    with pytest.raises(DataError, match=message):
+        call()
+
+
+def _fred(series_id: str, rows: list[tuple[date, float | None, date]]) -> pl.DataFrame:
+    """Stored FRED vintages: (obs_date, value, known_from), all still current."""
+    return pl.DataFrame(
+        {
+            "series_id": [series_id] * len(rows),
+            "obs_date": [row[0] for row in rows],
+            "value": [row[1] for row in rows],
+            "known_from": [row[2] for row in rows],
+            "known_until": [None] * len(rows),
+        },
+        schema={
+            "series_id": pl.String,
+            "obs_date": pl.Date,
+            "value": pl.Float64,
+            "known_from": pl.Date,
+            "known_until": pl.Date,
+        },
+    )
+
+
+def test_macro_window_unavailable_reasons(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    from alpha_cli.spine.macro import macro_window
+
+    episode = [{"start": "2020-03-02T00:00:00+00:00", "trough": "2020-03-20T00:00:00+00:00"}]
+    monkeypatch.setitem(sys.modules, "alpha_data.context.views", None)
+    missing = macro_window(tmp_path, episode)
+    assert missing == {"available": False, "reason": "the context data module is not installed"}
+    monkeypatch.setitem(sys.modules, "alpha_data.context.views", SimpleNamespace())
+    assert macro_window(tmp_path, episode)["reason"] == "no stored FRED context series"
+    (tmp_path / "context" / "fred").mkdir(parents=True)
+    assert macro_window(tmp_path, [])["reason"] == "no drawdown episode to describe"
+
+
+def test_macro_window_reads_each_series_as_known_at_the_trough(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+
+    from alpha_cli.spine.macro import SERIES, macro_window
+    from alpha_core import DataError
+
+    start, trough = date(2020, 3, 2), date(2020, 3, 20)
+    stored = {
+        "DGS10": _fred(
+            "DGS10",
+            [
+                (date(2020, 2, 28), 1.5, start),
+                (date(2020, 3, 19), 1.1, trough),
+                # A later revision and a later observation are not knowable at the trough.
+                (date(2020, 3, 19), 9.9, date(2020, 4, 1)),
+                (date(2020, 3, 20), 0.5, date(2020, 3, 21)),
+            ],
+        ),
+        "VIXCLS": _fred(
+            "VIXCLS",
+            [
+                (date(2020, 2, 28), 40.0, start),
+                (date(2020, 3, 18), 76.0, date(2020, 3, 19)),
+                (date(2020, 3, 19), None, trough),
+            ],
+        ),
+        "T10Y2Y": _fred("T10Y2Y", [(date(2020, 3, 10), 0.3, date(2020, 3, 11))]),
+    }
+    seen: list[date] = []
+
+    def load_series(series_id: str, *, data_dir: Path) -> pl.DataFrame:
+        assert data_dir == tmp_path
+        if series_id == "DFF":
+            raise DataError("FRED rows differ from provenance")
+        return stored.get(series_id, _fred(series_id, []))
+
+    def as_known(df: pl.DataFrame, *, as_of: date) -> pl.DataFrame:
+        seen.append(as_of)
+        return (
+            df.filter(
+                (pl.col("known_from") <= as_of)
+                & (pl.col("known_until").is_null() | (pl.col("known_until") >= as_of))
+            )
+            .sort("known_from")
+            .unique(subset=["series_id", "obs_date"], keep="last")
+        )
+
+    views = SimpleNamespace(load_series=load_series, as_known=as_known)
+    monkeypatch.setitem(sys.modules, "alpha_data.context.views", views)
+    (tmp_path / "context" / "fred").mkdir(parents=True)
+    episodes = [{"start": "2020-03-02T00:00:00+00:00", "trough": "2020-03-20T00:00:00+00:00"}]
+    result = macro_window(tmp_path, episodes)
+    assert seen == [trough] * (len(SERIES) - 1)  # every readable series; DFF fails to load
+    assert (result["available"], result["start"], result["trough"], result["as_of"]) == (
+        True,
+        "2020-03-02",
+        "2020-03-20",
+        "2020-03-20",
+    )
+    rows = {row["series_id"]: row for row in result["series"]}
+    assert list(rows) == list(SERIES)
+    assert rows["DGS10"]["start_value"] == pytest.approx(1.5)
+    assert rows["DGS10"]["trough_value"] == pytest.approx(1.1)
+    assert rows["DGS10"]["change"] == pytest.approx(-0.4)
+    assert rows["VIXCLS"]["trough_value"] == pytest.approx(76.0)
+    assert rows["T10Y2Y"] == {"series_id": "T10Y2Y", "reason": "no observation known by then"}
+    assert rows["DFF"] == {"series_id": "DFF", "reason": "DataError"}
+    assert rows["UNRATE"]["reason"] == "no observation known by then"

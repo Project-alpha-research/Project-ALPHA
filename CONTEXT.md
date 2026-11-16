@@ -4,7 +4,7 @@ sources:
   - packages/*/pyproject.toml
   - apps/*/pyproject.toml
   - workers/*/pyproject.toml
-verified: aa600e57932d
+verified: 8b7f5a348a98dc22
 ---
 
 # Project ALPHA — where to start
@@ -51,6 +51,7 @@ the area's row says what to read.
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
 | Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 3](docs/reference/project/owner-decisions-3.md) |
+| Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |
 | Package layers and data folders | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
@@ -66,7 +67,8 @@ When a fact changes, update its one home and link to it from elsewhere; never co
 
 - `uv run python scripts/fs.py orient` lists the areas and their module counts.
 - `uv run python scripts/fs.py search "<words>"` finds ranked excerpts of the documentation.
-- `uv run python scripts/fs.py stale` lists documents whose sources changed since they were verified.
+- `uv run python scripts/fs.py stale` lists documents whose sources changed since they were verified;
+  `fs.py owners <path>` names the documents that describe a file and `fs.py verify <document>` re-stamps one.
 
 ## How to change it
 

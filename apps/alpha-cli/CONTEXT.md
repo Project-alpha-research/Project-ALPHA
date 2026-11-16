@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 48870521
+verified: 68b26602e879d10e
 ---
 
 # alpha-cli workspace
@@ -27,7 +27,7 @@ did not give, and never route live capital.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | gate packets, case projections or dossiers |
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, owner decisions, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, suites, figures, rules, scans |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, suites, figures, rules, scans |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | Read-only queries | a read-only report or query, such as bar coverage |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | — | `alpha data` or `alpha crypto-data` acquisition, storage or backfill |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
@@ -50,9 +50,9 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
 | Rule tests | `test_cmds`, `results_cmds`, `spine/` (rule trials, sourced facts, diagnostics, audit and answer checks) | `test_spine_*`, `test_all_in_sizing` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
-| Crypto, daily data | `_crypto_*` (15; incl. `_crypto_snapshot_members`), `crypto_*` (4), `data_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*` |
+| Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent factor judging | `rdagent_factor_eval` (ADR-0049; run as a subprocess by the worker) | `test_rdagent_factor_eval` |
+| RD-Agent ledger | `rdagent_factor_eval` (ADR-0049), `_rdagent_clocks` (0050), `rdagent_exposure`, `rdagent_rule_family` (`python -m`) | `test_rdagent_*` |
 | Machine learning | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |
@@ -74,7 +74,7 @@ do not add a private copy.
 
 ## Outputs
 
-- Tests for the changed sub-area (above); a bias guard for any new data read; an integration test
-  through the real command for any new command.
-- The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file; regenerated
-  `docs/reference/commands.md` when commands change.
+- Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
+- The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context`:
+  [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));
+  regenerated `docs/reference/commands.md` when commands change.

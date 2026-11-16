@@ -10,6 +10,7 @@ from nautilus_trader.model.data import QuoteTick
 
 from alpha_backtest.feed import daily_bar_type, to_execution_feed
 from alpha_core import Bar
+from alpha_data.timeframe import DAILY
 from tests.fixtures.nautilus_fixtures import bars_from_closes, ns
 
 
@@ -67,7 +68,7 @@ def test_sub_daily_bars_fail_loud() -> None:
         for i in range(3)
     ]
     with pytest.raises(DataError, match="24h"):
-        to_execution_feed(hourly, daily_bar_type("X"))
+        to_execution_feed(hourly, daily_bar_type("X"), timeframe=DAILY)
 
 
 def test_duplicate_or_disordered_bars_fail_loud() -> None:
@@ -110,3 +111,65 @@ def test_negative_fee_fails_loud() -> None:
 
     with pytest.raises(DataError, match="fee_bps"):
         BpsFeeModel(-1.0)
+
+
+@pytest.mark.parametrize(
+    ("symbol", "timeframe", "expected"),
+    [
+        ("AAPL", "5m", "AAPL.SIM-5-MINUTE-LAST-EXTERNAL"),
+        ("BTC/USDT", "1h", "BTC/USDT.SIM-1-HOUR-LAST-EXTERNAL"),
+    ],
+)
+def test_intraday_bar_types(symbol: str, timeframe: str, expected: str) -> None:
+    from alpha_backtest.feed import bar_type_for
+    from alpha_data.timeframe import parse_timeframe
+
+    assert str(bar_type_for(symbol, parse_timeframe(timeframe))) == expected
+
+
+@pytest.mark.parametrize("gap_minutes", [5, 24 * 60])
+def test_intraday_event_order_and_stamps(gap_minutes: int) -> None:
+    from datetime import timedelta
+
+    from alpha_backtest.feed import bar_type_for
+    from alpha_data.timeframe import parse_timeframe
+
+    timeframe = parse_timeframe("5m")
+    bars = bars_from_closes("AAPL", [100.0, 110.0])
+    bars[1] = bars[1].model_copy(update={"ts": bars[0].ts + timedelta(minutes=gap_minutes)})
+    feed = to_execution_feed(bars, bar_type_for("AAPL", timeframe), timeframe=timeframe)
+    assert [type(event) for event in feed] == [QuoteTick, NautilusBar] * 2
+    stamps = [event.ts_event for event in feed]
+    assert stamps == [
+        stamp for bar in bars for stamp in (ns(bar.ts) + 1000, ns(bar.ts + timeframe.duration))
+    ]
+    assert all(left < right for left, right in zip(stamps, stamps[1:], strict=False))
+    assert [event.ts_init for event in feed] == stamps
+    assert float(feed[2].ask_price) == pytest.approx(bars[1].open)
+
+
+@pytest.mark.parametrize("gap_minutes", [4, 0, -5])
+def test_intraday_overlap_names_both_stamps(gap_minutes: int) -> None:
+    from datetime import timedelta
+
+    from alpha_core import DataError
+    from alpha_data.timeframe import parse_timeframe
+
+    bars = bars_from_closes("AAPL", [100.0, 110.0])
+    bars[1] = bars[1].model_copy(update={"ts": bars[0].ts + timedelta(minutes=gap_minutes)})
+    with pytest.raises(DataError) as caught:
+        to_execution_feed(bars, daily_bar_type("AAPL"), timeframe=parse_timeframe("5m"))
+    assert all(bar.ts.isoformat() in str(caught.value) for bar in bars)
+
+
+def test_intraday_refuses_daily_timing_override() -> None:
+    from alpha_core import DataError
+    from alpha_data.timeframe import parse_timeframe
+
+    with pytest.raises(DataError, match="timing"):
+        to_execution_feed(
+            bars_from_closes("AAPL", [100.0]),
+            daily_bar_type("AAPL"),
+            timeframe=parse_timeframe("5m"),
+            timing="utc_day_end_next_open",
+        )

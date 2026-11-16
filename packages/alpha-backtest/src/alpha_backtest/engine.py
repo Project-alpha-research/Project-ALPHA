@@ -1,4 +1,4 @@
-"""Minimal nautilus ``BacktestEngine`` run harness for the v1 daily slice.
+"""Minimal nautilus ``BacktestEngine`` run harness for any supported bar timeframe.
 
 Configured ``bar_execution=False`` so bars drive strategy *decisions* only — fills come from the
 open-priced quotes produced by ``feed.to_execution_feed``, giving the spec's "decide on close of t,

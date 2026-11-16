@@ -7,4 +7,6 @@ For any coding agent that is not Claude Code:
 3. A change follows the [delivery pipeline](workflow/CONTEXT.md). A build prompt from
    `scripts/handoff.py` already names what to read and run: then read CLAUDE.md and that list only.
 
+4. A changed file makes its documents stale (`scripts/fs.py owners <path>`): re-read, correct, then `fs.py verify <document>`; `gate.py check` fails until then.
+
 Model or second-opinion output is advisory; checks and CI grant no research or owner authority.

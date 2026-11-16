@@ -1,9 +1,11 @@
 """Translate point-in-time ``alpha_core.Bar`` objects into a ``nautilus_trader`` data feed.
 
-``to_execution_feed`` is the single seam that converts the look-ahead-safe daily bars produced by
+``to_execution_feed`` is the single seam that converts the look-ahead-safe bars produced by
 ``alpha_data.source.PointInTimeSource.as_of`` into the engine's data stream, encoding the
 "decide on close of t, fill at open of t+1" convention (see ``engine.run_backtest``).
-``daily_bar_type`` names the matching nautilus ``BarType``.
+``bar_type_for`` names the matching nautilus ``BarType``. Intraday bars decide at
+the interval close and quote the next open one microsecond after its interval start, including
+back-to-back bars; gaps between sessions are allowed.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ from nautilus_trader.model.data import BarType, QuoteTick
 from nautilus_trader.model.objects import Price, Quantity
 
 from alpha_core import Bar, DataError
+from alpha_data.timeframe import DAILY, BarTimeframe
 
 _NS_PER_SECOND = 1_000_000_000
 # A daily decision bar is "known" at its session close; we stamp it 23h after the session open.
@@ -27,19 +30,21 @@ _NS_PER_SECOND = 1_000_000_000
 _SESSION_CLOSE_OFFSET_NS = 23 * 3600 * _NS_PER_SECOND
 
 
-def daily_bar_type(symbol: str, venue: str = "SIM") -> BarType:
-    """A daily, last-price, externally-aggregated ``BarType`` for ``symbol`` on ``venue``.
+def bar_type_for(symbol: str, timeframe: BarTimeframe = DAILY, venue: str = "SIM") -> BarType:
+    """An externally aggregated, last-price bar type for any supported timeframe."""
+    return BarType.from_str(f"{symbol}.{venue}-{timeframe.nautilus}-LAST-EXTERNAL")
 
-    ``EXTERNAL`` aggregation marks the bars as already-aggregated daily data (we never let
-    nautilus build them from ticks), and ``LAST`` keys them off the close price.
-    """
-    return BarType.from_str(f"{symbol}.{venue}-1-DAY-LAST-EXTERNAL")
+
+def daily_bar_type(symbol: str, venue: str = "SIM") -> BarType:
+    """The historical daily bar type, retained for existing callers."""
+    return bar_type_for(symbol, DAILY, venue)
 
 
 def to_execution_feed(
     bars: Sequence[Bar],
     bar_type: BarType,
     *,
+    timeframe: BarTimeframe = DAILY,
     price_precision: int = 2,
     size_precision: int = 0,
     quote_size: float = 1_000_000_000.0,
@@ -70,12 +75,16 @@ def to_execution_feed(
     the microsecond survives canonical datetime trace serialization. The quote still uses the
     historical next-open price: this is a modeled execution approximation, not evidence that
     the price was executable after publication or that publication latency was one microsecond.
-    The default retains the original 23-hour session convention.
+    For daily bars the default retains the original 23-hour session convention. Intraday
+    bars require default timing: their decision is at open + duration and their opening
+    quote is at open + one microsecond, so adjacent intervals remain strictly ordered.
     """
     if type(timing) is not str or timing not in {"session_close_23h", "utc_day_end_next_open"}:
         raise DataError("unsupported daily execution feed timing")
     if not math.isfinite(slippage_bps) or slippage_bps < 0.0:
         raise DataError(f"slippage_bps must be finite and >= 0, got {slippage_bps}")
+    if not timeframe.is_daily and timing != "session_close_23h":
+        raise DataError("intraday execution feed requires default timing")
     utc_day = timing == "utc_day_end_next_open"
     if utc_day and any(
         b.ts.utcoffset() != timedelta(0)
@@ -87,19 +96,29 @@ def to_execution_feed(
     # non-chronological feed the engine silently runs with zero fills. Fail loud instead.
     for prev, cur in zip(bars, bars[1:], strict=False):
         gap_s = (cur.ts - prev.ts).total_seconds()
-        if gap_s < 24 * 3600:
+        if timeframe.is_daily and gap_s < 24 * 3600:
             raise DataError(
                 f"to_execution_feed requires daily (>= 24h-spaced, strictly increasing) bars; "
                 f"got {prev.ts.isoformat()} -> {cur.ts.isoformat()} ({gap_s / 3600:.1f}h apart)"
+            )
+        if not timeframe.is_daily and gap_s < timeframe.seconds:
+            raise DataError(
+                f"to_execution_feed requires non-overlapping, strictly increasing "
+                f"{timeframe.canonical} bars; got {prev.ts.isoformat()} -> {cur.ts.isoformat()}"
             )
     iid = bar_type.instrument_id
     size = Quantity(quote_size, size_precision)
     half_spread = slippage_bps / 10_000.0
     out: list[Data] = []
+    close_offset_ns = (
+        timeframe.seconds * _NS_PER_SECOND
+        if not timeframe.is_daily or utc_day
+        else _SESSION_CLOSE_OFFSET_NS
+    )
     for b in bars:
         open_ns = int(b.ts.timestamp() * _NS_PER_SECOND)
-        close_ns = open_ns + (24 * 3600 * _NS_PER_SECOND if utc_day else _SESSION_CLOSE_OFFSET_NS)
-        quote_ns = open_ns + (1000 if utc_day else 0)
+        close_ns = open_ns + close_offset_ns
+        quote_ns = open_ns + (1000 if utc_day or not timeframe.is_daily else 0)
         bid = Price(b.open * (1.0 - half_spread), price_precision)
         ask = Price(b.open * (1.0 + half_spread), price_precision)
         out.append(QuoteTick(iid, bid, ask, size, size, quote_ns, quote_ns))

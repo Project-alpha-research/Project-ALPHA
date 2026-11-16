@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 21 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 12 working, 25 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -30,6 +30,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 ## Partly working
 
 - **Download and freeze stock and ETF prices** — no offline way to get prices in; snapshot, verify and as-of read are proven end to end.
+- **Intraday bars, from one minute to one hour, end to end** — proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily. More: [docs/reference/invariants/data-bar-timeframes.md](docs/reference/invariants/data-bar-timeframes.md).
 - **Reports, figures and run comparison** — the text and JSON (--json) reports are proven end to end; figures and run comparison are tested in-process only.
 - **Price forecasts with the Kronos model** — proved only with a stand-in model. Needs: the Kronos model files (downloaded on first use; not on this computer).
 - **Research cases from idea to decision (D0, D1, D2)** — proven up to the owner-approval boundary; a full case needs provider data and your approval.
@@ -39,11 +40,14 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Paper trading: practice trading with no real money (IBKR Paper)** — no end-to-end test; parts tested with stand-ins. Needs: an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks.
 - **Corrected Alpha158 price features** — no ML run with version 2; superseded by version 3 (kept for stored results).
 - **AI stock research loop (RD-Agent, W02)** — RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved. Needs: an alpha command that starts the model-connected factor loop under the native job supervisor (backlog: rdagent-factor-loop-supervision); an end-to-end smoke check of the factor loop through the installed programs with a scripted model route. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
+- **RD-Agent's run viewer (RD-Agent)** — no end-to-end smoke check; not linked from the Workstation yet. More: [workers/rdagent/README.md](workers/rdagent/README.md).
 - **"Native job result" screen (W04, W18)** — its smoke check now passes here: alpha and the web app read a made-up stock job's result; the browser lane fails here only because the web front end's test packages are not installed; no real job exists yet. Needs: a real (not made-up) stock RD-Agent job, which needs an AI model connection. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **AI-run daily trading-rule study (Packet 3, W08)** — with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired. Needs: the Dell's storage settings, created by you (docs/operations/storage-settings.md; 10 GB reserve per ADR-0043); real Binance daily bars admitted into that storage. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md). More: [docs/operations/storage-settings.md](docs/operations/storage-settings.md).
 - **Running ALPHA on your Mac with real data providers** — one final review and a run on your Mac. Needs: your Mac; access to a real data provider (blocked since 31 August).
+- **Macro context data as first published** — installed-command smoke test written; execution and live FRED behavior await verification. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **Check an answer's numbers against the records** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 
@@ -92,6 +96,9 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Check a coin's whole downloaded daily history in one step — medium (M)
 - ControlStore-owned durable acquisition journal — large (L)
 - Data-directory naming migration — medium (M)
+- Delivery tooling paper cuts found while building the swing-judge stack — small (S)
+- Exact versions for outside projects in the main install's manifests — small (S)
+- Exposure log: correct entries and match ideas by economic family — medium (M)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
 - Full Qlib model zoo and fold-by-fold counterfactual retraining (W11/W12) — very large (XL)
@@ -99,21 +106,32 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Generalise D0 screening to every registered producer (Phase E) — medium (M)
 - Governed storage restore and query for real-data native studies (W19) — large (L)
 - Intraday (1h) equity timeframe — medium (M)
+- Intraday bars in the multi-asset portfolio replay — medium (M)
+- Intraday candles and run charts in the Workstation — medium (M)
 - Live trading phase (private, single owner) — very large (XL)
 - Local vision model and hosted finance reasoning — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
+- Name where NautilusTrader may be imported — small (S)
 - Offline price import from a local file — medium (M)
+- One crypto store for backtests, with receipts — medium (M)
+- One trial ledger, many code versions — medium (M)
 - Options expression research (W16) — large (L)
 - Overlap-corrected t statistic for the quick screen — small (S)
+- Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
+- Per-asset-class cost and annualisation defaults — small (S)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
+- RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
+- Re-check the vendored Kronos copy against the glue rules — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
+- Rule language: session, time of day, open and volume — medium (M)
+- Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
 
 ## Housekeeping
 
-- Backlog items: 24
+- Backlog items: 38
 - Staged refactors: 6
 
 ## Where things are

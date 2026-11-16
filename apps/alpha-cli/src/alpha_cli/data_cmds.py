@@ -28,9 +28,11 @@ from alpha_data.snapshot import (
     create_snapshot,
     resolve_snapshot_dir,
     snapshot_manifest_hash,
+    snapshot_timeframe,
     verify_snapshot,
 )
 from alpha_data.store import ParquetStore
+from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
 data_app = typer.Typer(help="Data ingestion, snapshots, and integrity.")
 
@@ -40,8 +42,20 @@ _CCXT_EXCHANGES = provider_option_choices("ccxt", "exchange")
 _DEFAULT_CCXT_EXCHANGE = "coinbase"
 
 
-def _store() -> ParquetStore:
-    return ParquetStore(AlphaSettings().data_dir / "store")
+_TIMEFRAME_HELP = (
+    "bar timeframe: 1D (default) or 1m..59m, 1h..23h; sub-minute and tick data are excluded"
+)
+
+
+def _timeframe(text: str) -> BarTimeframe:
+    try:
+        return parse_timeframe(text)
+    except DataError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--timeframe") from exc
+
+
+def _store(timeframe: BarTimeframe = DAILY) -> ParquetStore:
+    return ParquetStore(store_dir(AlphaSettings().data_dir, timeframe))
 
 
 def _snaps_root() -> Path:
@@ -53,9 +67,13 @@ def _candle_provenance(
     *,
     snapshot_id: str | None,
     knowledge_cutoff: datetime | None,
+    timeframe: BarTimeframe = DAILY,
+    source_timeframe: BarTimeframe | None = None,
+    session: str | None = None,
 ) -> dict[str, object]:
     data_root = AlphaSettings().data_dir
-    root = data_root / "snapshots" / snapshot_id if snapshot_id else data_root / "store"
+    stored = source_timeframe or timeframe
+    root = data_root / "snapshots" / snapshot_id if snapshot_id else store_dir(data_root, stored)
     store = ParquetStore(root)
     provenance = store.read_provenance(symbol)
     path = store._provenance_path(symbol)
@@ -63,13 +81,18 @@ def _candle_provenance(
     source = provenance.get("source") if provenance is not None else "unknown"
     dataset = provenance.get("dataset") if provenance is not None else None
     venue = dataset.get("venue") if isinstance(dataset, dict) else None
-    timeframe = dataset.get("timeframe") if isinstance(dataset, dict) else "1D"
+    dataset_timeframe = (
+        dataset.get("timeframe") if isinstance(dataset, dict) else timeframe.canonical
+    )
     receipt = provenance.get("receipt") if provenance is not None else None
     receipt_id = receipt.get("receipt_id") if isinstance(receipt, dict) else None
     quality_status = "legacy_unqualified"
     if isinstance(receipt_id, str) and isinstance(source, str):
-        passed = data_root / "store" / "candidates" / source / receipt_id / "quality.json"
-        reviewed = data_root / "store" / "quarantine" / source / receipt_id / "quality.json"
+        if not isinstance(dataset_timeframe, str):
+            raise DataError("dataset provenance must name a bar timeframe")
+        quality_root = store_dir(data_root, parse_timeframe(dataset_timeframe))
+        passed = quality_root / "candidates" / source / receipt_id / "quality.json"
+        reviewed = quality_root / "quarantine" / source / receipt_id / "quality.json"
         quality_status = (
             "passed"
             if passed.is_file()
@@ -77,16 +100,24 @@ def _candle_provenance(
             if reviewed.is_file()
             else "qualified"
         )
-    return {
+    result: dict[str, object] = {
         "source": source,
         "venue": venue,
-        "timeframe": timeframe,
+        "timeframe": dataset_timeframe,
         "snapshot_id": snapshot_id,
         "provenance_sha256": provenance_hash,
         "receipt_id": receipt_id,
         "knowledge_cutoff": knowledge_cutoff.isoformat() if knowledge_cutoff is not None else None,
         "quality_status": quality_status,
     }
+
+    if not timeframe.is_daily or not stored.is_daily:
+        from alpha_cli._runner import _calendar_for
+        from alpha_data.sessions import default_session
+
+        result["timeframe"] = timeframe.canonical
+        result["session"] = session or default_session(_calendar_for(symbol, provenance))
+    return result
 
 
 def _adapter(
@@ -97,6 +128,7 @@ def _adapter(
     venue: str = "US",
     calendar: str = "XNYS",
     currency: str = "USD",
+    timeframe: BarTimeframe = DAILY,
 ) -> DataAdapter:
     factory = _ADAPTERS.get(source)
     if factory is None:
@@ -109,7 +141,18 @@ def _adapter(
     if source != "ccxt" and exchange != _DEFAULT_CCXT_EXCHANGE:
         raise typer.BadParameter("--exchange applies only when --source ccxt")
 
-    kwargs: dict[str, str] = {}
+    if not timeframe.is_daily and source not in {"alpaca", "ccxt"}:
+        raise typer.BadParameter(
+            f"{source} provides daily bars only in ALPHA; use --source alpaca (stocks/ETFs) "
+            "or --source ccxt (crypto) for intraday bars"
+        )
+    kwargs: dict[str, object] = {}
+    if source in {"alpaca", "ccxt"}:
+        params = tuple(signature(factory).parameters.values())
+        if not timeframe.is_daily or any(
+            param.name == "timeframe" or param.kind is Parameter.VAR_KEYWORD for param in params
+        ):
+            kwargs["timeframe"] = timeframe
     if source == "ccxt":
         try:
             params = tuple(signature(factory).parameters.values())
@@ -236,8 +279,10 @@ def pull(
     currency: str = typer.Option("USD", help="Tiingo or Alpaca quote currency"),
     start: str = typer.Option(...),
     end: str = typer.Option(...),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Pull raw bars + corporate actions for SYMBOL and store them."""
+    tf = _timeframe(timeframe)
     adapter = _adapter(
         source,
         exchange,
@@ -245,6 +290,7 @@ def pull(
         venue=venue,
         calendar=calendar,
         currency=currency,
+        timeframe=tf,
     )
     symbol = normalize_symbol(symbol, source)
     try:
@@ -263,7 +309,7 @@ def pull(
                     f"Start there? (--start {first.date()})"
                 )
         result = adapter.fetch(symbol, start_date, end_date)
-        store = _store()
+        store = _store(tf)
         existing = store.read_provenance(result.symbol)
         if existing is not None and existing.get("source") == "tiingo" and adapter.name != "tiingo":
             raise DataError(
@@ -305,6 +351,8 @@ def pull(
         raise typer.BadParameter(str(exc)) from exc
     if adapter.name == "alpaca":
         detail += "; not yet confirmed (interim source, not the authoritative Tiingo source)"
+    if not tf.is_daily:
+        detail += f", timeframe {tf.canonical}"
     typer.echo(
         f"pulled {symbol} from {source}: {result.bars.height} bars, "
         f"{len(result.actions)} actions{detail}"
@@ -315,9 +363,10 @@ def pull(
 def source_status(
     symbol: str,
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Show canonical provenance and pending candidate/quarantine receipts for SYMBOL."""
-    store = _store()
+    store = _store(_timeframe(timeframe))
     try:
         provenance = store.read_provenance(symbol)
     except DataError as exc:
@@ -350,13 +399,14 @@ def audit(
     provider: str,
     receipt_id: str,
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Read one immutable candidate/quarantine quality report."""
     if any(part in provider or part in receipt_id for part in ("/", "\\", "..")):
         raise typer.BadParameter("provider/receipt id must be opaque path-safe values")
     roots = (
-        _store().root / "candidates" / provider / receipt_id,
-        _store().root / "quarantine" / provider / receipt_id,
+        _store(_timeframe(timeframe)).root / "candidates" / provider / receipt_id,
+        _store(_timeframe(timeframe)).root / "quarantine" / provider / receipt_id,
     )
     quality = next(
         (root / "quality.json" for root in roots if (root / "quality.json").is_file()), None
@@ -386,11 +436,12 @@ def repair(
         "--approve-differences",
         help="owner-reviewed override for this exact quarantined receipt",
     ),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Promote one exact quarantined receipt after explicit owner review."""
     try:
         outcome = promote_quarantined(
-            _store(),
+            _store(_timeframe(timeframe)),
             provider=provider,
             receipt_id=receipt_id,
             approve_differences=approve_differences,
@@ -410,10 +461,13 @@ def rollback_promotion(
         "--acknowledge",
         help="restore the immutable pre-promotion backup for this exact symbol",
     ),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Recover a canonical symbol after a process interruption during promotion."""
     try:
-        rollback_interrupted_promotion(_store(), symbol=symbol, acknowledge=acknowledge)
+        rollback_interrupted_promotion(
+            _store(_timeframe(timeframe)), symbol=symbol, acknowledge=acknowledge
+        )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"restored pre-promotion canonical bytes for {symbol}")
@@ -427,12 +481,14 @@ def snapshot(
     exchange: str = typer.Option(
         _DEFAULT_CCXT_EXCHANGE, help="CCXT exchange provenance: coinbase or binance"
     ),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """Freeze the current store for SYMBOLS into an immutable, hashed snapshot."""
-    adapter = _adapter(source, exchange)
+    tf = _timeframe(timeframe)
+    adapter = _adapter(source, exchange, timeframe=tf)
     try:
         create_snapshot(
-            _store(),
+            _store(tf),
             _snaps_root(),
             snapshot_id,
             symbols,
@@ -440,6 +496,7 @@ def snapshot(
             adapter_version=adapter.version,
             parser_version=adapter.parser_version,
             created_at=datetime.now(UTC),
+            timeframe=tf.canonical,
         )
     except DataError as exc:  # e.g. a symbol with no bars in the store
         raise typer.BadParameter(str(exc)) from exc
@@ -449,25 +506,37 @@ def snapshot(
 @data_app.command()
 def candles(
     symbol: str,
-    start: str = typer.Option(None, help="lower bound YYYY-MM-DD (inclusive)"),
-    end: str = typer.Option(None, help="as-of cutoff YYYY-MM-DD (inclusive)"),
+    start: str = typer.Option(None, help="inclusive lower bound: date or ISO instant with offset"),
+    end: str = typer.Option(None, help="as-of cutoff: date or ISO instant with offset"),
     snapshot: str = typer.Option(None, help="snapshot id for provenance"),
     manifest_id: str = typer.Option(None, help="exact qualified bulk chart manifest"),
     json_out: bool = typer.Option(False, "--json", help="emit JSON"),
     expected_snapshot_hash: str | None = None,
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
+    source_timeframe: str | None = typer.Option(
+        None, "--from-timeframe", help="stored timeframe to resample from"
+    ),
+    session: str | None = typer.Option(None, help="regular, extended or continuous"),
 ) -> None:
     """Point-in-time OHLCV candles for SYMBOL (split-adjusted; ``--end`` is an as-of cutoff).
 
     Reads through the same look-ahead firewall a backtest uses, so a chart can never show a bar past
     its window nor a split not yet known at ``--end``.
     """
-    from alpha_cli._runner import load_bars
+    from alpha_cli._runner import load_bars, parse_cutoff
 
     try:
-        when = datetime.combine(date.fromisoformat(end), time.max, tzinfo=UTC) if end else None
-        lower = date.fromisoformat(start) if start else None
-    except ValueError as exc:
-        raise typer.BadParameter(f"--start/--end must be YYYY-MM-DD: {exc}") from exc
+        target = parse_timeframe(timeframe)
+        stored = parse_timeframe(source_timeframe or timeframe)
+        when = parse_cutoff(end)
+        # Preserve the existing candle date window, including its last microsecond.
+        if end is not None and len(end) == 10 and when is not None:
+            when = when.replace(microsecond=999999)
+        lower = parse_cutoff(start)
+        if start is not None and len(start) == 10 and lower is not None:
+            lower = datetime.combine(lower.date(), time.min, tzinfo=UTC)
+    except DataError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     try:
         provenance = None
         if expected_snapshot_hash is not None:
@@ -493,7 +562,13 @@ def candles(
             snap = None
         else:
             bars, snap = load_bars(
-                symbol, data_dir=AlphaSettings().data_dir, snapshot_id=snapshot, as_of=when
+                symbol,
+                data_dir=AlphaSettings().data_dir,
+                snapshot_id=snapshot,
+                as_of=when,
+                timeframe=target.canonical,
+                source_timeframe=stored.canonical,
+                session=session,
             )
             if (
                 expected_snapshot_hash is not None
@@ -505,7 +580,7 @@ def candles(
     rows = [
         {"t": b.ts.timestamp(), "o": b.open, "h": b.high, "l": b.low, "c": b.close, "v": b.volume}
         for b in bars
-        if lower is None or b.ts.date() >= lower
+        if lower is None or b.ts >= lower
     ]
     if json_out:
         cutoff = when or (bars[-1].ts if bars else None)
@@ -519,6 +594,9 @@ def candles(
                         symbol,
                         snapshot_id=snap,
                         knowledge_cutoff=cutoff,
+                        timeframe=target,
+                        source_timeframe=stored,
+                        session=session,
                     ),
                     "bars": rows,
                 }
@@ -534,6 +612,7 @@ def symbols(
     with_actions: bool = typer.Option(
         False, "--with-actions", help="add per-symbol corporate-action knowledge-time counts"
     ),
+    timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
 ) -> None:
     """List every symbol with stored bars (the workstation's symbol picker reads this).
 
@@ -541,7 +620,7 @@ def symbols(
     *estimated* knowledge time (no ``announce_date``: the two-clock model is running on the
     ex-date clock alone for them), so the single-clock state is visible rather than silent.
     """
-    store = _store()
+    store = _store(_timeframe(timeframe))
     stored = store.list_symbols()
     if json_out:
         payload: dict[str, object] = {"symbols": stored}
@@ -602,7 +681,8 @@ def snapshots(json_out: bool = typer.Option(False, "--json", help="emit JSON")) 
 def verify(snapshot_id: str) -> None:
     """Re-hash a snapshot and confirm it matches its manifest."""
     try:
-        verify_snapshot(_snaps_root() / snapshot_id)
+        snapshot_dir = _snaps_root() / snapshot_id
+        verify_snapshot(snapshot_dir, timeframe=snapshot_timeframe(snapshot_dir))
     except DataError as exc:  # missing snapshot or a hash mismatch (corruption)
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"snapshot {snapshot_id}: integrity OK")

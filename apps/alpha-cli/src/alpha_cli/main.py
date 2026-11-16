@@ -13,6 +13,7 @@ import typer
 GROUPS: tuple[tuple[str, str, str], ...] = (
     ("results", "alpha_cli.results_cmds", "results_app"),
     ("data", "alpha_cli.data_cmds", "data_app"),
+    ("context", "alpha_cli.context_cmds", "context_app"),
     ("crypto-data", "alpha_cli.crypto_data_cmds", "crypto_data_app"),
     ("backtest", "alpha_cli.backtest_cmds", "backtest_app"),
     ("forecast", "alpha_cli.forecast_cmds", "forecast_app"),

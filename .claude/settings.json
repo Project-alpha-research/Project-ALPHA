@@ -199,6 +199,18 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "h=\"$CLAUDE_PROJECT_DIR/scripts/claude_hooks.py\"; [ -f \"$h\" ] || h=scripts/claude_hooks.py; [ -f \"$h\" ] || exit 0; python3 \"$h\" post-edit-documents",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [

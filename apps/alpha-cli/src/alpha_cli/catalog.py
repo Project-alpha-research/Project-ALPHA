@@ -23,10 +23,12 @@ COMMAND_RUN_TYPES: dict[str, str] = {
 type GenericCommandClass = Literal["empirical", "owner_only", "safe", "unknown"]
 
 _EMPIRICAL_ROOTS = frozenset(
-    {"backtest", "validate", "optim", "propfirm", "forecast", "ml", "monte-carlo"}
+    {"backtest", "validate", "optim", "propfirm", "forecast", "ml", "monte-carlo", "test"}
 )
 _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})
-_SAFE_ROOTS = frozenset({"info", "risk", "report", "figures", "chart", "rules", "scan"})
+_SAFE_ROOTS = frozenset(
+    {"info", "risk", "report", "figures", "chart", "rules", "scan", "results", "diagnose"}
+)
 # Governed crypto data house (ADR-0032): reads and verifications are safe; anything that
 # acquires, freezes, selects, batches, creates or cleans is owner authority.
 _CRYPTO_DATA_SAFE = frozenset(
@@ -88,6 +90,8 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
         )
     if root == "crypto-data":
         return "safe" if len(argv) > 1 and argv[1] in _CRYPTO_DATA_SAFE else "owner_only"
+    if root == "context":
+        return "safe" if len(argv) > 1 and argv[1] in {"list", "show", "window"} else "owner_only"
     if root == "strategy-candidate":
         # `run` publishes immutable run artifacts, so it needs a server-verified run context.
         return "empirical" if len(argv) > 1 and argv[1] == "run" else "safe"

@@ -54,6 +54,7 @@ The rule-test capability itself belongs to the [command line](command-line.md); 
 - How to change it: [apps/alpha-web/CONTEXT.md](../../../../apps/alpha-web/CONTEXT.md).
 - Decision records: [ADR-0021](../../../adr/0021-research-workstation-read-plane-and-command-center.md).
 - Screens for other parts (for example RD-Agent's native job result) are claimed by those parts.
+- **Plan:** [stage 10](../../../roadmap/production-scope-3.md#10-screens) of the checklist.
 
 ## Decisions and open questions
 

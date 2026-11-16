@@ -120,6 +120,7 @@ another package is named.
 | Subfolder | Owning module | Purpose |
 |---|---|---|
 | `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
+| `ledger/sources.toml` | `spine/trial_reader` | Optional absolute RD-Agent ledger path for the unified read-only view. |
 | `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
 | `context/edgar/` | `context_sources_cmds` over `alpha_data.context` | SEC filings, insider events, hashed provenance and immutable XML cache. |
@@ -139,6 +140,9 @@ another package is named.
 | `research_executions/` | `research_execution` | Per-execution directories for governed research runs, keyed by execution digest. |
 | `diagnostics/` | `research_diagnostic_cmds` | Digest-keyed research diagnostic outputs. |
 | `scans/` | `scan_cmds` | Pattern/hypothesis scan outputs. |
+| `labels/` | `labels_cmds` | Immutable `alpha labels` result folders (AFML worker labels and weights), keyed by input hash. |
+| `lookalike/` | `lookalike_cmds` | One folder per `alpha lookalike` result (`result.json`, `figure.png`), keyed by settings and bars. |
+| `unusual/` | `lookalike_cmds` | One folder per `alpha unusual` result, same layout. |
 | `rules/` | `rules_cmds` | Rule definitions and rule-run records. |
 | `strategy-workspaces/` | `project_workspace` | Disposable hash-only per-project workspace projections. |
 | `crypto/` | `crypto_data_cmds`, `_crypto_panel` | Crypto manifests, asset masters, coverage profiles/batches, backfill ledgers and `storage-config.json`. |

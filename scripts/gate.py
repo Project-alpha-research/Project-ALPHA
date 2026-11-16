@@ -974,6 +974,7 @@ def build_parser() -> argparse.ArgumentParser:
     component_p.add_argument(
         "name",
         choices=(
+            "afml",
             "backend",
             "backend-static",
             "backend-tests",

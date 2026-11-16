@@ -3,13 +3,12 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 01752ea3d5913e8a
+verified: 9ad012ffda9f3c4b
 ---
 
 # Results and cite
 
-**Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time
-a number goes into an answer.
+**Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time a number goes into an answer.
 
 **Commands**
 
@@ -28,6 +27,7 @@ uv run alpha results check <file>
   `run_id`, `basis`, `source`, `labels`, `reason`.
 - `compare` (two to eight runs, first is the base) gives each run's `value`, `diff`, `ratio`. `check` reads a draft whose numbers are tagged
   `0.75 [<run_id>:<metric>]` and reports each mismatch.
+- `ROUNDED_ACROSS_THRESHOLD`, `FLAG_CONTRADICTED`, `UNIT_MISMATCH`, `PRECISION_TOO_LOW`, `METRIC_NOT_STORED`: fix the draft.
 - Metrics: `verdict`, `oos_sharpe`, `dsr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`, `full_sample_max_drawdown`,
   `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `trades`, `exposure`, `top_1_profit_share`,
   `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `trial_dsr`, `variants_evaluated`.

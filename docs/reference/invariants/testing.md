@@ -14,7 +14,7 @@ sources:
   - scripts/claude_hooks.py
   - pyproject.toml
   - .semgrep/alpha.yml
-verified: af6fb1350f521101
+verified: 7aec77f9564ea386
 ---
 
 # Testing invariants
@@ -77,6 +77,8 @@ this file holds the mechanics.
   has no discriminating power.
 - The hardened form (`tests/bias_guards/test_poison_variants.py`) adds non-finite poison that must fail
   loud, and a must-fail leaky twin (a deliberately non-causal version) that the same predicate must reject.
+- A guard over an isolated worker skips where the worker is not installed and runs in that worker's
+  CI job (`test_afml_labels_future_poison.py` in `afml-worker`).
 - The marker comes from `pytestmark` in each module, not from the directory: an unmarked file in
   `tests/bias_guards/` is skipped by `pytest -m bias_guard`. Guards may live elsewhere if marked
   (`tests/unit/test_rules_bias_guard.py`).

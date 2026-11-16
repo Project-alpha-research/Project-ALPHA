@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: f3b67c7bc5308e4b
+verified: e1235a85a7c467ba
 ---
 
 # Deflated Sharpe and trial counting
@@ -32,9 +32,9 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 
 **What it cannot tell you**
 
-- Trials nobody recorded. Runs from `alpha validate`, `alpha optim` and `alpha backtest` are not in the
-  ledger: count them by hand and say the true number of tries is higher.
-- Related variants are not yet grouped into one family, so the effective number of tests is not shown.
+- Trials nobody recorded: `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger; count them by hand, say the true number is higher.
+- `alpha ledger summary` and `families` count every recorded try (rule tests, tools, RD-Agent) read-only and group related variants; the effective number
+  of tests is not shown, and the Sharpe step does not use the count yet.
 
 **Next** A setting that survives: check it against [the random-price null](random-price-null.md) and the
 benchmark. A setting that does not: report it as best-of-many and stop tuning.

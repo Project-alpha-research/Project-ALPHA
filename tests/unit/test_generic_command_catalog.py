@@ -17,6 +17,8 @@ def test_empty_generic_command_is_unknown() -> None:
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [
+        (["ledger", "summary"], "safe"),
+        (["partner", "selftest"], "safe"),
         (["context", "list"], "safe"),
         (["context", "show-edgar"], "safe"),
         (["context", "show-binance"], "safe"),
@@ -37,6 +39,9 @@ def test_empty_generic_command_is_unknown() -> None:
         (["provider", "check", "tiingo"], "owner_only"),
         (["strategy-candidate", "paper-preflight"], "safe"),
         (["strategy-candidate", "run"], "empirical"),
+        (["labels", "barrier"], "empirical"),
+        (["labels", "weights"], "empirical"),
+        (["labels", "importance"], "empirical"),
         (["chart", "overlays"], "safe"),
         (["rules", "save"], "safe"),
         (["scan", "check"], "safe"),

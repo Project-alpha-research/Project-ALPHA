@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-11-16
 **Deciders:** the orchestrating AI agent, under the owner's delegation of these decisions
-(recorded in [owner decisions, volume 3](../reference/project/owner-decisions-3.md)); built and
+(recorded in [owner decisions, volume 4](../reference/project/owner-decisions-4.md)); built and
 reviewed by AI agents
 **Amends:** [ADR-0049](0049-alpha-judges-rdagent-factors.md) points 2, 6 and 8;
 [ADR-0050](0050-swing-clocks-in-the-factor-judge.md) points 3, 5 and 6

@@ -95,6 +95,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
+- **Plan:** [stage 9](../../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the
+  checklist and [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
 
 ## Decisions and open questions
 

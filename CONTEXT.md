@@ -4,7 +4,7 @@ sources:
   - packages/*/pyproject.toml
   - apps/*/pyproject.toml
   - workers/*/pyproject.toml
-verified: c6ce776f094ca22e
+verified: f7799dc959f87c3e
 ---
 
 # Project ALPHA — where to start
@@ -22,7 +22,7 @@ it points to, never here.
 | [project layer](docs/reference/project/overview.md) | — | what is X for, why, where is X; should X be kept, changed, shelved or removed |
 | [packages/alpha-core/CONTEXT.md](packages/alpha-core/CONTEXT.md) | — | domain types, typed errors, settings, cost helpers |
 | [packages/alpha-data/CONTEXT.md](packages/alpha-data/CONTEXT.md) | — | point-in-time store, snapshots, crypto storage (commands, reports: alpha-cli) |
-| [packages/alpha-patterns/CONTEXT.md](packages/alpha-patterns/CONTEXT.md) | — | chart-pattern geometry and indicators |
+| [packages/alpha-patterns/CONTEXT.md](packages/alpha-patterns/CONTEXT.md) | — | chart-pattern geometry and indicators; shape lookalikes and novelty (STUMPY) |
 | [packages/alpha-strategies/CONTEXT.md](packages/alpha-strategies/CONTEXT.md) | — | trading signals, sizing, strategy rules |
 | [packages/alpha-backtest/CONTEXT.md](packages/alpha-backtest/CONTEXT.md) | — | the Nautilus backtest harness, fills, fees |
 | [packages/alpha-validation/CONTEXT.md](packages/alpha-validation/CONTEXT.md) | — | statistics: walk-forward, nulls, bootstrap, Deflated Sharpe, CPCV |
@@ -35,6 +35,7 @@ it points to, never here.
 | [workers/qlib/CONTEXT.md](workers/qlib/CONTEXT.md) | — | the isolated Qlib machine-learning worker |
 | [workers/literature/CONTEXT.md](workers/literature/CONTEXT.md) | — | the literature acquisition worker |
 | [workers/rdagent/CONTEXT.md](workers/rdagent/CONTEXT.md) | — | the RD-Agent native-loop worker |
+| [workers/afml/CONTEXT.md](workers/afml/CONTEXT.md) | — | the AFML methods worker: labels, sample weights (RiskLabAI, quantowl) |
 | [scripts/CONTEXT.md](scripts/CONTEXT.md) | — | the gate, CI steps, file-system tools, generators |
 | [tests/CONTEXT.md](tests/CONTEXT.md) | — | test layout, markers, bias guards, oracles |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | — | documentation, ADRs, plans, this file system |
@@ -50,7 +51,7 @@ the area's row says what to read.
 | Fact | Its one home |
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
-| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 3](docs/reference/project/owner-decisions-3.md) |
+| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 4](docs/reference/project/owner-decisions-4.md) |
 | Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |
@@ -67,8 +68,7 @@ When a fact changes, update its one home and link to it from elsewhere; never co
 
 - `uv run python scripts/fs.py orient` lists the areas and their module counts.
 - `uv run python scripts/fs.py search "<words>"` finds ranked excerpts of the documentation.
-- `uv run python scripts/fs.py stale` lists documents whose sources changed since they were verified;
-  `fs.py owners <path>` names the documents that describe a file and `fs.py verify <document>` re-stamps one.
+- `fs.py stale` lists documents whose sources changed since verified; `fs.py owners <path>` names those describing a file; `fs.py verify <doc>` re-stamps one.
 
 ## How to change it
 

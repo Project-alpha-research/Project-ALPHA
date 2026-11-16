@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 from alpha_cli import _rdagent_clocks as clocks
+from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_core import DataError
@@ -93,7 +94,7 @@ def test_spread_failure_is_recorded_and_never_passes(tmp_path: Path) -> None:
     def failing(*args: Any, **kwargs: Any) -> dict[str, Any]:
         return {**_real(*args, **kwargs), "status": "FAIL", "reason": ev.SPREAD_REASON}
 
-    with patch.object(ev, "spread", side_effect=failing):
+    with patch.object(judge, "spread", side_effect=failing):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
     assert factor["status"] == "SPREAD_FAIL"
@@ -255,7 +256,7 @@ def test_spread_stopped_factors_still_count_as_trials_exactly_as_before(tmp_path
     for status in ("PASS", "FAIL"):
         run = tmp_path / status
         req = fixture(run)
-        with patch.object(ev, "spread", side_effect=_forced(status)):
+        with patch.object(judge, "spread", side_effect=_forced(status)):
             records[status] = evaluate(run, req, tmp_path / f"ledger-{status}.jsonl")
     before, after = records["PASS"], records["FAIL"]
     assert after["replayed_trials"] == before["replayed_trials"] == 3
@@ -282,7 +283,7 @@ def test_a_spread_error_still_counts_its_clock_as_a_trial(tmp_path: Path) -> Non
     for name, side_effect in (("pass", _forced("PASS")), ("error", weekly_error)):
         run = tmp_path / name
         req = fixture(run)
-        with patch.object(ev, "spread", side_effect=side_effect):
+        with patch.object(judge, "spread", side_effect=side_effect):
             records[name] = evaluate(run, req, tmp_path / f"ledger-{name}.jsonl")
     assert records["error"]["replayed_trials"] == records["pass"]["replayed_trials"] == 3
     weekly = records["error"]["factors"][0]["clocks"]["weekly"]
@@ -304,7 +305,7 @@ def test_a_receipt_bound_universe_file_cannot_be_removed(tmp_path: Path) -> None
 def test_feedback_never_shows_a_failed_clocks_replay_as_a_result(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
-    with patch.object(ev, "spread", side_effect=_forced("FAIL")):
+    with patch.object(judge, "spread", side_effect=_forced("FAIL")):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     text = record["feedback_text"]
     assert "net annual excess counted only, not a result" in text

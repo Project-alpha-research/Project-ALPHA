@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 13 working, 26 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 19 working, 29 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -26,7 +26,13 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
 - **Upstream Alpha158 price features** — set feature_recipe_version: 3 in an ML stage config, or version 3 in an alpha ml prepare spec
+- **Textbook labels and overlap weights (López de Prado)** — uv run alpha labels barrier --asset SPY@alpaca (result folder with facts and a picture) (a real run is recorded)
+- **Which factors the labels lean on (purged MDI, MDA, SFI)** — uv run alpha labels importance <result-id> --factors <factors.parquet> (a real run is recorded)
+- **Has price action like this happened before? (STUMPY matrix profile)** — uv run alpha lookalike --asset SPY@alpaca --last 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
+- **What is unusual right now? (STUMPY left matrix profile)** — uv run alpha unusual --asset BTC/USDT --window 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
 - **Check an answer's numbers against the records** — alpha results check answer.md --json More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **One trial ledger across rule tests, tools and RD-Agent** — alpha ledger summary --json (a real run is recorded) More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
+- **Honesty self-test of the answer checker** — alpha partner selftest (a real run is recorded) More: [docs/reference/invariants/cli-results-check.md](docs/reference/invariants/cli-results-check.md).
 
 ## Partly working
 
@@ -59,6 +65,9 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Prop-firm challenge check** — tested in-process only.
 - **Ask the AI assistant about a recorded run (Codex)** — tested in a browser against a test server only (a real run is recorded).
 - **Let an AI assistant use ALPHA's tools (MCP)** — tested in-process only.
+- **Purged cross-validation for labels that last several days** — tested in-process only (a real run is recorded).
+- **Fractional differencing with d chosen on training data only** — tested in-process only (a real run is recorded).
+- **Second opinions on luck-adjusted scores, minimum track record and strategy risk** — tested in-process only (a real run is recorded).
 
 ## Known defects
 
@@ -97,10 +106,14 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Catalyst, expectations and fundamentals research (W15) — large (L)
 - Check a coin's whole downloaded daily history in one step — medium (M)
 - ControlStore-owned durable acquisition journal — large (L)
+- Coverage maps for Qlib and RD-Agent — medium (M)
+- Data provider limits not yet written down — small (S)
+- Data questions from the November repository studies — medium (M)
 - Data-directory naming migration — medium (M)
 - Delivery tooling paper cuts found while building the swing-judge stack — small (S)
 - Exact versions for outside projects in the main install's manifests — small (S)
 - Exposure log: correct entries and match ideas by economic family — medium (M)
+- File-system freshness gaps — small (S)
 - Freeze a crypto snapshot by coin and date range — medium (M)
 - From an RD-Agent candidate factor to a research case draft — medium (M)
 - Full Qlib model zoo and fold-by-fold counterfactual retraining (W11/W12) — very large (XL)
@@ -112,6 +125,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Intraday candles and run charts in the Workstation — medium (M)
 - Live trading phase (private, single owner) — very large (XL)
 - Local vision model and hosted finance reasoning — medium (M)
+- Lookalikes and novelty: what comes after the first commands — medium (M)
 - Make the weekly mutation sweep pass on main — small (S)
 - Multi-agent specialist swarm / PydanticAI migration — large (L)
 - Name where NautilusTrader may be imported — small (S)
@@ -122,18 +136,24 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Overlap-corrected t statistic for the quick screen — small (S)
 - Owner rule backtests: full allocation without rejected orders or daily churn — medium (M)
 - Per-asset-class cost and annualisation defaults — small (S)
+- Platform journey check: planted causes the AI partner must find — medium (M)
 - RD-Agent autonomous native research and restart continuation (W08/W13, T07) — very large (XL)
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Re-check the vendored Kronos copy against the glue rules — small (S)
+- Research-practice ideas from the owner's private research — medium (M)
+- Reviewer: checklists by folder and a required coverage list — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Rule language: session, time of day, open and volume — medium (M)
+- Rule-test report: wording and basis papercuts — small (S)
+- Textbook machine-learning methods in their own pinned worker — large (L)
 - Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
+- What the research partner borrows from QuantPad — medium (M)
 
 ## Housekeeping
 
-- Backlog items: 38
+- Backlog items: 49
 - Staged refactors: 6
 
 ## Where things are

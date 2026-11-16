@@ -8,7 +8,7 @@ verified: e3b0c44298fc1c14
 # Owner decisions log, volume 3
 
 Continues the [owner decisions log](owner-decisions.md) and [volume 2](owner-decisions-2.md);
-the rules for entries are in the first. New entries are appended at the end of this file.
+the rules for entries are in the first. This volume is full: new entries go in [volume 4](owner-decisions-4.md).
 
 ## Entries
 
@@ -144,6 +144,36 @@ the rules for entries are in the first. New entries are appended at the end of t
 - **Governs:** [delivery and agent tooling](components/delivery-and-agent-tooling.md); the rule
   is in [documentation invariants](../invariants/documentation.md#front-matter).
 
+### 2026-11-15 More of the suggested outside projects approved
+
+- **Said:** "I approve adding and using more of your suggestions for the repos" (as quoted in
+  pull request 201, which found it missing from this log on 2026-11-16).
+- **Context:** this is the approval behind the "Approved, not yet added" rows of the register.
+  Each project still arrives in its own pull request with its adapter and tests, under the glue
+  rules; approval is not adoption.
+- **Governs:** [outside projects register](outside-projects.md).
+
+### 2026-11-15 Test ideas are system tests until ALPHA is production grade
+
+- **Said:** exact words not recorded in this log; noted by the orchestrating session that day.
+- **Context:** until ALPHA is production grade, every research idea, loop and strategy run is an
+  end-to-end test of the system, not research. Ideas are chosen to exercise as many parts as
+  possible (data, horizons, asset kinds, model routes, judge stages, paper path, screens). A run
+  is reported first by what worked, broke, was slow, confusing or missing, and only briefly by
+  what the idea showed; its outcome is never presented as a market finding, and no effort goes
+  into rescuing an idea. The integrity machinery must still work, because it is being tested.
+  Defects and friction from each run are kept in a running list.
+- **Governs:** the [research route](../../../research/CONTEXT.md) and every report to the owner.
+
+### 2026-11-15 The orchestrating session delegates; every agent names its model
+
+- **Said:** exact words not recorded in this log; reinforced on 2026-11-16 (use Codex heavily).
+- **Context:** to protect the owner's usage limits, the session the owner talks to plans, briefs,
+  reviews hand-backs and lands pull requests; it does not run as a sub-agent. Every delegated
+  agent states its model: a heavier one for judgement, a lighter one for mechanical work. Any
+  build that can be written as a brief goes to Codex through the hand-off tool.
+- **Governs:** [model routing](../model-routing.md).
+
 ### 2026-11-16 Licences are never a criterion for outside projects
 
 - **Said:** "this project is non commercial and private so licensing and things DO NOT MATTER.
@@ -156,27 +186,3 @@ the rules for entries are in the first. New entries are appended at the end of t
   that lists licence among the things a project is judged on is superseded by this one.
 - **Governs:** [outside projects register](outside-projects.md);
   [ADR-0052](../../adr/0052-licence-is-not-a-criterion.md).
-
-### 2026-11-16 RD-Agent judge: spread check, idea families, universe file, call time limit
-
-- **Said:** exact words not recorded: the owner delegated these decisions; they were decided by
-  the orchestrating AI agent under the owner's delegation, 2026-11-16.
-- **Context:** the 2026-11-16 health check of RD-Agent's factor loop: 15 of 18 replayed factor ×
-  clock trials lost money before costs although they passed the rank screen; the proposer was told
-  only "failed the replay"; the universe was hard-coded; model calls hung for minutes.
-- **Decided:** (1) add a check before the replay that the top third the factor would hold beats the
-  bottom third, before costs, at each clock, without loosening anything; (2) tell the proposer each
-  rejected factor's spread, thirds, turnover and cost, group the whole ledger by idea family, and
-  tell it to leave a family after 3 failed near-variants (configurable); (3) make the universe,
-  calendar and year length configuration, widen crypto only by a point-in-time liquidity rule over
-  coins already in the store, and wire US stocks if the Alpaca store can support thirds; (4) a
-  180-second limit per model call with one bounded retry, counted against the caps; (5) leave the
-  60-call, USD 10 per run and USD 50 per month caps and what counts toward them unchanged, and show
-  paid model calls and free local embedding calls separately on the run receipt. Corrected the
-  same day: a factor stopped by the spread check is still a trial, counted in the Deflated Sharpe
-  exactly as before the check existed; long embedding inputs are chunked at sentence ends and
-  averaged, never truncated, and a memory entry whose embedding still fails is left out, counted
-  and reported on the receipt.
-- **Left to the owner:** whether free local embedding calls should count toward the 60-call cap.
-- **Governs:** [RD-Agent](components/rd-agent.md);
-  [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md).

@@ -10,19 +10,30 @@ the first steps of every later experiment, so in one run usually only the first 
 coding attempts reach the persistent knowledge base (seen 2026-11-15: two rounds, seven factors
 coded, four recorded). Restarting the counter before each experiment records every attempt.
 Proposed upstream patch: reset the counter in ``CoSTEER.develop`` (or key it by trace identity).
+
+A second upstream behaviour (same pin, ``knowledge_management/graph.py``,
+``UndirectedGraph.add_node``): a node's embedding is created while it is added to the
+coding-memory graph, and a refused embedding ends the whole coding step and so the run
+(2026-11-16: run 2 ended after local Ollama refused one input three times). While RD-Agent turns
+an evolve step into knowledge, ALPHA's strategy leaves out a node whose embedding failed; each
+skip is written to the run's ``memory-skips.jsonl`` and counted on the receipt. Proposed upstream
+patch: catch the embedding failure in ``add_node`` and leave the node out with a warning.
 """
 
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import tempfile
-from collections.abc import Mapping, Sequence
-from contextlib import nullcontext
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager, nullcontext
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from filelock import FileLock
+from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStrategyV2
 from rdagent.components.coder.factor_coder import FactorCoSTEER
 from rdagent.core.serialization import dump, load
 
@@ -55,8 +66,8 @@ def demote(
                 continue
             if digest is not None and _code_sha256(unit) != digest:
                 continue
-            node = knowledge.graph.nodes[node_id]
-            if node.label == "task_success_implement":
+            node = knowledge.graph.nodes.get(node_id)  # absent when its embedding was skipped
+            if node is not None and node.label == "task_success_implement":
                 node.label = "alpha_rejected_implement"
                 changed = True
         if changed:
@@ -98,8 +109,65 @@ def demote_in_file(
         return [], f"{type(error).__name__}: {error}"
 
 
+def _record_skip(record: Path | None, node: Any, error: BaseException) -> None:
+    if record is None:
+        return
+    content = str(getattr(node, "content", ""))
+    line = {
+        "schema": "AlphaMemorySkipV1",
+        "ts": datetime.now(UTC).isoformat(),
+        "label": getattr(node, "label", None),
+        "content_sha256": hashlib.sha256(content.encode()).hexdigest(),
+        "content_chars": len(content),
+        "error": f"{type(error).__name__}: {error}"[:300],
+    }
+    with record.open("a") as stream:
+        stream.write(json.dumps(line, sort_keys=True) + "\n")
+
+
+@contextmanager
+def tolerant_embeddings(graph: Any, record: Path | None) -> Iterator[None]:
+    """Within the block, a graph node whose embedding failed is left out and recorded.
+
+    Only a failure that leaves the node (or its neighbour) without an embedding is caught; any
+    other error is raised. The wrapper is an instance attribute removed on exit, so nothing of
+    ALPHA's is pickled with the knowledge base.
+    """
+    original = graph.add_node
+
+    def add_node(node: Any, neighbor: Any = None, *args: Any, **kwargs: Any) -> Any:
+        try:
+            return original(node, neighbor, *args, **kwargs)
+        except Exception as error:
+            missing = [
+                item
+                for item in (node, neighbor)
+                if item is not None and getattr(item, "embedding", None) is None
+            ]
+            if not missing:
+                raise
+            _record_skip(record, missing[0], error)
+            return None
+
+    graph.add_node = add_node
+    try:
+        yield
+    finally:
+        del graph.add_node
+
+
+class AlphaRAGStrategyV2(CoSTEERRAGStrategyV2):
+    def generate_knowledge(self, evolving_trace: Any, *, return_knowledge: bool = False) -> Any:
+        run = os.environ.get("ALPHA_FACTOR_RUN_DIR")
+        record = Path(run) / "memory-skips.jsonl" if run else None
+        with tolerant_embeddings(self.knowledgebase.graph, record):
+            return super().generate_knowledge(evolving_trace, return_knowledge=return_knowledge)
+
+
 class AlphaFactorCoSTEER(FactorCoSTEER):
     def develop(self, exp: Any) -> Any:
+        if type(self.rag) is CoSTEERRAGStrategyV2:
+            self.rag.__class__ = AlphaRAGStrategyV2  # only the knowledge step changes (above)
         if self.rag.dump_knowledge_base_path is not None:
             lock = (
                 FileLock(self.settings.filelock_path)

@@ -103,6 +103,14 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
         raise LaunchError(f"--run-max-calls must be between 1 and {MAX_CALLS}")
     if args.wall_seconds <= 0:
         raise LaunchError("--wall-seconds must be positive")
+    if not 0 < args.api_timeout <= 900:
+        raise LaunchError("--api-timeout must be between 0 and 900 seconds")
+    if not 0 <= args.provider_retries <= 3:
+        raise LaunchError("--provider-retries must be 0, 1, 2 or 3")
+    if args.family_switch_after < 1:
+        raise LaunchError("--family-switch-after must be at least 1")
+    if args.universe is not None and not args.universe.is_absolute():
+        raise LaunchError("--universe must be an absolute path")
     if args.chat_route == "api":
         if not args.api_model or not args.api_price_in_per_mtok or not args.api_price_out_per_mtok:
             raise LaunchError(
@@ -151,6 +159,8 @@ def loop_environment(
     home: str,
     memory_env: dict[str, str] | None = None,
     coder_max_loop: int = 2,
+    family_switch_after: int = 3,
+    universe_text: str = "15 surviving coins only",
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -190,6 +200,9 @@ def loop_environment(
         "ALPHA_FACTOR_RUN_DIR": str(run),
         "ALPHA_FACTOR_EVAL_PYTHON": str(REPO / ".venv" / "bin" / "python"),
         "ALPHA_FACTOR_TRIAL_LEDGER": str(ledger),
+        # ADR-0055: the proposer is told to leave an idea family after this many failed tries.
+        "ALPHA_FACTOR_FAMILY_SWITCH_AFTER": str(family_switch_after),
+        "ALPHA_FACTOR_UNIVERSE_TEXT": universe_text,
         **(memory_env or {}),
     }
 
@@ -206,6 +219,7 @@ class Launch:
         self.bundle = self.factor_python.parents[2]
         self.repo_python = REPO / ".venv" / "bin" / "python"
         self.children: list[subprocess.Popen[bytes]] = []
+        self.universe_text = "15 surviving coins only"
         self.receipt: dict[str, Any] = {
             "schema": "AlphaRdagentFactorRunReceiptV1",
             "label": LABEL,
@@ -280,10 +294,22 @@ class Launch:
                 str(self.args.data_dir),
                 "--out",
                 str(panel),
+                *(["--universe", str(self.args.universe)] if self.args.universe else []),
             ],
         )
         receipt = (panel / "panel-receipt.json").read_bytes()
-        self.receipt["panel_sha256"] = json.loads(receipt)["panel_sha256"]
+        frozen = json.loads(receipt)
+        self.receipt["panel_sha256"] = frozen["panel_sha256"]
+        universe = (
+            json.loads((panel / "universe.json").read_bytes())
+            if (panel / "universe.json").exists()
+            else None
+        )
+        self.receipt["universe"] = universe["name"] if universe else "default (all coins in store)"
+        self.universe_text = (
+            f"{len(frozen['instruments'])} instruments ({self.receipt['universe']}); "
+            + (universe["survivorship"] if universe else "surviving coins only")
+        )
         self.receipt["panel_receipt_sha256"] = hashlib.sha256(receipt).hexdigest()
         self.check(
             "prepare",
@@ -334,6 +360,10 @@ class Launch:
             self.args.chat_route,
             "--embedding-route",
             self.args.embedding_route,
+            "--api-timeout",
+            str(self.args.api_timeout),
+            "--provider-retries",
+            str(self.args.provider_retries),
         ]
         accept = self.args.accept_unhonoured
         if accept is None:  # the owner accepted losing temperature on the Codex route only
@@ -358,6 +388,8 @@ class Launch:
             "api_price_out_per_mtok": self.args.api_price_out_per_mtok,
             "api_openrouter": self.args.api_openrouter,
             "accept_unhonoured": accept,
+            "api_timeout_seconds": self.args.api_timeout,
+            "provider_retries": self.args.provider_retries,
         }
         # Only the gateway inherits the paid route's settings.
         child = self.spawn(command, "gateway", env=dict(os.environ))
@@ -405,6 +437,8 @@ class Launch:
             home=str(self.run / "home"),
             memory_env=self.memory_plan.env if self.memory_plan else None,
             coder_max_loop=self.args.coder_max_loop,
+            family_switch_after=self.args.family_switch_after,
+            universe_text=self.universe_text,
         )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
@@ -496,6 +530,7 @@ class Launch:
             calls = [row for row in parsed[0] if row.get("run_id") == self.args.run_id]
             labelled = label_calls(calls, parsed[1])
             output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in labelled))
+            self.receipt["call_split"] = call_split(calls)
             return {"calls": len(labelled), "skipped_lines": skipped}
         except Exception as error:  # noqa: BLE001 - labelling is best effort, with receipt diagnostics
             note = f"{type(error).__name__}: {error}"
@@ -513,6 +548,10 @@ class Launch:
             loop_reason=self.receipt.get("loop_reason", reason),
             gateway_status=self.gateway_status(),
             calls_labelled=self.write_call_labels(),
+            # Coding-memory entries left out because their embedding was refused (ADR-0055).
+            memory_entries_skipped=len((self.run / "memory-skips.jsonl").read_text().splitlines())
+            if (self.run / "memory-skips.jsonl").exists()
+            else 0,
             evaluations_sha256=hashlib.sha256(evaluations.read_bytes()).hexdigest()
             if evaluations.exists()
             else None,
@@ -531,6 +570,43 @@ class Launch:
         )
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
+
+
+def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
+    """Paid model calls versus free local embedding calls, as the gateway logged them.
+
+    Every attempt counts toward the run's call cap (unchanged); this only shows the owner the split.
+    """
+    split: dict[str, Any] = {
+        "model_chat": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "local_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "provider_timeouts": 0,
+        "empty_or_invalid_replies": 0,
+        "retried_attempts": 0,
+        "failed_requests": {},
+        "chunked_embedding_inputs": 0,
+        "embedding_chunks": 0,
+    }
+    for call in calls:
+        kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
+        split[kind]["requests"] += 1
+        split[kind]["attempts"] += int(call.get("attempts") or 0)
+        split[kind]["usd"] += float(call.get("usd") or 0.0)
+        split["chunked_embedding_inputs"] += int(call.get("chunked_inputs") or 0)
+        split["embedding_chunks"] += int(call.get("chunks") or 0)
+        errors = call.get("provider_errors") or []
+        split["provider_timeouts"] += errors.count("provider_timeout")
+        split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
+        if call.get("status") == 200:
+            split["retried_attempts"] += len(errors)
+        else:
+            split["retried_attempts"] += max(0, len(errors) - 1)
+            code = str(call.get("error_code"))
+            split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
+    split["counted_toward_call_cap"] = (
+        split["model_chat"]["attempts"] + split["local_embedding"]["attempts"]
+    )
+    return split
 
 
 def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
@@ -606,6 +682,10 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--api-price-in-per-mtok", type=float)
     r.add_argument("--api-price-out-per-mtok", type=float)
     r.add_argument("--api-openrouter", action="store_true")
+    r.add_argument("--api-timeout", type=float, default=180)
+    r.add_argument("--provider-retries", type=int, default=1)
+    r.add_argument("--family-switch-after", type=int, default=3)
+    r.add_argument("--universe", type=Path)
     return p
 
 

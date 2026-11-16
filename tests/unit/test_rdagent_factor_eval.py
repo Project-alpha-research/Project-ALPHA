@@ -14,6 +14,7 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_core import DataError
 from alpha_data.crypto.contracts import CryptoDatasetIdentityV1
@@ -114,7 +115,7 @@ def test_unknown_ledger_rows_count_conservatively_and_do_not_repeat(
     req = fixture(run, seed=43)
     with (
         patch.object(
-            ev,
+            judge,
             "screen",
             side_effect=[{"status": "OK", "p": p, "direction": 1} for p in (0.05, 1.0, 1.0)],
         ),
@@ -171,6 +172,8 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -
     record = ev._evaluate_locked(
         run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
     )
+    # ADR-0055 adds exactly one disclosure; without it the record is the pre-change bytes.
+    assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )
@@ -240,7 +243,7 @@ def test_noise_never_replayed(tmp_path: Path, seed: int) -> None:
     run = tmp_path / "run"
     req = fixture(run, seed=seed, noise=True)
     with patch.object(
-        ev, "run_weight_replay", side_effect=AssertionError("screen failed but replay called")
+        judge, "run_weight_replay", side_effect=AssertionError("screen failed but replay called")
     ):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     assert record["decision"] is False
@@ -343,7 +346,7 @@ def test_one_failing_factor_is_recorded_as_error_and_the_rest_still_land(tmp_pat
         return real(signal, outcome, digest, series=series)
 
     ledger = tmp_path / "ledger.jsonl"
-    with patch.object(ev, "screen", flaky):
+    with patch.object(judge, "screen", flaky):
         result = evaluate(run, req, ledger)
     statuses = {f["name"]: f["status"] for f in result["factors"]}
     assert statuses == {"factor": "CANDIDATE", "broken": "ERROR"}
@@ -442,7 +445,7 @@ def _publish(
 
 
 def _freeze(tmp_path: Path, store: CryptoBulkStore) -> dict[str, Any]:
-    with patch.object(ev, "configured_crypto_bulk_store", lambda _: store):
+    with patch.object(judge, "configured_crypto_bulk_store", lambda _: store):
         return ev.freeze(tmp_path / "control", tmp_path / "out")
 
 
@@ -626,7 +629,7 @@ def test_imported_identity_is_never_re_evaluated(
     run = tmp_path / "repeat"
     req = fixture(run)
     with (
-        patch.object(ev, "screen", side_effect=AssertionError("import screened")),
+        patch.object(judge, "screen", side_effect=AssertionError("import screened")),
         patch.object(ev, "replay", side_effect=AssertionError("import replayed")),
     ):
         result = evaluate(run, req, ledger)
@@ -683,7 +686,7 @@ def test_imported_rows_count_in_bh_family(tmp_path: Path, monkeypatch: pytest.Mo
     req = fixture(run)
     with (
         patch.object(
-            ev,
+            judge,
             "screen",
             side_effect=[
                 {"status": "OK", "p": 0.05, "direction": 1},
@@ -882,7 +885,7 @@ def test_same_request_repeat_has_no_evidence(tmp_path: Path) -> None:
 def test_screen_error_retains_computed_daily_ic_only(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
-    with patch.object(ev, "block_bootstrap_ci", side_effect=DataError("inference failed")):
+    with patch.object(judge, "block_bootstrap_ci", side_effect=DataError("inference failed")):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
     assert factor["status"] == "ERROR"

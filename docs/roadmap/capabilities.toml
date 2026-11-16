@@ -929,7 +929,7 @@ needs = [
   "an end-to-end smoke check of the factor loop through the installed programs with a scripted model route",
 ]
 state = "Partial"
-missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
+missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; the universe file is wired but the local stores hold only 15 coins and 9 single stocks, so neither universe can widen without a data pull; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]

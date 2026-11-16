@@ -453,7 +453,53 @@ after costs and the slow ranks whose held top third lost before costs. The summa
 newest distinct factors (at most 30) as whole lines within 4000 characters, rounds IC and q to
 three decimals, gives each replayed clock's annual return before and after costs, its annual
 cost and daily turnover, and states how many older factors it left out (2026-11-16: it had cut
-the 23rd line in half and showed no replay numbers). All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
+the 23rd line in half and showed no replay numbers). All results remain exploratory, not admitted.
+
+Spread check, idea families, universe file and call limit
+([ADR-0055](../../docs/adr/0055-spread-check-family-brief-and-universe-file.md), 2026-11-16):
+
+- Before a screened clock (q < 0.10) is replayed, the evaluator checks on the same decision days that
+  the top third the factor would hold beat its bottom third before costs (mean over decision days,
+  positive under both tie orders). If not, the clock is `SPREAD_FAIL`
+  (`top-third-does-not-beat-bottom-third`) whatever its replay shows. Each screened clock records a
+  `spread` object: top- and bottom-third mean returns, spread per hold and per year, t-statistic
+  (autocorrelation-adjusted), bootstrap interval, decision days, the share of the top third replaced
+  per rebalance and the yearly cost that implies. A stricter gate, never a pass. A spread-stopped
+  clock, or one whose spread could not be computed (`ERROR`), is still replayed (marked
+  `counted_only`) so the Deflated Sharpe counts every screened clock as a trial, exactly as before
+  the check; feedback and RD-Agent's result keys show such a replay as "counted only, not a
+  result", never as returns. A universe hash in the panel receipt requires the file.
+- Embeddings: after the local service refuses an input (HTTP 400), the gateway retries once with
+  inputs over `--embed-max-chars` (2,000) split at sentence ends and averages the pieces' vectors
+  (logged as `chunked_inputs`, `chunks`); never truncated. If it still fails, the coding step
+  leaves that memory entry out (`memory-skips.jsonl`) and the receipt counts
+  `memory_entries_skipped`; `call_split` adds `chunked_embedding_inputs` and `embedding_chunks`.
+- The proposer's context starts with every idea family in the ledger (name-keyword groups: tries,
+  best result, failures by status), names the families with `--family-switch-after` (3) or more
+  failed tries and no candidate, and tells it to move to a different family. Ledger lines add the
+  spread numbers for every clock that reached the check.
+- `--universe /abs/file.json` freezes the panel with a universe file (`AlphaRdagentUniverseV1`,
+  examples in `universes/`): source, instruments, a point-in-time liquidity rule, calendar (which
+  fixes the year length and clocks) and minimum universe. The file and its hash are bound into the
+  panel receipt; an unbound or edited file is refused. `binance-spot-liquid.json` (90-day median
+  quote volume of at least USD 1 million, at most 50 coins) keeps all 15 coins of the local store on
+  every exploration day; widening needs more coins in the store. `alpaca-us-stocks.json` is refused:
+  the Alpaca store has 9 single stocks (and 6 funds), fewer than 15, and the exchange-session
+  calendar is not yet evaluable.
+- Gateway: `--api-timeout` (180 s) bounds each paid call in total; a slower call ends as
+  `provider_timeout`, and it or an empty reply is retried `--provider-retries` times (1); every
+  attempt counts toward the caps. The receipt's `call_split` separates model chat calls (requests,
+  attempts, dollars) from free local embedding calls, with provider timeouts, empty replies and
+  retries.
+- Measured 2026-11-16: offline, on the 18 factor × clock trials that had reached the replay, the
+  spread check rejects 16 (all 15 that lost before costs and one daily-only pass); no model calls.
+  Two fresh runs (DeepSeek V4.1 Flash, 3 loops each, USD 0.085 and 0.138): 11 factors judged, 3
+  passed the rank screen, 1 passed the spread check (daily-only), none a swing candidate. Proposals
+  moved from "price near its high" to intraday/overnight drift, return predictability, trend
+  efficiency, co-skewness and drawdown. Five calls hit the 180 s limit; four retries succeeded, one
+  request failed after two attempts and the run went on. Run 2 stopped in its third loop because
+  local Ollama refused a 7,394-character embedding (HTTP 400), not a model timeout; its receipt was
+  written. Embeddings were 21 of 60 and 16 of 47 counted calls. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh
@@ -464,6 +510,8 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   --gateway-data-dir /abs/runs/model-gateway-state \
   --trial-ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl \
   --run-id <id> --loop-n 2      # at most 3 loops and 60 model calls; Codex and Ollama routes
+  # optional: --universe /abs/workers/rdagent/universes/binance-spot-liquid.json
+  #           --family-switch-after 3 --api-timeout 180 --provider-retries 1
 ```
 
 - `factor-requirements.lock`: 79 hash-pinned packages (the stock runtime's plus pandas 2.2.3,

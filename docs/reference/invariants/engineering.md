@@ -7,7 +7,7 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: afb23a88f1dd58df
+verified: f2b0ff419fa179f5
 ---
 
 # Engineering rules

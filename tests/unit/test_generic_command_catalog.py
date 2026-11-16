@@ -17,6 +17,7 @@ def test_empty_generic_command_is_unknown() -> None:
 @pytest.mark.parametrize(
     ("argv", "expected"),
     [
+        (["partner", "selftest"], "safe"),
         (["context", "list"], "safe"),
         (["context", "show-edgar"], "safe"),
         (["context", "show-binance"], "safe"),

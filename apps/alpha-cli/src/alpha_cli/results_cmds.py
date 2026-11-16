@@ -10,7 +10,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
-from alpha_cli.spine.check import check_text, render_check
+from alpha_cli.spine.check import FlagLookup, check_text, render_check
 from alpha_cli.spine.compare import (
     DEFAULT_METRICS,
     Lookup,
@@ -193,13 +193,32 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
         _error(exc, json_out)
 
 
-def fact_lookup(home: Path) -> Lookup:
-    """Discover completed runs; read each cited run's facts once, on demand."""
+def _run_paths(home: Path) -> dict[str, Path]:
+    """Discover completed runs in the same precedence order as run lookup."""
     paths: dict[str, Path] = {}
     for directory in RUN_DIRS:
         for manifest in (home / directory).glob("*/manifest.json"):
             if valid_run_id(manifest.parent.name):
                 paths.setdefault(manifest.parent.name, manifest.parent)
+    return paths
+
+
+def flag_lookup(home: Path) -> FlagLookup:
+    """Read stored diagnostic flags for cited runs; missing diagnostics have none."""
+    paths = _run_paths(home)
+
+    def lookup(run_id: str) -> list[dict[str, str]]:
+        flags: list[dict[str, str]] = read_json(
+            paths[resolve_run(run_id, paths)] / "diagnostics.json"
+        ).get("flags", [])
+        return flags
+
+    return lookup
+
+
+def fact_lookup(home: Path) -> Lookup:
+    """Discover completed runs; read each cited run's facts once, on demand."""
+    paths = _run_paths(home)
     cache: dict[str, dict[str, dict[str, Any]]] = {}
 
     def lookup(prefix: str, metric: str) -> dict[str, Any]:
@@ -207,6 +226,12 @@ def fact_lookup(home: Path) -> Lookup:
         run_id = resolve_run(prefix, paths)
         if run_id not in cache:
             cache[run_id] = {fact["metric"]: fact for fact in build_facts(paths[run_id])}
+        if metric not in cache[run_id]:
+            raise SpineError(
+                "METRIC_NOT_STORED",
+                f"Run {run_id} has no stored fact {metric} in its run folder.",
+                "Cite tool facts with alpha results cite <run_id> <metric> --tool-output <id>.",
+            )
         return cache[run_id][metric]
 
     return lookup
@@ -220,13 +245,14 @@ def check_answer(
         0, min=0, help="Tolerate this many untagged numbers as warnings."
     ),
 ) -> None:
-    """Check a draft's tagged numbers and required labels against stored facts."""
+    """Check a draft's tagged numbers, required labels and flags against stored facts."""
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
         fail(unreadable_file(path, exc), json_out)
     try:
-        result = check_text(text, fact_lookup(AlphaSettings().data_dir), allow_untagged)
+        home = AlphaSettings().data_dir
+        result = check_text(text, fact_lookup(home), allow_untagged, flag_lookup(home))
         emit(result, json_out=json_out, fallback=render_check(result))
         if not result["ok"]:
             raise typer.Exit(1)

@@ -55,7 +55,8 @@ The partner's instructions are four small sets of files, each with one job:
 
 The playbook, eleven tool cards, the six skills and the lessons folder are written, and the check
 above passes. They are unproven as behaviour: no test yet shows that an AI following them stays
-honest (the planned honesty traps), there is no answer checker, and no lesson has been recorded.
+honest. The answer checker now checks tagged numbers, labels and flag contradictions; `alpha partner selftest`
+exercises 18 planted answers without a model. Its installed smoke check is pending, and no lesson has been recorded.
 The research-case protocol library (`.agents/skills/alpha-research-protocols/`) is still loaded
 by the program and the tool server. For the rest see the capabilities below on
 [STATUS.md](../../../../STATUS.md).
@@ -63,7 +64,7 @@ by the program and the tool server. For the rest see the capabilities below on
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-mcp`
-- **Capabilities:** `ai-investigations`, `ai-tools-connection`
+- **Capabilities:** `ai-investigations`, `ai-tools-connection`, `honesty-selftest`
 - Partner instructions: `research/PLAYBOOK.md`, `research/tools/`, `research/lessons/`,
   `.agents/skills/`; routed from [research/CONTEXT.md](../../../../research/CONTEXT.md).
 - Code: `apps/alpha-mcp/src/`; the `alpha assistant` and `alpha research investigations` commands

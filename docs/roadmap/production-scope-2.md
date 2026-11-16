@@ -91,12 +91,12 @@ The AI as a research partner that drives the toolbox from a prompt.
 | Tool cards indexed by symptom, so the AI finds a tool it was never told about | Unproven | `research/tools` | Path 1 | [partner] |
 | The AI proposes next steps with reason, value and cost; says when evidence disagrees | Unproven | playbook and skills: text only | Path 1 | [partner] |
 | A drafted answer's tagged numbers and run labels checked against the stored records (`alpha results check`; not the reasoning) | Working | `alpha-cli` results | Now | [precise] |
-| The AI must run that check on every draft before sending it | Missing | playbook; gateway | Path 1 | [precise] |
+| The AI must run that check on every draft before sending it | Missing | playbook; skill text pending | Path 1 | [precise] |
 | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs | Unproven | `apps/alpha-mcp` | Path 1 | [grade] |
 | Connection for the Claude and ChatGPT apps, not only the terminal | Missing | `apps/alpha-mcp` | Later | [grade] |
 | A review step that audits a result for defects | Unproven | `alpha diagnose` audit; `review-result` skill | Path 1 | [grade] |
 | Ask an in-product assistant about a recorded run | Unproven | `alpha-cli`; `alpha-web` | Later | [status] |
-| Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | was `tools/alpha-eval` | Path 1 | [slim] |
+| Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | `alpha partner selftest`: 18 planted answers, no model calls; not yet scheduled weekly | Path 1 | [slim] |
 | Small autonomous research team around RD-Agent | Missing | backlog | Later | [team] |
 | Text from papers and the web can never run tools or unlock anything | Unproven | `workers/literature` | Later | private |
 | Call and dollar caps on RD-Agent's model use | Working | `workers/rdagent` gateway | Now | [status] |

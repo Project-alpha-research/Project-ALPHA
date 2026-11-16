@@ -1073,3 +1073,18 @@ real_data = "not yet confirmed; synthetic data only"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+
+[[capability]]
+id = "honesty-selftest"
+name = "Honesty self-test of the answer checker"
+what = "Check planted honest and dishonest answers against temporary stored runs, without a model call."
+see_it = ["alpha partner selftest"]
+entry_points = ["cli: alpha partner"]
+proof_synthetic = ["tests/unit/test_honesty_traps.py::test_every_scenario_behaves"]
+proof_smoke = ["tests/smoke/test_partner_selftest_smoke.py::test_partner_selftest"]
+real_data = "synthetic fixture runs only; no model calls"
+needs = []
+state = "Partial"
+missing = "smoke test written, not yet run outside the sandbox"
+docs = ["docs/reference/invariants/cli-results-check.md"]

@@ -138,6 +138,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "optim",
             "owner-auth",
             "paper",
+            "partner",
             "project",
             "propfirm",
             "provider",
@@ -154,3 +155,10 @@ def test_full_app_keeps_every_command_group() -> None:
         ]
     )
     assert "import-pdf" in group.commands["research"].commands  # type: ignore[attr-defined]
+
+
+def test_partner_selftest_does_not_import_heavy_modules(tmp_path: Path) -> None:
+    result = _run(_RUN, ["partner", "selftest", "--json"], tmp_path)
+    assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
+    report = json.loads(result.stdout)
+    assert report["ok"] and report["total"] == 18

@@ -11,6 +11,7 @@ import typer
 # The one command registry: (name, module, attribute). ``app`` mounts every entry; the console
 # entry mounts only the invoked group, so a CLI-backed read never imports unrelated engines.
 GROUPS: tuple[tuple[str, str, str], ...] = (
+    ("partner", "alpha_cli.partner_cmds", "partner_app"),
     ("results", "alpha_cli.results_cmds", "results_app"),
     ("data", "alpha_cli.data_cmds", "data_app"),
     ("context", "alpha_cli.context_cmds", "context_app"),

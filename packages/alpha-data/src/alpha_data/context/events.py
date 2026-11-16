@@ -58,6 +58,12 @@ FUNDING_SCHEMA: Schema = dict(
     interval_hours=pl.Int32,
     known_from=TIME,
 )
+OPEN_INTEREST_SCHEMA: Schema = dict(
+    symbol=pl.String,
+    ts=TIME,
+    open_interest=pl.Float64,
+    known_from=TIME,
+)
 METRICS_SCHEMA: Schema = dict(
     symbol=pl.String,
     ts=TIME,

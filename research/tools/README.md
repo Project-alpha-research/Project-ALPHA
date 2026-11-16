@@ -30,15 +30,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
-
-## Offline Bybit context
-
-Use `alpha context import-bybit --from <restored-store> --json` to import funding and hourly open interest.
-Read with `alpha context show-bybit --symbol BTCUSDT --kind open-interest --as-of 2024-01-01T01:05 --json`
-(or `--kind funding`). The import report lists rows, duplicates, conflicts, gaps and skipped manifests;
-failed symbols keep their previous tables. These are context observations, not a trading test or proof of cause.
-Next: test the explanation with the [rule test](rule-test.md). Import and clock details:
-[data layer](../../docs/reference/invariants/data.md#offline-bybit-context).
+| Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |
 
 ## Not available yet
 

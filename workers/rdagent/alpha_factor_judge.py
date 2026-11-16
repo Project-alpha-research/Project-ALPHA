@@ -47,8 +47,33 @@ SWING_BRIEF = (
     "per day; avoid re-proposing them. Slow volatility, illiquidity, max-return and "
     "return-volume ranks then passed the daily rank screen, yet the top third they would hold "
     "lost 28%-43% a year before costs: on 15 coins a few volatile coins' rallies dominate the "
-    "mean, so rank order and the top third's return can disagree. Exploratory, not admitted."
+    "mean, so rank order and the top third's return can disagree. ALPHA now rejects such a "
+    "factor unless the top third it would hold beat the bottom third "
+    "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
 )
+# Idea families by name pattern (regular expressions), first match wins (ADR-0055). Approximate
+# by design: it groups near-variants so the proposer sees how often one idea has already failed.
+FAMILY_KEYWORDS = (
+    ("price near its high / range position", ("high_prox", "stoch", "rangepos", r"(^|_)hp\d")),
+    ("short-term reversal and gaps", ("reversal_3d", "reversal_5d", "gap", "intraday_reversal")),
+    ("long-term reversal", ("long_term_reversal",)),
+    ("illiquidity", ("amihud", "illiquid")),
+    ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
+    ("skewness and lottery returns", ("skew", "max_return", "up_day")),
+    ("momentum and trend", ("momentum", "mom_", "trend", "sma_distance", "autocorr")),
+    ("volatility and beta", ("volatil", "semivariance", "beta", "vol_")),
+    ("range and compression", ("range",)),
+    ("volume level and trend", ("volume", "dollar_volume")),
+    ("VWAP distance", ("vwap", "clv", "close_location")),
+)
+
+
+def idea_family(name: str) -> str:
+    lowered = name.lower()
+    for family, keywords in FAMILY_KEYWORDS:
+        if any(re.search(keyword, lowered) for keyword in keywords):
+            return family
+    return "other: " + lowered.split("_")[0]
 
 
 def _rounded(value: Any) -> Any:
@@ -60,12 +85,68 @@ def replay_note(clock: str, replay: Any) -> str:
     """Why a replayed clock won or lost: before costs, after costs, the costs and the turnover."""
     if not replay:
         return ""
+    if "counted_only" in replay:  # ADR-0055: a failed clock's replay only counts the trial
+        return f"; {clock} replay counted only, not a result"
     gross = replay["gross"]["annualized_return"]
     net = replay["net"]["annualized_return"]
     return (
         f"; {clock} replay: {gross:+.0%}/yr before costs, {net:+.0%}/yr after "
         f"{replay['annual_cost']:.0%}/yr costs, turnover {replay['mean_turnover']:.0%}/day"
     )
+
+
+def spread_line(clock: str, result: Any) -> str:
+    """Top versus bottom third before costs (ADR-0055), with turnover and the cost it implies."""
+    if not result or result.get("status") not in ("PASS", "FAIL"):
+        return ""
+    return (
+        f"; {clock} spread {result['status']}: top third {result['top_third_mean_return']:+.2%} vs "
+        f"bottom {result['bottom_third_mean_return']:+.2%} per hold "
+        f"({result['annualized_spread']:+.0%}/yr before costs, t {result['t']:.1f}), "
+        f"top third changes {result['top_share_changed_per_rebalance']:.0%} per rebalance, "
+        f"about {result['estimated_annual_cost']:.0%}/yr costs"
+    )
+
+
+def _rank(row: dict[str, Any]) -> tuple[int, float]:
+    order = ("CANDIDATE", "FAST_ONLY", "REPLAY_FAIL", "SPREAD_FAIL", "SCREEN_FAIL")
+    status = row["status"]
+    score = order.index(status) if status in order else len(order)
+    if row["schema"] == "AlphaRdagentFactorTrialV3":
+        ic = row["clocks"][row["lead_clock"]]["screen"].get("mean_ic")
+    else:
+        ic = row["screen"].get("mean_ic")
+    return score, -abs(ic) if isinstance(ic, (int, float)) else 0.0
+
+
+def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
+    """Every idea family: tries, best result, how each failed, and which to leave."""
+    families: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        families.setdefault(idea_family(row["name"]), []).append(row)
+    lines, closed = [], []
+    for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        best = min(members, key=_rank)
+        counts: dict[str, int] = {}
+        for member in members:
+            counts[member["status"]] = counts.get(member["status"], 0) + 1
+        failed = ", ".join(f"{n} {status}" for status, n in sorted(counts.items()))
+        lines.append(
+            f"- {family}: {len(members)} tries; best {best['name']} ({best['status']}); {failed}"
+        )
+        if len(members) >= switch_after and not any(m["status"] == "CANDIDATE" for m in members):
+            closed.append(family)
+    text = "\nALPHA idea families (all runs; tries, best result, how they failed)\n" + "\n".join(
+        lines
+    )
+    if closed:
+        text += (
+            f"\nThese families have {switch_after} or more failed tries and no candidate: "
+            + "; ".join(closed)
+            + ". Do not propose another near-variant of them (a new window, skip or scaling of "
+            "the same idea); move to a different family with a different economic mechanism."
+        )
+    return text
 
 
 def ledger_summary(row: dict[str, Any]) -> str:
@@ -84,6 +165,8 @@ def ledger_summary(row: dict[str, Any]) -> str:
             f"IC {_rounded(lead['screen'].get('mean_ic'))}; q {_rounded(lead['q'])}"
         )
         for clock in ("daily", "weekly", "monthly"):
+            if clocks[clock]["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS"):
+                line += spread_line(clock, clocks[clock].get("spread"))
             line += replay_note(clock, clocks[clock].get("replay"))
     else:
         line = (
@@ -106,7 +189,9 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
     if not rows:
         return
     heading = (
-        "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
+        "\nALPHA trial ledger (all runs; exploratory, not admitted; "
+        + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
+        + ")\n"
     )
     lines, seen = [], set()
     unknown: list[str] = []
@@ -133,6 +218,12 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         used += len(line) + 1
     if omitted:
         lines.append(f"({omitted} older distinct factors not shown)")
+    distinct: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row["schema"] in known and row["status"] not in ("REPEAT", "IMPORTED"):
+            distinct.setdefault(row["code_sha256"], row)
+    switch_after = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+    context["hypothesis_and_feedback"] += family_summary(list(distinct.values()), switch_after)
     context["hypothesis_and_feedback"] += heading + "\n".join(lines)
     if unknown:
         context["hypothesis_and_feedback"] += (
@@ -265,7 +356,8 @@ class AlphaFactorScenario(QlibFactorScenario):
             "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
             "365 days/year. Direction chosen in-sample. BH q < 0.10 screens the cross-run trial "
-            "ledger, counting each factor x clock as a trial; only screened clocks are replayed. "
+            "ledger, counting each factor x clock as a trial; a screened clock can pass only "
+            "if the top third it would hold beat its bottom third before costs. "
             "Hold drifted weights between rebalances; residual trades are executed and charged. "
             "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "
             "a daily-only pass is FAST_ONLY, never admission, evidence, approval or promotion."
@@ -274,7 +366,9 @@ class AlphaFactorScenario(QlibFactorScenario):
     @property
     def experiment_setting(self) -> str:
         return (
-            "15 surviving Binance USDT spot coins, daily bars. History only: "
+            "Binance USDT spot coins, daily bars: "
+            + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
+            + ". History only: "
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
             "2023-12-31. 2024-01-01 onward is reserved and never available to this loop. "
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "

@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 95f5981ee17bac18
+verified: 9ac4b6bf92a3e50a
 ---
 
 # Worker invariants
@@ -152,7 +152,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets (monthly dollars capped at 50, not raisable) are checked before every attempt and fail closed. There is
   no automatic switch between routes, and the call log holds hashes and lengths, not text. The fixture loops still clear
-  all model settings. `tests/unit/test_rdagent_model_gateway.py`.
+  all model settings. A paid call has a 180 s limit (`provider_timeout`); a timeout or empty reply is retried once, each
+  attempt counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)). `tests/unit/test_rdagent_model_gateway.py`.
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
@@ -161,7 +162,10 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
   evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
-  daily-only pass is `FAST_ONLY`); every record is `exploratory, not admitted, not yet confirmed` with all authority
+  daily-only pass is `FAST_ONLY`); a screened clock whose top third did not beat its bottom third before costs is
+  `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
+  [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
+  come from a frozen universe file; every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from
   `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,

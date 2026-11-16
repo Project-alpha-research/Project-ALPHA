@@ -8,7 +8,8 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 14f695f3442abf41
+  - docs/adr/0052-licence-is-not-a-criterion.md
+verified: 876e972306623b74
 ---
 
 # Outside projects: the register
@@ -16,7 +17,8 @@ verified: 14f695f3442abf41
 Every open-source project ALPHA uses or has judged, in one table. An *outside project* is any
 library, engine or tool ALPHA did not write. How one is chosen and joined is decided in
 [ADR-0051](../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules); what a proposal
-must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations.md).
+must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations.md). Licence is
+not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-criterion.md)).
 
 ## How to read it
 
@@ -29,6 +31,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
   down; ask again only with new facts.
 - Judgements of projects not in ALPHA were made on 2026-11-15 from their public package pages.
   None of those projects was installed or run against ALPHA.
+- Rows marked *re-judged 2026-11-16* were first turned down or delayed partly for licence; they
+  were judged again on fit, upkeep, weight and conflict with pins. The full study is in the
+  owner's folder (`owner/repo-study/re-judged-without-licence-2026-11.md`, outside git).
 
 ## The register
 
@@ -69,6 +74,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | DuckDB | Asks one question across many stored files | For `alpha-cli`, in memory only | Approved, not yet added | A query tool, never the store |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
 | STUMPY | Finds chart stretches that look like an example | To be chosen | Approved, not yet added | Fixed, declared threshold only; see notes |
+| TimesFM 3.0, Chronos | General forecasting models | — | Later | Compare with Kronos on the Dell, scored by ALPHA; re-judged 2026-11-16 |
+| scikit-survival | Survival models: target or stop first | — (worker or root) | Later | Re-judged 2026-11-16; ties lifelines; needs sklearn 1.9 |
+| Arize Phoenix | Traces RD-Agent's model calls | — (own install, dev only) | Later | Re-judged 2026-11-16; LiteLLM has a hook; heavy; own install |
 | skfolio | Sizes a basket of positions | — | Later | When baskets need real sizing; heavy |
 | alphalens-reloaded | Report pages for mined factors | — (a worker, if adopted) | Later | Leans on pandas; not for the main install |
 | edgartools | Company figures from official filings | — | Later | Needs the owner's contact email; filing dates to check |
@@ -84,8 +92,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | open-code-review (Alibaba) | A second reader of code changes | — | Reference only | Trial found nothing ALPHA's reviewers missed; see notes |
 | OpenBB | Ideas for a data-provider layer | — | Reference only | Dozens of packages; ADR-0011 decided this |
 | TradingAgents, FinGPT, FinRobot, TensorTrade | Examples of AI trading agents | — | Reference only | Promise results; short tests; no trading authority |
-| TimesFM, Chronos | General forecasting models | — | Reference only | A possible comparison for Kronos, later |
-| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA already has with tests | — | Reference only | Too small or restricted to depend on |
+| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA already has with tests | — | Reference only | Too small, or a second engine; ALPHA has the ideas |
+| pypbo | Overfitting maths (PBO, deflated Sharpe) | — | Reference only | Re-judged 2026-11-16; no release or packaging; write our own, cross-check |
+| expectation | Tests you may peek at without false alarms | — | Reference only | Re-judged 2026-11-16; young; river covers it; revisit at paper phase |
 | FinRL | Trains trial-and-error trading agents | — | Refused | A teaching framework; heavy; closes no row |
 | vectorbt | A fast backtest engine | — | Refused | Conflicts with ALPHA's pandas pin; a second engine |
 | bt, backtesting.py, zipline-reloaded, backtrader, Lean | Backtest engines | — | Refused | ALPHA has one engine and must judge with it |
@@ -102,7 +111,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | fredapi | Downloads macro series | — | Refused | Stale; ALPHA keeps its own dated store |
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
-| mlfinlab | Methods from a well-known textbook | — | Refused | Reported as no longer open source |
+| mlfinlab | Methods from a well-known textbook | — | Refused | Re-judged 2026-11-16; the public repo is an issue tracker, code cannot be read or pinned |
 
 ## Notes on single rows
 
@@ -123,6 +132,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 - A project moves to *In use* only with its adapter, its contract test and its smoke test
   (rule 6 of the glue rules), and to *Refused* with a reason a later session can check.
 - Versions are not repeated here: the exact ones are in each `pyproject.toml` and lock file.
-- Licences of what is installed are in the
-  [dependency and licence matrix](../../governance/2026-07-19-dependency-license-matrix.md);
-  the Qlib worker also keeps a [notices file](../../../workers/qlib/THIRD_PARTY_NOTICES.md).
+- Licences of what is installed are listed in the
+  [dependency and licence matrix](../../governance/2026-07-19-dependency-license-matrix.md) and the
+  Qlib worker's [notices file](../../../workers/qlib/THIRD_PARTY_NOTICES.md). That is information,
+  not a criterion: licence never decides whether a project is used.

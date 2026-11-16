@@ -55,7 +55,7 @@ recomputation; a manifest or prose `passed` flag is never acceptance authority.
   later knowledge?
 - Are session, timezone, DST, holiday, early-close, equal-duration, halt, correction, split, and
   dividend semantics explicit, and are mixed 240/150-minute "four-hour" observations rejected?
-- Does provider authority/license/retention permit the claimed use?
+- Does provider authority/retention permit the claimed use?
 - Can later data or source revisions poison an earlier as-of result?
 
 ### 3. Sampling and estimator

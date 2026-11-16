@@ -48,6 +48,7 @@ _SAFE_ROOTS = frozenset(
         "scan",
         "results",
         "diagnose",
+        "partner",
         "unusual",
         "ledger",
     }

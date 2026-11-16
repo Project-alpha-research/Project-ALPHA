@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: afb4632f7283ef25
+verified: 81c0578404491b83
 ---
 
 # Command line runs invariants
@@ -112,7 +112,6 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## General rule trials
 
-- The unified read-only view is specified in [one trial ledger](cli-trial-ledger.md).
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
@@ -138,7 +137,7 @@ and how it names and publishes immutable runs. Project-wide rules:
   with an explicit reason.
 - Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
   use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
-- `alpha results` lists the ledger; `show` reads facts, flags, audit and available figure names;
+- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit and available figure names;
   `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
   The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
   source file/field, labels and a reason exactly when their value is null.
@@ -149,7 +148,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## Draft checks, lookalikes and novelty
 
-- `alpha results check|compare`: [draft checks](cli-results-check.md). `alpha lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
+- `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 
 ## Suites
 

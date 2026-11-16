@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 9bb42aed1367cb63
+verified: c8863296b00738d0
 ---
 
 # Research playbook: how to work any idea
@@ -50,7 +50,8 @@ does not exist yet, confusing output, an audit line that is `NOT-CHECKED`. Then 
 - A number that was not computed is said to be "not computed", with the command that would
   compute it. A `null` value comes with a `reason`: give the reason, never a guess.
 - Do no arithmetic of your own on results: use `uv run alpha results compare <run_id> <run_id>`.
-  `uv run alpha results check <file>` checks a draft's tagged numbers and labels, not the reasoning.
+- Save every draft and run `uv run alpha results check <file>` before sending; fix every problem.
+  `uv run alpha partner selftest` shows the checker catches planted mistakes. It does not check reasoning.
 - Everything else is marked "My reading:" or "Hypothesis:". The owner's own figures go in quotes.
 
 ## Labels, flags and trial counts
@@ -79,8 +80,7 @@ Labels and flags are how integrity shows. They go before the numbers, in plain w
 
 - A definition only they can give (which average, which bar, which assets).
 - A judgement call: whether a weak or mixed result is worth more time.
-- The one approval gate: before anything goes to paper or live trading. Nothing else is refused;
-  research needs no approval.
+- The one approval gate: before anything goes to paper or live trading. Nothing else is refused; research needs no approval.
 
 ## Worked examples (shapes of real output; placeholders, not numbers)
 

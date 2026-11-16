@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-253 commands in 32 groups. Options marked (required) are
+259 commands in 34 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -164,6 +164,16 @@ Triple-barrier labels and overlap weights (López de Prado), from the AFML worke
 - `alpha labels importance <RESULT_ID>` — Report which factors the labels lean on (MDI, purged MDA and SFI). Options: `--factors (required)`, +5 more
 - `alpha labels weights <RESULT_ID>` — Weight labels by how much they overlap (uniqueness), with time decay. Options: `--train-end`, `--last-weight`, +3 more
 
+## alpha ledger
+
+Read all recorded trials through one unchanged-ledger view.
+
+- `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
+- `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
+- `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
+
 ## alpha lookalike
 
 - `alpha lookalike` — Has price action like the latest N bars happened before? Options: `--asset (required)`, `--last`, `--timeframe`, `--top`, +3 more
@@ -223,6 +233,12 @@ Nautilus paper trading: local crypto sandbox and fail-closed IBKR Paper.
 - `alpha paper sessions` — List durable operational paper sessions, newest first. Options: `--json`
 - `alpha paper show <SESSION_ID>` — Show one durable paper session (never signals its recorded PID). Options: `--json`
 - `alpha paper stop <SESSION_ID>` — Request safe cooperative stop: cancel ALPHA orders, never flatten positions.
+
+## alpha partner
+
+Self-checks of the AI research partner's honesty tools.
+
+- `alpha partner selftest` — Check planted honest and dishonest answers against temporary stored runs. Options: `--json`
 
 ## alpha project
 
@@ -350,7 +366,7 @@ Governed research cases, contracts, sources, and bounded runs.
 
 List rule tests and quote their stored results.
 
-- `alpha results check <PATH>` — Check a draft's tagged numbers and required labels against stored facts. Options: `--json`, `--allow-untagged`
+- `alpha results check <PATH>` — Check a draft's tagged numbers, required labels and flags against stored facts. Options: `--json`, `--allow-untagged`
 - `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
 - `alpha results compare <RUN_IDS>` — Compare stored values, differences and ratios, with bases and run labels. Options: `--metric`, `--json`
 - `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`

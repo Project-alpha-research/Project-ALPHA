@@ -26,7 +26,7 @@ Telling a real edge from luck after many tries.
 | Every test, tool and variant counted in one ledger; the count printed on each result | Unproven | `alpha ledger`: one read model over the spine and RD-Agent ledgers | Path 1 | [partner] |
 | Locked final period, sealed by date; touching it marks the result for good | Unproven | `alpha-cli` judge | Path 1 | [precise] |
 | Log of every look at the locked period | Unproven | pull request 178 | Path 3 | [precise] |
-| Variants of one idea counted as one family, with the effective number of tests shown | Missing | `alpha ledger families`; effective number not yet | Path 1 | private |
+| Variants of one idea counted as one family, with the effective number of tests shown | Missing | `alpha ledger families`; the rule test's deflated Sharpe and verdict count the family; effective number not yet | Path 1 | private |
 | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) | Working | `alpha-validation` | Now | [kronos] |
 | Sensitivity to nearby parameter values | Unproven | `alpha-cli` optim | Path 1 | [grade] |
 | Sample-size check: is there enough data to say anything | Unproven | `alpha-research` | Path 2 | private |

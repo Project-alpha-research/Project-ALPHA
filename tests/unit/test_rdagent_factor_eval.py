@@ -507,12 +507,21 @@ def test_freeze_two_coins_stops_before_the_reserved_window(tmp_path: Path) -> No
     assert receipt["panel_sha256"] == digest
 
 
-@pytest.mark.parametrize("defect", ["gap", "overlap", "empty"])
-def test_freeze_refuses_gaps_overlaps_and_nothing(tmp_path: Path, defect: str) -> None:
+def test_freeze_records_an_interior_gap_instead_of_refusing_it(tmp_path: Path) -> None:
+    # A missing instrument-day is recorded, never bridged and never a reason to drop the coin
+    # (dropping gapped coins would bring survivorship bias back).
     store = _bulk_store(tmp_path)
-    if defect == "gap":
-        _publish(store, "BTCUSDT", (10.0, 11.0, 12.0, 13.0), skip=1)
-    elif defect == "overlap":
+    _publish(store, "BTCUSDT", (10.0, 11.0, 12.0, 13.0), skip=1)
+    receipt = _freeze(tmp_path, store)
+    assert receipt["missing_instrument_days"] == 1
+    assert receipt["instruments"]["BTCUSDT"]["longest_gap"] == 1
+    assert receipt["rows"] == 3
+
+
+@pytest.mark.parametrize("defect", ["overlap", "empty"])
+def test_freeze_refuses_overlaps_and_nothing(tmp_path: Path, defect: str) -> None:
+    store = _bulk_store(tmp_path)
+    if defect == "overlap":
         _publish(store, "BTCUSDT", (10.0, 11.0, 12.0))
         _publish(store, "BTCUSDT", (10.0, 11.5, 12.0), fetched=datetime(2026, 3, 1, tzinfo=UTC))
     with pytest.raises(DataError):

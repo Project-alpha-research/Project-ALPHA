@@ -12,6 +12,7 @@ from typing import Any
 import gate
 
 COMPONENTS = (
+    "afml",
     "backend",
     "backend-static",
     "backend-tests",
@@ -43,6 +44,7 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
         "uv.lock",
     ),
     "literature": ("workers/literature/",),
+    "afml": ("workers/afml/",),
 }
 
 
@@ -271,7 +273,7 @@ def component_steps(
             ("API freshness", cwd, ["git", "diff", "--exit-code", "--", "src/api/generated.ts"]),
             ("browser", cwd, ["npm", "run", "test:e2e:built", "--", "--viewports", viewports]),
         ]
-    if component in {"literature", "qlib"}:
+    if component in {"afml", "literature", "qlib"}:
         cwd = root / f"workers/{component}"
         return [
             ("lock", cwd, ["uv", "lock", "--check"]),

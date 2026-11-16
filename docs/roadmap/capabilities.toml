@@ -756,6 +756,31 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "afml-labels-and-weights"
+name = "Textbook labels and overlap weights (López de Prado)"
+what = "Label what happened after each event (target, stop or time limit first, on highs and lows) and measure how much overlapping labels repeat the same days, with two independent libraries that must agree."
+see_it = [
+  "cd workers/afml && uv run alpha-afml-worker labels BARS.parquet --out events.parquet",
+  "cd workers/afml && uv run alpha-afml-worker uniqueness events.parquet --bars BARS.parquet --out weights.parquet",
+  "cd workers/afml && uv run --group figure python examples/owner_figure.py --spy … --out … (one picture on real SPY bars)",
+]
+entry_points = [
+  "code: workers/afml/src/alpha_afml_worker/labels.py",
+  "code: workers/afml/src/alpha_afml_worker/uniqueness.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_uniqueness.py::test_chapter4_indicator_concurrency_and_uniqueness",
+  "workers/afml/tests/test_uniqueness.py::test_both_libraries_draw_the_hand_sequence",
+  "workers/afml/tests/test_labels.py::test_hand_path_long_first_touch_both_bases",
+  "workers/afml/tests/test_labels.py::test_truncation_labels_decided_by_bar_k_do_not_move",
+  "workers/afml/tests/test_cli.py::test_labels_then_uniqueness_end_to_end",
+]
+real_data = "run once on real daily SPY and BTC bars (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in the worker only; no alpha command calls it and no end-to-end smoke check through alpha yet"
+
+[[capability]]
 id = "qlib-refit"
 name = "Qlib model refit evidence"
 codes = ["W11"]

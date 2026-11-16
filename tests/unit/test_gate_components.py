@@ -252,28 +252,29 @@ def test_shard_spec_rejects_out_of_range(bad: str) -> None:
 @pytest.mark.parametrize(
     ("paths", "expected"),
     [
-        (["docs/notes.md"], {"qlib": False, "literature": False}),
+        (["docs/notes.md"], {"qlib": False, "literature": False, "afml": False}),
         (["apps/alpha-web/frontend/src/App.tsx"], {"qlib": False, "literature": False}),
-        (["workers/literature/src/x.py"], {"qlib": False, "literature": True}),
-        (["apps/alpha-cli/src/alpha_cli/x.py"], {"qlib": True, "literature": False}),
-        (["scripts/gate_components.py"], {"qlib": True, "literature": True}),
-        ([".github/workflows/ci.yml"], {"qlib": True, "literature": True}),
-        (["workers/qlib/pyproject.toml"], {"qlib": True, "literature": False}),
-        (None, {"qlib": True, "literature": True, "quant": True}),
-        ([], {"qlib": False, "literature": False, "quant": False}),
+        (["workers/literature/src/x.py"], {"qlib": False, "literature": True, "afml": False}),
+        (["workers/afml/src/alpha_afml_worker/labels.py"], {"qlib": False, "afml": True}),
+        (["apps/alpha-cli/src/alpha_cli/x.py"], {"qlib": True, "literature": False, "afml": False}),
+        (["scripts/gate_components.py"], {"qlib": True, "literature": True, "afml": True}),
+        ([".github/workflows/ci.yml"], {"qlib": True, "literature": True, "afml": True}),
+        (["workers/qlib/pyproject.toml"], {"qlib": True, "literature": False, "afml": False}),
+        (None, {"qlib": True, "literature": True, "afml": True, "quant": True}),
+        ([], {"qlib": False, "literature": False, "afml": False, "quant": False}),
     ],
 )
 def test_path_filters_select_conditional_jobs(
     paths: list[str] | None, expected: dict[str, bool]
 ) -> None:
     selected = gate_components.ci_changes(ROOT, {"paths": paths})
-    assert set(selected) == {"qlib", "literature", "quant"}
+    assert set(selected) == {"qlib", "literature", "afml", "quant"}
     assert {name: selected[name] for name in expected} == expected
 
 
 def test_push_runs_every_path_job_but_quant_keeps_its_own_rule() -> None:
     selected = gate_components.ci_changes(ROOT, {"paths": ["README.md"]}, run_all=True)
-    assert selected == {"qlib": True, "literature": True, "quant": False}
+    assert selected == {"qlib": True, "literature": True, "afml": True, "quant": False}
     quant = gate_components.ci_changes(
         ROOT, {"paths": ["packages/alpha-validation/src/alpha_validation/dsr.py"]}
     )
@@ -287,7 +288,7 @@ def test_changes_cli_prints_github_output_lines(
     monkeypatch.setenv("ALPHA_GATE_BASE", "missing-base")
     assert gate.main(["changes"]) == 0
     lines = capsys.readouterr().out.splitlines()
-    assert lines == ["literature=true", "qlib=true", "quant=false"]
+    assert lines == ["afml=true", "literature=true", "qlib=true", "quant=false"]
 
 
 def test_coverage_refuses_missing_shard_data(

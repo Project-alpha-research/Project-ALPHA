@@ -30,7 +30,7 @@ Telling a real edge from luck after many tries.
 | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) | Working | `alpha-validation` | Now | [kronos] |
 | Sensitivity to nearby parameter values | Unproven | `alpha-cli` optim | Path 1 | [grade] |
 | Sample-size check: is there enough data to say anything | Unproven | `alpha-research` | Path 2 | private |
-| Quick-screen score corrected for overlapping windows | Missing | backlog | Later | [status] |
+| Quick-screen score corrected for overlapping windows (the weights exist; nothing uses them yet) | Missing | `workers/afml` | Later | [status] |
 | Prop-firm challenge check, as an optional tool and never the goal | Unproven | `alpha-validation` | Later | [status] |
 
 ## 6. Diagnostics
@@ -121,6 +121,7 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Nautilus as the pinned backtest engine | Working | `alpha-backtest` | Now | [engines] |
 | Kronos with real model files, not a stand-in | Unproven | `alpha-forecast` | Later | [kronos] |
 | Automatic checks covering the RD-Agent worker, with a scripted-model smoke run | Missing | backlog | Path 3 | [status] |
+| Textbook labels and overlap weights from two pinned libraries that must agree | Unproven | `workers/afml` | Now | [status] |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [engines]: ../reference/project/owner-decisions.md#2026-11-14-the-architecture-in-one-line

@@ -1,0 +1,63 @@
+[project]
+name = "alpha-afml-worker"
+version = "0.1.0"
+description = "Isolated worker running two independent 'Advances in Financial Machine Learning' libraries for Project ALPHA."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "RiskLabAI==3.2.0",
+    "statsmodels==0.14.6",
+    "quantowl @ git+https://github.com/landtml/quantowl.git@37a17de8f519e7c2dae3d609a3e078c4c83de22e",
+    "numpy==2.4.6",
+    "pandas==2.3.3",
+    "polars==1.41.2",
+    "scipy==1.17.1",
+]
+
+[tool.uv]
+# ADR-0051 rule 4: never take a release in its first two weeks. Lock only what was published
+# at least two weeks before this worker was added (2026-11-16); move this date in an upgrade PR.
+exclude-newer = "2026-11-02T00:00:00Z"
+
+[project.scripts]
+alpha-afml-worker = "alpha_afml_worker.__main__:main"
+
+[dependency-groups]
+# Only the owner's picture (examples/owner_figure.py) needs this; the worker itself does not.
+figure = ["matplotlib==3.11.0"]
+dev = [
+    "mypy==2.1.0",
+    "pytest==9.1.0",
+    "ruff==0.15.17",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/alpha_afml_worker"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "--strict-markers --import-mode=importlib"
+markers = ["network: live network tests (opt-in)"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF100"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["alpha_afml_worker"]
+
+[[tool.mypy.overrides]]
+module = ["RiskLabAI.*", "quantowl.*", "numba.*", "statsmodels.*", "scipy.*", "pandas.*"]
+ignore_missing_imports = true

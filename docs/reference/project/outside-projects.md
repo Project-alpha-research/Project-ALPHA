@@ -8,7 +8,7 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 14f695f3442abf41
+verified: 5efbab81025daaa0
 ---
 
 # Outside projects: the register
@@ -62,6 +62,9 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | lightweight-charts | Price charts in the Workstation | Browser code in `alpha-web/frontend` | In use | Use more: mark every setup match on the chart |
 | BokehJS | Other charts in the Workstation | Browser code in `alpha-web/frontend` | In use | A second chart library; one per chart kind is the aim |
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
+| RiskLabAI 3.2.0 | Textbook label and weight methods | Own worker, `workers/afml` | In use | Primary; must agree with quantowl |
+| quantowl 0.1.6 | A second writing of the same methods | AFML worker, commit `37a17de` | In use | Not on PyPI; young, never trusted alone |
+| statsmodels 0.14.6, numba 0.68.1, scikit-learn | Libraries the two above need | AFML worker only | In use | RiskLabAI needs statsmodels below 0.15 |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
 | statsmodels | Regression, factor exposure, regimes | For `alpha-validation` | Approved, not yet added | Closes missing rows; replaces hand-written code |
 | arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |
@@ -85,7 +88,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | OpenBB | Ideas for a data-provider layer | — | Reference only | Dozens of packages; ADR-0011 decided this |
 | TradingAgents, FinGPT, FinRobot, TensorTrade | Examples of AI trading agents | — | Reference only | Promise results; short tests; no trading authority |
 | TimesFM, Chronos | General forecasting models | — | Reference only | A possible comparison for Kronos, later |
-| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA already has with tests | — | Reference only | Too small or restricted to depend on |
+| PyBroker, mlfinpy | Ideas ALPHA already has with tests | — | Reference only | Too small, or mlfinpy needs numpy 1 |
 | FinRL | Trains trial-and-error trading agents | — | Refused | A teaching framework; heavy; closes no row |
 | vectorbt | A fast backtest engine | — | Refused | Conflicts with ALPHA's pandas pin; a second engine |
 | bt, backtesting.py, zipline-reloaded, backtrader, Lean | Backtest engines | — | Refused | ALPHA has one engine and must judge with it |
@@ -102,7 +105,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | fredapi | Downloads macro series | — | Refused | Stale; ALPHA keeps its own dated store |
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
-| mlfinlab | Methods from a well-known textbook | — | Refused | Reported as no longer open source |
+| mlfinlab 0.12.3 (public archive) | The textbook methods, older code | — | Reference only | Answer key when the two disagree; needs pandas 1 |
 
 ## Notes on single rows
 

@@ -4,17 +4,18 @@ sources:
   - workers/qlib/**
   - workers/literature/**
   - workers/rdagent/**
+  - workers/afml/**
   - scripts/gate_components.py
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 98487c9592866f85
+verified: 58859cb2de36195c
 ---
 
 # Worker invariants
 
 What must hold for the isolated worker projects under `workers/`: the Qlib ML worker, the literature
-acquisition worker and the RD-Agent native-loop probe. The general rule is
+acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. The general rule is
 [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
 
 ## Shared rules
@@ -25,11 +26,12 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   [ADR-0016](../../adr/0016-isolated-qlib-worker.md).
 - No ALPHA package imports worker code. `alpha_cli` launches a worker as a subprocess and exchanges files
   or JSON with it. [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
-- The qlib and literature gates are `uv run python scripts/gate.py component qlib|literature` (CI jobs of the
-  same name). From `workers/<name>/` they run: `uv lock --check`, `uv sync --locked`,
+- The qlib, literature and afml gates are `uv run python scripts/gate.py component qlib|literature|afml`
+  (CI jobs `qlib-worker`, `literature-worker`, `afml-worker`). From `workers/<name>/` they run:
+  `uv lock --check`, `uv sync --locked`,
   `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
   `gate.py check` does not run worker tests.
-- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib and literature run strict mypy. The one exception is RD-Agent's stock
+- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
 
 ## Qlib worker
@@ -93,6 +95,24 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   exit. An invalid explicit cache fails before the worker starts.
 - Network work starts only from an explicit owner action, never from opening or refreshing a page. Only owner
   screening raises a claim from draft to screened.
+
+## AFML worker
+
+- The only environment with RiskLabAI, quantowl or numba ([ADR-0054](../../adr/0054-afml-worker.md)).
+  RiskLabAI is pinned from PyPI, quantowl by commit; `[tool.uv] exclude-newer` keeps every locked release
+  at least two weeks old. Never add either library to the root lock; never edit their code.
+- Two libraries, one answer: a value both implement leaves the worker only when they agree to 1e-10 (or,
+  for draws and event lists, exactly); otherwise `AgreementError`. A value only one implements is not
+  offered (negative time-decay weights are refused for that reason).
+- Triple-barrier labels default to ALPHA's convention (`basis="high_low"`): decide at the event bar's close,
+  enter at the next open, a barrier is touched when a bar's high or low reaches it, a gap through a barrier
+  exits at the open, and a bar reaching both is ambiguous: stop-first in the headline, the optimistic reading
+  beside it. `basis="close"` is the libraries' convention and exists for parity only.
+- Barrier widths and CUSUM thresholds use volatility from closes strictly before the event bar; nothing is
+  fitted on the sample. The vertical barrier is a bar count; an event that has neither touched a barrier
+  nor reached it is open and gets no label. `tests/test_labels.py` holds the truncation tests.
+- Only finished labels are weighted. Uniqueness and time decay depend on every label used, so training
+  weights are built with `uniqueness --train-end` (labels ended by then only; tested to ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.
 
 ## RD-Agent worker
 

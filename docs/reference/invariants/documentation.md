@@ -97,6 +97,11 @@ delivery states, the generated roadmap index, append-only records, and relative 
   `tests/unit/test_roadmap_index.py` fails on one.
 - A wanted feature with no plan is `docs/roadmap/backlog/<slug>.md` with `**Status:**` `Idea` or `Scoped` and
   `**Rough size:**` `S`, `M`, `L` or `XL` within its first 8 lines. Remove it when the work lands.
+- A backlog note also has `## Problem / why`, `## What "done" looks like` and `## Dependencies`.
+  Every capability id is traced to its checklist row in `docs/roadmap/capability-trace.md`, every
+  `alpha` command is named by a capability, and every component page has a `- **Plan:**` line
+  linking the roadmap; `tests/unit/test_filesystem_completeness.py` enforces all four.
+- Health-plan items not yet done are listed once, in `docs/roadmap/health-plan.md`.
 - A staged refactor is `docs/roadmap/refactors/<slug>.md` with `**Risk:**` `L`, `M` or `H` within its first
   8 lines. Copy an existing file's template.
 

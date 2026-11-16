@@ -60,6 +60,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.
 - Decision records: [ADR-0006](../../../adr/0006-two-tier-null-model.md),
   [ADR-0029](../../../adr/0029-four-family-monte-carlo-validation.md).
+- **Plan:** [stages 5 and 6](../../../roadmap/production-scope-2.md#5-overfit-tests) of the
+  checklist; [toolkit](../../../roadmap/backlog/afml-toolkit-worker.md).
 
 ## Decisions and open questions
 

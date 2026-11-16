@@ -54,6 +54,8 @@ trial ledger retains every attempt and labels repeats and development-machine da
   [ADR-0002](../../../adr/0002-cli-sole-composer-subprocess-surfaces.md),
   [ADR-0014](../../../adr/0014-cli-owned-development-control-plane.md),
   [ADR-0015](../../../adr/0015-evidence-ledger-not-agent-memory.md).
+- **Plan:** the verbs in [stage 8](../../../roadmap/production-scope-2.md#8-ai-partner) and records
+  in [stage 7](../../../roadmap/production-scope-2.md#7-records-and-memory) of the checklist.
 
 ## Decisions and open questions
 

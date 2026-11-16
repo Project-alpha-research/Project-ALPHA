@@ -43,6 +43,9 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - Runbook: [Codex investigations](../../../operations/codex-investigations.md).
 - Decision records: [ADR-0022](../../../adr/0022-codex-collaboration-surface.md),
   [ADR-0015](../../../adr/0015-evidence-ledger-not-agent-memory.md).
+- **Plan:** [stage 8](../../../roadmap/production-scope-2.md#8-ai-partner) of the checklist;
+  [QuantPad lessons](../../../roadmap/backlog/partner-grounding-from-quantpad.md),
+  [journey check](../../../roadmap/backlog/platform-journey-check.md).
 
 ## Decisions and open questions
 

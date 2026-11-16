@@ -16,7 +16,9 @@ decision to buy, sell or hold.
 
 Many market ideas are rules rather than machine-learning models. ALPHA needs a precise, causal way
 to state such a rule, so that the same rule can be backtested, checked statistically and later
-traded paper or live without changing its meaning.
+traded paper or live without changing its meaning. The owner's own chart setups are ideas of equal
+standing with RD-Agent's, judged by the same ledger and statistics
+([design brief](../owner-decisions-2.md#2026-11-14-the-retail-traders-fit-is-the-design-brief)).
 
 ## Its job in the research loop
 
@@ -49,6 +51,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
   [packages/alpha-patterns/CONTEXT.md](../../../../packages/alpha-patterns/CONTEXT.md).
 - Decision records: [ADR-0003](../../../adr/0003-t+1-fill-encoding.md),
   [ADR-0019](../../../adr/0019-governed-research-cases-before-strategy-development.md).
+- **Plan:** [stages 1 and 3](../../../roadmap/production-scope.md#3-look-before-testing) of the
+  checklist.
 
 ## Decisions and open questions
 

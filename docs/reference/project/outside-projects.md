@@ -85,7 +85,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | OpenBB | Ideas for a data-provider layer | — | Reference only | Dozens of packages; ADR-0011 decided this |
 | TradingAgents, FinGPT, FinRobot, TensorTrade | Examples of AI trading agents | — | Reference only | Promise results; short tests; no trading authority |
 | TimesFM, Chronos | General forecasting models | — | Reference only | A possible comparison for Kronos, later |
-| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA already has with tests | — | Reference only | Too small or restricted to depend on |
+| PyBroker, mlfinpy, RiskLabAI | Ideas ALPHA has with tests | — | Reference only | Too small; RiskLabAI superseded 2026-11-16 ([note][toolkit]) |
 | FinRL | Trains trial-and-error trading agents | — | Refused | A teaching framework; heavy; closes no row |
 | vectorbt | A fast backtest engine | — | Refused | Conflicts with ALPHA's pandas pin; a second engine |
 | bt, backtesting.py, zipline-reloaded, backtrader, Lean | Backtest engines | — | Refused | ALPHA has one engine and must judge with it |
@@ -102,7 +102,39 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | fredapi | Downloads macro series | — | Refused | Stale; ALPHA keeps its own dated store |
 | ib_async | Talks to Interactive Brokers | — | Refused | Nautilus already carries that link |
 | lightweight-charts-python, getFamaFrenchFactors, sec-edgar-downloader | Wrappers, downloaders | — | Refused | Stale, or do less |
-| mlfinlab | Methods from a well-known textbook | — | Refused | Reported as no longer open source |
+| mlfinlab | Methods from a well-known textbook | — | Refused | No readable code; an old copy is an answer key ([note][toolkit]) |
+
+## Judged in the November follow-up studies
+
+Judged on 2026-11-16 from public package pages; none installed. Added by the file-system audit
+so no verdict lives only in a private study. Rows already in a pull request are not repeated.
+
+| Project | What it does for ALPHA | How it is glued | State | Reason |
+|---|---|---|---|---|
+| MAPIE | Forecast ranges with measured coverage; drift alarm | — | Later | For the Kronos view; needs a parity test against a hand-made split |
+| river | Drift alarms on a live stream | — | Later | Paper-trading phase alerts |
+| statsforecast | Plain forecasts every model must beat | — | Later | A baseline gauntlet for Kronos and Qlib forecasts |
+| polars-ds | Rolling regressions inside Polars | — | Later | Only if ALPHA's own rolling regression stays |
+| dtaidistance | Lookalikes allowed to stretch in time | — | Later | Only if STUMPY proves too rigid; fixed warping window and cap |
+| tsdownsample, great-tables | Thin long series for screens; report tables | — | Later | Intraday charts; reports outside the Workstation |
+| PyMC, Bambi | Shrink many small, noisy edges together | — (a worker) | Later | Heavy; only in its own install |
+| scoringrules, pyextremes | Score forecasts; size tail losses | — | Later | Kronos scoring; "how bad can a day be" |
+| RiskLabAI, quantowl | Textbook methods: labels, weights, purged checks | — (a worker) | Later | Under study ([note][toolkit]) |
+| SEC EDGAR bulk files | Company filings dated by filing time | — (data source) | Later | Free; filing time is the known-from date |
+| Binance public bulk files | Funding and open-interest history | — (data source) | Later | Free, with checksums; re-hash on every pull |
+| CFTC and FINRA files | Futures positioning; short interest | — (data source) | Later | Free; publication delay must be checked first |
+| aeon, tslearn, wildboar | Time-series shapes and distances | — | Reference only | Overlap STUMPY; small or pin clashes |
+| darts, puncc, skchange | Forecasting, ranges, change points | — | Reference only | Overlap MAPIE, ruptures or a second framework |
+| PyPortfolioOpt, pyfixest, CausalPy | Baskets, panel regressions, event impact | — | Reference only | Overlap skfolio, linearmodels, the event study |
+| instructor, plotly-resampler, DVC, mem0 | AI output, charts, data versions, memory | — | Reference only | ALPHA has each already, or a second record |
+| finmlkit, mlfinpy, fracdiff, timeseriescv | Textbook pieces | — | Reference only | Pin clashes or idle; the toolkit study covers them |
+| Riskfolio-Lib | Portfolio risk models | — | Refused | Requires vectorbt, already refused |
+| DoWhy, tfcausalimpact, pycausalimpact | Cause-and-effect estimates | — | Refused | Pin clashes (SciPy, pandas, TensorFlow) or idle since 2020 |
+| granite-tsfm, polars-ols, mplfinance | Forecast models; regressions; charts | — | Refused | Unmaintained by their own account, or stale |
+| cot_reports, fluke, overfit, confseq | Positioning reader; overfitting tests | — | Refused | Stale or brand new with no users; read CFTC files directly |
+| PySR | Searches for formulas | — | Refused | A trial multiplier; installs a second language |
+
+[toolkit]: ../../roadmap/backlog/afml-toolkit-worker.md
 
 ## Notes on single rows
 

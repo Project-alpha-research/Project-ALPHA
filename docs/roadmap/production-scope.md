@@ -28,8 +28,9 @@ and the questions put to the owner are in [part 3](production-scope-3.md).
 - **Source.** A link to the owner decision, or one of: *private* (the owner's research, kept
   outside git and restated here in plain words only); [status] (the status page);
   [partner], [rd-all], [spine] (owner decisions of 2026-11-15 on the research partner, on using
-  everything RD-Agent has with memory first, and on the clean spine; recorded in pull request
-  182, which is not merged yet).
+  everything RD-Agent has with memory first, and on the clean spine, in [volume 3][spine] of the log).
+  Rows added by the file-system audit of 2026-11-16 restate private research ideas; their purpose,
+  reasoning and home are in the linked [backlog](README.md) notes.
 
 ## The three golden paths
 
@@ -49,24 +50,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-161 capabilities: 33 working, 54 built but unproven, 72 missing, 1 to rebuild,
-1 dropped by decision.
+183 capabilities: 34 working, 55 built but unproven, 92 missing, 1 to rebuild,
+1 dropped by decision (recounted 2026-11-16 after the file-system audit added 22 rows).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 2 | 8 | 0 | 0 |
-| 2. Data and context | 3 | 11 | 8 | 0 | 0 |
-| 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
-| 4. Backtest | 3 | 3 | 6 | 0 | 0 |
-| 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
-| 6. Diagnostics | 4 | 6 | 7 | 0 | 0 |
-| 7. Records and memory | 3 | 5 | 7 | 0 | 1 |
+| 1. Idea | 2 | 2 | 10 | 0 | 0 |
+| 2. Data and context | 3 | 11 | 9 | 0 | 0 |
+| 3. Look before testing | 0 | 7 | 4 | 0 | 0 |
+| 4. Backtest | 3 | 3 | 8 | 0 | 0 |
+| 5. Overfit tests | 6 | 8 | 5 | 0 | 0 |
+| 6. Diagnostics | 4 | 6 | 8 | 0 | 0 |
+| 7. Records and memory | 3 | 5 | 9 | 0 | 1 |
 | 8. AI partner | 2 | 4 | 7 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 3 | 3 | 8 | 0 | 0 |
-| 10. Screens | 1 | 3 | 10 | 0 | 0 |
-| 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
-| 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **33** | **54** | **72** | **1** | **1** |
+| 9. RD-Agent and Qlib engines | 3 | 3 | 10 | 0 | 0 |
+| 10. Screens | 1 | 3 | 11 | 0 | 0 |
+| 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
+| 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
+| **All** | **34** | **55** | **92** | **1** | **1** |
 
 ## 1. Idea
 
@@ -86,6 +87,8 @@ How a question, a chart observation or a paper becomes something testable.
 | Quick recorded first look at many ideas | Working | `alpha scan hypotheses` | Now | [status] |
 | Dated log of expectations and catalysts: rumour, fact, interpretation, action kept apart | Missing | new | Later | private |
 | The owner's market views logged as dated hypotheses with rival explanations | Missing | idea trail | Path 1 | private |
+| The AI frames a loose question: the decision it serves, horizon, baseline, kind of method | Missing | playbook; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
+| Data that cannot answer a question reported as a gap, never as a failed idea | Missing | `research/` route; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
 
 ## 2. Data and context
 
@@ -115,6 +118,7 @@ Prices, the universe, and the context a trader needs around them.
 | Bring in prices or the owner's own trades from a local file | Missing | backlog | Later | [grade] |
 | Provider checks and a job list for long downloads | Unproven | `alpha-cli` | Path 1 | [status] |
 | Download receipts and quota bookkeeping | Unproven | `alpha-data` (shelved) | Later | [triage] |
+| Free positioning data: futures positioning and short interest, dated when published | Missing | [register](../reference/project/outside-projects.md#judged-in-the-november-follow-up-studies) | Later | private |
 
 ## 3. Look before testing
 
@@ -131,6 +135,8 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Event-based sampling compared with fixed-time sampling | Missing | `alpha-research` | Later | private |
 | Descriptive first looks: gaps, distributions, seasonality | Unproven | `alpha-research` | Path 2 | [status] |
 | Dense multi-panel price charts, full screen, trade markers, two chart styles | Unproven | `alpha-web` charts | Path 2 | [ui] |
+| Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
+| Which came first after each match, target or stop, with still-open trades counted | Unproven | lifelines; pull request 213 | Path 2 | private |
 
 ## 4. Backtest
 
@@ -150,18 +156,20 @@ Simulating the idea with costs, against the right comparison.
 | Daily decision with intraday entry timing | Missing | `align_as_known` exists (PR #189); not yet usable from rules or strategies | Path 2 | [any-bar] |
 | Machine-learning models trained by Qlib and replayed with costs | Working | `workers/qlib` | Now | [status] |
 | Strategy development workspace (fixed approved steps) | Unproven | `alpha-strategies` | Later | [status] |
+| A new method compared with a plain baseline at the same data and trial budget | Missing | `alpha-validation`; [journey check](backlog/platform-journey-check.md) | Later | private |
+| An idea judged together with current holdings against an equal-weight basket | Missing | `alpha-backtest` | Later | private |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [free]: ../reference/project/owner-decisions-2.md#2026-11-14-free-real-data-on-the-dell-now
 [grade]: ../reference/project/owner-decisions-3.md#2026-11-15-what-production-grade-means
 [no-hft]: ../reference/project/owner-decisions-2.md#2026-11-14-never-high-frequency-trading
 [papers]: ../reference/project/owner-decisions.md#2026-11-14-literature-strengthens-rd-agents-proposal-step
-[partner]: https://github.com/tradingsystem1880-eng/Project-ALPHA/pull/182
+[partner]: ../reference/project/owner-decisions-3.md#2026-11-15-the-ai-must-be-a-research-partner-not-an-instruction-follower
 [precise]: ../reference/project/owner-decisions.md#2026-11-14-precision-and-live-capital
-[rd-all]: https://github.com/tradingsystem1880-eng/Project-ALPHA/pull/182
+[rd-all]: ../reference/project/owner-decisions-3.md#2026-11-15-adopt-everything-rd-agent-has-memory-first
 [retail]: ../reference/project/owner-decisions-2.md#2026-11-14-the-retail-traders-fit-is-the-design-brief
 [slim]: ../reference/project/owner-decisions-3.md#2026-11-15-always-slimmer
-[spine]: https://github.com/tradingsystem1880-eng/Project-ALPHA/pull/182
+[spine]: ../reference/project/owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over
 [status]: ../../STATUS.md
 [thin]: ../reference/project/owner-decisions-2.md#2026-11-14-thin-alpha-dramatically-rd-agent-and-qlib-are-the-proven-core
 [triage]: triage-2026-11.md

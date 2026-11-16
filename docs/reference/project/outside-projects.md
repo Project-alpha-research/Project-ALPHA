@@ -147,6 +147,12 @@ so no verdict lives only in a private study. Rows already in a pull request are 
 | granite-tsfm, polars-ols, mplfinance | Forecast models; regressions; charts | — | Refused | Unmaintained by their own account, or stale |
 | cot_reports, fluke, overfit, confseq | Positioning reader; overfitting tests | — | Refused | Stale or brand new with no users; read CFTC files directly |
 | PySR | Searches for formulas | — | Refused | A trial multiplier; installs a second language |
+| Vibe-Trading, StockSharp, Qbot, myhhub stock, two script collections | Ideas on grounding, fills, layout | — | Reference only | Read 2026-10-03 |
+| Moirai 2.0, TimeGPT, Lag-Llama, FinText, FinCast, Chronos-2, TimesFM 2.5 | More forecasting models | — | Later | Beside Kronos |
+| FinBERT family, Fin-R1, FinGPT, Qwen3 embedding and reranker | Finance text and retrieval models | — | Later | Only after a measured gap; Codex first |
+| PyOD, Ledoit-Wolf, CVXPY, cvxportfolio, EconML | Outliers, covariance, allocation, causal effects | — | Later | Each needs a named task first |
+| Docling, BM25 | Reads filings and papers | — | Later | Native structured data first |
+| investpy, findatapy, Twelve Data, QTPyLib, Moonshot, pybotters | Data and test helpers | — | Reference only | Overlap ALPHA |
 
 [toolkit]: ../../roadmap/backlog/afml-toolkit-worker.md
 

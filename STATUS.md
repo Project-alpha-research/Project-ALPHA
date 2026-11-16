@@ -142,11 +142,14 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Re-check the vendored Kronos copy against the glue rules — small (S)
+- Research-method ideas recovered from earlier material — medium (M)
+- Research-partner and screen ideas recovered from earlier material — medium (M)
 - Research-practice ideas from the owner's private research — medium (M)
 - Reviewer: checklists by folder and a required coverage list — small (S)
 - Risk stress scenarios that can move the drawdown — small (S)
 - Rule language: session, time of day, open and volume — medium (M)
 - Rule-test report: wording and basis papercuts — small (S)
+- Test-fixture ideas recovered from earlier material — medium (M)
 - Textbook machine-learning methods in their own pinned worker — large (L)
 - Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
@@ -154,7 +157,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 
 ## Housekeeping
 
-- Backlog items: 49
+- Backlog items: 52
 - Staged refactors: 6
 
 ## Where things are

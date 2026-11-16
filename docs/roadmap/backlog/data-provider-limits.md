@@ -14,6 +14,10 @@ Facts found in pull requests 190, 196 and 202 that live only in their descriptio
 - Free positioning data (futures positioning, short interest) and filing-dated company data are
   judged in the [register](../../reference/project/outside-projects.md#judged-in-the-november-follow-up-studies).
 
+Also unwritten: what happens when a free provider is down (failover and redundancy for the owner's
+sources) and crypto data quality (inflated exchange volume, outages that leave gaps, a venue that
+disappears).
+
 ## Where it would live
 
 The [data layer page](../../reference/project/components/data-layer.md) and the data invariants.

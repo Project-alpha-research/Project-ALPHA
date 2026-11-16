@@ -35,6 +35,8 @@ Telling a real edge from luck after many tries.
 | Labels with a target, a stop and a time limit; splits that respect multi-day labels | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
 | Second-opinion overfitting numbers and the minimum track record a result needs | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
 | Combined signals never count the same input twice as evidence | Missing | ledger; [practice](backlog/practitioner-research-ideas.md) | Later | private |
+| Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
+| Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 6. Diagnostics
 
@@ -61,6 +63,8 @@ Explaining a result: where the profit and the losses came from.
 | Stress scenarios that can move the drawdown | Missing | backlog | Later | [status] |
 | Kronos forecast ranges as an exploratory view | Unproven | `alpha-forecast` | Later | [kronos] |
 | Process, market exposure and chance told apart; capital tied up and for how long | Missing | `alpha diagnose` | Later | private |
+| Named crisis replays (2008, March 2020, the 2022 crypto bear, flash crashes) with settings unchanged | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
+| Synthetic crisis stress: correlations pushed toward one, liquidity that dries up, partial fills | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
 
 ## 7. Records and memory
 
@@ -86,6 +90,7 @@ What is kept, how it is labelled, and what the system remembers.
 | Staged research cases with an approval at each stage (the old lane) | Dropped | `alpha-research` | Path 1 | [thin] |
 | Conclusions flagged for review when their data or source is revised or withdrawn | Missing | idea folder; [practice](backlog/practitioner-research-ideas.md) | Later | private |
 | Each claim labelled descriptive, predictive or causal | Missing | run records; [practice](backlog/practitioner-research-ideas.md) | Later | private |
+| An earlier private pattern study kept as history and as a chart-setup test case | Missing | idea folder; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 
 ## 8. AI partner
 
@@ -107,6 +112,7 @@ The AI as a research partner that drives the toolbox from a prompt.
 | Platform journey check: seeded scenarios with a known cause, scored weekly | Rebuild | `alpha partner selftest` covers the answer-honesty part only: 25 planted answers, no model calls; not scheduled weekly | Path 1 | [slim] |
 | Small autonomous research team around RD-Agent | Missing | backlog | Later | [team] |
 | Text from papers and the web can never run tools or unlock anything | Unproven | `workers/literature` | Later | private |
+| Sources an answer actually used recorded, apart from sources only retrieved | Missing | `alpha-cli` results; [note](backlog/rescued-partner-ideas.md) | Later | private |
 | Call and dollar caps on RD-Agent's model use | Working | `workers/rdagent` gateway | Now | [status] |
 
 ## 9. RD-Agent and Qlib engines
@@ -135,6 +141,7 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Fractional differencing with d chosen on training data only | Unproven | `workers/afml` | Path 3 | [status] |
 | Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
 | A map of everything Qlib and RD-Agent offer, each item with a state | Missing | [coverage maps](backlog/engine-coverage-maps.md) | Path 3 | [rd-all] |
+| Feature attribution (SHAP-style) for tree models, tracked over time as an early drift warning | Missing | `workers/qlib`; [note](backlog/engine-coverage-maps.md) | Later | private |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [engines]: ../reference/project/owner-decisions.md#2026-11-14-the-architecture-in-one-line

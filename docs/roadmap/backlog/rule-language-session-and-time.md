@@ -20,6 +20,9 @@ end, so these are the main missing pieces for intraday swing-entry ideas.
   has closed, session high/low so far.
 - Optional cross conditions (state across two consecutive decision bars).
 - Each new source has a future-poison bias guard with a leaky twin.
+- Operands for a new high over a long window (a 52-week-high breakout) and for strength relative
+  to a benchmark, so the common momentum styles (own-history, cross-sectional top and bottom
+  slices, sector-neutral, breakout, volume-confirmed) can all be written as rules.
 
 ## Dependencies
 

@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+from pathlib import Path
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -36,7 +38,7 @@ primary = 5
 """
 
 
-def minimal(**updates):
+def minimal(**updates: Any) -> dict[str, Any]:
     data = {
         "setup": {
             "name": "test",
@@ -50,7 +52,7 @@ def minimal(**updates):
     return data
 
 
-def test_load_identity_and_frozen(tmp_path):
+def test_load_identity_and_frozen(tmp_path: Path) -> None:
     import tomllib
 
     toml = tmp_path / "setup.toml"
@@ -71,12 +73,12 @@ def test_load_identity_and_frozen(tmp_path):
     assert list(spec.filters) == ["three_below", "uptrend"]
     assert SetupSpec.load(spec.model_dump(mode="json")) == spec
     with pytest.raises(ValidationError):
-        spec.setup.name = "changed"
+        spec.setup.name = "changed"  # type: ignore[misc]
     with pytest.raises(TypeError):
-        spec.filters["new"] = "close > 1"
+        spec.filters["new"] = "close > 1"  # type: ignore[index]
 
 
-def test_filter_order_is_part_of_the_identity():
+def test_filter_order_is_part_of_the_identity() -> None:
     # Filter order decides the rejection reason, so swapped filters are a different spec.
     data = minimal(filters={"first": "close < 0", "second": "close > 99"})
     swapped = minimal(filters={"second": "close > 99", "first": "close < 0"})
@@ -90,7 +92,7 @@ def test_filter_order_is_part_of_the_identity():
 
 
 @pytest.mark.parametrize("section", ["context", "dates", "session"])
-def test_next_piece(section):
+def test_next_piece(section: str) -> None:
     with pytest.raises((DataError, ValidationError), match="next piece"):
         SetupSpec.load(minimal(**{section: {"x": 1}}))
     with pytest.raises((DataError, ValidationError), match="next piece"):
@@ -100,7 +102,7 @@ def test_next_piece(section):
 
 
 @pytest.mark.parametrize("section", [None, "setup", "trigger", "exit", "study"])
-def test_unknown_keys(section):
+def test_unknown_keys(section: str) -> None:
     data = minimal(
         trigger={"when": "close > 0", "within": 2}, study={"horizons": [1], "primary": 1}
     )
@@ -127,7 +129,7 @@ def test_unknown_keys(section):
         {"exit": {"opposite": "close"}},
     ],
 )
-def test_invalid_sections(update):
+def test_invalid_sections(update: dict[str, Any]) -> None:
     with pytest.raises((DataError, ValidationError)):
         SetupSpec.load(minimal(**update))
 
@@ -135,11 +137,11 @@ def test_invalid_sections(update):
 @pytest.mark.parametrize(
     "text, kind", [("2 atr(14)", "atr"), ("3 %", "percent"), ("prev(low)", "level")]
 )
-def test_exit_forms(text, kind):
+def test_exit_forms(text: str, kind: str) -> None:
     assert parse_exit(text).kind == kind
 
 
-def test_daily_only_and_suffix(tmp_path):
+def test_daily_only_and_suffix(tmp_path: Path) -> None:
     data = minimal()
     data["setup"]["timeframe"] = "1h"
     with pytest.raises((DataError, ValidationError)):
@@ -149,6 +151,6 @@ def test_daily_only_and_suffix(tmp_path):
 
 
 @pytest.mark.parametrize("name", ["warm-up", "no-trigger", "no-next-bar", "pending-trigger"])
-def test_filter_names_cannot_impersonate_built_in_reasons(name):
+def test_filter_names_cannot_impersonate_built_in_reasons(name: str) -> None:
     with pytest.raises((ValidationError, DataError), match="reserved"):
         SetupSpec.load(minimal(filters={name: "close > 1"}))

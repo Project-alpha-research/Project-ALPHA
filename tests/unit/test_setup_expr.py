@@ -1,6 +1,7 @@
 """Hand-computed trailing expressions and the closed syntax boundary."""
 
 import math
+from typing import Any
 
 import polars as pl
 import pytest
@@ -9,7 +10,7 @@ from alpha_core import DataError
 from alpha_study.setup import compile_expr
 
 
-def frame():
+def frame() -> pl.DataFrame:
     return pl.DataFrame(
         {
             "open": list(range(12)),
@@ -62,7 +63,7 @@ def frame():
         ("sma(prev(close, 2), 3)", [None] * 4 + list(range(2, 10)), 4),
     ],
 )
-def test_values(text, expected, warmup):
+def test_values(text: str, expected: list[Any], warmup: int) -> None:
     compiled = compile_expr(text)
     actual = frame().with_columns(compiled.expr.alias("value"))["value"].to_list()
     assert compiled.warmup == warmup
@@ -109,7 +110,7 @@ def test_values(text, expected, warmup):
         "abs(x=close)",
     ],
 )
-def test_rejected_syntax(text):
+def test_rejected_syntax(text: str) -> None:
     with pytest.raises(DataError, match="allowed"):
         compile_expr(text)
 
@@ -124,11 +125,11 @@ def test_rejected_syntax(text):
         "sma(close / 0, 2)",
     ],
 )
-def test_null_operands_propagate(text):
+def test_null_operands_propagate(text: str) -> None:
     assert frame().with_columns(compile_expr(text).expr.alias("v"))["v"].null_count() == 12
 
 
-def test_nonfinite_sources_and_overflow_are_null():
+def test_nonfinite_sources_and_overflow_are_null() -> None:
     bars = frame().with_columns(pl.Series("close", [math.nan, math.inf] + [1e308] * 10))
     values = bars.select(compile_expr("close * 2").expr)["close"].to_list()
     assert values == [None] * 12
@@ -143,11 +144,11 @@ def test_nonfinite_sources_and_overflow_are_null():
         ("for_bars(2 > 1, 3)", [None] * 2 + [True] * 10),
     ],
 )
-def test_windowed_literals_broadcast_per_bar(text, expected):
+def test_windowed_literals_broadcast_per_bar(text: str, expected: list[Any]) -> None:
     assert frame().with_columns(compile_expr(text).expr.alias("v"))["v"].to_list() == expected
 
 
-def test_atr_accounts_for_gaps_and_nested_warmup():
+def test_atr_accounts_for_gaps_and_nested_warmup() -> None:
     source = frame().with_columns(
         pl.Series("close", [10, 20, 5] + [10] * 9),
         pl.Series("high", [12, 22, 7] + [12] * 9),
@@ -160,7 +161,7 @@ def test_atr_accounts_for_gaps_and_nested_warmup():
     assert compile_expr("prev(ema(sma(close, 4), 3), 2)").warmup == 7
 
 
-def test_rolling_null_window_does_not_skip_missing_values():
+def test_rolling_null_window_does_not_skip_missing_values() -> None:
     source = frame().with_columns(pl.Series("volume", [1, 2, None, 4, 5, 6] + [7] * 6))
     for fn in ["sma", "highest", "lowest"]:
         values = source.select(compile_expr(f"{fn}(volume, 3)").expr.alias("v"))["v"].to_list()
@@ -168,7 +169,7 @@ def test_rolling_null_window_does_not_skip_missing_values():
         assert values[5] is not None
 
 
-def test_null_inside_a_window_counts_as_false_not_unknown():
+def test_null_inside_a_window_counts_as_false_not_unknown() -> None:
     # Review finding: one missing volume must not turn within_bars/for_bars null for n bars.
     source = frame().with_columns(pl.Series("volume", [60.0] * 6 + [None] + [60.0] * 5))
     within = source.select(compile_expr("within_bars(volume > 50, 5)").expr)["volume"]
@@ -187,12 +188,12 @@ def test_null_inside_a_window_counts_as_false_not_unknown():
         "sma(" * 40 + "close" + ", 2)" * 40,
     ],
 )
-def test_oversized_expressions_fail_loud_not_hang(text):
+def test_oversized_expressions_fail_loud_not_hang(text: str) -> None:
     with pytest.raises(DataError, match="too large|too deep"):
         compile_expr(text)
 
 
-def test_largest_allowed_expression_evaluates_quickly():
+def test_largest_allowed_expression_evaluates_quickly() -> None:
     import time
 
     # Every wrapped node is cheap: the tree must not double per level.
@@ -203,7 +204,7 @@ def test_largest_allowed_expression_evaluates_quickly():
     assert values[0] == 31
 
 
-def test_event_operators_count_a_null_condition_as_false():
+def test_event_operators_count_a_null_condition_as_false() -> None:
     # The decision: a null boolean counts as false. Only the static window warm-up is null.
     for text in ["within_bars(close / 0 > 1, 2)", "for_bars(close / 0 > 1, 2)"]:
         values = frame().with_columns(compile_expr(text).expr.alias("v"))["v"].to_list()

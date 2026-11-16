@@ -3,7 +3,9 @@
 import math
 import random
 import tomllib
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import polars as pl
 import pytest
@@ -15,11 +17,15 @@ from tests.unit.test_setup_spec import EXAMPLE, minimal
 
 pytestmark = pytest.mark.bias_guard
 
+Decision = Callable[
+    [int, SetupSpec, dict[str, list[Any]], int], tuple[str | None, str | None, int | None]
+]
+
 
 OHLCV = ("open", "high", "low", "close", "volume")
 
 
-def rich_bars(n, seed=7):
+def rich_bars(n: int, seed: int = 7) -> pl.DataFrame:
     """A random walk where open, close and volume all differ: no degenerate comparisons."""
     rng = random.Random(seed)
     close, rows = 100.0, []
@@ -34,7 +40,7 @@ def rich_bars(n, seed=7):
     return frame.with_columns(pl.Series("ts", stamps))
 
 
-def variants(frame, k, *, evaluator=False):
+def variants(frame: pl.DataFrame, k: int, *, evaluator: bool = False) -> list[pl.DataFrame]:
     """(a) full, (b) truncated after k, (c) x1000 after k, (d) huge but valid after k,
     (e) volume missing after k, and for raw expressions (f) NaN everywhere after k
     (the evaluator itself refuses non-finite bars, so (f) is expression-only)."""
@@ -69,7 +75,7 @@ def variants(frame, k, *, evaluator=False):
     return out
 
 
-def assert_prefix(expr, frame, k):
+def assert_prefix(expr: pl.Expr, frame: pl.DataFrame, k: int) -> None:
     results = [
         variant.with_columns(expr.alias("value")).select("value").head(k + 1)
         for variant in variants(frame, k)
@@ -78,10 +84,10 @@ def assert_prefix(expr, frame, k):
         assert_frame_equal(results[0], result, check_exact=True)
 
 
-def generated_expressions():
+def generated_expressions() -> list[str]:
     rng = random.Random(1401)
 
-    def number(depth):
+    def number(depth: int) -> str:
         if depth == 0:
             # 0 is in the leaves so division by zero is generated too.
             return rng.choice(["open", "high", "low", "close", "volume", "2", "0", "1.5"])
@@ -98,7 +104,7 @@ def generated_expressions():
             return f"{rng.choice(['prev', 'pct_change'])}({x}, n={rng.randint(1, 5)})"
         return f"({x} {rng.choice(['+', '-', '*', '/'])} {number(depth - 1)})"
 
-    def boolean(depth):
+    def boolean(depth: int) -> str:
         if depth == 0:
             return f"({number(1)} {rng.choice(['<', '<=', '>', '>=', '==', '!='])} {number(1)})"
         choice = rng.randrange(7)
@@ -116,7 +122,7 @@ def generated_expressions():
     return [number(3) if i % 2 else boolean(2) for i in range(220)]
 
 
-def test_generated_expression_prefixes():
+def test_generated_expression_prefixes() -> None:
     expressions = generated_expressions()
     assert len(set(expressions)) >= 200
     # Every vocabulary term and operator appears in the generated set.
@@ -142,7 +148,7 @@ ENTRY = ["entry_ts", "entry_price"]
 OUTCOME = ["status", "reason", "detail", "trigger_ts", *ENTRY]
 
 
-def assert_candidates_causal(spec, source, k):
+def assert_candidates_causal(spec: SetupSpec, source: pl.DataFrame, k: int) -> dict[str, int]:
     """Compare every candidate whose event is at or before k across the future variants.
 
     What may legitimately differ, and nothing else:
@@ -202,7 +208,7 @@ def assert_candidates_causal(spec, source, k):
     return counts
 
 
-def assert_next_open(candidates, source):
+def assert_next_open(candidates: pl.DataFrame, source: pl.DataFrame) -> None:
     """Entry is always the open of the bar after the trigger: never the trigger bar itself
     (decided at its close) and never later. Prefix poisoning cannot see this, so check it."""
     stamps, opens = source["ts"].to_list(), source["open"].to_list()
@@ -217,7 +223,7 @@ def assert_next_open(candidates, source):
         assert row["entry_price"] == opens[trigger + 1]
 
 
-def breakout_case():
+def breakout_case() -> tuple[SetupSpec, pl.DataFrame]:
     breakout = minimal(
         filters={"volume": "volume > prev(volume)"},
         reference={"level": "prev(highest(high, 3))"},
@@ -230,7 +236,7 @@ def breakout_case():
     return SetupSpec.load(breakout), frame
 
 
-def delayed_trigger_case():
+def delayed_trigger_case() -> tuple[SetupSpec, pl.DataFrame]:
     """A pullback whose trigger comes on a later bar, or not at all, inside the window."""
     delayed = minimal(
         reference={"avg": "sma(close, 5)"}, trigger={"when": "close > prev(high)", "within": 1}
@@ -239,7 +245,7 @@ def delayed_trigger_case():
     return SetupSpec.load(delayed), breakout_case()[1]
 
 
-def test_example_and_breakout_candidate_prefixes():
+def test_example_and_breakout_candidate_prefixes() -> None:
     totals = {"full": 0, "edge": 0, "open": 0}
     example = SetupSpec.load(tomllib.loads(EXAMPLE))
     rich = rich_bars(90, seed=11)
@@ -251,6 +257,7 @@ def test_example_and_breakout_candidate_prefixes():
         (delayed_trigger_case()[0], rich),
     ]
     for spec, source in cases:
+        assert spec.trigger is not None
         texts = [
             spec.setup.event,
             *spec.filters.values(),
@@ -269,16 +276,18 @@ def test_example_and_breakout_candidate_prefixes():
     assert {None, "no-trigger"} <= reasons, reasons
 
 
-def test_guard_catches_deliberately_leaky_twin():
+def test_guard_catches_deliberately_leaky_twin() -> None:
     with pytest.raises(AssertionError):
         assert_prefix(pl.col("close").shift(-1), bars(list(range(20))), 8)
 
 
-def _leaky_decision(reach):
+def _leaky_decision(reach: int) -> Decision:
     """A twin of the real decision whose trigger search reaches `reach` bars past the window."""
     real = evaluate._decision
 
-    def decision(i, spec, values, length):
+    def decision(
+        i: int, spec: SetupSpec, values: dict[str, list[Any]], length: int
+    ) -> tuple[str | None, str | None, int | None]:
         if spec.trigger is None:
             return real(i, spec, values, length)
         widened = spec.model_copy(
@@ -294,7 +303,9 @@ def _leaky_decision(reach):
     return decision
 
 
-def test_guard_catches_an_evaluator_that_searches_past_the_window(monkeypatch):
+def test_guard_catches_an_evaluator_that_searches_past_the_window(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(evaluate, "_decision", _leaky_decision(1))
     spec, source = delayed_trigger_case()
     with pytest.raises(AssertionError):
@@ -302,7 +313,7 @@ def test_guard_catches_an_evaluator_that_searches_past_the_window(monkeypatch):
             assert_candidates_causal(spec, source, k)
 
 
-def test_guard_catches_entry_at_the_trigger_bar_open():
+def test_guard_catches_entry_at_the_trigger_bar_open() -> None:
     spec, source = breakout_case()
     honest = find_candidates(spec, source, symbol="BTC/USDT")
     assert_next_open(honest, source)
@@ -318,7 +329,7 @@ def test_guard_catches_entry_at_the_trigger_bar_open():
         assert_next_open(leaky, source)
 
 
-def test_guard_catches_a_leak_hidden_behind_nan_and_null():
+def test_guard_catches_a_leak_hidden_behind_nan_and_null() -> None:
     # A leak that reads a later row only through a null/NaN path is still caught.
     frame = rich_bars(40)
     with pytest.raises(AssertionError):

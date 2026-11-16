@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-242 commands in 29 groups. Options marked (required) are
+245 commands in 30 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -334,8 +334,8 @@ Governed research cases, contracts, sources, and bounded runs.
 
 List rule tests and quote their stored results.
 
-- `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--json`
-- `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks and chart names for a run or test. Options: `--json`
+- `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--tool-output`, `--json`
+- `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks, tool outputs and chart names. Options: `--json`
 
 ## alpha risk
 
@@ -388,6 +388,14 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 ## alpha test
 
 - `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +6 more
+
+## alpha tool
+
+Investigate a recorded rule test: market exposure, market regimes and change points.
+
+- `alpha tool attribution <RUN_ID>` — How much of the run's return is benchmark exposure (beta) and what is left (alpha… Options: `--benchmark`, `--json`
+- `alpha tool changepoints <RUN_ID>` — Dates at which the run's behaviour shifted; a hindsight description, never a sig… Options: `--on`, `--json`
+- `alpha tool regimes <RUN_ID>` — Whether the run earns its return in calm or in turbulent markets. Options: `--market`, `--k`, `--json`
 
 ## alpha validate
 

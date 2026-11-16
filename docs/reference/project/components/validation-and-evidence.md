@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: c471d54c14daa489
+verified: 117a03295cbe541a
 ---
 
 # Validation and evidence
@@ -43,12 +43,19 @@ through `alpha results` and `alpha diagnose`; flags identify observations to exa
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
 retain the basis and source for each number, including a reason when it is unavailable.
 
+Three follow-up [investigation tools](../../invariants/cli-runs.md#investigation-tools) answer
+questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
+return is market exposure, with Newey-West uncertainty), `alpha tool regimes` (calm versus
+turbulent markets from a Markov-switching model) and `alpha tool changepoints` (dates where the
+behaviour shifted). They are glue over statsmodels and ruptures, write no new statistics, and
+label what they cannot avoid: `hindsight`, `parameters-fit-in-sample`, `benchmark-is-same-asset`.
+
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `investigation-tools`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

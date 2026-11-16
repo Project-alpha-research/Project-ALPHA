@@ -14,6 +14,8 @@ from typing import Any
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.trial_record import FACTOR_SCHEMAS, TrialRecord, map_row
 
+READER_VERSION = 1
+
 
 @dataclass(frozen=True)
 class LedgerSource:

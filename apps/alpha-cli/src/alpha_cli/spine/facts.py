@@ -12,7 +12,7 @@ from alpha_cli.spine.errors import SpineError
 METRICS = {
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
-    "dsr": "The validation gauntlet's stored deflated Sharpe probability.",
+    "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
     **{
         f"{prefix}_{metric}": f"{label} {meaning}."
         for prefix, label in (
@@ -33,7 +33,11 @@ METRICS = {
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
     "total_trials": "Ledger trial count observed for this diagnostic pass.",
-    "trial_dsr": "Deflated Sharpe using available symbol trials and sensitivity variants.",
+    "trial_dsr": "Deflated Sharpe using the idea family's trial count from the one ledger.",
+    "family_trials": (
+        "Trials counted for the deflated Sharpe: the idea's family in the one ledger, "
+        "this run and its variants."
+    ),
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
 # Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
@@ -50,6 +54,7 @@ METRIC_UNITS = {
     "delay_base_sharpe": "ratio",
     "delayed_sharpe": "ratio",
     "total_trials": "count",
+    "family_trials": "count",
     "trial_dsr": "fraction",
     "variants_evaluated": "count",
     **{
@@ -95,7 +100,12 @@ _FIELDS = {
             ("delay_base_sharpe", "delay.base_sharpe", "returns-level approximation"),
             ("delayed_sharpe", "delay.delayed_sharpe", "returns-level approximation"),
             ("total_trials", "trials.total_trials", "ledger at the time of the run"),
-            ("trial_dsr", "trials.dsr", "available symbol trial Sharpes and sensitivity variants"),
+            ("trial_dsr", "trials.dsr", "one trial ledger, idea family at the time of the run"),
+            (
+                "family_trials",
+                "trials.family.n_trials_used",
+                "one trial ledger, idea family at the time of the run",
+            ),
             ("variants_evaluated", "variants_evaluated", "full-sample sensitivity engine re-runs"),
         )
     },
@@ -122,6 +132,8 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
             parent = parent.get(part, {})
         value = parent.get(parts[-1])
         reason = parent.get("reasons", {}).get(parts[-1]) or f"{filename}:{field} is unavailable"
+        if metric == "family_trials" and value is None:
+            reason = "recorded before family counts were used"
         facts.append(
             {
                 "metric": metric,

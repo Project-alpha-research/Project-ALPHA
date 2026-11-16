@@ -113,7 +113,11 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         name=row.get("name"),
         spec_hash=row.get("spec_sha256"),
         assets=(row["symbol"],) if row.get("symbol") else (),
-        bar_size="1D" if row.get("periods_per_year") in (252, 365) else None,
+        bar_size=row["bar_size"]
+        if isinstance(row.get("bar_size"), str) and row["bar_size"]
+        else "1D"
+        if row.get("periods_per_year") in (252, 365)
+        else None,
         windows={"data_start": row.get("first_ts"), "data_end": row.get("last_ts")},
         outcome=outcome,
         raw_status=status,

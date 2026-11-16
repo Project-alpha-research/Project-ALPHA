@@ -17,11 +17,11 @@ from alpha_cli._strategies import surrogate_for
 from alpha_cli.artifact_contract import artifact_contract, verify_manifest_artifacts
 from alpha_cli.spine import diagnostics as d
 from alpha_cli.spine.audit import audit
-from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.deflation import count_snapshot, deflate, family_sharpes, spine_snapshot
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.spec import IdeaSpec, Rule
-from alpha_core import Bar, CorporateAction, DataError
-from alpha_validation.dsr import deflated_sharpe
+from alpha_cli.spine.trial_reader import LedgerSnapshot
+from alpha_core import Bar, CorporateAction
 from alpha_validation.metrics import to_returns
 
 
@@ -58,9 +58,18 @@ def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str,
 
 
 def trials(
-    home: Path, symbol: str, returns: Any, ppy: int, variants: list[dict[str, Any]]
+    home: Path,
+    symbol: str,
+    returns: Any,
+    ppy: int,
+    variants: list[dict[str, Any]],
+    rule_kind: str,
+    *,
+    snapshot: LedgerSnapshot | None = None,
 ) -> dict[str, Any]:
-    rows = read_trials(home)
+    snapshot = snapshot if snapshot is not None else spine_snapshot(home)
+    count = count_snapshot(snapshot, rule_kind)
+    rows = list(snapshot.raw_rows.values())
     sharpes = [
         row["oos_sharpe"] / math.sqrt(row["periods_per_year"])
         for row in rows
@@ -68,27 +77,34 @@ def trials(
         and row.get("oos_sharpe") is not None
         and row.get("periods_per_year")
     ]
-    current, reason = d.score(returns, ppy)
+    current, _ = d.score(returns, ppy)
     if current is not None:
         sharpes.append(current / math.sqrt(ppy))
     sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
-    value = None
-    if len(sharpes) < 2:
-        reason = "fewer than two available trial Sharpes"
-    elif reason is None:
-        try:
-            value = deflated_sharpe(returns, trial_sharpes=sharpes).dsr
-        except DataError as exc:
-            reason = str(exc)
+    variants_scored = sum(v["sharpe"] is not None for v in variants)
+    n_trials = count.prior_trials + 1 + count.unknown_rows + variants_scored
+    value = deflate(returns, sharpes, n_trials)
     return {
         "basis": (
-            "walk-forward out-of-sample returns; same-symbol ledger OOS and "
-            "this run's full-sample variants, in per-observation Sharpe units"
+            "walk-forward out-of-sample returns; variance from same-symbol ledger OOS and "
+            "this run's variants; trial count from the idea's family in the one trial ledger"
         ),
-        "total_trials": len(rows) + 1,
+        "total_trials": count.ledger_rows + 1,
         "available_sharpes": len(sharpes),
-        "dsr": value,
-        "reasons": {"dsr": reason} if value is None else {},
+        **value,
+        "family": {
+            "family_id": count.family_id,
+            "prior_trials": count.prior_trials,
+            "this_run": 1,
+            "variants_scored": variants_scored,
+            "unknown_rows": count.unknown_rows,
+            "n_trials": n_trials,
+            "available_sharpes": len(sharpes),
+            "n_trials_used": value["n_trials_used"],
+            "ledger": "ledger/trials.jsonl",
+            "ledger_rows": count.ledger_rows,
+            "reader_version": count.reader_version,
+        },
     }
 
 
@@ -129,7 +145,7 @@ def write_diagnostics(
     identity: RunIdentity,
     home: Path,
     result: dict[str, Any],
-) -> None:
+) -> _gauntlet.GauntletOutput:
     rdir = Path(result["run_dir"])
     # These exact sidecars are reused by write_validation_run's idempotent publication seam.
     _artifacts.write_run_sidecars(
@@ -192,7 +208,19 @@ def write_diagnostics(
     returns = to_returns([float(bar.close) for bar in bars])
     weights, costs = surrogate_for(spec).weights_and_costs(returns)
     document["delay"] = d.delay(returns, weights, costs, ppy)
-    document["trials"] = trials(home, bars[0].symbol, out.oos.oos_returns, ppy, variants)
+    snapshot = spine_snapshot(home)
+    document["trials"] = trials(
+        home, bars[0].symbol, out.oos.oos_returns, ppy, variants, idea.rule.kind, snapshot=snapshot
+    )
+    result["deflation"] = document["trials"]["family"]
+    sharpes = family_sharpes(snapshot, result["deflation"]["family_id"])
+    current, _ = d.score(out.oos.oos_returns, ppy)
+    if current is not None:
+        sharpes.append(current / math.sqrt(ppy))
+    sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
+    out = _gauntlet.apply_trial_deflation(
+        out, sharpes, result["deflation"]["family_id"], result["deflation"]["n_trials_used"]
+    )
     document["macro_window"] = macro_window(home, document["drawdowns"]["episodes"])
     document["flags"] = d.flags(document)
     document["audit"] = audit(
@@ -209,3 +237,4 @@ def write_diagnostics(
         variants=len(variants),
     )
     _publish(rdir, document, identity)
+    return out

@@ -15,6 +15,7 @@ import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _gauntlet, _runner, rules_cmds
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine.deflation import validation_family
 from alpha_core import Bar, DataError
 from alpha_core.config import AlphaSettings
 from alpha_validation import render_tearsheet_html, report_to_manifest
@@ -144,7 +145,6 @@ def validate(
             snapshot_id=snapshot,
             as_of=research_cutoff,
         )
-        # kronos: precompute the signal cache and pin its key on the spec (no-op otherwise)
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(
             bars, spec, data_dir=settings.data_dir, seed=resolved_seed
         )
@@ -182,6 +182,7 @@ def validate(
             snapshot_id=snapshot_id,
             dividends=dividends,
             tier2_spec_for_path=tier2_spec_for_path,
+            **validation_family(settings.data_dir, strategy),
         )
     except DataError as exc:  # no bars, unknown strategy/null-model, train < warmup floor, etc.
         raise typer.BadParameter(str(exc)) from exc
@@ -241,6 +242,11 @@ def write_validation_run(
     rdir = _artifacts.run_dir(data_dir, identity.run_id)
     equity = list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True))
     manifest = report_to_manifest(out.report)
+    if manifest.get("dsr") is not None and manifest.get("verdict") is not None:
+        manifest["verdict"]["n_trials"] = manifest["dsr"]["n_trials"]
+        manifest["verdict"]["trial_basis"] = manifest["dsr"].get(
+            "trial_basis", "no ledger family: counted as one trial"
+        )
     manifest["command"] = "validate"
     manifest["research_cutoff"] = as_of
     manifest["oos_semantics"] = "fixed_rule_evaluation_no_refit"

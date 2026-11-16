@@ -207,8 +207,6 @@ def test_observation_thresholds(share: float, top: float, benchmark: float, expe
 def test_trials_normalize_each_frequency_and_count_current(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from types import SimpleNamespace
-
     from alpha_cli.spine import diagnose
     from alpha_cli.spine.ledger import append_trial
 
@@ -218,17 +216,24 @@ def test_trials_normalize_each_frequency_and_count_current(
     )
     seen: list[float] = []
 
-    def dsr(returns: object, *, trial_sharpes: list[float]) -> SimpleNamespace:
-        seen.extend(trial_sharpes)
-        return SimpleNamespace(dsr=0.75)
+    from alpha_cli.spine.deflation import deflate
 
-    monkeypatch.setattr(diagnose, "deflated_sharpe", dsr)
-    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}])
+    original = deflate
+
+    def dsr(returns: list[float], trial_sharpes: list[float], n_trials: int) -> dict[str, object]:
+        seen.extend(trial_sharpes)
+        result = original(returns, trial_sharpes, n_trials)
+        if result["dsr"] is not None:
+            result["dsr"] = 0.75
+        return result
+
+    monkeypatch.setattr(diagnose, "deflate", dsr)
+    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}], "ma_cross")
     assert result["total_trials"] == 3
     assert result["dsr"] == pytest.approx(0.75)
     assert seen[0] == pytest.approx(1)
     assert seen[-1] == pytest.approx(2)
-    result = diagnose.trials(tmp_path / "empty", "SPY", [0.1, -0.1, 0.2], 4, [])
+    result = diagnose.trials(tmp_path / "empty", "SPY", [0.1, -0.1, 0.2], 4, [], "ma_cross")
     assert result["dsr"] is None
     assert result["reasons"]["dsr"]
 
@@ -261,14 +266,14 @@ def test_variants_skip_unchanged_neighbour_and_move_tsmom_lookback() -> None:
 def test_trials_report_a_refused_dsr_as_its_reason(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from alpha_cli.spine import diagnose
+    from alpha_cli.spine import deflation, diagnose
     from alpha_core import DataError
 
-    def refuse(returns: object, *, trial_sharpes: list[float]) -> None:
+    def refuse(variance: float, n_trials: int) -> None:
         raise DataError("degenerate trial Sharpes")
 
-    monkeypatch.setattr(diagnose, "deflated_sharpe", refuse)
-    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}])
+    monkeypatch.setattr(deflation, "expected_max_sharpe", refuse)
+    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}], "ma_cross")
     assert result["available_sharpes"] == 2
     assert result["dsr"] is None
     assert result["reasons"] == {"dsr": "degenerate trial Sharpes"}

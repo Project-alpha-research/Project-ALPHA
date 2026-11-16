@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from importlib.metadata import version
 from typing import TYPE_CHECKING
 
@@ -25,6 +25,7 @@ from alpha_cli._seeds import semantic_seeds
 from alpha_cli._strategies import surrogate_for
 from alpha_cli._surrogate import Surrogate
 from alpha_cli._synth import bar_permutation_null, full_engine_null
+from alpha_cli.spine.deflation import deflate
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation import (
     CISummary,
@@ -118,10 +119,11 @@ def run_gauntlet(
     snapshot_id: str | None,
     dividends: Sequence[CorporateAction] = (),
     tier2_spec_for_path: Callable[[list[Bar]], RunSpec] | None = None,
+    trial_sharpes: Sequence[float] | None = None,
+    trial_family: str | None = None,
+    trial_count: int = 1,
 ) -> GauntletOutput:
     """Run the full gauntlet over ``bars`` and assemble the ``GauntletReport``."""
-    # Validate the Tier-1 null choice up front with the full accepted set (the deeper parametric
-    # check only knows student_t/garch and would omit the default, "bootstrap").
     if params.null_model not in ("bootstrap", "student_t", "garch"):
         raise DataError(
             f"unknown null model {params.null_model!r}; known: 'bootstrap', 'student_t', 'garch'"
@@ -134,8 +136,6 @@ def run_gauntlet(
             "prop-firm runs."
         )
     if params.seed is None:
-        # SeedSequence(None) draws OS entropy: the run would be irreproducible while the manifest
-        # still records a seed - a silent violation of the determinism contract (spec 11.4).
         raise DataError("gauntlet seed must be an explicit integer for reproducibility, got None")
     if params.tier2_mode not in ("replay", "model"):
         raise DataError(f"unknown tier2 mode {params.tier2_mode!r}; known: 'replay', 'model'")
@@ -144,6 +144,10 @@ def run_gauntlet(
     ppy = spec.periods_per_year
     oos, result = fresh_oos_execution(bars, spec, dividends=dividends)
     oos_metrics = _oos_metrics(oos, ppy)
+    if trial_family is not None:
+        trial_sharpes = list(trial_sharpes or [])
+        if _has_variance(oos.oos_returns):
+            trial_sharpes.append(sharpe_ratio(oos.oos_returns, periods_per_year=1))
 
     child_seeds = semantic_seeds(
         params.seed,
@@ -163,8 +167,6 @@ def run_gauntlet(
     cagr_seed = child_seeds["validation.cagr_ci"]
     ruin_seed = child_seeds["validation.risk_of_ruin"]
 
-    # Risk-of-ruin is undefined on a flat OOS (no path to draw down); leave it NaN there so the
-    # Verdict's risk dimension fails rather than reading a spurious 0.0 "no ruin".
     oos_metrics["risk_of_ruin"] = (
         risk_of_ruin(
             oos.oos_returns,
@@ -194,13 +196,14 @@ def run_gauntlet(
             _degenerate_ci("sharpe", params.confidence),
             _degenerate_ci("cagr", params.confidence),
         )
-        dsr = _degenerate_dsr(params.dsr_threshold)
+        dsr = _degenerate_dsr(
+            params.dsr_threshold, trial_family, max(trial_count, len(trial_sharpes or []))
+        )
         cpcv = _degenerate_cpcv()
     else:
         safe_sharpe = safe_sharpe_statistic(ppy)
         # Tier 1 — cheap returns-level null: the strategy's surrogate on synthetic return paths.
-        # "bootstrap" resamples the observed returns; "student_t"/"garch" draw from a fat-tailed
-        # parametric model (heavier-tailed / volatility-clustered → a more adversarial null).
+        # "bootstrap" resamples observed returns; "student_t"/"garch" draw fat-tailed paths.
         # The statistic is scored on the walk-forward OOS index window (not the full sample), so
         # Tier-1's observed measures the same window as Tier-2 and every other gate.
         price_returns = to_returns(np.array([b.close for b in bars], dtype=np.float64))
@@ -273,8 +276,6 @@ def run_gauntlet(
             _null_summary("bar_permutation", tier3),
         )
 
-        # Block-bootstrap BCa CIs on the OOS returns (cagr from the resampled equity path). The
-        # safe Sharpe treats a zero-variance resample as 0.0 so a sparse OOS can't abort the CI.
         sharpe_ci = block_bootstrap_ci(
             oos.oos_returns,
             safe_sharpe,
@@ -293,9 +294,9 @@ def run_gauntlet(
         )
         cis = (_ci_summary("sharpe", sharpe_ci), _ci_summary("cagr", cagr_ci))
 
-        # Deflated/Probabilistic Sharpe on the OOS stream (single-config: n_trials=1 → DSR=PSR) and
-        # the CPCV distribution of OOS Sharpe across combinatorial time-slice folds.
-        dsr = _dsr_summary(oos.oos_returns, params.dsr_threshold)
+        dsr = _dsr_summary(
+            oos.oos_returns, params.dsr_threshold, trial_sharpes, trial_family, trial_count
+        )
         cpcv = _cpcv_summary(oos.oos_returns, params, ppy)
 
     outcomes = build_outcomes(oos_metrics=oos_metrics, nulls=nulls, cis=cis, dsr=dsr, cpcv=cpcv)
@@ -462,30 +463,107 @@ def _degenerate_ci(metric: str, confidence: float) -> CISummary:
     )
 
 
-def _dsr_summary(oos_returns: FloatArray, threshold: float) -> DSRSummary:
-    """Deflated/Probabilistic Sharpe of the OOS stream (single config → n_trials=1, DSR=PSR)."""
-    res = deflated_sharpe(oos_returns, threshold=threshold)
-    return DSRSummary(
-        sharpe=res.sharpe,
-        psr=res.psr,
-        dsr=res.dsr,
-        expected_max_sharpe=res.expected_max_sharpe,
-        n_trials=res.n_trials,
-        threshold=res.threshold,
-        passed=res.passed,
+@dataclass(frozen=True)
+class TrialDSRSummary(DSRSummary):
+    trial_basis: str = "no ledger family: counted as one trial"
+    reason: str | None = None
+
+
+def _trial_basis(family: str | None, count: int) -> str:
+    return (
+        f"ledger family {family}, {count} trials"
+        if family
+        else "no ledger family: counted as one trial"
     )
 
 
-def _degenerate_dsr(threshold: float) -> DSRSummary:
+def _dsr_summary(
+    oos_returns: FloatArray,
+    threshold: float,
+    trial_sharpes: Sequence[float] | None = None,
+    trial_family: str | None = None,
+    trial_count: int = 1,
+) -> TrialDSRSummary:
+    """Use Bailey & López de Prado (2014) through the public package functions."""
+    res = deflated_sharpe(oos_returns, threshold=threshold, trial_sharpes=trial_sharpes)
+    count = max(trial_count, res.n_trials)
+    value, sr0, reason = res.dsr, res.expected_max_sharpe, None
+    if trial_family is not None and count > res.n_trials:
+        counted = deflate(oos_returns, list(trial_sharpes or []), count)
+        value = counted["dsr"] if counted["dsr"] is not None else math.nan
+        sr0 = (
+            counted["expected_max_sharpe"]
+            if counted["expected_max_sharpe"] is not None
+            else math.nan
+        )
+        reason = counted["reasons"].get("dsr")
+    return TrialDSRSummary(
+        sharpe=res.sharpe,
+        psr=res.psr,
+        dsr=value,
+        expected_max_sharpe=sr0,
+        n_trials=count,
+        threshold=res.threshold,
+        passed=value >= threshold,
+        trial_basis=_trial_basis(trial_family, count),
+        reason=reason,
+    )
+
+
+def _degenerate_dsr(threshold: float, family: str | None = None, count: int = 1) -> TrialDSRSummary:
     """A not-passed DSR summary for a flat OOS (PSR/DSR undefined on zero variance)."""
-    return DSRSummary(
+    return TrialDSRSummary(
         sharpe=math.nan,
         psr=math.nan,
         dsr=math.nan,
         expected_max_sharpe=math.nan,
-        n_trials=1,
+        n_trials=count,
         threshold=threshold,
         passed=False,
+        trial_basis=_trial_basis(family, count),
+        reason="zero-variance out-of-sample returns",
+    )
+
+
+def apply_trial_deflation(
+    out: GauntletOutput,
+    sharpes: Sequence[float],
+    family: str,
+    count: int,
+) -> GauntletOutput:
+    """Rebuild every verdict consumer before publication after sensitivity runs finish."""
+    report = out.report
+    if report.dsr is None or report.cpcv is None:
+        raise DataError("family deflation requires the gauntlet's DSR and CPCV summaries")
+    dsr = (
+        _dsr_summary(out.oos.oos_returns, report.dsr.threshold, sharpes, family, count)
+        if _has_variance(out.oos.oos_returns)
+        else _degenerate_dsr(report.dsr.threshold, family, max(count, len(sharpes)))
+    )
+    outcomes = build_outcomes(
+        oos_metrics=report.oos_metrics,
+        nulls=report.nulls,
+        cis=report.cis,
+        dsr=dsr,
+        cpcv=report.cpcv,
+    )
+    verdict = _verdict_summary(
+        dict(report.oos_metrics),
+        report.nulls,
+        report.cis,
+        dsr,
+        report.cpcv,
+        n_oos=int(out.oos.oos_returns.size),
+    )
+    return replace(
+        out,
+        report=replace(
+            report,
+            dsr=dsr,
+            outcomes=outcomes,
+            passed=all(o.passed for o in outcomes),
+            verdict=verdict,
+        ),
     )
 
 

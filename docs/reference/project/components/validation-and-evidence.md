@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: fa7d2b2aed9a436e
+verified: d6032e1e8bd7a583
 ---
 
 # Validation and evidence
@@ -52,7 +52,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`,
+  `family-deflated-sharpe`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

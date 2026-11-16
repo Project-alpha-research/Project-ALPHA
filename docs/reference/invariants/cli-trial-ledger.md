@@ -5,8 +5,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/trial_reader.py
   - apps/alpha-cli/src/alpha_cli/spine/trial_query.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
+  - apps/alpha-cli/src/alpha_cli/spine/deflation.py
+  - tests/smoke/test_family_deflation_smoke.py
+  - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 414e856e7faae937
+verified: 8e9da3241e167cdf
 ---
 
 # One trial ledger invariants
@@ -39,8 +42,21 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   contribute conservatively even if there are no mapped factors; an unmapped row of a factor
   schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` is the sum of family
   counts plus unknown spine rows: each row once, never doubled (ADR-0053).
-- `trials_for_deflation` exposes family count, all-trials count and basis. Existing DSR callers
-  are unchanged; wiring them to this seam is a follow-up.
+- Rule-test deflation reads only the spine ledger, never `sources.toml` or RD-Agent. Reader version 1
+  counts prior `spine:<rule>` trials excluding repeats and errors, plus this run, scored sensitivity
+  variants and all unknown spine rows. The count never falls below the available Sharpe count.
+- `trial_dsr` keeps the sample variance of same-symbol OOS Sharpes and this run's variants, in
+  per-observation units. The public expected-maximum and PSR functions compute the probability.
+  Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;
+  `family_trials` cites the recorded count. Missing ledgers count zero; unreadable ones fail with
+  `LEDGER_UNREADABLE`, never a one-trial fallback. No diagnostics means `spine.deflation` is null.
+- The verdict's `dsr` uses available counted family Sharpes, current OOS and scored variants with
+  at least that same count. Its summary and verdict record `n_trials` and `trial_basis`; insufficient
+  dispersion observations for a larger count give an unavailable probability and a failed DSR gate.
+  `alpha validate` recognises existing spine families by registered rule strategy; other runs state
+  `no ledger family: counted as one trial`. No ledger history or immutable run is rewritten.
+- `alpha results show` adds the recorded count and live `family_counts` rows, outcomes and reader
+  trials from the spine-only snapshot. Older runs have a null recorded count and an explicit reason.
 - DuckDB is imported only for a query, connects to `:memory:` with external access disabled,
   and receives a Polars frame converted to Arrow. There is no database file or SQL file read.
 - Questions are `by-family`, `by-outcome`, `by-asset`, `by-month`, `asset-history`,

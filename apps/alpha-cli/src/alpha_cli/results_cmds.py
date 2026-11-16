@@ -18,9 +18,11 @@ from alpha_cli.spine.compare import (
     render_compare,
     resolve_run,
 )
+from alpha_cli.spine.deflation import spine_snapshot
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import build_facts, read_json, require_metric
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.trial_reader import family_counts
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -120,7 +122,21 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
 
     rdir, manifest = _run(home, run_id)
     diagnostics = read_json(rdir / "diagnostics.json")
+    rule = manifest.get("spine", {}).get("rule", {}).get("kind")
+    family_id = f"spine:{rule}" if rule else None
+    counts = family_counts(spine_snapshot(home))
+    current = next(
+        (row for row in counts if row["family_id"] == family_id),
+        {"reader_trials": 0, "rows": 0, "outcomes": {}},
+    )
+    at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     return {
+        "family": {
+            "family_id": family_id,
+            "trials_at_run": at_run,
+            "now": {key: current[key] for key in ("reader_trials", "rows", "outcomes")},
+            "reason": None if at_run is not None else "recorded before family counts were used",
+        },
         "run_id": run_id,
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
@@ -148,7 +164,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             ids = list(
                 dict.fromkeys(
                     row["run_id"]
-                    for row in read_trials(home)
+                    for row in spine_snapshot(home).raw_rows.values()
                     if row.get("test_id") == run_id and row.get("run_id")
                 )
             )

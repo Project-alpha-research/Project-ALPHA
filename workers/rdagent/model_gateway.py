@@ -131,17 +131,11 @@ class Settings:
     codex_effort: str = "medium"
     codex_timeout: float = 900
     json_retries: int = 2
-    # A paid-route call that gives no complete reply within api_timeout seconds ends as
-    # provider_timeout; it and an empty or invalid reply are retried provider_retries times. Every
-    # attempt is reserved against the call and dollar caps like any other.
+    # Total paid-call deadline; retries reserve against every cap (ADR-0055).
     api_timeout: float = 180
     provider_retries: int = 1
-    # A local embedding model refuses inputs past its context (Ollama nomic-embed-text answered
-    # HTTP 400 to 2,994- and 7,394-character inputs on 2026-11-16; its window is 2,048 tokens).
-    # After such a refusal the request is sent once more with every input longer than this split
-    # at sentence ends into pieces of at most this many characters, each piece embedded and the
-    # input's vector the mean; never truncated (ADR-0055). Inputs the service accepts whole are
-    # embedded whole, exactly as before.
+    coding_reasoning_tokens: int | None = None
+    # Retry refused long embeddings as averaged sentence chunks, never truncated (ADR-0055).
     embed_max_chars: int = 2000
     accept_unhonoured: tuple[str, ...] = ()
     api_model: str | None = None
@@ -164,6 +158,10 @@ class Settings:
         return self.data_dir / "model-gateway"
 
     def validate(self) -> None:
+        if self.coding_reasoning_tokens is not None:
+            raise ValueError(
+                "coding_reasoning_tokens cannot be sent: provider request field is unconfirmed"
+            )
         if not self.data_dir.is_absolute() or not self.data_dir.is_dir():
             raise ValueError("data-dir must be an existing absolute directory")
         root = self.data_dir.resolve()
@@ -672,7 +670,12 @@ def _post_json(url: str, body: dict[str, Any], key: str | None, timeout: float) 
                 str(error.get("message", "provider error")),
                 payload=payload,
             ) from exc
-        raise GatewayError(exc.code, "provider_error", "provider returned an HTTP error") from exc
+        message = payload.get("error") if isinstance(payload, dict) else None
+        raise GatewayError(
+            exc.code,
+            "provider_error",
+            message if isinstance(message, str) else "provider returned an HTTP error",
+        ) from exc
     except TimeoutError as exc:
         raise GatewayError(504, "provider_timeout", "provider read timed out") from exc
     except (OSError, urllib.error.URLError) as exc:
@@ -854,6 +857,7 @@ class Gateway:
             waived=[],
             refused=[],
             attempts=0,
+            timeout_retry_attempts=0,
             provider_errors=[],
             chunked_inputs=0,
             chunks=0,
@@ -1061,6 +1065,7 @@ class Gateway:
             prompt, instructions = plan.prompt, plan.instructions
             row.update(effort=plan.effort, prompt_sha256=digest(prompt), prompt_chars=len(prompt))
             json_failures = 0
+            timeout_retry = False
             while True:
                 with self.slot(row):
                     reserve = 0.0
@@ -1076,6 +1081,8 @@ class Gateway:
                         ) / 1e6
                     ticket = self.budget.reserve(reserve)
                     row["attempts"] += 1
+                    row["timeout_retry_attempts"] += int(timeout_retry)
+                    timeout_retry = False
                     row["usd"] += reserve
                     try:
                         result = self.chat_backend.complete(
@@ -1086,6 +1093,7 @@ class Gateway:
                         row["provider_errors"].append(exc.code)
                         retried = len(row["provider_errors"]) <= self.settings.provider_retries
                         if exc.code in PROVIDER_RETRYABLE and retried:
+                            timeout_retry = exc.code == "provider_timeout"
                             continue
                         raise
                     self.budget.settle(ticket, result.usd)
@@ -1229,6 +1237,17 @@ class Gateway:
             }
         except GatewayError as exc:
             row.update(status=exc.status, error_code=exc.code)
+            if exc.status == 400 and (
+                exc.code in {"context_length_exceeded", "input_too_long", "embedding_input_refused"}
+                or exc.code == "provider_error"
+                and re.search(
+                    r"(?:input|context).*(?:length|limit|window)|too many tokens", str(exc), re.I
+                )
+            ):
+                row["error_code"] = "embedding_input_refused"
+                raise GatewayError(
+                    400, "embedding_input_refused", f"local embedding input refused: {exc}"
+                ) from exc
             if exc.param:
                 row["refused"].append(exc.param)
             raise
@@ -1392,6 +1411,7 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--json-retries", type=int, default=2)
         p.add_argument("--api-timeout", type=float, default=180)
         p.add_argument("--provider-retries", type=int, default=1)
+        p.add_argument("--coding-reasoning-tokens", type=int, default=None)
         p.add_argument("--embed-max-chars", type=int, default=2000)
         p.add_argument("--accept-unhonoured", default="")
         p.add_argument("--api-model")

@@ -12,7 +12,7 @@ import re
 import sys
 from collections.abc import Iterator
 from dataclasses import asdict
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -342,7 +342,8 @@ def _report(
         disclosures["universe"] = spec
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
-        f"{LABEL}. {spec['survivorship']}. Ledger trials: {len(family)}; "
+        f"{LABEL}. {spec['survivorship']}. "
+        f"Factor-family trials (each factor x clock, unreadable rows too): {len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction chosen in-sample. Exploration "
@@ -568,6 +569,12 @@ def _screen_factors(
 
     rows: list[dict[str, Any]] = []
     signals: dict[str, np.ndarray] = {}
+    identity_path = run / "run-identity.json"
+    identity = (
+        json.loads(identity_path.read_bytes()) if identity_path.exists() else {"run_id": run.name}
+    )
+    if not isinstance(identity.get("run_id"), str) or not identity["run_id"].strip():
+        raise DataError("invalid run identity")
     for factor in request["factors"]:
         digest = factor["code_sha256"]
         row = {
@@ -575,7 +582,8 @@ def _screen_factors(
             "schema": TRIAL_SCHEMA,
             "plain_name": plain_name(factor["name"]),
             "trial_index": len(history) + len(rows) + 1,
-            "run_id": run.name,
+            "run_id": identity["run_id"],
+            "recorded_at": datetime.now(UTC).isoformat(),
             "iteration": request["iteration"],
             "panel_sha256": inputs["panel_sha256"],
             "windows": WINDOWS,
@@ -819,7 +827,7 @@ def _evaluate_locked(
     )
     trials = _deflate(rows, history, family, replay_returns)
     lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
-    feedback += f" ledger_trials_all_families: {all_count}."
+    feedback += f" Ledger rows, all families (rules, repeats too): {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",
         "ledger_trials_all_families": all_count,

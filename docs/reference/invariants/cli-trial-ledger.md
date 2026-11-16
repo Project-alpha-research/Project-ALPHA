@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 3b324ac28fa4a72c
+verified: a5d7422fc367d765
 ---
 
 # One trial ledger invariants
@@ -22,7 +22,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 
 - The spine source is `<home>/ledger/trials.jsonl`. `--rdagent-ledger PATH` overrides
   `[rdagent] factor_ledger = "/absolute/path"` in `<home>/ledger/sources.toml`.
-  With neither, only the spine source is configured. Invalid TOML or configuration produces
+  With neither, the `alpha ledger` commands read the RD-Agent ledger at its default location beside
+  the data directory, `<home>/../runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl` (the
+  factor loop's `--trial-ledger`), reported as missing when absent. Invalid TOML or configuration produces
   `LEDGER_SOURCE_INVALID`; configured files that do not exist are reported as missing.
 - Read each file's bytes once. Acquire a shared `flock` only when its `.lock` exists, opened
   `rb`; never create directories, files or lock files. No writer or historical row is changed.
@@ -31,7 +33,7 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Non-object JSON, missing required mapping fields, unknown schemas/statuses and malformed
   field values become unknown rows with a reason. An incomplete final line is reported as
   `incomplete last line (a writer may be mid-append)`. File access failures fail loud.
-- Every command reports sources and unknown rows in JSON. Human output includes unknown counts
+- Every command reports sources and unknown rows in JSON. Human output names each source read, includes unknown counts
   and reasons and ends with `Read-only view; the ledgers themselves are unchanged.`
 
 ## Families and queries
@@ -78,8 +80,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Questions are `by-family`, `by-outcome`, `by-asset`, `by-month`, `asset-history`,
   `family-trials`, `top-measure` and `repeats`. Bind values with `?`; reject unknown questions
   with `UNKNOWN_QUESTION` and missing/unlisted parameters with `BAD_PARAMETER`.
-- Statuses not yet mapped stay unknown: `SPREAD_FAIL` is written by a newer RD-Agent judge not on
-  main yet; unknown until that lands, then mapped to rejected.
+- `SPREAD_FAIL` maps to rejected, retains its raw status and says "stopped by the spread check".
+  Failed factors show their recorded failure reason and first error line.
+- Factor dates use UTC `recorded_at` when present; old rows keep the run-id date-prefix fallback.
 - `by-asset` and `asset-history` normalise names for grouping only (`BTCUSDT` = `BTC/USDT`);
   names with `:` (perpetuals) stay separate; `list` and `show` keep the original name.
 - Limits are 1–200, default 50. Top measures exclude nulls; p and q sort ascending and the

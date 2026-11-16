@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 8666a5512ad2a5fc
+verified: c8b30e3f7bebd260
 ---
 
 # RD-Agent
@@ -55,6 +55,9 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
   the universe is a frozen file; each paid model call has a time limit
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+- Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
+  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
+  Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are

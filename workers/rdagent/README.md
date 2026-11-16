@@ -578,13 +578,55 @@ programs and research rounds alongside the ledger's verdicts. Without that runti
 shows manifest facts and explains what is missing. It copies the integrity key into a temporary
 HOME for reading signed artifacts and removes the copy afterwards.
 
+A continued run starts at a round boundary (2026-11-17). It loads only a completed round's
+checkpoint (`<loop>/4_record`; if that dump is truncated, an older completed one), takes the
+research trace (hypotheses, experiments, feedback) from it, and runs it in a fresh RD-Agent
+scheduler built from this run's settings, so this run's own round folders are numbered from 0.
+A round the previous session left half-finished (the call cap stopped it) is not resumed: it is
+appended to that run's `rounds.jsonl` as `AlphaRdagentRoundAbandonedV1`, status
+`abandoned_at_cap`, `trial_created: false`, and no trial is invented for it; this run's own
+unfinished round is recorded the same way when it ends. The receipt's `rounds_completed` counts
+this run's completed rounds and `loops_after` = `loops_before` + `rounds_completed` (only this
+run's rounds when the previous session could not be loaded). The model calls already spent on
+an abandoned round stay spent, and its proposal is not re-proposed or evaluated.
+
 Known limits: a run that crashes before finishing a round keeps the previous session as the one
-to continue (if the newest step dump is truncated, the next-older dump is used). Two runs started
-at the same time from one memory both continue the same session and the later one becomes the
-pointer; the coding knowledge itself is shared safely through RD-Agent's file lock. A continued
-session keeps RD-Agent's pickled scenario description from its first run (the data folders and
-the coder's attempt limit come from the current run). RD-Agent's own logs from a memory run are
-signed with the memory key, so its log viewer needs `ARTIFACT_SIGNING_KEY_PATH` pointed there.
+to continue. Two runs started at the same time from one memory both continue the same session
+and the later one becomes the pointer; the coding knowledge itself is shared safely through
+RD-Agent's file lock. The restored research trace keeps RD-Agent's pickled scenario description
+from its first run (the data folders and the coder come from the current run). RD-Agent's own
+logs from a memory run are signed with the memory key, so its log viewer needs
+`ARTIFACT_SIGNING_KEY_PATH` pointed there.
+
+### Failure reasons, idea families and the call split (2026-11-17)
+
+A factor that produced no usable values is a `FAILED` trial with a `failure_reason`, carried into
+its ledger row, `alpha ledger list` and the next proposal's feedback: `critic_rejected` (the code
+ran; RD-Agent's critic did not accept it), `cap_reached` (the call cap stopped the coder),
+`exception` (the code raised; `failure_detail` keeps the error's own line, never the traceback
+header) or `bad_output` (no `factor.py`, or not one numeric column on a date/instrument index).
+
+Each factor row also keeps the proposal's `description`, `formulation` and `variables`. The idea
+family rule (`--family-switch-after`, ADR-0055) classifies a composite (machine learning, a
+regression, a weighted combination) or a factor whose name has no family keyword by the feature
+families its own words name; it inherits every one, so a ridge composite of volatility, drawdown,
+skew and autocorrelation features counts as a try in each, and it is barred when any of them is
+closed. A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
+carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself subject to the
+limit. The match is approximate and over-inclusive: a stray family word adds a family, never
+removes one.
+
+Local embedding calls still count toward the 60-call cap. When a coding-memory embedding fails,
+the coder looks at that request's own error (RD-Agent's retry wrapper otherwise hides it): a
+budget refusal stops the worker at once (`BudgetExhausted`) and the receipt names the cap; only
+an input the local embedding model refused is skipped and logged with that cause in
+`memory-skips.jsonl`; any other error stops the run. The receipt's `call_split` shows
+`local_embedding` and `model_chat` attempts (summing to `counted_toward_call_cap`) and
+`timeout_retry_attempts`, the reserved attempts that retried a provider timeout.
+`--coding-reasoning-tokens` exists but must stay unset: OpenRouter documents `reasoning.max_tokens`,
+but whether the pinned model's providers honour it (the gateway sends `require_parameters`) is
+unconfirmed without a paid call, and the gateway cannot yet tell a coding call from others, so
+any value is refused.
 
 ### RD-Agent's own log viewer (2026-11-15)
 

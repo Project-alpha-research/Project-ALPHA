@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: fa7d2b2aed9a436e
+verified: 4e1366ef82a6d82b
 ---
 
 # Validation and evidence
@@ -47,12 +47,20 @@ the trial count and any sentence that contradicts a stored flag against those st
 between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad
 reasoning. `alpha partner selftest` runs 25 planted honest and dishonest answers through the check.
 
+The inverted-signal research control trades the opposite direction without adding a trial; CASH shorts
+are hypothetical and no borrow or funding cost is charged. Walk-forward efficiency compares each fold's
+out-of-sample return with the rule's return over that fold's recorded training window; it is a
+practitioner rule of thumb, not a statistical test. See the
+[inversion card](../../../../research/tools/inverted-signal-control.md) and
+[efficiency card](../../../../research/tools/walk-forward.md).
+
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`,
+  `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

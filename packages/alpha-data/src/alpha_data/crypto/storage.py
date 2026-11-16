@@ -161,6 +161,8 @@ class CryptoBulkStore:
         self._capacity = capacity
         self.reserve_fraction = reserve_fraction
         self.minimum_free_bytes = minimum_free_bytes
+        self._revision_index: dict[tuple[str, tuple[tuple[str, str], ...]], set[str]] | None = None
+        self._revision_directory: tuple[int, int, int, int] | None = None
         if cloud_root_identity is not None and expected_volume_uuid is not None:
             raise DataError("bulk storage must select exactly one identity backend")
         if cloud_root_identity is None and not self.expected_volume_uuid:
@@ -382,6 +384,7 @@ class CryptoBulkStore:
         return manifest
 
     def _publish_manifest(self, body: dict[str, object]) -> dict[str, object]:
+        directory_before = self._manifest_directory_identity()
         manifest_id = hashlib.sha256(canonical_bytes(body)).hexdigest()
         manifest = {**body, "manifest_id": manifest_id}
         try:
@@ -396,7 +399,61 @@ class CryptoBulkStore:
                 os.replace(temporary, manifest_path)
         except OSError as exc:
             raise DataError("crypto internal manifest publication failed") from exc
+        if self._revision_index is not None:
+            if directory_before != self._revision_directory:
+                self._revision_index = None
+            else:
+                self._index_raw_manifest(self._revision_index, manifest)
+                self._revision_directory = self._manifest_directory_identity()
         return manifest
+
+    def _manifest_directory_identity(self) -> tuple[int, int, int, int] | None:
+        _reject_symlink_path(Path(self.manifest_root.anchor), self.manifest_root)
+        try:
+            info = self.manifest_root.stat()
+        except FileNotFoundError:
+            return None
+        return info.st_dev, info.st_ino, info.st_mtime_ns, info.st_ctime_ns
+
+    @staticmethod
+    def _index_raw_manifest(
+        index: dict[tuple[str, tuple[tuple[str, str], ...]], set[str]],
+        manifest: dict[str, object],
+    ) -> None:
+        if manifest.get("artifact_kind") == "raw" and "receipt" in manifest:
+            receipt = CryptoRawReceiptV1.from_dict(manifest["receipt"])
+            key = (receipt.dataset.content_sha256, receipt.request)
+            index.setdefault(key, set()).add(str(manifest["manifest_id"]))
+
+    def stable_resource_revision_lineage(
+        self,
+        *,
+        dataset: CryptoDatasetIdentityV1,
+        request: tuple[tuple[str, str], ...],
+        response_sha256: str,
+    ) -> tuple[str, ...]:
+        """Discover once per store, then verify only this exact resource's raw receipts.
+
+        This index is discovery state, never evidence or a replacement for verification.
+        Own publications update it; a changed manifest directory forces rediscovery.
+        """
+        directory = self._manifest_directory_identity()
+        if self._revision_index is None or directory != self._revision_directory:
+            index: dict[tuple[str, tuple[tuple[str, str], ...]], set[str]] = {}
+            for manifest in self.metadata_inventory(include_retired=True):
+                self._index_raw_manifest(index, manifest)
+            if self._manifest_directory_identity() != directory:
+                raise DataError("crypto manifest directory changed during lineage discovery")
+            self._revision_index, self._revision_directory = index, directory
+        prior: set[str] = set()
+        for manifest_id in self._revision_index.get((dataset.content_sha256, request), ()):
+            if self.retirement(manifest_id) is not None:
+                continue
+            manifest = self.verify_manifest(manifest_id)
+            receipt = CryptoRawReceiptV1.from_dict(manifest["receipt"])
+            if receipt.response_sha256 != response_sha256:
+                prior.add(receipt.response_sha256)
+        return tuple(sorted(prior))
 
     def publish_normalized(
         self,

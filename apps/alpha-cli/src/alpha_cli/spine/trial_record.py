@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, fields
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +12,7 @@ OUTCOMES = ("supported", "rejected", "inconclusive", "invalid", "error", "record
 FACTOR_OUTCOMES = {
     "CANDIDATE": "supported",
     "SCREEN_FAIL": "rejected",
+    "SPREAD_FAIL": "rejected",
     "REPLAY_FAIL": "rejected",
     "FAST_ONLY": "rejected",
     "DEGENERATE": "invalid",
@@ -56,6 +57,7 @@ class TrialRecord:
     run_id: str | None
     source_file: str
     source_line: int
+    reason: str | None = None
 
 
 def _strings(value: Any) -> tuple[str, ...]:
@@ -113,7 +115,11 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         name=row.get("name"),
         spec_hash=row.get("spec_sha256"),
         assets=(row["symbol"],) if row.get("symbol") else (),
-        bar_size="1D" if row.get("periods_per_year") in (252, 365) else None,
+        bar_size=row["bar_size"]
+        if isinstance(row.get("bar_size"), str) and row["bar_size"]
+        else "1D"
+        if row.get("periods_per_year") in (252, 365)
+        else None,
         windows={"data_start": row.get("first_ts"), "data_end": row.get("last_ts")},
         outcome=outcome,
         raw_status=status,
@@ -178,6 +184,11 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
         if present
     )
     created, basis = _run_date(row["run_id"])
+    if "recorded_at" in row:
+        stamp = datetime.fromisoformat(row["recorded_at"])
+        if stamp.tzinfo is None:
+            raise ValueError("recorded_at must have a timezone")
+        created, basis = stamp.astimezone(UTC).isoformat(), "recorded"
     evidence = row["evidence"] if rule else row.get("evidence", {})
     return dict(
         kind="rule_family" if rule else "factor",
@@ -192,6 +203,12 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
         windows=windows,
         outcome=outcomes[status],
         raw_status=status,
+        reason=(
+            "stopped by the spread check"
+            if status == "SPREAD_FAIL"
+            else ": ".join(str(row[k]) for k in ("failure_reason", "failure_detail") if row.get(k))
+            or None
+        ),
         measures=measures,
         evidence_path=evidence.get("trial" if rule else "series_manifest"),
         evidence_sha256=evidence.get("sha256"),

@@ -173,3 +173,9 @@ def test_partner_selftest_does_not_import_heavy_modules(tmp_path: Path) -> None:
     assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
     report = json.loads(result.stdout)
     assert report["ok"] and report["total"] == 25
+
+
+@pytest.mark.parametrize("command", ["import-bybit", "show-bybit"])
+def test_bybit_commands_keep_unrelated_groups_lazy(tmp_path: Path, command: str) -> None:
+    result = _run(_RUN, ["context", command, "--help"], tmp_path)
+    assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}

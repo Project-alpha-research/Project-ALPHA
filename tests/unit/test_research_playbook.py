@@ -50,6 +50,8 @@ SYMPTOMS = (
     "profit from a handful of trades",
     "fragile to costs",
     "need the macro picture",
+    "is this just the market going up?",
+    "does it hold up out of sample?",
 )
 PLANNED = ("regime detection", "attribution", "change-point detection", "capacity")
 CLI_SRC = ROOT / "apps/alpha-cli/src/alpha_cli"
@@ -328,3 +330,13 @@ def test_skills_name_only_real_metrics_flags_and_audit_checks() -> None:
     card = _parts(f"{TOOLS_DIR}/results-and-cite.md")[0]
     missing = sorted(set(METRICS) - set(card))
     assert not missing, f"the results card must list every metric; missing: {missing}"
+
+
+def test_honesty_cards_exist_and_state_their_limits() -> None:
+    inverted = _text(f"{TOOLS_DIR}/inverted-signal-control.md")
+    assert "ledger" in inverted and "30" in inverted and "hypothetical" in inverted
+    assert "standard error" in inverted and "never decides" in inverted
+    assert "No borrow or funding cost" in inverted and "this check is weak here" in inverted
+    wfe = _text(f"{TOOLS_DIR}/walk-forward.md")
+    assert "practitioner rule of thumb, not a statistical test" in wfe
+    assert "recorded training window" in wfe and "no pass/fail threshold" in wfe

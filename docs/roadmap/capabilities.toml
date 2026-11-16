@@ -929,7 +929,7 @@ needs = [
   "an end-to-end smoke check of the factor loop through the installed programs with a scripted model route",
 ]
 state = "Partial"
-missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
+missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; the universe file is wired but the local stores hold only 15 coins and 9 single stocks, so neither universe can widen without a data pull; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
@@ -1174,16 +1174,16 @@ docs = ["docs/reference/project/components/data-layer.md"]
 [[capability]]
 id = "crypto-derivatives-context"
 name = "Crypto funding rates and open interest as known"
-what = "Read verified Binance USD-M funding and derivatives metrics at a UTC knowledge cutoff."
-see_it = ["alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+what = "Read verified Binance USD-M context and offline-imported Bybit linear funding and hourly open interest at a UTC knowledge cutoff."
+see_it = ["alpha context import-bybit --from <restored-store> --json", "alpha context show-bybit --symbol BTCUSDT --kind open-interest --as-of 2024-01-01T01:05 --json", "alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
 entry_points = ["cli: alpha context"]
-proof_synthetic = ["tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
-proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
-real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known"
-real_data_needs = "network"
+proof_synthetic = ["tests/unit/test_context_bybit_import.py::test_open_interest_future_poison_and_leaky_clock", "tests/unit/test_context_sources_cmds.py::test_bybit_import_show_and_future_poison", "tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_bybit_smoke.py::test_context_bybit_offline_import_and_read", "tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known; 2026-11-17: restored Bybit store imported offline, 50 symbols funding (287,857 rows) and 51 hourly open interest (2,027,681 rows) Jan 2022-Sep 2026, 0 conflicts, read as known"
+real_data_needs = "network for Binance; restored crypto store for offline Bybit import"
 needs = []
 state = "Partial"
-missing = "no pull-to-screen path or research use yet; only one symbol tried"
+missing = "no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks"
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]
@@ -1224,3 +1224,42 @@ real_data = "synthetic fixture runs only; no model calls"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-results-check.md"]
+
+[[capability]]
+id = "family-deflated-sharpe"
+name = "Deflated Sharpe counted over the idea's family"
+what = "Record the family trial count behind diagnostic Sharpe and the verdict, and show live family totals."
+see_it = ["alpha results cite <run_id> family_trials"]
+entry_points = ["cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_deflation.py::test_worked_example", "tests/unit/test_spine_deflation.py::test_ledger_fixture", "tests/unit/test_spine_deflation.py::test_validate_rerun_keeps_the_family_recorded_at_first_publication", "tests/unit/test_spine_deflation.py::test_family_sharpes_keep_only_the_run_frequency", "tests/unit/test_spine_deflation.py::test_same_test_repeats_count_once_keeping_the_earliest", "tests/unit/test_spine_deflation.py::test_spread_floored_below_five_comparable_trials", "tests/unit/test_spine_deflation.py::test_variants_count_in_n_but_not_in_the_spread"]
+proof_smoke = ["tests/smoke/test_family_deflation_smoke.py::test_family_deflation_grows"]
+real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a copy of the Dell's data folder: family count 10 then 11 (2 repeats of earlier tests not counted); the verdict's deflated Sharpe 0.985 then 0.953 (equal to trial_dsr), against 0.999 and 0.997 counted as one trial"
+needs = []
+state = "Working"
+docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]
+
+[[capability]]
+id = "inverted-signal-control"
+name = "Opposite-direction research control"
+what = "Compare a rule with its opposite direction on the same bars and costs without counting another trial."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> inverted_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_inversion_next_open_known_pnl_and_ledger_unchanged", "tests/unit/test_spine_controls.py::test_short_is_resized_on_equity_net_of_its_dividend_debit", "tests/unit/test_spine_controls.py::test_a_shrinking_short_book_keeps_trading_whole_units", "tests/unit/test_spine_controls.py::test_label_order", "tests/unit/test_spine_diagnostics.py::test_rule_test_publishes_controls_without_counting_them"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder, ledger unchanged by alpha diagnose: ma_cross 50/200 SPY Sharpe 0.76, opposite -0.75, 15 trades each, inconclusive; same on BTC/USDT 0.63 against -0.61, 9 trades, inconclusive; tsmom 252/21 BTC/USDT 0.72 against -0.70, 20 trades, inconclusive; ma_cross 10/50 SPY 0.55 against -0.59, 107 trades, control passed with the rising-market caveat"
+needs = []
+state = "Working"
+docs = ["research/tools/inverted-signal-control.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "walk-forward-efficiency"
+name = "Walk-forward efficiency with explicit limits"
+what = "Read the median annualised out-of-sample to in-sample return ratio as a practitioner rule of thumb, not a statistical test."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> wfe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_wfe_reads_the_recorded_train_window_after_warm_up", "tests/unit/test_spine_controls.py::test_wfe_two_folds", "tests/unit/test_spine_controls.py::test_wfe_null", "tests/unit/test_spine_controls.py::test_wfe_median_uses_defined_folds_and_names_the_rest"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder: ma_cross 50/200 SPY median 65% over 31 of 33 folds; same on BTC/USDT 0% over 7 of 9; tsmom 252/21 BTC/USDT -11% over 6 of 9; ma_cross 10/50 SPY 99% over 33 of 34"
+needs = []
+state = "Working"
+docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]

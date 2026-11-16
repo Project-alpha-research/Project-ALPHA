@@ -31,6 +31,9 @@ Every result visible in the Workstation, in a quant style, with text.
 | The screens opened from a phone over private remote access | Missing | Dell setup | Path 1 | [spine] |
 | Chat panels and demo views folded away once their content shows elsewhere | Missing | `alpha-web` | Later | [grade] |
 | Pages fit a phone screen without sideways scrolling | Missing | `alpha-web` menu bar | Path 1 | [ui] |
+| The owner's terminal-style screen mock-ups kept as a design reference beside the built screens | Missing | `docs/assets`; [note](backlog/rescued-partner-ideas.md) | Later | private |
+| Signals and indicators handed to the owner's own charting platform, so the owner can keep the final call | Missing | `alpha-web`; [note](backlog/workstation-ui-ideas-from-owner-references.md) | Later | private |
+| Further screen ideas from the owner's references: event bands, card gallery, model cards, explorers | Missing | `alpha-web`; [note](backlog/workstation-ui-ideas-from-owner-references.md) | Later | private |
 
 ## 11. Paper and live
 

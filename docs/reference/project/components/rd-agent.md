@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 394e4fe43eb3a9aa
+verified: c8b30e3f7bebd260
 ---
 
 # RD-Agent
@@ -51,6 +51,13 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
   makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+  A screened factor passes only if the top third it would hold beat its bottom third before
+  costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
+  the universe is a frozen file; each paid model call has a time limit
+  ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+- Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
+  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
+  Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are
@@ -86,7 +93,8 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   [gate coverage](../../../roadmap/backlog/gate-coverage-rdagent.md).
 - Decision records: [ADR-0044](../../../adr/0044-rdagent-model-gateway.md) (how it reaches its
   models), [ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors),
-  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods).
+  [ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods),
+  [ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md) (spread check, families).
   Related: [ADR-0011](../../../adr/0011-evidence-gated-external-integrations.md),
   [ADR-0035](../../../adr/0035-generic-study-composition-and-external-capability-adapters.md).
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
@@ -117,6 +125,11 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   candidate; 15 of 18 replayed swing-judge screen passes lost money before costs, so the rank screen
   and the held top third disagree on 15 coins. Runs sharing one gateway can now start together,
   and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
+- Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials;
+  two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
+  candidate. Open for the owner: whether free local embeddings should count toward the 60-call cap
+  (they were 21 of 60 and 16 of 47 calls), and a data pull to widen the universe (the stores hold
+  15 coins and 9 single stocks). Long memory embeddings are now chunked, never truncated.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

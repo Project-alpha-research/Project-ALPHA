@@ -5,7 +5,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
-verified: 1025afd2c583a2fe
+  - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
+verified: 6e8145e6ed0dbe39
 ---
 
 # Research tools, by symptom
@@ -25,10 +26,13 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | Few trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [rule test](rule-test.md) on more assets |
 | Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [charts](charts.md) (`trade_pnl`) |
 | Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md) |
+| "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
+| "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
+| Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |
 
 ## Not available yet
 

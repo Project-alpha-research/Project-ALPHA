@@ -86,7 +86,6 @@ from alpha_data.crypto.contracts import (
     CryptoFamily,
     CryptoMarketType,
     CryptoQualityReportV1,
-    CryptoRawReceiptV1,
     CryptoSnapshotV1,
 )
 from alpha_data.crypto.ingestion import ingest_provider_pages, ingest_provider_payload
@@ -502,19 +501,13 @@ def _stable_resource_revision_lineage(
     request: tuple[tuple[str, str], ...],
     response_sha256: str,
 ) -> tuple[str, ...]:
-    """Find prior bytes for the same stable provider resource without trusting filenames."""
-    prior: set[str] = set()
-    for manifest in store.inventory():
-        if manifest.get("artifact_kind") != "raw" or "receipt" not in manifest:
-            continue
-        receipt = CryptoRawReceiptV1.from_dict(manifest["receipt"])
-        if (
-            receipt.dataset == dataset
-            and receipt.request == request
-            and receipt.response_sha256 != response_sha256
-        ):
-            prior.add(receipt.response_sha256)
-    return tuple(sorted(prior))
+    """Keep revision detection scoped to the exact provider resource.
+
+    The command's store owns discovery; matching raw artifacts still fully verify.
+    """
+    return store.stable_resource_revision_lineage(
+        dataset=dataset, request=request, response_sha256=response_sha256
+    )
 
 
 def _write_snapshot(snapshot: CryptoSnapshotV1) -> None:
@@ -2640,6 +2633,7 @@ def _acquire_result(
     http_response_evidence: Callable[[CompleteHttpResponse], None] | None = None,
     http_error_response_evidence: Callable[[CompleteHttpResponse], None] | None = None,
     http_retry_429: bool = False,
+    store: CryptoBulkStore | None = None,
 ) -> dict[str, object]:
     """Acquire one bounded public provider page; this grants no research or order authority."""
     dataset_family = _family(family)
@@ -2675,7 +2669,7 @@ def _acquire_result(
             reason=reason,
             captured_at=fetched_at,
         )
-        store = _bulk_store()
+        store = store if store is not None else _bulk_store()
         store.verify_ready(required_bytes=0)
         if provider == "bybit":
             plan = _bybit_plan(
@@ -2843,8 +2837,7 @@ def _acquire_result(
                 unexplained_revision=bool(correction_lineage),
                 acquisition_scope=acquisition_scope,
             )
-            quality = single_result.quality
-            normalized_manifest = single_result.normalized_manifest
+            quality, normalized_manifest = single_result.quality, single_result.normalized_manifest
             raw_manifests = (single_result.raw_manifest,)
     except FixtureAccountingBlocked:
         raise
@@ -4528,7 +4521,11 @@ __all__ = [
 
 
 def _backfill_acquire(
-    provider: str, family: str, instrument: str, **window: object
+    provider: str,
+    family: str,
+    instrument: str,
+    store_factory: Callable[[], CryptoBulkStore] | None = None,
+    **window: object,
 ) -> dict[str, object]:
     """Call the acquisition path in-process with every unused typer default made explicit.
 
@@ -4540,6 +4537,7 @@ def _backfill_acquire(
             provider,
             family,
             instrument,
+            store=None if store_factory is None else store_factory(),
             network=None,
             pool_address=None,
             metrics=None,
@@ -4576,15 +4574,17 @@ def backfill(
     """Run many bounded `acquire` pages over symbols x windows, resumably; grants no authority."""
     from alpha_cli._crypto_backfill import BackfillWindow, run_backfill, unpublished_binance_periods
     from alpha_cli._crypto_backfill_evidence import verify_completed_window
+    from alpha_cli._crypto_backfill_state import CommandStore
     from alpha_data.crypto.verification import ArtifactVerificationBudget
 
+    command_store = CommandStore(_bulk_store)
     verification_budget = None
     if max_verify_artifact_bytes is not None:
         verification_budget = ArtifactVerificationBudget(max_verify_artifact_bytes)
 
     def verify_completed(symbol: str, window: BackfillWindow, entry: Mapping[str, object]) -> None:
         verify_completed_window(
-            _bulk_store(),
+            command_store.get(),
             symbol,
             window,
             entry,
@@ -4618,7 +4618,7 @@ def backfill(
             start=start_date,
             end=end_date,
             ledger_path=ledger_path,
-            acquire=_backfill_acquire,
+            acquire=partial(_backfill_acquire, store_factory=command_store.get),
             now=(started := _now()),
             dry_run=dry_run,
             log=None if json_out else lambda line: typer.echo(line, err=True),

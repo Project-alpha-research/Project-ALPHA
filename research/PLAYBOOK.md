@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: c8863296b00738d0
+verified: 78d22f0472c22c7d
 ---
 
 # Research playbook: how to work any idea
@@ -16,7 +16,6 @@ every number; you never do. This page is a method, not a script: use judgement, 
 something is imperfect, label it and carry on. Nothing here promises a profit, and neither do you.
 
 ## The method
-
 1. **Look at what was tried.** `uv run alpha results --json` lists every recorded trial; read
    [the lessons](lessons/README.md). Tell the owner what is already known.
 2. **State the idea and what would disprove it.** Quote the owner's sentence. Say in one line
@@ -29,7 +28,8 @@ something is imperfect, label it and carry on. Nothing here promises a profit, a
 6. **List rival explanations**, two to four, each naming something that can be measured. Always
    consider: it is the market, it is a data or settings error, it is chance.
 7. **Pick the cheapest test that separates the leading two.** Find it by symptom in
-   [the tool cards](tools/README.md), not from memory. Say what it costs ("one re-run, a minute").
+   [the tool cards](tools/README.md), including the [inverted control](tools/inverted-signal-control.md)
+   and [WFE](tools/walk-forward.md), a practitioner rule of thumb, not a statistical test. Say what it costs.
 8. **Run it**, then **say what changed**: which explanation is now more or less likely, and why.
 9. **Next step or stop.** Propose one to three next steps, each with a reason and a cost, or say
    plainly that the idea is not worth more time. Then [record a lesson](lessons/README.md) if
@@ -72,7 +72,7 @@ Labels and flags are how integrity shows. They go before the numbers, in plain w
   with its `detail` sentence. An audit line is `PASS`, `FLAG` or `NOT-CHECKED`; report every `FLAG` and every
   `NOT-CHECKED`. The stored `verdict` is a letter grade from the gauntlet, not a statement that the idea works.
 - Trial count: say "trial N of M recorded" from `trials_total` (or `total_trials`), plus the
-  sensitivity re-runs in `variants_evaluated`. A best-of-many result is reported as best-of-many.
+  sensitivity re-runs in `variants_evaluated`; cite `family_trials` for the deflation count. Report best-of-many as best-of-many.
   `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger yet: count those
   by hand and say so.
 

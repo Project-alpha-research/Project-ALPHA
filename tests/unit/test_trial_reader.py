@@ -191,17 +191,17 @@ def test_factor_count_deduplicates_code_and_imported_clock(tmp_path: Path) -> No
 
 
 def test_unmapped_factor_status_still_counts_like_the_writer_counts_it(tmp_path: Path) -> None:
-    """A status written by a newer writer (here SPREAD_FAIL) is shown as unknown, yet the
+    """A status written by a newer writer (here a made-up one) is shown as unknown, yet the
     factor family count never falls below what the writer's own counter gives."""
     rd = tmp_path / "rd.jsonl"
     rows = [
         factor(trial_index=1),
-        factor(trial_index=2, code_sha256="d" * 64, status="SPREAD_FAIL"),
+        factor(trial_index=2, code_sha256="d" * 64, status="NEWER_STATUS"),
     ]
     write_rows(rd, rows)
     snapshot = read_ledgers(ledger_sources(tmp_path, rd))
     assert len(snapshot.records) == 1 and len(snapshot.unknown) == 1
-    assert "unknown status: SPREAD_FAIL" in snapshot.unknown[0].reason
+    assert "unknown status: NEWER_STATUS" in snapshot.unknown[0].reason
     from alpha_cli._rdagent_clocks import trial_family
 
     assert family_counts(snapshot)[0]["reader_trials"] == len(trial_family(rows))

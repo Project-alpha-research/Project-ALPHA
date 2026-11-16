@@ -8,7 +8,7 @@ verified: e3b0c44298fc1c14
 # Owner decisions log, volume 3
 
 Continues the [owner decisions log](owner-decisions.md) and [volume 2](owner-decisions-2.md);
-the rules for entries are in the first. New entries are appended at the end of this file.
+the rules for entries are in the first. This volume is full: new entries go in [volume 4](owner-decisions-4.md).
 
 ## Entries
 

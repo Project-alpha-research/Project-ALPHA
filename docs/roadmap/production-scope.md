@@ -51,24 +51,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-190 capabilities: 39 working, 66 built but unproven, 83 missing, 1 to rebuild,
-1 dropped by decision (recounted 2026-11-16 after the file-system audit added 22 rows).
+212 capabilities: 39 working, 66 built but unproven, 105 missing, 1 to rebuild,
+1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 4 | 8 | 0 | 0 |
-| 2. Data and context | 3 | 12 | 8 | 0 | 0 |
-| 3. Look before testing | 1 | 7 | 4 | 0 | 0 |
+| 1. Idea | 2 | 4 | 10 | 0 | 0 |
+| 2. Data and context | 3 | 12 | 10 | 0 | 0 |
+| 3. Look before testing | 1 | 7 | 6 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
-| 5. Overfit tests | 6 | 8 | 5 | 0 | 0 |
-| 6. Diagnostics | 5 | 6 | 8 | 0 | 0 |
-| 7. Records and memory | 3 | 6 | 8 | 0 | 1 |
-| 8. AI partner | 3 | 8 | 3 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 5 | 6 | 9 | 0 | 0 |
-| 10. Screens | 1 | 3 | 11 | 0 | 0 |
+| 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
+| 6. Diagnostics | 5 | 6 | 12 | 0 | 0 |
+| 7. Records and memory | 3 | 6 | 9 | 0 | 1 |
+| 8. AI partner | 3 | 8 | 5 | 1 | 0 |
+| 9. RD-Agent and Qlib engines | 5 | 6 | 12 | 0 | 0 |
+| 10. Screens | 1 | 3 | 14 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **39** | **66** | **83** | **1** | **1** |
+| **All** | **39** | **66** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -90,6 +90,8 @@ How a question, a chart observation or a paper becomes something testable.
 | The owner's market views logged as dated hypotheses with rival explanations | Missing | idea trail | Path 1 | private |
 | The AI frames a loose question: the decision it serves, horizon, baseline, kind of method | Missing | playbook; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
 | Data that cannot answer a question reported as a gap, never as a failed idea | Missing | `research/` route; [practice](backlog/practitioner-research-ideas.md) | Path 1 | private |
+| Verified source library: papers, books and tools checked to exist, grouped by topic, rules of thumb traced to their origin | Missing | `research/` source cards; [note](backlog/rescued-research-ideas.md) | Later | private |
+| A paper's edge checked on the stretch after its publication date, apart from the stretch before | Missing | literature claim model; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 2. Data and context
 
@@ -120,6 +122,8 @@ Prices, the universe, and the context a trader needs around them.
 | Provider checks and a job list for long downloads | Unproven | `alpha-cli` | Path 1 | [status] |
 | Download receipts and quota bookkeeping | Unproven | `alpha-data` (shelved) | Later | [triage] |
 | Free positioning data: futures positioning and short interest, dated when published | Missing | [register](../reference/project/outside-projects.md#judged-in-the-november-follow-up-studies) | Later | private |
+| On-chain and sentiment context as research inputs: network value ratios, exchange flows, dominance, a fear index | Missing | `alpha-data` `context/`; [note](backlog/rescued-research-ideas.md) | Later | private |
+| Mechanical data-handling checks: keyed alignment, join counts, time-bin edges, daylight-saving gaps, reshape round trips | Missing | tests; [note](backlog/rescued-test-fixtures.md) | Later | private |
 
 ## 3. Look before testing
 
@@ -139,6 +143,8 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Dense multi-panel price charts, full screen, trade markers, two chart styles | Unproven | `alpha-web` charts | Path 2 | [ui] |
 | Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
 | Which came first after each match, target or stop, with still-open trades counted | Unproven | lifelines; pull request 213 | Path 2 | private |
+| A pattern detector checked against a hand-labelled set of examples before it is trusted | Missing | new Setup Lab; [note](backlog/rescued-test-fixtures.md) | Path 2 | private |
+| What winners and losers looked like before entry, beside a random-date control | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 
 ## 4. Backtest
 

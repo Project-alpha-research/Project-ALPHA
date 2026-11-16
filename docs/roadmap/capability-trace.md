@@ -36,6 +36,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `run-reports` | Reopen any stored run with its report |
 | `rules-and-scans` | Simple rule language ("close above X and Y"), saved and rerun exactly |
 | `strategy-development` | Strategy development workspace (fixed approved steps) |
+| `inverted-signal-control` | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact |
+| `walk-forward-efficiency` | Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb |
 | `validation-gauntlet` | Walk-forward testing with gaps between train and test |
 | `validation-gauntlet` | Luck-adjusted scores: deflated Sharpe, overfitting probability, combinatorial splits |
 | `validation-gauntlet` | Random-price and shuffled-bar comparisons |
@@ -77,6 +79,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `answer-check` | A drafted answer's tagged numbers and run labels checked against the stored records and flags (`alpha results check`; not the reasoning) |
 | `honesty-selftest` | Planted honest and dishonest answers prove the checker catches invented numbers (`alpha partner selftest`) |
 | `answer-check` | Runs compared side by side, differences computed by code (`alpha results compare`) |
+| `family-deflated-sharpe` | Variants of one idea counted as one family, with the effective number of tests shown |
 
 ## Working rows that are not a workflow
 

@@ -9,7 +9,7 @@ sources:
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
   - docs/adr/0052-licence-is-not-a-criterion.md
-verified: fa24fd80b19a6b53
+verified: 8fa45d3fb634b1d5
 ---
 
 # Outside projects: the register

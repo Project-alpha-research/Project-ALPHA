@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 
+from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
@@ -100,6 +101,7 @@ from alpha_cli._rdagent_judge import (
 from alpha_cli._rdagent_judge import (
     outside_git as outside_git,
 )
+from alpha_cli._rdagent_judge import panel_membership
 from alpha_cli._rdagent_judge import (
     plain_name as plain_name,
 )
@@ -191,6 +193,8 @@ def _inputs(
         raise DataError("factor instruments outside panel")
     fingerprint = sha(
         Path(__file__).read_bytes()
+        + Path(__file__).with_name("_rdagent_judge.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_membership.py").read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
         + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
@@ -453,6 +457,27 @@ def _clock_series_frames(
             ).sort(["clock", "date", "instrument"]),
         )
 
+    if data.get("events"):
+        yield "events", pl.DataFrame(data["events"]).with_columns(pl.lit("daily").alias("clock"))
+    if data.get("positions"):
+        yield (
+            "positions",
+            pl.DataFrame(
+                [
+                    {
+                        "clock": "daily",
+                        "date": snapshot["date"],
+                        "instrument": name,
+                        "quantity": snapshot["quantities"][j],
+                        "cash": snapshot["cash"],
+                        "equity": snapshot["equity"],
+                    }
+                    for snapshot in data["positions"]
+                    for j, name in enumerate(symbols)
+                ]
+            ),
+        )
+
 
 def _series_frames(
     row: dict[str, Any],
@@ -564,9 +589,14 @@ def _screen_factors(
     series: dict[str, dict[str, Any]],
     eligible: np.ndarray | None = None,
     survivorship: str = SURVIVORSHIP,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     from alpha_cli.rdagent_exposure import label_for
 
+    screen_options: dict[str, Any] = {"gap_policy": True, "closes": closes} if gap_policy else {}
+    if eligible is not None:
+        screen_options["eligible"] = eligible
     rows: list[dict[str, Any]] = []
     signals: dict[str, np.ndarray] = {}
     identity_path = run / "run-identity.json"
@@ -642,7 +672,7 @@ def _screen_factors(
                             clock,
                             open_days=open_days,
                             series=block,
-                            **({} if eligible is None else {"eligible": eligible}),  # type: ignore[arg-type]
+                            **screen_options,
                         )
                     except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                         stats = {
@@ -653,7 +683,16 @@ def _screen_factors(
                     row["clocks"][clock].update(status=stats["status"], p=stats["p"], screen=stats)
                     if stats["status"] == "OK":
                         row["clocks"][clock]["spread"] = _spread_or_error(
-                            signals[digest], opens, days, digest, clock, open_days, stats, symbols
+                            signals[digest],
+                            opens,
+                            days,
+                            digest,
+                            clock,
+                            open_days,
+                            stats,
+                            symbols,
+                            gap_policy=gap_policy,
+                            closes=closes,
                         )
             identities[digest] = row
         rows.append(row)
@@ -669,6 +708,9 @@ def _spread_or_error(
     open_days: list[date],
     stats: dict[str, Any],
     symbols: list[str],
+    *,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
 ) -> dict[str, Any]:
     try:
         return spread_at_clock(
@@ -680,6 +722,8 @@ def _spread_or_error(
             open_days=open_days,
             direction=stats["direction"],
             symbols=symbols,
+            gap_policy=gap_policy,
+            closes=closes,
         )
     except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
         return {"status": "ERROR", "error": f"{type(error).__name__}: {error}"}
@@ -693,6 +737,7 @@ def _replay_clocks(
     series: dict[str, dict[str, Any]],
     family: dict[tuple[str, str], dict[str, Any]],
     total_rows: int,
+    gap_policy: bool = False,
 ) -> tuple[dict[tuple[str, str], np.ndarray], dict[str, dict[str, float]]]:
     q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
     qvalues: dict[str, dict[str, float]] = {}
@@ -725,6 +770,7 @@ def _replay_clocks(
                         trial["screen"]["direction"],
                         clock=clock,
                         series=series[digest][clock],
+                        **({"gap_policy": True} if gap_policy else {}),
                     )
                 except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                     trial.update(
@@ -745,6 +791,58 @@ def _replay_clocks(
             row["status"], row["lead_clock"] = overall_status(row["clocks"])
         row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
     return replay_returns, qvalues
+
+
+def _eligibility(
+    run: Path,
+    panel: pl.DataFrame,
+    days: list[date],
+    symbols: list[str],
+    spec: dict[str, Any],
+) -> tuple[np.ndarray | None, bool]:
+    receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
+    policy = receipt.get("gap_policy")
+    if policy is not None and policy != membership.POLICY:
+        raise DataError("unknown frozen gap policy")
+    mask = panel_membership(panel, days, symbols) if policy is not None else None
+    if spec["liquidity"] is not None:
+        start = min(panel["date"].to_list())
+        volume_days = [start + timedelta(days=n) for n in range((days[-1] - start).days + 1)]
+        liquidity = universes.eligibility(
+            matrix(panel, "quote_volume", volume_days, symbols),
+            volume_days,
+            days,
+            spec["liquidity"],
+        )
+        mask = liquidity if mask is None else mask & liquidity
+    return mask, policy is not None
+
+
+def _gap_disclosure(panel: pl.DataFrame, rows: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
+    summary = membership.panel_summary(panel)
+    replays = [
+        t["replay"] for row in rows if row["status"] != "REPEAT" for t in row["clocks"].values()
+    ]
+    spreads = [
+        t.get("spread", {})
+        for row in rows
+        if row["status"] != "REPEAT"
+        for t in row["clocks"].values()
+    ]
+    summary["spread_haircuts_applied"] = sum(s.get("haircuts_applied", 0) for s in spreads)
+    count = sum(r.get("haircuts_applied", 0) for r in replays)
+    summary["haircuts_applied"] = count
+    summary["written_off_at_panel_end"] = sum(r.get("written_off_at_panel_end", 0) for r in replays)
+    note = (
+        f" {summary['instruments_ended_early']} instruments ended early; "
+        f"{summary['missing_instrument_days']} instrument-days were missing inside their spans; "
+        f"{count} position haircuts across the new factor/clock replays "
+        f"({summary['written_off_at_panel_end']} at panel end); "
+        f"{summary['spread_haircuts_applied']} spread-leg haircuts. "
+        + str(membership.POLICY["assumption"])
+        + " "
+    )
+    return summary, note
 
 
 def _evaluate_locked(
@@ -788,16 +886,8 @@ def _evaluate_locked(
             f"universe {spec['name']!r}: min_names {MIN_NAMES} and {ANNUAL_DAYS} days a year are "
             "the only values the evaluator applies yet"
         )
-    eligible = None
-    if spec["liquidity"] is not None:
-        start: date = panel["date"].min()  # type: ignore[assignment]
-        volume_days = [start + timedelta(days=n) for n in range((last - start).days + 1)]
-        eligible = universes.eligibility(
-            matrix(panel, "quote_volume", volume_days, symbols),
-            volume_days,
-            days,
-            spec["liquidity"],
-        )
+    eligible, gap_policy = _eligibility(run, panel, days, symbols, spec)
+    closes = matrix(panel, "close", open_days, symbols) if gap_policy else None
     series: dict[str, dict[str, Any]] = {}
     rows, signals = _screen_factors(
         run,
@@ -814,19 +904,35 @@ def _evaluate_locked(
         series,
         eligible,
         spec["survivorship"],
+        gap_policy,
+        closes,
     )
     all_count = len(all_history) + len(rows)
     for index, row in enumerate(rows, len(all_history) + 1):
         row.update(trial_index=index, ledger_trials_all_families=all_count)
     family = _ledger_family([*history, *unknown, *rows])
     replay_returns, qvalues = _replay_clocks(
-        rows, panel, signals, days, series, family, len(history) + len(unknown) + len(rows)
+        rows,
+        panel,
+        signals,
+        days,
+        series,
+        family,
+        len(history) + len(unknown) + len(rows),
+        gap_policy,
     )
     series_note = _record_series(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
     lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
+    if gap_policy:
+        disclosure, note = _gap_disclosure(panel, rows)
+        disclosures["missing_bars"] = disclosure
+        feedback += note
+        for row in rows:
+            row["missing_bars"] = disclosure
+            legacy[f"{row['name']}.feedback"] += note
     feedback += f" Ledger rows, all families (rules, repeats too): {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",

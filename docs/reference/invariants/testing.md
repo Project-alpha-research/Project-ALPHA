@@ -14,7 +14,7 @@ sources:
   - scripts/claude_hooks.py
   - pyproject.toml
   - .semgrep/alpha.yml
-verified: 7aec77f9564ea386
+verified: a8b90257013c919f
 ---
 
 # Testing invariants

@@ -10,6 +10,10 @@ from pathlib import Path
 
 import semgrep_runner
 
+# Rules whose behaviour the single fixture pins: every `# finding` line must be flagged and no
+# other line may be (alpha-float-literal-equality, alpha-negative-shift).
+CONTRACT_RULES = ("alpha-float-literal-equality", "alpha-negative-shift")
+
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
@@ -49,11 +53,11 @@ def main() -> int:
         actual = {
             entry["start"]["line"]
             for entry in payload["results"]
-            if entry["check_id"].endswith("alpha-float-literal-equality")
+            if entry["check_id"].endswith(CONTRACT_RULES)
         }
         if actual != expected:
             raise RuntimeError(f"Semgrep contract: expected findings {expected}, got {actual}")
-    print("Semgrep contract: exact generation checks exempt; all four leaky comparisons detected.")
+    print("Semgrep contract: exempt cases pass; every leaky comparison and negative shift found.")
     return 0
 
 

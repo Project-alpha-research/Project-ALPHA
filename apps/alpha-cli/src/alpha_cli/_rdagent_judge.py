@@ -20,6 +20,7 @@ import numpy as np
 import polars as pl
 
 from alpha_backtest.portfolio_replay import run_weight_replay
+from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
@@ -216,7 +217,7 @@ def _days(frame: pl.DataFrame, column: str = "date") -> pl.Series:
 def validate_panel(frame: pl.DataFrame) -> pl.DataFrame:
     if frame.is_empty():
         raise DataError("empty panel")
-    frame = frame.with_columns(_days(frame)).sort(["date", "instrument"])
+    frame = frame.with_columns(_days(frame))
     if (frame["date"] >= RESERVED_DAY).any():
         raise DataError("panel reaches reserved window")
     if frame.select(["date", "instrument"]).is_duplicated().any():
@@ -225,8 +226,8 @@ def validate_panel(frame: pl.DataFrame) -> pl.DataFrame:
         pl.col("date").diff().drop_nulls().dt.total_days().alias("step")
     )
     for name, steps in gaps.iter_rows():
-        if any(step != 1 for step in steps):
-            raise DataError(f"disordered or gapped daily bars for {name}")
+        if any(step <= 0 for step in steps):
+            raise DataError(f"disordered daily bars for {name}")
     prices = frame.select(PRICE_COLUMNS).to_numpy().astype(float)
     volumes = frame.select(["volume", "quote_volume"]).to_numpy().astype(float)
     if (
@@ -239,7 +240,7 @@ def validate_panel(frame: pl.DataFrame) -> pl.DataFrame:
     low, high, open_, close = (frame[c].to_numpy() for c in ("low", "high", "open", "close"))
     if (low > np.minimum(open_, close)).any() or (high < np.maximum(open_, close)).any():
         raise DataError("inconsistent OHLC")
-    return frame
+    return frame.sort(["date", "instrument"])
 
 
 def _alpaca_viability(data_dir: Path, spec: dict[str, Any]) -> None:
@@ -268,6 +269,9 @@ def _alpaca_viability(data_dir: Path, spec: dict[str, Any]) -> None:
 
 def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str, Any]:
     spec = universes.load(universe)
+    data_dir = Path(spec.get("data_dir", data_dir))
+    if "data_dir" in spec and not data_dir.is_dir():
+        raise DataError(f"universe data_dir {data_dir} is not an existing directory")
     if spec["source"] == "alpaca-us-equities":
         _alpaca_viability(data_dir, spec)
     universes.evaluable(spec)
@@ -292,7 +296,10 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
         verified, payload = store.read_verified_normalized(path.stem, max_bytes=32 * 1024 * 1024)
         quality: Any = verified["quality"]
         dataset: Any = verified["dataset"]
-        if quality["state"] != "qualified" or quality["failures"]:
+        # Missing days inside a month are the gaps the panel receipt records (decision 1), so a
+        # month whose only warning is its cadence gap is accepted; anything else still fails.
+        gap_only = quality["state"] == "warning" and list(quality["warnings"]) == ["cadence_gap"]
+        if (quality["state"] != "qualified" and not gap_only) or quality["failures"]:
             raise DataError(f"unqualified normalized artifact: {path.stem}")
         digest = str(verified["artifact_sha256"])
         if (
@@ -301,9 +308,10 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
         ):
             continue
         manifests.append({"manifest_id": path.stem, "artifact_sha256": digest})
-        if digest in hashes:
+        capture = (str(dataset["instrument"]), digest)
+        if capture in hashes:
             continue
-        hashes.add(digest)
+        hashes.add(capture)
         raw = pl.read_parquet(io.BytesIO(payload))
         days = _days(raw, "open_time")
         # Validate order within each artifact before merging chronological captures.
@@ -321,7 +329,7 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
         frames.append(frame)
     if not frames:
         raise DataError("no qualified Binance spot daily bars")
-    panel = validate_panel(pl.concat(frames))
+    panel = validate_panel(pl.concat(frames).sort(["date", "instrument"]))
     if universe is not None:
         present = panel["instrument"].n_unique()
         missing = (
@@ -335,15 +343,7 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
                 + (f" (missing {', '.join(missing)})" if missing else "")
                 + f"; cross-sectional thirds need at least {spec['min_universe']}"
             )
-    summary = panel.group_by("instrument").agg(
-        pl.len().alias("rows"),
-        pl.col("date").min().alias("first"),
-        pl.col("date").max().alias("last"),
-    )
-    instruments = {
-        str(name): {"rows": int(rows), "first_day": first.isoformat(), "last_day": last.isoformat()}
-        for name, rows, first, last in summary.sort("instrument").iter_rows()
-    }
+    summary = membership.panel_summary(panel)
     out.mkdir(parents=True, exist_ok=False)
     buffer = io.BytesIO()
     panel.write_parquet(buffer)
@@ -352,7 +352,7 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
     receipt = {
         "schema": "AlphaRdagentFactorPanelV1",
         "manifests": manifests,
-        "instruments": instruments,
+        **summary,
         "rows": panel.height,
         "panel_sha256": sha(payload),
     }
@@ -386,8 +386,24 @@ def screen(
     series: dict[str, Any] | None = None,
     n_resamples: int | None = None,
     eligible: np.ndarray | None = None,
+    gap_policy: bool = False,
 ) -> dict[str, Any]:
     values = np.asarray(signal, dtype=float)
+    outcomes = np.asarray(outcome, dtype=float)
+    skipped = 0
+    keep = np.ones(len(values), dtype=bool)
+    if gap_policy:
+        keep = np.isfinite(values).sum(axis=1) >= MIN_NAMES
+        skipped = int((~keep).sum())
+        values, outcomes = values[keep], outcomes[keep]
+        eligible = eligible[keep] if eligible is not None else None
+        if not len(values):
+            return {
+                "status": "DEGENERATE",
+                "p": 1.0,
+                "breadth_skipped_days": skipped,
+                "reason": "membership or liquidity rule left fewer than 5 names on every day",
+            }
     finite = np.isfinite(values)
     # With a liquidity rule (ADR-0055) coverage is judged over the names the universe let rank;
     # without one every cell counts, as before.
@@ -399,6 +415,8 @@ def screen(
     ) / len(values)
     thin_days = int((finite.sum(axis=1) < MIN_NAMES).sum())
     result: dict[str, Any] = {"coverage": coverage, "tie_share": ties, "thin_days": thin_days}
+    if gap_policy:
+        result["breadth_skipped_days"] = skipped
     if eligible is not None:
         result["universe_thin_days"] = int((eligible.sum(axis=1) < MIN_NAMES).sum())
     if coverage < 0.8 or ties > 0.05 or thin_days:
@@ -407,9 +425,14 @@ def screen(
         if result.get("universe_thin_days"):
             result["reason"] = "the universe's liquidity rule left fewer than 5 names on some days"
         return {**result, "status": "DEGENERATE", "p": 1.0}
-    ic = cross_sectional_ic(values, np.asarray(outcome, dtype=float), min_names=MIN_NAMES)
+    ic = cross_sectional_ic(values, outcomes, min_names=MIN_NAMES)
     if series is not None:
-        series.update(daily_ic=ic.values, names=(finite & np.isfinite(outcome)).sum(axis=1))
+        expanded: list[float | None] = [None] * len(signal)
+        for index, value in zip(np.flatnonzero(keep), ic.values, strict=True):
+            expanded[index] = value
+        series.update(
+            daily_ic=expanded, names=(np.isfinite(signal) & np.isfinite(outcome)).sum(axis=1)
+        )
     daily = np.asarray([v for v in ic.values if v is not None], dtype=float)
     effective = autocorrelation_effective_size(daily)
     mean, sd = float(daily.mean()), float(daily.std(ddof=1))
@@ -446,8 +469,12 @@ def screen_at_clock(
     series: dict[str, Any] | None = None,
     n_resamples: int | None = None,
     eligible: np.ndarray | None = None,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
 ) -> dict[str, Any]:
-    data = clock_samples(signal, opens, days, open_days, clock)
+    data = clock_samples(
+        signal, opens, days, open_days, clock, closes=closes, gap_policy=gap_policy
+    )
     if series is not None:
         series.update(data)
     seed_digest = digest if clock == "daily" else sha((digest + clock).encode())
@@ -455,7 +482,12 @@ def screen_at_clock(
     if eligible is not None:
         index = {day: i for i, day in enumerate(days)}
         options["eligible"] = eligible[[index[day] for day in data["days"]]]
-    return screen(data["signal"], data["outcome"], seed_digest, series=series, **options)
+    if gap_policy:
+        options["gap_policy"] = True
+    result = screen(data["signal"], data["outcome"], seed_digest, series=series, **options)
+    if gap_policy:
+        result.update(data["gap_counts"])
+    return result
 
 
 def _return_metrics(values: np.ndarray) -> dict[str, float]:
@@ -480,7 +512,10 @@ def replay(
     *,
     clock: str = "daily",
     series: dict[str, Any] | None = None,
+    gap_policy: bool = False,
 ) -> tuple[dict[str, Any], np.ndarray]:
+    if gap_policy:
+        return _gap_replay(panel, signal, days, direction, clock=clock, series=series)
     sessions = [days[0] + timedelta(days=n) for n in range((days[-1] - days[0]).days + 3)]
     if sessions[-1] >= RESERVED_DAY or (panel["date"] >= RESERVED_DAY).any():
         raise DataError("replay reaches reserved window")
@@ -566,6 +601,7 @@ def spread(
     horizon: int,
     annual: int = ANNUAL_DAYS,
     n_resamples: int | None = None,
+    gap_policy: bool = False,
 ) -> dict[str, Any]:
     """Does the top third the factor would hold beat its bottom third, before costs (ADR-0055)?
 
@@ -580,7 +616,11 @@ def spread(
         raise DataError("spread check needs a claimed direction")
     observed: dict[bool, list[float]] = {False: [], True: []}
     tops, bottoms, members = [], [], []
+    skipped = 0
     for scores, returns in zip(np.asarray(signal, float), np.asarray(outcome, float), strict=True):
+        if gap_policy and np.isfinite(scores).sum() < MIN_NAMES:
+            skipped += 1
+            continue
         for reverse in (False, True):
             top, bottom = _thirds(scores, direction, symbols, reverse_ties=reverse)
             if len(top) + len(bottom) > np.isfinite(scores).sum() or not top:
@@ -630,6 +670,8 @@ def spread(
         "warnings": [f"low_sample: n={values.size}"] if values.size < 20 else [],
         "basis": "before costs; mean over decision days; non-overlapping forward windows",
     }
+    if gap_policy:
+        result.update(breadth_skipped_days=skipped)
     if not passed:
         result["reason"] = SPREAD_REASON
     return result
@@ -646,9 +688,33 @@ def spread_at_clock(
     direction: int,
     symbols: list[str],
     n_resamples: int | None = None,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
 ) -> dict[str, Any]:
-    data = clock_samples(signal, opens, days, open_days, clock)
-    return spread(
+    data = clock_samples(
+        signal, opens, days, open_days, clock, closes=closes, gap_policy=gap_policy
+    )
+    counts: dict[str, int] = {}
+    if gap_policy:
+        if closes is None:
+            raise DataError("gap spread requires closes")
+        index = {day: i for i, day in enumerate(open_days)}
+        starts = [index[day + timedelta(days=1)] for day in data["days"]]
+        ends = [index[day + timedelta(days=1 + CLOCKS[clock])] for day in data["days"]]
+        counted = np.zeros(data["signal"].shape, dtype=bool)
+        for i, row in enumerate(data["signal"]):
+            if np.isfinite(row).sum() >= MIN_NAMES:
+                top, bottom = _thirds(row, direction, symbols, reverse_ties=False)
+                counted[i, [*top, *bottom]] = True
+        data["outcome"], counts = membership.holding_returns(
+            opens,
+            closes,
+            open_days,
+            starts,
+            ends,
+            counted=counted,
+        )
+    result = spread(
         data["signal"],
         data["outcome"],
         direction,
@@ -656,4 +722,84 @@ def spread_at_clock(
         sha((digest + clock).encode()),
         horizon=CLOCKS[clock],
         n_resamples=n_resamples,
+        **({"gap_policy": True} if gap_policy else {}),
     )
+    if gap_policy:
+        result.update(counts)
+        result["basis"] = (
+            "before costs; fixed non-overlapping decision schedule; delayed gap exits may "
+            "overlap later holding windows; missing entry opens stay cash"
+        )
+    return result
+
+
+def panel_membership(panel: pl.DataFrame, days: list[date], symbols: list[str]) -> np.ndarray:
+    start = min(panel["date"].to_list())
+    history = [start + timedelta(days=i) for i in range((days[-1] - start).days + 1)]
+    return membership.membership(matrix(panel, "close", history, symbols), history, days)
+
+
+def _gap_replay(
+    panel: pl.DataFrame,
+    signal: np.ndarray,
+    days: list[date],
+    direction: int,
+    *,
+    clock: str,
+    series: dict[str, Any] | None,
+) -> tuple[dict[str, Any], np.ndarray]:
+    if (panel["date"] >= RESERVED_DAY).any() or days[-1] + timedelta(days=2) >= RESERVED_DAY:
+        raise DataError("replay reaches reserved window")
+    if days[0] != date.fromisoformat(EXPLORATION[0]) or any(
+        (b - a).days != 1 for a, b in zip(days, days[1:], strict=False)
+    ):
+        raise DataError("replay needs consecutive days from the exploration phase")
+    symbols = sorted(panel["instrument"].unique().to_list())
+    last = max(panel["date"].to_list())
+    if last < days[-1] + timedelta(days=2):
+        raise DataError("replay needs two trailing panel days")
+    sessions = [days[0] + timedelta(days=i) for i in range((last - days[0]).days + 1)]
+    eligible = panel_membership(panel, days, symbols)
+    scores = np.where(eligible, signal, np.nan)
+    data = membership.run_gap_replay(
+        matrix(panel, "open", sessions, symbols),
+        matrix(panel, "close", sessions, symbols),
+        sessions,
+        scores,
+        eligible,
+        symbols,
+        horizon=CLOCKS[clock],
+        direction=direction,
+        min_names=MIN_NAMES,
+        fraction=TOP_FRACTION,
+        fee_bps=FEE_BPS,
+        slippage_bps=SLIPPAGE_BPS,
+    )
+    periods = data["periods"]
+    net = np.array([p.excess_return for p in periods])
+    gross = np.array([p.gross_return - p.benchmark_return for p in periods])
+    if series is not None:
+        series.update({key: data[key] for key in ("periods", "targets", "positions", "events")})
+    metrics = {
+        "net": _return_metrics(net),
+        "gross": _return_metrics(gross),
+        "mean_turnover": float(np.mean([p.turnover for p in periods])),
+        "turnover_per_rebalance": sum(p.turnover for p in periods) / data["rebalances"],
+        "annual_cost": sum(p.fees + p.slippage_cost for p in periods)
+        / float(np.mean(data["equity_curve"]))
+        * ANNUAL_DAYS
+        / len(periods),
+        "gap_policy": membership.POLICY,
+        **{
+            key: data[key]
+            for key in (
+                "rebalances",
+                "breadth_skipped_days",
+                "missing_coin_days",
+                "haircuts_applied",
+                "written_off_at_panel_end",
+                "benchmark_haircuts_applied",
+            )
+        },
+    }
+    return metrics, net

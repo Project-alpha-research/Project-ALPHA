@@ -767,3 +767,49 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   ([backlog](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md)); a Nautilus replay;
   the candidate-to-research-case hand-off
   ([backlog](../../docs/roadmap/backlog/rdagent-candidate-to-research-case.md)).
+
+### Missing bars and causal membership
+
+New panel receipts carry `AlphaRdagentGapPolicyV1`. `_rdagent_membership.panel_summary`
+records first/last dates, missing days inside each span, longest gaps and early endings;
+these are descriptions of the frozen input, never trading signals. The universe may provide
+an optional absolute `data_dir`, which must exist when the panel is frozen (a frozen run
+still loads after the store moves); otherwise the launcher's data
+directory applies. This does not change the gateway, ledger or other ALPHA data directories.
+No wide-universe instrument list is supplied by the code.
+
+A name can rank only after `REENTRY_BARS = 20` consecutive daily bars, with a finite factor
+value, and passing any configured liquidity rule. A gap resets the streak. Days below the
+existing five-name minimum are skipped and counted. Factor input contains explicit null rows
+inside each first-to-last span; no forward fill and no rows outside that span.
+
+Held names with missing bars stay at their last close and cannot finance other purchases.
+They exit at the first resuming close, with the usual sell costs, or are written off after
+`WRITE_OFF_AFTER_DAYS = 30` calendar days without a bar. The write-off recovers last close
+multiplied by `1 - DELISTING_HAIRCUT`, where `DELISTING_HAIRCUT = 0.30`.
+**This 30% loss is a conservative assumption, not a measured delisting recovery.** An unresolved
+position at panel end uses the same assumption, counted separately as `written_off_at_panel_end`.
+An administrative write-off has no fictitious exchange fee. A later resumption can become a
+new position only after a fresh warm-up. The zero-cost comparison basket follows the same waits.
+
+Ordinary screen labels retain the fixed next-open/open horizon. A missing endpoint uses the
+first available close within 30 days after the endpoint, otherwise the last close with the
+haircut. A label whose entry open is missing is zero (the order never fills). Unresolved labels whose search reaches the reserved boundary remain null. Spread
+holdings instead follow the position waiting rule, including gaps inside a holding period;
+a missing entry open is uninvested cash. Both kinds of fallback are counted separately.
+The report and proposer feedback state early endings, missing instrument-days and position
+haircuts, with per-clock counts for spread legs and replay positions. Replay events and daily
+position/cash snapshots are persisted with the diagnostic series.
+
+Receipts without a gap policy retain the earlier evaluation path; they remain readable and
+are never rewritten. Gap-free, warmed-up panels preserve the old screen, spread and replay
+numbers, checked against the retained canonical replay path. Costs, clocks, thresholds, trial
+counting and the reserved window are unchanged. A month whose only quality warning is its
+cadence gap is accepted at freeze; any other warning or failure still refuses the panel.
+
+**Known limit: identity across a gap.** The resume rule assumes the same asset in the same
+units on both sides of a gap. The 2026-11-17 system check on the wide store found three pairs
+where that is false: LUNAUSDT restarts as LUNA 2.0 (last close 0.00005, resume close 8.87),
+DREPUSDT and COCOSUSDT were redenominated (about 100x and 1,300x). A factor holding them books
+a fake gain of that size. Until the data layer splits such pairs, do not judge factors on that
+store as is. Serializing HDF in the isolated factor runtime still needs an outside check.

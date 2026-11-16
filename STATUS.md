@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 12 working, 24 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 14 working, 24 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -26,6 +26,8 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
 - **Upstream Alpha158 price features** — set feature_recipe_version: 3 in an ML stage config, or version 3 in an alpha ml prepare spec
+- **Has price action like this happened before? (STUMPY matrix profile)** — uv run alpha lookalike --asset SPY@alpaca --last 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
+- **What is unusual right now? (STUMPY left matrix profile)** — uv run alpha unusual --asset BTC/USDT --window 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
 
 ## Partly working
 

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 3fd6b69956c22395
+verified: 973d11bf929c46f9
 ---
 
 # Command line
@@ -41,6 +41,9 @@ Every capability on [STATUS.md](../../../../STATUS.md) runs through it; each is 
 it belongs to. `alpha test` takes an idea spec or flags and evaluates a long/flat rule across
 assets and named data stores. Each result appears in the Workstation Run Browser, while the general
 trial ledger retains every attempt and labels repeats and development-machine data.
+`alpha lookalike` and `alpha unusual` answer two chart questions for one asset and write a
+labelled figure ([strategies and signals](strategies-and-signals.md)); a lookalike run is recorded
+in the same ledger as an exploratory trial.
 
 ## Where it lives
 

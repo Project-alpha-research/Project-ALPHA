@@ -9,7 +9,7 @@ sources:
   - scripts/claude_hooks.py
   - tests/bias_guards/**
   - tests/oracles/**
-verified: 1ec6b9e0dccff072
+verified: 7ba0efc9dee746c1
 ---
 
 # Research integrity

@@ -21,6 +21,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
+  - apps/alpha-cli/src/alpha_cli/*lookalike*.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
   - tests/smoke/test_rule_test_smoke.py
@@ -31,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 4576d34fc4bcd25f
+verified: c77a139ccea3fd8d
 ---
 
 # Command line runs invariants
@@ -144,6 +145,10 @@ and how it names and publishes immutable runs. Project-wide rules:
   imperative `next` command; JSON under `--json`), including when every asset of a test fails.
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
   sensitivity re-runs separately from the append-only row index.
+
+## Lookalikes and novelty
+
+- `alpha lookalike` and `alpha unusual`: see [pattern invariants § Lookalikes and novelty](patterns.md#lookalikes-and-novelty).
 
 ## Suites
 

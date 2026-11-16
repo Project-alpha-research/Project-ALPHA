@@ -49,24 +49,24 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-159 capabilities: 31 working, 55 built but unproven, 71 missing, 1 to rebuild,
+161 capabilities: 33 working, 55 built but unproven, 71 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 2 | 8 | 0 | 0 |
 | 2. Data and context | 3 | 11 | 8 | 0 | 0 |
-| 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
+| 3. Look before testing | 1 | 6 | 3 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 6 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
-| 6. Diagnostics | 4 | 6 | 7 | 0 | 0 |
+| 6. Diagnostics | 5 | 6 | 7 | 0 | 0 |
 | 7. Records and memory | 2 | 5 | 7 | 0 | 1 |
 | 8. AI partner | 1 | 5 | 6 | 1 | 0 |
 | 9. RD-Agent and Qlib engines | 3 | 3 | 8 | 0 | 0 |
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **31** | **55** | **71** | **1** | **1** |
+| **All** | **33** | **55** | **71** | **1** | **1** |
 
 ## 1. Idea
 
@@ -123,6 +123,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed | Missing | new Setup Lab | Path 2 | private |
+| "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure | Working | `alpha lookalike` (STUMPY); no screen yet | Now | private |
 | Pattern and indicator detectors that use only bars already seen | Unproven | `alpha-patterns` | Path 2 | [status] |
 | Scan many markets for a rule | Unproven | `alpha scan` | Path 2 | [status] |
 | What happened after each match (event study) | Unproven | `alpha-research` | Path 2 | private |

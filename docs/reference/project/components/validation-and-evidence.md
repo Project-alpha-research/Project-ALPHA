@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: d5c9404da1f2ff93
+verified: 4d2840345addafcc
 ---
 
 # Validation and evidence
@@ -41,7 +41,8 @@ run with `--no-diagnose` and labelled `no-diagnostics`: benchmark comparisons, d
 concentration, sensitivity re-runs and explicitly counted variants. The owner can read these
 through `alpha results` and `alpha diagnose`; flags identify observations to examine and grant no
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
-retain the basis and source for each number, including a reason when it is unavailable.
+retain the basis and source for each number, including a reason when it is unavailable. A run's diagnostics
+and manifest appear together or not at all.
 `alpha results check <file>` reads a drafted answer and verifies each tagged number, run label
 and the trial count against those stored facts, and `alpha results compare` computes differences
 between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad

@@ -377,9 +377,12 @@ def test_macro_window_unavailable_reasons(tmp_path: Path, monkeypatch: pytest.Mo
     episode = [{"start": "2020-03-02T00:00:00+00:00", "trough": "2020-03-20T00:00:00+00:00"}]
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", None)
     missing = macro_window(tmp_path, episode)
-    assert missing == {"available": False, "reason": "the context data module is not installed"}
+    assert missing["reason"] == "macro data was not installed when this run was made"
+    assert missing["available"] is False and "detail" in missing
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", SimpleNamespace())
-    assert macro_window(tmp_path, episode)["reason"] == "no stored FRED context series"
+    absent = macro_window(tmp_path, episode)
+    assert absent["reason"] == "macro data was not installed when this run was made"
+    assert "no stored FRED context series" in absent["detail"]
     (tmp_path / "context" / "fred").mkdir(parents=True)
     assert macro_window(tmp_path, [])["reason"] == "no drawdown episode to describe"
 
@@ -452,5 +455,6 @@ def test_macro_window_reads_each_series_as_known_at_the_trough(
     assert rows["DGS10"]["change"] == pytest.approx(-0.4)
     assert rows["VIXCLS"]["trough_value"] == pytest.approx(76.0)
     assert rows["T10Y2Y"] == {"series_id": "T10Y2Y", "reason": "no observation known by then"}
-    assert rows["DFF"] == {"series_id": "DFF", "reason": "DataError"}
+    assert rows["DFF"]["reason"] == "macro data could not be read"
+    assert rows["DFF"]["detail"].startswith("DataError")
     assert rows["UNRATE"]["reason"] == "no observation known by then"

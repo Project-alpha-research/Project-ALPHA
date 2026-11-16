@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: ff0b0aac06a780d3
+verified: bedc004430dcf4e0
 ---
 
 # Bar timeframes
@@ -84,6 +84,7 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
   the second before New York midnight after the last; the split cross-check uses each bar's New York
   date. Alpaca hourly bars are clock-aligned (the 09:00 New York bar holds 09:00-09:59), so hours that
   start at the 09:30 open are resampled from minute bars. Tests: `tests/unit/test_alpaca_adapter.py`.
-- CCXT intraday: an intraday series must be a contiguous grid; a missing bar fails loud (crypto trades
+- CCXT intraday: an intraday series must be a contiguous grid, including the requested start and end
+  (leading and trailing gaps); a missing bar fails loud (crypto trades
   24/7; Coinbase omits buckets with no trades, so sparse pairs at short bars are refused). CCXT pulls keep
   no receipt or raw pages (legacy provenance). Tests: `tests/unit/test_ccxt_intraday_timeframe.py`.

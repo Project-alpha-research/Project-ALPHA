@@ -23,7 +23,7 @@ COMMAND_RUN_TYPES: dict[str, str] = {
 type GenericCommandClass = Literal["empirical", "owner_only", "safe", "unknown"]
 
 _EMPIRICAL_ROOTS = frozenset(
-    {"backtest", "validate", "optim", "propfirm", "forecast", "ml", "monte-carlo", "test"}
+    {"backtest", "validate", "optim", "propfirm", "forecast", "ml", "monte-carlo", "test", "tool"}
 )
 _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})
 _SAFE_ROOTS = frozenset(

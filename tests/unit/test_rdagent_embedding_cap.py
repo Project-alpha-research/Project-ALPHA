@@ -8,11 +8,14 @@ import tempfile
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
 from tests.unit.test_rdagent_factor_launch import launch
+from tests.unit.test_rdagent_loop_fixups_2 import coder_parts
 from workers.rdagent import model_gateway as gw
 
 
@@ -74,7 +77,7 @@ def test_sixty_paid_calls_plus_local_embeddings(model: gw.Gateway) -> None:
 def test_paid_embedding_backend_counts_despite_local_route_and_alias(model: gw.Gateway) -> None:
     class PaidEmbedding:
         def embed(self, inputs: list[str]) -> gw.EmbeddingResult:
-            return gw.EmbeddingResult([[1.0]], "nomic-embed-text", usd=0.025)
+            return gw.EmbeddingResult([[1.0]], "nomic-embed-text")
 
     model.embedding_backend = PaidEmbedding()
     for _ in range(60):
@@ -83,7 +86,7 @@ def test_paid_embedding_backend_counts_despite_local_route_and_alias(model: gw.G
         embed(model)
     state = model.budget.status()["runs"]["test"]
     assert state["counted_calls"] == 60 and state["local_embedding_calls"] == 0
-    assert state["usd"] == pytest.approx(1.5)
+    assert state["usd"] == 0  # embeddings carry no dollars, as before
     split = launch.call_split(rows(model))
     assert split["provider_embedding"]["attempts"] == 60
     assert split["counted_calls"] == 60 and split["local_embedding_calls"] == 0
@@ -270,20 +273,73 @@ def test_timeout_retry_stays_counted_after_local_embeddings(model: gw.Gateway) -
     assert rows(model)[-1]["timeout_retry_attempts"] == 0
 
 
-@pytest.mark.parametrize("group,cap", [("runs", "run_max_usd"), ("months", "month_max_usd")])
-def test_paid_embedding_money_cap_prevents_provider_attempt(
-    model: gw.Gateway, group: str, cap: str
-) -> None:
-    class PaidEmbedding:
-        def embed(self, inputs: list[str]) -> gw.EmbeddingResult:
-            pytest.fail("the paid provider must not be reached after the money cap")
+# Review fixes (2026-11-17): bare-text refusals, unchanged dollars, built-in backend only.
 
-    model.embedding_backend = PaidEmbedding()
-    model.settings.api_price_in_per_mtok = 1
-    key = "test" if group == "runs" else gw.month()
-    state: dict[str, Any] = {"schema_version": 1, "runs": {}, "months": {}}
-    state[group][key] = {"calls": 1, "usd": getattr(model.settings, cap)}
-    model.budget.write(state)
-    with pytest.raises(gw.GatewayError, match=cap):
+
+@pytest.mark.parametrize("cap", ["local_guard", "call_cap"])
+def test_both_cap_refusals_stop_the_coder_even_as_bare_text(model: gw.Gateway, cap: str) -> None:
+    """The client may keep only the message text; the coder must still see a budget refusal."""
+    if cap == "local_guard":
+        model.budget.write(
+            {
+                "schema_version": 1,
+                "runs": {"test": {"calls": 0, "usd": 0, "local_embedding_calls": 2000}},
+                "months": {},
+            }
+        )
+    else:
+        model.budget.write(
+            {"schema_version": 1, "runs": {"test": {"calls": 60, "usd": 0}}, "months": {}}
+        )
+        model.embedding_backend = PaidLikeOllama(model.settings)
+    with pytest.raises(gw.GatewayError) as refused:
         embed(model)
-    assert rows(model)[-1]["attempts"] == 0
+    ns = coder_parts()
+    graph = SimpleNamespace(add_node=Mock(side_effect=RuntimeError(refused.value.message)))
+    with tempfile.TemporaryDirectory() as directory:
+        record = Path(directory) / "memory-skips.jsonl"
+        with (
+            pytest.raises(ns["BudgetExhausted"]),
+            ns["tolerant_embeddings"](graph, record),
+        ):
+            graph.add_node(SimpleNamespace(embedding=None))
+        assert not record.exists()
+
+
+class PaidLikeOllama(gw.OllamaEmbeddings):
+    """A subclass is not the gateway's built-in local backend, whatever it calls itself."""
+
+
+def test_embedding_money_accounting_is_unchanged(
+    model: gw.Gateway, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Embeddings never carried dollars, even when the backend fails; no new pricing rule."""
+
+    def broken(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        raise gw.GatewayError(502, "invalid_provider_response", "no vectors")
+
+    model.settings.api_price_in_per_mtok = 1000.0
+    model.embedding_backend = PaidLikeOllama(model.settings)
+    embed(model)
+    monkeypatch.setattr(gw, "post_json", broken)
+    with pytest.raises(gw.GatewayError, match="no vectors"):
+        embed(model)
+    state = model.budget.status()["runs"]["test"]
+    assert state["counted_calls"] == 2 and state["local_embedding_calls"] == 0
+    assert state["usd"] == 0
+    assert [row["usd"] for row in rows(model)] == [0, 0]
+    assert rows(model)[-1]["local_embedding"] is False
+
+
+def test_ollama_backend_off_this_machine_is_not_exempt(model: gw.Gateway) -> None:
+    model.settings.ollama_url = "https://embeddings.example.com"
+    embed(model)
+    state = model.budget.status()["runs"]["test"]
+    assert state["counted_calls"] == 1 and state["local_embedding_calls"] == 0
+
+
+def test_a_chat_row_is_never_split_as_local() -> None:
+    forged = [{"endpoint": "/v1/chat/completions", "attempts": 2, "local_embedding": True}]
+    split = launch.call_split(forged)
+    assert split["counted_calls"] == split["counted_toward_call_cap"] == 2
+    assert split["local_embedding_calls"] == 0

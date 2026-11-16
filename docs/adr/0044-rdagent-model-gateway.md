@@ -105,4 +105,10 @@ Routes considered, checked against OpenAI's own documentation on 2026-11-14:
 - A later Codex CLI may rename a feature switch; the call then fails visibly rather than running
   with a tool on.
 
-**Amendment — owner decision 2026-11-17:** Free embeddings served entirely by the gateway's local backend no longer count toward the 60-call cap; local attempts have a separate `LOCAL_EMBEDDING_CALLS_PER_RUN = 2000` guard. Chat, provider embeddings and paid retries remain counted; the 60-call, USD 10 per-run and USD 50 monthly limits keep their values. Receipts and monthly totals separate counted calls from local embeddings; past counts stay as recorded.
+**Amendment — owner decision 2026-11-17:** Free embeddings served entirely by the gateway's
+built-in local backend (loopback Ollama, or the fake test route) no longer count toward the 60-call
+cap, nor toward the monthly call count; they have their own per-run guard,
+`LOCAL_EMBEDDING_CALLS_PER_RUN = 2000`, which stops the run with `budget_exhausted`. Chat calls,
+any other embedding backend and every retry of a counted call still count. The 60-call, USD 10
+per-run and USD 50 monthly limits keep their values; dollar accounting is unchanged. Receipts and
+monthly totals show counted calls and local embeddings separately; past counts stay as recorded.

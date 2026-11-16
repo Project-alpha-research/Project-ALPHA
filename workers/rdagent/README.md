@@ -617,7 +617,9 @@ limit. The match is approximate and over-inclusive: a stray family word adds a f
 removes one.
 
 Local embeddings are free and are not counted toward the 60-call cap (owner decision 2026-11-17).
-Only the gateway's built-in local embedding backends are exempt, never a caller flag or model name.
+Only the gateway's built-in local embedding backend (Ollama on a loopback address, or the fake
+test route) is exempt, never a caller flag, a model name or any other backend. They do not count
+toward the monthly call count either; embedding dollars are unchanged (none are charged).
 Their attempts, including chunk retries, have a separate per-run limit of 2,000
 (`LOCAL_EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted` and stops the run.
 All chat calls (including Codex), provider embeddings and paid retries remain counted; the

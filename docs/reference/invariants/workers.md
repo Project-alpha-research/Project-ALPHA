@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: befa025b00148cfd
+verified: a49022bc58ad60cb
 ---
 
 # Worker invariants
@@ -150,8 +150,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
-  Only built-in local embedding backends are exempt; their 2,000-attempt guard returns `budget_exhausted`.
-  Receipts and monthly status separate `counted_calls` from `local_embedding_calls`; old counts stay recorded.
+  Only the built-in loopback Ollama (or fake) embedding backend is exempt (2,000-attempt run guard, `budget_exhausted`;
+  no dollars); receipts and monthly status split `counted_calls` from `local_embedding_calls`, old counts as recorded.
   No automatic route switch; logs hold hashes and lengths, not text; fixture loops clear model settings. Paid calls
   have a 180 s limit and one retry, both counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by

@@ -599,7 +599,11 @@ class Launch:
 
 
 def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
-    """Separate exempt attempts; old logs retain their original counted-call accounting."""
+    """Model calls versus free local embeddings, as the gateway logged them.
+
+    Only embedding rows the gateway itself marked ``local_embedding`` are outside the 60-call cap
+    (owner decision 2026-11-17); old logs without the mark stay counted as they were.
+    """
     split: dict[str, Any] = {
         "model_chat": {"requests": 0, "attempts": 0, "usd": 0.0},
         "local_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
@@ -627,9 +631,8 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         split["provider_timeouts"] += errors.count("provider_timeout")
         split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
         attempts = int(call.get("attempts") or 0)
-        split[
-            "local_embedding_calls" if call.get("local_embedding") is True else "counted_calls"
-        ] += attempts
+        local = kind == "local_embedding" and call.get("local_embedding") is True
+        split["local_embedding_calls" if local else "counted_calls"] += attempts
         split["retried_attempts"] += max(0, attempts - 1)
         split["timeout_retry_attempts"] += int(
             call.get(

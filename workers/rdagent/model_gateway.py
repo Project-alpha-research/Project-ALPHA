@@ -317,7 +317,8 @@ class Budget:
                         raise GatewayError(
                             429,
                             "budget_exhausted",
-                            f"local embedding limit LOCAL_EMBEDDING_CALLS_PER_RUN ({limit})",
+                            f"budget exhausted: local embedding limit "
+                            f"LOCAL_EMBEDDING_CALLS_PER_RUN ({limit}) reached",
                         )
                     entry["local_embedding_calls"] += 1
                     continue
@@ -362,7 +363,6 @@ class EmbeddingResult:
     vectors: list[list[float]]
     model: str
     tokens: int | None = None
-    usd: float = 0.0
 
 
 class ChatBackend(Protocol):
@@ -1188,19 +1188,19 @@ class Gateway:
         return pieces, owners
 
     def embedding_attempt(self, inputs: list[str], row: dict[str, Any]) -> EmbeddingResult:
-        local = type(self.embedding_backend) in (OllamaEmbeddings, FakeEmbeddings)
+        """Only the built-in fake or loopback Ollama backend skips the call cap (2026-11-17)."""
+        backend = self.embedding_backend
+        local = type(backend) is FakeEmbeddings or (
+            type(backend) is OllamaEmbeddings and loopback_url(self.settings.ollama_url)
+        )
         row["local_embedding"] = local
-        reserve = 0.0
-        if not local:
-            reserve = sum(map(len, inputs)) * (self.settings.api_price_in_per_mtok or 0) / 4e6
-        ticket = self.budget.reserve(reserve, local_embedding=local)
+        ticket = self.budget.reserve(0, local_embedding=local)
         row["attempts"] += 1
-        row["usd"] += reserve
-        result = self.embedding_backend.embed(inputs)
-        if not local:
-            self.budget.settle(ticket, result.usd)
-            row["usd"] += result.usd - reserve
-        return result
+        try:
+            return backend.embed(inputs)
+        finally:
+            if not local:
+                self.budget.settle(ticket, 0)
 
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
         row = self.record("/v1/embeddings", request)

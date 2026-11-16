@@ -31,6 +31,20 @@ start supported actions. It never does the work itself: each action is a call to
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md). Start it with `uv run alpha-web`.
 
+A run made by `alpha test` (a rule test) opens with its own first section, above the summary:
+
+- **What was tested**: the idea in the owner's words, the rule as one plain sentence, the asset,
+  data source, period, costs, the trial count at the time and the run's labels.
+- **Worth a look**: each flag from the diagnostic pass, as its stored sentence.
+- **Audit**: each mechanical check with PASS, FLAG or NOT-CHECKED and its detail. No grade.
+- **Against buy and hold**, **If things were slightly different**, **By year** and
+  **Macro during the worst drawdown** (or one line saying why it is not available).
+
+Every number comes from the run's stored `manifest.json` and `diagnostics.json`; a missing one
+reads `not recorded` with the stored reason. The toolbar says `rule test` and lists the labels,
+and the Run library names the run `rule test <name> <bar size> — <asset> · …` (for example `D1`).
+The rule-test capability itself belongs to the [command line](command-line.md); this part shows it.
+
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-web`

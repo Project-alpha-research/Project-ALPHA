@@ -7,7 +7,7 @@ const hash = 'b'.repeat(64)
 const detail: RunDetail = {
   run_id: runId, kind: 'runs', has_equity: true,
   display_name: 'Fixture', market: 'unknown', mtime: 0, research_gate_watermark: null,
-  run_context_kind: 'standalone_sandbox', run_context_project_id: null, run_context_watermark: null,
+  run_context_kind: 'standalone_sandbox', run_context_project_id: null, run_context_watermark: null, rule_test: null,
   has_trades: false, has_tearsheet: false, has_forecast: false, has_nulls: false,
   has_trials: false, has_forecast_paths: false, has_propfirm_paths: false, has_origins: false, has_portfolio_analytics: false,
   manifest: { run_id: runId, command: 'backtest_run', schema_version: 3,

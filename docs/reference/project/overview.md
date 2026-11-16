@@ -46,12 +46,13 @@ gate is before paper or live trading.
 The spine is built clean inside this repository, one golden path at a time. Each path runs from
 a plain-English prompt to a result on a screen, and the old lane it replaces is deleted when it
 works. At most two streams of work are in flight. Path 1 runs from a prompt to a recorded,
-audited result through the playbook and `alpha test`; what remains is showing it on the screens
-and the honesty traps, the check that an AI following the playbook stays honest.
+audited result through the playbook and `alpha test`, and a first report screen shows it; what
+remains is the benchmark on that screen's chart and the honesty traps, the check that an AI
+following the playbook stays honest.
 
 | Golden path | The prompt it must serve | State |
 |---|---|---|
-| 1. Rule test | "Test this trend rule on these assets" | built ([route](../../../research/CONTEXT.md)); screens and honesty traps remain |
+| 1. Rule test | "Test this trend rule on these assets" | built ([route](../../../research/CONTEXT.md)), first report screen; honesty traps remain |
 | 2. Chart setup | "Show every match of this setup and what happened after" | after 1 |
 | 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | after 2 |
 

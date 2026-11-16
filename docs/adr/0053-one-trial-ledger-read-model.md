@@ -58,13 +58,21 @@ list, show, families and query commands; evidence checks hash the referenced fil
 `trials_for_deflation` supplies the count for the later deflated-Sharpe integration. Spine
 rule counts exclude repeat and error labels; tools and setup searches do not count.
 Rule-family counts count rows. Factor counts reuse `trial_family` (distinct code/clock pairs,
-excluding repeats) plus every unknown RD-Agent row. `all_trials` sums those family counts and
-adds every unknown row from either source; thus an unknown RD-Agent row also contributes to
-the factor family's conservative count. Recorded family sizes remain separately visible.
+excluding repeats) plus every unknown RD-Agent row. `all_trials` is the number of distinct
+attempts: the family counts (which already hold every unknown RD-Agent row) plus unknown rows of
+the spine file. A row is counted once whether or not it can be interpreted: never dropped, never
+doubled (owner delegation, 2026-11-16; on that day 243 trials, 2 not interpreted). Recorded family sizes remain separately visible.
 An unmapped RD-Agent row of a factor schema (a status the reader has no mapping for yet) is fed
 to the writer's own `trial_family` counter, so the factor count is never below the family size
 the writer recorded; any other unknown RD-Agent row adds one. Real data on 2026-11-16: two V3
-rows with status `SPREAD_FAIL` (a writer not yet on main) are shown unknown and counted.
+rows with status `SPREAD_FAIL` are shown unknown and counted. `SPREAD_FAIL` is a status written by
+a newer RD-Agent judge that is not on main yet; it is shown as unknown until that lands, then
+mapped to rejected.
+
+`by-asset` and `asset-history` normalise instrument names only for grouping (`BTCUSDT`,
+`BTC-USDT` and `BTC/USDT` form one group shown as `BTC/USDT`). Records keep their original
+names in `list` and `show`. Names containing `:` (perpetual contracts) stay separate from spot
+pairs, because they are a different instrument; the output states this.
 
 ## Options refused
 

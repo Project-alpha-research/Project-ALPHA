@@ -173,12 +173,16 @@ def family_counts(snapshot: LedgerSnapshot) -> list[dict[str, Any]]:
 
 def trials_for_deflation(snapshot: LedgerSnapshot, family_id: str) -> dict[str, Any]:
     counts = family_counts(snapshot)
+    # Every RD-Agent unknown row is already inside the factor family count; only unknown rows
+    # of other files (the spine) still need adding. A row is counted once, never twice.
+    outside = sum(row.source != "rdagent" for row in snapshot.unknown)
     return {
         "family_id": family_id,
         "family_trials": next(
             (r["reader_trials"] for r in counts if r["family_id"] == family_id), 0
         ),
-        "all_trials": sum(r["reader_trials"] for r in counts) + len(snapshot.unknown),
-        "basis": "Reader family counts plus every unknown row; RD-Agent factor counts also "
-        "include unknown RD-Agent rows conservatively.",
+        "all_trials": sum(r["reader_trials"] for r in counts) + outside,
+        "unknown_rows": len(snapshot.unknown),
+        "basis": "Family counts, which already include unknown RD-Agent rows, plus unknown rows "
+        "of other files; every row is counted once, whether or not it can be interpreted.",
     }

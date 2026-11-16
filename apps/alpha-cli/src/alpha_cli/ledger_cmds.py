@@ -14,6 +14,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.errors import SpineError, fail
+from alpha_cli.spine.trial_query import ASSET_NOTE, asset_group
 from alpha_cli.spine.trial_reader import (
     LedgerSnapshot,
     family_counts,
@@ -62,13 +63,16 @@ def _render(output: dict[str, Any]) -> str:
         "by_outcome",
         "family_count",
         "newest_created_at",
-        "all_trials",
         "evidence_found",
         "evidence_sha256_now",
         "evidence_matches",
     ):
         if key in output:
             lines.append(f"{key}: {json.dumps(output[key], sort_keys=True)}")
+    if "trials_text" in output:
+        lines.append(output["trials_text"])
+    if "note" in output:
+        lines.append(output["note"])
     for source in output.get("sources", []):
         if source["state"] == "missing":
             lines.append(f"{source['source']}: ledger file not found ({source['file']})")
@@ -103,12 +107,21 @@ def _run(
         )
 
 
+def _totals(snapshot: LedgerSnapshot) -> dict[str, Any]:
+    result = trials_for_deflation(snapshot, "")
+    total, unknown = result["all_trials"], result["unknown_rows"]
+    text = f"{total} trials"
+    if unknown:
+        text += f", including {unknown} rows ALPHA could not interpret (counted anyway)"
+    return {"all_trials": total, "unknown_rows": unknown, "trials_text": text}
+
+
 def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
     return {
         "by_kind": dict(Counter(r.kind for r in snapshot.records)),
         "by_outcome": dict(Counter(r.outcome for r in snapshot.records)),
         "family_count": len(family_counts(snapshot)),
-        "all_trials": trials_for_deflation(snapshot, "")["all_trials"],
+        **_totals(snapshot),
         "newest_created_at": max(
             (r.created_at for r in snapshot.records if r.created_at), default=None
         ),
@@ -146,7 +159,7 @@ def list_trials(
                     kind=kind, family_id=family, outcome=outcome, source=source
                 ).items()
             )
-            and (asset is None or asset in r.assets)
+            and (asset is None or asset_group(asset) in {asset_group(a) for a in r.assets})
         ]
         records.sort(
             key=lambda r: (r.created_at is not None, r.created_at or "", r.source, r.source_line),
@@ -214,7 +227,7 @@ def families(rdagent_ledger: RD = None, json_out: JSON = False) -> None:
     def select(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
         return {
             "families": family_counts(snapshot),
-            "all_trials": trials_for_deflation(snapshot, "")["all_trials"],
+            **_totals(snapshot),
         }
 
     _run(rdagent_ledger, json_out, select)
@@ -238,6 +251,7 @@ def query_trials(
         json_out,
         lambda snapshot, home: {
             "question": question,
+            **({"note": ASSET_NOTE} if "asset" in question else {}),
             "rows": query(
                 snapshot, question, asset=asset, family=family, measure=measure, limit=limit
             ),

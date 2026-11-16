@@ -59,7 +59,12 @@ def test_worked_example(tmp_path: Path) -> None:
     assert counts["spine:ma_cross"]["reader_trials"] == 2
     assert counts["spine:ma_cross"]["outcomes"] == {"supported": 1, "rejected": 1, "error": 1}
     result = trials_for_deflation(snapshot, "rdagent-factors")
-    assert result["family_trials"] == 6 and result["all_trials"] == 11 and result["basis"]
+    assert (
+        result["family_trials"] == 6
+        and result["all_trials"] == 9
+        and result["unknown_rows"] == 2
+        and result["basis"]
+    )
     assert trials_for_deflation(snapshot, "absent")["family_trials"] == 0
 
 
@@ -200,3 +205,12 @@ def test_unmapped_factor_status_still_counts_like_the_writer_counts_it(tmp_path:
     from alpha_cli._rdagent_clocks import trial_family
 
     assert family_counts(snapshot)[0]["reader_trials"] == len(trial_family(rows))
+
+
+def test_all_trials_counts_each_row_once(tmp_path: Path) -> None:
+    """Unknown RD-Agent rows sit inside the factor count; unknown spine rows are added once."""
+    home, rd = example(tmp_path)
+    write_rows(home / "ledger/trials.jsonl", [spine(), "not json"])
+    snapshot = read_ledgers(ledger_sources(home, rd))
+    families = {r["family_id"]: r["reader_trials"] for r in family_counts(snapshot)}
+    assert trials_for_deflation(snapshot, "x")["all_trials"] == sum(families.values()) + 1

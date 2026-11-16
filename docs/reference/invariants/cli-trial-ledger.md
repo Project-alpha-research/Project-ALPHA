@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/trial_query.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/smoke/test_ledger_smoke.py
-verified: c56a494db59ea633
+verified: 414e856e7faae937
 ---
 
 # One trial ledger invariants
@@ -37,8 +37,8 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
 - `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows
   contribute conservatively even if there are no mapped factors; an unmapped row of a factor
-  schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` adds all
-  unknown rows again to the sum of family counts, as specified by ADR-0053.
+  schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` is the sum of family
+  counts plus unknown spine rows: each row once, never doubled (ADR-0053).
 - `trials_for_deflation` exposes family count, all-trials count and basis. Existing DSR callers
   are unchanged; wiring them to this seam is a follow-up.
 - DuckDB is imported only for a query, connects to `:memory:` with external access disabled,
@@ -46,6 +46,10 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Questions are `by-family`, `by-outcome`, `by-asset`, `by-month`, `asset-history`,
   `family-trials`, `top-measure` and `repeats`. Bind values with `?`; reject unknown questions
   with `UNKNOWN_QUESTION` and missing/unlisted parameters with `BAD_PARAMETER`.
+- Statuses not yet mapped stay unknown: `SPREAD_FAIL` is written by a newer RD-Agent judge not on
+  main yet; unknown until that lands, then mapped to rejected.
+- `by-asset` and `asset-history` normalise names for grouping only (`BTCUSDT` = `BTC/USDT`);
+  names with `:` (perpetuals) stay separate; `list` and `show` keep the original name.
 - Limits are 1–200, default 50. Top measures exclude nulls; p and q sort ascending and the
   other allowed measures descending. Undated rows group under `unknown` for by-month.
 

@@ -15,6 +15,28 @@ MEASURES = ("oos_sharpe", "dsr", "p", "q", "mean_ic", "annualised_excess")
 ORDER = "created_at DESC NULLS LAST, source DESC, source_line DESC"
 
 
+QUOTES = ("USDT", "USDC", "USD", "BTC", "ETH", "EUR")
+ASSET_NOTE = (
+    "Grouping normalises names: BTC/USDT, BTC-USDT and BTCUSDT count as BTC/USDT. "
+    "Names with a ':' (perpetual contracts) are never merged with spot pairs. "
+    "list and show keep each record's original name."
+)
+
+
+def asset_group(name: str) -> str:
+    """Group key for an instrument name, used only for grouping; never stored on a record."""
+    cleaned = name.strip().upper().replace("-", "/").replace("_", "/")
+    if ":" in cleaned or not cleaned.replace("/", "").isalnum() or cleaned.count("/") > 1:
+        return name
+    if "/" in cleaned:
+        return cleaned
+    for quote in QUOTES:
+        base = cleaned.removesuffix(quote)
+        if base != cleaned and base and len(base) <= 6:
+            return f"{base}/{quote}"
+    return name
+
+
 @dataclass(frozen=True)
 class Question:
     sql: str
@@ -30,7 +52,7 @@ QUESTIONS = {
         "SELECT outcome, count(*) AS rows FROM trials GROUP BY outcome ORDER BY outcome LIMIT ?"
     ),
     "by-asset": Question(
-        "SELECT asset, count(*) AS rows FROM trials, unnest(assets) AS a(asset) "
+        "SELECT asset, count(*) AS rows FROM trials, unnest(asset_groups) AS a(asset) "
         "GROUP BY asset ORDER BY asset LIMIT ?"
     ),
     "by-month": Question(
@@ -38,7 +60,8 @@ QUESTIONS = {
         "count(*) AS rows FROM trials GROUP BY month ORDER BY month LIMIT ?"
     ),
     "asset-history": Question(
-        f"SELECT * FROM trials WHERE list_contains(assets, ?) ORDER BY {ORDER} LIMIT ?", ("asset",)
+        f"SELECT * FROM trials WHERE list_contains(asset_groups, ?) ORDER BY {ORDER} LIMIT ?",
+        ("asset",),
     ),
     "family-trials": Question(
         f"SELECT * FROM trials WHERE family_id = ? ORDER BY {ORDER} LIMIT ?", ("family",)
@@ -75,10 +98,16 @@ def _frame(snapshot: LedgerSnapshot) -> Any:
             if field.name in {"family_size_recorded", "source_line"}
             else pl.String
         )
+    schema["asset_groups"] = pl.List(pl.String)
     schema.update({f"m_{name}": pl.Float64 for name in (*MEASURES, "benchmark_sharpe")})
     rows = []
     for record in snapshot.records:
-        row = {name: getattr(record, name) for name in schema if not name.startswith("m_")}
+        row = {
+            name: getattr(record, name)
+            for name in schema
+            if not name.startswith("m_") and name != "asset_groups"
+        }
+        row["asset_groups"] = sorted({asset_group(a) for a in record.assets})
         row.update(
             {f"m_{name}": record.measures.get(name) for name in (*MEASURES, "benchmark_sharpe")}
         )
@@ -130,6 +159,8 @@ def query(
             "Missing or unlisted question parameter, measure or limit.",
             "Use the question's required parameter and a limit from 1 to 200.",
         )
+    if asset is not None:
+        provided["asset"] = asset_group(asset)
     values = [provided[name] for name in definition.parameters] + [limit]
     with connection(snapshot) as con:
         cursor = con.execute(definition.sql, values)

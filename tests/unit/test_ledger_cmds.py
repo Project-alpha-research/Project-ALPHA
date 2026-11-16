@@ -115,3 +115,12 @@ def test_human_top_measure_and_spine_evidence(
     human = CliRunner().invoke(ledger_app, ["query", "top-measure", "--measure", "oos_sharpe"])
     assert human.exit_code == 0, human.output
     assert "measure_value" in human.output and "0.7" in human.output
+
+
+def test_totals_wording_and_grouping_note(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
+    assert "9 trials, including 2 rows ALPHA could not interpret (counted anyway)" in out
+    out = CliRunner().invoke(ledger_app, ["query", "by-asset", "--rdagent-ledger", str(rd)]).output
+    assert "Grouping normalises names" in out

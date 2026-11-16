@@ -96,3 +96,33 @@ def test_bindings_order_limit_and_unknown_month(tmp_path: Path) -> None:
         {"month": "unknown", "rows": 1},
     ]
     assert query(snapshot, "asset-history", asset="x' OR TRUE --") == []
+
+
+def test_asset_grouping_normalises_names_only_for_grouping(tmp_path: Path) -> None:
+    from alpha_cli.spine.trial_query import asset_group
+    from tests.unit.test_trial_reader import write_rows
+    from tests.unit.test_trial_record import factor
+
+    assert {asset_group(n) for n in ("BTC/USDT", "BTCUSDT", "btc-usdt")} == {"BTC/USDT"}
+    assert asset_group("BTC/USDT:USDT") == "BTC/USDT:USDT"  # perpetual stays separate
+    assert asset_group("SPY") == "SPY"
+    rd = tmp_path / "rd.jsonl"
+    write_rows(
+        rd,
+        [
+            factor(trial_index=1, instruments=["BTCUSDT"]),
+            factor(trial_index=2, instruments=["BTC/USDT"], code_sha256="e" * 64),
+            factor(trial_index=3, instruments=["BTC/USDT:USDT"], code_sha256="f" * 64),
+        ],
+    )
+    snapshot = read_ledgers(ledger_sources(tmp_path, rd))
+    assert {r["asset"]: r["rows"] for r in query(snapshot, "by-asset")} == {
+        "BTC/USDT": 2,
+        "BTC/USDT:USDT": 1,
+    }
+    assert len(query(snapshot, "asset-history", asset="BTCUSDT")) == 2
+    assert {a for r in snapshot.records for a in r.assets} == {
+        "BTCUSDT",
+        "BTC/USDT",
+        "BTC/USDT:USDT",
+    }

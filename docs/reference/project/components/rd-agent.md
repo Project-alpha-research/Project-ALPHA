@@ -114,7 +114,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 - Measured 2026-11-16 (system tests, about USD 0.66): 66 factors judged across all runs, no
   candidate; 15 of 18 replayed swing-judge screen passes lost money before costs, so the rank screen
   and the held top third disagree on 15 coins. Runs sharing one gateway can now start together,
-  and RD-Agent is told why each replay lost. Owner report: `owner/rdagent-status/report.md` (outside git).
+  and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

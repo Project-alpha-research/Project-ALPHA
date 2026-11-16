@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -115,7 +116,7 @@ def test_untagged_budget(tmp_path: Path) -> None:
 def test_all_labels_and_trial_citation_must_be_visible(tmp_path: Path) -> None:
     lookup = make_lookup(tmp_path)
 
-    def labelled(run_id, metric):
+    def labelled(run_id: str, metric: str) -> dict[str, Any]:
         return {
             **lookup(run_id, metric),
             "labels": ["quick", "source-defaulted", "short-history", "no-diagnostics"],

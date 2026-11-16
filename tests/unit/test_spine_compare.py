@@ -1,7 +1,9 @@
 """Stored comparisons retain provenance and explain unavailable arithmetic."""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -14,7 +16,7 @@ A = "9a99cb94971d54dc"
 B = "abcd1234971d54dc"
 
 
-def make_lookup(home: Path):
+def make_lookup(home: Path) -> Callable[[str, str], dict[str, Any]]:
     for run_id, value, basis in ((A, 0.8, "base"), (B, 1.2, "other")):
         directory = home / "runs" / run_id
         directory.mkdir(parents=True, exist_ok=True)
@@ -75,7 +77,7 @@ def test_null_and_mixed_basis(tmp_path: Path) -> None:
     "base,other", [(0, 2), (float("inf"), 2), (2, float("nan")), (1e-308, 1e308)]
 )
 def test_unavailable_ratio(base: float, other: float) -> None:
-    def lookup(run_id, metric):
+    def lookup(run_id: str, metric: str) -> dict[str, Any]:
         return {
             "value": base if run_id == A else other,
             "run_id": run_id,

@@ -20,6 +20,13 @@ many tries; accept a free lunch; miss that a result is just the market; hide a f
 Each injected failure must block a claim; a later design compares owner-only, AI-only and
 combined work on the same tasks.
 
+More scenarios from earlier work: a vague idea turned into a plan, a paper turned into a
+hypothesis, conflicting papers, a misleading win rate, a dead end that should be recognised, an
+options idea judged realistically, and the AI choosing its own next step. Harness lessons: cap the
+calls spent on orientation, enforce the permitted read window, reserve budget for the final read
+and report, conserve attempts globally, test that sealed values never leak, and include a
+positive control specified independently of the system under test.
+
 ## Where it would live
 
 `tests/` scenarios on made-up data plus a scorer run weekly by the health check; results on

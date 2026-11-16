@@ -3,7 +3,7 @@ owner: study projections
 sources:
   - packages/alpha-study/src/**
   - packages/alpha-study/pyproject.toml
-verified: a0b2ee248a82
+verified: b72721dd0b5ae99e
 ---
 
 # alpha-study workspace
@@ -34,7 +34,8 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 - `setup/`: frozen daily idea specs, causal expressions and candidate inspection; no exits simulated.
 - Tests: `tests/unit/study/` (its own folder), `tests/unit/test_study_*.py`; bias guards
   `tests/bias_guards/test_study_double_bottom_future_poison.py`,
-  `tests/bias_guards/test_verified_semantic_read_future_poison.py`.
+  `tests/bias_guards/test_verified_semantic_read_future_poison.py`,
+  `tests/bias_guards/test_setup_future_poison.py`.
 - Check: `uv run python scripts/gate.py check`; `uv run lint-imports` keeps the seam one-way.
 
 ## Outputs

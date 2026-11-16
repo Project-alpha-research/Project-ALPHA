@@ -3,7 +3,7 @@ owner: strategy layer
 sources:
   - packages/alpha-strategies/src/**
   - packages/alpha-strategies/pyproject.toml
-verified: 1ac86fc02443
+verified: e0e9500b2c84c7c4
 ---
 
 # alpha-strategies workspace
@@ -11,7 +11,7 @@ verified: 1ac86fc02443
 ## Purpose
 
 Nautilus strategy classes and the pure decision functions behind them: trailing-window signals,
-volatility-target sizing, rule specs and the shared paper-safe lifecycle. It imports only
+volatility-target sizing, plain all-in sizing, rule specs and the shared paper-safe lifecycle. It imports only
 `alpha_core` and `alpha_patterns` (import-linter contract "alpha_strategies depends only on core
 and patterns"); only `alpha_cli` composes it. A strategy decides on the close of a bar and fills at
 the next open, never earlier.

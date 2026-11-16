@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from rdagent.scenarios.qlib.proposal.factor_proposal import QlibFactorHypothesis
 from rdagent.utils import convert2bool
 from rdagent.utils.agent.tpl import T
 
+from alpha_factor_coder import demote_in_file
 from alpha_factor_data import check_prefix_invariance
 
 LEGACY_KEYS = ["IC"] + [
@@ -28,6 +30,180 @@ LEGACY_KEYS = ["IC"] + [
     for cost in ("without", "with")
     for metric in ("annualized_return", "max_drawdown")
 ]
+# RD-Agent's own log viewer (rdagent/log/ui/app.py, QLIB_SELECTED_METRICS) indexes these too;
+# ALPHA does not compute an information ratio, so it is present as NaN, never invented.
+VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
+
+
+SWING_BRIEF = (
+    "The trader is a retail swing trader holding days to weeks, never high frequency. "
+    "ALPHA judges every factor at daily, weekly (7-day) and monthly (28-day) holding clocks; "
+    "only a weekly or monthly pass can become a candidate. Wanted: slow signals whose "
+    "cross-sectional ranks change rarely (low turnover). State an economic or behavioural "
+    "mechanism in the hypothesis and a falsifier: what result would show it wrong. "
+    "Every trade costs 10 bps fee plus 6 bps slippage on each side; turning over half the book "
+    "every day costs about 29% a year. Fast daily reversal, gap and range ideas already passed "
+    "the daily screen but lost money after costs because they traded 19%-79% of the portfolio "
+    "per day; avoid re-proposing them. Exploratory, not admitted."
+)
+
+
+def ledger_summary(row: dict[str, Any]) -> str:
+    if row.get("schema") not in {
+        "AlphaRdagentFactorTrialV1",
+        "AlphaRdagentFactorTrialV2",
+        "AlphaRdagentFactorTrialV3",
+    }:
+        raise ValueError("invalid ALPHA trial ledger schema")
+    if row["schema"] == "AlphaRdagentFactorTrialV3":
+        clocks = row["clocks"]
+        statuses = ", ".join(f"{c} {clocks[c]['status']}" for c in ("daily", "weekly", "monthly"))
+        lead = clocks[row["lead_clock"]]
+        line = (
+            f"{row['name']}: {row['status']} ({statuses}); lead {row['lead_clock']} "
+            f"IC {lead['screen'].get('mean_ic')}; q {lead['q']}"
+        )
+    else:
+        line = (
+            f"{row['name']}: {row['status']}; mean rank IC {row['screen'].get('mean_ic')}; "
+            f"q {row['q']}; run {row['run_id']}"
+        )
+    if row.get("exposure", {}).get("previously_exposed") is True:
+        line += "; protected window previously exposed"
+    return line
+
+
+def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> None:
+    context["hypothesis_and_feedback"] += "\n" + SWING_BRIEF
+    if not ledger_name or not Path(ledger_name).exists():
+        return
+    raw = Path(ledger_name).read_bytes()
+    # Another run may be appending; only complete lines participate in the summary.
+    rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+    if not rows:
+        return
+    heading = (
+        "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
+    )
+    lines, seen = [], set()
+    unknown: list[str] = []
+    known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
+            raise ValueError("invalid ALPHA trial ledger schema")
+        if row["schema"] not in known | {"AlphaRuleTrialV1"}:
+            unknown.append(row["schema"])
+        elif row["schema"] in known:
+            ledger_summary(row)  # Validate known rows even outside the 30-row summary.
+    for row in (r for r in reversed(rows) if r["schema"] in known):
+        line = ledger_summary(row)
+        if row["code_sha256"] in seen or row["status"] == "REPEAT":
+            continue
+        seen.add(row["code_sha256"])
+        lines.append(line)
+        if len(lines) == 30:
+            break
+    context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+    if unknown:
+        context["hypothesis_and_feedback"] += (
+            f"\n{len(unknown)} ledger rows of other kinds were skipped "
+            f"({', '.join(sorted(set(unknown)))})"
+        )
+
+
+def record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
+    if not rejected:
+        return
+    try:
+        _record_coder_verdicts(run, iteration, rejected)
+    except Exception as error:  # noqa: BLE001 - a verdict record never stops the runner
+        print(f"coder verdicts not recorded: {type(error).__name__}", file=sys.stderr)
+
+
+def _record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
+    informations = [task.get_task_information() for task, _ in rejected]
+    demoted, note = demote_in_file(
+        os.environ, informations, [factor["code_sha256"] for _, factor in rejected]
+    )
+    with (run / "coder-verdicts.jsonl").open("a") as stream:
+        for (_, factor), information in zip(rejected, informations, strict=True):
+            stream.write(
+                json.dumps(
+                    {
+                        "schema": "AlphaCoderVerdictV1",
+                        "iteration": iteration,
+                        "name": factor["name"],
+                        "code_sha256": factor["code_sha256"],
+                        "status": factor["status"],
+                        "task_information_sha256": hashlib.sha256(information.encode()).hexdigest(),
+                        "demoted": information in demoted,
+                        "note": note,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+
+
+def record_code(run: Path, digest: str, code: bytes) -> None:
+    folder = run / "code"
+    folder.mkdir(exist_ok=True)
+    path = folder / f"{digest}.py"
+    if path.exists():
+        if path.read_bytes() != code:
+            raise ValueError(f"conflicting factor code archive: {digest}")
+        return
+    # Write a temporary file, then link it into place: a crash never leaves a partial copy.
+    temporary = folder / f".{digest}.{os.getpid()}.tmp"
+    with temporary.open("wb") as stream:
+        stream.write(code)
+        stream.flush()
+        os.fsync(stream.fileno())
+    try:
+        os.link(temporary, path)
+    except FileExistsError:
+        if path.read_bytes() != code:
+            raise ValueError(f"conflicting factor code archive: {digest}") from None
+    finally:
+        temporary.unlink()
+
+
+def record_round(run: Path, exp: Any, feedback: Any, row: dict[str, Any]) -> None:
+    hashes = {f["name"]: f["code_sha256"] for f in exp.alpha_evaluation.get("factors", [])}
+    record = {
+        "schema": "AlphaRdagentRoundV1",
+        **row,
+        "hypothesis": {
+            key: getattr(exp.hypothesis, key, None)
+            for key in (
+                "hypothesis",
+                "reason",
+                "concise_reason",
+                "concise_observation",
+                "concise_justification",
+                "concise_knowledge",
+            )
+        },
+        "tasks": [
+            {
+                "name": task.factor_name,
+                **{key: getattr(task, key, None) for key in ("description", "variables")},
+                "formulation": getattr(task, "factor_formulation", None),
+                "code_sha256": hashes.get(task.factor_name),
+            }
+            for task in exp.sub_tasks
+        ],
+        "feedback": {
+            key: getattr(feedback, key)
+            for key in ("observations", "hypothesis_evaluation", "new_hypothesis", "reason")
+        },
+    }
+    with (run / "rounds.jsonl").open("a") as stream:
+        stream.write(json.dumps(record, sort_keys=True) + "\n")
 
 
 class AlphaFactorScenario(QlibFactorScenario):
@@ -53,12 +229,16 @@ class AlphaFactorScenario(QlibFactorScenario):
     def simulator(self) -> str:
         return (
             "A factor is judged by ALPHA's rank IC with inference and a cost-aware replay; there "
-            "is no Qlib model. Decide at the close of UTC day d, fill at open d+1, exit at open "
-            "d+2. ALPHA canonical synchronized long-only replay (not Nautilus), top third equal "
+            "is no Qlib model. Decide at the close of UTC day d, fill at open d+1, hold daily "
+            "(1 day), weekly (7 days) or monthly (28 days). Each clock uses non-overlapping "
+            "screen windows phased at 2021-01-01. ALPHA canonical synchronized long-only replay "
+            "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
             "365 days/year. Direction chosen in-sample. BH q < 0.10 screens the cross-run trial "
-            "ledger; only screened factors are replayed. Positive net excess makes an exploratory "
-            "candidate, never admission, evidence, approval or promotion."
+            "ledger, counting each factor x clock as a trial; only screened clocks are replayed. "
+            "Hold drifted weights between rebalances; residual trades are executed and charged. "
+            "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "
+            "a daily-only pass is FAST_ONLY, never admission, evidence, approval or promotion."
         )
 
     @property
@@ -68,7 +248,8 @@ class AlphaFactorScenario(QlibFactorScenario):
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
             "2023-12-31. 2024-01-01 onward is reserved and never available to this loop. "
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
-            "not all. "
+            "not all. Daily, weekly (7-day) and monthly (28-day) holding/rebalance clocks are "
+            "fixed in advance; only a weekly or monthly pass can become a candidate. "
             "exploratory, not admitted, not yet confirmed."
         )
 
@@ -78,7 +259,7 @@ class AlphaFactorRunner(Developer):
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
         if not exp.sub_tasks:
-            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS, float("nan")))
+            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS + VIEWER_KEYS, float("nan")))
             exp.stdout = "baseline: no factors; ALPHA evaluates factors standalone"
             return exp
         run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
@@ -89,6 +270,7 @@ class AlphaFactorRunner(Developer):
         folder = run / "evaluations" / f"iter-{iteration}"
         folder.mkdir(exist_ok=False)
         factors, frames = [], []
+        rejected = []
         if not (len(exp.sub_tasks) == len(exp.sub_workspace_list) == len(exp.prop_dev_feedback)):
             raise ValueError("factor tasks, workspaces and feedback lengths differ")
         for task, workspace, feedback in zip(
@@ -108,6 +290,8 @@ class AlphaFactorRunner(Developer):
                 "status": "FAILED",
                 "lookahead": {"status": "NOT_RUN"},
             }
+            if code:
+                record_code(run, str(factor["code_sha256"]), code)
             if code and feedback:
                 execution, values = workspace.execute("All")
                 if values is not None:
@@ -128,9 +312,14 @@ class AlphaFactorRunner(Developer):
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
+                    elif factor["status"] == "FAILED" or check["status"] == "LOOKAHEAD":
+                        # Only ALPHA's verdict on the code itself: a check that merely errored
+                        # (timeout, subprocess failure) says nothing about the code.
+                        rejected.append((task, factor))
                 else:
                     factor["failure_detail"] = execution
             factors.append(factor)
+        record_coder_verdicts(run, iteration, rejected)
         if frames:
             values_frame = pd.concat(frames, axis=1).sort_index().reset_index()
             values_frame["date"] = pd.to_datetime(values_frame.date, utc=True).dt.date
@@ -169,7 +358,9 @@ class AlphaFactorRunner(Developer):
                 lines[-1] if lines else f"ALPHA evaluator exit {result.returncode}"
             )
         record = json.loads((folder / "result.json").read_bytes())
-        exp.result = pd.Series(record["legacy_result"])
+        exp.result = pd.Series(
+            {**dict.fromkeys(VIEWER_KEYS, float("nan")), **record["legacy_result"]}
+        )
         exp.stdout = record["feedback_text"]
         exp.alpha_evaluation = record
         if all(f["status"] == "FAILED" for f in factors):
@@ -180,39 +371,7 @@ class AlphaFactorRunner(Developer):
 class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
     def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
         context, flag = super().prepare_context(trace)
-        ledger_name = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
-        if ledger_name and Path(ledger_name).exists():
-            raw = Path(ledger_name).read_bytes()
-            # Only complete lines: another run may be appending at this moment.
-            rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
-            if rows:
-                heading = (
-                    "\nALPHA trial ledger (all runs; exploratory, not admitted; "
-                    "15 surviving coins only)\n"
-                )
-                lines, seen = [], set()
-                for row in reversed(rows):
-                    if row.get("schema") not in {
-                        "AlphaRdagentFactorTrialV1",
-                        "AlphaRdagentFactorTrialV2",
-                    }:
-                        raise ValueError("invalid ALPHA trial ledger schema")
-                    if row["code_sha256"] in seen or row["status"] == "REPEAT":
-                        continue
-                    seen.add(row["code_sha256"])
-                    lines.append(
-                        f"{row['name']}: {row['status']}; "
-                        f"mean rank IC {row['screen'].get('mean_ic')}; "
-                        f"q {row['q']}; run {row['run_id']}"
-                    )
-                    if (
-                        row["schema"] == "AlphaRdagentFactorTrialV2"
-                        and row["exposure"]["previously_exposed"] is True
-                    ):
-                        lines[-1] += "; protected window previously exposed"
-                    if len(lines) == 30:
-                        break
-                context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+        append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
         return context, flag
 
 
@@ -255,4 +414,14 @@ class AlphaFactorFeedback(Experiment2Feedback):
         }
         with (Path(os.environ["ALPHA_FACTOR_RUN_DIR"]) / "feedback.jsonl").open("a") as stream:
             stream.write(json.dumps(row, sort_keys=True) + "\n")
+        try:
+            record_round(Path(os.environ["ALPHA_FACTOR_RUN_DIR"]), exp, feedback, row)
+        except Exception as error:  # noqa: BLE001 - evidence must never abort RD-Agent's step
+            with (Path(os.environ["ALPHA_FACTOR_RUN_DIR"]) / "rounds-errors.jsonl").open(
+                "a"
+            ) as out:
+                out.write(
+                    json.dumps({"iteration": row.get("iteration"), "error": repr(error)[:500]})
+                    + "\n"
+                )
         return feedback

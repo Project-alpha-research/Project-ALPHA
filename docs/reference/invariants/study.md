@@ -5,7 +5,7 @@ sources:
   - tests/unit/study/test_*.py
   - tests/bias_guards/test_study_double_bottom_future_poison.py
   - tests/bias_guards/test_verified_semantic_read_future_poison.py
-verified: a0b2ee248a82
+verified: 74be65a24954a910
 ---
 
 # Study invariants
@@ -53,9 +53,13 @@ registry, and the blind semantic-read contract. The package is a projection laye
 
 ## Setup causality
 
-Daily `setup/` expressions read only the current and earlier rows; null operands stay null.
-Candidates use ordered filters and causal triggers, with entry only at the next open.
-`tests/bias_guards/test_setup_future_poison.py` checks prefix invariance and a leaky control.
+- Daily `setup/` expressions read only the current and earlier rows: shifts of n ≥ 1, trailing
+  full windows, causal EWM and row-wise logic. Non-finite values become null; text length, nesting
+  and emitted size are bounded so a pathological expression fails loud.
+- Filters decide the reason in file order. A trigger window that runs past the last bar is
+  `pending` / `pending-trigger`, never `no-trigger`. Entry is only the next bar's open.
+- `tests/bias_guards/test_setup_future_poison.py` truncates and poisons later bars (x1000, huge,
+  NaN, missing volume) and catches hand-built leaky twins at expression and evaluator level.
 
 ## Operator registry
 

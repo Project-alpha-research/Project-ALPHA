@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 9b38a129c7aa
+verified: 3fd6b69956c22395
 ---
 
 # Command line
@@ -38,12 +38,14 @@ owner's decisions.
 ## What is real today
 
 Every capability on [STATUS.md](../../../../STATUS.md) runs through it; each is claimed by the part
-it belongs to.
+it belongs to. `alpha test` takes an idea spec or flags and evaluates a long/flat rule across
+assets and named data stores. Each result appears in the Workstation Run Browser, while the general
+trial ledger retains every attempt and labels repeats and development-machine data.
 
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** none
+- **Capabilities:** `rule-test`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),

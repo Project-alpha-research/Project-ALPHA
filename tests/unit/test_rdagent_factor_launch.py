@@ -8,7 +8,9 @@ import json
 import os
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -99,11 +101,12 @@ def test_loop_environment_is_exact_and_names_alpha_classes(tmp_path: Path) -> No
     assert env["QLIB_FACTOR_RUNNER"] == "alpha_factor_judge.AlphaFactorRunner"
     assert env["QLIB_FACTOR_SUMMARIZER"] == "alpha_factor_judge.AlphaFactorFeedback"
     assert env["QLIB_FACTOR_SCEN"] == "alpha_factor_judge.AlphaFactorScenario"
+    assert env["QLIB_FACTOR_CODER"] == "alpha_factor_coder.AlphaFactorCoSTEER"
     assert env["QLIB_FACTOR_HYPOTHESIS_GEN"] == "alpha_factor_judge.AlphaFactorHypothesisGen"
-    assert env["FACTOR_CoSTEER_max_loop"] == "1"
+    assert env["FACTOR_CoSTEER_max_loop"] == "2"
     assert env["CONDA_DEFAULT_ENV"] == "alpha-no-conda"
     assert not any(k.startswith(("OPENAI", "ALPHA_GATEWAY", "MODEL_CoSTEER")) for k in env)
-    assert len(env) == 31
+    assert len(env) == 32
     assert env["FACTOR_CoSTEER_python_bin"].startswith(
         "env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE "
     )
@@ -250,3 +253,248 @@ def test_codex_route_alone_waives_temperature_by_default(
     if waived:
         assert gateway_command[gateway_command.index("--accept-unhonoured") + 1] == "temperature"
     assert ("--api-model" in gateway_command) is (route == "api")
+
+
+def test_step_wrapper_records_success_failure_and_unset_run_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import asyncio
+
+    sys.path.insert(0, str(WORKER))
+    try:
+        entry = importlib.import_module("factor_loop_entry")
+    finally:
+        sys.path.remove(str(WORKER))
+
+    class FakeLoop:
+        step_idx = {7: 0}
+        steps = ["coding"]
+
+        async def _run_step(self, li: int, force_subproc: bool = False) -> str:
+            assert li == 7
+            if force_subproc:
+                raise ValueError("step failed")
+            self.step_idx[li] = 1
+            return "done"
+
+    original = FakeLoop._run_step
+    monkeypatch.delenv("ALPHA_FACTOR_RUN_DIR", raising=False)
+    entry.record_steps(FakeLoop)
+    assert FakeLoop._run_step is original
+    monkeypatch.setenv("ALPHA_FACTOR_RUN_DIR", str(tmp_path))
+    entry.record_steps(FakeLoop)
+    loop = FakeLoop()
+    assert asyncio.run(loop._run_step(7)) == "done"
+    loop.step_idx[7] = 0
+    with pytest.raises(ValueError, match="step failed"):
+        asyncio.run(loop._run_step(7, force_subproc=True))
+    rows = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
+    assert [r["event"] for r in rows] == ["start", "end", "start", "end"]
+    assert all(
+        r["schema"] == "AlphaRdagentStepV1"
+        and r["loop"] == 7
+        and r["step_index"] == 0
+        and r["step"] == "coding"
+        for r in rows
+    )
+    assert rows[1]["status"] == "ok" and rows[1]["error_type"] is None
+    assert rows[3]["status"] == "error" and rows[3]["error_type"] == "ValueError"
+    from datetime import datetime
+
+    for row in rows:
+        offset = datetime.fromisoformat(row["ts"]).utcoffset()
+        assert offset is not None
+        assert offset.total_seconds() == 0
+
+
+def test_label_calls_inside_outside_overlap_and_boundaries() -> None:
+    def step(event: str, loop: int, name: str, stamp: str) -> dict[str, object]:
+        return {
+            "event": event,
+            "loop": loop,
+            "step_index": loop,
+            "step": name,
+            "ts": f"2026-11-15T00:{stamp}+00:00",
+        }
+
+    steps = [
+        step("start", 0, "propose", "00:00"),
+        step("start", 1, "coding", "01:00"),
+        step("end", 1, "coding", "02:00"),
+        step("end", 0, "propose", "03:00"),
+    ]
+    calls = [
+        {"id": i, "ts": f"2026-11-15T00:{stamp}+00:00"}
+        for i, stamp in enumerate(["00:00", "01:30", "02:00", "02:30", "04:00"])
+    ]
+    original = json.dumps(calls)
+    rows = launch.label_calls(calls, steps)
+    assert [(r["loop"], r["step"]) for r in rows] == [
+        (0, "propose"),
+        (1, "coding"),
+        (1, "coding"),
+        (0, "propose"),
+        (None, "outside-step"),
+    ]
+    assert all(r["schema"] == "AlphaRdagentCallLabelV1" for r in rows)
+    assert json.dumps(calls) == original
+    assert [r["id"] for r in rows] == list(range(5))
+
+
+def test_finish_labels_only_this_run_and_handles_missing_or_bad_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    job = launch.Launch(
+        args(tmp_path),
+        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+    )
+    job.run.mkdir()
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    assert job.finish(0, "test") == 0
+    assert (job.run / "calls-labelled.jsonl").read_bytes() == b""
+    assert job.receipt["calls_labelled"]["calls"] == 0
+    assert "missing" in job.receipt["calls_labelled"]["reason"]
+    state = job.args.gateway_data_dir / "model-gateway"
+    state.mkdir(parents=True)
+    calls = [
+        {"run_id": rid, "ts": "2026-11-15T00:00:00+00:00", "payload": "unchanged"}
+        for rid in ["test-run", "other"]
+    ]
+    (state / "calls.jsonl").write_text("".join(json.dumps(r) + "\n" for r in calls))
+    (job.run / "steps.jsonl").write_text("")
+    job.finish(0, "test")
+    rows = [
+        json.loads(line) for line in (job.run / "calls-labelled.jsonl").read_text().splitlines()
+    ]
+    assert len(rows) == 1 and rows[0]["run_id"] == "test-run"
+    assert rows[0]["payload"] == "unchanged" and rows[0]["step"] == "outside-step"
+    # A line cut short by a killed loop is skipped and counted; the other calls stay labelled.
+    (job.run / "steps.jsonl").write_text("invalid json\n")
+    assert job.finish(0, "test") == 0
+    assert job.receipt["calls_labelled"] == {"calls": 1, "skipped_lines": 1}
+
+
+@pytest.mark.parametrize("method", ["verify", "prepare", "gateway", "loop"])
+def test_launcher_logs_start_before_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, method: str
+) -> None:
+    job = launch.Launch(
+        args(tmp_path),
+        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+    )
+    job.run.mkdir()
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise launch.LaunchError("stop at first work")
+
+    monkeypatch.setattr(job, "check", refuse)
+    monkeypatch.setattr(job, "spawn", refuse)
+    with pytest.raises(launch.LaunchError):
+        getattr(job, method)(*(["http://unused", "token"] if method == "loop" else []))
+    row = json.loads((job.run / "launch.jsonl").read_text().splitlines()[0])
+    assert row["step"] == method and row["event"] == "start"
+
+
+@pytest.mark.parametrize("value", ["0", "4"])
+def test_coder_max_loop_bounds(tmp_path: Path, value: str) -> None:
+    with pytest.raises(launch.LaunchError, match="--coder-max-loop"):
+        launch.validate(args(tmp_path, "--coder-max-loop", value), environ(tmp_path))
+
+
+def test_memory_path_inside_git_refused(tmp_path: Path) -> None:
+    with pytest.raises(launch.LaunchError, match="--memory-dir.*outside"):
+        launch.validate(
+            args(tmp_path, "--memory-dir", str(WORKER / "never-memory")), environ(tmp_path)
+        )
+
+
+@pytest.mark.parametrize("disabled", [False, True])
+def test_launcher_memory_default_opt_out_and_determinism(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, disabled: bool
+) -> None:
+    from types import SimpleNamespace
+
+    parsed = args(tmp_path, *(["--no-memory"] if disabled else []))
+    paths = launch.validate(parsed, environ(tmp_path))
+    job = launch.Launch(parsed, paths)
+    job.run.mkdir()
+    captured: dict[str, str] = {}
+
+    def spawn(command: Sequence[str], log: str, **kwargs: Any) -> SimpleNamespace:
+        captured.update(kwargs["env"])
+        return SimpleNamespace(wait=lambda timeout: 0)
+
+    monkeypatch.setattr(job, "spawn", spawn)
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    assert job.loop("http://unused", "token") == 0
+    assert job.finish(0, "test") == 0
+    assert job.receipt["memory"]["enabled"] is (not disabled)
+    base = launch.loop_environment(
+        base_url="http://unused",
+        token="token",
+        run=job.run,
+        factor_python=job.factor_python,
+        ledger=parsed.trial_ledger,
+        home=str(job.run / "home"),
+    )
+    assert {k: captured[k] for k in base} == base
+    assert captured["ALPHA_FACTOR_EVAL_PYTHON"] == base["ALPHA_FACTOR_EVAL_PYTHON"]
+    assert captured["ALPHA_FACTOR_TRIAL_LEDGER"] == str(parsed.trial_ledger)
+    memory_dir = parsed.trial_ledger.parent / "research-memory"
+    if disabled:
+        assert captured == base
+        assert not memory_dir.exists()
+    else:
+        assert (memory_dir / "memory.json").exists()
+        assert len(captured.keys() - base.keys()) == 7
+        assert captured["ARTIFACT_SIGNING_KEY_PATH"].startswith(str(memory_dir))
+
+
+def test_step_wrapper_records_a_skipped_step(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import asyncio
+
+    sys.path.insert(0, str(WORKER))
+    try:
+        entry = importlib.import_module("factor_loop_entry")
+    finally:
+        sys.path.remove(str(WORKER))
+
+    class FakeLoop:
+        EXCEPTION_KEY = "_EXCEPTION"
+        step_idx = {0: 0}
+        steps = ["coding"]
+
+        def __init__(self) -> None:
+            self.loop_prev_out: dict[int, dict[str, object]] = {0: {}}
+
+        async def _run_step(self, li: int, force_subproc: bool = False) -> None:
+            # RD-Agent swallows a skip-loop error and stores it instead of raising.
+            self.loop_prev_out[li][self.EXCEPTION_KEY] = KeyError("coder failed")
+
+    monkeypatch.setenv("ALPHA_FACTOR_RUN_DIR", str(tmp_path))
+    entry.record_steps(FakeLoop)
+    asyncio.run(FakeLoop()._run_step(0))
+    rows = [json.loads(line) for line in (tmp_path / "steps.jsonl").read_text().splitlines()]
+    assert rows[1]["status"] == "skipped" and rows[1]["error_type"] == "KeyError"
+
+
+def test_exit_reason_names_the_call_cap(tmp_path: Path) -> None:
+    namespace = launch.parser().parse_args(
+        ["run", "--data-dir", "/d", "--run-dir", "/r", "--gateway-data-dir", "/g",
+         "--trial-ledger", "/l", "--run-id", "x", "--run-max-calls", "4"]
+    )  # fmt: skip
+    capped = {"this_run": {"calls": 4, "usd": 0.0}}
+    assert launch.exit_reason(1, capped, namespace) == (
+        "loop exit 1: model call cap reached (4 of 4 calls)"
+    )
+    assert launch.exit_reason(1, {"this_run": {"calls": 2}}, namespace) == "loop exit 1"
+    assert launch.exit_reason(1, {"error": "no output"}, namespace) == "loop exit 1"
+
+
+def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
+    parsed = args(tmp_path)
+    parsed.trial_ledger = Path("relative/trials.jsonl")
+    with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
+        launch.validate(parsed, environ(tmp_path))

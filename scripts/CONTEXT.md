@@ -9,7 +9,7 @@ sources:
   - scripts/commands_reference.py
   - scripts/roadmap_index.py
   - scripts/setup.sh
-verified: 3a0098cd96e3
+verified: bcc2f4b591aef637
 ---
 
 # scripts workspace
@@ -17,7 +17,7 @@ verified: 3a0098cd96e3
 ## Purpose
 
 The developer and CI tooling: the gate (`gate.py`: the fast local check, CI job steps, quant
-sweeps), test selection, the file-system tools (`fs.py orient|search|stale`), generators for
+sweeps), test selection, the file-system tools (`fs.py orient|search|stale|owners|verify`), generators for
 committed documents, OpenAPI checks and the agent hooks. Scripts are top-level modules on the
 mypy and pytest path, not a package; the harness scripts are standard library only. They never
 read owner data, credentials or hidden tests.

@@ -17,6 +17,8 @@
 #                           ~230 MB) and record it with workers/rdagent/install_stock_profile.py.
 #   --with-factor-runtime   build the closed Python 3.11 factor runtime from
 #                           workers/rdagent/factor-requirements.lock (79 hash-pinned packages).
+#   --with-ui               build RD-Agent's own log viewer from ui-requirements.lock
+#                           (191 hash-pinned packages, about 1.1 GB).
 set -Eeuo pipefail
 trap 'status=$?; printf "setup-rdagent: FAILED at line %s: %s (exit %s)\n" "$LINENO" "$BASH_COMMAND" "$status" >&2; exit "$status"' ERR
 
@@ -27,11 +29,13 @@ daily_image=sha256:ae4e8b7c575fabea88a029b6cae757f342ca2525e07f7c22272d5105c346b
 with_daily=0
 with_stock=0
 with_factor=0
+with_ui=0
 for argument in "$@"; do
     case "$argument" in
         --with-daily-container) with_daily=1 ;;
         --with-stock-runtime) with_stock=1 ;;
         --with-factor-runtime) with_factor=1 ;;
+        --with-ui) with_ui=1 ;;
         *) echo "setup-rdagent: unknown option $argument" >&2; exit 2 ;;
     esac
 done
@@ -173,6 +177,30 @@ if [ "$with_factor" = 1 ]; then
     factor="$bundle/venv/bin/python"
 fi
 
+ui="${ALPHA_VIEWER_PYTHON:-}"
+if [ "$with_ui" = 1 ]; then
+    bundle="$runtime/rdagent-ui-py311"
+    marker="$runtime/rdagent-ui-py311.incomplete"
+    if [ -e "$marker" ]; then
+        echo "setup-rdagent: $bundle build was interrupted ($marker); remove both to rebuild." >&2
+        exit 1
+    fi
+    if [ ! -e "$bundle" ]; then
+        stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+        printf 'build started %s\n' "$stamp" >"$marker"
+        # Python 3.11: upstream RD-Agent declares and tests 3.10/3.11 only. Never download one.
+        uv venv --quiet --no-python-downloads --python 3.11 "$bundle/venv"
+        uv pip install --quiet --python "$bundle/venv/bin/python" --require-hashes --no-deps \
+            -r workers/rdagent/ui-requirements.lock
+        identity="$(.venv/bin/python -B workers/rdagent/install_stock_profile.py --profile ui "$bundle")"
+        printf 'validated %s identity %s\n' "$stamp" "$identity" >>"$marker"
+        mv "$marker" "$runtime/rdagent-ui-py311.built-$stamp"
+    fi
+    identity="$(.venv/bin/python -B workers/rdagent/install_stock_profile.py --profile ui --verify "$bundle")"
+    echo "setup-rdagent: ui runtime $identity"
+    ui="$bundle/venv/bin/python"
+fi
+
 echo 'setup-rdagent: done; provisioning only, no execution authority or research admission'
 printf 'export ALPHA_RDAGENT_SOURCE=%q\n' "$derived"
 if [ -n "$stock" ] && [ -x "$stock" ]; then
@@ -187,4 +215,10 @@ if [ -n "$factor" ] && [ -x "$factor" ]; then
     printf 'export ALPHA_FACTOR_PYTHON=%q\n' "$factor"
 else
     echo '# ALPHA_FACTOR_PYTHON: not provisioned (rerun with --with-factor-runtime)'
+fi
+
+if [ -n "$ui" ] && [ -x "$ui" ]; then
+    printf 'export ALPHA_VIEWER_PYTHON=%q\n' "$ui"
+else
+    echo '# ALPHA_VIEWER_PYTHON: not provisioned (rerun with --with-ui)'
 fi

@@ -4,7 +4,7 @@ sources:
   - scripts/capabilities.py
   - scripts/status.py
   - docs/archive/research-notes/feature-readiness-checklist-2026-10-27.md
-verified: 9b38a129c7aa
+verified: 61981a16822579d5
 ---
 
 # Glossary

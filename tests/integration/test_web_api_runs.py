@@ -1139,3 +1139,41 @@ def test_market_conflict_is_decided_by_source(
     )
     items = {r["run_id"]: r for r in client.get("/api/runs").json()["items"]}
     assert items["cafe000000000017"]["market"] == "crypto"
+
+
+@pytest.mark.parametrize(
+    ("timeframe", "label"),
+    [
+        ("5m", "M5"),
+        ("15m", "M15"),
+        ("1h", "H1"),
+        ("4h", "H4"),
+        ("7m", "M7"),
+        ("3h", "H3"),
+        ("1D", "D1"),
+        (None, "D1"),
+    ],
+)
+def test_intraday_display_name_and_period_without_http(
+    tmp_path: Path, timeframe: str | None, label: str
+) -> None:
+    manifest: dict[str, object] = {"symbol": "AAPL", "params": {"strategy_name": "ma_crossover"}}
+    if timeframe is not None:
+        manifest["timeframe"] = timeframe
+    # Duplicate day is in the middle, so endpoint dates alone cannot detect intraday curves.
+    stamps = [
+        datetime(2024, 1, 2, 14, 30, tzinfo=UTC),
+        datetime(2024, 1, 3, 14, 30, tzinfo=UTC),
+        datetime(2024, 1, 3, 14, 35, tzinfo=UTC),
+        datetime(2024, 1, 4, 14, 30, tzinfo=UTC),
+    ]
+    pl.DataFrame({"ts": stamps, "equity": [100.0, 101.0, 102.0, 103.0]}).write_parquet(
+        tmp_path / "equity_curve.parquet"
+    )
+    assert _runs.display_name("runs", "abcdef0123456789", manifest, tmp_path) == (
+        f"ma_crossover {label} — AAPL · 2024-01-02 14:30 → 2024-01-04 14:30 · run abcdef01"
+    )
+    pl.DataFrame({"ts": [stamps[0], stamps[-1]], "equity": [100.0, 103.0]}).write_parquet(
+        tmp_path / "equity_curve.parquet"
+    )
+    assert _runs._curve_period(tmp_path) == "2024-01-02 → 2024-01-04"

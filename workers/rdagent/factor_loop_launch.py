@@ -25,6 +25,12 @@ from typing import Any
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
+if str(WORKER) not in sys.path:
+    sys.path.insert(0, str(WORKER))
+
+import research_memory  # noqa: E402
+from source_pin import SOURCE_SHA256  # noqa: E402
+
 MAX_CALLS = 60
 LABEL = "exploratory, not admitted, not yet confirmed"
 AUTHORITY = dict.fromkeys(("admitted", "evidence", "approval", "promotion"), False)
@@ -45,6 +51,35 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def label_calls(calls: list[dict[str, Any]], steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Copy calls with the latest-starting completed step that contains each timestamp."""
+    active: dict[tuple[int, int, str], list[dict[str, Any]]] = {}
+    intervals = []
+    for row in steps:
+        key = (row["loop"], row["step_index"], row["step"])
+        if row["event"] == "start":
+            active.setdefault(key, []).append(row)
+        elif row["event"] == "end" and active.get(key):
+            start = active[key].pop()
+            intervals.append(
+                (datetime.fromisoformat(start["ts"]), datetime.fromisoformat(row["ts"]), start)
+            )
+    labelled = []
+    for call in calls:
+        ts = datetime.fromisoformat(call["ts"])
+        matching = [(start, row) for start, end, row in intervals if start <= ts <= end]
+        step = max(matching, key=lambda item: item[0])[1] if matching else None
+        labelled.append(
+            {
+                **call,
+                "schema": "AlphaRdagentCallLabelV1",
+                "loop": step["loop"] if step else None,
+                "step": step["step"] if step else "outside-step",
+            }
+        )
+    return labelled
+
+
 def _inside_git(path: Path) -> bool:
     probe = path
     while not probe.exists():
@@ -60,6 +95,8 @@ def _inside_git(path: Path) -> bool:
 
 
 def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Path]:
+    if not 1 <= args.coder_max_loop <= 3:
+        raise LaunchError("--coder-max-loop must be 1, 2 or 3")
     if not 1 <= args.loop_n <= 3:
         raise LaunchError("--loop-n must be 1, 2 or 3")
     if not 1 <= args.run_max_calls <= MAX_CALLS:
@@ -87,6 +124,14 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
     for name in ("run_dir", "gateway_data_dir", "trial_ledger"):
         if _inside_git(getattr(args, name)):
             raise LaunchError(f"--{name.replace('_', '-')} must be outside every git work tree")
+    # Memory is checked after the trial ledger, whose folder gives its default location, so a
+    # relative --trial-ledger is reported as such rather than as a bad --memory-dir.
+    if not args.no_memory:
+        args.memory_dir = args.memory_dir or args.trial_ledger.parent / "research-memory"
+        if not args.memory_dir.is_absolute():
+            raise LaunchError("--memory-dir must be an absolute path")
+        if _inside_git(args.memory_dir.resolve()):
+            raise LaunchError("--memory-dir must be outside every git work tree")
     paths = {}
     for key in ("ALPHA_RDAGENT_SOURCE", "ALPHA_FACTOR_PYTHON"):
         value = environ.get(key, "")
@@ -97,7 +142,15 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
 
 
 def loop_environment(
-    *, base_url: str, token: str, run: Path, factor_python: Path, ledger: Path, home: str
+    *,
+    base_url: str,
+    token: str,
+    run: Path,
+    factor_python: Path,
+    ledger: Path,
+    home: str,
+    memory_env: dict[str, str] | None = None,
+    coder_max_loop: int = 2,
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -119,10 +172,11 @@ def loop_environment(
             f"env -u LM_STUDIO_API_KEY -u LM_STUDIO_API_BASE {factor_python}"
         ),
         "ALPHA_FACTOR_CODE_PYTHON": str(factor_python),
-        "FACTOR_CoSTEER_max_loop": "1",
+        "FACTOR_CoSTEER_max_loop": str(coder_max_loop),
         "FACTOR_CoSTEER_data_folder": str(run / "factor_data" / "full"),
         "FACTOR_CoSTEER_data_folder_debug": str(run / "factor_data" / "debug"),
         "QLIB_FACTOR_SCEN": "alpha_factor_judge.AlphaFactorScenario",
+        "QLIB_FACTOR_CODER": "alpha_factor_coder.AlphaFactorCoSTEER",
         "QLIB_FACTOR_RUNNER": "alpha_factor_judge.AlphaFactorRunner",
         "QLIB_FACTOR_SUMMARIZER": "alpha_factor_judge.AlphaFactorFeedback",
         "QLIB_FACTOR_HYPOTHESIS_GEN": "alpha_factor_judge.AlphaFactorHypothesisGen",
@@ -136,11 +190,15 @@ def loop_environment(
         "ALPHA_FACTOR_RUN_DIR": str(run),
         "ALPHA_FACTOR_EVAL_PYTHON": str(REPO / ".venv" / "bin" / "python"),
         "ALPHA_FACTOR_TRIAL_LEDGER": str(ledger),
+        **(memory_env or {}),
     }
 
 
 class Launch:
     def __init__(self, args: argparse.Namespace, paths: dict[str, Path]) -> None:
+        self.memory_plan: research_memory.MemoryPlan | None = None
+        self.token = ""
+        self.api_key = os.environ.get("ALPHA_GATEWAY_API_KEY", "")
         self.args = args
         self.run = args.run_dir
         self.source = paths["ALPHA_RDAGENT_SOURCE"]
@@ -158,7 +216,9 @@ class Launch:
             "started_at": _now(),
         }
 
-    def log(self, step: str, **fields: Any) -> None:
+    def log(self, step: str, event: str | None = None, **fields: Any) -> None:
+        if event is not None:
+            fields["event"] = event
         line = json.dumps({"ts": _now(), "step": step, **fields}, sort_keys=True)
         with (self.run / "launch.jsonl").open("a") as stream:
             stream.write(line + "\n")
@@ -179,6 +239,7 @@ class Launch:
         return result.stdout.strip()
 
     def verify(self) -> None:
+        self.log("verify", event="start")
         self.receipt["factor_runtime_identity"] = self.check(
             "verify-runtime",
             [
@@ -205,6 +266,7 @@ class Launch:
         )
 
     def prepare(self) -> None:
+        self.log("prepare", event="start")
         panel = self.run / "panel"
         self.check(
             "freeze",
@@ -254,6 +316,7 @@ class Launch:
         return child
 
     def gateway(self) -> tuple[str, str]:
+        self.log("gateway", event="start")
         self.args.gateway_data_dir.mkdir(parents=True, exist_ok=True)
         state = self.args.gateway_data_dir / "model-gateway"
         command = [
@@ -313,6 +376,24 @@ class Launch:
         raise LaunchError("model gateway did not write its session within 30 s")
 
     def loop(self, base_url: str, token: str) -> int:
+        self.log("loop", event="start")
+        self.token = token
+        if not self.args.no_memory:
+            try:
+                self.memory_plan = research_memory.prepare(
+                    self.args.memory_dir or self.args.trial_ledger.parent / "research-memory",
+                    run_id=self.args.run_id,
+                    run_dir=self.run,
+                    source_sha256=SOURCE_SHA256,
+                    judge_sha256=research_memory.judge_sha256(),
+                )
+            except Exception as error:  # noqa: BLE001 - memory is a warning, never a refusal
+                self.receipt["memory_warning"] = (
+                    f"memory unavailable ({type(error).__name__}); this run starts fresh"
+                )
+                self.log("memory", status="unavailable", error_type=type(error).__name__)
+            else:
+                self.log("memory", warnings=[w["code"] for w in self.memory_plan.warnings])
         work = self.run / "work"
         work.mkdir()
         environment = loop_environment(
@@ -322,6 +403,8 @@ class Launch:
             factor_python=self.factor_python,
             ledger=self.args.trial_ledger,
             home=str(self.run / "home"),
+            memory_env=self.memory_plan.env if self.memory_plan else None,
+            coder_max_loop=self.args.coder_max_loop,
         )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
@@ -392,6 +475,36 @@ class Launch:
             "months": state.get("months"),
         }
 
+    def write_call_labels(self) -> dict[str, Any]:
+        output = self.run / "calls-labelled.jsonl"
+        paths = (self.args.gateway_data_dir / "model-gateway/calls.jsonl", self.run / "steps.jsonl")
+        try:
+            missing = [str(p) for p in paths if not p.exists()]
+            if missing:
+                output.write_bytes(b"")
+                return {"calls": 0, "reason": "missing files: " + ", ".join(missing)}
+            skipped = 0
+            parsed: list[list[dict[str, Any]]] = []
+            for p in paths:
+                rows = []
+                for line in p.read_text().splitlines():
+                    try:
+                        rows.append(json.loads(line))
+                    except ValueError:
+                        skipped += 1  # a line cut short by a killed process
+                parsed.append(rows)
+            calls = [row for row in parsed[0] if row.get("run_id") == self.args.run_id]
+            labelled = label_calls(calls, parsed[1])
+            output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in labelled))
+            return {"calls": len(labelled), "skipped_lines": skipped}
+        except Exception as error:  # noqa: BLE001 - labelling is best effort, with receipt diagnostics
+            note = f"{type(error).__name__}: {error}"
+            try:
+                output.write_bytes(b"")
+            except OSError as write_error:
+                note += f"; empty output: {type(write_error).__name__}: {write_error}"
+            return {"calls": 0, "reason": note}
+
     def finish(self, exit_status: int, reason: str) -> int:
         evaluations = self.run / "evaluations.jsonl"
         self.receipt.update(
@@ -399,12 +512,34 @@ class Launch:
             exit_status=exit_status,
             loop_reason=self.receipt.get("loop_reason", reason),
             gateway_status=self.gateway_status(),
+            calls_labelled=self.write_call_labels(),
             evaluations_sha256=hashlib.sha256(evaluations.read_bytes()).hexdigest()
             if evaluations.exists()
             else None,
         )
+        self.receipt["memory"] = (
+            research_memory.record(
+                self.memory_plan,
+                run_id=self.args.run_id,
+                run_dir=self.run,
+                started_at=self.receipt["started_at"],
+                ended_at=self.receipt["ended_at"],
+                secrets=(self.token, self.api_key),
+            )
+            if self.memory_plan
+            else {"enabled": False}
+        )
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
+
+
+def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
+    """A plain reason for a failed loop; names the call cap when the run used all of it."""
+    this_run = gateway_state.get("this_run") if isinstance(gateway_state, dict) else None
+    calls = (this_run or {}).get("calls") or 0
+    if calls >= args.run_max_calls:
+        return f"loop exit {code}: model call cap reached ({calls} of {args.run_max_calls} calls)"
+    return f"loop exit {code}"
 
 
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
@@ -412,6 +547,7 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     args.run_dir.mkdir()
     (args.run_dir / "logs").mkdir()
     launch = Launch(args, paths)
+    launch.api_key = environ.get("ALPHA_GATEWAY_API_KEY", "")
 
     def interrupted(signum: int, frame: Any) -> None:
         raise KeyboardInterrupt
@@ -423,7 +559,9 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
         launch.prepare()
         base_url, token = launch.gateway()
         code = launch.loop(base_url, token)
-        status, reason = (0, "completed") if code == 0 else (1, f"loop exit {code}")
+        status, reason = (
+            (0, "completed") if code == 0 else (1, exit_reason(code, launch.gateway_status(), args))
+        )
     except LaunchError as error:
         reason = str(error)
     except KeyboardInterrupt:
@@ -456,6 +594,9 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--trial-ledger", type=Path, required=True)
     r.add_argument("--run-id", required=True)
     r.add_argument("--loop-n", type=int, default=2)
+    r.add_argument("--memory-dir", type=Path)
+    r.add_argument("--no-memory", action="store_true")
+    r.add_argument("--coder-max-loop", type=int, default=2)
     r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)
     r.add_argument("--wall-seconds", type=float, default=5400)
     r.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")

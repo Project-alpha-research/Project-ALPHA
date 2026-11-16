@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: aa600e57932d
+verified: eb34047dc8c8cd58
 ---
 
 # Strategy invariants
@@ -53,6 +53,10 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 - `vol_target_size`: notional = min(capital x target_vol / vol, capital x max_leverage);
   units = signal x notional / price. Inputs must be finite and positive. `tests/unit/test_sizing.py`.
 - Zero realized volatility means flat (`zero_volatility`), never a division by zero.
+- `sizing="all_in"` is the plain alternative for the three trend rules: on a flat-to-long decision
+  the target is net liquidation value less a 0.2% buffer, divided by close times fee and slippage,
+  rounded down to the instrument increment; units are held while long and zero when flat. Long
+  only. The Tier-1 surrogate models it as weight 1 or 0. `tests/unit/test_all_in_sizing.py`.
 
 ## Rule specs
 

@@ -422,9 +422,32 @@ judge ([ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md)). RD-Agen
 codes factors; its settings `QLIB_FACTOR_SCEN`, `QLIB_FACTOR_HYPOTHESIS_GEN`, `QLIB_FACTOR_RUNNER`
 and `QLIB_FACTOR_SUMMARIZER` name four classes in `alpha_factor_judge.py`; the runner sends the
 factor values to `alpha_cli.rdagent_factor_eval` in ALPHA's environment, which screens each new
-factor (rank IC against the next-open-to-next-open return, autocorrelation-adjusted inference,
-BH over the cross-run trial ledger) and replays only those that pass through ALPHA's canonical
-synchronized engine with crypto costs. RD-Agent never sees 2024 or later; no Qlib model, Docker
+factor at daily (1-day), weekly (7-day) and monthly (28-day) holding clocks. Decision days
+start at 2021-01-01 and advance by the clock's calendar days; screens use non-overlapping
+next-open-to-open forward returns ending by 2023-12-31, autocorrelation-adjusted inference and
+seeded stationary-bootstrap intervals. Fewer than 20 observations carry a low-sample warning.
+BH counts every factor x clock as a trial across runs; V1, V2 and imported historical results
+each count once at daily. Records disclose both trial count and distinct factor count.
+Only clocks with q < 0.10 replay through ALPHA's canonical synchronized engine. Replays choose
+the top third on clock decision days, then drift holdings by closes between rebalances. Small
+residual trades caused by fill prices and fees are executed and charged. Costs remain 10 bps
+fee plus 6 bps slippage per side; annualisation uses 365 days. Each clock reports net/gross
+metrics, turnover per day, total daily turnover divided by scheduled rebalances (including the
+initial allocation), annual cost (total fees and slippage divided by mean canonical equity,
+annualised over the replay days), and rebalance count. The engine's final liquidation is
+charged and included in turnover and costs.
+
+Only a weekly or monthly PASS (q < 0.10 and positive net annual excess) makes a CANDIDATE.
+A daily-only pass is FAST_ONLY and ALPHA's decision remains false. New evaluations write one
+V3 ledger row per factor with all three clock results; top-level screen/replay/p/q mirror daily.
+The lead is the lowest-q passing swing clock, otherwise the lowest-q clock; RD-Agent's legacy
+IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `mean_ic`,
+`q`, `net_annual_excess` and `mean_turnover`, plus `<factor>.feedback` with the explanation.
+Deflated Sharpe counts every replayed factor x clock. Repeated code hashes
+are not evaluated again. The proposer receives the plain-English swing brief on every context
+call, before the cross-run ledger summary, including when no ledger exists. It asks for slow,
+low-turnover signals with a mechanism and falsifier, and explains the daily ideas that failed
+after costs. All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh
@@ -449,6 +472,136 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   iteration), `feedback.jsonl` (the model's suggestion beside ALPHA's decision), `launch.jsonl`,
   `logs/` and `receipt.json`. The trial ledger is shared by all runs and append-only.
 - Generated factor code runs with the gateway's address and token removed from its environment.
+
+### Research memory (2026-11-15)
+
+Memory is enabled by default. RD-Agent keeps CoSTEER's working factor programs and failed
+coding attempts, and continues the previous run's hypothesis, experiment and feedback trace.
+It uses RD-Agent's supported knowledge settings and session checkout; earlier run folders stay
+unchanged. This is working knowledge: ALPHA's trial ledger remains the sole evidence authority.
+Nothing is copied between memory and the ledger.
+
+ALPHA's code-level verdict reaches coding memory before evaluation: factors that fail the
+look-ahead check (`LOOKAHEAD`) or run but return the wrong output shape (`FAILED`) lose their
+successful coding-reference status. Their graph nodes become `alpha_rejected_implement` and
+their attempt history stays available for inspection. Screen and replay failures keep their
+correct implementations as coding references. The coder reloads shared knowledge before each
+experiment under the same file lock. Signed knowledge updates replace the file atomically;
+demotion errors are recorded without stopping the run.
+
+`coder-verdicts.jsonl` records each rejected factor's iteration, name, code and task-information
+hashes, status, whether it was demoted, and any memory error. With memory disabled, it records
+`demoted: false` and `no persistent coding memory`. The inspector lists these task names as
+“ALPHA rejected the code of: ...”.
+
+The default location is `research-memory/` beside the trial ledger. Use `--memory-dir /abs/path`
+to choose another location outside every git work tree, or `--no-memory` to run fresh without
+reading or writing memory. `--coder-max-loop` accepts 1–3 (default 2); at 1 the coder cannot learn
+an error-to-fix lesson within a run. The gateway's 60-call cap still applies.
+
+`memory.json` links sessions by path and records runs, hashes and warnings. CoSTEER writes
+`costeer/factor-knowledge.pkl`. The signing key lives at `signing/artifact_signing.key` (mode
+0600): it is an integrity key, not a credential. Keep the memory directory and linked run folders
+available together.
+
+Unreadable manifests, changed RD-Agent versions and unloadable coding knowledge are quarantined
+with a reason. Missing or unloadable sessions start a fresh trace while keeping usable coding
+knowledge. A changed ALPHA judge produces a warning and continuation still proceeds. Warnings
+appear in the run receipt; entry-side events are in `memory-events.jsonl`. If a gateway secret is
+found, the knowledge file is deleted and the new session is excluded; the warning names any
+session files left for the owner to delete. A recording failure is also reported in the receipt.
+
+Inspect without changing memory (omit `--json` for a plain-English explanation):
+
+```sh
+.venv/bin/python workers/rdagent/research_memory.py show \
+  --memory-dir /abs/runs/rdagent-trial-ledger/research-memory \
+  --trial-ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl --json
+```
+
+Set `ALPHA_FACTOR_PYTHON` and `ALPHA_RDAGENT_SOURCE` to inspect coding attempts, errors, working
+programs and research rounds alongside the ledger's verdicts. Without that runtime the inspector
+shows manifest facts and explains what is missing. It copies the integrity key into a temporary
+HOME for reading signed artifacts and removes the copy afterwards.
+
+Known limits: a run that crashes before finishing a round keeps the previous session as the one
+to continue (if the newest step dump is truncated, the next-older dump is used). Two runs started
+at the same time from one memory both continue the same session and the later one becomes the
+pointer; the coding knowledge itself is shared safely through RD-Agent's file lock. A continued
+session keeps RD-Agent's pickled scenario description from its first run (the data folders and
+the coder's attempt limit come from the current run). RD-Agent's own logs from a memory run are
+signed with the memory key, so its log viewer needs `ARTIFACT_SIGNING_KEY_PATH` pointed there.
+
+### RD-Agent's own log viewer (2026-11-15)
+
+RD-Agent's unmodified Streamlit log viewer shows each loop's hypothesis, the generated code
+per evolve step, feedback, and ALPHA's numbers in RD-Agent's result fields. ALPHA has no
+information ratio, so that field is empty.
+
+```sh
+bash scripts/setup_rdagent.sh --with-ui
+# Set ALPHA_VIEWER_PYTHON and ALPHA_RDAGENT_SOURCE to the exports printed by setup.
+.venv/bin/python workers/rdagent/rdagent_viewer.py serve --run-dir /abs/runs/<date>-<slug>
+```
+
+Setup is needed once: the pinned Python 3.11 viewer runtime contains 191 packages, about
+1.1 GB. The launcher verifies its recorded profile before starting. Open
+http://127.0.0.1:19899; it listens on 127.0.0.1 only and stays in the foreground until Ctrl-C.
+Use `--port` to choose another port if that one is busy.
+
+Repeat `--run-dir` to view several runs. Each must be absolute, outside git and contain
+`work/log/`. The launcher creates symlinks in `rdagent-viewer-links/` beside the first run
+(or `--links-dir DIR`, also outside git); it removes only old symlinks and leaves other files
+alone. Runs sharing one enabled research memory use that memory's signing key. A single run
+otherwise uses its own home key; for other combinations supply `--signing-key PATH`.
+One viewer can read only one signing key. The key is copied into a temporary HOME, removed
+when the viewer exits; model settings and API keys are excluded from its environment.
+
+Runs from before 2026-11-15 lack the result field the viewer reads and stop it with a
+`KeyError`, shown in the page.
+
+### Evidence recorded per trial
+
+All files below live under the run directory, outside git; they remain exploratory, not admitted.
+Series include a `clock` column; replay and holdings files have one block per replayed clock.
+
+- `evaluations/iter-<n>/series/<code_sha256>.screen.parquet`: per-clock rank IC and finite-name counts.
+- `evaluations/iter-<n>/series/<code_sha256>.buckets.parquet`: direction-adjusted tercile outcomes and observation counts.
+- `evaluations/iter-<n>/series/<code_sha256>.buckets_daily.parquet`: outcomes per day and tercile (bucket 3 is the replay's top third).
+- `evaluations/iter-<n>/series/<code_sha256>.replay.parquet`: canonical period returns, turnover, fees and slippage.
+- `evaluations/iter-<n>/series/<code_sha256>.holdings.parquet`: decision-day instruments, target weights and scores.
+- `evaluations/iter-<n>/series/series.json`: factor hashes and file hashes, bound into evaluation inputs and trial-ledger evidence references; unavailable series carry `series_note`.
+- `code/<code_sha256>.py`: the exact factor code, written once and checked on reuse.
+- `rounds.jsonl`: RD-Agent's hypothesis, tasks and feedback words linked to factor hashes and both decisions; `feedback.jsonl` stays unchanged.
+- `steps.jsonl`: UTC start/end records for each loop step, including error types.
+- `calls-labelled.jsonl`: this run's gateway calls labelled by loop and step; `launch.jsonl` also records launcher step starts.
+- New trial-ledger rows carry a deterministic plain-English `plain_name` beside the original name.
+
+### Human-authored rule families
+
+```sh
+.venv/bin/python -m alpha_cli.rdagent_rule_family run \
+  --spec /abs/spec.json --spec-sha256 <sha256> --data-dir /abs/data \
+  --run-dir /abs/new-rule-run --ledger /abs/rdagent-factor-trials.jsonl
+```
+
+- Copies the frozen `spec.json` and `spec.sha256` into the new run directory outside git.
+- Writes `trials/<symbol>-N<N>/series.parquet`, `trial.json`, and each book's `fills.parquet`.
+- Writes `family-result.json` with within-family BH, outcomes, warnings and exploratory labels.
+- Appends one block of rule trials to the shared ledger and writes `receipt.json` with hashes and indices.
+
+Optional instrument defaults are 0 fee / 5 bps slippage, 252 periods per year, CASH for
+non-crypto and MARGIN for slash pairs; each default is a warning. Reads stop at 2023-12-31.
+Rule trials count in the ledger total but do not enter RD-Agent's factor family or proposal summary.
+
+Unknown ledger schemas are skipped by the proposer with a counted explanation. The evaluator
+keeps their trial indices contiguous, excludes their contents from identity and repeat checks,
+and counts each as one conservative trial with p = 1.0. Evaluations containing such rows add
+`ledger_unknown_rows` (count and distinct schema names) and warn on stderr. Malformed complete
+lines and malformed known-schema rows still fail loud. The proposer, which reads without the
+ledger lock, ignores a final line without a newline (another writer may be appending); the
+evaluator, the exposure command and the rule family read under the lock, so for them a partial
+last line means a crashed writer and they fail loud rather than append after it.
 
 ### Exposure log and imported trials
 

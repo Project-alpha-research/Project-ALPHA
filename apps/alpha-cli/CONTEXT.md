@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 5ff21a3fbd1ec555
+verified: b86ecc77fcfedfa8
 ---
 
 # alpha-cli workspace
@@ -52,7 +52,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context*_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent ledger | `rdagent_*`, `_rdagent_*` (4), `spine/trial_*`, `ledger_cmds` | `test_rdagent_*` (incl. `fixups_2`), `test_trial_*`, `test_ledger_cmds` |
+| RD-Agent ledger | `rdagent_*`, `_rdagent_*` (5), `spine/trial_*`, `ledger_cmds` | `test_rdagent_*` (`gapped_universe`), `test_trial_*`, `test_ledger_cmds` |
 | Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |
@@ -62,7 +62,7 @@ option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) 
 do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
-  light (`tests/unit/test_public_seams.py`).
+  light (`tests/unit/test_public_seams.py`). RD-Agent gaps: `_rdagent_membership`, [rules](../../workers/rdagent/README.md#missing-bars-and-causal-membership).
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

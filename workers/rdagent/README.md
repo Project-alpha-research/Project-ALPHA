@@ -664,6 +664,14 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   mostly short-term reversal: five failed the screen, one failed to run, three passed the screen
   and failed the replay after costs (daily turnover 0.52-0.79). No candidate. One run per route
   is not a quality comparison.
+- Prices change: re-read 2026-11-16, the same snapshot lists USD 0.15 / 0.60 per million (weekday
+  windows at 0.30 / 1.20), and OpenRouter charged up to twice the gateway's estimate on one call;
+  the budget settles on the charged cost, so caps hold. Four system-test runs that day (one with
+  memory, three without, comparing `deepseek/deepseek-v4-pro-0813` at 0.111 / 4.44 and
+  `deepseek/deepseek-v4-flash-0731` at 0.06 / 0.18) cost USD 0.66 in all, judged 18 factors and
+  found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
+  calls count toward it), one after a stuck call; replies that reason for 8-12 minutes and return
+  no text (`invalid_provider_response`) occurred in every run.
 - Embeddings stay on local Ollama on both routes.
 - Not yet: supervision by `alpha`'s native job supervisor
   ([backlog](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md)); a Nautilus replay;

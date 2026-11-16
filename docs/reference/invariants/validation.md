@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: af03ecd465736f1d
+verified: 15781c7c07b4799b
 ---
 
 # Validation statistics invariants
@@ -52,14 +52,15 @@ Gate outcomes are built by `build_outcomes` in `tearsheet.py` (called from `_gau
   ([investigation](../../archive/research-notes/2026-06-23-tier1-surrogate-crediting-bias.md)).
   Tests: `tests/unit/test_gauntlet_tier1.py`.
 - `bootstrap_ci` (gate 4): passes when the Sharpe BCa lower bound is above 0; the interval is always reported.
-- `deflated_sharpe`: PSR/DSR of the OOS stream; a single run has `n_trials = 1`, so DSR equals PSR. Passes
-  when DSR is at least `dsr_threshold`.
+- `deflated_sharpe`: PSR/DSR of the OOS stream. With no ledger family `n_trials = 1` and DSR equals PSR;
+  a rule test, or `alpha validate` of a strategy with a spine family, deflates by the family's trial count
+  ([counting](cli-trial-ledger.md)) and records it as `trial_basis`. Passes when DSR is at least `dsr_threshold`.
 - `cpcv_oos`: passes when the mean OOS Sharpe across CPCV folds of the OOS stream is above 0.
 - A flat or zero-variance OOS short-circuits every gate to a clean FAIL, never an undefined-Sharpe crash
   (`tests/integration/test_gauntlet_degenerate.py`). A zero-variance bootstrap resample scores 0.0 through the one
   statistic `_gauntlet.safe_sharpe_statistic`; the portfolio and cross-sectional runs import it rather than copy it.
-- Multi-trial statistics (DSR deflated by trial-Sharpe variance, PBO, Reality Check, SPA) judge a parameter
-  sweep and belong to `alpha optim` (`_optim.py`), never the single-run gauntlet.
+- Parameter-sweep statistics (PBO, Reality Check, SPA, and a sweep's own DSR) belong to `alpha optim`
+  (`_optim.py`); the gauntlet only counts the ledger family above.
 
 ## Null models and permutation tests
 

@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 8e9da3241e167cdf
+verified: 8d29e46685083307
 ---
 
 # One trial ledger invariants
@@ -50,11 +50,15 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;
   `family_trials` cites the recorded count. Missing ledgers count zero; unreadable ones fail with
   `LEDGER_UNREADABLE`, never a one-trial fallback. No diagnostics means `spine.deflation` is null.
-- The verdict's `dsr` uses available counted family Sharpes, current OOS and scored variants with
-  at least that same count. Its summary and verdict record `n_trials` and `trial_basis`; insufficient
-  dispersion observations for a larger count give an unavailable probability and a failed DSR gate.
+- The verdict's `dsr` takes its variance from counted family Sharpes of the run's bar size only
+  (daily on either calendar; another bar size's per-bar Sharpe is on another scale, so it counts in
+  N but not in the variance), this run's scored variants and its own OOS Sharpe, with N at least the
+  family count. Its summary and verdict record `n_trials` and `trial_basis`, and `dsr` also records
+  `family_id` and `prior_sharpes`; too few Sharpes for a larger N give an unavailable probability
+  and a failed DSR gate. A rule test reads the ledger once for both the verdict and diagnostics.
   `alpha validate` recognises existing spine families by registered rule strategy; other runs state
-  `no ledger family: counted as one trial`. No ledger history or immutable run is rewritten.
+  `no ledger family: counted as one trial`. Re-running an existing run id reuses the family inputs
+  in its manifest, never today's grown ledger. No ledger history or immutable run is rewritten.
 - `alpha results show` adds the recorded count and live `family_counts` rows, outcomes and reader
   trials from the spine-only snapshot. Older runs have a null recorded count and an explicit reason.
 - DuckDB is imported only for a query, connects to `:memory:` with external access disabled,

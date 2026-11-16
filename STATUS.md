@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 19 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 20 working, 29 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -33,6 +33,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Check an answer's numbers against the records** — alpha results check answer.md --json More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **One trial ledger across rule tests, tools and RD-Agent** — alpha ledger summary --json (a real run is recorded) More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
 - **Honesty self-test of the answer checker** — alpha partner selftest (a real run is recorded) More: [docs/reference/invariants/cli-results-check.md](docs/reference/invariants/cli-results-check.md).
+- **Deflated Sharpe counted over the idea's family** — alpha results cite <run_id> family_trials (a real run is recorded) More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
 
 ## Partly working
 
@@ -56,7 +57,6 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one symbol tried. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
-- **Deflated Sharpe counted over the idea's family** — smoke test written, not yet run outside the sandbox. More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 

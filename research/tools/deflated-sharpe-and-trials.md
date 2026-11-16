@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 55da5f5e8776edb0
+verified: 8f886d19794ff853
 ---
 
 # Deflated Sharpe and trial counting
@@ -20,8 +20,8 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 
 **How to read it**
 - `trial_dsr` uses the idea family's ledger count and variance from available same-symbol Sharpes and variants.
-  `dsr` feeds the verdict using family Sharpes and at least that count; its `trial_basis` names the family
-  or explicitly says no family was found. Both are probabilities; the pass line is 0.95. `null` has a reason.
+  `dsr` feeds the verdict using same-bar-size family Sharpes and at least that count; its `trial_basis`
+  names the family or explicitly says no family was found. Both are probabilities; the pass line is 0.95. `null` has a reason.
 - Cite `family_trials` for the count at the run: prior family trials, this run, scored variants and unknown
   rows, never below the available Sharpes. `alpha results show` also shows live family counts.
 - `total_trials` is the ledger count when the run was made; `variants_evaluated` counts its re-runs. Report

@@ -79,7 +79,7 @@ Nautilus harness, its feed encoding, fee model and result schema, and the multi-
   `tests/integration/test_dividend_credit.py::test_insolvent_fill_fails_loud_not_truncated`.
 - The terminal equity sample is re-read after the run so a final-session fill's fee is never lost.
 - `BacktestResult.resized_entries` defaults to zero for compatibility and records equity-sized CASH long
-  orders reduced at the opening ask to fit free cash including fees. The strategy retains the decision
+  entries from flat reduced at the opening ask to fit free cash including fees. The strategy retains the decision
   target and submits on the intended open; affordable orders retain their original bytes. Sizing details:
   [strategy sizing](strategies.md#sizing). `tests/unit/test_entry_gap_sizing.py`.
 - Shared-lifecycle CASH buy rejections land in `BacktestResult.execution_rejections`; the CLI persists them

@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: acb906e729c38083
+verified: 0be2231a520117c9
 ---
 
 # Strategy invariants
@@ -58,9 +58,9 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   the target is net liquidation value less a 0.2% buffer, divided by close times fee and slippage,
   rounded down to the instrument increment; units are held while long and zero when flat. Long
   only. The Tier-1 surrogate models it as weight 1 or 0. `tests/unit/test_all_in_sizing.py`.
-- If an all-in or `size_on_equity` long BUY exceeds free CASH including rounded fees, reduce it to the
+- If an all-in or `size_on_equity` long entry from flat exceeds free CASH including rounded fees, reduce it to the
   largest affordable instrument size step at the opening ask, with no extra buffer. Affordable orders,
-  fixed-unit/fixed-capital orders, shorts, exits, MARGIN and paper execution retain their behavior.
+  raising an open long, fixed-unit/fixed-capital orders, shorts, exits, MARGIN and paper execution retain their behavior.
   `resized_entries` counts reductions; no affordable lot retains the existing refusal path.
   `tests/unit/test_entry_gap_sizing.py` pins gap timing, causal sizing and unchanged execution bytes.
 

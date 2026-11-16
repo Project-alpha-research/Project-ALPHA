@@ -673,11 +673,14 @@ class VolTargetStrategy(Strategy):  # type: ignore[misc]  # nautilus Strategy is
     def _cash_buy_quantity(
         self, quantity: Quantity, quote: QuoteTick, instrument: Instrument
     ) -> Quantity | None:
-        """Keep affordable targets; cap equity-sized CASH longs at the actual opening ask."""
+        """Keep affordable targets; fit equity-sized CASH entries from flat to the opening ask.
+
+        Raising an open long and covering a short keep the whole-order refusal.
+        """
         can_resize = (
             self._paper_risk is None
             and self._fixed_quantity is None
-            and self.net_units >= 0.0
+            and self.net_units == 0.0
             and (self._sizing == "all_in" or self._size_on_equity)
         )
         if (

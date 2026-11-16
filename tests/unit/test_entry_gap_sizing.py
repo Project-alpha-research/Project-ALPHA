@@ -272,3 +272,17 @@ def test_fixed_quantity_still_refuses_the_whole_unaffordable_order() -> None:
         assert rejection.requested_quantity == 99
         assert rejection.required_cash == 10207.2
         assert rejection.reason == "cash_notional_exceeds_free_balance"
+
+
+def test_long_top_up_is_not_resized_and_stays_a_counted_refusal() -> None:
+    # Equity sizing raises an open long twice beyond free cash; only the flat entry is resized.
+    result, accounting = _run_gap(
+        10,
+        prices=[100.0, 100.34, 101.45, 103.54, 105.55, 106.47, 110.45, 111.52, 112.66, 112.08],
+        opens=[100.0, 100.01, 102.58, 101.51, 102.99, 107.98, 104.69, 109.86, 113.99, 110.66],
+        equity_sizing=True,
+    )
+    assert result.resized_entries == 1
+    assert result.rejected == 2
+    assert all(row.requested_quantity < 10 for row in result.execution_rejections)
+    assert min(row.cash_free for row in accounting) >= 0

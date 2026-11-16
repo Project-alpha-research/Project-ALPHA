@@ -118,7 +118,7 @@ and how it names and publishes immutable runs. Project-wide rules:
   carry an `error` label and retain unavailable metrics as null; their explanation is in the command output.
 - Quick mode uses 20/4/4 null paths and 50 resamples, with a `quick` label. All runs carry `all-in` and
   `dev-machine-data`; ambiguous default sources and history shorter than three years receive labels too.
-- CASH equity-sized longs are capped at the affordable size step including fees at the open; the existing buffer stays.
+- CASH equity-sized long entries from flat are capped at the affordable size step including fees at the open; the existing buffer stays.
   The manifest/result counts `resized_entries` in scored execution and prints a line above zero; older runs load without it.
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all

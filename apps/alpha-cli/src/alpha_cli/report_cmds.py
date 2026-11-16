@@ -28,6 +28,12 @@ _DAILY_RULE_COMMANDS = frozenset(
 )
 
 
+def _block_value(value: object) -> object:
+    if isinstance(value, float):
+        return _fmt(value)
+    return f"[{len(value)} values]" if isinstance(value, list) else value
+
+
 def _fmt(x: Any) -> str:
     # bool is an int subclass; never render True/False as "1.0000"
     return f"{x:.4f}" if isinstance(x, int | float) and not isinstance(x, bool) else "n/a"
@@ -263,9 +269,9 @@ def report(
     for key in ("dsr", "pbo", "spa", "reality_check"):  # optim verdict blocks (nested dicts)
         block = manifest.get(key)
         if isinstance(block, dict):
-            inner = ", ".join(
-                f"{k}={_fmt(v) if isinstance(v, float) else v}" for k, v in block.items()
-            )
+            # Headline value first; a recorded list (trial Sharpes) shows as its length.
+            items = sorted(block.items(), key=lambda item: item[0] != key)
+            inner = ", ".join(f"{k}={_block_value(v)}" for k, v in items)
             typer.echo(f"{key}: {inner}")
     if manifest.get("best_config"):
         best = ", ".join(f"{name}={val:g}" for name, val in manifest["best_config"])

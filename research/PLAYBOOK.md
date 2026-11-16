@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: c8863296b00738d0
+verified: 7b3b1277ebc93cc5
 ---
 
 # Research playbook: how to work any idea
@@ -72,7 +72,7 @@ Labels and flags are how integrity shows. They go before the numbers, in plain w
   with its `detail` sentence. An audit line is `PASS`, `FLAG` or `NOT-CHECKED`; report every `FLAG` and every
   `NOT-CHECKED`. The stored `verdict` is a letter grade from the gauntlet, not a statement that the idea works.
 - Trial count: say "trial N of M recorded" from `trials_total` (or `total_trials`), plus the
-  sensitivity re-runs in `variants_evaluated`. A best-of-many result is reported as best-of-many.
+  sensitivity re-runs in `variants_evaluated`; cite `family_trials` for the deflation count. Report best-of-many as best-of-many.
   `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger yet: count those
   by hand and say so.
 

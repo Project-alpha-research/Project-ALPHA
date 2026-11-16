@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 81c0578404491b83
+verified: dc423c6ce75ae8c1
 ---
 
 # Command line runs invariants
@@ -131,7 +131,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 - Rule tests run a full-sample diagnostic pass, including cost/parameter engine re-runs and a
   returns-level delay approximation. `--no-diagnose` skips it and labels the run `no-diagnostics`.
 - `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
-  drawdowns, calendar returns, trade concentration, counted variants, trial-adjusted Sharpe, flags and
+  drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict (see [counting](cli-trial-ledger.md)), flags and
   a macro window: stored FRED series at the start and trough of the worst drawdown, as known at the
   trough (`spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are null
   with an explicit reason.

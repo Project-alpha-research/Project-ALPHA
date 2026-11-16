@@ -1224,3 +1224,16 @@ real_data = "synthetic fixture runs only; no model calls"
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-results-check.md"]
+
+[[capability]]
+id = "family-deflated-sharpe"
+name = "Deflated Sharpe counted over the idea's family"
+what = "Record the family trial count behind diagnostic Sharpe and the verdict, and show live family totals."
+see_it = ["alpha results cite <run_id> family_trials"]
+entry_points = ["cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_deflation.py::test_worked_example", "tests/unit/test_spine_deflation.py::test_ledger_fixture", "tests/unit/test_spine_deflation.py::test_validate_rerun_keeps_the_family_recorded_at_first_publication", "tests/unit/test_spine_deflation.py::test_family_sharpes_keep_only_the_run_frequency", "tests/unit/test_spine_deflation.py::test_same_test_repeats_count_once_keeping_the_earliest", "tests/unit/test_spine_deflation.py::test_spread_floored_below_five_comparable_trials", "tests/unit/test_spine_deflation.py::test_variants_count_in_n_but_not_in_the_spread"]
+proof_smoke = ["tests/smoke/test_family_deflation_smoke.py::test_family_deflation_grows"]
+real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a copy of the Dell's data folder: family count 10 then 11 (2 repeats of earlier tests not counted); the verdict's deflated Sharpe 0.985 then 0.953 (equal to trial_dsr), against 0.999 and 0.997 counted as one trial"
+needs = []
+state = "Working"
+docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]

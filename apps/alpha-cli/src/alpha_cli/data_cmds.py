@@ -561,15 +561,38 @@ def candles(
             )
             snap = None
         else:
-            bars, snap = load_bars(
-                symbol,
-                data_dir=AlphaSettings().data_dir,
-                snapshot_id=snapshot,
-                as_of=when,
-                timeframe=target.canonical,
-                source_timeframe=stored.canonical,
-                session=session,
+            root = (
+                resolve_snapshot_dir(AlphaSettings().data_dir / "snapshots", snapshot)
+                if snapshot
+                else store_dir(AlphaSettings().data_dir, stored)
             )
+            bars_path = ParquetStore(root)._bars_path(symbol)
+            if not bars_path.exists():
+                raise DataError(
+                    f"bars for {symbol!r} not found at {bars_path}; "
+                    "next: run alpha data pull --help to download the missing data"
+                )
+            from polars.exceptions import PolarsError
+
+            try:
+                bars, snap = load_bars(
+                    symbol,
+                    data_dir=AlphaSettings().data_dir,
+                    snapshot_id=snapshot,
+                    as_of=when,
+                    timeframe=target.canonical,
+                    source_timeframe=stored.canonical,
+                    session=session,
+                )
+            except FileNotFoundError as exc:
+                raise DataError(
+                    f"bars for {symbol!r} not found at {bars_path}; "
+                    "next: run alpha data pull --help to download the missing data"
+                ) from exc
+            except (OSError, PolarsError) as exc:
+                raise DataError(
+                    f"corrupt or unreadable bars for {symbol!r} at {bars_path}: {exc}"
+                ) from exc
             if (
                 expected_snapshot_hash is not None
                 and snapshot_manifest_hash(snapshot_path) != expected_snapshot_hash

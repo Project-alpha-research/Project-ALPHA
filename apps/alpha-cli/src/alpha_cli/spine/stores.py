@@ -4,21 +4,37 @@ from __future__ import annotations
 
 import json
 import tomllib
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from statistics import median
 
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
+from alpha_data.timeframe import BarTimeframe
 
 
-def periods_per_year(timestamps: Sequence[datetime]) -> int:
-    """Infer bar frequency from elapsed years, snapping daily exchange/crypto calendars."""
+def periods_per_year(timestamps: Sequence[datetime], bar_size: BarTimeframe | None = None) -> int:
+    """Use observed intraday sessions; retain elapsed-year inference for daily bars."""
     if len(timestamps) < 30:
         raise ValueError("periods_per_year requires at least 30 bars")
     if any(right <= left for left, right in zip(timestamps, timestamps[1:], strict=False)):
         raise ValueError("periods_per_year requires strictly increasing timestamps")
+    intraday = (
+        not bar_size.is_daily
+        if bar_size is not None
+        else median(
+            (right - left).total_seconds()
+            for left, right in zip(timestamps, timestamps[1:], strict=False)
+        )
+        < 86400
+    )
+    if intraday:
+        counts = Counter(stamp.date() for stamp in timestamps)
+        days = 365 if any(day.weekday() >= 5 for day in counts) else 252
+        return round(median(counts.values()) * days)
     years = (timestamps[-1] - timestamps[0]).total_seconds() / (365.25 * 86400)
     frequency = len(timestamps) / years
     for daily in (252, 365):

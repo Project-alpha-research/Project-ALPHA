@@ -31,7 +31,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 8721de7f02d2e616
+verified: ec630bf03bca905a
 ---
 
 # Command line runs invariants
@@ -114,7 +114,9 @@ and how it names and publishes immutable runs. Project-wide rules:
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
-  name, idea, rule, store and integrity labels; `source` identifies the resolved provider.
+  name, idea, rule, store and integrity labels; `source` identifies the resolved provider. Annualisation records a basis:
+  daily bars retain elapsed-year inference and 252/365 snaps; intraday uses median bars per occupied date times 365
+  if weekends occur, otherwise 252. Known bar sizes are explicit. These descriptive manifest fields are outside identity.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts
   without rewriting them and appends a `repeat` trial; the manifest retains its original test association.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync;
@@ -127,15 +129,15 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## Stored facts and diagnostics
 
-- Rule tests run a full-sample diagnostic pass, including cost/parameter engine re-runs and a
-  returns-level delay approximation. `--no-diagnose` skips it and labels the run `no-diagnostics`.
-- `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
-  drawdowns, calendar returns, trade concentration, counted variants, trial-adjusted Sharpe, flags and
-  a macro window: stored FRED series at the start and trough of the worst drawdown, as known at the
-  trough (`spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are null
-  with an explicit reason.
-- Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
-  use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
+- Rule tests run full-sample cost/parameter re-runs and a returns-level delay approximation; `--no-diagnose` skips and labels the pass.
+- Diagnostics and the manifest are staged together; the completed run directory is renamed into place after verification.
+  `diagnostics.json` stores benchmarks, drawdowns, calendar returns, concentration, counted variants, trial-adjusted Sharpe and flags.
+  The macro window uses stored FRED series at the drawdown start and trough, as known at the trough (`spine/macro.py`).
+  Unavailability has a plain-English reason and separate technical detail. Flags are observations; unavailable numbers are null with reasons.
+  The retained `share_explained` field is benchmark fall / strategy fall on the same dates; flag wording calls it a ratio.
+- Audits have independent PASS / FLAG / NOT-CHECKED entries, no overall grade, and walk-forward traces.
+  Fill ranges allow recorded slippage, or are NOT-CHECKED when cost settings are absent.
+  The final manifest verifies all sidecars. Spine `data_period` and `traded_period` facts name loaded-bar and stored-equity endpoints.
 - `alpha results` lists the ledger; `show` reads facts, flags, audit and available figure names;
   `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
   The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
@@ -146,8 +148,7 @@ and how it names and publishes immutable runs. Project-wide rules:
   sensitivity re-runs separately from the append-only row index.
 - `results show <test_id>` shows every asset that completed and lists each one that did not, or
   whose stored run could not be read, under `failed` with a reason; naming one run still fails loud.
-- `alpha tool attribution|regimes|changepoints` describe a recorded rule test: [investigation tools](cli-investigation-tools.md).
-- `alpha results check|compare`: [draft checks and run comparisons](cli-results-check.md).
+- Tools: [investigations](cli-investigation-tools.md); `alpha results check|compare`: [draft checks and comparisons](cli-results-check.md).
 
 ## Suites
 

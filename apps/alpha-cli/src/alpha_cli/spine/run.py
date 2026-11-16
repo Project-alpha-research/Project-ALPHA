@@ -12,13 +12,14 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine.diagnose import write_diagnostics
+from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
+from alpha_data.timeframe import DAILY
 
 
 def _fields(obj: Any) -> dict[str, Any]:
@@ -83,8 +84,9 @@ def _prepare(
     )
     if (bars[-1].ts - bars[0].ts).total_seconds() < 3 * 365.25 * 86400:
         result["labels"].append("short-history")
-    ppy = periods_per_year([bar.ts for bar in bars])
+    ppy = periods_per_year([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
+    result["periods_per_year_basis"] = "elapsed calendar years; daily snap to 252 or 365"
     spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars))
     identity = _runner.run_identity_for(
         {
@@ -118,56 +120,8 @@ def _execute(
         manifest = _artifacts.read_manifest(rdir)
         result["labels"].append("repeat")
     else:
-        out = _gauntlet.run_gauntlet(
-            prepared.bars,
-            prepared.spec,
-            knobs,
-            run_id=prepared.identity.run_id,
-            snapshot_id=None,
-            dividends=prepared.dividends,
-        )
-        _artifacts.publish_artifact(
-            rdir / "spec.json",
-            lambda path: path.write_text(
-                json.dumps(
-                    {**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256},
-                    sort_keys=True,
-                    separators=(",", ":"),
-                    allow_nan=False,
-                ),
-                encoding="utf-8",
-            ),
-        )
-        if "no-diagnostics" not in result["labels"]:
-            write_diagnostics(
-                idea,
-                prepared.bars,
-                prepared.dividends,
-                prepared.spec,
-                out,
-                prepared.identity,
-                home,
-                result,
-            )
-        _, manifest = write_validation_run(
-            home,
-            prepared.bars,
-            prepared.spec,
-            out,
-            prepared.identity,
-            extra_manifest={
-                "source": result["source"],
-                "spine": {
-                    "test_id": test_id,
-                    "spec_sha256": idea.spec_sha256,
-                    "name": idea.name,
-                    "idea": idea.idea,
-                    "rule": idea.rule.model_dump(),
-                    "store": result["store"],
-                    "labels": list(result["labels"]),
-                },
-            },
-        )
+        with staged_run(result) as staged_home:
+            manifest = _write_run(idea, prepared, home, staged_home, knobs, test_id, result)
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
@@ -183,6 +137,81 @@ def _execute(
         variants_evaluated=diagnostics.get("variants_evaluated", 0),
         facts=build_facts(rdir),
     )
+
+
+def _write_run(
+    idea: IdeaSpec,
+    prepared: Prepared,
+    home: Path,
+    staged_home: Path,
+    knobs: _gauntlet.GauntletParams,
+    test_id: str,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    rdir = Path(result["run_dir"])
+    out = _gauntlet.run_gauntlet(
+        prepared.bars,
+        prepared.spec,
+        knobs,
+        run_id=prepared.identity.run_id,
+        snapshot_id=None,
+        dividends=prepared.dividends,
+    )
+    _artifacts.publish_artifact(
+        rdir / "spec.json",
+        lambda path: path.write_text(
+            json.dumps(
+                {**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256},
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ),
+            encoding="utf-8",
+        ),
+    )
+    if "no-diagnostics" not in result["labels"]:
+        write_diagnostics(
+            idea,
+            prepared.bars,
+            prepared.dividends,
+            prepared.spec,
+            out,
+            prepared.identity,
+            home,
+            result,
+        )
+    _, manifest = write_validation_run(
+        staged_home,
+        prepared.bars,
+        prepared.spec,
+        out,
+        prepared.identity,
+        extra_manifest={
+            "source": result["source"],
+            "spine": {
+                "test_id": test_id,
+                "spec_sha256": idea.spec_sha256,
+                "name": idea.name,
+                "idea": idea.idea,
+                "rule": idea.rule.model_dump(),
+                "store": result["store"],
+                "labels": list(result["labels"]),
+                "annualisation": {
+                    "periods_per_year": prepared.spec.periods_per_year,
+                    "basis": result["periods_per_year_basis"],
+                },
+                "data_period": {
+                    "first_ts": prepared.bars[0].ts.isoformat(),
+                    "last_ts": prepared.bars[-1].ts.isoformat(),
+                },
+                "traded_period": {
+                    "first_ts": out.oos.oos_timestamps[0].isoformat(),
+                    "last_ts": out.oos.oos_timestamps[-1].isoformat(),
+                },
+            },
+        },
+    )
+    return manifest
 
 
 def run_idea(

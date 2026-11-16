@@ -10,6 +10,8 @@ from alpha_cli.spine.errors import SpineError
 
 # Public vocabulary: one plain-English meaning per metric.
 METRICS = {
+    "data_period": "First and last loaded bar.",
+    "traded_period": "First and last stored equity point.",
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
     "dsr": "The validation gauntlet's stored deflated Sharpe probability.",
@@ -69,6 +71,8 @@ TOOL_METRICS = {
 }
 METRICS.update({metric: meaning for metric, (_, meaning) in TOOL_METRICS.items()})
 _FIELDS = {
+    "data_period": ("manifest.json", "spine.data_period", "loaded bars"),
+    "traded_period": ("manifest.json", "spine.traded_period", "stored out-of-sample equity curve"),
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),

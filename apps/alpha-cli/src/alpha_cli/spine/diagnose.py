@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 import math
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -23,6 +26,24 @@ from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation.dsr import deflated_sharpe
 from alpha_validation.metrics import to_returns
+
+
+@contextmanager
+def staged_run(result: dict[str, Any]) -> Iterator[Path]:
+    """Publish diagnostics and their manifest together by renaming a completed directory."""
+    final = Path(result["run_dir"])
+    final.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".pending-", dir=final.parent) as temporary:
+        staged_home = Path(temporary)
+        staged = _artifacts.run_dir(staged_home, final.name)
+        result["run_dir"] = str(staged)
+        try:
+            yield staged_home
+            if not (staged / "manifest.json").is_file():
+                raise DataError("cannot publish a staged run without its manifest")
+            staged.rename(final)
+        finally:
+            result["run_dir"] = str(final)
 
 
 def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str, _runner.RunSpec]]:

@@ -165,8 +165,8 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
                 "flag": "drawdown-with-market",
                 "detail": (
                     f"During the worst drawdown ({abs(episodes[0].get('depth') or 0.0):.0%}), "
-                    f"buy and hold fell {abs(episodes[0]['benchmark_return']):.0%} "
-                    "over the same dates."
+                    f"buy and hold fell {share:.2g} times as much over the same dates "
+                    f"({abs(episodes[0]['benchmark_return']):.0%})."
                 ),
             }
         )

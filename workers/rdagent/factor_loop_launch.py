@@ -366,7 +366,7 @@ class Launch:
             if child.poll() is not None:
                 raise LaunchError(f"model gateway exited with {child.returncode}; see logs")
             try:
-                session = json.loads((state / "session.json").read_text())
+                session = json.loads((state / f"session-{child.pid}.json").read_text())
             except (OSError, ValueError):
                 session = {}
             if session.get("pid") == child.pid:

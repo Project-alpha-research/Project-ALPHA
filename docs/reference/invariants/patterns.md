@@ -11,7 +11,7 @@ sources:
   - tests/bias_guards/test_lookalike_future_poison.py
   - tests/unit/test_lookalike.py
   - apps/alpha-cli/src/alpha_cli/*lookalike*.py
-verified: fe70f889ccbabfc6
+verified: 574b1c728741b1c7
 ---
 
 # Pattern geometry invariants

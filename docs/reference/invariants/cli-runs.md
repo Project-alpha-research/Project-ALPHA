@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 6981f02f5eb6a287
+verified: afb4632f7283ef25
 ---
 
 # Command line runs invariants
@@ -146,9 +146,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts
   sensitivity re-runs separately from the append-only row index.
 
-## Lookalikes and novelty
+## Draft checks, lookalikes and novelty
 
-- `alpha lookalike` and `alpha unusual`: see [pattern invariants § Lookalikes and novelty](patterns.md#lookalikes-and-novelty).
+- `alpha results check|compare`: [draft checks](cli-results-check.md). `alpha lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 
 ## Suites
 

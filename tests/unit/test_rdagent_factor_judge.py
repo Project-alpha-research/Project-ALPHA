@@ -213,6 +213,7 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "os": os,
         "json": json,
         "pd": pd,
+        "re": importlib.import_module("re"),
         "subprocess": subprocess,
         "sys": sys,
         "Developer": object,
@@ -339,6 +340,7 @@ def swing_parts() -> dict[str, Any]:
         "_rounded",
         "AlphaFactorHypothesisGen",
         "idea_family",
+        "input_families",
         "spread_line",
         "_rank",
         "family_summary",
@@ -350,7 +352,7 @@ def swing_parts() -> dict[str, Any]:
         or (
             isinstance(n, ast.Assign)
             and any(
-                isinstance(t, ast.Name) and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS")
+                isinstance(t, ast.Name) and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE")
                 for t in n.targets
             )
         )

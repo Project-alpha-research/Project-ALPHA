@@ -343,7 +343,7 @@ def _report(
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
         f"{LABEL}. {spec['survivorship']}. "
-        f"Factor and clock trials (including unknown attempts): {len(family)}; "
+        f"Factor-family trials (each factor x clock, unreadable rows too): {len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction chosen in-sample. Exploration "
@@ -827,7 +827,7 @@ def _evaluate_locked(
     )
     trials = _deflate(rows, history, family, replay_returns)
     lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
-    feedback += f" Ledger rows across all families (including repeats): {all_count}."
+    feedback += f" Ledger rows, all families (rules, repeats too): {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",
         "ledger_trials_all_families": all_count,

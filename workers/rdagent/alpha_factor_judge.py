@@ -69,21 +69,55 @@ FAMILY_KEYWORDS = (
 )
 
 
-def idea_family(name: str, description: str = "", formulation: str = "") -> str:
+# A proposal that mixes several features (machine learning, a regression, a weighted combination).
+COMPOSITE = re.compile(
+    r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|regression|"
+    r"gradient boost\w*|random forest|neural|lightgbm|xgboost|pca|principal component\w*|"
+    r"linear combination|weighted (?:sum|average|combination)|(?:combination|blend|mix) of)\b"
+)
+
+
+def input_families(*texts: str) -> set[str]:
+    """Families of the features a proposal's own words name, matched at word starts."""
+    found = set()
+    for word in re.findall(r"[a-z][a-z0-9_]*", " ".join(texts).lower()):
+        for family, keywords in FAMILY_KEYWORDS:
+            if any(re.search(rf"(?:^|_)(?:{keyword})", word) for keyword in keywords):
+                found.add(family)
+                break
+    return found
+
+
+def idea_family(
+    name: str, description: str = "", formulation: str = "", variables: Any = None
+) -> str:
+    """One family, or every family a composite draws on joined by "; " (ADR-0055).
+
+    A composite (by its words) or a name with no family keyword is classified by the features
+    its description, formulation and variables name, so renaming cannot leave the family rule;
+    a composite with no identifiable input is "composite: unknown inputs". Over-inclusive by
+    design: a stray family word in the text adds a family, it never removes one.
+    """
     lowered = name.lower()
-    proposal = f"{name} {description} {formulation}".lower().replace("_", " ")
-    if re.search(r"\b(?:composite|ridge|ensemble|blend|ml|machine.learning)\b", proposal):
-        inherited = set()
-        for feature in re.findall(r"[a-z][a-z0-9_]*", f"{description} {formulation}".lower()):
-            for family, keywords in FAMILY_KEYWORDS:
-                if any(re.search(keyword, feature) for keyword in keywords):
-                    inherited.add(family)
-                    break
-        return "; ".join(sorted(inherited)) if inherited else "composite: unknown inputs"
-    for family, keywords in FAMILY_KEYWORDS:
-        if any(re.search(keyword, lowered) for keyword in keywords):
-            return family
-    return "other: " + lowered.split("_")[0]
+    named = next(
+        (
+            family
+            for family, keywords in FAMILY_KEYWORDS
+            if any(re.search(keyword, lowered) for keyword in keywords)
+        ),
+        None,
+    )
+    words = " ".join(
+        f"{key} {value}"
+        for key, value in (variables.items() if isinstance(variables, dict) else ())
+    )
+    composite = COMPOSITE.search(f"{name} {description} {formulation}".lower().replace("_", " "))
+    if named is not None and not composite:
+        return named
+    families = input_families(description, formulation, words) | ({named} if named else set())
+    if families:
+        return "; ".join(sorted(families))
+    return "composite: unknown inputs" if composite else "other: " + lowered.split("_")[0]
 
 
 def _rounded(value: Any) -> Any:
@@ -134,7 +168,10 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     families: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         for family in idea_family(
-            row["name"], row.get("description") or "", row.get("formulation") or ""
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
         ).split("; "):
             families.setdefault(family, []).append(row)
     lines, closed = [], []
@@ -397,34 +434,46 @@ class AlphaFactorScenario(QlibFactorScenario):
 
 class AlphaFactorRunner(Developer):
     @staticmethod
+    def text_reason(text: str) -> str | None:
+        """cap_reached or exception when the text says so; otherwise None."""
+        lowered = text.lower()
+        if any(t in lowered for t in ("budget_exhausted", "budget exhausted", "call cap reached")):
+            return "cap_reached"
+        if "Traceback" in text or re.search(r"\b\w*(?:Error|Exception)\b", text):
+            return "exception"
+        return None
+
+    @staticmethod
+    def error_line(text: str) -> str:
+        """The error's own first line: after a traceback, its final "SomeError: ..." line."""
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if "Traceback" in text:
+            errors = [line for line in lines if re.match(r"[\w.]*(?:Error|Exception)\b", line)]
+            if errors:
+                return errors[-1]
+        return lines[0] if lines else ""
+
+    @staticmethod
     def execute_factor(workspace: Any, feedback: Any) -> tuple[Any, str | None, str]:
         """Separate execution, critic and output failures before they reach the ledger."""
         detail = str(getattr(feedback, "execution_feedback", "") or "")
         if not feedback:
-            if (
-                "budget_exhausted" in detail
-                or "budget exhausted" in detail
-                or "call cap reached" in detail
-            ):
-                return None, "cap_reached", detail.split("\n")[0]
-            if "Traceback" in detail or "Error:" in detail or "Exception:" in detail:
-                return None, "exception", detail.split("\n")[0]
-            return (
-                None,
-                "critic_rejected",
-                detail.split("\n")[0] or "RD-Agent critic did not accept the code",
-            )
+            reason = AlphaFactorRunner.text_reason(detail) or "critic_rejected"
+            line = AlphaFactorRunner.error_line(detail)
+            return None, reason, line or "RD-Agent critic did not accept the code"
         try:
             execution, values = workspace.execute("All")
         except Exception as error:
-            reason = (
-                "cap_reached" if getattr(error, "code", None) == "budget_exhausted" else "exception"
-            )
-            return None, reason, f"{type(error).__name__}: {error}".split("\n")[0]
+            reason = AlphaFactorRunner.text_reason(f"{getattr(error, 'code', '')} {error}")
+            return None, reason or "exception", f"{type(error).__name__}: {error}".split("\n")[0]
         if not isinstance(values, pd.DataFrame):
             text = str(execution)
-            reason = "exception" if "Traceback" in text or "Error" in text else "bad_output"
-            return None, reason, text.split("\n")[0] or "factor returned no data frame"
+            reason = AlphaFactorRunner.text_reason(text) or "bad_output"
+            return (
+                None,
+                reason,
+                AlphaFactorRunner.error_line(text) or "factor returned no data frame",
+            )
         if (
             values.empty
             or len(values.columns) != 1
@@ -483,7 +532,13 @@ class AlphaFactorRunner(Developer):
                 "lookahead": {"status": "NOT_RUN"},
                 "description": getattr(task, "description", None),
                 "formulation": getattr(task, "factor_formulation", None),
-                "failure_reason": "bad_output",
+                # The feature names and meanings a composite is classified by (ADR-0055).
+                "variables": getattr(task, "variables", None),
+                # No code: the coder stopped (the call cap, an error) or produced no file.
+                "failure_reason": self.text_reason(
+                    str(getattr(feedback, "execution_feedback", "") or "")
+                )
+                or "bad_output",
                 "failure_detail": "factor.py was not produced",
             }
             if code:

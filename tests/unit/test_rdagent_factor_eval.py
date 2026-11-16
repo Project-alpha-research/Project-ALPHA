@@ -192,14 +192,21 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
     # New recording metadata and presentation are checked before projecting onto the old
     # byte contract; the original metric/decision checksum remains unchanged.
     assert record["factors"][0].pop("recorded_at") == "2026-11-17T00:00:00+00:00"
-    assert "Factor and clock trials (including unknown attempts): 3" in record["feedback_text"]
-    assert "Ledger rows across all families (including repeats): 1" in record["feedback_text"]
+    assert (
+        "Factor-family trials (each factor x clock, unreadable rows too): 3"
+        in record["feedback_text"]
+    )
+    assert "Ledger rows, all families (rules, repeats too): 1" in record["feedback_text"]
     assert "Factor failed: reason not recorded." in record["feedback_text"]
     record["feedback_text"] = (
         record["feedback_text"]
-        .replace("Factor and clock trials (including unknown attempts)", "Ledger trials")
         .replace(
-            "Ledger rows across all families (including repeats)", "ledger_trials_all_families"
+            "Factor-family trials (each factor x clock, unreadable rows too)",
+            "Ledger trials",
+        )
+        .replace(
+            "Ledger rows, all families (rules, repeats too)",
+            "ledger_trials_all_families",
         )
     )
     for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
@@ -1059,5 +1066,5 @@ def test_rule_family_excluded_from_factor_statistics_and_repeats(tmp_path: Path)
     assert mixed["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["trial_index"] == 2
-    assert "Ledger rows across all families (including repeats): 2" in mixed["feedback_text"]
+    assert "Ledger rows, all families (rules, repeats too): 2" in mixed["feedback_text"]
     assert len(ev._read_ledger(ledger)) == 2

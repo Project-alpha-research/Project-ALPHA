@@ -817,30 +817,53 @@ from factor_loop_entry import install_source
 install_source(Path(sys.argv[2]))
 from rdagent.components.knowledge_management.graph import UndirectedGraph, UndirectedNode
 from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStrategyV2
-from rdagent.oai.llm_utils import APIBackend
+from rdagent.oai.backend.base import APIBackend
 import alpha_factor_coder as c
 
 from model_gateway import GatewayError
 
-def refuse(self: object, input_content: object) -> None:
-    try:
-        raise GatewayError(400, "embedding_input_refused", "input length exceeds context")
-    except GatewayError as cause:
-        raise RuntimeError("Failed to create chat completion after 2 retries.") from cause
-APIBackend.create_embedding = refuse
+# The real seam: the embedding request's own failure. Upstream's retry wrapper then retries and
+# raises a fresh RuntimeError with no cause, as in the 2026-11-17 run.
+failure = [GatewayError(400, "embedding_input_refused", "input length exceeds context")]
+calls = []
+def refuse(self: object, input_content_list: object, *args: object, **kwargs: object) -> None:
+    calls.append(1)
+    raise failure[0]
+APIBackend._create_embedding_with_cache = refuse
 graph = UndirectedGraph.__new__(UndirectedGraph)
 graph.__dict__.update(nodes={}, vector_base=None)
 record = Path(sys.argv[3]) / "memory-skips.jsonl"
 node = UndirectedNode(content="x" * 7394, label="task_success_implement")
-with c.tolerant_embeddings(graph, record):
+with c.tolerant_embeddings(graph, record, APIBackend):
     graph.add_nodes(node=node, neighbors=[])
 assert graph.nodes == {}, graph.nodes
 assert "add_node" not in vars(graph)  # restored: nothing of ALPHA's is pickled with the graph
+assert APIBackend._create_embedding_with_cache is refuse  # the backend seam is restored too
 pickle.dumps(graph)
 skip = json.loads(record.read_text())
 assert skip["schema"] == "AlphaMemorySkipV1" and skip["content_chars"] == 7394, skip
 assert "input length exceeds context" in skip["error"]
 assert "Failed to create" not in skip["error"]
+# a budget refusal is never a skip: it stops the worker at once, before upstream's retries
+failure[0] = GatewayError(429, "budget_exhausted", "budget exhausted: run_max_calls")
+calls.clear()
+try:
+    with c.tolerant_embeddings(graph, record, APIBackend):
+        graph.add_nodes(node=UndirectedNode(content="z", label="task_trace"), neighbors=[])
+except c.BudgetExhausted as stop:
+    assert "budget exhausted" in str(stop) and calls == [1], calls
+else:
+    raise AssertionError("a budget refusal was swallowed")
+assert len(record.read_text().splitlines()) == 1
+# an unexplained embedding failure is not a skip either
+failure[0] = RuntimeError("connection reset")
+try:
+    with c.tolerant_embeddings(graph, record, APIBackend):
+        graph.add_nodes(node=UndirectedNode(content="w", label="task_trace"), neighbors=[])
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("an unexplained embedding failure was skipped")
 # an error that is not a missing embedding still stops the step
 graph.get_node = lambda node_id: (_ for _ in ()).throw(KeyError("broken"))
 embedded = UndirectedNode(content="y", label="x")
@@ -872,6 +895,7 @@ print("ok")
             "HOME": str(tmp_path),
             "PATH": "/usr/bin:/bin",
             "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+            "MAX_RETRY": "2",  # upstream's retry count; it sleeps between retries
         },
         timeout=120,
         capture_output=True,

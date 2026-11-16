@@ -16,9 +16,10 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+
 from tests.unit.test_rdagent_factor_judge import swing_parts
 
-WORKER = Path(__file__).resolve().parents[1]
+WORKER = Path(__file__).resolve().parents[2] / "workers/rdagent"
 sys.path.insert(0, str(WORKER))
 launch = importlib.import_module("factor_loop_launch")
 memory = importlib.import_module("research_memory")
@@ -28,7 +29,7 @@ gateway = importlib.import_module("model_gateway")
 def coder_parts() -> dict[str, Any]:
     tree = ast.parse((WORKER / "alpha_factor_coder.py").read_text())
     selected = {"BudgetExhausted", "embedding_failure", "_record_skip", "tolerant_embeddings"}
-    nodes = [
+    nodes: list[ast.stmt] = [
         n
         for n in tree.body
         if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name in selected
@@ -64,6 +65,70 @@ def test_budget_refusal_is_not_a_memory_skip(tmp_path: Path, wrapped: bool) -> N
     assert not record.exists()
 
 
+class _Backend:
+    """Upstream's shape (pin 484776c, oai/backend/base.py): retries swallow the real error."""
+
+    failures: list[Exception] = []
+    calls = 0
+
+    def _create_embedding_with_cache(self, input_content_list: list[str]) -> list[list[float]]:
+        type(self).calls += 1
+        raise type(self).failures[0]
+
+    def create_embedding(self, content: str) -> list[float]:
+        for _ in range(3):
+            try:
+                return self._create_embedding_with_cache([content])[0]
+            except Exception:  # upstream retries every failure, then forgets it
+                continue
+        raise RuntimeError("Failed to create chat completion after 3 retries.")
+
+
+class _Graph:
+    def add_node(self, node: Any, neighbor: Any = None) -> None:
+        node.embedding = _Backend().create_embedding("text")
+
+
+def _upstream_graph() -> _Graph:
+    return _Graph()
+
+
+def test_budget_refusal_behind_upstream_retries_stops_at_once(tmp_path: Path) -> None:
+    """The real 2026-11-17 shape: the RuntimeError carries no cause, yet the cap is seen."""
+    ns = coder_parts()
+    _Backend.failures = [gateway.GatewayError(429, "budget_exhausted", "budget exhausted: run")]
+    _Backend.calls = 0
+    unpatched = _Backend._create_embedding_with_cache
+    graph = _upstream_graph()
+    record = tmp_path / "memory-skips.jsonl"
+    with (
+        pytest.raises(ns["BudgetExhausted"], match="budget exhausted"),
+        ns["tolerant_embeddings"](graph, record, _Backend),
+    ):
+        graph.add_node(SimpleNamespace(embedding=None))
+    assert _Backend.calls == 1  # no upstream retry after a budget refusal
+    assert not record.exists()
+    assert _Backend._create_embedding_with_cache is unpatched  # nothing of ALPHA's stays
+
+
+def test_input_refusal_behind_upstream_retries_is_skipped_with_its_cause(tmp_path: Path) -> None:
+    ns = coder_parts()
+    _Backend.failures = [
+        gateway.GatewayError(400, "embedding_input_refused", "local embedding input refused")
+    ]
+    graph = _upstream_graph()
+    record = tmp_path / "memory-skips.jsonl"
+    with ns["tolerant_embeddings"](graph, record, _Backend):
+        graph.add_node(SimpleNamespace(embedding=None))
+    assert "local embedding input refused" in json.loads(record.read_text())["error"]
+    _Backend.failures = [RuntimeError("connection reset")]
+    with (
+        pytest.raises(RuntimeError, match="after 3 retries"),
+        ns["tolerant_embeddings"](graph, record, _Backend),
+    ):
+        graph.add_node(SimpleNamespace(embedding=None))
+
+
 def test_only_input_refusals_skip_and_log_the_real_cause(tmp_path: Path) -> None:
     ns = coder_parts()
     refusal = gateway.GatewayError(
@@ -84,34 +149,80 @@ def test_only_input_refusals_skip_and_log_the_real_cause(tmp_path: Path) -> None
         graph.add_node(SimpleNamespace(embedding=None))
 
 
+# Abridged from the real 2026-11-17 proposal `ml_ridge_composite_28d` (run
+# 2026-11-17-rdagent-spread-check, rounds.jsonl iteration 0): its own words and variables.
+REAL_COMPOSITE: dict[str, Any] = {
+    "name": "ml_ridge_composite_28d",
+    "description": "[Machine Learning based Factor] Walk-forward cross-sectional ridge "
+    "composite of slow OHLCV features, trained to predict the cross-sectional rank of the next "
+    "28-day open-to-open return.",
+    "formulation": "m20_{i,t}=ln(C_t/C_{t-20}), vol60_{i,t}=sqrt(...), hp120_{i,t}=C/max H-1, "
+    "skew60_{i,t}=..., mdd120_{i,t}=..., ac60_{i,t}=...; f_{i,t}=x_{i,t}^T beta",
+    "variables": {
+        "ac60_{i,t}": "Lag-1 autocorrelation of the trailing 60 daily log returns.",
+        "hp120_{i,t}": "120-day high proximity: close divided by trailing 120-day high minus one.",
+        "m20_{i,t}": "20-day log momentum feature.",
+        "mdd120_{i,t}": "Maximum peak-to-trough drawdown of close over the trailing 120 days.",
+        "skew60_{i,t}": "Adjusted sample skewness of the trailing 60 daily log returns.",
+        "vol60_{i,t}": "60-day realized volatility of daily log returns.",
+        "vt60_{i,t}": "60-day volume trend: log ratio of 20-day to 60-day mean volume.",
+    },
+}
+
+
+def _family(ns: dict[str, Any], row: dict[str, Any]) -> set[str]:
+    args = (row["name"], row.get("description", ""), row.get("formulation", ""))
+    return set(ns["idea_family"](*args, row.get("variables")).split("; "))
+
+
 def test_ridge_composite_inherits_every_input_family() -> None:
     ns = swing_parts()
-    description = "Ridge composite of volatility_28d, drawdown_90d, skew_28d and autocorr_7d"
-    families = ns["idea_family"]("ml_ridge", description, "ridge(features)").split("; ")
-    assert set(families) == {
+    families = _family(ns, REAL_COMPOSITE)
+    assert {
         "volatility and beta",
         "drawdown",
         "skewness and lottery returns",
         "momentum and trend",
-    }
-    rows = [
-        {
-            "name": "ml_ridge",
-            "description": description,
-            "formulation": "ridge(features)",
-            "schema": "AlphaRdagentFactorTrialV2",
-            "status": "FAILED",
-            "screen": {},
-        }
-        for _ in range(3)
-    ]
+    } <= families
+    # Before the fix this composite was filed as "other: ml" and escaped every family.
+    assert not any(family.startswith("other") for family in families)
+    # Three failed volatility tries close that family; the composite is named in it, so the
+    # proposer is told to leave composites that use it too.
+    volatility = {"schema": "AlphaRdagentFactorTrialV2", "status": "SCREEN_FAIL", "screen": {}}
+    rows = [{**volatility, "name": f"volatility_{n}d"} for n in (20, 40)]
+    rows.append({**REAL_COMPOSITE, "schema": "AlphaRdagentFactorTrialV2", "status": "FAILED"})
+    rows[-1]["screen"] = {}
     summary = ns["family_summary"](rows, 3)
-    for family in families:
-        assert f"{family}: 3 tries" in summary
-    assert "Do not propose" in summary and "composites" in summary
-    assert (
-        ns["idea_family"]("ml_ridge", "unknown features", "ridge(x)") == "composite: unknown inputs"
-    )
+    closed = summary.split("no candidate: ")[1]
+    assert "volatility and beta" in closed and "composites using ANY" in summary
+    assert "- drawdown: 1 tries" in summary
+
+
+def test_composite_family_cannot_be_dodged_by_renaming() -> None:
+    ns = swing_parts()
+    renamed = {**REAL_COMPOSITE, "name": "signal_alpha_x"}
+    assert _family(ns, renamed) == _family(ns, REAL_COMPOSITE)
+    plain = {"name": "factor_a", "description": "Weighted sum of volatility and skewness ranks"}
+    assert _family(ns, plain) == {"volatility and beta", "skewness and lottery returns"}
+    unknown = {"name": "ml_ridge_composite_7d"}  # the real ledger rows carry no description
+    assert _family(ns, unknown) == {"composite: unknown inputs"}
+
+
+def test_single_family_factor_keeps_its_family() -> None:
+    ns = swing_parts()
+    cases = {
+        "amihud_illiquidity_20d": "Mean absolute return per dollar volume over 20 days.",
+        "vol_adjusted_momentum_28d": "28-day momentum divided by 60-day volatility.",
+        "range_compression_10d": "High-low range over its 60-day mean; a strange arrangement.",
+    }
+    families = {
+        name: _family(ns, {"name": name, "description": text}) for name, text in cases.items()
+    }
+    assert families == {
+        "amihud_illiquidity_20d": {"illiquidity"},
+        "vol_adjusted_momentum_28d": {"momentum and trend"},
+        "range_compression_10d": {"range and compression"},
+    }
 
 
 def test_resume_ignores_partial_checkpoint_and_records_abandonment(tmp_path: Path) -> None:
@@ -183,23 +294,37 @@ def test_reasoning_limit_unconfirmed_default_is_unset() -> None:
     assert gateway.Settings(data_dir=Path("/data"), run_id="id").coding_reasoning_tokens is None
 
 
-def test_gateway_counts_timeout_retry_only_after_reservation() -> None:
-    with tempfile.TemporaryDirectory(dir="/tmp") as directory:
+def test_gateway_counts_timeout_retry_only_after_reservation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Three tries allowed, two calls left: the timeout retry that was reserved counts once."""
+    monkeypatch.setenv("ALPHA_GATEWAY_API_KEY", "sk-test-not-real")
+    monkeypatch.setenv("ALPHA_GATEWAY_API_BASE", "https://example.com/api/v1")
+
+    def timed_out(*args: Any) -> dict[str, Any]:
+        raise gateway.GatewayError(504, "provider_timeout", "provider read timed out")
+
+    monkeypatch.setattr(gateway, "_post_json", timed_out)
+    # The gateway refuses a data dir inside any git checkout, so this test uses /tmp directly.
+    with tempfile.TemporaryDirectory(prefix="gateway-unit-", dir="/tmp") as directory:
         settings = gateway.Settings(
             data_dir=Path(directory),
             run_id="id",
-            chat_route="fake",
+            chat_route="api",
             embedding_route="fake",
+            api_model="deepseek/test-model",
+            api_price_in_per_mtok=1,
+            api_price_out_per_mtok=2,
+            api_openrouter=True,
             provider_retries=2,
             run_max_calls=2,
         )
-        backend = Mock()
-        backend.complete.side_effect = gateway.GatewayError(504, "provider_timeout", "timed out")
-        model = gateway.Gateway(settings, chat_backend=backend)
+        model = gateway.Gateway(settings)
         with pytest.raises(gateway.GatewayError, match="budget exhausted"):
             model.chat({"model": "alpha-chat", "messages": [{"role": "user", "content": "x"}]})
-        row = json.loads(model.log_path.read_text())
-        assert row["timeout_retry_attempts"] == 1 and row["attempts"] == 2
+        row = json.loads(model.log_path.read_text().splitlines()[-1])
+        assert row["attempts"] == 2 and row["timeout_retry_attempts"] == 1
+        assert row["provider_errors"] == ["provider_timeout", "provider_timeout"]
 
 
 def test_completed_rounds_add_to_inherited_count(tmp_path: Path) -> None:
@@ -223,6 +348,34 @@ def test_completed_rounds_add_to_inherited_count(tmp_path: Path) -> None:
         plan, run_id="new", run_dir=new, started_at="start", ended_at="end", secrets=()
     )
     assert result["loops_before"] == 1 and result["loops_after"] == 2
+    # A half-finished round in this run's own session is recorded as abandoned, not counted.
+    (new / "work/log/__session__/1").mkdir()
+    (new / "work/log/__session__/1/0_direct_exp_gen").touch()
+    newer = tmp_path / "newer"
+    (newer / "work/log/__session__/0").mkdir(parents=True)
+    (newer / "work/log/__session__/0/4_record").touch()
+    plan = memory.prepare(
+        root, run_id="newer", run_dir=newer, source_sha256="pin", judge_sha256="judge"
+    )
+    assert plan.loops_before == 2
+    # The previous session could not be loaded: the run started a new lineage of its own.
+    event = {
+        "schema": "AlphaRdagentMemoryEventV1",
+        "code": "session-unloadable",
+        "message": "The previous session could not be loaded.",
+        "ts": "now",
+    }
+    (newer / "memory-events.jsonl").write_text(json.dumps(event) + "\n")
+    result = memory.record(
+        plan, run_id="newer", run_dir=newer, started_at="start", ended_at="end", secrets=()
+    )
+    assert result["loops_after"] == 1
+    for _ in range(2):  # recording an abandoned round twice writes it once
+        memory.close_unfinished_rounds(new / "work/log/__session__")
+    abandoned = [json.loads(line) for line in (new / "rounds.jsonl").read_text().splitlines()]
+    assert [(row["schema"], row["loop"]) for row in abandoned] == [
+        ("AlphaRdagentRoundAbandonedV1", 1)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -238,6 +391,20 @@ def test_completed_rounds_add_to_inherited_count(tmp_path: Path) -> None:
             SimpleNamespace(execution_feedback="call cap reached", final_decision=False),
             "cap_reached",
         ),
+        (
+            SimpleNamespace(
+                execution_feedback='Traceback (most recent call last):\n  File "factor.py", '
+                "line 3\nKeyError: 'close'",
+                final_decision=False,
+            ),
+            "exception",
+        ),
+        (
+            SimpleNamespace(
+                execution_feedback="Code ran; the output looks wrong.", final_decision=False
+            ),
+            "critic_rejected",
+        ),
     ],
 )
 def test_runner_keeps_execution_reason_before_critic(feedback: Any, expected: str) -> None:
@@ -252,11 +419,14 @@ def test_runner_keeps_execution_reason_before_critic(feedback: Any, expected: st
     cls = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
     values, reason, detail = cls.execute_factor(Mock(), Feedback())
     assert values is None and reason == expected
-    assert "\n" not in detail
+    assert "\n" not in detail and not detail.startswith("Traceback")
+    if "Traceback" in feedback.execution_feedback:
+        assert detail == "KeyError: 'close'"
 
 
 def test_runner_records_exception_and_bad_shape() -> None:
     import pandas as pd
+
     from tests.unit.test_rdagent_factor_judge import judge_parts
 
     cls = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
@@ -288,6 +458,7 @@ def test_invalid_embedding_model_is_not_an_input_refusal() -> None:
 
 def test_bad_factor_format_is_recorded_before_prefix_check() -> None:
     import pandas as pd
+
     from tests.unit.test_rdagent_factor_judge import judge_parts
 
     frame = pd.DataFrame(

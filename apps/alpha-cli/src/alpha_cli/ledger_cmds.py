@@ -29,6 +29,15 @@ ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-le
 RD = Annotated[Path | None, typer.Option("--rdagent-ledger", help="RD-Agent ledger path.")]
 JSON = Annotated[bool, typer.Option("--json")]
 NOTICE = "Read-only view; the ledgers themselves are unchanged."
+# Where the RD-Agent factor loop's shared ledger lives beside the data directory (the
+# `--trial-ledger` path every real run has used): read when `ledger/sources.toml` is absent.
+DEFAULT_RDAGENT_LEDGER = Path("runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl")
+
+
+def _rdagent_ledger(home: Path, rdagent: Path | None) -> Path | None:
+    if rdagent is None and not (home / "ledger/sources.toml").exists():
+        return home.resolve().parent / DEFAULT_RDAGENT_LEDGER
+    return rdagent
 
 
 def _render(output: dict[str, Any]) -> str:
@@ -59,7 +68,9 @@ def _render(output: dict[str, Any]) -> str:
         if any(key in row for row in rows)
     ]
     lines = ["\t".join(keys)] if keys else []
-    lines.extend("\t".join(str(row.get(key, "")) for key in keys) for row in rows)
+    lines.extend(
+        "\t".join("" if row.get(key) is None else str(row[key]) for key in keys) for row in rows
+    )
     for key in (
         "by_kind",
         "by_outcome",
@@ -93,7 +104,7 @@ def _run(
 ) -> None:
     try:
         home = AlphaSettings().data_dir
-        snapshot = read_ledgers(ledger_sources(home, rdagent))
+        snapshot = read_ledgers(ledger_sources(home, _rdagent_ledger(home, rdagent)))
         output = action(snapshot, home)
         output["sources"] = [asdict(s) for s in snapshot.sources]
         output["unknown"] = [asdict(row) for row in snapshot.unknown]

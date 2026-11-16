@@ -36,6 +36,26 @@ def test_spread_failure_listed_and_counted_once(
     assert trials_for_deflation(snapshot, "rdagent-factors")["all_trials"] == 1
 
 
+def test_ledger_reads_the_default_rdagent_ledger_and_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "data"
+    home.mkdir()
+    default = tmp_path / "runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    default.parent.mkdir(parents=True)
+    default.write_text(json.dumps(factor(version=2, status="SPREAD_FAIL")) + "\n")
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    output = CliRunner().invoke(ledger_app, ["summary"]).output
+    assert f"rdagent: read {default.resolve()}" in output
+    assert "not understood" not in output
+    # A configured source still wins; the default is only the fallback.
+    configured = tmp_path / "elsewhere.jsonl"
+    (home / "ledger").mkdir()
+    (home / "ledger/sources.toml").write_text(f'[rdagent]\nfactor_ledger = "{configured}"\n')
+    output = CliRunner().invoke(ledger_app, ["summary"]).output
+    assert f"rdagent: ledger file not found ({configured})" in output
+
+
 def test_spread_message_says_replay_counts_only() -> None:
     row = factor(version=2, status="SPREAD_FAIL", screen={}, replay={"counted_only": "spread"})
     assert "replayed only to count the trial; its result is not used" in clock_feedback(row)
@@ -86,6 +106,9 @@ def test_proposer_counts_have_plain_labels(tmp_path: Path) -> None:
     request["factors"][0].update(status="FAILED", failure_reason="critic_rejected")
     request_path.write_text(json.dumps(request))
     result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
-    assert "Factor and clock trials (including unknown attempts): 3" in result["feedback_text"]
-    assert "Ledger rows across all families (including repeats): 1" in result["feedback_text"]
+    assert (
+        "Factor-family trials (each factor x clock, unreadable rows too): 3"
+        in result["feedback_text"]
+    )
+    assert "Ledger rows, all families (rules, repeats too): 1" in result["feedback_text"]
     assert "ledger_trials_all_families:" not in result["feedback_text"]

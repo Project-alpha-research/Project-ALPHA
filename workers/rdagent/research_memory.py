@@ -232,7 +232,7 @@ def close_unfinished_rounds(session: Path) -> None:
                 stream.write(
                     _json(
                         {
-                            "schema": "AlphaRdagentRoundV1",
+                            "schema": "AlphaRdagentRoundAbandonedV1",
                             "loop": int(folder.name),
                             "status": "abandoned_at_cap",
                             "recorded_at": _now(),
@@ -374,7 +374,15 @@ def open_factor_loop(
     if session:
         # A fresh scheduler receives only completed research history; no paid half-round is
         # resumed. Shared CoSTEER knowledge is loaded by the current coder's normal settings.
-        close_unfinished_rounds(Path(session))
+        try:
+            close_unfinished_rounds(Path(session))
+        except (OSError, ValueError) as error:  # a record problem never stops the new run
+            _safe_event(
+                environ,
+                "abandoned-round-unrecorded",
+                f"The previous session's unfinished round could not be recorded "
+                f"({type(error).__name__}).",
+            )
         dumps = sorted(
             (
                 p
@@ -473,6 +481,7 @@ def _record(
         last_completed = completed_loops(session)
         result["knowledge_sha256_after"] = _hash(knowledge)
         events = run_dir / "memory-events.jsonl"
+        codes = set()
         if events.exists():
             for line in events.read_text(errors="replace").splitlines():
                 try:
@@ -488,6 +497,7 @@ def _record(
                         _warning("memory-event-corrupt", "A memory event line was unreadable.")
                     )
                     continue
+                codes.add(event["code"])
                 result["warnings"].append(event)
         # New schedulers number their own rounds from zero. Count completed record files,
         # not the highest session index (old sessions can still have inherited numbering).
@@ -502,7 +512,10 @@ def _record(
             else 0
         )
         result["rounds_completed"] = completed
-        result["loops_after"] = plan.loops_before + completed
+        # A run whose previous session could not be loaded started a new lineage: it inherits
+        # no completed rounds, so it counts only its own.
+        inherited = 0 if "session-unloadable" in codes else plan.loops_before
+        result["loops_after"] = inherited + completed
         progressed = completed > 0
         close_unfinished_rounds(session)
         if not found and progressed:

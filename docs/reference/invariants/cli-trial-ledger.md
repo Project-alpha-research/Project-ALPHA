@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 3b324ac28fa4a72c
+verified: a5d7422fc367d765
 ---
 
 # One trial ledger invariants
@@ -22,7 +22,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 
 - The spine source is `<home>/ledger/trials.jsonl`. `--rdagent-ledger PATH` overrides
   `[rdagent] factor_ledger = "/absolute/path"` in `<home>/ledger/sources.toml`.
-  With neither, only the spine source is configured. Invalid TOML or configuration produces
+  With neither, the `alpha ledger` commands read the RD-Agent ledger at its default location beside
+  the data directory, `<home>/../runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl` (the
+  factor loop's `--trial-ledger`), reported as missing when absent. Invalid TOML or configuration produces
   `LEDGER_SOURCE_INVALID`; configured files that do not exist are reported as missing.
 - Read each file's bytes once. Acquire a shared `flock` only when its `.lock` exists, opened
   `rb`; never create directories, files or lock files. No writer or historical row is changed.

@@ -1237,3 +1237,29 @@ real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a 
 needs = []
 state = "Working"
 docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]
+
+[[capability]]
+id = "inverted-signal-control"
+name = "Opposite-direction research control"
+what = "Compare a rule with its opposite direction on the same bars and costs without counting another trial."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> inverted_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_inversion_next_open_known_pnl_and_ledger_unchanged", "tests/unit/test_spine_controls.py::test_short_is_resized_on_equity_net_of_its_dividend_debit", "tests/unit/test_spine_controls.py::test_a_shrinking_short_book_keeps_trading_whole_units", "tests/unit/test_spine_controls.py::test_label_order", "tests/unit/test_spine_diagnostics.py::test_rule_test_publishes_controls_without_counting_them"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder, ledger unchanged by alpha diagnose: ma_cross 50/200 SPY Sharpe 0.76, opposite -0.75, 15 trades each, inconclusive; same on BTC/USDT 0.63 against -0.61, 9 trades, inconclusive; tsmom 252/21 BTC/USDT 0.72 against -0.70, 20 trades, inconclusive; ma_cross 10/50 SPY 0.55 against -0.59, 107 trades, control passed with the rising-market caveat"
+needs = []
+state = "Working"
+docs = ["research/tools/inverted-signal-control.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "walk-forward-efficiency"
+name = "Walk-forward efficiency with explicit limits"
+what = "Read the median annualised out-of-sample to in-sample return ratio as a practitioner rule of thumb, not a statistical test."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> wfe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_wfe_reads_the_recorded_train_window_after_warm_up", "tests/unit/test_spine_controls.py::test_wfe_two_folds", "tests/unit/test_spine_controls.py::test_wfe_null", "tests/unit/test_spine_controls.py::test_wfe_median_uses_defined_folds_and_names_the_rest"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder: ma_cross 50/200 SPY median 65% over 31 of 33 folds; same on BTC/USDT 0% over 7 of 9; tsmom 252/21 BTC/USDT -11% over 6 of 9; ma_cross 10/50 SPY 99% over 33 of 34"
+needs = []
+state = "Working"
+docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]

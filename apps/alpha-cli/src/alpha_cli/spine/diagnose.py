@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import replace
+from bisect import bisect_right
+from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from pydantic import ValidationError
@@ -16,6 +17,13 @@ from alpha_cli._strategies import surrogate_for
 from alpha_cli.artifact_contract import artifact_contract, verify_manifest_artifacts
 from alpha_cli.spine import diagnostics as d
 from alpha_cli.spine.audit import audit
+from alpha_cli.spine.controls import (
+    in_sample_rows,
+    inverted_summary,
+    run_inverted_backtest,
+    unavailable_control,
+    walk_forward_efficiency,
+)
 from alpha_cli.spine.deflation import (
     TestKey,
     TrialFamily,
@@ -27,8 +35,11 @@ from alpha_cli.spine.deflation import (
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
-from alpha_core import Bar, CorporateAction
+from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation.metrics import to_returns
+
+if TYPE_CHECKING:
+    from alpha_backtest.results import BacktestResult
 
 
 def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str, _runner.RunSpec]]:
@@ -151,6 +162,49 @@ def _publish(rdir: Path, document: dict[str, Any], identity: RunIdentity) -> Non
     )
 
 
+def _inverted_control(
+    bars: list[Bar],
+    dividends: list[CorporateAction],
+    spec: _runner.RunSpec,
+    full: BacktestResult,
+    document: dict[str, Any],
+) -> dict[str, Any]:
+    """The opposite-direction control; a control that cannot run is recorded, never fatal."""
+    try:
+        inverted = run_inverted_backtest(bars, spec, full, dividends=dividends)
+        return inverted_summary(
+            document["full_sample"],
+            [v for _, v in inverted.equity_curve],
+            len(inverted.trades),
+            spec.periods_per_year,
+            hypothetical=spec.account_type.upper() == "CASH",
+            market_return=document["benchmark"]["total_return"],
+        )
+    except DataError as exc:
+        return unavailable_control(document["full_sample"], str(exc))
+
+
+def _efficiency(out: _gauntlet.GauntletOutput, full: BacktestResult, ppy: int) -> dict[str, Any]:
+    """WFE: each fold's recorded train window, read from the full-sample run the folds index.
+
+    The fold bounds index the returns of a series one point per loaded bar, which is the
+    full-sample run's equity curve; ``out.result`` is the OOS-only execution and cannot be used.
+    """
+    timestamps = [ts for ts, _ in full.equity_curve]
+    trace = full.decision_trace
+    # The first decision is on the close of bar j and fills at the open of bar j + 1; equity at
+    # timestamps[j + 1] is sampled before that fill, so returns[j] is flat and returns[j + 1] is
+    # the first that can carry a position. bisect_right gives j + 1 (bar stamps precede closes).
+    first_tradable = bisect_right(timestamps, trace[0].ts) if trace else 0
+    rows = in_sample_rows(
+        [asdict(fold) for fold in out.oos.folds],
+        [v for _, v in full.equity_curve],
+        ppy,
+        first_tradable=first_tradable,
+    )
+    return walk_forward_efficiency(rows)
+
+
 def write_diagnostics(
     idea: IdeaSpec,
     bars: list[Bar],
@@ -222,6 +276,8 @@ def write_diagnostics(
         "variants": variants,
     }
     document["variants_evaluated"] = result["variants_evaluated"]
+    document["inverted_signal"] = _inverted_control(bars, dividends, spec, full, document)
+    document["walk_forward_efficiency"] = _efficiency(out, full, ppy)
     returns = to_returns([float(bar.close) for bar in bars])
     weights, costs = surrogate_for(spec).weights_and_costs(returns)
     document["delay"] = d.delay(returns, weights, costs, ppy)

@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 20 working, 29 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 22 working, 29 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -34,6 +34,8 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **One trial ledger across rule tests, tools and RD-Agent** — alpha ledger summary --json (a real run is recorded) More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
 - **Honesty self-test of the answer checker** — alpha partner selftest (a real run is recorded) More: [docs/reference/invariants/cli-results-check.md](docs/reference/invariants/cli-results-check.md).
 - **Deflated Sharpe counted over the idea's family** — alpha results cite <run_id> family_trials (a real run is recorded) More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-trial-ledger.md](docs/reference/invariants/cli-trial-ledger.md).
+- **Opposite-direction research control** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/inverted-signal-control.md](research/tools/inverted-signal-control.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **Walk-forward efficiency with explicit limits** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/walk-forward.md](research/tools/walk-forward.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 
 ## Partly working
 

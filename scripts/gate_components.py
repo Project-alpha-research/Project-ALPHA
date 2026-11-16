@@ -32,6 +32,12 @@ SHOW_OUTPUT = frozenset({"mutation gate"})
 # Pull-request path filters for the isolated jobs. An entry ending in "/" or "*" is a prefix,
 # anything else an exact path. Push to main and an unknown comparison base run everything.
 _ALWAYS = (".github/", "scripts/gate*", "scripts/run_owned_test.py")
+AFML_ROOT_TESTS = (
+    "tests/smoke/test_afml_labels_smoke.py",
+    "tests/bias_guards/test_afml_labels_future_poison.py",
+    "tests/integration/test_afml_cv_parity.py",
+    "tests/integration/test_afml_stats_parity.py",
+)
 PATH_FILTERS: dict[str, tuple[str, ...]] = {
     # The worker is isolated, but its bridge test drives the alpha-cli journal through the
     # platform interpreter (workers/qlib/tests/test_w09_durable_bridge.py).
@@ -44,14 +50,9 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
         "uv.lock",
     ),
     "literature": ("workers/literature/",),
-    # The worker job also runs the `alpha labels` smoke check and the worker's future-poison guard,
-    # which need the installed worker (the root test job skips them).
-    "afml": (
-        "workers/afml/",
-        "apps/alpha-cli/src/alpha_cli/labels_cmds.py",
-        "tests/smoke/test_afml_labels_smoke.py",
-        "tests/bias_guards/test_afml_labels_future_poison.py",
-    ),
+    # The worker job also runs ALPHA's root checks over the installed worker (the `alpha labels`
+    # smoke check, its poison guard, parity with ALPHA's statistics); the root job skips them.
+    "afml": ("workers/afml/", "apps/alpha-cli/src/alpha_cli/labels_cmds.py", *AFML_ROOT_TESTS),
 }
 
 
@@ -291,18 +292,9 @@ def component_steps(
             ("tests", cwd, ["uv", "run", "pytest", "-q", "-m", "not network"]),
         ]
         if component == "afml":
-            smoke = [
-                "uv",
-                "run",
-                "pytest",
-                "-q",
-                "-n",
-                "0",
-                "tests/smoke/test_afml_labels_smoke.py",
-                "tests/bias_guards/test_afml_labels_future_poison.py",
-            ]
+            pytest = ["uv", "run", "pytest", "-q", "-n", "0", *AFML_ROOT_TESTS]
             owned = ["uv", "run", "python", "scripts/run_owned_test.py", "--timeout", "900", "--"]
-            steps.append(("alpha labels smoke and future poison", root, [*owned, *smoke]))
+            steps.append(("root checks over the worker", root, [*owned, *pytest]))
         return steps
     raise ValueError(f"Unknown gate component: {component}")
 

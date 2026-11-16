@@ -784,6 +784,72 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "afml-factor-importance"
+name = "Which factors the labels lean on (purged MDI, MDA, SFI)"
+what = "Report how much each candidate factor (RD-Agent's among them) helps predict the labels, on purged folds and with overlap weights; a report that no gate reads."
+see_it = ["uv run alpha labels importance <result-id> --factors <factors.parquet>"]
+entry_points = [
+  "cli: alpha labels importance",
+  "code: workers/afml/src/alpha_afml_worker/importance.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_importance.py::test_informative_columns_outrank_noise",
+  "workers/afml/tests/test_importance.py::test_folds_are_the_leak_checked_purged_ones",
+]
+proof_smoke = [
+  "tests/smoke/test_afml_labels_smoke.py::test_importance_report_over_factors",
+]
+real_data = "run on real daily SPY and BTC labels with simple features (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "afml-purged-cv"
+name = "Purged cross-validation for labels that last several days"
+what = "Split labelled events into purged k-fold or combinatorial folds by label end time, with an embargo and backtest paths, every fold checked for leaks."
+see_it = ["cd workers/afml && uv run alpha-afml-worker cv SPANS.parquet --out splits.json --n-groups 6 --test-groups 2 --embargo 5"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/cv.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_cv.py::test_dense_labels_all_three_agree_exactly",
+  "workers/afml/tests/test_cv.py::test_leak_checker_catches_a_plain_unpurged_kfold",
+  "tests/integration/test_afml_cv_parity.py::test_one_day_labels_equal_alpha_cpcv",
+]
+real_data = "run on real daily SPY and BTC labels (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet (no alpha command uses it; alpha test still splits with one-day labels)"
+
+[[capability]]
+id = "afml-fracdiff"
+name = "Fractional differencing with d chosen on training data only"
+what = "Make a price series steadier for a model while keeping its memory, choosing the smallest passing d on the training span and freezing it."
+see_it = ["cd workers/afml && uv run alpha-afml-worker fracdiff BARS.parquet --fit-end 2023-12-29T00:00:00+00:00 --out ffd.parquet"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/fracdiff.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_fracdiff.py::test_hand_weights_for_half_and_one",
+  "workers/afml/tests/test_fracdiff.py::test_min_d_uses_only_the_training_span",
+]
+real_data = "run on real daily SPY and BTC closes (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet (no alpha command or feature step uses it)"
+
+[[capability]]
+id = "afml-stats-second-opinion"
+name = "Second opinions on luck-adjusted scores, minimum track record and strategy risk"
+what = "Compute PSR, DSR and PBO with two outside libraries beside ALPHA's own, plus how long a track record must be and the chance a win rate falls short."
+see_it = ["cd workers/afml && uv run alpha-afml-worker stats INPUTS.json --out stats.json"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/stats.py"]
+proof_synthetic = [
+  "tests/integration/test_afml_stats_parity.py::test_alpha_and_both_libraries",
+  "workers/afml/tests/test_stats.py::test_min_track_record_length_hits_the_target_psr",
+]
+real_data = "run on real daily SPY and BTC moving-average grids (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet (result cards do not show minimum track record or strategy risk)"
+
+[[capability]]
 id = "qlib-refit"
 name = "Qlib model refit evidence"
 codes = ["W11"]

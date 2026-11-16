@@ -122,6 +122,10 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Kronos with real model files, not a stand-in | Unproven | `alpha-forecast` | Later | [kronos] |
 | Automatic checks covering the RD-Agent worker, with a scripted-model smoke run | Missing | backlog | Path 3 | [status] |
 | Textbook labels and overlap weights from two pinned libraries that must agree | Working | `alpha labels`, `workers/afml` | Now | [status] |
+| Factor importance on purged folds (MDI, MDA, SFI), a report for RD-Agent's factors | Working | `alpha labels importance` | Now | [status] |
+| Purged splits by label end time, with embargo, backtest paths and a leak checker | Unproven | `workers/afml` | Path 3 | [status] |
+| Fractional differencing with d chosen on training data only | Unproven | `workers/afml` | Path 3 | [status] |
+| Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
 
 [any-bar]: ../reference/project/owner-decisions-3.md#2026-11-15-no-daily-only-rule-fewer-strict-rules
 [engines]: ../reference/project/owner-decisions.md#2026-11-14-the-architecture-in-one-line

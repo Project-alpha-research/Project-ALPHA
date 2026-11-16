@@ -5,7 +5,7 @@ sources:
   - workers/afml/examples/**
   - workers/afml/pyproject.toml
   - workers/afml/uv.lock
-verified: 27911e5135d98acf
+verified: 04902dea2c8b42d6
 ---
 
 # AFML worker workspace
@@ -14,8 +14,8 @@ verified: 27911e5135d98acf
 
 An isolated process that runs two independent implementations of methods from López de Prado's
 *Advances in Financial Machine Learning*: RiskLabAI (primary) and quantowl (second opinion).
-Today it offers sample uniqueness, time-decay weights, the sequential bootstrap, CUSUM events and
-triple-barrier labels with meta-labels. A number leaves only when both libraries agree (or, for
+Today it offers sample uniqueness and weights, the sequential bootstrap, CUSUM events, triple-barrier
+labels and meta-labels, purged CV, fractional differencing, feature importance and Sharpe statistics. A number leaves only when both libraries agree (or, for
 labels on highs and lows, when ALPHA's own adapter code computed it). It is a separate uv
 project with its own lock; no ALPHA package imports it and it imports no ALPHA package.
 [ADR-0054](../../docs/adr/0054-afml-worker.md)
@@ -32,8 +32,8 @@ project with its own lock; no ALPHA package imports it and it imports no ALPHA p
 
 ## How to change it
 
-- Code: `workers/afml/src/alpha_afml_worker/` (`contract.py` checks input, `uniqueness.py` and
-  `labels.py` are the adapter); tests: `workers/afml/tests/` (`shared_fixtures.py` holds the
+- Code: `workers/afml/src/alpha_afml_worker/` (`contract.py` checks input; `uniqueness.py`,
+  `labels.py`, `cv.py`, `fracdiff.py`, `importance.py`, `stats.py` are the adapter); tests: `workers/afml/tests/` (`shared_fixtures.py` holds the
   shared inputs: hand-built bars and a seeded synthetic series). Never commit market data.
 - A new function gets a parity test first: a hand-worked value, and the two libraries equal to
   1e-10 where both implement it. A look-ahead-sensitive one also gets a truncation test.

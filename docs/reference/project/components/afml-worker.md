@@ -4,14 +4,15 @@ sources:
   - workers/afml/CONTEXT.md
   - workers/afml/README.md
   - docs/adr/0054-afml-worker.md
-verified: d245cb5638171589
+verified: f513c8dd27122108
 ---
 
 # AFML worker
 
 A separate program that runs methods from Marcos López de Prado's textbook *Advances in
 Financial Machine Learning* through two independent open libraries, RiskLabAI and quantowl, and
-only hands a number back when both agree. Today `alpha labels` uses it to label what happened after an event (target,
+only hands a number back when both agree. Today `alpha labels` uses it to label what happened after an event, weight overlapping labels
+and report which factors the labels lean on; (target,
 stop or time limit first) and measures how much overlapping labels repeat the same days.
 
 ## Why it exists
@@ -37,8 +38,9 @@ Its output is advisory; ALPHA's own code decides what a label means.
 - Labels default to ALPHA's convention: highs and lows, entry at the next open, a bar touching
   both barriers scored stop-first with the optimistic reading kept beside it.
 - Nothing fitted on the whole sample; every look-ahead-sensitive function has a truncation test.
-- Next, each in its own pull request: label-aware purged cross-validation, fractional
-  differencing, purged feature importance, and second opinions on ALPHA's backtest statistics.
+- Also in the worker: purged splits by label end time with a brute-force leak checker,
+  fractional differencing with d chosen on training data only, factor importance on those
+  purged folds (a report for RD-Agent's factors), and second opinions on PSR, DSR and PBO.
 
 ## What is real today
 
@@ -47,7 +49,8 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `workers/afml`
-- **Capabilities:** `afml-labels-and-weights`
+- **Capabilities:** `afml-labels-and-weights`, `afml-factor-importance`, `afml-purged-cv`, `afml-fracdiff`,
+  `afml-stats-second-opinion`
 - Code: [`workers/afml/`](../../../../workers/afml/README.md).
 - Tests: `workers/afml/tests/`; CI job `afml-worker`.
 - How to change it: [workers/afml/CONTEXT.md](../../../../workers/afml/CONTEXT.md).

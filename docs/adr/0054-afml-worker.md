@@ -80,8 +80,11 @@ Facts read from the installed packages on this machine (CPython 3.12.3), not fro
 - The truncation tests live in `workers/afml/tests/test_labels.py`, mirrored as the future-poison
   guard `tests/bias_guards/test_afml_labels_future_poison.py` (with a leaky twin it must reject);
   both need the installed worker, so they run in the `afml-worker` job and skip elsewhere.
-- Each later item (purged CV, fractional differencing, importance, backtest statistics) arrives
-  in its own pull request with its parity test.
+- Update, same pull request (2026-11-16): wave 1 items 3 to 6 followed in this pull request,
+  each with its parity test: purged CV (`cv.py`, with ALPHA's brute-force leak checker), fractional
+  differencing (`fracdiff.py`, d fitted on training data only), importance (`importance.py`, quantowl
+  on the checked folds; RiskLabAI's unpurged MDA and SFI never used) and statistics (`stats.py`,
+  compared with ALPHA's PSR, DSR and PBO in `tests/integration/test_afml_stats_parity.py`).
 
 ## Implementation anchors
 

@@ -134,3 +134,26 @@ def test_worker_high_low_labels_match_alpha_barrier_outcome(tmp_path: Path) -> N
             assert (row["outcome"], row["end_pos"]) == (race.outcome, j), row
         compared += 1
     assert compared > 20 and gap_decided <= compared // 20
+
+
+def test_importance_report_over_factors(tmp_path: Path) -> None:
+    if not (WORKER / ".venv" / "bin" / "python").is_file():
+        pytest.skip("AFML worker not installed; run `uv sync --locked --project workers/afml`")
+    home = _home(tmp_path)
+    ran = alpha(home, "labels", "barrier", "--asset", "SPY", "--json", timeout=900).json()
+    bars = pl.read_parquet(Path(ran["result_dir"]) / "bars.parquet")
+    log_close = bars["close"].log()
+    factors = bars.select("ts").with_columns(
+        mom_20=(log_close - log_close.shift(20)).fill_null(0.0),
+        noise=pl.Series([((i * 7919) % 101) / 101.0 for i in range(bars.height)]),
+    )
+    factor_file = tmp_path / "factors.parquet"
+    factors.write_parquet(factor_file)
+    report = alpha(
+        home, "labels", "importance", ran["result_id"], "--factors", str(factor_file),
+        "--n-groups", "4", "--json", timeout=900,
+    ).json()  # fmt: skip
+    assert "report-only" in report["labels"]
+    metrics = {fact["metric"] for fact in report["facts"]}
+    assert {"mdi:mom_20", "mda:noise", "sfi:mom_20"} <= metrics
+    assert all(fact["reason"] is None for fact in report["facts"])

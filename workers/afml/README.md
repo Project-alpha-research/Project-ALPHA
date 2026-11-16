@@ -27,6 +27,10 @@ installed (it calls pandas methods removed in pandas 2).
 | Sequential bootstrap | `uniqueness.sequential_bootstrap` | Same draws from both for the same seed; hand probabilities 2/5, 5/11; book's Monte Carlo medians 0.6 and 0.7 |
 | CUSUM events on log closes, threshold from prior volatility | `labels.find_events` | Hand path; fixed-threshold libraries identical |
 | Triple-barrier labels and meta-labels | `labels.barrier_labels` | Hand path with known first touches; truncation test |
+| Purged k-fold and combinatorial purged CV, backtest paths | `cv.purged_splits` | Brute-force leak checker; equal to ALPHA's `cpcv.py` on one-day labels; split and path counts |
+| Fractional differencing, minimum d on training data | `fracdiff.ffd`, `fracdiff.fit_min_d` | Hand weights for d = 0.5; libraries equal to 1e-10; d unchanged by later bars |
+| Feature importance: MDI, MDA, SFI (a report) | `importance.importance` | Book's synthetic test; quantowl on ALPHA-checked purged folds only |
+| PSR, DSR, PBO, minimum track record, strategy risk | `stats` | Side by side with ALPHA's own values (root parity test) |
 
 Labels come in two bases. `high_low` (default) is ALPHA's: decide at the event bar's close, enter
 at the next open, touch on the bar's high or low, and a bar reaching both barriers is scored
@@ -49,5 +53,5 @@ is used and the summary's `weights_scope` says so. A label's span runs from its 
 end bar, one bar more than the position is held, so overlap is counted slightly high.
 
 `BARS.parquet` has `ts` (aware UTC), `open`, `high`, `low`, `close`, one row per bar, strictly
-increasing. A summary is printed as JSON; any failure prints one line and exits 2. No `alpha`
-command calls the worker yet.
+increasing. A summary is printed as JSON; any failure prints one line and exits 2. `alpha labels barrier|weights|importance`
+call the worker; the other functions are worker commands (`alpha-afml-worker --help`).

@@ -419,3 +419,108 @@ def weights(
     lines += [f"{f['metric']}: {f['value']}" for f in output["facts"]]
     lines.append("Labels: " + ", ".join(output["labels"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))
+
+
+def _factor_table(parent: Path, factors_path: Path, staging: Path) -> tuple[Path, list[str]]:
+    """Join factor values (as of each event bar's close) to the decided labels, with weights."""
+    events = pl.read_parquet(parent / "events.parquet").filter(pl.col("end_pos") >= 0)
+    weights = pl.read_parquet(staging / "weights.parquet").select(
+        pl.col("start").alias("ts"), pl.col("avg_uniqueness").alias("weight")
+    )
+    factors = pl.read_parquet(factors_path)
+    schema = factors.schema
+    if "ts" not in factors.columns or not isinstance(schema["ts"], pl.Datetime):
+        raise ValueError("the factor file needs a 'ts' column of timestamps")
+    names = [c for c in factors.columns if c != "ts" and schema[c].is_numeric()]
+    if not names:
+        raise ValueError("the factor file has no numeric factor columns")
+    factors = factors.select(
+        pl.col("ts").dt.replace_time_zone("UTC")
+        if schema["ts"].time_zone is None
+        else pl.col("ts").dt.convert_time_zone("UTC"),
+        *names,
+    ).with_columns(pl.col("ts").dt.cast_time_unit("us"))
+    table = (
+        events.select(
+            "ts",
+            pl.col("pos").alias("start"),
+            pl.col("end_pos").alias("end"),
+            pl.col("meta_label").cast(pl.Int64).alias("label"),
+        )  # fmt: skip
+        .join(weights, on="ts", how="inner")
+        .join(factors, on="ts", how="inner")
+        .drop_nulls()
+        .drop("ts")
+    )
+    path = staging / "importance-input.parquet"
+    table.write_parquet(path)
+    return path, names
+
+
+@labels_app.command("importance")
+def importance_report(
+    result_id: str = typer.Argument(..., help="A high_low result id from alpha labels barrier."),
+    factors: Path = typer.Option(  # noqa: B008
+        ..., help="Parquet: ts plus one numeric column per factor, each known at that bar's close."
+    ),
+    n_groups: int = typer.Option(5, help="Purged k-fold groups."),
+    embargo: int = typer.Option(5, help="Labels embargoed after each test block."),
+    seed: int = typer.Option(0, help="Seed for the forest and the permutations."),
+    worker_project: Path | None = typer.Option(None, help="Worker project (default workers/afml)."),  # noqa: B008
+    json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
+) -> None:
+    """Report which factors the labels lean on (MDI, purged MDA and SFI). A report, not a gate."""
+    home = AlphaSettings().data_dir
+    try:
+        parent = _labels_root(home) / result_id
+        if "/" in result_id or not (parent / "result.json").is_file():
+            raise SpineError(
+                "UNKNOWN_RESULT",
+                f"No labels result {result_id!r}.",
+                "Run alpha labels barrier first and pass the result id it prints.",
+            )
+        project = _worker(worker_project)
+        params = {"factors_sha256": _sha256(factors), "n_groups": n_groups, "embargo": embargo,
+                  "seed": seed}  # fmt: skip
+        lock = _worker_fingerprint(project)
+        rid = _identity({"kind": "importance", "parent": result_id, "params": params, "lock": lock})
+        final = _labels_root(home) / rid
+        if not (final / "result.json").is_file():
+            staging = Path(tempfile.mkdtemp(prefix=f".{rid}-", dir=_labels_root(home)))
+            _call_worker(project, ["uniqueness", str(parent / "events.parquet"), "--bars",
+                                   str(parent / "bars.parquet"), "--out",
+                                   str(staging / "weights.parquet")])  # fmt: skip
+            table, names = _factor_table(parent, factors, staging)
+            summary = _call_worker(project, [
+                "importance", str(table), "--out", str(staging / "importance.json"),
+                "--n-groups", str(n_groups), "--embargo", str(embargo), "--seed", str(seed),
+            ])  # fmt: skip
+            report = json.loads((staging / "importance.json").read_text("utf-8"))
+            labels = ["report-only", "factor-timing-unchecked", "weights-whole-sample"]
+            if summary["rows"] < SMALL_SAMPLE:
+                labels.append("small-sample")
+            basis = "purged k-fold on label end times, uniqueness-weighted; MDI in-sample"
+            facts = [
+                _fact(f"{kind}:{name}", report[kind][name]["mean"], rid, basis, labels,
+                      f"{kind.upper()} mean importance of {name}.")
+                for kind in ("mdi", "mda", "sfi") for name in names
+            ]  # fmt: skip
+            result = {
+                "result_id": rid, "kind": "importance", "parent": result_id, "params": params,
+                "factors": names, "worker": {"fingerprint": lock}, "summary": summary,
+                "labels": labels, "facts": facts, "created_at": datetime.now(UTC).isoformat(),
+            }  # fmt: skip
+            (staging / "result.json").write_text(
+                json.dumps(result, sort_keys=True, indent=2, allow_nan=False), "utf-8"
+            )
+            _publish(staging, final)
+        output = json.loads((final / "result.json").read_text("utf-8"))
+        output["result_dir"] = str(final)
+    except SpineError as exc:
+        fail(exc, json_out)
+    except (ValueError, OSError, DataError, subprocess.TimeoutExpired) as exc:
+        fail(SpineError("LABELS_FAILED", str(exc), "Correct the input named above."), json_out)
+    lines = [f"Importance {rid} for labels {result_id} (a report; nothing is decided)"]
+    lines += [f"{f['metric']}: {f['value']:.4f}" for f in output["facts"]]
+    lines.append("Labels: " + ", ".join(output["labels"]))
+    emit(output, json_out=json_out, fallback="\n".join(lines))

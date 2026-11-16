@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 14 working, 24 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 15 working, 27 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -27,6 +27,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
 - **Upstream Alpha158 price features** — set feature_recipe_version: 3 in an ML stage config, or version 3 in an alpha ml prepare spec
 - **Textbook labels and overlap weights (López de Prado)** — uv run alpha labels barrier --asset SPY@alpaca (result folder with facts and a picture) (a real run is recorded)
+- **Which factors the labels lean on (purged MDI, MDA, SFI)** — uv run alpha labels importance <result-id> --factors <factors.parquet> (a real run is recorded)
 - **Check an answer's numbers against the records** — alpha results check answer.md --json More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 
 ## Partly working
@@ -41,6 +42,9 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Check data providers and background jobs** — job list tested only with a stand-in command; provider checks need real providers.
 - **Paper trading: practice trading with no real money (IBKR Paper)** — no end-to-end test; parts tested with stand-ins. Needs: an opt-in setting, live Binance public data, and an IBKR practice account and gateway for stocks.
 - **Corrected Alpha158 price features** — no ML run with version 2; superseded by version 3 (kept for stored results).
+- **Purged cross-validation for labels that last several days** — tested in-process only; no end-to-end smoke check yet (no alpha command uses it; alpha test still splits with one-day labels).
+- **Fractional differencing with d chosen on training data only** — tested in-process only; no end-to-end smoke check yet (no alpha command or feature step uses it).
+- **Second opinions on luck-adjusted scores, minimum track record and strategy risk** — tested in-process only; no end-to-end smoke check yet (result cards do not show minimum track record or strategy risk).
 - **AI stock research loop (RD-Agent, W02)** — RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: one run of 3 iterations, 5 factors, no candidate; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved. Needs: an alpha command that starts the model-connected factor loop under the native job supervisor (backlog: rdagent-factor-loop-supervision); an end-to-end smoke check of the factor loop through the installed programs with a scripted model route. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).
 - **RD-Agent's run viewer (RD-Agent)** — no end-to-end smoke check; not linked from the Workstation yet. More: [workers/rdagent/README.md](workers/rdagent/README.md).
 - **"Native job result" screen (W04, W18)** — its smoke check now passes here: alpha and the web app read a made-up stock job's result; the browser lane fails here only because the web front end's test packages are not installed; no real job exists yet. Needs: a real (not made-up) stock RD-Agent job, which needs an AI model connection. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md).

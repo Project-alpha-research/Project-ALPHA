@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 8cf4526a553b02aa
+verified: 412f1c290677125b
 ---
 
 # Worker invariants
@@ -99,29 +99,26 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 
 ## AFML worker
 
-- The only environment with RiskLabAI, quantowl or numba ([ADR-0054](../../adr/0054-afml-worker.md)).
-  RiskLabAI is pinned from PyPI, quantowl by commit; `[tool.uv] exclude-newer` keeps every locked release
-  at least two weeks old. Never add either library to the root lock; never edit their code.
-- Two libraries, one answer: a value both implement leaves the worker only when they agree to 1e-10 (or,
-  for draws and event lists, exactly); otherwise `AgreementError`. A value only one implements is not
-  offered (negative time-decay weights are refused for that reason).
-- Triple-barrier labels default to ALPHA's convention (`basis="high_low"`): decide at the event bar's close,
-  enter at the next open, a barrier is touched when a bar's high or low reaches it, a gap through a barrier
-  exits at the open, and a bar reaching both is ambiguous: stop-first in the headline, the optimistic reading
-  beside it. `basis="close"` is the libraries' convention and exists for parity only.
-- Barrier widths and CUSUM thresholds use volatility from closes strictly before the event bar; nothing is
-  fitted on the sample. The vertical barrier is a bar count; an event that has neither touched a barrier
-  nor reached it is open and gets no label. Truncation tests: `tests/test_labels.py` and the root guard
-  `tests/bias_guards/test_afml_labels_future_poison.py` (run by the `afml-worker` job).
-- Only finished labels are weighted. Uniqueness and time decay depend on every label used, so
-  training weights are built with `uniqueness --train-end` (labels ended by then only; tested to
-  ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.
-- `alpha labels barrier|weights` (`labels_cmds.py`) reads bars point in time, starts the worker with
-  `uv run --locked --no-sync` and a minimal environment, and publishes one immutable folder under
-  `data_dir/labels/` per hash of bars, parameters and worker code (lock and source): bars, worker files,
-  the picture and `result.json` (spine-shaped facts, labels).
-  A missing worker fails with `WORKER_NOT_INSTALLED` and the one setup step; the smoke check runs in the
-  `afml-worker` job.
+- The only environment with RiskLabAI, quantowl or numba ([ADR-0054](../../adr/0054-afml-worker.md)): RiskLabAI pinned from
+  PyPI, quantowl by commit, `[tool.uv] exclude-newer` keeps releases two weeks old. Never in the root lock; never edited.
+- Two libraries, one answer: a value both implement leaves only when they agree to 1e-10 (draws, events, folds: exactly);
+  otherwise `AgreementError`. A value only one implements is not offered without a hand parity test.
+- Labels default to ALPHA's convention (`basis="high_low"`): decide at the event close, enter at the next open, touch on
+  the bar's high or low, a gap through a barrier exits at the open, a bar reaching both is stop-first with the
+  optimistic reading beside it. `basis="close"` is the libraries' convention, for parity only.
+- Nothing is fitted on the whole sample: barrier widths and CUSUM thresholds use closes strictly before the event; the
+  vertical barrier is a bar count; an undecided event gets no label; fractional-differencing `d` is chosen on the
+  training span (`fracdiff --fit-end`) and frozen; weights take `uniqueness --train-end`.
+- Splits (`cv.py`) are RiskLabAI's, each passed through ALPHA's brute-force leak checker and compared with ALPHA's
+  reference rule; a library may drop more rows (reported), never fewer. Importance (MDI, MDA, SFI) runs quantowl's
+  functions on those checked folds only, never RiskLabAI's unpurged MDA or SFI; it is a report, no gate reads it.
+- Root checks that need the worker skip elsewhere and run in the `afml-worker` job (`AFML_ROOT_TESTS` in
+  `scripts/gate_components.py`): the `alpha labels` smoke check, the future-poison guard, and parity with
+  ALPHA's `barrier.py`, `cpcv.py`, PSR, DSR and PBO. ALPHA's values stay the record.
+- `alpha labels barrier|weights|importance` (`labels_cmds.py`) reads bars point in time, runs the worker with
+  `uv run --locked --no-sync` and a minimal environment, and publishes one immutable folder under `data_dir/labels/`
+  per hash of inputs and worker code, with `result.json` (spine-shaped facts, labels). A missing worker fails with
+  `WORKER_NOT_INSTALLED` and the one setup step.
 
 ## RD-Agent worker
 

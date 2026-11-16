@@ -8,7 +8,7 @@ sources:
   - workers/rdagent/source_pin.py
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
-verified: 4be27286a617a963
+verified: 6a8b4e7c759f8253
 ---
 
 # Outside projects: the register
@@ -64,7 +64,7 @@ must record is in [ADR-0011](../../adr/0011-evidence-gated-external-integrations
 | pypdf | Reads the text of research papers | Literature worker | In use | The worker's one dependency |
 | RiskLabAI 3.2.0 | Textbook label and weight methods | Own worker, `workers/afml` | In use | Primary; must agree with quantowl |
 | quantowl 0.1.6 | A second writing of the same methods | AFML worker, commit `37a17de` | In use | Not on PyPI; young, never trusted alone |
-| statsmodels 0.14.6, numba 0.68.1, scikit-learn | Libraries the two above need | AFML worker only | In use | RiskLabAI needs statsmodels below 0.15 |
+| statsmodels 0.14.6, numba 0.68.1, scikit-learn | ADF test, compiled loops, forests | AFML worker only | In use | RiskLabAI needs statsmodels below 0.15 |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
 | statsmodels | Regression, factor exposure, regimes | For `alpha-validation` | Approved, not yet added | Closes missing rows; replaces hand-written code |
 | arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |

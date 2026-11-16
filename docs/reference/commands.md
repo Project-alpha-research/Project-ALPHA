@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-246 commands in 30 groups. Options marked (required) are
+247 commands in 30 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -157,6 +157,7 @@ Resolved settings + machine-readable catalogs.
 Triple-barrier labels and overlap weights (López de Prado), from the AFML worker.
 
 - `alpha labels barrier` — Label what happened after each event: target, stop or time limit first. Options: `--asset (required)`, `--target`, `--stop`, +7 more
+- `alpha labels importance <RESULT_ID>` — Report which factors the labels lean on (MDI, purged MDA and SFI). Options: `--factors (required)`, +5 more
 - `alpha labels weights <RESULT_ID>` — Weight labels by how much they overlap (uniqueness), with time decay. Options: `--train-end`, `--last-weight`, +3 more
 
 ## alpha ml

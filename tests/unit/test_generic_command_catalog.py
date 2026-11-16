@@ -35,6 +35,7 @@ def test_empty_generic_command_is_unknown() -> None:
         (["strategy-candidate", "run"], "empirical"),
         (["labels", "barrier"], "empirical"),
         (["labels", "weights"], "empirical"),
+        (["labels", "importance"], "empirical"),
         (["chart", "overlays"], "safe"),
         (["rules", "save"], "safe"),
         (["scan", "check"], "safe"),

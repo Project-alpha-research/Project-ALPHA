@@ -5,7 +5,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
-verified: 1025afd2c583a2fe
+  - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
+verified: 39d57fa0f6eb2160
 ---
 
 # Research tools, by symptom
@@ -29,6 +30,15 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
+
+## Offline Bybit context
+
+Use `alpha context import-bybit --from <restored-store> --json` to import funding and hourly open interest.
+Read with `alpha context show-bybit --symbol BTCUSDT --kind open-interest --as-of 2024-01-01T01:05 --json`
+(or `--kind funding`). The import report lists rows, duplicates, conflicts, gaps and skipped manifests;
+failed symbols keep their previous tables. These are context observations, not a trading test or proof of cause.
+Next: test the explanation with the [rule test](rule-test.md). Import and clock details:
+[data layer](../../docs/reference/invariants/data.md#offline-bybit-context).
 
 ## Not available yet
 

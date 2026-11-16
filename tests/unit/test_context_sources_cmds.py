@@ -215,3 +215,50 @@ def test_errors_say_the_next_step(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     )
     flat = " ".join(result.output.replace("│", " ").split())
     assert result.exit_code != 0 and "Next: nothing is stored yet; run" in flat
+
+
+def test_bybit_import_show_and_future_poison(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import context_sources_cmds
+    from tests.unit.test_context_bybit_import import source
+
+    src, data = tmp_path / "source", tmp_path / "data"
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(data))
+    source(src, [0, 1], family="open_interest", values=[1.0, 1e100])
+    assert invoke("import-bybit", "--from", str(src), "--json")["tables"][0]["rows"] == 2
+    args = (
+        "show-bybit",
+        "--symbol",
+        "BTCUSDT",
+        "--kind",
+        "open-interest",
+        "--as-of",
+        "2024-01-01T01:05",
+        "--json",
+    )
+    expected = invoke(*args)
+    assert len(expected["rows"]) == 1 and expected["rows"][0]["open_interest"] == 1.0
+    monkeypatch.setattr(context_sources_cmds, "as_known_events", lambda df, **kwargs: df)
+    with pytest.raises(AssertionError):
+        assert invoke(*args) == expected
+
+
+def test_bybit_errors_are_offline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path / "data"))
+    for args in [
+        ["import-bybit", "--from", str(tmp_path / "missing")],
+        ["show-bybit", "--symbol", "BTCUSDT", "--kind", "metrics"],
+        ["show-bybit", "--symbol", "BTCUSDT", "--kind", "funding"],
+    ]:
+        result = CliRunner().invoke(context_app, args)
+        assert result.exit_code != 0
+        assert "network" not in result.output.lower()
+        assert "Next:" in result.output
+
+
+def test_bybit_catalog_authority() -> None:
+    from alpha_cli.catalog import classify_generic_command
+
+    assert classify_generic_command(["context", "show-bybit"]) == "safe"
+    assert classify_generic_command(["context", "import-bybit"]) == "owner_only"

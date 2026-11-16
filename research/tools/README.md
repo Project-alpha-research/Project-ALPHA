@@ -5,7 +5,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
-verified: 1025afd2c583a2fe
+  - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
+verified: 39d57fa0f6eb2160
 ---
 
 # Research tools, by symptom
@@ -29,6 +30,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
+| Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |
 
 ## Not available yet
 

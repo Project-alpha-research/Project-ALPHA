@@ -57,7 +57,7 @@ full real-time range retries the same range in windows: one before 1920, five-ye
 without constructing year 10000. The schedule follows the UTC date of the explicit aware-UTC `fetched_at` the CLI supplies, validated before transport or
 writes. Identical vintage rows merge; conflicting or overlapping rows fail, comparing adjacent sorted rows of one series and observation: an open-ended
 predecessor or a shared boundary is rejected, gaps remain valid.
-The generic launcher classifies only `context list`, `show`, `window`, `show-edgar` and `show-binance` as safe local
+The generic launcher classifies only `context list`, `show`, `window`, `show-edgar`, `show-binance` and `show-bybit` as safe local
 reads; bare, unknown and `pull*` commands remain owner-only. The group appears under the Data menu.
 
 SEC EDGAR filings and Form 4 insider transactions live under `context/edgar/`. A filing is known from its acceptance time plus a 5-hour margin, because SEC's
@@ -69,6 +69,8 @@ Live SEC check not yet run; Form 4 XML field names were checked against SEC's ow
 Binance USD-M funding (monthly files) and daily metrics (open interest, long/short ratios) live under `context/binance/um/`, each ZIP checked against its
 `.CHECKSUM`. Funding is known at settlement, metrics five minutes after their stamp. A changed stored value fails; missing periods are listed. File formats
 were checked live on 2026-11-16 (BTCUSDT). Reads show only rows known by an aware UTC cutoff; there is no "latest" view.
+Bybit linear funding and hourly open interest are imported offline (`alpha context import-bybit --from <store>`) into `context/bybit/linear/`,
+checksum-verified; funding is known at settlement, open interest 1 h 5 min after its hour starts. First import 2026-11-17: 50 + 51 symbols, 2022-2026.
 
 ### Real data on the Dell
 

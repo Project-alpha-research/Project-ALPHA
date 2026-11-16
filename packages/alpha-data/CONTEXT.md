@@ -3,7 +3,7 @@ owner: data layer
 sources:
   - packages/alpha-data/src/**
   - packages/alpha-data/pyproject.toml
-verified: c4fcb3186445e133
+verified: e23355ab8160a435
 ---
 
 # alpha-data workspace
@@ -39,7 +39,7 @@ import it. It must never let a read see data that was not knowable at the cutoff
   `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
   house in `crypto/` and `crypto/providers/` (command-local raw-resource discovery is owned by
   `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
-  Binance derivatives context in `context/` (separate hashed tables under `data_dir/context/`,
+  Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
   never bars or backtest inputs; event reads require an aware UTC cutoff).
 - Tests: `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,

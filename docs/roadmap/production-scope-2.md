@@ -35,8 +35,8 @@ Telling a real edge from luck after many tries.
 | Labels with a target, a stop and a time limit; splits that respect multi-day labels | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
 | Second-opinion overfitting numbers and the minimum track record a result needs | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
 | Combined signals never count the same input twice as evidence | Missing | ledger; [practice](backlog/practitioner-research-ideas.md) | Later | private |
-| Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
-| Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
+| Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Unproven | [efficiency](../../research/tools/walk-forward.md); no IS figures yet | Later | private |
+| Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Unproven | [control](../../research/tools/inverted-signal-control.md); diagnostic, not proof | Later | private |
 | Robustness to noise added to the price series, re-running the rule on perturbed prices | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 6. Diagnostics

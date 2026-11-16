@@ -1237,3 +1237,31 @@ real_data = "on 2026-11-17 two quick ma_cross rule tests of SPY daily bars on a 
 needs = []
 state = "Working"
 docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-trial-ledger.md"]
+
+[[capability]]
+id = "inverted-signal-control"
+name = "Opposite-direction research control"
+what = "Compare a rule with its opposite direction on the same bars and costs without counting another trial."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> inverted_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_inversion_next_open_known_pnl_and_ledger_unchanged", "tests/unit/test_spine_diagnostics.py::test_rule_test_publishes_controls_without_counting_them"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Partial"
+missing = "end-to-end smoke verification outside the builder sandbox; rule-test vocabulary has no price stops or original short entries"
+docs = ["research/tools/inverted-signal-control.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "walk-forward-efficiency"
+name = "Walk-forward efficiency with explicit limits"
+what = "Read the median annualised out-of-sample to in-sample return ratio as a practitioner rule of thumb, not a statistical test."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> wfe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_controls.py::test_wfe_two_folds", "tests/unit/test_spine_controls.py::test_wfe_null"]
+proof_smoke = ["tests/smoke/test_inverted_control_smoke.py::test_inverted_control_and_wfe"]
+real_data = "not yet confirmed; synthetic data only"
+needs = []
+state = "Partial"
+missing = "rule tests record no in-sample returns, so efficiency is null; end-to-end smoke verification outside the builder sandbox"
+docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]

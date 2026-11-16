@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_intake.py
-verified: bdd1a2a989f8
+verified: 32bcb815d0bc2974
 ---
 
 # Stage 01 — idea: sentence to research case

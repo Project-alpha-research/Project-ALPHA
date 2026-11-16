@@ -7,6 +7,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from rdagent.scenarios.qlib.proposal.factor_proposal import QlibFactorHypothesis
 from rdagent.utils import convert2bool
 from rdagent.utils.agent.tpl import T
 
+from alpha_factor_coder import demote_in_file
 from alpha_factor_data import check_prefix_invariance
 
 LEGACY_KEYS = ["IC"] + [
@@ -28,6 +30,9 @@ LEGACY_KEYS = ["IC"] + [
     for cost in ("without", "with")
     for metric in ("annualized_return", "max_drawdown")
 ]
+# RD-Agent's own log viewer (rdagent/log/ui/app.py, QLIB_SELECTED_METRICS) indexes these too;
+# ALPHA does not compute an information ratio, so it is present as NaN, never invented.
+VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
 
 
 SWING_BRIEF = (
@@ -81,7 +86,16 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
     )
     lines, seen = [], set()
-    for row in reversed(rows):
+    unknown: list[str] = []
+    known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
+            raise ValueError("invalid ALPHA trial ledger schema")
+        if row["schema"] not in known | {"AlphaRuleTrialV1"}:
+            unknown.append(row["schema"])
+        elif row["schema"] in known:
+            ledger_summary(row)  # Validate known rows even outside the 30-row summary.
+    for row in (r for r in reversed(rows) if r["schema"] in known):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
@@ -90,6 +104,49 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         if len(lines) == 30:
             break
     context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+    if unknown:
+        context["hypothesis_and_feedback"] += (
+            f"\n{len(unknown)} ledger rows of other kinds were skipped "
+            f"({', '.join(sorted(set(unknown)))})"
+        )
+
+
+def record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
+    if not rejected:
+        return
+    try:
+        _record_coder_verdicts(run, iteration, rejected)
+    except Exception as error:  # noqa: BLE001 - a verdict record never stops the runner
+        print(f"coder verdicts not recorded: {type(error).__name__}", file=sys.stderr)
+
+
+def _record_coder_verdicts(
+    run: Path, iteration: int, rejected: list[tuple[Any, dict[str, Any]]]
+) -> None:
+    informations = [task.get_task_information() for task, _ in rejected]
+    demoted, note = demote_in_file(
+        os.environ, informations, [factor["code_sha256"] for _, factor in rejected]
+    )
+    with (run / "coder-verdicts.jsonl").open("a") as stream:
+        for (_, factor), information in zip(rejected, informations, strict=True):
+            stream.write(
+                json.dumps(
+                    {
+                        "schema": "AlphaCoderVerdictV1",
+                        "iteration": iteration,
+                        "name": factor["name"],
+                        "code_sha256": factor["code_sha256"],
+                        "status": factor["status"],
+                        "task_information_sha256": hashlib.sha256(information.encode()).hexdigest(),
+                        "demoted": information in demoted,
+                        "note": note,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
 
 
 def record_code(run: Path, digest: str, code: bytes) -> None:
@@ -202,7 +259,7 @@ class AlphaFactorRunner(Developer):
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
         if not exp.sub_tasks:
-            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS, float("nan")))
+            exp.result = pd.Series(dict.fromkeys(LEGACY_KEYS + VIEWER_KEYS, float("nan")))
             exp.stdout = "baseline: no factors; ALPHA evaluates factors standalone"
             return exp
         run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
@@ -213,6 +270,7 @@ class AlphaFactorRunner(Developer):
         folder = run / "evaluations" / f"iter-{iteration}"
         folder.mkdir(exist_ok=False)
         factors, frames = [], []
+        rejected = []
         if not (len(exp.sub_tasks) == len(exp.sub_workspace_list) == len(exp.prop_dev_feedback)):
             raise ValueError("factor tasks, workspaces and feedback lengths differ")
         for task, workspace, feedback in zip(
@@ -254,9 +312,14 @@ class AlphaFactorRunner(Developer):
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
+                    elif factor["status"] == "FAILED" or check["status"] == "LOOKAHEAD":
+                        # Only ALPHA's verdict on the code itself: a check that merely errored
+                        # (timeout, subprocess failure) says nothing about the code.
+                        rejected.append((task, factor))
                 else:
                     factor["failure_detail"] = execution
             factors.append(factor)
+        record_coder_verdicts(run, iteration, rejected)
         if frames:
             values_frame = pd.concat(frames, axis=1).sort_index().reset_index()
             values_frame["date"] = pd.to_datetime(values_frame.date, utc=True).dt.date
@@ -295,7 +358,9 @@ class AlphaFactorRunner(Developer):
                 lines[-1] if lines else f"ALPHA evaluator exit {result.returncode}"
             )
         record = json.loads((folder / "result.json").read_bytes())
-        exp.result = pd.Series(record["legacy_result"])
+        exp.result = pd.Series(
+            {**dict.fromkeys(VIEWER_KEYS, float("nan")), **record["legacy_result"]}
+        )
         exp.stdout = record["feedback_text"]
         exp.alpha_evaluation = record
         if all(f["status"] == "FAILED" for f in factors):

@@ -99,9 +99,10 @@ def test_too_few_bars_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_store(tmp_path, symbol="SPY", n=40)
-    path = ParquetStore(tmp_path / "store")._provenance_path("SPY")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text('{"source":"synthetic"}')
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="synthetic", adapter_version="1", parser_version="1"
+    )
     root = typer.Typer()
     root.command()(test_rule)
     result = CliRunner().invoke(
@@ -264,7 +265,9 @@ def test_show_test_id_reports_an_unreadable_asset_and_keeps_the_rest(
     good, broken = "0123456789abcdef", "fedcba9876543210"
     for run_id in (good, broken):
         (tmp_path / "runs" / run_id).mkdir(parents=True)
-        append_trial(tmp_path, {"run_id": run_id, "test_id": "t3", "symbol": run_id[:3], "labels": []})
+        append_trial(
+            tmp_path, {"run_id": run_id, "test_id": "t3", "symbol": run_id[:3], "labels": []}
+        )
     (tmp_path / "runs" / good / "manifest.json").write_text(json.dumps({"command": "validate"}))
     (tmp_path / "runs" / broken / "manifest.json").write_text("{not json")
     result = CliRunner().invoke(app(), ["results", "show", "t3", "--json"])
@@ -277,3 +280,66 @@ def test_show_test_id_reports_an_unreadable_asset_and_keeps_the_rest(
     # Naming the broken run directly still fails loud.
     direct = CliRunner().invoke(app(), ["results", "show", broken, "--json"])
     assert direct.exit_code != 0
+
+
+def test_rule_run_publishes_diagnostics_and_reads_them_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine.run import run_idea
+    from alpha_cli.spine.spec import load_spec
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed_store(tmp_path, symbol="SPY", n=150)
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    result = run_idea(idea, home=tmp_path, quick=True)["results"][0]
+    assert result["error"] is None, result
+    rdir = Path(result["run_dir"])
+    manifest = json.loads((rdir / "manifest.json").read_text())
+    assert "diagnostics.json" in manifest["artifacts"]
+    stored = json.loads((rdir / "diagnostics.json").read_text())
+    # fast=4, fast=6, slow=16, slow=24 and doubled costs.
+    assert stored["variants_evaluated"] == result["variants_evaluated"] == 5
+    assert [v["name"] for v in stored["sensitivity"]["variants"]][0] == "costs_x2"
+    assert result["flags"] == stored["flags"]
+    assert result["benchmark_sharpe"] == stored["benchmark"]["sharpe"]
+    intact = next(item for item in stored["audit"] if item["check"] == "artifacts-intact")
+    assert intact["status"] == "PASS"
+    assert stored["macro_window"]["available"] is False
+    assert stored["macro_window"]["reason"]
+    run_id = result["run_id"]
+    read = CliRunner().invoke(app(), ["diagnose", run_id, "--json"])
+    assert read.exit_code == 0, read.output
+    assert json.loads(read.stdout) == stored
+    shown = CliRunner().invoke(app(), ["results", "show", run_id, "--json"])
+    assert shown.exit_code == 0, shown.output
+    (run,) = json.loads(shown.stdout)["runs"]
+    assert run["run_id"] == run_id
+    assert run["audit"] == stored["audit"]
+    assert run["diagnostics_reason"] is None
+    fact = next(item for item in run["facts"] if item["metric"] == "variants_evaluated")
+    assert fact["value"] == 5
+
+
+def test_diagnose_unknown_and_corrupt_runs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    unknown = CliRunner().invoke(app(), ["diagnose", "missing", "--json"])
+    assert unknown.exit_code == 1
+    error = json.loads(unknown.stdout)["error"]
+    assert error["code"] == "UNKNOWN_RUN"
+    assert "alpha results" in error["next"]
+    run_id = "0123456789abcdef"
+    rdir = tmp_path / "runs" / run_id
+    rdir.mkdir(parents=True)
+    (rdir / "manifest.json").write_text('{"command":"validate"}')
+    (rdir / "diagnostics.json").write_text("[]")
+    corrupt = CliRunner().invoke(app(), ["diagnose", run_id, "--json"])
+    assert corrupt.exit_code == 1
+    error = json.loads(corrupt.stdout)["error"]
+    assert error["code"] == "INVALID_ARTIFACT"
+    assert "diagnostics.json must contain an object" in error["message"]

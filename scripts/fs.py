@@ -1,14 +1,17 @@
-"""The file system's command line: orientation, document search and staleness. Read-only.
+"""The file system's command line: orientation, document search and staleness.
 
     uv run python scripts/fs.py orient [--component NAME] [--json]
     uv run python scripts/fs.py search "QUERY" [--kind KIND] [--limit N] [--format text|json]
     uv run python scripts/fs.py stale [--strict] [--format text|json]
+    uv run python scripts/fs.py owners PATH... [--json]
+    uv run python scripts/fs.py verify DOCUMENT...
 
 ``orient`` lists components, module counts and the routing documents to read first. ``search``
 returns ranked excerpts of tracked documentation (path, heading, line range, kind). ``stale``
-lists living documents
-whose ``sources`` changed after their ``verified`` commit; it exits 0 (a report) unless
-``--strict`` is given or a document's front matter cannot be checked.
+lists living documents whose ``sources`` no longer match their ``verified`` fingerprint; it
+exits 0 (a report) unless ``--strict`` is given or a document's front matter cannot be checked.
+``owners`` lists the living documents that describe each path. ``verify`` is the only command
+that writes: after you re-read a document against its sources, it records their fingerprint.
 """
 
 from __future__ import annotations
@@ -39,7 +42,20 @@ def build_parser() -> argparse.ArgumentParser:
     stale = sub.add_parser("stale", help="living documents whose sources changed since verified")
     stale.add_argument("--strict", action="store_true", help="exit 1 when any document is stale")
     stale.add_argument("--format", choices=("text", "json"), default="text")
+    owners = sub.add_parser("owners", help="living documents that describe each path")
+    owners.add_argument("paths", nargs="+")
+    owners.add_argument("--json", action="store_true")
+    verify = sub.add_parser("verify", help="record that a document matches its sources now")
+    verify.add_argument("documents", nargs="+")
     return parser
+
+
+def _relative(root: Path, name: str) -> str:
+    """A path as git names it, whether given from the root, the current directory or absolute."""
+    path = Path(name)
+    if not path.is_absolute() and (root / path).exists():
+        return path.as_posix()
+    return path.resolve().relative_to(root.resolve()).as_posix()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -62,8 +78,22 @@ def main(argv: list[str] | None = None) -> int:
             )
             if any(r.problems for r in reports):
                 return 1
-            if args.strict and any(r.changed_files for r in reports):
+            if args.strict and any(r.stale for r in reports):
                 return 1
+        elif args.command == "owners":
+            found = fs_stale.owners(root, [_relative(root, name) for name in args.paths])
+            if args.json:
+                print(json.dumps(found, sort_keys=True))
+            else:
+                for path, documents in found.items():
+                    print(f"{path}: {', '.join(documents) or 'no living document describes it'}")
+        elif args.command == "verify":
+            for report in fs_stale.verify(root, [_relative(root, name) for name in args.documents]):
+                print(
+                    f"verified {report.path}: {report.verified} -> {report.fingerprint}"
+                    if report.stale
+                    else f"already current {report.path}"
+                )
         else:
             result = fs_search.search(root, args.query, kind=args.kind, limit=args.limit)
             print(

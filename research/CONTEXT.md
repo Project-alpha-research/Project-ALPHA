@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/control_store.py
   - packages/alpha-core/src/alpha_core/config.py
-verified: bdd1a2a989f8
+verified: b2af55f7737dca78
 ---
 
 # Research pipeline — how an idea becomes an owner decision

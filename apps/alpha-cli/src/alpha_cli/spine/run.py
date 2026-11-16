@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import math
@@ -18,6 +19,11 @@ from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
+
+
+def _fields(obj: Any) -> dict[str, Any]:
+    """Instance fields of a dataclass, by declared field name."""
+    return {field.name: getattr(obj, field.name) for field in dataclasses.fields(obj)}
 
 
 def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _runner.RunSpec:
@@ -86,8 +92,8 @@ def _prepare(
             "symbol": resolved.symbol,
             "snapshot_id": snapshot_id,
             "research_cutoff": None,
-            **vars(spec),
-            **{key: value for key, value in vars(knobs).items() if key != "max_workers"},
+            **_fields(spec),
+            **{key: value for key, value in _fields(knobs).items() if key != "max_workers"},
             "spec_sha256": idea.spec_sha256,
             "source": resolved.source,
             "store": resolved.store_name,

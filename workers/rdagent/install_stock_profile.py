@@ -1,7 +1,8 @@
-"""Record and re-check a closed stock or factor RDLoop runtime bundle.
+"""Record and re-check a closed stock, factor or viewer runtime bundle.
 
 ``--profile factor`` selects factor-requirements.lock and factor-profile.json; the stock
 profile remains the default with its original bytes and identity schema.
+``--profile ui`` selects ui-requirements.lock and ui-profile.json for the log viewer.
 
 The bundle is the layout ``StockFixtureLaunch`` measures: ``<bundle>/venv/bin/python``,
 ``<bundle>/venv/pyvenv.cfg`` and ``<bundle>/dependencies.lock.txt``. This helper never installs or
@@ -42,7 +43,8 @@ def _sha(data: bytes) -> str:
 
 def locked_pins(text: str) -> dict[str, str]:
     pins: dict[str, str] = {}
-    for line in text.splitlines():
+    for line in text.replace("\\\n", " ").splitlines():
+        line = line.strip()
         if not line or line.startswith("#"):
             continue
         match = _PIN.match(line)
@@ -78,7 +80,7 @@ def measure(bundle: Path, profile: str = "stock") -> dict[str, object]:
     if version is None or not version[1].startswith(PYTHON + "."):
         raise ValueError(f"stock runtime must be CPython {PYTHON}")
     site = venv / "lib" / f"python{PYTHON}" / "site-packages"
-    lock = (LOCK if profile == "stock" else WORKER / "factor-requirements.lock").read_bytes()
+    lock = (LOCK if profile == "stock" else WORKER / f"{profile}-requirements.lock").read_bytes()
     pins = locked_pins(lock.decode())
     installed: dict[str, str] = {}
     for dist in importlib.metadata.distributions(path=[str(site)]):
@@ -93,7 +95,11 @@ def measure(bundle: Path, profile: str = "stock") -> dict[str, object]:
         raise ValueError(f"stock runtime differs from lock: {extra=} {missing=} {changed=}")
     files = _inventory(site)
     return {
-        "schema": SCHEMA if profile == "stock" else "AlphaFactorRuntimeProfileV1",
+        "schema": {
+            "stock": SCHEMA,
+            "factor": "AlphaFactorRuntimeProfileV1",
+            "ui": "AlphaViewerRuntimeProfileV1",
+        }[profile],
         "python": version[1],
         "lock_sha256": _sha(lock),
         "distributions": len(installed),
@@ -118,11 +124,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--verify", action="store_true")
-    parser.add_argument("--profile", choices=("stock", "factor"), default="stock")
+    parser.add_argument("--profile", choices=("stock", "factor", "ui"), default="stock")
     args = parser.parse_args(argv)
     bundle = args.bundle.absolute()
     try:
-        lock = LOCK if args.profile == "stock" else WORKER / "factor-requirements.lock"
+        lock = LOCK if args.profile == "stock" else WORKER / f"{args.profile}-requirements.lock"
         filename = f"{args.profile}-profile.json"
         profile = measure(bundle, args.profile)
         rendered = (json.dumps(profile, sort_keys=True, indent=2) + "\n").encode()

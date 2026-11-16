@@ -237,6 +237,7 @@ describe('run workspace capabilities', () => {
       run_context_kind: 'legacy_context_unknown',
       run_context_project_id: null,
       run_context_watermark: 'LEGACY_CONTEXT_UNKNOWN',
+      rule_test: null,
     }
   }
 

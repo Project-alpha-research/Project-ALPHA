@@ -49,7 +49,7 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-161 capabilities: 33 working, 52 built but unproven, 74 missing, 1 to rebuild,
+161 capabilities: 33 working, 54 built but unproven, 72 missing, 1 to rebuild,
 1 dropped by decision.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
@@ -57,7 +57,7 @@ gate, before paper or live trading ([decision][thin]).
 | 1. Idea | 2 | 2 | 8 | 0 | 0 |
 | 2. Data and context | 3 | 11 | 8 | 0 | 0 |
 | 3. Look before testing | 0 | 6 | 3 | 0 | 0 |
-| 4. Backtest | 3 | 1 | 8 | 0 | 0 |
+| 4. Backtest | 3 | 3 | 6 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 2 | 0 | 0 |
 | 6. Diagnostics | 4 | 6 | 7 | 0 | 0 |
 | 7. Records and memory | 3 | 5 | 7 | 0 | 1 |
@@ -66,7 +66,7 @@ gate, before paper or live trading ([decision][thin]).
 | 10. Screens | 1 | 3 | 10 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 3 | 0 | 0 |
 | 12. Health and hygiene | 6 | 0 | 3 | 0 | 0 |
-| **All** | **33** | **52** | **74** | **1** | **1** |
+| **All** | **33** | **54** | **72** | **1** | **1** |
 
 ## 1. Idea
 
@@ -139,12 +139,12 @@ Simulating the idea with costs, against the right comparison.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | One-asset rule backtest with costs: decide at a close, fill at the next open | Working | `alpha-backtest` | Now | [status] |
-| The same backtest on real free data, shown on a screen | Missing | `alpha-backtest` | Path 1 | [grade] |
+| The same backtest on real free data, shown on a screen | Unproven | `alpha test` report in `alpha-web` | Path 1 | [grade] |
 | Rank many assets by a factor and replay the basket with costs | Working | `alpha-cli` judge | Now | [status] |
 | One portfolio engine per kind of test; duplicates retired after a side-by-side check | Missing | `alpha-backtest` | Path 3 | [slim] |
 | Costs that grow with trade size, and a capacity view at the owner's size | Missing | `alpha-validation` | Path 1 | private |
 | Benchmark on a total-return basis: dividends, cash yield, real terms, every rolling window | Missing | run report | Path 1 | private |
-| Plain answer to "is this mostly the market?" beside every result | Missing | run report | Path 1 | [partner] |
+| Plain answer to "is this mostly the market?" beside every result | Unproven | rule-test report: buy-and-hold table and drawdown flag | Path 1 | [partner] |
 | Twins of a test: sizing changed only, or one filter removed | Missing | new `alpha vary` | Path 1 | private |
 | Variants compared at the same capital and risk | Missing | `alpha-backtest` | Later | private |
 | Daily decision with intraday entry timing | Missing | `align_as_known` exists (PR #189); not yet usable from rules or strategies | Path 2 | [any-bar] |

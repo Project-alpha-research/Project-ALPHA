@@ -25,6 +25,7 @@ export default defineConfig({
         'src/panels/paperModel.ts',
         'src/panels/portfolioModels.ts',
         'src/panels/reportModel.ts',
+        'src/panels/ruleTestModel.ts',
         'src/components/figureExport.ts',
         'src/panels/governanceModel.ts',
         'src/panels/marketWatchModel.ts',

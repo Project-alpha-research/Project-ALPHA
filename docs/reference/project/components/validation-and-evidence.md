@@ -52,7 +52,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

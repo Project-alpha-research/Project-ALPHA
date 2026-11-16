@@ -153,10 +153,11 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - Vol-target sizing keeps sending orders a cash account cannot pay for — small (S)
 - Web-started downloads ignore proxy and certificate settings — small (S)
 - What the research partner borrows from QuantPad — medium (M)
+- Workstation screen ideas from the owner's reference images — medium (M)
 
 ## Housekeeping
 
-- Backlog items: 52
+- Backlog items: 53
 - Staged refactors: 6
 
 ## Where things are

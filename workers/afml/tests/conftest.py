@@ -1,10 +1,10 @@
-"""Pytest fixtures over :mod:`shared_fixtures`: the chapter-4 example and real SPY bars."""
+"""Pytest fixtures over :mod:`shared_fixtures`: the chapter-4 example and synthetic bars."""
 
 from __future__ import annotations
 
 import polars as pl
 import pytest
-from shared_fixtures import FIXTURES, daily_ts
+from shared_fixtures import daily_ts, synthetic_daily_bars
 
 
 @pytest.fixture
@@ -16,6 +16,6 @@ def chapter4() -> tuple[pl.Series, pl.DataFrame]:
 
 
 @pytest.fixture(scope="session")
-def spy_bars() -> pl.DataFrame:
-    """501 real daily SPY bars, 2022-2023, copied once from ALPHA's Alpaca store."""
-    return pl.read_parquet(FIXTURES / "spy_daily_2022_2023.parquet")
+def daily_bars() -> pl.DataFrame:
+    """600 seeded synthetic daily bars (no market data is committed)."""
+    return synthetic_daily_bars()

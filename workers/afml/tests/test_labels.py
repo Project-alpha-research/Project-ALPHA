@@ -110,8 +110,8 @@ def test_vertical_barrier_and_open_label() -> None:
     )
 
 
-def test_meta_label_is_one_exactly_when_the_side_made_money(spy_bars: pl.DataFrame) -> None:
-    rows = label_events(spy_bars, LabelParams()).filter(pl.col("ret").is_not_null())
+def test_meta_label_is_one_exactly_when_the_side_made_money(daily_bars: pl.DataFrame) -> None:
+    rows = label_events(daily_bars, LabelParams()).filter(pl.col("ret").is_not_null())
     assert rows.height > 50
     assert (rows["meta_label"] == (rows["ret"] > 0).cast(pl.Float64)).all()
 
@@ -139,9 +139,9 @@ def test_cusum_hand_path_and_libraries_agree() -> None:
     assert cusum_events(ts, close, np.full(close.size, 0.025)).tolist() == [3, 4, 7]
 
 
-def test_cusum_fixed_threshold_libraries_agree_on_spy(spy_bars: pl.DataFrame) -> None:
-    ts = pd.DatetimeIndex(spy_bars["ts"].to_numpy()).tz_localize("UTC")
-    close = spy_bars["close"].to_numpy()
+def test_cusum_fixed_threshold_libraries_agree_on_daily_bars(daily_bars: pl.DataFrame) -> None:
+    ts = pd.DatetimeIndex(daily_bars["ts"].to_numpy()).tz_localize("UTC")
+    close = daily_bars["close"].to_numpy()
     for h in (0.01, 0.02, 0.04):
         fixed = cusum_events_fixed(ts, close, h)
         assert fixed.size > 5
@@ -152,10 +152,10 @@ def test_cusum_fixed_threshold_libraries_agree_on_spy(spy_bars: pl.DataFrame) ->
     )
 
 
-def test_close_basis_disagreements_are_all_log_versus_simple(spy_bars: pl.DataFrame) -> None:
+def test_close_basis_disagreements_are_all_log_versus_simple(daily_bars: pl.DataFrame) -> None:
     # barrier_labels raises AgreementError on any disagreement not explained by the return
     # convention; this pins that the real series runs clean and how many cases there are.
-    rows = label_events(spy_bars, LabelParams(), "close")
+    rows = label_events(daily_bars, LabelParams(), "close")
     disagree = rows.filter(~pl.col("close_libraries_agree")).height
     assert rows.height > 50 and disagree <= rows.height // 20
 
@@ -171,12 +171,12 @@ def _corrupt_after(bars: pl.DataFrame, k: int, seed: int) -> pl.DataFrame:
 @pytest.mark.parametrize("k", [120, 250, 400])
 @pytest.mark.parametrize("basis", ["high_low", "close"])
 def test_truncation_labels_decided_by_bar_k_do_not_move(
-    spy_bars: pl.DataFrame, k: int, basis: str
+    daily_bars: pl.DataFrame, k: int, basis: str
 ) -> None:
     params = LabelParams()
     end = "end_pos" if basis == "high_low" else "close_end_pos"
-    full = label_events(spy_bars, params, basis)  # type: ignore[arg-type]
-    for variant in (_corrupt_after(spy_bars, k, SEED + k), spy_bars.head(k + 1)):
+    full = label_events(daily_bars, params, basis)  # type: ignore[arg-type]
+    for variant in (_corrupt_after(daily_bars, k, SEED + k), daily_bars.head(k + 1)):
         other = label_events(variant, params, basis)  # type: ignore[arg-type]
         events_full = full.filter(pl.col("pos") <= k).select(
             "ts", "pos", "side", "width", "threshold"
@@ -191,10 +191,10 @@ def test_truncation_labels_decided_by_bar_k_do_not_move(
         assert decided_full.equals(decided_other)
 
 
-def test_find_events_use_only_the_past(spy_bars: pl.DataFrame) -> None:
-    events = find_events(spy_bars, LabelParams())
+def test_find_events_use_only_the_past(daily_bars: pl.DataFrame) -> None:
+    events = find_events(daily_bars, LabelParams())
     k = 300
-    assert find_events(spy_bars.head(k + 1), LabelParams()).equals(
+    assert find_events(daily_bars.head(k + 1), LabelParams()).equals(
         events.filter(pl.col("pos") <= k)
     )
 

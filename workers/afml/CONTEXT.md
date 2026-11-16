@@ -33,8 +33,8 @@ project with its own lock; no ALPHA package imports it and it imports no ALPHA p
 ## How to change it
 
 - Code: `workers/afml/src/alpha_afml_worker/` (`contract.py` checks input, `uniqueness.py` and
-  `labels.py` are the adapter); tests: `workers/afml/tests/` (`shared_fixtures.py` and
-  `fixtures/` hold the shared parity inputs).
+  `labels.py` are the adapter); tests: `workers/afml/tests/` (`shared_fixtures.py` holds the
+  shared inputs: hand-built bars and a seeded synthetic series). Never commit market data.
 - A new function gets a parity test first: a hand-worked value, and the two libraries equal to
   1e-10 where both implement it. A look-ahead-sensitive one also gets a truncation test.
 - Read each library's API from the installed source in `workers/afml/.venv`, never from memory.

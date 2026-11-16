@@ -8,9 +8,15 @@ import subprocess
 from pathlib import Path
 
 import polars as pl
-from shared_fixtures import FIXTURES
+import pytest
+from shared_fixtures import synthetic_daily_bars
 
-SPY = FIXTURES / "spy_daily_2022_2023.parquet"
+
+@pytest.fixture
+def bars_file(tmp_path: Path) -> Path:
+    path = tmp_path / "bars.parquet"
+    synthetic_daily_bars().write_parquet(path)
+    return path
 
 
 def run(*args: str | Path) -> subprocess.CompletedProcess[str]:
@@ -30,16 +36,16 @@ def test_capabilities_names_the_pinned_libraries() -> None:
     assert caps["label_bases"] == ["high_low", "close"]
 
 
-def test_labels_then_uniqueness_end_to_end(tmp_path: Path) -> None:
+def test_labels_then_uniqueness_end_to_end(tmp_path: Path, bars_file: Path) -> None:
     events = tmp_path / "events.parquet"
-    labelled = run("labels", SPY, "--out", events)
+    labelled = run("labels", bars_file, "--out", events)
     assert labelled.returncode == 0, labelled.stderr
     summary = json.loads(labelled.stdout)
     assert summary["basis"] == "high_low" and summary["events"] > 50
     assert set(pl.read_parquet(events).columns) >= {"ts", "end", "outcome", "meta_label"}
 
     weights = tmp_path / "weights.parquet"
-    weighted = run("uniqueness", events, "--bars", SPY, "--out", weights, "--seed", "7")
+    weighted = run("uniqueness", events, "--bars", bars_file, "--out", weights, "--seed", "7")
     assert weighted.returncode == 0, weighted.stderr
     report = json.loads(weighted.stdout)
     assert 0.0 < report["mean_avg_uniqueness"] <= 1.0
@@ -47,27 +53,27 @@ def test_labels_then_uniqueness_end_to_end(tmp_path: Path) -> None:
     frame = pl.read_parquet(weights)
     assert frame.columns == ["start", "end", "bars", "avg_uniqueness", "decay"]
 
-    close = run("labels", SPY, "--out", tmp_path / "close.parquet", "--basis", "close")
+    close = run("labels", bars_file, "--out", tmp_path / "close.parquet", "--basis", "close")
     assert close.returncode == 0, close.stderr
 
 
-def test_bad_input_exits_two_with_one_line(tmp_path: Path) -> None:
+def test_bad_input_exits_two_with_one_line(tmp_path: Path, bars_file: Path) -> None:
     bad = tmp_path / "bad.parquet"
-    pl.read_parquet(SPY).reverse().write_parquet(bad)
+    pl.read_parquet(bars_file).reverse().write_parquet(bad)
     result = run("labels", bad, "--out", tmp_path / "x.parquet")
     assert result.returncode == 2
     assert result.stderr.startswith("alpha-afml-worker: ContractError")
     assert not (tmp_path / "x.parquet").exists()
 
 
-def test_weights_up_to_train_end_ignore_every_later_bar(tmp_path: Path) -> None:
+def test_weights_up_to_train_end_ignore_every_later_bar(tmp_path: Path, bars_file: Path) -> None:
     """Reviewer finding: decay and uniqueness over the whole file leak later labels into earlier
     weights. With ``train_end`` the weights use only labels that ended by then, so corrupting
     every later bar must leave them unchanged."""
     from alpha_afml_worker.__main__ import run_labels, run_uniqueness
     from alpha_afml_worker.labels import LabelParams
 
-    bars = pl.read_parquet(SPY)
+    bars = pl.read_parquet(bars_file)
     k = 300
     train_end = bars["ts"][k]
     corrupted = bars.with_columns(

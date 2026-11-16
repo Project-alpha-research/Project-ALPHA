@@ -129,10 +129,10 @@ def test_random_overlaps_stay_in_unit_interval_and_libraries_agree() -> None:
     assert result.max_gap <= TOLERANCE
 
 
-def test_real_spy_labels_libraries_agree_to_1e10(spy_bars: pl.DataFrame) -> None:
-    events = label_events(spy_bars, LabelParams())
+def test_daily_labels_libraries_agree_to_1e10(daily_bars: pl.DataFrame) -> None:
+    events = label_events(daily_bars, LabelParams())
     finished = events.filter(pl.col("end").is_not_null()).select(start="ts", end="end")
-    result = average_uniqueness(spy_bars["ts"], finished)
+    result = average_uniqueness(daily_bars["ts"], finished)
     assert finished.height > 50
     assert result.max_gap <= TOLERANCE
     boot = sequential_bootstrap(result.indicator, finished.height, SEED)

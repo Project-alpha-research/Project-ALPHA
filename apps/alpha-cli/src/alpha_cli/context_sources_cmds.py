@@ -22,6 +22,8 @@ from alpha_data.context.events import (
     load_events,
 )
 
+sources_app = typer.Typer()
+
 
 def _emit(payload: dict[str, Any], json_out: bool) -> None:
     emit(payload, json_out=json_out, fallback=json.dumps(payload, indent=2, allow_nan=False))
@@ -61,6 +63,7 @@ def _rows(df: pl.DataFrame) -> list[dict[str, Any]]:
     ]
 
 
+@sources_app.command("pull-edgar")
 def pull_edgar(
     ticker: str | None = typer.Option(None),
     cik: str | None = typer.Option(None),
@@ -84,6 +87,7 @@ def pull_edgar(
     _emit(report, json_out)
 
 
+@sources_app.command("pull-binance")
 def pull_binance(
     symbol: str = typer.Option(...),
     kind: str = typer.Option(...),
@@ -106,6 +110,7 @@ def pull_binance(
     _emit(report, json_out)
 
 
+@sources_app.command("show-edgar")
 def show_edgar(
     ticker: str | None = typer.Option(None),
     cik: str | None = typer.Option(None),
@@ -140,6 +145,7 @@ def show_edgar(
     )
 
 
+@sources_app.command("show-binance")
 def show_binance(
     symbol: str = typer.Option(...),
     kind: str = typer.Option(...),

@@ -208,7 +208,4 @@ def window(
     )
 
 
-context_app.command("pull-edgar")(sources.pull_edgar)
-context_app.command("pull-binance")(sources.pull_binance)
-context_app.command("show-edgar")(sources.show_edgar)
-context_app.command("show-binance")(sources.show_binance)
+context_app.add_typer(sources.sources_app)

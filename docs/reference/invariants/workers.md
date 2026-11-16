@@ -111,8 +111,9 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
 - Barrier widths and CUSUM thresholds use volatility from closes strictly before the event bar; nothing is
   fitted on the sample. The vertical barrier is a bar count; an event that has neither touched a barrier
   nor reached it is open and gets no label. `tests/test_labels.py` holds the truncation tests.
-- Only finished labels are weighted. Uniqueness and time decay depend on every label used, so training
-  weights are built with `uniqueness --train-end` (labels ended by then only; tested to ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.
+- Only finished labels are weighted. Uniqueness and time decay depend on every label used, so
+  training weights are built with `uniqueness --train-end` (labels ended by then only; tested to
+  ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.
 
 ## RD-Agent worker
 

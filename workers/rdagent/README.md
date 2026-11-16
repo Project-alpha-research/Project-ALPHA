@@ -773,7 +773,8 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
 New panel receipts carry `AlphaRdagentGapPolicyV1`. `_rdagent_membership.panel_summary`
 records first/last dates, missing days inside each span, longest gaps and early endings;
 these are descriptions of the frozen input, never trading signals. The universe may provide
-an optional `data_dir`, an existing absolute store directory; otherwise the launcher's data
+an optional absolute `data_dir`, which must exist when the panel is frozen (a frozen run
+still loads after the store moves); otherwise the launcher's data
 directory applies. This does not change the gateway, ledger or other ALPHA data directories.
 No wide-universe instrument list is supplied by the code.
 
@@ -793,7 +794,7 @@ new position only after a fresh warm-up. The zero-cost comparison basket follows
 
 Ordinary screen labels retain the fixed next-open/open horizon. A missing endpoint uses the
 first available close within 30 days after the endpoint, otherwise the last close with the
-haircut. Unresolved labels whose search reaches the reserved boundary remain null. Spread
+haircut. A label whose entry open is missing is zero (the order never fills). Unresolved labels whose search reaches the reserved boundary remain null. Spread
 holdings instead follow the position waiting rule, including gaps inside a holding period;
 a missing entry open is uninvested cash. Both kinds of fallback are counted separately.
 The report and proposer feedback state early endings, missing instrument-days and position

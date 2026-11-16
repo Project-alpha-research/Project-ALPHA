@@ -376,3 +376,154 @@ def test_thin_non_rebalance_day_cannot_allocate_new_holdings() -> None:
     )
     assert not weights.any()
 
+
+def walk_panel(n: int = 120, names: int = 9, seed: int = 11) -> pl.DataFrame:
+    """Random-walk bars with distinct open and close, from 2020-12-01."""
+    rng = np.random.default_rng(seed)
+    closes = 100 * np.exp(np.cumsum(rng.normal(0, 0.03, size=(n, names)), axis=0))
+    opens = closes * np.exp(rng.normal(0, 0.01, size=(n, names)))
+    return pl.DataFrame(
+        [
+            {
+                "date": date(2020, 12, 1) + timedelta(days=i),
+                "instrument": f"C{j}",
+                "open": float(opens[i, j]),
+                "close": float(closes[i, j]),
+                "high": float(max(opens[i, j], closes[i, j]) * 1.01),
+                "low": float(min(opens[i, j], closes[i, j]) * 0.99),
+                "volume": 100.0,
+                "quote_volume": 10000.0,
+            }
+            for i in range(n)
+            for j in range(names)
+        ]
+    )
+
+
+def _poisoned(bars: pl.DataFrame, cutoff: date, ended: str) -> pl.DataFrame:
+    """Every price after the cutoff changes, and one instrument's series ends at the cutoff."""
+    changed = bars.with_columns(
+        [
+            pl.when(pl.col("date") > cutoff)
+            .then(pl.col(c) * (1.7 + pl.col("instrument").str.slice(1).cast(pl.Float64) / 10))
+            .otherwise(pl.col(c))
+            .alias(c)
+            for c in ("open", "close", "high", "low")
+        ]
+    )
+    return changed.filter(~((pl.col("instrument") == ended) & (pl.col("date") > cutoff)))
+
+
+@pytest.mark.parametrize("clock", ["daily", "weekly"])
+def test_future_poison_on_a_held_coin_leaves_everything_up_to_t_unchanged(clock: str) -> None:
+    """Mutating bars after t, and ending a coin held at t, changes nothing dated at or before t.
+
+    Covers membership, ranks (targets), fills, positions, realised P&L and closed periods; the
+    poison has power, because it changes what happens after t.
+    """
+    bars = walk_panel()
+    days = [date(2021, 1, 1) + timedelta(days=i) for i in range(70)]
+    symbols = [f"C{j}" for j in range(9)]
+    scores = np.random.default_rng(5).normal(size=(70, 9))
+    cutoff = date(2021, 1, 30)
+    clean: dict[str, Any] = {}
+    judge.replay(bars, scores, days, 1, clock=clock, series=clean, gap_policy=True)
+    held_at_cutoff = next(p for p in clean["positions"] if p["date"] == cutoff)["quantities"]
+    ended = symbols[int(np.argmax(held_at_cutoff))]
+    assert max(held_at_cutoff) > 0
+    poison_bars = _poisoned(bars, cutoff, ended)
+    poisoned: dict[str, Any] = {}
+    judge.replay(poison_bars, scores, days, 1, clock=clock, series=poisoned, gap_policy=True)
+    for key in ("events", "positions"):
+        assert [e for e in clean[key] if e["date"] <= cutoff] == [
+            e for e in poisoned[key] if e["date"] <= cutoff
+        ]
+    assert [t for t in clean["targets"] if t.origin_ts.date() <= cutoff] == [
+        t for t in poisoned["targets"] if t.origin_ts.date() <= cutoff
+    ]
+    assert [p for p in clean["periods"] if p.exit_ts.date() <= cutoff] == [
+        p for p in poisoned["periods"] if p.exit_ts.date() <= cutoff
+    ]
+    clean_members = judge.panel_membership(bars, days, symbols)
+    poison_members = judge.panel_membership(poison_bars, days, symbols)
+    through = days.index(cutoff) + 1
+    assert np.array_equal(clean_members[:through], poison_members[:through])
+    # Power: the ended coin leaves membership the next day and is written off 30 days later.
+    assert not poison_members[through:, symbols.index(ended)].any()
+    writeoffs = [e for e in poisoned["events"] if e["basis"] == "writeoff"]
+    assert writeoffs and writeoffs[0]["instrument"] == ended
+    assert writeoffs[0]["date"] == cutoff + timedelta(days=30)
+
+
+def test_write_off_waits_exactly_thirty_calendar_days_everywhere() -> None:
+    """Day 29 without a bar keeps waiting; a bar on day 30 is an exit, not a write-off."""
+    from alpha_cli import _rdagent_membership as membership
+
+    start = date(2021, 1, 1)
+    days = [start + timedelta(days=i) for i in range(60)]
+    for resume, haircut in ((30, False), (31, True)):
+        prices = np.full((60, 1), 100.0)
+        prices[1:resume] = np.nan
+        prices[resume:] = 50.0
+        account = membership.Account(["A"], fee_bps=0, slippage_bps=0)
+        account.trade(0, 1.0, 100.0, start, "open")
+        for day, row in zip(days, prices, strict=True):
+            account.observe(day, row)
+            if day == start + timedelta(days=29):
+                assert account.quantities[0] == 1.0 and account.haircuts == 0
+        assert account.haircuts == int(haircut)
+        assert account.events[-1]["price"] == pytest.approx(70.0 if haircut else 50.0)
+        assert account.events[-1]["date"] == start + timedelta(days=30)
+        held, held_counts = membership.holding_returns(prices, prices, days, [0], [10])
+        assert held[0, 0] == pytest.approx(-0.3 if haircut else -0.5)
+        assert held_counts["haircuts_applied"] == int(haircut)
+
+
+def test_gap_free_replay_first_period_is_hand_computed() -> None:
+    """A gap-free panel: hand-computed first period, no haircut, no wait."""
+    rows = []
+    for i in range(40):
+        for j in range(5):
+            price = 100.0 + (i if j == 0 else 0.0)
+            rows.append(
+                {
+                    "date": date(2020, 12, 1) + timedelta(days=i),
+                    "instrument": f"C{j}",
+                    "open": price,
+                    "close": price,
+                    "high": price,
+                    "low": price,
+                    "volume": 1.0,
+                    "quote_volume": 1.0,
+                }
+            )
+    bars = pl.DataFrame(rows)
+    days = [date(2021, 1, 1) + timedelta(days=i) for i in range(5)]
+    scores = np.tile(np.array([5.0, 1.0, 2.0, 3.0, 4.0]), (5, 1))  # C0 is the only top name
+    series: dict[str, Any] = {}
+    metrics, net = judge.replay(bars, scores, days, 1, series=series, gap_policy=True)
+    assert metrics["haircuts_applied"] == 0 and metrics["missing_coin_days"] == 0
+    # Decide on the 2021-01-01 close: k = round(5/3) = 2 names, C0 (close 131) and C4 (100), half
+    # each, sized at that close. Fill at the 2021-01-02 open (C0 132) with 6 bps slippage and
+    # 10 bps fee, buys scaled pro rata to the cash; value at the 2021-01-03 open (C0 133).
+    q0, q4 = 500_000 / 131, 500_000 / 100
+    net_return = (q0 * 133 + q4 * 100) / ((q0 * 132 + q4 * 100) * 1.0006 * 1.001) - 1
+    benchmark = (133 / 132 - 1) / 5
+    first = series["periods"][0]
+    assert first.gross_return == pytest.approx(0.5 * (133 / 132 - 1), rel=1e-12)
+    assert first.benchmark_return == pytest.approx(benchmark, rel=1e-12)
+    assert net[0] == pytest.approx(net_return - benchmark, rel=1e-9)
+
+
+def test_frozen_universe_reloads_after_its_store_is_gone(tmp_path: Path) -> None:
+    """The store is read once, at freeze; evaluating a frozen run must not need it mounted."""
+    store = tmp_path / "store"
+    store.mkdir()
+    spec = {**universes.DEFAULT, "data_dir": str(store)}
+    panel_dir = tmp_path / "panel"
+    panel_dir.mkdir()
+    (panel_dir / "universe.json").write_text(json.dumps(spec))
+    store.rmdir()
+    assert universes.frozen(panel_dir)["data_dir"] == str(store)
+    with pytest.raises(DataError, match="data_dir"):
+        judge.freeze(tmp_path / "unused", tmp_path / "out", panel_dir / "universe.json")

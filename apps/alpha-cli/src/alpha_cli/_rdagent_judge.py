@@ -270,6 +270,8 @@ def _alpaca_viability(data_dir: Path, spec: dict[str, Any]) -> None:
 def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str, Any]:
     spec = universes.load(universe)
     data_dir = Path(spec.get("data_dir", data_dir))
+    if "data_dir" in spec and not data_dir.is_dir():
+        raise DataError(f"universe data_dir {data_dir} is not an existing directory")
     if spec["source"] == "alpaca-us-equities":
         _alpaca_viability(data_dir, spec)
     universes.evaluable(spec)

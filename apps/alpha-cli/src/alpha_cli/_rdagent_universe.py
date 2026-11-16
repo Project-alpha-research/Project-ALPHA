@@ -62,9 +62,10 @@ def validate(spec: Any) -> dict[str, Any]:
         not isinstance(spec["data_dir"], str)
         or not spec["data_dir"].strip()
         or not Path(spec["data_dir"]).is_absolute()
-        or not Path(spec["data_dir"]).is_dir()
     ):
-        raise DataError("universe data_dir must name an existing absolute store directory")
+        # Existence is checked where the store is read (freeze), so a frozen run still loads
+        # after its store is moved or unmounted.
+        raise DataError("universe data_dir must name an absolute store directory")
     if not isinstance(spec["name"], str) or not spec["name"].strip():
         raise DataError("universe name must be a non-empty string")
     if spec["source"] not in SOURCES:

@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: b54208cb881736c5
+verified: bac8c65a581d0478
 ---
 
 # Validation statistics invariants

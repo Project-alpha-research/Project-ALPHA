@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 7015211b15a5dde4
+verified: 737ddeb86bb9fa40
 ---
 
 # Data layer invariants
@@ -142,8 +142,7 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   earlier than requested. It stores nothing.
 - QuantPad is no longer a provider: its adapter and archive code were removed on 2026-11-14
   ([ADR-0018 note](../../adr/0018-quantpad-external-research-data-boundary.md#owner-supersession--2026-11-14)).
-  Datasets registered earlier from a QuantPad receipt stay readable and research-only, and the web app
-  still files old QuantPad runs under equities (`alpha_web._runs._EQUITY_SOURCES`).
+  Earlier QuantPad receipts stay readable and research-only; the web app still files their runs under equities (`alpha_web._runs._EQUITY_SOURCES`).
 
 ## Crypto storage
 
@@ -156,18 +155,20 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   body; an existing path may be republished only with identical bytes.
 - Normalized bytes publish only after every input raw manifest re-verifies and the bytes match the quality
   report hash. Derived artifacts accept only normalized inputs.
+- Archive revision discovery indexes exact dataset/request raw manifest ids in memory for one store lifetime.
+  Build from hash-verified metadata once, update after publication, and rebuild on manifest-directory changes.
+  Matching raw artifacts still verify; changed resource bytes retain correction lineage and quarantine.
+  The index is not evidence; full inventory, new-artifact checks and reserve enforcement remain unchanged.
 - Bybit derivative trades and order-book snapshots require a `CryptoAcquisitionScopeV1` (research case,
   revision, reason); any other family refuses a scope. Unscoped historical captures stay readable but cannot
   enter governed snapshots.
-- Storage paths are confined to their root; symlinks are refused.
-- Cleanup deletes only `bulk/cache`. Staging, raw, normalized, snapshot, manifest and control roots are never
-  removed.
+- Storage paths are confined to their root; symlinks are refused. Normalized reads are capped at 32 MiB and re-verify bytes while reading.
+- Cleanup deletes only `bulk/cache`. Staging, raw, normalized, snapshot, manifest and control roots are never removed.
 - Retirement appends a hash-bound receipt under the admission lock and never deletes manifests, raw lineage or
   payloads. Only `inactive_quarantined` and `revoked_units_error` are valid reasons. Retired inputs are
   excluded from new admission and active inventories; full audits include them. `scripts/crypto_data_hygiene.py`
   audits references (`--report`) and repeats the audit under the lock before `--apply`; it fails closed on
   unreadable evidence and never retires referenced artifacts.
-- Normalized reads are capped at 32 MiB and re-verify the artifact while reading.
 - A governed snapshot member is its content (dataset, artifact key, artifact hash). Creation and every
   verification resolve it with one rule (`alpha_cli/_crypto_snapshot_members.py`): several retained
   captures of the same bytes count as one only if they agree on everything except per-fetch provenance
@@ -196,5 +197,4 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   `reviewed-native-v2` adds XRP and SOL and seeds `build_cross_provider_asset_master`.
 - A feature's availability may never precede an input observation or its source availability, and no
   feature reads a later observation. Enforced by `tests/bias_guards/test_crypto_features_future_poison.py`.
-- Per-provider fetch, parse, budget and availability rules (Binance, Bybit, CoinGecko, GeckoTerminal,
-  DefiLlama) and coverage profiles are in [crypto providers](crypto-providers.md).
+- Provider fetch, parse, budget and availability rules and coverage profiles are in [crypto providers](crypto-providers.md).

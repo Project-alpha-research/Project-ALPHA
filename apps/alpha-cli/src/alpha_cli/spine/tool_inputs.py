@@ -36,7 +36,8 @@ class RunSeries:
     ppy: int
     dates: tuple[datetime, ...]
     equity: tuple[float, ...]
-    closes: dict[datetime, float]
+    # The engine samples equity at each bar's open, so a fair market return is open-to-open.
+    opens: dict[datetime, float]
 
 
 def load_run(home: Path, run_id: str) -> RunSeries:
@@ -89,7 +90,7 @@ def load_run(home: Path, run_id: str) -> RunSeries:
         ppy=ppy,
         dates=dates,
         equity=tuple(float(value) for value in equity),
-        closes={bar.ts: float(bar.close) for bar in bars},
+        opens={bar.ts: float(bar.open) for bar in bars},
     )
 
 
@@ -105,8 +106,8 @@ class Joined:
 
 
 def join_market(series: RunSeries, asset: str | None) -> Joined:
-    """Inner-join the run with another asset's closes on timestamps; returns span shared bars."""
-    name, closes = series.asset, series.closes
+    """Inner-join the run with another asset's opens on timestamps; returns span shared bars."""
+    name, opens = series.asset, series.opens
     if asset is not None:
         resolved = resolve_asset(asset, data_dir=series.home)
         name = f"{resolved.symbol}@{resolved.store_name}"
@@ -115,9 +116,9 @@ def join_market(series: RunSeries, asset: str | None) -> Joined:
             bars, _ = _runner.load_bars(
                 resolved.symbol, data_dir=resolved.data_dir, as_of=series.dates[-1]
             )
-            closes = {bar.ts: float(bar.close) for bar in bars}
-    common = [date for date in series.dates if date in closes]
-    inside = sum(series.dates[0] <= ts <= series.dates[-1] for ts in closes)
+            opens = {bar.ts: float(bar.open) for bar in bars}
+    common = [date for date in series.dates if date in opens]
+    inside = sum(series.dates[0] <= ts <= series.dates[-1] for ts in opens)
     counts = {
         "run_bars": len(series.dates),
         "other_bars_in_run_window": inside,
@@ -138,7 +139,7 @@ def join_market(series: RunSeries, asset: str | None) -> Joined:
         same_asset=name == series.asset,
         dates=common,
         strategy=to_returns([equity[date] for date in common]),
-        market=to_returns([closes[date] for date in common]),
+        market=to_returns([opens[date] for date in common]),
         ppy=series.ppy if len(common) == len(series.dates) else periods_per_year(common),
         counts=counts,
     )

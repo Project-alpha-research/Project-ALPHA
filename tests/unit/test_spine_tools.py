@@ -27,7 +27,7 @@ def _series(home: Path, n: int = 700, always_long: bool = False) -> tool_inputs.
     rng = np.random.default_rng(5)
     market = np.r_[rng.normal(0.0008, 0.005, n // 2), rng.normal(0.0, 0.03, n - n // 2)]
     held = ((np.arange(n) // 25) % 2 == 0) | always_long
-    closes = 100.0 * np.cumprod(1.0 + np.r_[0.0, market])
+    opens = 100.0 * np.cumprod(1.0 + np.r_[0.0, market])
     equity = 1e6 * np.cumprod(1.0 + np.r_[0.0, np.where(held, market, 0.0)])
     dates = tuple(START + timedelta(days=i) for i in range(n + 1))
     rdir = home / "runs" / RUN
@@ -46,7 +46,7 @@ def _series(home: Path, n: int = 700, always_long: bool = False) -> tool_inputs.
         ppy=365,
         dates=dates,
         equity=tuple(float(v) for v in equity),
-        closes=dict(zip(dates, (float(v) for v in closes), strict=True)),
+        opens=dict(zip(dates, (float(v) for v in opens), strict=True)),
     )
 
 
@@ -71,7 +71,8 @@ def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> None
     def load_bars(symbol: str, *, data_dir: Path, as_of: datetime) -> tuple[list[Any], None]:
         seen.update(symbol=symbol, as_of=as_of)
         return [
-            SimpleNamespace(ts=date, close=series.closes[date] * 2) for date in series.dates[::keep]
+            SimpleNamespace(ts=date, open=series.opens[date] * 2, close=float("nan"))
+            for date in series.dates[::keep]
         ], None
 
     monkeypatch.setattr(tool_inputs._runner, "load_bars", load_bars)
@@ -135,6 +136,19 @@ def test_cross_asset_join_reports_dropped_bars(home: Path, monkeypatch: pytest.M
     assert output["result"]["periods_per_year"] == 183  # every second day, inferred from dates
     assert tool_inputs._seen == {"symbol": "QQQ", "as_of": _series(home).dates[-1]}
     assert output["file"] != tools.attribution(home, RUN)["file"]
+
+
+def test_market_returns_are_open_to_open_like_the_equity(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The engine samples equity at each open; a close-based benchmark would mismatch intervals.
+    # QQQ's opens are SPY's doubled (same returns) and its closes are unusable.
+    same = tools.attribution(home, RUN)["result"]
+    _other_asset(monkeypatch, home, keep=1)
+    other = tools.attribution(home, RUN, "QQQ")["result"]
+    assert other["beta"] == pytest.approx(same["beta"])
+    assert other["r_squared"] == pytest.approx(same["r_squared"])
+    assert "open-to-open" in tools.attribution(home, RUN, "QQQ")["basis"]
 
 
 def test_too_few_shared_bars(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -365,3 +379,11 @@ def test_old_ledger_rows_without_kind_read_as_rule_tests(tmp_path: Path) -> None
         "rule_test",
         "tool:regimes",
     ]
+
+
+def test_cross_asset_basis_names_the_clock_caveat(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert "same instant" not in tools.attribution(home, RUN)["basis"]
+    _other_asset(monkeypatch, home, keep=1)
+    assert "not the same instant" in tools.attribution(home, RUN, "QQQ")["basis"]

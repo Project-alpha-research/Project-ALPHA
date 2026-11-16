@@ -86,13 +86,22 @@ def record(
     return {**document, "file": relative, "trials_total": row["total_trials"]}
 
 
+# Two assets' bars share a date stamp, not an instant: a coin's day opens at midnight UTC and a
+# US stock's at the exchange open, so a cross-asset comparison carries this caveat.
+CLOCKS = (
+    "a shared timestamp is the same bar date, not the same instant, when the two assets open "
+    "at different times of day; "
+)
+
+
 def attribution(home: Path, run_id: str, benchmark: str | None = None) -> dict[str, Any]:
     series = load_run(home, run_id)
     joined = join_market(series, benchmark)
     result = market_attribution(joined.strategy, joined.market, periods_per_year=joined.ppy)
     basis = (
-        f"full-sample strategy returns against buy-and-hold close-to-close returns of "
-        f"{joined.name} on shared timestamps; {result.pop('basis')}"
+        f"full-sample strategy returns against buy-and-hold open-to-open returns of "
+        f"{joined.name} on shared timestamps (the engine marks equity at each bar's open); "
+        f"{'' if joined.same_asset else CLOCKS}{result.pop('basis')}"
     )
     result.update(benchmark=joined.name, periods_per_year=joined.ppy, join=joined.counts)
     return record(
@@ -153,8 +162,9 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
         },
     }
     basis = (
-        f"{fit['basis']}; market = close-to-close returns of {joined.name}; "
-        f"{regime_model.SPLIT_BASIS}"
+        f"{fit['basis']}; market = open-to-open returns of {joined.name}, matching the "
+        "engine's open-marked equity; "
+        f"{'' if joined.same_asset else CLOCKS}{regime_model.SPLIT_BASIS}"
     )
     return record(
         series,

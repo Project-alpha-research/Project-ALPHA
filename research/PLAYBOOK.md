@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: cc97d5c6b9294886
+verified: 47e81493f9892a22
 ---
 
 # Research playbook: how to work any idea
@@ -49,8 +49,8 @@ does not exist yet, confusing output, an audit line that is `NOT-CHECKED`. Then 
   run id and the field or line it came from.
 - A number that was not computed is said to be "not computed", with the command that would
   compute it. A `null` value comes with a `reason`: give the reason, never a guess.
-- Do no arithmetic of your own on results. Quote both numbers and let the reader compare; the
-  strategy-minus-benchmark differences are already recorded under `strategy_minus_benchmark`.
+- Do no arithmetic of your own on results: use `uv run alpha results compare <run_id> <run_id>`.
+  `uv run alpha results check <file>` checks a draft's tagged numbers and labels, not the reasoning.
 - Everything else is marked "My reading:" or "Hypothesis:". The owner's own figures go in quotes.
 
 ## Labels, flags and trial counts

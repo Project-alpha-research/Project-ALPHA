@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
-verified: 3e155c2fd3c1d29f
+verified: d6db108bf8ef2a5e
 ---
 
 # Research tools, by symptom
@@ -40,7 +40,7 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 - an event calendar (scheduled releases and earnings dates);
 - an event study and random-date controls as plain commands (they exist only inside the older
   staged lane);
-- an answer checker, recorded comparisons between runs, a lessons search and counted variants;
+- a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
 - the planned plain verbs that would wrap these tools (get, idea, tool, vary, learn, promote): none is a
   command yet, so never type one; use the cards above.

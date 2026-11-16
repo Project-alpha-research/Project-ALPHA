@@ -282,7 +282,7 @@ def test_every_alpha_command_and_option_named_is_registered(rel: str) -> None:
 def test_the_command_checker_rejects_unknown_commands_and_options() -> None:
     assert command_problem("uv run alpha results cite <run_id> oos_sharpe --json") is None
     assert command_problem("alpha test --rule ma_cross --param fast=50 --asset SPY") is None
-    assert command_problem("alpha results check answer.md") is not None
+    assert command_problem("alpha results compare <run_id> <run_id> --nope") is not None
     assert command_problem("alpha learn search words") is not None
     assert command_problem("alpha results cite <run_id> oos_sharpe --facts") is not None
 

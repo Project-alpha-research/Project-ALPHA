@@ -106,8 +106,8 @@ Prices, the universe, and the context a trader needs around them.
 | One price series per source kept apart automatically; differences shown as a label | Unproven | `alpha-data` | Path 1 | [thin] |
 | Benchmarks and sector funds stored for comparison (market, size, sectors, BTC, a basket) | Unproven | `alpha-data` | Path 1 | [partner] |
 | Macro series as first published: rates, inflation, jobs, credit, volatility index | Unproven | `alpha-data` `context/` | Later | [partner] |
-| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Missing | small checked files | Later | [partner] |
-| Crypto context: funding rates, open interest, listings | Unproven | `alpha-data` (shelved) | Later | [triage] |
+| Event calendar: central-bank meetings, inflation releases, an earnings-date proxy | Unproven | `alpha context pull-edgar` (8-K item 2.02) | Later | [partner] |
+| Crypto context: funding rates, open interest, listings | Unproven | `alpha context pull-binance` | Later | [triage] |
 | Company fundamentals by filing date, for value-plus-quant ideas | Missing | backlog; Qlib | Later | private |
 | Fund and coin flow data with honest accounting (flows are not asset growth) | Missing | none yet | Later | private |
 | News and social text as dated, sourced evidence | Missing | none yet | Later | private |

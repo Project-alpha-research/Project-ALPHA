@@ -395,10 +395,8 @@ def parse_binance_exchange_info(
     return pl.DataFrame(parsed).sort("symbol")
 
 
-def parse_binance_archive_zip(
-    payload: bytes, *, family: BinanceArchiveFamily = "klines"
-) -> pl.DataFrame:
-    """Extract one bounded flat official CSV member and parse it without path writes."""
+def archive_csv_member(payload: bytes) -> bytes:
+    """Extract one bounded flat official CSV member without path writes."""
     if not isinstance(payload, bytes) or not payload or len(payload) > 512 * 1024 * 1024:
         raise DataError("Binance archive ZIP exceeds the compressed byte limit")
     try:
@@ -418,6 +416,14 @@ def parse_binance_archive_zip(
             csv_payload = archive.read(member)
     except (zipfile.BadZipFile, RuntimeError, OSError) as exc:
         raise DataError("Binance archive ZIP is malformed") from exc
+    return csv_payload
+
+
+def parse_binance_archive_zip(
+    payload: bytes, *, family: BinanceArchiveFamily = "klines"
+) -> pl.DataFrame:
+    """Extract one bounded flat official CSV member and parse it without path writes."""
+    csv_payload = archive_csv_member(payload)
     if family == "klines":
         return parse_binance_klines(csv_payload, source="archive_csv")
     if family == "trades":

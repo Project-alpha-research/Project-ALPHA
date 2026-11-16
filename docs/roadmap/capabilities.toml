@@ -1030,3 +1030,33 @@ needs = []
 state = "Partial"
 missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "filing-events"
+name = "Company filings, earnings dates and insider trades as filed"
+what = "Read SEC filings, earnings-related 8-Ks and Form 4 transactions known by an acceptance cutoff."
+see_it = ["alpha context show-edgar --ticker TEST --view earnings --as-of 2024-01-26 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_edgar.py::test_pull_pages_cache_acceptance_earnings_and_provenance", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "not yet confirmed; invented fixtures only; live formats not yet verified"
+real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
+needs = []
+state = "Partial"
+missing = "installed-command smoke execution and SEC live formats await verification"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "crypto-derivatives-context"
+name = "Crypto funding rates and open interest as known"
+what = "Read verified Binance USD-M funding and derivatives metrics at a UTC knowledge cutoff."
+see_it = ["alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "not yet confirmed; invented fixtures only; live formats not yet verified"
+real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
+needs = []
+state = "Partial"
+missing = "installed-command smoke execution and Binance live formats await verification"
+docs = ["docs/reference/project/components/data-layer.md"]

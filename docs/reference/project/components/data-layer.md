@@ -46,22 +46,30 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 Daily market series such as Treasury yields and the VIX have no revision history at FRED; each
 value is stored as known from the day after its date and the series is marked `approximate`.
 
-FRED/ALFRED macro series retain values as first published and every returned revision, with publication dates and
-hashed provenance in `data_dir/context/fred/`: reference data for explaining research results, kept apart from the bar
-store, snapshots and backtest inputs. `alpha context` pulls, lists and reads it. The default read takes publications
-with `known_from <= cutoff` and no `known_until` or `known_until >= cutoff` (both ends inclusive). An observation with
-no valid vintage is absent; a valid vintage with a missing value stays null and never falls back to an earlier value,
-while an expired newest observation can leave an earlier still-valid one to carry. Explicit first-release and latest
-views keep their historical and null-ended-only policies. Window endpoints carry the last observation knowable at each
-boundary, capped by `--as-of`; window extrema use observation dates inside the window at that cutoff.
-The key comes only from `FRED_API_KEY`; provider copyright restrictions are recorded in provenance. Live API behavior
-remains unconfirmed. HTTP 400 on the full real-time range retries the same range in windows: one before 1920,
-five-year buckets, and a final bucket ending 9999-12-31, for any cutoff year and without constructing year 10000. The
-schedule follows the UTC date of the explicit aware-UTC `fetched_at` the CLI supplies, validated before transport or
-writes. Identical vintage rows merge; conflicting or overlapping rows fail, comparing adjacent sorted rows of one
-series and observation: an open-ended predecessor or a shared boundary is rejected, gaps remain valid.
-The generic launcher classifies only `context list`, `show` and `window` as safe local reads; bare, unknown and `pull`
-commands remain owner-only. The group appears under the Data menu.
+FRED/ALFRED macro series retain values as first published and every returned revision, with publication dates and hashed provenance in
+`data_dir/context/fred/`: reference data for explaining research results, kept apart from the bar store, snapshots and backtest inputs. `alpha context`
+pulls, lists and reads it. The default read takes publications with `known_from <= cutoff` and no `known_until` or `known_until >= cutoff` (both ends
+inclusive). An observation with no valid vintage is absent; a valid vintage with a missing value stays null and never falls back to an earlier value, while
+an expired newest observation can leave an earlier still-valid one to carry. Explicit first-release and latest views keep their historical and
+null-ended-only policies. Window endpoints carry the last observation knowable at each boundary, capped by `--as-of`; window extrema use observation dates
+inside the window at that cutoff. The key comes only from `FRED_API_KEY`; provider copyright restrictions are recorded in provenance. Live API behavior
+remains unconfirmed. HTTP 400 on the full real-time range retries the same range in windows: one before 1920, five-year buckets, and a final bucket ending
+9999-12-31, for any cutoff year and without constructing year 10000. The schedule follows the UTC date of the explicit aware-UTC `fetched_at` the CLI
+supplies, validated before transport or writes. Identical vintage rows merge; conflicting or overlapping rows fail, comparing adjacent sorted rows of one
+series and observation: an open-ended predecessor or a shared boundary is rejected, gaps remain valid. The generic launcher classifies `context list`,
+`show`, `window`, `show-edgar` and `show-binance` as safe local reads; bare, unknown and acquisition commands remain owner-only. The group appears under
+the Data menu.
+
+SEC EDGAR filings and Form 4 transactions live under `context/edgar/`. Their `known_from` is the filing's acceptance timestamp in UTC; rows without that
+timestamp are counted as rejected. Earnings are a view of 8-K/8-K/A item 2.02, not a forecast calendar. Amendments retain their own accession and clock,
+and re-pulls retain earlier events. `ALPHA_SEC_USER_AGENT` is required and never persisted; requests are spaced by 0.2 seconds and immutable archive XML is
+cached locally. Ticker maps and submissions stay fresh. SEC live formats not yet verified.
+
+Binance USD-M monthly funding and daily metrics live under `context/binance/um/`, with SHA-256 sidecar verification and reusable raw ZIPs. Funding is known
+at settlement; metrics are known five minutes after their timestamp. Identical overlaps merge; changed values fail. Missing periods are reported,
+all-missing pulls fail, and metrics pulls are capped at 400 days. Binance live formats not yet verified. Both event sources publish Parquet and hashed
+provenance atomically per file; torn pairs fail on read. Reads only expose `known_from <=` an aware UTC cutoff, with no latest view; date-only CLI cutoffs
+mean midnight UTC. See the [commands](../../commands.md).
 
 ### Real data on the Dell
 
@@ -120,48 +128,36 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 
 ### Limits
 
-- **Stooq:** since 2026-11-14 the `stooq` downloader no longer answers Stooq's "verify your
-  browser" check itself (it used to solve the check and pose as a desktop browser; getting past a
-  bot check is not acceptable here). It now sends one request under a generic client name and, when
-  challenged, refuses with a clear message. Stooq data already stored stays readable.
-- **Yahoo (`yfinance`):** Yahoo's terms forbid collecting data from its services "using any
-  automated means" without Yahoo's express prior permission, and Yahoo has not given it. The owner
-  was told this on 2026-11-14 and decided to use the `yfinance` downloader for now, for personal
-  research only, until Alpaca or the Mac is ready
-  ([owner decisions](../owner-decisions-2.md#2026-11-14-any-free-stock-source-now-alpaca-account-to-follow)).
-  One modest sequential download was made (above). The owner's Alpaca key was set the same day,
-  so Alpaca replaces Yahoo for new stock downloads; the Yahoo copy stays for comparison. Yahoo's prices are rebuilt from its split-adjusted series
-  (the adapter multiplies the splits back), so they carry small rounding.
-- **Alpaca intraday:** bars of 1 to 59 minutes and 1 to 23 hours come from the same free plan and
-  feed; each bar is stamped at its start and covers all hours Alpaca returns (04:00 to 20:00 New
-  York). Hourly bars follow the clock (the 09:00 bar holds 09:00-09:59, half pre-market), so
-  session hours are resampled from minute bars. No bar exists for a minute without qualifying
-  trades, so illiquid names at 1 minute will fail the gap check. A full 2016-onward 1-minute pull
-  exceeds the 200-page cap. Whether Alpaca later revises historical minute bars is not documented.
-- **Alpaca:** free Basic plan only: history since 2016; the latest 15 minutes are not available,
-  so ALPHA asks only for completed sessions; 200 calls a minute; personal, non-commercial use, and
-  the data must never be published, shared or committed. The corporate-actions list has no
-  announcement date, so an action is treated as known only from its ex-date. A symbol with a stock
-  dividend, spin-off or unit split in the requested window is refused, and a split the price
-  series contradicts fails loud; dividends have no such cross-check, and Alpaca misses some older
-  ETF dividends (SPY 2016-03-18 and 2018-06-15, for example). Daily highs and lows are built from
-  trades and can carry a stray print (NVDA 2024-06-10 high 195.95). An Alpaca download never
-  replaces Tiingo data and never shares a series with another source, either way (hence its own
-  data folder).
-- **Binance monthly archives:** a month's file exists only after the month ends, and Binance
-  publishes it 1 to 7 days later (once 12; measured 2026-11-14), so a backfill lists the current
-  month, and a just-ended month whose file is still missing for up to 14 days, as "not published
-  yet" rather than failing; the current month comes from
-  the bounded live-service tail. A governed crypto snapshot may hold many months of many coins;
-  the daily price reader used by the daily rule lane reads every month named for BTCUSDT
-  (one stored copy per month), refusing gaps, overlaps and unnamed months in the range
+- **Stooq:** since 2026-11-14 the `stooq` downloader no longer answers Stooq's "verify your browser" check itself (it used to solve the check and pose as a
+  desktop browser; getting past a bot check is not acceptable here). It now sends one request under a generic client name and, when challenged, refuses
+  with a clear message. Stooq data already stored stays readable.
+- **Yahoo (`yfinance`):** Yahoo's terms forbid collecting data from its services "using any automated means" without Yahoo's express prior permission, and
+  Yahoo has not given it. The owner was told this on 2026-11-14 and decided to use the `yfinance` downloader for now, for personal research only, until
+  Alpaca or the Mac is ready ([owner decisions](../owner-decisions-2.md#2026-11-14-any-free-stock-source-now-alpaca-account-to-follow)). One modest
+  sequential download was made (above). The owner's Alpaca key was set the same day, so Alpaca replaces Yahoo for new stock downloads; the Yahoo copy stays
+  for comparison. Yahoo's prices are rebuilt from its split-adjusted series (the adapter multiplies the splits back), so they carry small rounding.
+- **Alpaca intraday:** bars of 1 to 59 minutes and 1 to 23 hours come from the same free plan and feed; each bar is stamped at its start and covers all
+  hours Alpaca returns (04:00 to 20:00 New York). Hourly bars follow the clock (the 09:00 bar holds 09:00-09:59, half pre-market), so session hours are
+  resampled from minute bars. No bar exists for a minute without qualifying trades, so illiquid names at 1 minute will fail the gap check. A full
+  2016-onward 1-minute pull exceeds the 200-page cap. Whether Alpaca later revises historical minute bars is not documented.
+- **Alpaca:** free Basic plan only: history since 2016; the latest 15 minutes are not available, so ALPHA asks only for completed sessions; 200 calls a
+  minute; personal, non-commercial use, and the data must never be published, shared or committed. The corporate-actions list has no announcement date, so
+  an action is treated as known only from its ex-date. A symbol with a stock dividend, spin-off or unit split in the requested window is refused, and a
+  split the price series contradicts fails loud; dividends have no such cross-check, and Alpaca misses some older ETF dividends (SPY 2016-03-18 and
+  2018-06-15, for example). Daily highs and lows are built from trades and can carry a stray print (NVDA 2024-06-10 high 195.95). An Alpaca download never
+  replaces Tiingo data and never shares a series with another source, either way (hence its own data folder).
+- **Binance monthly archives:** a month's file exists only after the month ends, and Binance publishes it 1 to 7 days later (once 12; measured 2026-11-14),
+  so a backfill lists the current month, and a just-ended month whose file is still missing for up to 14 days, as "not published yet" rather than failing;
+  the current month comes from the bounded live-service tail. A governed crypto snapshot may hold many months of many coins; the daily price reader used by
+  the daily rule lane reads every month named for BTCUSDT (one stored copy per month), refusing gaps, overlaps and unnamed months in the range
   ([ADR-0048](../../../adr/0048-daily-rule-lane-binding-and-named-months.md)).
 
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-data`
 - **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
-  `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`
+  `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
+  `filing-events`, `crypto-derivatives-context`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.
 - Tests: `tests/smoke/test_data_smoke.py`, `tests/smoke/test_crypto_data_smoke.py` (crypto downloads through an

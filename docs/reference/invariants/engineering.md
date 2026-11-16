@@ -7,7 +7,7 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: f2b0ff419fa179f5
+verified: 4d1b2c62d9ffbb20
 ---
 
 # Engineering rules
@@ -48,7 +48,9 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 ## Strict typing
 
 - `mypy --strict` covers `packages`, `apps`, `tests` and the harness scripts. Only the overrides in
-  `pyproject.toml` (Nautilus, scipy, quantstats, STUMPY, vendored Kronos) are exempt.
+  `pyproject.toml` (Nautilus, scipy, quantstats, STUMPY, statsmodels, ruptures, vendored Kronos) are exempt.
+- statsmodels and ruptures ship no stubs; the owner decided on 2026-11-17 to use them as untyped
+  libraries through the same `ignore_missing_imports` override as scipy, not with inline ignores.
 - A `type: ignore` must name its error code (semgrep rule `alpha-type-ignore-without-code`).
 
 ## Polars by default

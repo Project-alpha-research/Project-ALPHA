@@ -122,7 +122,7 @@ def test_the_guard_catches_a_leaky_whole_series_search() -> None:
     assert leaky != _leaky_twin(_series(_poison(close, as_of)))
 
 
-@pytest.mark.parametrize("as_of", [400, 620, 899])
+@pytest.mark.parametrize("as_of", [400, 620, 850])
 def test_novelty_ignores_every_bar_after_as_of(as_of: int) -> None:
     close = _clean()
     clean = novelty_score(_series(close), WINDOW, as_of=_series(close).ts[as_of])

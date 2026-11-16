@@ -87,6 +87,15 @@ def test_outcomes_stop_at_the_query_end_and_are_labelled() -> None:
     assert far.value is None and far.reason is not None and "not known yet" in far.reason
     # The path after the match ends at the query's last bar, never later.
     assert len(match.path_after) == QUERY + 29 - match.end_index + 1
+    assert result.outcomes_into_query == 1  # the match ending at 529 reaches bar 929 > 740
+    close = _planted().close.copy()
+    close[705:735] = close[705] * np.exp(MOTIF)  # ends 5 bars before the query starts
+    nearby = _series(close)
+    touching = find_lookalikes(
+        nearby, nearby.ts[QUERY], 30, top_k=10, exclusion=30, max_distance=2.0, horizons=(10,)
+    )
+    assert 705 in [m.start_index for m in touching.matches]
+    assert touching.outcomes_into_query == 1
 
 
 def test_the_summary_is_withheld_below_the_minimum() -> None:
@@ -237,3 +246,40 @@ def test_bad_novelty_inputs_fail_loud() -> None:
     flat = _series(close)
     with pytest.raises(DataError, match="constant"):
         novelty_score(flat, 30, as_of=flat.ts[-1])
+
+
+def _jittered_flat(close: np.ndarray, start: int, stop: int, price: float) -> None:
+    """A flat stretch with one-ulp jitter, as split or dividend adjustment can leave behind."""
+    close[start:stop] = price
+    close[start:stop:3] = np.nextafter(price, price + 1.0)
+
+
+def test_a_near_constant_stretch_is_never_a_perfect_match() -> None:
+    close = _walk(600, 4)
+    _jittered_flat(close, 200, 240, 33.3)
+    bars = _series(close)
+    result = find_lookalikes(bars, bars.ts[450], 20, top_k=50, exclusion=20, max_distance=1e6)
+    assert all(not 200 <= m.start_index <= 220 for m in result.matches)
+    assert all(m.distance > 0.1 for m in result.matches)
+    assert result.constant_candidates_skipped >= 21
+    with pytest.raises(DataError, match="constant"):
+        find_lookalikes(bars, bars.ts[210], 20, top_k=5, exclusion=20, max_distance=2.0)
+
+
+@pytest.mark.parametrize("seed", range(4))
+def test_a_near_constant_stretch_never_becomes_the_novelty_neighbour(seed: int) -> None:
+    close = _walk(500, seed)
+    _jittered_flat(close, 100, 160, float(close[99]))
+    bars = _series(close)
+    result = novelty_score(bars, 20, as_of=bars.ts[-1], warmup=20)
+    windows = np.lib.stride_tricks.sliding_window_view(close, 20)
+    z = (windows - windows.mean(axis=1, keepdims=True)) / windows.std(axis=1, keepdims=True)
+    latest = z[-1]
+    flat = np.ptp(windows, axis=1) <= 1e-9 * np.max(np.abs(windows), axis=1)
+    # STUMPY's convention: a flat window sits at distance sqrt(window) from any other window.
+    honest = [
+        math.sqrt(20) if flat[j] else float(np.linalg.norm(latest - z[j]))
+        for j in range(len(z) - 1 - 5)
+    ]
+    assert flat[100:141].all()
+    assert result.score == pytest.approx(min(honest), abs=1e-6)

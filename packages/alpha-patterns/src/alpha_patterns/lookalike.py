@@ -41,6 +41,10 @@ FloatArray = npt.NDArray[np.float64]
 MIN_WINDOW = 5
 #: Below this many matches the outcome summary is withheld, with a reason.
 MIN_MATCHES_FOR_SUMMARY = 5
+#: A window whose high-low range is at most this share of its largest absolute price counts as
+#: flat. STUMPY's own test is an exact zero range; a flat stretch carrying one-ulp jitter (as
+#: price adjustment can leave) would pass it, rescale to noise and score as a perfect match.
+NEAR_CONSTANT_RELATIVE = 1e-9
 
 LABELS = (
     "descriptive, not a forecast",
@@ -110,6 +114,7 @@ class LookalikeResult:
     matches_within_threshold: int
     matches: tuple[Match, ...]
     overlapping_outcomes: int  # pairs of matches whose longest outcome windows share bars
+    outcomes_into_query: int  # matches whose longest outcome window reaches the query's own bars
     labels: tuple[str, ...]
 
 
@@ -154,9 +159,13 @@ def _index_of(series: OHLCV, ts: float, name: str) -> int:
 
 
 def _constant(values: FloatArray, window: int) -> npt.NDArray[np.bool_]:
-    """STUMPY's definition: a window whose highest and lowest value are equal."""
+    """Flat windows: high-low range within ``NEAR_CONSTANT_RELATIVE`` of the largest price.
+
+    Passed to STUMPY as its ``*_subseq_isconstant`` array, so STUMPY and this module agree.
+    """
     view = np.lib.stride_tricks.sliding_window_view(values, window)
-    return np.asarray(np.ptp(view, axis=1) == 0.0)
+    scale = np.max(np.abs(view), axis=1)
+    return np.asarray(np.ptp(view, axis=1) <= NEAR_CONSTANT_RELATIVE * scale)
 
 
 def _znorm_rows(values: FloatArray, window: int) -> FloatArray:
@@ -164,8 +173,9 @@ def _znorm_rows(values: FloatArray, window: int) -> FloatArray:
     view = np.lib.stride_tricks.sliding_window_view(values, window)
     mean = view.mean(axis=1, keepdims=True)
     std = view.std(axis=1, keepdims=True)
-    safe = np.where(std == 0.0, 1.0, std)
-    return np.asarray(np.where(std == 0.0, 0.0, (view - mean) / safe), dtype=np.float64)
+    flat = _constant(values, window)[:, None]
+    safe = np.where(flat, 1.0, std)
+    return np.asarray(np.where(flat, 0.0, (view - mean) / safe), dtype=np.float64)
 
 
 def znorm(values: Sequence[float] | FloatArray) -> FloatArray:
@@ -224,15 +234,23 @@ def find_lookalikes(
     # Cut at the as-of bar first: nothing after the query's last bar is ever read below.
     close = np.asarray(history.close[: end + 1], dtype=np.float64)
     query = close[start : end + 1]
-    if float(np.ptp(query)) == 0.0:
+    if bool(_constant(query, window)[0]):
         raise DataError("the query window is constant; a flat stretch has no shape to match")
     searched = close[:start]
     if searched.size < 2 * window:
         raise DataError(
             f"need at least {2 * window} bars before the query to search, got {searched.size}"
         )
-    distances = np.asarray(stumpy.mass(query, searched), dtype=np.float64)
     constant = _constant(searched, window)
+    distances = np.asarray(
+        stumpy.mass(
+            query,
+            searched,
+            T_subseq_isconstant=constant,
+            Q_subseq_isconstant=np.array([False]),
+        ),
+        dtype=np.float64,
+    )
     distances[constant] = np.inf
     chosen: list[int] = []
     for index in np.argsort(distances, kind="stable"):
@@ -266,6 +284,7 @@ def find_lookalikes(
         matches_within_threshold=len(matches),
         matches=kept,
         overlapping_outcomes=overlapping,
+        outcomes_into_query=sum(1 for match in kept if match.end_index + longest >= start),
         labels=(f"N={len(kept)} matches", *LABELS),
     )
 
@@ -374,7 +393,7 @@ def novelty_score(
     constant = _constant(close, window)
     if bool(constant[-1]):
         raise DataError("the latest window is constant; a flat stretch has no shape to score")
-    profile = stumpy.stump(close, window)
+    profile = stumpy.stump(close, window, T_A_subseq_isconstant=constant)
     left = np.asarray(profile.left_I_, dtype=np.int64)
     rows = _znorm_rows(close, window)
     scores = np.full(count, np.nan)

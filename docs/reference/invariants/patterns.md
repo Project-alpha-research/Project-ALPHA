@@ -11,7 +11,7 @@ sources:
   - tests/bias_guards/test_lookalike_future_poison.py
   - tests/unit/test_lookalike.py
   - apps/alpha-cli/src/alpha_cli/*lookalike*.py
-verified: 7c5fda23d2e62d0e
+verified: fe70f889ccbabfc6
 ---
 
 # Pattern geometry invariants
@@ -94,7 +94,10 @@ General rule: [research integrity § Decide at close, fill at next open](researc
   least `exclusion >= window` bars apart. "What happened next" uses only bars up to the query's last bar.
 - The threshold is the caller's fixed `max_distance`, recorded in the result. `stumpy.match` is never called:
   its default threshold comes from the whole distance profile and lets later bars change earlier matches.
-  Distances come from `stumpy.mass`; constant candidate windows are skipped and counted.
+  Distances come from `stumpy.mass`; flat candidate windows are skipped and counted. "Flat" is a high-low range
+  within `NEAR_CONSTANT_RELATIVE` (1e-9) of the window's largest price, passed to STUMPY as its
+  `*_subseq_isconstant` array: STUMPY's exact-zero test lets one-ulp jitter rescale to a perfect match.
+  Outcome windows that reach the query's own bars are counted (`outcomes_into_query`) and labelled.
 - `novelty_score` uses STUMPY's left matrix profile (`stump(...).left_I_`, exclusion zone `ceil(window/4)`)
   and recomputes each left distance from the z-normalised windows; parity with `stumpy.stumpi(...).left_P_`
   is pinned in `tests/unit/test_lookalike.py`. The percentile ranks the latest score against earlier scored

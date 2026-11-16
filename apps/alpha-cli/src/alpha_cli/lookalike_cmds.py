@@ -191,6 +191,11 @@ def lookalike(
                 if result.overlapping_outcomes
                 else []
             ),
+            *(
+                [f"outcomes of {result.outcomes_into_query} matches run into the query's own bars"]
+                if result.outcomes_into_query
+                else []
+            ),
         ]
         rdir = home / "lookalike" / result_id
         repeat = (rdir / "result.json").exists()

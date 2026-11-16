@@ -3,7 +3,7 @@ owner: pattern geometry
 sources:
   - packages/alpha-patterns/src/**
   - packages/alpha-patterns/pyproject.toml
-verified: 1987a52c907a189f
+verified: 7852451a83024b77
 ---
 
 # alpha-patterns workspace

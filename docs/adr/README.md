@@ -16,7 +16,7 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0008](0008-vendored-kronos-and-alpha-forecast-layer.md) | Vendored Kronos model behind a layer-1 `alpha_forecast` facade | Accepted | 2026-07-04 |
 | [0009](0009-forecast-leakage-and-tier2-cost-policy.md) | Pretrain-leakage policy + cache-first engine integration | Accepted | 2026-07-04 |
 | [0010](0010-local-kronos-weights-offline-policy.md) | Local Kronos weights + code-wired offline loading policy | Accepted | 2026-07-18 |
-| [0011](0011-evidence-gated-external-integrations.md) | Evidence-gated adoption of external integrations | Accepted | 2026-07-19 |
+| [0011](0011-evidence-gated-external-integrations.md) | Evidence-gated adoption of external integrations | Accepted; item 5 amended by 0052 | 2026-07-19 |
 | [0012](0012-operational-paper-sessions.md) | Operational paper sessions remain separate from deterministic research runs | Accepted | 2026-07-19 |
 | [0013](0013-run-identity-v3-and-causal-artifacts.md) | Version run identity and publish causal artifact contracts | Accepted | 2026-07-19 |
 | [0014](0014-cli-owned-development-control-plane.md) | Keep development lifecycle state in a CLI-owned control plane | Accepted | 2026-07-19 |
@@ -56,7 +56,8 @@ This folder records the **load-bearing decisions** behind Project ALPHA's archit
 | [0048](0048-daily-rule-lane-binding-and-named-months.md) | Daily-rule approvals bind every module the lane runs through; the daily price query reads named months | Accepted | 2026-11-14 |
 | [0049](0049-alpha-judges-rdagent-factors.md) | ALPHA, not RD-Agent's built-in Qlib backtest, judges RD-Agent's factors (ALPHA classes through RD-Agent's settings; reserved 2024+ window) | Accepted; amended by 0050 | 2026-11-14 |
 | [0050](0050-swing-clocks-in-the-factor-judge.md) | The factor judge tests every idea at daily, weekly and monthly holding; only a swing pass is a candidate | Accepted | 2026-11-15 |
-| [0051](0051-glue-rules-for-outside-projects.md) | Glue rules for outside projects: how a library or engine is chosen, pinned and joined; a register of every one used or judged | Accepted | 2026-11-15 |
+| [0051](0051-glue-rules-for-outside-projects.md) | Glue rules for outside projects: how a library or engine is chosen, pinned and joined; a register of every one used or judged | Accepted; rules 2 and 11 amended by 0052 | 2026-11-15 |
+| [0052](0052-licence-is-not-a-criterion.md) | Licence is never a criterion for an outside project (owner decision 2026-11-16) | Accepted | 2026-11-16 |
 | [0055](0055-spread-check-family-brief-and-universe-file.md) | The factor judge checks that the top third beats the bottom third before the replay; the proposer sees idea families; the universe is a file; model calls have a time limit | Accepted | 2026-11-16 |
 
 ## Conventions

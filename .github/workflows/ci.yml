@@ -24,6 +24,7 @@ jobs:
     outputs:
       qlib: ${{ steps.select.outputs.qlib }}
       literature: ${{ steps.select.outputs.literature }}
+      afml: ${{ steps.select.outputs.afml }}
       quant: ${{ steps.select.outputs.quant }}
     steps:
       - uses: actions/checkout@v6.0.3
@@ -183,11 +184,22 @@ jobs:
       - name: Shared literature gate
         run: uv run python scripts/gate.py component literature
 
+  afml-worker:
+    needs: changes
+    if: needs.changes.outputs.afml == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6.0.3
+      - uses: ./.github/actions/setup
+      - name: Shared AFML gate
+        run: uv run python scripts/gate.py component afml
+
   ci-ok:
     # The one check branch protection requires. Add every new job to `needs`; then
     # jobs can be added, removed or renamed without touching repository settings.
     if: always()
-    needs: [changes, static, tests, coverage, quant, frontend, qlib-worker, literature-worker]
+    needs: [changes, static, tests, coverage, quant, frontend, qlib-worker, literature-worker, afml-worker]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -197,7 +209,7 @@ jobs:
           # Conditional job -> the `changes` output that decides it. Only these may be skipped,
           # and only when `changes` succeeded and said the job was not needed.
           CONDITIONAL: >-
-            {"quant": "quant", "qlib-worker": "qlib", "literature-worker": "literature"}
+            {"quant": "quant", "qlib-worker": "qlib", "literature-worker": "literature", "afml-worker": "afml"}
         run: |
           echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
           failed=$(echo "$RESULTS" | jq -r --argjson conditional "$CONDITIONAL" '

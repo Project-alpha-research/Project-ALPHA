@@ -49,6 +49,7 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
   [ADR-0013](../../../adr/0013-run-identity-v3-and-causal-artifacts.md).
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules);
   open: [where it may be imported](../../../roadmap/backlog/nautilus-import-boundary.md).
+- **Plan:** [stage 4](../../../roadmap/production-scope.md#4-backtest) of the checklist.
 
 ## Decisions and open questions
 

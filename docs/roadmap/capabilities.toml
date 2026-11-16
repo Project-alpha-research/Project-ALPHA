@@ -382,6 +382,7 @@ entry_points = [
   "cli: alpha suite plan",
   "cli: alpha suite run",
   "cli: alpha strategy-candidate run",
+  "cli: alpha project create",
   "api: POST /api/projects/{project_id}/experiments/{experiment_id}/suite/{action}/run",
   "panel: apps/alpha-web/frontend/src/panels/V3Workbenches.tsx",
 ]
@@ -521,6 +522,8 @@ entry_points = [
   "cli: alpha research capture",
   "cli: alpha research run",
   "cli: alpha research decide",
+  "cli: alpha evidence add",
+  "cli: alpha owner-auth enroll",
   "api: POST /api/research/cases",
   "panel: apps/alpha-web/frontend/src/panels/ResearchCockpit.tsx",
 ]
@@ -754,6 +757,100 @@ proof_smoke = [
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Working"
+
+[[capability]]
+id = "afml-labels-and-weights"
+name = "Textbook labels and overlap weights (López de Prado)"
+what = "Label what happened after each event (target, stop or time limit first, on highs and lows) and measure how much overlapping labels repeat the same days, with two independent libraries that must agree."
+see_it = [
+  "uv run alpha labels barrier --asset SPY@alpaca (result folder with facts and a picture)",
+  "uv run alpha labels weights <result-id> --train-end 2024-12-31",
+]
+entry_points = [
+  "cli: alpha labels barrier",
+  "cli: alpha labels weights",
+  "code: workers/afml/src/alpha_afml_worker/labels.py",
+  "code: workers/afml/src/alpha_afml_worker/uniqueness.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_uniqueness.py::test_chapter4_indicator_concurrency_and_uniqueness",
+  "workers/afml/tests/test_uniqueness.py::test_both_libraries_draw_the_hand_sequence",
+  "workers/afml/tests/test_labels.py::test_hand_path_long_first_touch_both_bases",
+  "workers/afml/tests/test_labels.py::test_truncation_labels_decided_by_bar_k_do_not_move",
+  "workers/afml/tests/test_cli.py::test_labels_then_uniqueness_end_to_end",
+]
+proof_smoke = [
+  "tests/smoke/test_afml_labels_smoke.py::test_labels_and_weights_end_to_end",
+]
+real_data = "run on real daily SPY and BTC bars (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "afml-factor-importance"
+name = "Which factors the labels lean on (purged MDI, MDA, SFI)"
+what = "Report how much each candidate factor (RD-Agent's among them) helps predict the labels, on purged folds and with overlap weights; a report that no gate reads."
+see_it = ["uv run alpha labels importance <result-id> --factors <factors.parquet>"]
+entry_points = [
+  "cli: alpha labels importance",
+  "code: workers/afml/src/alpha_afml_worker/importance.py",
+]
+proof_synthetic = [
+  "workers/afml/tests/test_importance.py::test_informative_columns_outrank_noise",
+  "workers/afml/tests/test_importance.py::test_folds_are_the_leak_checked_purged_ones",
+]
+proof_smoke = [
+  "tests/smoke/test_afml_labels_smoke.py::test_importance_report_over_factors",
+]
+real_data = "run on real daily SPY and BTC labels with simple features (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "afml-purged-cv"
+name = "Purged cross-validation for labels that last several days"
+what = "Split labelled events into purged k-fold or combinatorial folds by label end time, with an embargo and backtest paths, every fold checked for leaks."
+see_it = ["cd workers/afml && uv run alpha-afml-worker cv SPANS.parquet --out splits.json --n-groups 6 --test-groups 2 --embargo 5"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/cv.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_cv.py::test_dense_labels_all_three_agree_exactly",
+  "workers/afml/tests/test_cv.py::test_leak_checker_catches_a_plain_unpurged_kfold",
+  "tests/integration/test_afml_cv_parity.py::test_one_day_labels_equal_alpha_cpcv",
+]
+real_data = "run on real daily SPY and BTC labels (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+
+[[capability]]
+id = "afml-fracdiff"
+name = "Fractional differencing with d chosen on training data only"
+what = "Make a price series steadier for a model while keeping its memory, choosing the smallest passing d on the training span and freezing it."
+see_it = ["cd workers/afml && uv run alpha-afml-worker fracdiff BARS.parquet --fit-end 2023-12-29T00:00:00+00:00 --out ffd.parquet"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/fracdiff.py"]
+proof_synthetic = [
+  "workers/afml/tests/test_fracdiff.py::test_hand_weights_for_half_and_one",
+  "workers/afml/tests/test_fracdiff.py::test_command_fits_d_before_fit_end_and_ignores_later_bars",
+]
+real_data = "run on real daily SPY and BTC closes (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+
+[[capability]]
+id = "afml-stats-second-opinion"
+name = "Second opinions on luck-adjusted scores, minimum track record and strategy risk"
+what = "Compute PSR, DSR and PBO with two outside libraries beside ALPHA's own, plus how long a track record must be and the chance a win rate falls short."
+see_it = ["cd workers/afml && uv run alpha-afml-worker stats INPUTS.json --out stats.json"]
+entry_points = ["code: workers/afml/src/alpha_afml_worker/stats.py"]
+proof_synthetic = [
+  "tests/integration/test_afml_stats_parity.py::test_alpha_and_both_libraries",
+  "workers/afml/tests/test_stats.py::test_min_track_record_length_hits_the_target_psr",
+]
+real_data = "run on real daily SPY and BTC moving-average grids (2026-11-16, owner/afml outside git)"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "qlib-refit"
@@ -1030,6 +1127,64 @@ needs = []
 state = "Partial"
 missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "price-lookalikes"
+name = "Has price action like this happened before?"
+codes = ["STUMPY matrix profile"]
+what = "Find every earlier stretch shaped like the latest bars of one asset, see what followed each on one figure, and record the look as an exploratory trial."
+see_it = ["uv run alpha lookalike --asset SPY@alpaca --last 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha lookalike", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_repeated_motif_is_found", "tests/bias_guards/test_lookalike_future_poison.py::test_lookalikes_ignore_every_bar_after_the_query_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "price-novelty"
+name = "What is unusual right now?"
+codes = ["STUMPY left matrix profile"]
+what = "Score how unlike every earlier stretch the latest bars of one asset are, ranked against all earlier scores, on one figure."
+see_it = ["uv run alpha unusual --asset BTC/USDT --window 30", "the figure.png in the printed result folder"]
+entry_points = ["cli: alpha unusual", "code: packages/alpha-patterns/src/alpha_patterns/lookalike.py"]
+proof_synthetic = ["tests/unit/test_lookalike.py::test_a_planted_novel_window_scores_as_unusual", "tests/bias_guards/test_lookalike_future_poison.py::test_each_novelty_score_uses_only_bars_up_to_its_own_window_end"]
+proof_smoke = ["tests/smoke/test_lookalike_smoke.py::test_lookalike_and_unusual_write_labelled_results"]
+real_data = "yes: SPY (Alpaca) and BTC/USDT daily, SPY hourly, 2026-11-16, read-only"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/outside-projects.md"]
+
+[[capability]]
+id = "filing-events"
+name = "Company filings, earnings dates and insider trades as filed"
+what = "Read SEC filings, earnings-related 8-Ks and Form 4 transactions known by an acceptance cutoff."
+see_it = ["alpha context show-edgar --ticker TEST --view earnings --as-of 2024-01-26 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_edgar.py::test_pull_pages_cache_acceptance_earnings_and_provenance", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "not yet confirmed; no live SEC call made; acceptanceDateTime time zone unconfirmed (known_from carries a 5-hour margin)"
+real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
+needs = []
+state = "Partial"
+missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "crypto-derivatives-context"
+name = "Crypto funding rates and open interest as known"
+what = "Read verified Binance USD-M funding and derivatives metrics at a UTC knowledge cutoff."
+see_it = ["alpha context show-binance --symbol BTCUSDT --kind funding --as-of 2024-01-01 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_binance_bulk.py::test_cache_missing_and_overlap", "tests/unit/test_context_sources_cmds.py::test_show_sources_and_future_poison"]
+proof_smoke = ["tests/smoke/test_context_sources_smoke.py::test_context_sources_local_reads"]
+real_data = "confirmed 2026-11-16: BTCUSDT funding Jan-Feb 2024 (180 rows) and metrics 2024-01-02/03 (576 rows) pulled live, checksum-verified and read as known"
+real_data_needs = "network"
+needs = []
+state = "Partial"
+missing = "no pull-to-screen path or research use yet; only one symbol tried"
+docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]
 id = "answer-check"

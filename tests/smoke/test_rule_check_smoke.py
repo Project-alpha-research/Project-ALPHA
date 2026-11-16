@@ -1,6 +1,5 @@
 """Draft checking and comparison through the installed command on stored rule tests."""
 
-import json
 from pathlib import Path
 
 import pytest
@@ -17,9 +16,10 @@ def test_rule_answer_check_and_compare(tmp_path: Path) -> None:
     home.mkdir()
     data = home / "data"
     seed_store(data, symbol="SPY", n=400)
-    provenance = ParquetStore(data / "store")._provenance_path("SPY")
-    provenance.parent.mkdir(parents=True, exist_ok=True)
-    provenance.write_text(json.dumps({"source": "alpaca"}))
+    # Strict pull provenance: bar reads reject a partial provenance file.
+    ParquetStore(data / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
     ids = []
     for fast in (5, 8):
         result = alpha(

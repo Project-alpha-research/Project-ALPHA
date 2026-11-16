@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: c471d54c14daa489
+verified: bc33cfe1617a6c58
 ---
 
 # Validation and evidence
@@ -42,6 +42,10 @@ concentration, sensitivity re-runs and explicitly counted variants. The owner ca
 through `alpha results` and `alpha diagnose`; flags identify observations to examine and grant no
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
 retain the basis and source for each number, including a reason when it is unavailable.
+`alpha results check <file>` reads a drafted answer and verifies each tagged number, run label
+and the trial count against those stored facts, and `alpha results compare` computes differences
+between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad
+reasoning.
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 

@@ -1041,6 +1041,5 @@ proof_synthetic = ["tests/unit/test_spine_check.py::test_correct_answer", "tests
 proof_smoke = ["tests/smoke/test_rule_check_smoke.py::test_rule_answer_check_and_compare"]
 real_data = "not yet confirmed; synthetic data only"
 needs = []
-state = "Partial"
-missing = "end-to-end smoke verification outside the builder sandbox"
+state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md"]

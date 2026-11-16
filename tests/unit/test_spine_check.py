@@ -173,3 +173,9 @@ def test_tagged_year_and_integer_at_line_start_are_checked(tmp_path: Path) -> No
     result = check_text(f"1234. [{A}:trades]. {TRIALS}", lookup)
     # A period separates a list ordinal from a tag; this is not a quoted value.
     assert result["checked_numbers"] == 1
+
+
+def test_mismatch_next_step_names_the_cite_command(tmp_path: Path) -> None:
+    result = check_text(f"quick 1.8 [{A}:oos_sharpe]. {TRIALS}", make_lookup(tmp_path))
+    mismatch = next(p for p in result["problems"] if p["kind"] == "VALUE_MISMATCH")
+    assert f"alpha results cite {A} oos_sharpe" in mismatch["next"]

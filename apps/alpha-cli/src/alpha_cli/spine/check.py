@@ -145,7 +145,10 @@ def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
             mismatch = _match_value(written, fact)
             if mismatch:
                 kind, message, stored = mismatch
-                problems.append(_problem(text, number.start(), kind, message, stored=stored))
+                step = f"Run alpha results cite {first} {metric} and copy its value."
+                problems.append(
+                    _problem(text, number.start(), kind, message, stored=stored, next_step=step)
+                )
             elif metric == "total_trials" and second is None:
                 trial_count = True
         except SpineError as exc:
@@ -196,7 +199,9 @@ def check_text(text: str, lookup: Lookup, allow_untagged: int = 0) -> Fact:
 
 
 def render_check(result: Fact) -> str:
-    lines = [f"{'OK' if result['ok'] else 'FAILED'}: checked {result['checked_numbers']} numbers."]
+    lines = [
+        f"{'OK' if result['ok'] else 'FAILED'}: checked {result['checked_numbers']} number(s)."
+    ]
     for level in ("problems", "warnings"):
         for problem in result[level]:
             lines.append(

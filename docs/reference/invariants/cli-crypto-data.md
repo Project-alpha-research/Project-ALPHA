@@ -91,7 +91,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
   evidence. A provider `DataError` on one window is recorded and the run continues; an accounting refusal
   (`FixtureAccountingBlocked`) stops the run and never splits or retries.
 - Backfill reuses one lazily opened bulk store per command, including completed-window verification.
-  Archive revision lookup uses its in-memory discovery index ([data storage](data.md#crypto-storage));
+  Archive revision lookup uses the store's in-memory discovery index ([data storage](data.md#crypto-storage));
   each acquisition still checks capacity and verifies its new raw inputs.
 - Progress loads once under ownership. Saves detect stale/replaced files through device, inode, size and
   nanosecond modification/change metadata, then fsync and atomically replace the same version-1 JSON once

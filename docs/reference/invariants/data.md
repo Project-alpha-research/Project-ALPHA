@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 46c664b31ade2b3d
+verified: 3617b73ee985d164
 ---
 
 # Data layer invariants
@@ -150,12 +150,9 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
 - Bulk bytes live on the configured external volume; manifests and the control database stay internal. Before any write, `verify_ready` checks volume UUID,
   writability and the free-space reserve, failing closed. `verify_readable` checks mount and UUID only, without a write probe.
 - Publish external bytes first and the internal manifest last. A manifest id is the SHA-256 of its canonical body; an existing path may be republished only
-  with identical bytes.
+  with identical bytes. Revision lookup uses a per-store in-memory raw-manifest index, built once and updated on each write: discovery only, never evidence.
 - Normalized bytes publish only after every input raw manifest re-verifies and the bytes match the quality report hash. Derived artifacts accept only
   normalized inputs.
-- Archive revision discovery indexes exact dataset/request raw manifest ids in memory for one store lifetime. It builds from hash-verified metadata once,
-  updates after each publication, and rebuilds when the manifest directory changes. Matching raw artifacts still verify; changed resource bytes retain
-  correction lineage and quarantine. The index is not evidence; new-artifact checks and reserve enforcement are unchanged.
 - Bybit derivative trades and order-book snapshots require a `CryptoAcquisitionScopeV1` (research case, revision, reason); any other family refuses a
   scope. Unscoped historical captures stay readable but cannot enter governed snapshots.
 - Storage paths are confined to their root; symlinks are refused.

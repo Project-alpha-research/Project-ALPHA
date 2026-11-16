@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 1b346be9fc45b9bc
+verified: f6670d1d0e06c5b8
 ---
 
 # RD-Agent worker workspace
@@ -42,7 +42,7 @@ no market, inference or evidence authority.
   have their own 2,000-attempt guard. See the worker invariants for accounting and compatibility.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`,
   `test_rdagent_embedding_cap.py`, `test_setup_rdagent.py`, `test_rdagent_viewer.py`, `test_rdagent_factor_{eval,judge,launch}.py`,
-  `test_rdagent_research_memory.py` (the factor-runtime cases need
+  `test_rdagent_research_memory.py`, `test_rdagent_gapped_universe.py` (the factor-runtime cases need
   `ALPHA_FACTOR_PYTHON` as well). Tests that need the RD-Agent source skip unless `ALPHA_RDAGENT_SOURCE` (and, for stock lanes, `ALPHA_STOCK_PYTHON`) is set.
 - There is no CI gate component for this worker; run `uv run python scripts/gate.py check` from
   the repository root.

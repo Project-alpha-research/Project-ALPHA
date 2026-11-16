@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 21edd2dbc0e931bf
+verified: befa025b00148cfd
 ---
 
 # Worker invariants
@@ -122,7 +122,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `WORKER_NOT_INSTALLED` and the one setup step.
 
 ## RD-Agent worker
-
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.
@@ -166,7 +165,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   daily-only pass is `FAST_ONLY`); a screened clock whose top third did not beat its bottom third before costs is
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
-  come from a frozen universe file; every record is `exploratory, not admitted, not yet confirmed` with all authority
+  come from a frozen universe file, optionally selecting its own store directory.
+  New panels use causal gap accounting; old receipts retain their policy. Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from
   `factor-requirements.lock` and recorded by
   `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,

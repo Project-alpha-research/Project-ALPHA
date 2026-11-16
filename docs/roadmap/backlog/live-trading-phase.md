@@ -17,6 +17,13 @@ and limits are chosen.
 - Position, cash and order reconciliation against the venue.
 - Risk limits, kill/freeze controls and disconnect/restart recovery.
 - Paper/shadow/fault qualification, then a separate limited-capital approval by the owner.
+- The approval gate shows an evidence pack: the idea record, data description, every experiment
+  id, the baseline, validation results, portfolio assumptions, known weaknesses and the verdict.
+- Paper-phase rules: how long to paper trade and how many trades before judging; slippage and fill
+  gaps against the backtest; a demotion trigger when live results fall well below validated ones;
+  a cumulative-sum decay test; a daily signal health check.
+- Risk controls: staged drawdown halts (day, week, peak), per-asset and per-sector caps, a limit on
+  portfolio correlation, and a personal drawdown tolerance that is enforced mechanically.
 
 ## Dependencies
 

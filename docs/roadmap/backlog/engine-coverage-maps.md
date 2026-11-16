@@ -18,6 +18,14 @@ Nautilus; it is long-only, so a factor's losing side is invisible; the quick-scr
 calibrated on independent noise only. An intake checklist for new upstream versions (pins,
 images, fixtures re-run) is also wanted.
 
+Also wanted: factor-judge diagnostics beyond the information coefficient and turnover (how fast a
+signal fades, return spread across ranked groups and whether it rises steadily with rank), and
+the same coverage-map treatment for the long list of upstream Qlib items (point-in-time database,
+meta-learning, reinforcement learning, online updating, irregular-frequency data, shared data
+server) and RD-Agent's scenario families.
+Tree-model feature attribution (SHAP-style), watched over time, would warn of drift or leakage
+before results degrade; it complements the purged importance reports.
+
 ## Where it would live
 
 Two tables in [rd-agent-in-alpha.md](../rd-agent-in-alpha.md) and the Qlib component page.

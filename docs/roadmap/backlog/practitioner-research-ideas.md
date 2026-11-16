@@ -44,7 +44,13 @@ ideas that are not yet checklist rows. Restated in plain words, with no private 
 - The owner wants the statistics behind a result explained in plain words, tied to the strategy.
 - The private research names its own sources and their limits, and the material that would
   raise confidence if it were found; it lives outside git and is never committed.
-
+- An idea card with the economic reason it should work: who is on the other side, why they lose,
+  the mechanism, how it could fail, one "because X, Y predicts Z" sentence, universe and horizon.
+- A guided learning path for the owner: the key textbook chapters, how Qlib and RD-Agent fit
+  together, what each tool decides and what stays with the owner, statistics explained in plain
+  words and tied to the strategy at hand (the Learn view of the research loop screen).
+- A scheduled discovery feed of new papers feeding a queue of hypotheses, each with a priority and
+  a check for novelty against what is already known.
 ## Where it would live
 
 `research/PLAYBOOK.md` and the idea folder (stages 1 and 7 of the checklist).

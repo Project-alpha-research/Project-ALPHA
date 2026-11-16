@@ -32,12 +32,9 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 
 **What it cannot tell you**
 
-- Trials nobody recorded. Runs from `alpha validate`, `alpha optim` and `alpha backtest` are not in the
-  ledger: count them by hand and say the true number of tries is higher.
-- Related variants are not yet grouped into one family, so the effective number of tests is not shown.
-- `alpha ledger summary` and `alpha ledger families` count every recorded try across rule tests, tools and the
-  RD-Agent factor ledger in one read-only view; rows it cannot read are shown and still counted. The Sharpe
-  step does not use that count yet.
+- Trials nobody recorded: `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger; count them by hand, say the true number is higher.
+- `alpha ledger summary` and `families` count every recorded try (rule tests, tools, RD-Agent) read-only and group related variants; the effective number
+  of tests is not shown, and the Sharpe step does not use the count yet.
 
 **Next** A setting that survives: check it against [the random-price null](random-price-null.md) and the
 benchmark. A setting that does not: report it as best-of-many and stop tuning.

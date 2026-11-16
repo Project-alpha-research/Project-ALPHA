@@ -314,6 +314,21 @@ class Launch:
             f"{len(frozen['instruments'])} instruments ({self.receipt['universe']}); "
             + (universe["survivorship"] if universe else "surviving coins only")
         )
+        if "gap_policy" in frozen:
+            self.receipt["missing_bars"] = {
+                key: frozen[key]
+                for key in (
+                    "gap_policy",
+                    "instruments_ended_early",
+                    "missing_instrument_days",
+                    "longest_gap",
+                )
+            }
+            self.universe_text += (
+                f"; {frozen['instruments_ended_early']} instruments ended early; "
+                f"{frozen['missing_instrument_days']} missing instrument-days inside spans. "
+                "Haircut counts are reported per evaluation; 30% is a conservative assumption"
+            )
         self.receipt["panel_receipt_sha256"] = hashlib.sha256(receipt).hexdigest()
         self.check(
             "prepare",

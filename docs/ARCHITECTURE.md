@@ -122,6 +122,8 @@ another package is named.
 | `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
 | `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
+| `context/edgar/` | `context_sources_cmds` over `alpha_data.context` | SEC filings, insider events, hashed provenance and immutable XML cache. |
+| `context/binance/` | `context_sources_cmds` over `alpha_data.context` | USD-M funding/metrics events, hashed provenance and verified ZIP cache. |
 | `context/fred/` | `context_cmds` over `alpha_data.context` | Macro vintage parquet and hashed provenance; separate from bars and backtests. |
 | `snapshots/` | `data_cmds` over `alpha_data.snapshot` | Immutable content-hashed data snapshots that runs and studies bind to. |
 | `runs/` | `_artifacts` (backtest/validate runs; listed in `run_store.RUN_DIRS`) | Immutable single-strategy run directories with manifest-pinned artifacts. |

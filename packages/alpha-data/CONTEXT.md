@@ -3,7 +3,7 @@ owner: data layer
 sources:
   - packages/alpha-data/src/**
   - packages/alpha-data/pyproject.toml
-verified: ff57f5ce97e619e4
+verified: 0609a1e88c11479f
 ---
 
 # alpha-data workspace
@@ -37,12 +37,13 @@ import it. It must never let a read see data that was not knowable at the cutoff
 - Code: `packages/alpha-data/src/alpha_data/`; bar timeframes (one minute to one day, the no-HFT boundary,
   one store per timeframe) in `timeframe.py`; exchange sessions, resampling and as-known alignment in
   `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
-  house in `crypto/` and `crypto/providers/`; FRED macro reference vintages in `context/`
-  (separate parquet/provenance under `data_dir/context/fred`, never bars or backtest inputs).
+  house in `crypto/` and `crypto/providers/`; FRED macro vintages, SEC filings/insider events and
+  Binance derivatives context in `context/` (separate hashed tables under `data_dir/context/`,
+  never bars or backtest inputs; event reads require an aware UTC cutoff).
 - Tests: `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,
   `test_bar_timeframe.py`, `test_ingest_pipeline_intraday.py`, `test_sessions.py`, `test_resample.py`, `test_align.py`,
-  `test_crypto_*`, `test_context_fred.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
+  `test_crypto_*`, `test_context_*.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
   `test_survivorship.py`, `test_candles_pit.py`, `test_intraday_future_poison.py`, `test_crypto_*_future_poison.py`; integration
   `tests/integration/test_data_cli.py` and `tests/integration/test_crypto_*`.
 - A new or changed read path needs its future-poison guard with a must-fail leaky twin

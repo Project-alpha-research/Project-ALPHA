@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/macro.py
-verified: cb2f127da443e94c
+verified: 464517acd25cc56d
 ---
 
 # Macro context

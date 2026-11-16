@@ -498,3 +498,48 @@ def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
     parsed.trial_ledger = Path("relative/trials.jsonl")
     with pytest.raises(launch.LaunchError, match="--trial-ledger must be an absolute path"):
         launch.validate(parsed, environ(tmp_path))
+
+
+def test_runs_sharing_one_gateway_state_each_get_their_own_gateway(tmp_path: Path) -> None:
+    """Concurrent runs must share the gateway state (one monthly cap), so each finds its own
+    gateway: on 2026-11-16 two of three runs started together failed with 'did not write its
+    session within 30 s' because every gateway wrote the same session.json."""
+    import threading
+
+    jobs, results = [], {}
+    for name in ("a", "b", "c"):
+        run = tmp_path / f"run-{name}"
+        (run / "logs").mkdir(parents=True)
+        parsed = args(tmp_path, "--chat-route", "fake", "--embedding-route", "fake")
+        parsed.run_id = f"test-run-{name}"
+        job = launch.Launch(
+            parsed,
+            {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+        )
+        job.run = run
+        job.repo_python = Path(sys.executable)
+        jobs.append(job)
+
+    def start(job: Any) -> None:
+        try:
+            results[job.args.run_id] = job.gateway()
+        except launch.LaunchError as error:
+            results[job.args.run_id] = error
+
+    threads = [threading.Thread(target=start, args=(job,)) for job in jobs]
+    try:
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=60)
+        assert all(isinstance(value, tuple) for value in results.values()), results
+        assert len({base_url for base_url, _ in results.values()}) == 3
+        jobs[0].stop()
+        state = tmp_path / "gateway" / "model-gateway"
+        for job in jobs[1:]:
+            pid = job.children[0].pid
+            assert json.loads((state / f"session-{pid}.json").read_text())["pid"] == pid
+    finally:
+        for job in jobs:
+            job.stop()
+    assert not list((tmp_path / "gateway" / "model-gateway").glob("session*.json"))

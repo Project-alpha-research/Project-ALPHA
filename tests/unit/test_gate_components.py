@@ -333,9 +333,12 @@ def test_changed_line_floor_lives_in_pyproject_and_is_guarded() -> None:
     assert gate.harness_metrics(ROOT)["coverage_fail_under"] == 85
 
 
-def test_afml_component_ends_with_the_alpha_labels_smoke_check() -> None:
+def test_afml_component_ends_with_the_smoke_check_and_the_poison_guard() -> None:
     steps = gate_components.component_steps(ROOT, "afml")
     name, cwd, command = steps[-1]
-    assert (name, cwd) == ("alpha labels smoke", ROOT)
+    assert (name, cwd) == ("alpha labels smoke and future poison", ROOT)
     assert "scripts/run_owned_test.py" in command
-    assert command[-1] == "tests/smoke/test_afml_labels_smoke.py"
+    assert command[-2:] == [
+        "tests/smoke/test_afml_labels_smoke.py",
+        "tests/bias_guards/test_afml_labels_future_poison.py",
+    ]

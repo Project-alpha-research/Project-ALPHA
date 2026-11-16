@@ -9,7 +9,7 @@ sources:
   - scripts/commands_reference.py
   - scripts/roadmap_index.py
   - scripts/setup.sh
-verified: 3e2613e97f717b3d
+verified: db208d487f8b17e9
 ---
 
 # scripts workspace

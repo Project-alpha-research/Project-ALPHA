@@ -4,14 +4,14 @@ sources:
   - workers/afml/CONTEXT.md
   - workers/afml/README.md
   - docs/adr/0054-afml-worker.md
-verified: f49855d2144dac19
+verified: d245cb5638171589
 ---
 
 # AFML worker
 
 A separate program that runs methods from Marcos López de Prado's textbook *Advances in
 Financial Machine Learning* through two independent open libraries, RiskLabAI and quantowl, and
-only hands a number back when both agree. Today it labels what happened after an event (target,
+only hands a number back when both agree. Today `alpha labels` uses it to label what happened after an event (target,
 stop or time limit first) and measures how much overlapping labels repeat the same days.
 
 ## Why it exists
@@ -58,8 +58,9 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
 - No owner decision about this part is in the [owner decisions log](../owner-decisions.md) yet.
   The barrier convention (highs and lows, stop-first on an ambiguous bar) was ruled at owner
   level by the orchestrator on 2026-11-16 and is recorded in ADR-0054.
-- Open: no `alpha` command calls the worker yet; ALPHA's own `barrier.py` and the worker's
-  high/low labels are not yet compared across the process boundary.
+- `alpha labels barrier|weights` calls the worker. ALPHA's own `barrier.py` and the worker's
+  high/low labels agreed on every SPY and BTC daily event (2026-11-16); the one designed difference
+  is a bar that opens beyond a barrier, which the worker decides by its open.
 
 ## Never
 

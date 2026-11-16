@@ -8,7 +8,7 @@ sources:
   - scripts/gate.py
   - scripts/gate_components.py
   - pyproject.toml
-verified: e5a2b0b89aefbb98
+verified: 7630c1a11d65e329
 ---
 
 # Checks
@@ -54,7 +54,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `frontend`: browser journeys at the reference viewport (plus reference-only ones) | broken Workstation screens and flows, real backend | PR | 8.6 min |
 | `qlib-worker` job | the isolated Qlib worker's lint, types or tests | PR (paths) | 5.7 min |
 | `literature-worker` job | the literature worker's lint, types or tests | PR (paths) | 0.5 min |
-| `afml-worker` job | the AFML worker's lint, types, parity or look-ahead tests; the `alpha labels` smoke check | PR (paths) | about 1.5 min |
+| `afml-worker` job | the AFML worker's lint, types, parity, look-ahead tests; `alpha labels` smoke and poison guard | PR (paths) | ~2 min |
 | `ci-ok` job | any job failing or cancelled; a skip counts only when `changes` said so | PR | 4 s |
 | `harness-nightly` job: semgrep, determinism double-run, raise-site coverage | results that change with hash seed or time zone | Nightly | 13.4 min |
 | `slow-oracles` job: every `slow_oracle` test | the same as the `quant` job, for statistics not touched by a pull request | Nightly | 1.1 min |

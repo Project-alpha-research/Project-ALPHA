@@ -44,11 +44,13 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
         "uv.lock",
     ),
     "literature": ("workers/literature/",),
-    # The worker job also runs the `alpha labels` smoke check, which needs the installed worker.
+    # The worker job also runs the `alpha labels` smoke check and the worker's future-poison guard,
+    # which need the installed worker (the root test job skips them).
     "afml": (
         "workers/afml/",
         "apps/alpha-cli/src/alpha_cli/labels_cmds.py",
         "tests/smoke/test_afml_labels_smoke.py",
+        "tests/bias_guards/test_afml_labels_future_poison.py",
     ),
 }
 
@@ -297,9 +299,10 @@ def component_steps(
                 "-n",
                 "0",
                 "tests/smoke/test_afml_labels_smoke.py",
+                "tests/bias_guards/test_afml_labels_future_poison.py",
             ]
             owned = ["uv", "run", "python", "scripts/run_owned_test.py", "--timeout", "900", "--"]
-            steps.append(("alpha labels smoke", root, [*owned, *smoke]))
+            steps.append(("alpha labels smoke and future poison", root, [*owned, *smoke]))
         return steps
     raise ValueError(f"Unknown gate component: {component}")
 

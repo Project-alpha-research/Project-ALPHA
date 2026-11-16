@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 0a2b4a9a826d882b
+verified: 8cf4526a553b02aa
 ---
 
 # Worker invariants
@@ -111,7 +111,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   beside it. `basis="close"` is the libraries' convention and exists for parity only.
 - Barrier widths and CUSUM thresholds use volatility from closes strictly before the event bar; nothing is
   fitted on the sample. The vertical barrier is a bar count; an event that has neither touched a barrier
-  nor reached it is open and gets no label. `tests/test_labels.py` holds the truncation tests.
+  nor reached it is open and gets no label. Truncation tests: `tests/test_labels.py` and the root guard
+  `tests/bias_guards/test_afml_labels_future_poison.py` (run by the `afml-worker` job).
 - Only finished labels are weighted. Uniqueness and time decay depend on every label used, so
   training weights are built with `uniqueness --train-end` (labels ended by then only; tested to
   ignore later bars). The worker writes Parquet and a JSON summary, never a verdict.

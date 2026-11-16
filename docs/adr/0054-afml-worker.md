@@ -68,15 +68,18 @@ Facts read from the installed packages on this machine (CPython 3.12.3), not fro
 
 ## Consequences
 
-- Wave 1 items 1 and 2 exist as worker functions with parity and truncation tests. No `alpha`
-  command calls the worker yet, so glue rule 6's smoke test through the installed `alpha` program
-  is not met; the worker's own command is smoke-tested instead.
-- ALPHA's `barrier.py` and the worker's high/low labels are two writings of one convention; a
-  side-by-side test across the process boundary is a follow-up.
+- Wave 1 items 1 and 2 exist as worker functions with parity and truncation tests, called by
+  `alpha labels barrier|weights` (glue rule 6's smoke test: `tests/smoke/test_afml_labels_smoke.py`).
+- ALPHA's `barrier.py` and the worker's high/low labels are two writings of one convention. On the
+  same entries they agreed on all 506 SPY and 557 BTC daily events (2026-11-16), ambiguous bars and
+  the optimistic reading included. One designed difference remains: the worker reads each bar's
+  open, so a bar that opens beyond a barrier decides it; `barrier_outcome` has no opens and would
+  call that bar ambiguous (stop-first). It occurred on neither series; the smoke test counts it.
 - Negative time-decay weights (book: forget the oldest labels) are refused: RiskLabAI does not
   implement them.
-- The truncation tests live in `workers/afml/tests/test_labels.py`; a guard under
-  `tests/bias_guards` is a follow-up if that folder must hold every look-ahead guard.
+- The truncation tests live in `workers/afml/tests/test_labels.py`, mirrored as the future-poison
+  guard `tests/bias_guards/test_afml_labels_future_poison.py` (with a leaky twin it must reject);
+  both need the installed worker, so they run in the `afml-worker` job and skip elsewhere.
 - Each later item (purged CV, fractional differencing, importance, backtest statistics) arrives
   in its own pull request with its parity test.
 

@@ -360,7 +360,16 @@ def swing_parts() -> dict[str, Any]:
         def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
             return {"hypothesis_and_feedback": "Existing context"}, True
 
-    namespace = {"Any": Any, "Path": Path, "os": os, "json": json, "QlibFactorHypothesisGen": Base}
+    import re
+
+    namespace = {
+        "Any": Any,
+        "Path": Path,
+        "os": os,
+        "re": re,
+        "json": json,
+        "QlibFactorHypothesisGen": Base,
+    }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<swing-context>", "exec"), namespace)
     return namespace
 
@@ -728,3 +737,6 @@ def test_idea_family_keywords_on_the_health_check_names() -> None:
     assert family("ret_vol_corr_28d") == "return-volume relation"
     assert family("max_return_28d") == "skewness and lottery returns"
     assert family("mystery_signal") == "other: mystery"
+    # 2026-11-16 run: the model abbreviated "high proximity" as hp126
+    assert family("hp126_skip10_lowvol") == "price near its high / range position"
+    assert family("hp126_skip10_lowskew") == "price near its high / range position"

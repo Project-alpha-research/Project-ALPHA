@@ -51,10 +51,10 @@ SWING_BRIEF = (
     "factor before the replay unless the top third it would hold beat the bottom third "
     "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
 )
-# Idea families by name keyword, first match wins (ADR-0055). Approximate by design: it groups
-# near-variants so the proposer sees how often one idea has already failed.
+# Idea families by name pattern (regular expressions), first match wins (ADR-0055). Approximate
+# by design: it groups near-variants so the proposer sees how often one idea has already failed.
 FAMILY_KEYWORDS = (
-    ("price near its high / range position", ("high_prox", "high_proximity", "stoch", "rangepos")),
+    ("price near its high / range position", ("high_prox", "stoch", "rangepos", r"(^|_)hp\d")),
     ("short-term reversal and gaps", ("reversal_3d", "reversal_5d", "gap", "intraday_reversal")),
     ("long-term reversal", ("long_term_reversal",)),
     ("illiquidity", ("amihud", "illiquid")),
@@ -71,7 +71,7 @@ FAMILY_KEYWORDS = (
 def idea_family(name: str) -> str:
     lowered = name.lower()
     for family, keywords in FAMILY_KEYWORDS:
-        if any(keyword in lowered for keyword in keywords):
+        if any(re.search(keyword, lowered) for keyword in keywords):
             return family
     return "other: " + lowered.split("_")[0]
 

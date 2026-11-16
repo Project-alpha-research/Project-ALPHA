@@ -41,3 +41,11 @@ Each item is a checklist row, a playbook line, an invariant, or dropped by the o
 ## Sources
 
 - [Checklist stage 8](../production-scope-2.md#8-ai-partner), [stage 10](../production-scope-3.md#10-screens)
+
+## More recovered from the second pass
+
+- A reading advisor: put whole books and papers into context instead of retrieving snippets, choose
+  documents in tiers, check each claim against the source, and extract PDFs locally.
+- What the owner wants, as design input: a systematic, data-tested edge in place of reacting to
+  candles; private ideas over public strategies; the owner's chart reads turned into numbers; the
+  human keeps the final call; every result explained in plain words with the short view first.

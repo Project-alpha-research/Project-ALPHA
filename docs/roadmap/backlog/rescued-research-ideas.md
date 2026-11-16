@@ -48,3 +48,19 @@ Each item is a checklist row, a line in the playbook, an ADR, or dropped by the 
 ## Sources
 
 - [Checklist stage 5](../production-scope-2.md#5-overfit-tests), [stage 7](../production-scope-2.md#7-records-and-memory)
+
+## More recovered from the second pass
+
+- Idea check against publication date: compare a published edge before and after it became public.
+- Noise robustness: re-run a rule on prices with added noise; a cliff means a fitted rule.
+- A plausibility label for results far above a retail swing book's usual net range; a label, not a threshold.
+- Automated-loop score: out-of-sample result, complexity (parameter count) and a trade-count floor.
+- Scan many context features against trade loss, run-up and profit; count every feature scanned.
+- Before-entry profile of winners and losers beside a random-date control.
+- Feature building: say what you care about, find the raw data, choose the type, then transform
+  (percent not price units, ratio of short to long range, rarity score) and plot examples.
+- Event sampling: show event count against the threshold, since too many events is noise and too few
+  leaves no sample; scale thresholds by volatility.
+- Regime stack: require a hidden-state model, a switching model and change detection to agree before
+  declaring a regime; then switch strategy, adjust settings or scale risk by regime.
+- Published chart-pattern statistics kept as base-rate priors for the first pattern studies.

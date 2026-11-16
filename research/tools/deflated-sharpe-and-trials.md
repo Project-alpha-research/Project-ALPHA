@@ -19,10 +19,10 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 ```
 
 **How to read it**
-- `trial_dsr` uses the idea family's ledger count and variance from available same-symbol Sharpes and variants.
-  `dsr` feeds the verdict using same-bar-size family Sharpes and at least that count; its `trial_basis`
+- `trial_dsr` and the verdict's `dsr` use the same inputs (equal after a rule test): spread from the idea
+  family's distinct same-bar-size Sharpes and this run, N from the family count; its `trial_basis`
   names the family, repeats not counted and a floored spread (under 5 comparable trials), or says no family
-  was found. Both are probabilities; the pass line is 0.95. `null` has a reason. Variants are full-sample figures.
+  was found. Pass line 0.95. Variants count in N but stay out of the spread: full-sample, neighbouring, correlated.
 - Cite `family_trials` for the count at the run: prior family trials, this run, scored variants and unknown
   rows, never below the available Sharpes. `alpha results show` also shows live family counts.
 - `total_trials` is the ledger count when the run was made; `variants_evaluated` counts its re-runs. Report

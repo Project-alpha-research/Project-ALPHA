@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -21,7 +20,7 @@ from alpha_cli.spine.deflation import (
     TestKey,
     TrialFamily,
     count_snapshot,
-    deflate,
+    family_deflation,
     family_sharpes,
     spine_snapshot,
     spine_test_key,
@@ -76,30 +75,36 @@ def trials(
     snapshot: LedgerSnapshot | None = None,
     current_test: TestKey | None = None,
 ) -> dict[str, Any]:
+    """The trial count and family-deflated Sharpe, from the same inputs as the verdict's ``dsr``."""
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     count = count_snapshot(snapshot, rule_kind, current_test)
-    rows = list(snapshot.raw_rows.values())
-    sharpes = [
-        row["oos_sharpe"] / math.sqrt(row["periods_per_year"])
-        for row in rows
-        if row.get("symbol") == symbol
+    # Same-asset Sharpes of any rule, this run and its variants: only their number is used, as a
+    # wider count of tries when it is larger than the family's.
+    same_asset = sum(
+        row.get("symbol") == symbol
         and row.get("oos_sharpe") is not None
-        and row.get("periods_per_year")
-    ]
+        and bool(row.get("periods_per_year"))
+        for row in snapshot.raw_rows.values()
+    )
     current, _ = d.score(returns, ppy)
-    if current is not None:
-        sharpes.append(current / math.sqrt(ppy))
-    sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
     variants_scored = sum(v["sharpe"] is not None for v in variants)
+    available = same_asset + (current is not None) + variants_scored
     n_trials = count.prior_trials + count.this_run + count.unknown_rows + variants_scored
-    value = deflate(returns, sharpes, n_trials)
+    prior = family_sharpes(snapshot, count.family_id, ppy, current_test)
+    family = TrialFamily(
+        count.family_id, n_trials, max(n_trials, available), len(prior) + 1, count.repeats
+    )
+    value = family_deflation(returns, prior, family)
     return {
         "basis": (
-            "walk-forward out-of-sample returns; variance from same-symbol ledger OOS and "
-            "this run's variants; trial count from the idea's family in the one trial ledger"
+            "walk-forward out-of-sample returns, the same inputs as the verdict's dsr: spread from "
+            "the idea family's distinct tests at this bar size and this run (sensitivity variants "
+            "count as tries but are full-sample figures, so they stay out of the spread); tries "
+            "from the family in the one trial ledger, or the wider count of same-asset tests of "
+            "any rule when that is larger"
         ),
         "total_trials": count.ledger_rows + 1,
-        "available_sharpes": len(sharpes),
+        "available_sharpes": available,
         **value,
         "family": {
             "family_id": count.family_id,
@@ -109,7 +114,8 @@ def trials(
             "variants_scored": variants_scored,
             "unknown_rows": count.unknown_rows,
             "n_trials": n_trials,
-            "available_sharpes": len(sharpes),
+            "available_sharpes": available,
+            "comparable_trials": family.comparable,
             "n_trials_used": value["n_trials_used"],
             "ledger": "ledger/trials.jsonl",
             "ledger_rows": count.ledger_rows,
@@ -238,17 +244,15 @@ def write_diagnostics(
     family = result["deflation"] = document["trials"]["family"]
     # The verdict's prior trials: the family's same-frequency Sharpes and this run's variants (the
     # gauntlet adds this run's own OOS Sharpe); N is the family count recorded above.
-    sharpes = family_sharpes(snapshot, family["family_id"], ppy, current)
-    comparable = len(sharpes) + 1
-    sharpes.extend(v["sharpe"] / math.sqrt(ppy) for v in variants if v["sharpe"] is not None)
+    # The verdict deflates by exactly the diagnostics' family: same Sharpes, same count.
     out = _gauntlet.apply_trial_deflation(
         out,
-        sharpes,
+        family_sharpes(snapshot, family["family_id"], ppy, current),
         TrialFamily(
             family["family_id"],
             family["n_trials"],
             family["n_trials_used"],
-            comparable,
+            family["comparable_trials"],
             family["repeats_not_counted"],
         ),
     )

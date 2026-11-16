@@ -24,11 +24,12 @@ from alpha_cli.spine.trial_reader import (
 from alpha_cli.spine.trial_record import TrialRecord
 from alpha_core import DataError
 from alpha_validation.dsr import expected_max_sharpe, probabilistic_sharpe_ratio
-from alpha_validation.metrics import FloatSeq
+from alpha_validation.metrics import FloatSeq, sharpe_ratio
 
 # Recorded in every gauntlet DSR summary (outside run-id hashing), so a stored verdict names the
-# counting rule it used: same-test repeats collapsed, spread floored below FLOOR_BELOW trials.
-DEFLATION_RULE = "family-dedup-floor-1"
+# counting rule it used: same-test repeats collapsed, spread floored below FLOOR_BELOW trials,
+# sensitivity variants counted in N but kept out of the spread (version 2).
+DEFLATION_RULE = "family-dedup-floor-2"
 FLOOR_BELOW = 5
 _DAILY = frozenset({252, 365})
 
@@ -279,3 +280,26 @@ def deflate(
     except DataError as exc:
         result["reasons"]["dsr"] = str(exc)
     return result
+
+
+def family_deflation(
+    returns: FloatSeq, prior_sharpes: Sequence[float], family: TrialFamily
+) -> dict[str, Any]:
+    """The family-deflated Sharpe probability shared by the verdict and the diagnostics.
+
+    The spread is the family's distinct same-bar-size Sharpes plus this run's own; sensitivity
+    variants are full-sample figures of neighbouring settings (another basis, strongly
+    correlated), so they count in ``family.count`` but never enter the spread. Below
+    ``FLOOR_BELOW`` comparable trials the spread is floored at the sampling variance of this
+    run's Sharpe estimate.
+    """
+    floored = family.comparable < FLOOR_BELOW
+    try:
+        own = sharpe_ratio(np.asarray(returns, dtype=np.float64), periods_per_year=1)
+        floor = sharpe_sampling_variance(returns) if floored else 0.0
+    except DataError as exc:
+        result = deflate(returns, [], family.count)
+        result["reasons"]["dsr"] = str(exc)
+        return {**result, "spread_floored": floored}
+    result = deflate(returns, [*prior_sharpes, own], family.count, variance_floor=floor)
+    return {**result, "spread_floored": floored}

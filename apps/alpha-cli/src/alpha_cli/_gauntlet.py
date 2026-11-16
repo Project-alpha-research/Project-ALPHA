@@ -29,8 +29,7 @@ from alpha_cli.spine.deflation import (
     DEFLATION_RULE,
     FLOOR_BELOW,
     TrialFamily,
-    deflate,
-    sharpe_sampling_variance,
+    family_deflation,
 )
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation import (
@@ -539,11 +538,8 @@ def _dsr_summary(
     prior = tuple(float(value) for value in trial_sharpes or ()) if trial_family else ()
     value, sr0, reason, count, floored = res.dsr, res.expected_max_sharpe, None, 1, False
     if trial_family is not None:
-        sharpes = [*prior, sharpe_ratio(oos_returns, periods_per_year=1)]
-        floored = trial_family.comparable < FLOOR_BELOW
-        floor = sharpe_sampling_variance(oos_returns) if floored else 0.0
-        counted = deflate(oos_returns, sharpes, trial_family.count, variance_floor=floor)
-        count = counted["n_trials_used"]
+        counted = family_deflation(oos_returns, prior, trial_family)
+        floored, count = counted["spread_floored"], counted["n_trials_used"]
         value = counted["dsr"] if counted["dsr"] is not None else math.nan
         sr0 = (
             counted["expected_max_sharpe"]

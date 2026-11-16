@@ -204,38 +204,41 @@ def test_observation_thresholds(share: float, top: float, benchmark: float, expe
         assert (name in names) is expected
 
 
-def test_trials_normalize_each_frequency_and_count_current(
+def test_trials_spread_is_the_family_and_this_run_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from alpha_cli.spine import diagnose
+    """Same-asset rows of other rules widen the count only; variants count but stay out."""
+    from alpha_cli.spine import deflation, diagnose
     from alpha_cli.spine.ledger import append_trial
 
     append_trial(tmp_path, {"symbol": "SPY", "labels": [], "oos_sharpe": 2, "periods_per_year": 4})
     append_trial(
         tmp_path, {"symbol": "OTHER", "labels": [], "oos_sharpe": 999, "periods_per_year": 1}
     )
-    seen: list[float] = []
+    seen: list[list[float]] = []
+    original = deflation.deflate
 
-    from alpha_cli.spine.deflation import deflate
+    def spy(
+        returns: list[float],
+        trial_sharpes: list[float],
+        n_trials: int,
+        *,
+        variance_floor: float = 0.0,
+    ) -> dict[str, object]:
+        seen.append(list(trial_sharpes))
+        return original(returns, trial_sharpes, n_trials, variance_floor=variance_floor)
 
-    original = deflate
-
-    def dsr(returns: list[float], trial_sharpes: list[float], n_trials: int) -> dict[str, object]:
-        seen.extend(trial_sharpes)
-        result = original(returns, trial_sharpes, n_trials)
-        if result["dsr"] is not None:
-            result["dsr"] = 0.75
-        return result
-
-    monkeypatch.setattr(diagnose, "deflate", dsr)
+    monkeypatch.setattr(deflation, "deflate", spy)
     result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}], "ma_cross")
     assert result["total_trials"] == 3
-    assert result["dsr"] == pytest.approx(0.75)
-    assert seen[0] == pytest.approx(1)
-    assert seen[-1] == pytest.approx(2)
-    result = diagnose.trials(tmp_path / "empty", "SPY", [0.1, -0.1, 0.2], 4, [], "ma_cross")
-    assert result["dsr"] is None
-    assert result["reasons"]["dsr"]
+    assert result["available_sharpes"] == 3  # the SPY row, this run and its one variant
+    assert seen[-1] == pytest.approx(
+        [float(np.mean([0.1, -0.1, 0.2]) / np.std([0.1, -0.1, 0.2], ddof=1))]
+    )
+    assert result["spread_floored"] is True
+    assert result["family"]["variants_scored"] == 1
+    assert result["family"]["n_trials"] == 4  # this run, its variant and two unmapped rows
+    assert result["dsr"] is not None
 
 
 def test_performance_hand_computed() -> None:

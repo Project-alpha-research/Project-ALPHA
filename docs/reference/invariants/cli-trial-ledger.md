@@ -44,25 +44,27 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   counts plus unknown spine rows: each row once, never doubled (ADR-0053).
 - Rule-test deflation reads only the spine ledger, never `sources.toml` or RD-Agent. Reader version 1
   counts prior `spine:<rule>` trials excluding repeats and errors, plus this run, scored sensitivity
-  variants and all unknown spine rows. The count never falls below the available Sharpe count.
+  variants and all unknown spine rows. It is raised to the wider count of same-asset tests of any
+  rule, this run and its variants when that is larger.
   Trials of the same test (spec hash, symbol, data window and bar size) count once, keeping the
   earliest; a run repeating an earlier test is not counted again (`this_run` 0) and its own Sharpe
   replaces the earlier one. Rows without a spec hash or symbol cannot be matched and each count.
-- `trial_dsr` keeps the sample variance of same-symbol OOS Sharpes and this run's variants, in
-  per-observation units. The public expected-maximum and PSR functions compute the probability.
+- `trial_dsr` uses exactly the verdict's inputs below, so for a rule test with diagnostics it equals
+  the verdict's `dsr`. The public expected-maximum and PSR functions compute the probability.
   Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;
   `family_trials` cites the recorded count. Missing ledgers count zero; unreadable ones fail with
   `LEDGER_UNREADABLE`, never a one-trial fallback. No diagnostics means `spine.deflation` is null.
 - The verdict's `dsr` takes its variance from counted family Sharpes of the run's bar size only
   (daily on either calendar; another bar size's per-bar Sharpe is on another scale, so it counts in
-  N but not in the variance), this run's scored variants and its own OOS Sharpe, with N at least the
-  family count. Below 5 comparable trials (distinct same-bar-size family tests with a Sharpe, this
-  run included) the variance is the larger of the sample variance and the sampling variance of this
-  run's per-bar Sharpe (the PSR's non-normal standard error, squared); from 5 the sample variance
-  stands. `trial_basis` says in plain words when the count is the wider same-asset count of any
+  N but not in the variance) and this run's own OOS Sharpe, with N at least the family count.
+  Sensitivity variants count in N but stay out of the variance: they are full-sample figures of
+  neighbouring settings, another basis and strongly correlated, and would narrow the spread.
+  Below 5 comparable trials (distinct same-bar-size family tests with a Sharpe, this run included)
+  the variance is the larger of the sample variance and the sampling variance of this run's
+  per-bar Sharpe (the PSR's non-normal standard error, squared); from 5 the sample variance stands. `trial_basis` says in plain words when the count is the wider same-asset count of any
   rule, how many repeats were not counted and when the spread was floored. `dsr` also records
   `family_id`, `prior_sharpes`, `family_count`, `comparable_trials`, `repeats`, `spread_floored`
-  and `deflation_rule` (`family-dedup-floor-1`, not part of the run id). A rule test reads the
+  and `deflation_rule` (`family-dedup-floor-2`, not part of the run id). A rule test reads the
   ledger once for both the verdict and diagnostics; an unreadable ledger stops `alpha validate`
   with `LEDGER_UNREADABLE` and its next step.
   `alpha validate` recognises existing spine families by registered rule strategy; other runs state

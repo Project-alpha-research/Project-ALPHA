@@ -373,7 +373,7 @@ def test_validate_rerun_keeps_the_family_recorded_at_first_publication(
     manifest_path = next((tmp_path / "runs").glob("*/manifest.json"))
     stored = manifest_path.read_bytes()
     assert json.loads(stored)["dsr"]["n_trials"] == 38
-    assert json.loads(stored)["dsr"]["deflation_rule"] == "family-dedup-floor-1"
+    assert json.loads(stored)["dsr"]["deflation_rule"] == "family-dedup-floor-2"
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     for i in range(41, 61):
         rows.append({**rows[0], "trial_index": i, "total_trials": i, "oos_sharpe": -i / 50})
@@ -571,3 +571,39 @@ def test_validate_reports_an_unreadable_ledger_cleanly(
     assert isinstance(result.exception, SystemExit)
     assert "Cannot read the trial ledger" in result.output
     assert "Fix the file's permissions" in result.output
+
+
+def test_variants_count_in_n_but_not_in_the_spread(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full-sample variants of neighbouring settings are another basis: N only, never variance.
+
+    The diagnostic ``trial_dsr`` uses the same inputs as the verdict, so the two agree.
+    """
+    from alpha_cli.spine.run import run_idea
+    from alpha_cli.spine.spec import load_spec
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    ledger(tmp_path)
+    seed_store(tmp_path, symbol="SPY", n=150)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    result = run_idea(idea, home=tmp_path, quick=True)["results"][0]
+    assert result["error"] is None, result["error"]
+    rdir = Path(result["run_dir"])
+    manifest = json.loads((rdir / "manifest.json").read_text())
+    trials_doc = json.loads((rdir / "diagnostics.json").read_text())["trials"]
+    assert trials_doc["family"]["variants_scored"] == 5
+    assert manifest["dsr"]["n_trials"] == 43
+    assert len(manifest["dsr"]["prior_sharpes"]) == 36
+    own = manifest["dsr"]["sharpe"]
+    family = [i / 100 / math.sqrt(252) for i in range(1, 37)]
+    assert trials_doc["trial_sharpe_variance"] == pytest.approx(
+        float(np.var([*family, own], ddof=1)), abs=1e-15, rel=0
+    )
+    assert trials_doc["dsr"] == manifest["dsr"]["dsr"]
+    assert manifest["dsr"]["deflation_rule"] == "family-dedup-floor-2"

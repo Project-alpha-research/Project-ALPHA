@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 3fd6b69956c22395
+verified: becbfb38b0f95794
 ---
 
 # Command line
@@ -45,7 +45,7 @@ trial ledger retains every attempt and labels repeats and development-machine da
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** `rule-test`
+- **Capabilities:** `rule-test`, `one-trial-ledger`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),

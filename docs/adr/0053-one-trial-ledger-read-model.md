@@ -61,6 +61,10 @@ Rule-family counts count rows. Factor counts reuse `trial_family` (distinct code
 excluding repeats) plus every unknown RD-Agent row. `all_trials` sums those family counts and
 adds every unknown row from either source; thus an unknown RD-Agent row also contributes to
 the factor family's conservative count. Recorded family sizes remain separately visible.
+An unmapped RD-Agent row of a factor schema (a status the reader has no mapping for yet) is fed
+to the writer's own `trial_family` counter, so the factor count is never below the family size
+the writer recorded; any other unknown RD-Agent row adds one. Real data on 2026-11-16: two V3
+rows with status `SPREAD_FAIL` (a writer not yet on main) are shown unknown and counted.
 
 ## Options refused
 

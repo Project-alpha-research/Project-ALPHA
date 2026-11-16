@@ -70,10 +70,12 @@ def _render(output: dict[str, Any]) -> str:
         if key in output:
             lines.append(f"{key}: {json.dumps(output[key], sort_keys=True)}")
     for source in output.get("sources", []):
-        if source["unknown"]:
+        if source["state"] == "missing":
+            lines.append(f"{source['source']}: ledger file not found ({source['file']})")
+        for reason, count in source["unknown_by_reason"].items():
             lines.append(
-                f"{source['source']} unknown: "
-                f"{json.dumps(source['unknown_by_reason'], sort_keys=True)}"
+                f"{source['source']}: {count} row(s) not understood yet, counted as trials "
+                f"anyway: {reason}"
             )
     return "\n".join([*lines, NOTICE])
 
@@ -106,6 +108,7 @@ def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
         "by_kind": dict(Counter(r.kind for r in snapshot.records)),
         "by_outcome": dict(Counter(r.outcome for r in snapshot.records)),
         "family_count": len(family_counts(snapshot)),
+        "all_trials": trials_for_deflation(snapshot, "")["all_trials"],
         "newest_created_at": max(
             (r.created_at for r in snapshot.records if r.created_at), default=None
         ),

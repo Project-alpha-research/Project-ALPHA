@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.trial_record import TrialRecord, map_row
+from alpha_cli.spine.trial_record import FACTOR_SCHEMAS, TrialRecord, map_row
 
 
 @dataclass(frozen=True)
@@ -91,7 +91,7 @@ def read_ledgers(sources: list[LedgerSource]) -> LedgerSnapshot:
         reasons: Counter[str] = Counter()
         mapped = 0
         for number, line in enumerate(lines, 1):
-            schema = None
+            schema, row = None, None
             try:
                 if number == len(lines) and not line.endswith(b"\n"):
                     raise ValueError("incomplete last line (a writer may be mid-append)")
@@ -103,6 +103,8 @@ def read_ledgers(sources: list[LedgerSource]) -> LedgerSnapshot:
             except (ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
                 reason = f"missing field: {exc.args[0]}" if isinstance(exc, KeyError) else str(exc)
                 unknown.append(UnknownRow(source.source, str(path), number, schema, reason))
+                if isinstance(row, dict):
+                    raw_rows[(str(path.resolve()), number)] = row
                 reasons[reason] += 1
             else:
                 records.append(record)
@@ -140,7 +142,20 @@ def family_counts(snapshot: LedgerSnapshot) -> list[dict[str, Any]]:
             from alpha_cli._rdagent_clocks import trial_family
 
             raw = [snapshot.raw_rows[(r.source_file, r.source_line)] for r in records]
-            count = len(trial_family(raw)) + rd_unknown
+            # An unmapped row of a factor schema (a status this reader has no mapping for yet)
+            # is still a factor attempt: let the writer's own counter see it so the count is
+            # never below the family size the writer recorded. Anything else adds one each.
+            extra = [
+                snapshot.raw_rows[key]
+                for row in snapshot.unknown
+                if row.source == "rdagent"
+                and row.schema in FACTOR_SCHEMAS
+                and (key := (str(Path(row.file).resolve()), row.line)) in snapshot.raw_rows
+            ]
+            try:
+                count = len(trial_family(raw + extra)) + rd_unknown - len(extra)
+            except (ValueError, KeyError, TypeError, IndexError, AttributeError):
+                count = len(trial_family(raw)) + rd_unknown
         latest = records[-1] if records else None
         result.append(
             dict(

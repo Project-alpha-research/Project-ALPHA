@@ -1,6 +1,8 @@
 """Tolerant, non-mutating snapshots and conservative family counts."""
 
 import json
+from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -14,14 +16,14 @@ from alpha_cli.spine.trial_reader import (
 from tests.unit.test_trial_record import factor, rule, spine
 
 
-def write_rows(path, rows):
+def write_rows(path: Any, rows: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "".join((json.dumps(row) if isinstance(row, dict) else row) + "\n" for row in rows)
     )
 
 
-def example(tmp_path):
+def example(tmp_path: Path) -> tuple[Path, Path]:
     home, rd = tmp_path / "home", tmp_path / "runs/ledger/factors.jsonl"
     write_rows(
         home / "ledger/trials.jsonl",
@@ -45,7 +47,7 @@ def example(tmp_path):
     return home, rd
 
 
-def test_worked_example(tmp_path):
+def test_worked_example(tmp_path: Path) -> None:
     home, rd = example(tmp_path)
     snapshot = read_ledgers(ledger_sources(home, rd))
     assert len(snapshot.records) == 7 and len(snapshot.unknown) == 2
@@ -62,13 +64,15 @@ def test_worked_example(tmp_path):
 
 
 @pytest.mark.parametrize("lock", [False, True])
-def test_reads_create_and_modify_nothing(tmp_path, lock, monkeypatch):
+def test_reads_create_and_modify_nothing(
+    tmp_path: Path, lock: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     home, rd = example(tmp_path)
     if lock:
         for path in (home / "ledger/trials.jsonl", rd):
             path.with_suffix(".jsonl.lock").write_bytes(b"lock")
 
-    def state():
+    def state() -> Any:
         return {
             str(p): (p.stat().st_mtime_ns, p.read_bytes() if p.is_file() else None)
             for p in tmp_path.rglob("*")
@@ -79,7 +83,7 @@ def test_reads_create_and_modify_nothing(tmp_path, lock, monkeypatch):
 
     real_flock, calls = fcntl.flock, []
 
-    def observe(fd, operation):
+    def observe(fd: Any, operation: Any) -> Any:
         calls.append(operation)
         return real_flock(fd, operation)
 
@@ -89,7 +93,7 @@ def test_reads_create_and_modify_nothing(tmp_path, lock, monkeypatch):
     assert calls.count(fcntl.LOCK_SH) == (2 if lock else 0)
 
 
-def test_sources_precedence_missing_and_invalid(tmp_path):
+def test_sources_precedence_missing_and_invalid(tmp_path: Path) -> None:
     assert len(ledger_sources(tmp_path, None)) == 1
     config = tmp_path / "ledger/sources.toml"
     config.parent.mkdir()
@@ -111,7 +115,7 @@ def test_sources_precedence_missing_and_invalid(tmp_path):
         assert error.value.payload["code"] == "LEDGER_SOURCE_INVALID"
 
 
-def test_bad_rows_and_incomplete_last_line(tmp_path):
+def test_bad_rows_and_incomplete_last_line(tmp_path: Path) -> None:
     path = tmp_path / "ledger/trials.jsonl"
     write_rows(
         path,
@@ -132,7 +136,7 @@ def test_bad_rows_and_incomplete_last_line(tmp_path):
     assert trials_for_deflation(snapshot, "absent")["all_trials"] == 7
 
 
-def test_repeat_and_latest_count(tmp_path):
+def test_repeat_and_latest_count(tmp_path: Path) -> None:
     path = tmp_path / "ledger/trials.jsonl"
     write_rows(path, [spine(), spine(trial_index=2, labels=["repeat"]), spine(kind="tool:acf")])
     snapshot = read_ledgers(ledger_sources(tmp_path, None))
@@ -141,7 +145,7 @@ def test_repeat_and_latest_count(tmp_path):
     assert counts["spine-tool:acf"]["reader_trials"] == 0
 
 
-def test_malformed_family_and_windows_are_unknown(tmp_path):
+def test_malformed_family_and_windows_are_unknown(tmp_path: Path) -> None:
     rd = tmp_path / "rd.jsonl"
     write_rows(
         rd,
@@ -160,10 +164,12 @@ def test_malformed_family_and_windows_are_unknown(tmp_path):
     )
     snapshot = read_ledgers(ledger_sources(tmp_path, rd))
     assert not snapshot.records and len(snapshot.unknown) == 3
-    assert family_counts(snapshot)[0]["reader_trials"] == 3
+    # Two unmapped rule rows add one each; the malformed V3 factor row is counted the way the
+    # writer counts a V3 row: one attempt per clock (daily, weekly, monthly).
+    assert family_counts(snapshot)[0]["reader_trials"] == 5
 
 
-def test_factor_count_deduplicates_code_and_imported_clock(tmp_path):
+def test_factor_count_deduplicates_code_and_imported_clock(tmp_path: Path) -> None:
     rd = tmp_path / "rd.jsonl"
     write_rows(
         rd,
@@ -177,3 +183,20 @@ def test_factor_count_deduplicates_code_and_imported_clock(tmp_path):
     counts = family_counts(snapshot)[0]
     assert counts["rows"] == 3 and counts["reader_trials"] == 4
     assert counts["family_size_recorded"] == 4
+
+
+def test_unmapped_factor_status_still_counts_like_the_writer_counts_it(tmp_path: Path) -> None:
+    """A status written by a newer writer (here SPREAD_FAIL) is shown as unknown, yet the
+    factor family count never falls below what the writer's own counter gives."""
+    rd = tmp_path / "rd.jsonl"
+    rows = [
+        factor(trial_index=1),
+        factor(trial_index=2, code_sha256="d" * 64, status="SPREAD_FAIL"),
+    ]
+    write_rows(rd, rows)
+    snapshot = read_ledgers(ledger_sources(tmp_path, rd))
+    assert len(snapshot.records) == 1 and len(snapshot.unknown) == 1
+    assert "unknown status: SPREAD_FAIL" in snapshot.unknown[0].reason
+    from alpha_cli._rdagent_clocks import trial_family
+
+    assert family_counts(snapshot)[0]["reader_trials"] == len(trial_family(rows))

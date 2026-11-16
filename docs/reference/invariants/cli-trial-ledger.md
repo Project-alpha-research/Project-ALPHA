@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/trial_query.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/smoke/test_ledger_smoke.py
-verified: 0000000000000000
+verified: c56a494db59ea633
 ---
 
 # One trial ledger invariants
@@ -36,7 +36,8 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
 - `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows
-  contribute conservatively even if there are no mapped factors. `all_trials` adds all
+  contribute conservatively even if there are no mapped factors; an unmapped row of a factor
+  schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` adds all
   unknown rows again to the sum of family counts, as specified by ADR-0053.
 - `trials_for_deflation` exposes family count, all-trials count and basis. Existing DSR callers
   are unchanged; wiring them to this seam is a follow-up.

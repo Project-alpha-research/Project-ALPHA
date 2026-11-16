@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -14,7 +16,7 @@ from tests.unit.test_trial_record import factor, rule
 @pytest.mark.parametrize(
     "args", [["summary"], ["list"], ["families"], ["query", "by-outcome"], ["show", "spine:1"]]
 )
-def test_commands(tmp_path, monkeypatch, args):
+def test_commands(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, args: Any) -> None:
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.rglob("*") if p.is_file()}
@@ -33,7 +35,9 @@ def test_commands(tmp_path, monkeypatch, args):
 
 
 @pytest.mark.parametrize("is_rule", [False, True])
-def test_evidence_match_mismatch_and_missing(tmp_path, monkeypatch, is_rule):
+def test_evidence_match_mismatch_and_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, is_rule: Any
+) -> None:
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     content = b'{"evidence":true}'
@@ -60,7 +64,7 @@ def test_evidence_match_mismatch_and_missing(tmp_path, monkeypatch, is_rule):
     assert json.loads(CliRunner().invoke(ledger_app, args).output)["evidence_found"] is False
 
 
-def test_filters_and_errors(tmp_path, monkeypatch):
+def test_filters_and_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     runner = CliRunner()
@@ -95,7 +99,9 @@ def test_filters_and_errors(tmp_path, monkeypatch):
         assert json.loads(result.output)["error"]["code"] == code
 
 
-def test_human_top_measure_and_spine_evidence(tmp_path, monkeypatch):
+def test_human_top_measure_and_spine_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     evidence = home / "runs/abc/manifest.json"

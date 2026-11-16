@@ -2,13 +2,14 @@
 
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from alpha_cli.spine.trial_record import OUTCOMES, map_row
 
 
-def spine(**updates):
+def spine(**updates: Any) -> dict[str, Any]:
     return (
         dict(
             schema="AlphaTrialV1",
@@ -32,7 +33,7 @@ def spine(**updates):
     )
 
 
-def factor(version=3, **updates):
+def factor(version: Any = 3, **updates: Any) -> dict[str, Any]:
     return (
         dict(
             schema=f"AlphaRdagentFactorTrialV{version}",
@@ -66,7 +67,7 @@ def factor(version=3, **updates):
     )
 
 
-def rule(**updates):
+def rule(**updates: Any) -> dict[str, Any]:
     return (
         factor(
             schema="AlphaRuleTrialV1",
@@ -87,7 +88,7 @@ def rule(**updates):
     )
 
 
-def mapped(row):
+def mapped(row: Any) -> Any:
     return map_row(
         "spine" if row["schema"] == "AlphaTrialV1" else "rdagent", Path("/ledger"), 2, row
     )
@@ -104,7 +105,7 @@ def mapped(row):
         (None, "recorded"),
     ],
 )
-def test_spine_outcomes(verdict, outcome):
+def test_spine_outcomes(verdict: Any, outcome: Any) -> None:
     assert mapped(spine(verdict=verdict)).outcome == outcome
     assert mapped(spine(verdict=verdict, labels=["error"])).outcome == "error"
 
@@ -125,7 +126,7 @@ def test_spine_outcomes(verdict, outcome):
     ],
 )
 @pytest.mark.parametrize("version", [1, 2, 3])
-def test_factor_outcomes(version, status, outcome):
+def test_factor_outcomes(version: Any, status: Any, outcome: Any) -> None:
     record = mapped(factor(version, status=status))
     assert record.outcome == outcome
     assert record.counts_for_deflation == (status != "REPEAT")
@@ -140,11 +141,11 @@ def test_factor_outcomes(version, status, outcome):
         ("INVALID", "invalid"),
     ],
 )
-def test_rule_outcomes(status, outcome):
+def test_rule_outcomes(status: Any, outcome: Any) -> None:
     assert mapped(rule(status=status)).outcome == outcome
 
 
-def test_common_fields():
+def test_common_fields() -> None:
     record = mapped(spine())
     assert record.trial_id == "spine:1" and record.family_id == "spine:ma_cross"
     assert record.assets == ("SPY",) and record.bar_size == "1D"
@@ -177,13 +178,13 @@ def test_common_fields():
         ("future", "spine-other", "future", "runs/abc/manifest.json"),
     ],
 )
-def test_other_spine_kinds(kind, family, subkind, path):
+def test_other_spine_kinds(kind: Any, family: Any, subkind: Any, path: Any) -> None:
     record = mapped(spine(kind=kind, tool_output="tools/result.json", find_id="find1"))
     assert (record.family_id, record.subkind, record.evidence_path) == (family, subkind, path)
     assert record.outcome == "recorded" and not record.counts_for_deflation
 
 
-def test_rdagent_fields_and_legacy():
+def test_rdagent_fields_and_legacy() -> None:
     record = mapped(factor())
     assert record.measures == {"p": 0.01, "q": 0.03, "mean_ic": 0.2}
     assert record.windows == {
@@ -224,6 +225,6 @@ def test_rdagent_fields_and_legacy():
         {"schema": "AlphaTrialV1"},
     ],
 )
-def test_unmappable(row):
+def test_unmappable(row: Any) -> None:
     with pytest.raises((ValueError, KeyError, TypeError)):
         mapped(row)

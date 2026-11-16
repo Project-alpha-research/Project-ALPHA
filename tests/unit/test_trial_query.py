@@ -1,5 +1,8 @@
 """Named questions bind values and never grant SQL or filesystem access."""
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 
 from alpha_cli.spine.errors import SpineError
@@ -21,15 +24,15 @@ from tests.unit.test_trial_reader import example
         "repeats",
     ],
 )
-def test_every_question(tmp_path, question):
+def test_every_question(tmp_path: Path, question: Any) -> None:
     home, rd = example(tmp_path)
     snapshot = read_ledgers(ledger_sources(home, rd))
-    parameters = {
+    by_question: dict[str, dict[str, Any]] = {
         "asset-history": {"asset": "SPY"},
         "family-trials": {"family": "rule:f1"},
         "top-measure": {"measure": "mean_ic"},
-    }.get(question, {})
-    result = query(snapshot, question, **parameters)
+    }
+    result = query(snapshot, question, **by_question.get(question, {}))
     assert result and len(result) <= 50
     assert set(QUESTIONS) == {
         "by-family",
@@ -51,7 +54,7 @@ def test_every_question(tmp_path, question):
         }
 
 
-def test_empty_and_external_access(tmp_path):
+def test_empty_and_external_access(tmp_path: Path) -> None:
     snapshot = read_ledgers(ledger_sources(tmp_path, None))
     assert query(snapshot, "by-family") == []
     with connection(snapshot) as con:
@@ -74,13 +77,13 @@ def test_empty_and_external_access(tmp_path):
         ("by-family", {"limit": 201}, "BAD_PARAMETER"),
     ],
 )
-def test_bad_parameters(tmp_path, question, parameters, code):
+def test_bad_parameters(tmp_path: Path, question: Any, parameters: Any, code: Any) -> None:
     with pytest.raises(SpineError) as error:
         query(read_ledgers(ledger_sources(tmp_path, None)), question, **parameters)
     assert error.value.payload["code"] == code
 
 
-def test_bindings_order_limit_and_unknown_month(tmp_path):
+def test_bindings_order_limit_and_unknown_month(tmp_path: Path) -> None:
     from tests.unit.test_trial_reader import write_rows
     from tests.unit.test_trial_record import factor
 

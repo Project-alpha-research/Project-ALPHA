@@ -146,8 +146,8 @@ the rules for entries are in the first. New entries are appended at the end of t
 
 ### 2026-11-16 RD-Agent judge: spread check, idea families, universe file, call time limit
 
-- **Decided by:** the orchestrating AI agent under the owner's delegation, 2026-11-16 (the owner
-  delegated these decisions; no owner words are quoted here).
+- **Said:** exact words not recorded: the owner delegated these decisions; they were decided by
+  the orchestrating AI agent under the owner's delegation, 2026-11-16.
 - **Context:** the 2026-11-16 health check of RD-Agent's factor loop: 15 of 18 replayed factor ×
   clock trials lost money before costs although they passed the rank screen; the proposer was told
   only "failed the replay"; the universe was hard-coded; model calls hung for minutes.

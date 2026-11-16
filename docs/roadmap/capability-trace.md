@@ -77,6 +77,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `answer-check` | A drafted answer's tagged numbers and run labels checked against the stored records and flags (`alpha results check`; not the reasoning) |
 | `honesty-selftest` | Planted honest and dishonest answers prove the checker catches invented numbers (`alpha partner selftest`) |
 | `answer-check` | Runs compared side by side, differences computed by code (`alpha results compare`) |
+| `family-deflated-sharpe` | Variants of one idea counted as one family, with the effective number of tests shown |
 
 ## Working rows that are not a workflow
 

@@ -14,6 +14,8 @@ from typing import Any
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.trial_record import FACTOR_SCHEMAS, TrialRecord, map_row
 
+READER_VERSION = 1
+
 
 @dataclass(frozen=True)
 class LedgerSource:
@@ -121,6 +123,19 @@ def read_ledgers(sources: list[LedgerSource]) -> LedgerSnapshot:
             )
         )
     return LedgerSnapshot(records, unknown, reports, raw_rows)
+
+
+def spine_snapshot(home: Path) -> LedgerSnapshot:
+    """The spine ledger alone, as a snapshot; an unreadable file fails with its typed error."""
+    path = (home / "ledger/trials.jsonl").resolve()
+    try:
+        return read_ledgers([LedgerSource("spine", str(path))])
+    except OSError as exc:
+        raise SpineError(
+            "LEDGER_UNREADABLE",
+            f"Cannot read the trial ledger {path}: {exc}",
+            "Fix the file's permissions; never edit or delete ledger rows.",
+        ) from exc
 
 
 def family_counts(snapshot: LedgerSnapshot) -> list[dict[str, Any]]:

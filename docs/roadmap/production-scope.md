@@ -51,15 +51,15 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-214 capabilities: 44 working, 66 built but unproven, 102 missing, 1 to rebuild,
+214 capabilities: 45 working, 65 built but unproven, 102 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material,
-then two diagnostics rows made working by the investigation tools, the setup contact sheets and the setup study).
+then two diagnostics rows made working by the investigation tools, the setup contact sheets, the setup study and the setup trade).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 5 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
-| 3. Look before testing | 4 | 6 | 4 | 0 | 0 |
+| 3. Look before testing | 5 | 5 | 4 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
 | 6. Diagnostics | 7 | 6 | 12 | 0 | 0 |
@@ -143,7 +143,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Descriptive first looks: gaps, distributions, seasonality | Unproven | `alpha-research` | Path 2 | [status] |
 | Dense multi-panel price charts, full screen, trade markers, two chart styles | Unproven | `alpha-web` charts | Path 2 | [ui] |
 | Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
-| Which came first after each match, target or stop, with still-open trades counted | Partial | `alpha setup trade`; outside-sandbox smoke pending | Path 2 | private |
+| Which came first after each match, target or stop, with still-open trades counted | Working | `alpha setup trade` (stop, target, time exit; same-exit controls) | Path 2 | private |
 | A pattern detector checked against a hand-labelled set of examples before it is trusted | Missing | new Setup Lab; [note](backlog/rescued-test-fixtures.md) | Path 2 | private |
 | What winners and losers looked like before entry, beside a random-date control | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 

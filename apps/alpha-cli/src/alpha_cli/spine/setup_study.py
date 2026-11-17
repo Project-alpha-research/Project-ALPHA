@@ -235,6 +235,14 @@ def _publish(
     )
 
 
+def _older_rule_study(home: Path, find_id: str) -> bool:
+    return any(
+        (m := json.loads(p.read_text())).get("find_id") == find_id
+        and m.get("study_rule_version") != STUDY_RULE_VERSION
+        for p in sorted((home / "setup-studies").glob("*/manifest.json"))
+    )
+
+
 def _run(find_id: str, home: Path) -> dict[str, Any]:
     import polars as pl
 
@@ -260,6 +268,14 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
         summary = _summarise(spec, manifest, candidates, bars, warmup, study_id, outcomes, costs)
         summary["labels"].extend(cost_labels)
+        if _older_rule_study(home, find_id):
+            # Same find, different cost assumption: a new look, so it counts as a trial.
+            summary["labels"].append("remeasured-new-cost-rule")
+            summary["reading"] += (
+                " This re-measures an earlier study of the same find under the new per-asset"
+                " cost rule; it counts as one more look, not a new idea."
+            )
+        summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
         add_study_trial_fact(home, summary)
         _publish(destination, summary, outcomes, spec, manifest)
     primary = summary["horizons"][str(spec.study.primary)]["pooled"]

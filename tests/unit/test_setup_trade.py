@@ -199,8 +199,9 @@ def test_readings(
 
 
 def test_control_occupancy_weights_and_unavailable_pattern_levels() -> None:
+    from alpha_cli.spine.setup_controls import _draw_means
     from alpha_cli.spine.setup_exits import PATTERN_LEVEL_REASON
-    from alpha_cli.spine.setup_trade import _draw_means, trade_controls
+    from alpha_cli.spine.setup_trade import trade_controls
 
     cache = {
         "X": {
@@ -336,7 +337,14 @@ def test_named_reference_levels_are_frozen_at_trigger_close(tmp_path: Path) -> N
 
 
 @pytest.mark.parametrize(
-    "source,expected", [("alpaca", 0.0994), ("binance", 0.097), ("unknown", 0.097)]
+    "source,expected",
+    [
+        ("alpaca", 0.0994),
+        ("yfinance", 0.0994),
+        ("binance", 0.097),
+        ("ccxt:binance", 0.097),
+        ("unknown", 0.097),
+    ],
 )
 def test_actual_market_net_returns(tmp_path: Path, source: str, expected: float) -> None:
     from alpha_cli.spine.setup_costs import asset_costs, round_trip

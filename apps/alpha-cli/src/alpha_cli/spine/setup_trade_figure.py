@@ -38,9 +38,20 @@ def draw_trades(
     from matplotlib.ticker import PercentFormatter
 
     font_manager.findfont(theme.font_family, fallback_to_default=False)
+    # Losses red, gains green: the owner reads the colour before the key.
     palette = {
-        name: theme.series_colour(i)
-        for i, name in enumerate(("stop", "target", "time", "opposite"))
+        "stop": theme.down,
+        "target": theme.up,
+        "time": theme.series_colour(0),
+        "opposite": theme.series_colour(3),
+        "open-at-end": theme.faint,
+    }
+    names = {
+        "stop": "Stop exit (incl. gaps through the stop)",
+        "target": "Target exit",
+        "time": "Time exit",
+        "opposite": "Opposite-condition exit",
+        "open-at-end": "Still open at the end (marked only, not in the mean)",
     }
     with rc_context(_style(theme)):
         figure = Figure(figsize=(16, 9), dpi=100)
@@ -50,72 +61,30 @@ def draw_trades(
             (r for r in rows if r["net_return"] is not None),
             key=lambda r: (r["entry_ts"], r["asset"], r["candidate_id"]),
         )
-        reasons = {"stop-gap": "stop", "max-hold": "time"}
-        if any(r["reason"] == "open-at-end" for r in done):
-            palette["open-at-end"] = theme.faint
+        groups = [
+            {"stop-gap": "stop", "max-hold": "time"}.get(r["reason"], r["reason"]) for r in done
+        ]
         top.bar(
-            range(len(done)),
-            [r["net_return"] for r in done],
-            color=[palette[reasons.get(r["reason"], r["reason"])] for r in done],
+            range(len(done)), [r["net_return"] for r in done], color=[palette[g] for g in groups]
         )
-        top.legend(
-            handles=[
-                Patch(
-                    color=c,
-                    label="Open at end (marked only)"
-                    if k == "open-at-end"
-                    else f"{k.title()} exit",
-                )
-                for k, c in palette.items()
-            ],
-            loc="upper left",
-            facecolor=theme.panel,
-            labelcolor=theme.ink,
-        )
-        top.set_xlabel("Trades in entry-date order (open-at-end bars are marked only)")
+        if done:
+            top.legend(
+                handles=[
+                    Patch(color=palette[k], label=f"{names[k]}: {groups.count(k)}")
+                    for k in palette
+                    if k in groups
+                ],
+                loc="upper left",
+                facecolor=theme.panel,
+                labelcolor=theme.ink,
+            )
+        ticks = _year_ticks([r["entry_ts"] for r in done])
+        if ticks:
+            top.set_xticks([i for i, _ in ticks], [label for _, label in ticks])
+        top.set_xlim(-1, max(len(done), 1))
+        top.set_xlabel("Each bar is one trade, in entry-date order (year of entry below)")
         top.set_ylabel("Trade return after costs")
-        if primary["random_date_5"] is not None:
-            bottom.axhspan(
-                primary["random_date_5"],
-                primary["random_date_95"],
-                color=theme.ink_dim,
-                alpha=0.25,
-                label="Random dates: middle 90% of their average returns",
-            )
-        if primary["drift_mean"] is not None:
-            bottom.axhline(
-                primary["drift_mean"],
-                color=theme.ink,
-                linestyle="--",
-                label="Same exits started on any day",
-            )
-        if primary["mean"] is not None:
-            bottom.plot(
-                [0],
-                [primary["mean"]],
-                "o",
-                color=theme.accent,
-                markersize=10,
-                label="Average completed trade after this setup",
-            )
-            bottom.annotate(
-                f"{primary['trades']} trades; {primary['hit_rate']:.1%} hit rate",
-                (0, primary["mean"]),
-                xytext=(20, 12),
-                textcoords="offset points",
-            )
-            bottom.legend(loc="upper left", facecolor=theme.panel, labelcolor=theme.ink)
-        else:
-            bottom.text(
-                0.5,
-                0.5,
-                "No completed trades; controls unavailable",
-                ha="center",
-                transform=bottom.transAxes,
-            )
-        bottom.set_xlim(-1, 1)
-        bottom.set_xticks([])
-        bottom.set_ylabel("Average net return per trade")
+        _controls_panel(bottom, primary, theme)
         for axes in (top, bottom):
             axes.axhline(0, color=theme.faint, linewidth=0.8)
             axes.yaxis.set_major_formatter(PercentFormatter(1))
@@ -136,6 +105,71 @@ def draw_trades(
         return buffer.getvalue()
 
 
+def _year_ticks(stamps: list[Any]) -> list[tuple[int, str]]:
+    """First trade of each entry year, thinned to at most twelve labels."""
+    firsts: list[tuple[int, str]] = []
+    for i, stamp in enumerate(stamps):
+        year = getattr(stamp, "year", None)
+        if year is None:
+            return []
+        if not firsts or firsts[-1][1] != str(year):
+            firsts.append((i, str(year)))
+    step = -(-len(firsts) // 12) if firsts else 1
+    return firsts[::step]
+
+
+def _controls_panel(axes: Any, primary: dict[str, Any], theme: Theme) -> None:
+    low, high, drift, mean = (
+        primary[k] for k in ("random_date_5", "random_date_95", "drift_mean", "mean")
+    )
+    if low is not None and high is not None:
+        axes.axhspan(
+            low,
+            high,
+            facecolor=theme.substrate,
+            edgecolor=theme.faint,
+            label=f"Random dates, middle 90% of their averages: {low:.2%} to {high:.2%}",
+        )
+    if drift is not None:
+        axes.axhline(
+            drift,
+            color=theme.ink,
+            linestyle="--",
+            label=f"Same exits started on any day: {drift:.2%}",
+        )
+    if mean is None:
+        axes.text(
+            0.5,
+            0.5,
+            "No completed trades; nothing to compare",
+            ha="center",
+            transform=axes.transAxes,
+        )
+    else:
+        axes.plot(
+            [0],
+            [mean],
+            "o",
+            color=theme.gold,
+            markersize=12,
+            label=f"Average completed trade after this setup: {mean:.2%}",
+        )
+        axes.annotate(
+            f"{primary['trades']} trades, {primary['hit_rate']:.1%} of them gained",
+            (0, mean),
+            xytext=(18, 14),
+            textcoords="offset points",
+            color=theme.ink,
+        )
+        axes.legend(loc="upper left", facecolor=theme.panel, labelcolor=theme.ink)
+    values = [v for v in (low, high, drift, mean, 0.0) if v is not None]
+    span = max(values) - min(values) or 0.01
+    axes.set_ylim(min(values) - 0.15 * span, max(values) + 0.6 * span)
+    axes.set_xlim(-1, 1)
+    axes.set_xticks([])
+    axes.set_ylabel("Average net return per trade")
+
+
 def trade_text(output: dict[str, Any]) -> str:
     row = output["pooled"]
     lines = [output["reading"], "measure\tvalue"]
@@ -150,7 +184,15 @@ def trade_text(output: dict[str, Any]) -> str:
         ("random-date p", "random_date_p", True),
     ):
         value = row[field]
-        text = "unavailable" if value is None else f"{value:.2%}" if percent else str(value)
+        text = (
+            "unavailable"
+            if value is None
+            else f"{value:.2%}"
+            if percent
+            else f"{value:.1f}"
+            if isinstance(value, float)
+            else str(value)
+        )
         lines.append(f"{title}\t{text}")
     lines.extend(
         [

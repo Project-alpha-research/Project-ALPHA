@@ -1,5 +1,6 @@
 """Hand-built fills, frozen causal levels and occupancy."""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -18,7 +19,7 @@ def spec(**exits: Any) -> SetupSpec:
     )
 
 
-def bars(values: list[tuple[float, float, float, float]]) -> list[Any]:
+def bars(values: Sequence[tuple[float, float, float, float]]) -> list[Any]:
     from types import SimpleNamespace
 
     return [
@@ -34,7 +35,7 @@ def bars(values: list[tuple[float, float, float, float]]) -> list[Any]:
     ]
 
 
-def run(values: list[tuple[float, float, float, float]], **exits: Any) -> dict[str, Any]:
+def run(values: Sequence[tuple[float, float, float, float]], **exits: Any) -> dict[str, Any]:
     return simulate(prepare_exits(spec(**exits), bars(values)), 1, 0.0006)
 
 

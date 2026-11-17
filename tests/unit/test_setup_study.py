@@ -257,3 +257,22 @@ def test_study_shared_crypto_costs_and_old_rule_reader(tmp_path: Path) -> None:
     manifest["study_rule_version"] = "setup-study-1"
     (folder / "manifest.json").write_text(json.dumps(manifest))
     assert "older-cost-rule" in read_study(folder)["labels"]
+
+
+def test_restudy_under_new_cost_rule_is_labelled_and_counted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    found = make_find(tmp_path)
+    # The first study ran under the earlier cost rule, so it has its own older id and folder.
+    monkeypatch.setattr(setup_study, "STUDY_RULE_VERSION", "setup-study-1")
+    first = setup_study.run_study(found["find_id"], home=tmp_path)
+    monkeypatch.undo()
+    assert "remeasured-new-cost-rule" not in first["labels"]
+    again = setup_study.run_study(found["find_id"], home=tmp_path)
+    assert again["study_id"] != first["study_id"]
+    assert "remeasured-new-cost-rule" in again["labels"]
+    assert "new per-asset cost rule" in again["reading"]
+    studies = [r for r in spine_snapshot(tmp_path).records if r.kind == "setup_study"]
+    assert [r.counts_for_deflation for r in studies] == [True, True]
+    repeat = setup_study.run_study(found["find_id"], home=tmp_path)
+    assert {"repeat", "remeasured-new-cost-rule"} <= set(repeat["labels"])

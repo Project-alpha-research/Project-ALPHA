@@ -38,6 +38,18 @@ def test_identical_bytes_and_dimensions() -> None:
     assert Image.open(BytesIO(first)).size == (1600, 900)
 
 
+def test_year_ticks_mark_first_trade_of_each_year_and_thin_out() -> None:
+    from datetime import UTC, datetime
+
+    from alpha_cli.spine.setup_trade_figure import _year_ticks
+
+    stamps = [datetime(2000 + i // 2, 1, 1 + i % 2, tzinfo=UTC) for i in range(60)]
+    ticks = _year_ticks(stamps)
+    assert ticks[0] == (0, "2000") and len(ticks) <= 12
+    assert all(stamps[i].year == int(label) for i, label in ticks)
+    assert _year_ticks([1, 2]) == []
+
+
 def test_open_at_end_is_shown_separately_from_completed_mean() -> None:
     primary = dict(
         mean=None, drift_mean=None, random_date_5=None, random_date_95=None, trades=0, hit_rate=None

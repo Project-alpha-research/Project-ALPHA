@@ -11,6 +11,9 @@ from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
 
 CRYPTO_FEE_BPS = 10.0
 CRYPTO_SLIPPAGE_BPS = 5.0
+# The store's own adapters (packages/alpha-data/src/alpha_data/adapters).
+CRYPTO_PROVIDERS = frozenset({"binance", "bybit", "ccxt"})
+EQUITY_PROVIDERS = frozenset({"alpaca", "tiingo", "stooq", "yfinance"})
 
 
 def setup_market(resolved_asset: ResolvedAsset) -> str | None:
@@ -30,13 +33,11 @@ def setup_market(resolved_asset: ResolvedAsset) -> str | None:
             return None
     # The existing engine recognises slash pairs as crypto. Legacy stock providers have
     # no dataset identity; an unknown provider/symbol combination gets the higher costs.
-    if "/" in resolved_asset.symbol or resolved_asset.source.lower() in {
-        "binance",
-        "bybit",
-        "ccxt",
-    }:
+    # Provider names may carry a venue ("ccxt:binance"): every part is checked.
+    parts = set(resolved_asset.source.lower().split(":"))
+    if "/" in resolved_asset.symbol or parts & CRYPTO_PROVIDERS:
         return "crypto"
-    if resolved_asset.source.lower() in {"alpaca", "tiingo", "stooq"}:
+    if parts & EQUITY_PROVIDERS:
         return "equity"
     return None
 

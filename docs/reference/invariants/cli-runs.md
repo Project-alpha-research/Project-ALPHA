@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 21842994555b9955
+verified: 1bc80d2b7eeab14a
 ---
 
 # Command line runs invariants
@@ -177,8 +177,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.
 - SHA-256 study/asset/horizon seeds; exact uniform draws of dates more than ten bars apart; tail (b+1)/(2,000+1). Pool by complete occurrence counts.
 - Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
-- Paths use available occurrences per bar. `setup-studies/<id>` hashes find id and `setup-study-2`; old folders read with `older-cost-rule`; nullable paths
-  are stored with outcomes.
+- `setup-studies/<id>` hashes find id and `setup-study-2`; old folders read with `older-cost-rule`. Re-studying a find that has an older-rule study is
+  labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
 - Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
 - Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
 - One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).
@@ -189,9 +189,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Entry is bar one; exits at an open exclude that new bar from duration. No time limit implies 250 bars and `no-time-exit`.
 - One position per asset, including the exit bar. Count skipped/invalid/open-at-end separately; only completed trades enter tested means.
 - Mark open-at-end to final close. Adverse move sees only an exit open or stop fill, never the later low; target exits conservatively include the bar's low.
-- Costs use resolved dataset asset class, then legacy slash-pair/provider identity; unknown markets use crypto costs with `costs-assumed-high`.
-- Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, and weight assets by observed completed
-  trades.
+- Costs use the dataset asset class, then slash pairs or a crypto provider (any `:` part), then a stock provider (yfinance, alpaca, tiingo, stooq);
+  unknown markets use crypto costs with `costs-assumed-high`.
+- Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, weight assets by completed trades.
 - Use 2,000 exact spaced draws; causal expressions evaluate at arbitrary bars. Pattern-only levels or undefined draw means null controls with reasons.
 - Halves use their own entry-date ranges. Support requires 30 completed trades, positive excess, p ≤ 0.05, agreeing halves and available controls; exploratory
   only.

@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: bac8c65a581d0478
+verified: e697cf3f6bc7a5bc
 ---
 
 # Validation statistics invariants
@@ -91,7 +91,10 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
 - Splitters are index-only and engine-agnostic. Oracles: `tests/oracles/test_metamorphic_splits.py`.
 - `block_bootstrap_ci` uses the Politis–Romano stationary bootstrap with BCa correction (leave-one-out
   jackknife acceleration, a documented approximation on dependent data). It fails loud when the BCa adjustment
-  is unstable instead of returning an infinite percentile.
+  is unstable instead of returning an infinite percentile. It stays hand-written (checked against `arch` 8.0.0):
+  `arch` draws from the same law but other numbers for the same seed (path by path, block restart on `u <= p`
+  instead of `u < p`), has no other `length`, and lacks the BCa clamp and the fail-loud acceleration check, so
+  a swap would change every stored seeded interval, risk-of-ruin and null path.
 
 ## Multi-trial selection statistics
 
@@ -99,6 +102,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   against the expected maximum Sharpe of `N` trials using the cross-trial variance.
 - PBO via CSCV runs on a `(T × S)` performance matrix and is deterministic (no RNG).
 - Reality Check and SPA judge the best of `S` strategies with stationary-bootstrap means.
+  They, the stationary bootstrap and the proportion statistics stay hand-written: `arch` and `statsmodels` differ
+  by random draws, test statistic or last digits (`tests/unit/test_stats_library_parity.py`).
 
 ## Path risk and scenarios
 

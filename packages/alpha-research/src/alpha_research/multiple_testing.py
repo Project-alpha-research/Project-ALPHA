@@ -1,9 +1,18 @@
-"""Holm adjustment for one immutable, preregistered secondary hypothesis family."""
+"""Holm adjustment for one immutable, preregistered secondary hypothesis family.
+
+The adjusted p-values are computed by ``statsmodels.stats.multitest.multipletests`` with
+``method="holm"``. They are bit-for-bit the values the earlier hand-written loop gave, which
+``tests/unit/test_stats_library_parity.py`` keeps frozen. The rejection rule stays ALPHA's:
+adjusted p-value ``<=`` the family's alpha. This module keeps the frozen family, its contract
+hash and the fail-loud input checks.
+"""
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+
+import numpy as np
 
 from alpha_core import DataError
 from alpha_research._canonical import canonical_sha256
@@ -67,21 +76,17 @@ def holm_adjust_secondary_family(
     family: FrozenSecondaryFamily,
 ) -> tuple[HolmAdjustedHypothesis, ...]:
     """Return Holm-adjusted p-values in the family's original registered order."""
-    count = len(family.hypotheses)
-    ordered = sorted(family.hypotheses, key=lambda item: (item.p_value, item.hypothesis_id))
-    adjusted_by_id: dict[str, float] = {}
-    prior = 0.0
-    for rank, hypothesis in enumerate(ordered):
-        candidate = min(1.0, (count - rank) * hypothesis.p_value)
-        adjusted = max(prior, candidate)
-        adjusted_by_id[hypothesis.hypothesis_id] = adjusted
-        prior = adjusted
+    # Imported here so that importing alpha_research does not load statsmodels.
+    from statsmodels.stats.multitest import multipletests
+
+    raw = np.array([item.p_value for item in family.hypotheses], dtype=np.float64)
+    adjusted = multipletests(raw, alpha=family.alpha, method="holm")[1]
     return tuple(
         HolmAdjustedHypothesis(
             hypothesis_id=item.hypothesis_id,
             p_value=item.p_value,
-            adjusted_p_value=adjusted_by_id[item.hypothesis_id],
-            rejected=adjusted_by_id[item.hypothesis_id] <= family.alpha,
+            adjusted_p_value=float(value),
+            rejected=float(value) <= family.alpha,
         )
-        for item in family.hypotheses
+        for item, value in zip(family.hypotheses, adjusted, strict=True)
     )

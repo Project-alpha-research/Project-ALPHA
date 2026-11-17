@@ -113,9 +113,7 @@ from alpha_validation.proportion import (
     ProportionInterval,
     autocorrelation_effective_size,
     benjamini_hochberg,
-    effective_sample_size,
     newcombe_diff_interval,
-    overlap_factor,
     wilson_interval,
 )
 from alpha_validation.reality_check import DataSnoopingResult, reality_check, spa_test
@@ -204,7 +202,6 @@ __all__ = [
     "conditional_lift",
     "crps_sample",
     "deflated_sharpe",
-    "effective_sample_size",
     "empirical_return_paths",
     "excursion_quantiles",
     "expected_max_sharpe",
@@ -220,7 +217,6 @@ __all__ = [
     "monotonic_trend",
     "n_cpcv_splits",
     "newcombe_diff_interval",
-    "overlap_factor",
     "path_metric_arrays",
     "parametric_price_null",
     "permutation_test",

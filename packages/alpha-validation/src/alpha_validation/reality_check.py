@@ -15,6 +15,17 @@ Both consume a ``(T observations × S strategies)`` performance matrix — each 
 per-observation performance relative to the benchmark (use raw returns to test "beats zero"). They
 reuse the project's stationary bootstrap, so the null shares its block-dependence handling and
 seeding. A low p-value means the best strategy survives the snooping correction (gate passes).
+
+**Hand-written on purpose (checked against arch 8.0.0, 2026-11-15).** ``arch.bootstrap.SPA``
+differs in three ways. (1) Its test statistic is the largest raw mean: the variance estimate is
+used only to choose which strategies to recentre, so its ``studentize`` flag does not change the
+p-value, whereas :func:`spa_test` divides each mean by its bootstrap long-run standard deviation
+as Hansen (2005) defines the statistic. (2) Its p-value is ``#{null > observed} / B``; here it is
+``(1 + #{null >= observed}) / (1 + B)``, which is never zero. (3) It draws different random
+numbers for the same seed (validation invariants). :func:`reality_check` matches arch's "upper"
+p-value within Monte Carlo error; :func:`spa_test` is a different statistic and can disagree
+completely. ``tests/unit/test_stats_library_parity.py`` pins both facts. ALPHA has no
+hand-written StepM or Model Confidence Set; arch's are available if those are wanted.
 """
 
 from __future__ import annotations

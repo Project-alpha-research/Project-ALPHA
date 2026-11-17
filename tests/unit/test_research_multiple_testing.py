@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 
@@ -71,3 +72,66 @@ def test_holm_ties_are_deterministic_and_monotone() -> None:
 def test_frozen_secondary_family_rejects_malformed_input(factory: Callable[[], object]) -> None:
     with pytest.raises(DataError):
         factory()
+
+
+_ONE = (SecondaryHypothesis("a", 0.1),)
+_ID = "SecondaryHypothesis.hypothesis_id must be non-empty"
+_P = "SecondaryHypothesis.p_value must be finite in [0, 1]"
+_FAMILY_ID = "FrozenSecondaryFamily.family_id must be non-empty"
+_TUPLE = "FrozenSecondaryFamily.hypotheses must be a non-empty tuple"
+_ALPHA = "FrozenSecondaryFamily.alpha must be finite in (0, 0.5)"
+
+
+@pytest.mark.parametrize(
+    ("factory", "message"),
+    [
+        (lambda: SecondaryHypothesis("   ", 0.01), _ID),
+        (lambda: SecondaryHypothesis(cast(str, 7), 0.01), _ID),
+        (lambda: SecondaryHypothesis("a", -0.01), _P),
+        (lambda: SecondaryHypothesis("a", float("inf")), _P),
+        (lambda: FrozenSecondaryFamily("  ", _ONE), _FAMILY_ID),
+        (lambda: FrozenSecondaryFamily(cast(str, 3), _ONE), _FAMILY_ID),
+        (
+            lambda: FrozenSecondaryFamily("f", cast(tuple[SecondaryHypothesis, ...], list(_ONE))),
+            _TUPLE,
+        ),
+        (lambda: FrozenSecondaryFamily("f", ()), _TUPLE),
+        (
+            lambda: FrozenSecondaryFamily("f", (*_ONE, SecondaryHypothesis("a", 0.2))),
+            "secondary hypothesis IDs must be unique within the frozen family",
+        ),
+        (lambda: FrozenSecondaryFamily("f", _ONE, alpha=0.0), _ALPHA),
+        (lambda: FrozenSecondaryFamily("f", _ONE, alpha=float("nan")), _ALPHA),
+    ],
+)
+def test_malformed_input_fails_with_its_exact_message(
+    factory: Callable[[], object], message: str
+) -> None:
+    with pytest.raises(DataError) as caught:
+        factory()
+    assert str(caught.value) == message
+
+
+def test_boundary_values_are_accepted_and_the_contract_is_exact() -> None:
+    family = FrozenSecondaryFamily(
+        "edges",
+        (SecondaryHypothesis("zero", 0.0), SecondaryHypothesis("one", 1.0)),
+        alpha=0.49,
+    )
+    assert family.to_dict() == {
+        "alpha": 0.49,
+        "family_id": "edges",
+        "hypotheses": [
+            {"hypothesis_id": "zero", "p_value": 0.0},
+            {"hypothesis_id": "one", "p_value": 1.0},
+        ],
+        "method": "holm",
+        "schema_version": 1,
+    }
+
+
+def test_an_adjusted_value_equal_to_alpha_is_rejected() -> None:
+    family = FrozenSecondaryFamily("equal", (SecondaryHypothesis("only", 0.05),), alpha=0.05)
+    (result,) = holm_adjust_secondary_family(family)
+    assert result.adjusted_p_value == 0.05
+    assert result.rejected is True

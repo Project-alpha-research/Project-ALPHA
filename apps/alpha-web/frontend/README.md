@@ -191,6 +191,5 @@ Chart exploration: each scientific series has All data / 30D / 90D / 1Y and incl
 
 Scientific resizing uses Bokeh’s native interaction/level-of-detail signal and returns to full-detail idle after settling. Observations and exact table/export values remain unchanged.
 
-Genuine browser captures of both native Results previews are in the root
-[README](../../../README.md#native-qlib-and-nautilus-results-previews). These are separately
+The native Results previews are shelved demonstrations (see [STATUS](../../../STATUS.md)). These are separately
 executed synthetic demonstrations; the view does not couple or rerun the engines.

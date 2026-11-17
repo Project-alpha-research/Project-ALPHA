@@ -103,11 +103,11 @@ def test_caller_cannot_claim_local_exemption(model: gw.Gateway, field: str) -> N
 
 
 def test_local_guard_allows_2000_then_refuses_and_survives_restart(model: gw.Gateway) -> None:
-    assert gw.LOCAL_EMBEDDING_CALLS_PER_RUN == 2000
+    assert gw.EMBEDDING_CALLS_PER_RUN == 2000
     for _ in range(2000):
         embed(model)
     restarted = gw.Gateway(model.settings)
-    with pytest.raises(gw.GatewayError, match="LOCAL_EMBEDDING_CALLS_PER_RUN.*2000") as error:
+    with pytest.raises(gw.GatewayError, match="EMBEDDING_CALLS_PER_RUN.*2000") as error:
         embed(restarted)
     assert error.value.code == "budget_exhausted" and error.value.status == 429
     assert rows(model)[-1]["attempts"] == 0
@@ -154,7 +154,7 @@ def test_local_chunk_retry_uses_local_guard(
             "months": {},
         }
     )
-    with pytest.raises(gw.GatewayError, match="LOCAL_EMBEDDING_CALLS_PER_RUN"):
+    with pytest.raises(gw.GatewayError, match="EMBEDDING_CALLS_PER_RUN"):
         model.embeddings({"model": "alpha-embed", "input": "word. " * 500})
     assert rows(model)[-1]["attempts"] == 1
     assert model.budget.status()["runs"]["test"]["calls"] == 0

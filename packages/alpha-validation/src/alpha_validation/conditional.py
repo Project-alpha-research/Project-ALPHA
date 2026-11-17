@@ -23,10 +23,10 @@ findings:
 1. **``valid``** masks bars whose outcome is not yet knowable — the tail of the series where the
    forward window runs off the end, and the warm-up head where the predictor has no history. Left
    unmasked, unresolved bars silently count as failures and every rate is biased downward.
-2. **``overlap``** deflates both arms by the factor from
-   :func:`~alpha_validation.proportion.overlap_factor`. A 30-day forward window measured on daily
-   bars gives ~30 overlapping observations of the same episode; treating them as 30 independent
-   trials shrinks every interval by ``sqrt(30)``.
+2. **``overlap``** deflates both arms by how many times the average observation is
+   double-counted: events times horizon divided by the span of bars, never below 1. A 30-day
+   forward window measured on daily bars gives ~30 overlapping observations of the same episode;
+   treating them as 30 independent trials shrinks every interval by ``sqrt(30)``.
 3. **``apply_fdr``** carries a family of results through Benjamini-Hochberg. Screening ten
    predictors against four outcomes is forty hypotheses, and two of them clear ``p < 0.05`` by
    construction.

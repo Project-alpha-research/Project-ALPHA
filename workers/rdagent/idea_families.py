@@ -141,50 +141,109 @@ SYMBOLS = frozenset(
         "return",
     ]
 )
-SETTINGS = frozenset({"max_depth", "num_leaves", "learning_rate", "rank_t"})
-PLACEHOLDER = re.compile(r"(?:x|f|feat|feature|z)_?\d+(?:_[a-z])*$")
+SETTINGS = frozenset(
+    {"max_depth", "num_leaves", "learning_rate", "rank_t", "reg_lambda", "reg_alpha"}
+)
+# An unrecognised name is a feature only if it reads like one. These are not: names led by an
+# index letter (r_1, b_0, y_raw, l2_penalty, n_estimators), by a LaTeX or operator word (tilde_x,
+# max_iter, rolling_20d), estimator settings, and one short or generic word (SSR, SST, var, rank).
+OPERATOR_WORDS = frozenset(
+    {"tilde", "hat", "bar", "frac", "left", "right", "cdot", "ln", "log", "exp", "sqrt", "sum"}
+    | {"prod", "max", "min", "mathbb", "mathrm", "operatorname", "text", "rolling", "target"}
+)
+SETTING_WORDS = frozenset(
+    {"iter", "iterations", "estimators", "samples", "leaf", "leaves", "depth", "regularization"}
+    | {"subsample", "colsample", "bytree", "refit", "frequency", "epochs", "seed", "penalty"}
+    | {"intercept"}
+)
+# A generic placeholder key (x1, x_2, f3, feat1, feature_4, z1, x1_i_s) names its input in its
+# value.
+PLACEHOLDER = re.compile(r"(?:x|f|feat|feature|z)_?\d+$")
 
 
-def input_names(variables: Any) -> list[str]:
+def _stem(raw: str) -> str | None:
+    """A key or token without LaTeX indices, exponents or one-letter subscripts, else None."""
+    if raw.strip().startswith("\\"):
+        return None  # a LaTeX command (beta, hat y, frac): never a feature name
+    stem = re.sub(r"_?\{.*$|\(.*$|\^.*$|_[^_,]*,.*$", "", raw.strip().lower())
+    stem = re.sub(r"(?:_[a-z])+$", "", stem)
+    return stem if re.fullmatch(r"[a-z][a-z0-9_]*", stem) else None
+
+
+def _is_input(stem: str) -> bool:
+    if name_matches(stem):
+        return True  # a keyword-recognised feature is always an input, whatever it looks like
+    tokens = stem.split("_")
+    words = [t for t in name_tokens(stem) if not re.fullmatch(r"(?:skip)?\d+[a-z]*", t)]
+    return bool(
+        words
+        and not re.fullmatch(r"[a-z]\d*", tokens[0])
+        and stem not in SYMBOLS | SETTINGS
+        and tokens[0] not in OPERATOR_WORDS | SYMBOLS
+        and not set(words) & SETTING_WORDS
+        and not (len(words) == 1 and (len(words[0]) < 4 or words[0] in GENERIC_ESTIMATOR_WORDS))
+    )
+
+
+def read_inputs(variables: Any) -> tuple[list[str], list[str]]:
+    """Named inputs of a variable list, and placeholder keys whose value names no input."""
     entries = (
         variables.items()
         if isinstance(variables, dict)
         else (((key, "") for key in variables) if isinstance(variables, (list, tuple)) else [])
     )
     names: list[str] = []
+    unreadable: list[str] = []
     for key, value in entries:
-        key = str(key).lower()
-        if PLACEHOLDER.fullmatch(key):
-            candidates = re.findall(r"\b[a-zA-Z][a-zA-Z0-9_]*\b", str(value))
-            candidates = [n for n in candidates if "_" in n or any(c.isdigit() for c in n)]
+        stem = _stem(str(key))
+        if stem is None:
+            continue
+        if PLACEHOLDER.fullmatch(stem):
+            tokens = re.findall(r"\b[a-zA-Z][a-zA-Z0-9_]*\b", str(value))
+            found = [
+                s
+                for t in tokens
+                if ("_" in t or any(c.isdigit() for c in t))
+                and (s := _stem(t)) is not None
+                and _is_input(s)
+            ]
+            if not found:
+                unreadable.append(str(key))
         else:
-            candidates = [key]
-        for candidate in candidates:
-            # LaTeX indices, or plain one-letter index suffixes, do not name a construct.
-            stem = re.sub(r"_?\{.*$|\(.*$", "", candidate.lower()).strip("\\")
-            stem = re.sub(r"(?:_[a-z])+$", "", stem)
-            if (
-                not re.search(r"[a-z]", stem)
-                or len(stem) == 1
-                or stem in SYMBOLS | SETTINGS
-                or PLACEHOLDER.fullmatch(stem)
-            ):
-                continue
-            if stem not in names:
-                names.append(stem)
-    return names
+            found = [stem] if _is_input(stem) else []
+        names.extend(name for name in found if name not in names)
+    return names, unreadable
+
+
+def input_names(variables: Any) -> list[str]:
+    return read_inputs(variables)[0]
+
+
+UNKNOWN = "composite: unknown inputs"
 
 
 def idea_family(
     name: str, description: str = "", formulation: str = "", variables: Any = None
 ) -> str:
-    """Only names classify; prose may identify a composite but never its mechanism."""
-    listed = input_names(variables)
-    inputs = input_families(*listed)
+    """Only names classify; prose may identify a composite but never its mechanism.
+
+    A composite takes the families of its name and of every named input (an unrecognised one is
+    its own ``other:`` family). It is ``composite: unknown inputs`` when it names no input, and
+    also carries that family when a placeholder input's value names none, so an unnamed input
+    cannot hide a closed family's feature. A regression is one construct unless it lists two
+    keyword-recognised features. The formulation never classifies.
+    """
+    listed, unreadable = read_inputs(variables)
+    # Every family a recognised input's name matches, as for a single name's keywords.
+    inputs = {f for item in listed for f in name_matches(item) or [name_family(item)]}
+    known = {found[0] for item in listed if (found := name_matches(item))}
     text = " ".join(re.findall(r"[a-z0-9]+", f"{name} {description}".lower()))
     text = text.replace("volume weighted average price", "vwap")
-    if COMPOSITE.search(text) or (WEAK_COMPOSITE.search(text) and len(inputs) >= 2):
-        return "; ".join(sorted(inputs)) or "composite: unknown inputs"
+    if COMPOSITE.search(text) or (WEAK_COMPOSITE.search(text) and len(known) >= 2):
+        families = inputs | set(name_matches(name))
+        if unreadable or not families:
+            families.add(UNKNOWN)
+        return "; ".join(sorted(families))
     return name_family(name)
 
 

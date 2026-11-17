@@ -588,8 +588,8 @@ def test_composite_history_adds_no_symbol_families() -> None:
         for i in range(3)
     ]
     summary = ns["family_summary"](rows, 3)
-    assert "other: c" not in summary and "other: m" not in summary
-    assert "no candidate: other: jv." in summary
+    assert "other:" not in summary
+    assert "no candidate: composite: unknown inputs." in summary
 
 
 def test_refusal_message_has_no_doubled_full_stop(

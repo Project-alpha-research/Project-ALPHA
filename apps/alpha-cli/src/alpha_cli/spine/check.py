@@ -19,6 +19,7 @@ LABEL_PHRASES = {
     "source-defaulted": "source defaulted",
     "short-history": "short history",
     "no-diagnostics": "no diagnostics",
+    "too-few-trades": "too few trades",
 }
 _TAG = re.compile(
     r"\[([0-9a-fA-F]{8,16})(?:~([0-9a-fA-F]{8,16}))?:([A-Za-z_]\w*)(?::(diff|ratio))?\]"

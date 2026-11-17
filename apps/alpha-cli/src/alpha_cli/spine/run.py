@@ -14,6 +14,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine.audit import cap_sparse_run
 from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
@@ -30,6 +31,36 @@ from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.timeframe import DAILY
+from alpha_validation.tearsheet import report_to_manifest
+
+
+def idea_id(spec_hash: str, data_fingerprint: str) -> str:
+    """Link the same spec and data across source versions; never a trial-count key."""
+    payload = json.dumps([spec_hash, data_fingerprint], separators=(",", ":"))
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def headline_manifest(out: _gauntlet.GauntletOutput, result: dict[str, Any]) -> dict[str, Any]:
+    """Add the evidence caveat to each stored headline, keeping numeric scores intact."""
+    if "too-few-trades" not in result["labels"]:
+        return {}
+    stored = report_to_manifest(out.report)
+    headlines = {}
+    for key in ("dsr", "verdict"):
+        if stored[key] is not None:
+            headlines[key] = {
+                **stored[key],
+                "labels": ["too-few-trades"],
+                "sentence": result["sentence"],
+            }
+    if "verdict" in headlines and "dsr" in headlines:
+        headlines["verdict"].update(
+            n_trials=headlines["dsr"]["n_trials"],
+            trial_basis=headlines["dsr"].get(
+                "trial_basis", "no ledger family: counted as one trial"
+            ),
+        )
+    return headlines
 
 
 def _fields(obj: Any) -> dict[str, Any]:
@@ -113,6 +144,7 @@ def _prepare(
         },
         source_fingerprint=_runner.source_fingerprint(bars, dividends=dividends),
     )
+    result["idea_id"] = idea_id(idea.spec_sha256, identity.source_fingerprint)
     result.update(run_id=identity.run_id, run_dir=str(_artifacts.run_dir(home, identity.run_id)))
     return Prepared(bars, dividends, spec, identity)
 
@@ -138,6 +170,11 @@ def _execute(
             if not line.startswith("HTML report saved to:"):
                 print(line)
         print(f"HTML report saved to: {rdir / 'tearsheet.html'}")
+    result["labels"] = list(
+        dict.fromkeys([*result["labels"], *manifest.get("spine", {}).get("labels", [])])
+    )
+    result["sentence"] = manifest.get("spine", {}).get("sentence")
+    result["idea_id"] = manifest.get("idea_id")
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
@@ -155,6 +192,8 @@ def _execute(
         facts=build_facts(rdir),
     )
 
+    if result.get("sentence"):
+        print(f"{result['sentence']} [too-few-trades]")
     if result["resized_entries"] > 0:
         print(
             f"{result['asset']}: {result['resized_entries']} cash entries resized to fit "
@@ -215,6 +254,8 @@ def _write_run(
             result,
             snapshot=snapshot,
         )
+    else:
+        out = cap_sparse_run(out, result)
     _, manifest = write_validation_run(
         staged_home,
         prepared.bars,
@@ -222,9 +263,12 @@ def _write_run(
         out,
         prepared.identity,
         extra_manifest={
+            **headline_manifest(out, result),
+            "idea_id": idea_id(idea.spec_sha256, prepared.identity.source_fingerprint),
             "source": result["source"],
             "resized_entries": out.result.resized_entries,
             "spine": {
+                "sentence": result.get("sentence"),
                 "test_id": test_id,
                 "spec_sha256": idea.spec_sha256,
                 "name": idea.name,

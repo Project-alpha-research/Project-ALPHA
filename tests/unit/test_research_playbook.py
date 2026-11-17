@@ -52,6 +52,7 @@ SYMPTOMS = (
     "need the macro picture",
     "is this just the market going up?",
     "does it hold up out of sample?",
+    "would a slightly different data feed change the answer?",
 )
 PLANNED = ("regime detection", "attribution", "change-point detection", "capacity")
 CLI_SRC = ROOT / "apps/alpha-cli/src/alpha_cli"
@@ -202,6 +203,8 @@ def flag_names() -> set[str]:
         "concentration": {"top_3": 0.9},
         "sensitivity": {"variants": [{"kind": "costs", **weak}, {"kind": "parameter", **weak}]},
         "delay": {"base_sharpe": 2.0, "delayed_sharpe": 0.5},
+        "price_noise": {"labels": ["fragile-to-price-noise"], "sentence": "noise flips signs"},
+        "plausibility": [{"flag": "implausibly-good", "detail": "check data"}],
     }
     return {item["flag"] for item in diagnostics.flags(sections)}
 
@@ -320,7 +323,7 @@ def test_every_name_in_a_code_span_occurs_in_the_program(rel: str) -> None:
 def test_skills_name_only_real_metrics_flags_and_audit_checks() -> None:
     """The exact vocabularies, so a skill cannot keep a check or flag the tool has dropped."""
     checks, flags = audit_checks(), flag_names()
-    assert checks and len(flags) == 6, "the fixtures above must exercise every check and flag"
+    assert checks and len(flags) == 8, "the fixtures above must exercise every check and flag"
     review = _parts(skill_file("review-result"))[0]
     missing = sorted(checks - set(review))
     assert not missing, f"review-result must walk every audit check; missing: {missing}"

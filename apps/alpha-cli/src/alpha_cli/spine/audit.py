@@ -2,9 +2,76 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
+
+from alpha_validation.verdict import VerdictSummary
+
+if TYPE_CHECKING:
+    from alpha_cli import _gauntlet
+
+ENOUGH_TRADES = 30
+IMPLAUSIBLE_SHARPE = 3.0
+IMPLAUSIBLE_HIT_RATE = 0.80
+IMPLAUSIBLE_MEAN_TRADE = 0.05
+
+
+def capped_verdict(verdict: VerdictSummary, trades: int) -> VerdictSummary:
+    """C is the existing middle grade; sparse trades cannot improve a lower grade."""
+    if trades >= ENOUGH_TRADES:
+        return verdict
+    return replace(
+        verdict,
+        overall="C" if verdict.overall in ("A", "B") else verdict.overall,
+        detail={**verdict.detail, "overall_gpa": min(2.0, verdict.detail["overall_gpa"])},
+    )
+
+
+def cap_sparse_run(
+    out: _gauntlet.GauntletOutput, result: dict[str, Any]
+) -> _gauntlet.GauntletOutput:
+    trades = len(out.result.trades)
+    if trades >= ENOUGH_TRADES:
+        return out
+    if "too-few-trades" not in result["labels"]:
+        result["labels"].append("too-few-trades")
+    result["sentence"] = f"Only {trades} closed trades: too few to judge."
+    if out.report.verdict is None:
+        return out
+    return replace(
+        out, report=replace(out.report, verdict=capped_verdict(out.report.verdict, trades))
+    )
+
+
+def plausibility(
+    sharpe: float | None,
+    hit_rate: float | None,
+    mean_trade: float | None,
+    trades: int,
+    *,
+    daily: bool,
+) -> list[dict[str, str]]:
+    raised = trades >= ENOUGH_TRADES and (
+        (sharpe is not None and sharpe > IMPLAUSIBLE_SHARPE)
+        or (hit_rate is not None and hit_rate > IMPLAUSIBLE_HIT_RATE)
+        or (daily and mean_trade is not None and mean_trade > IMPLAUSIBLE_MEAN_TRADE)
+    )
+    return (
+        [
+            {
+                "flag": "implausibly-good",
+                "detail": (
+                    "This looks too good: check for a data error or a look at the future "
+                    "before believing it."
+                ),
+            }
+        ]
+        if raised
+        else []
+    )
 
 
 def audit(
@@ -73,7 +140,11 @@ def audit(
             fee > 0 and slippage > 0,
             f"Spec fee {fee:g} bps and slippage {slippage:g} bps.",
         )
-    add("enough-trades", trades >= 30, f"{trades} closed walk-forward trades; threshold 30.")
+    add(
+        "enough-trades",
+        trades >= ENOUGH_TRADES,
+        f"{trades} closed walk-forward trades; threshold {ENOUGH_TRADES}.",
+    )
     add(
         "benchmark-present",
         benchmark,

@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 1bc80d2b7eeab14a
+verified: 81fe78e1f4e68a2e
 ---
 
 # Command line runs invariants
@@ -93,12 +93,10 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar dates are
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
-  trial; the manifest retains its original test association.
-- `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync; `trial_index` and `total_trials` equal the 1-based line
-  number. Corruption fails loud. Errors count as trials, carry an `error` label and retain unavailable metrics as null; their explanation is in the command
-  output.
-- Quick mode uses 20/4/4 null paths and 50 resamples, with a `quick` label. All runs carry `all-in` and `dev-machine-data`; ambiguous default sources and
-  history shorter than three years receive labels too.
+  trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+- `ledger/trials.jsonl` is append-only `AlphaTrialV1` (lock file, strict JSON, fsync); `trial_index` and `total_trials` equal the 1-based line number and
+  corruption fails loud. Errors count as trials with an `error` label and null unavailable metrics; the command output explains them.
+- Quick mode (20/4/4 null paths, 50 resamples) is labelled `quick`; all runs carry `all-in` and `dev-machine-data`; defaulted sources and short history too.
 - CASH equity-sized long entries from flat are capped at the affordable size step including fees at the open; the existing buffer stays. The manifest/result
   counts `resized_entries` in scored execution and prints a line above zero; older runs load without it.
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
@@ -113,16 +111,18 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - `inverted_signal` shorts where the rule was long (same engine, bars, costs, next-open fills), re-sized to 100% of equity net of short dividends each bar;
   CASH shorts are hypothetical, no borrow or funding cost; no ledger, variant or family count ([card](../../../research/tools/inverted-signal-control.md)).
 - `walk_forward_efficiency`: per fold, OOS CAGR over the full-sample CAGR on its recorded train window (warm-up trimmed); median of defined folds. Rule of
-  thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
+  thumb, not a test; folds without OOS trades are counted and null it when most: [WFE card](../../../research/tools/walk-forward.md).
+- Under 30 closed OOS trades, `too-few-trades` labels the run, facts and verdict/DSR headlines (`results check` needs "too few trades"); grade A/B reads C
+  in the manifest and ledger row, D/F and numbers kept. The HTML tear sheet does not yet carry the too-few-trades caveat.
+- [`price_noise`](../../../research/tools/price-noise.md): 50 run-id-seeded price-feed controls, no ledger trial; `implausibly-good` never improves a verdict.
 - Audit entries are independent PASS / FLAG / NOT-CHECKED, no overall grade; traces use walk-forward artifacts; fill ranges allow recorded slippage
   (NOT-CHECKED without cost settings); the manifest verifies every sidecar. `data_period` / `traded_period` facts: loaded-bar and stored-equity endpoints.
 - `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figures and [`alpha
   tool`](cli-investigation-tools.md) outputs (for a test id, failed or unreadable assets under `failed` with a reason); `cite` quotes a stored field; `alpha
   diagnose` never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`; facts carry run id, basis, source file/field, labels and a reason exactly
   when the value is null.
-- These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an imperative `next` command; JSON under `--json`), including
-  when every asset of a test fails. Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts sensitivity re-runs
-  separately from the append-only row index.
+- These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known`, imperative `next`; JSON under `--json`), even when every asset
+  fails. Ledger schema stays `AlphaTrialV1`; optional `variants_evaluated` counts sensitivity re-runs apart from the append-only row index.
 ## Draft checks, lookalikes and novelty
 - `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 ## Suites

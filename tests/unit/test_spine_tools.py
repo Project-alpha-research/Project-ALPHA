@@ -1,6 +1,7 @@
 """Investigation tools: outputs outside the run directory, sourced facts, counted ledger rows."""
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -232,7 +233,9 @@ def test_changepoints_map_back_to_dates(
     home: Path, monkeypatch: pytest.MonkeyPatch, on: str
 ) -> None:
     # Always in the market: a long/flat rule's own entries and exits are change points too.
-    series = _series(home, always_long=True)
+    # Its recorded position is long on every bar, so each change point is a behaviour shift.
+    always = _series(home, always_long=True)
+    series = replace(always, positions=(True,) * len(always.dates))
     monkeypatch.setattr(tools, "load_run", lambda home, run_id: series)
     output = tools.changepoints(home, RUN, on)
     result = output["result"]

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 883f23d4915715d7
+verified: e03a5344e812d0f9
 ---
 # Results and cite
 **Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time a number goes into an answer.
@@ -17,16 +17,17 @@ uv run alpha results check <file>
 ```
 **How to read it**
 - `alpha results` lists ledger rows (newest first, failures too) and `total_trials`; `show <id>`: `facts`, `labels`, `flags`, `audit`, `charts`,
-  `tools`, `family` (recorded and live family counts); for a test id, failed assets under `failed` with a reason.
+  `idea_id` (filter with `--idea-id`), `tools`, `family` (recorded and live family counts); for a test id, failed assets under `failed` with a reason.
 - `cite` prints one stored value with its tag and basis: `<value> [<run_id>:<metric>] (<basis>)`. Paste the tag. `--json` gives `metric`, `value`,
   `run_id`, `basis`, `source`, `labels`, `reason`.
 - `compare` (two to eight runs, first is the base) gives each run's `value`, `diff`, `ratio`. `check` reads a draft tagged `0.75 [<run_id>:<metric>]`;
   fix the draft on `ROUNDED_ACROSS_THRESHOLD`, `FLAG_CONTRADICTED`, `UNIT_MISMATCH`, `PRECISION_TOO_LOW` or `METRIC_NOT_STORED`.
-- Metrics: `data_period`, `traded_period`, `verdict`, `oos_sharpe`, `dsr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
+- Metrics: `data_period`, `traded_period`, `verdict`, `oos_sharpe`, `dsr`, `psr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
   `full_sample_max_drawdown`, `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`,
   `exposure`, `top_1_profit_share`, `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`,
   `variants_evaluated`, `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`.
-  WFE is a practitioner rule of thumb, not a statistical test; `wfe_fold_count` counts the folds in its median.
+  `price_noise_median_sharpe`, `price_noise_p05_sharpe`, `price_noise_p95_sharpe`, `price_noise_sign_flip_share`, `price_noise_median_trades`;
+  WFE is a rule of thumb, not a test, and `wfe_fold_count` counts its folds.
   [Tool](attribution-regimes-changepoints.md) facts take `--tool-output <id>` when a tool ran twice: `market_beta`, `market_alpha_annual`,
   `market_alpha_p`, `market_r_squared`, `regime_turbulent_share_of_return`, `regime_turbulent_share_of_time`, `changepoint_count`.
 - Setup study ids support cite/check: `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`,

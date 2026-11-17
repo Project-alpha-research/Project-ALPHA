@@ -1313,6 +1313,32 @@ state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
 
 [[capability]]
+id = "price-noise"
+name = "Price-noise robustness controls"
+what = "Re-run 50 deterministic perturbed price copies and describe net Sharpe sensitivity without adding trials."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> price_noise_p05_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_price_noise.py::test_noise_is_deterministic_valid_independent_and_preserves_volume", "tests/unit/test_spine_price_noise.py::test_price_noise_real_engine_leaves_ledger_byte_identical", "tests/unit/test_spine_price_noise.py::test_fragile_and_robust_noise"]
+proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
+real_data = "on 2026-11-17 full rule tests on the Dell's data (scratch ledger): net Sharpe 5-95% across 50 copies, original in brackets: ma_cross 50/200 SPY 0.74-0.75 (0.75); ma_cross 10/50 SPY 0.54-0.57 (0.56); ma_cross 50/200 BTC/USDT 0.63-0.64 (0.63); tsmom 365 BTC/USDT 0.81-0.84 (0.83); no sign flips, no undefined copy, no fragile label; adds 10-22% to alpha test time (about a minute on SPY 1993-2026)"
+needs = []
+state = "Working"
+docs = ["research/tools/price-noise.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "implausibly-good"
+name = "Implausible-result observation"
+what = "Flag unusually high net Sharpe, hit rate or mean daily-trade return with at least 30 OOS trades."
+see_it = ["alpha diagnose <run_id>"]
+entry_points = ["cli: alpha diagnose"]
+proof_synthetic = ["tests/unit/test_spine_honesty_3.py::test_plausibility_triggers", "tests/unit/test_spine_honesty_3.py::test_plausibility_flag_does_not_change_verdict", "tests/unit/test_spine_honesty_3.py::test_implausibly_good_fires_on_a_rule_over_a_steadily_rising_demo_series"]
+proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
+real_data = "on 2026-11-17 the same four Dell rule tests (SPY ma_cross 50/200 and 10/50, BTC/USDT ma_cross 50/200 and tsmom 365) stored the check and raised nothing, as expected; it fires on a synthetic steady uptrend (Sharpe 6.4, 40 trades)"
+needs = []
+state = "Working"
+docs = ["research/tools/diagnose-and-audit.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
 id = "setup-study"
 name = "Study outcomes after every separate setup occurrence"
 what = "Measure net forward returns against drift and spaced random dates, with one counted exploratory trial, a figure and citable facts."

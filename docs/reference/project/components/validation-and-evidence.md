@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: f68c4187128bc52e
+verified: ea0572842102639f
 ---
 
 # Validation and evidence
@@ -55,6 +55,9 @@ practitioner rule of thumb, not a statistical test. See the
 [inversion card](../../../../research/tools/inverted-signal-control.md) and
 [efficiency card](../../../../research/tools/walk-forward.md).
 
+Price-noise controls re-run 50 perturbed copies without counting trials; the plausibility flag asks for a data/look-ahead check.
+Neither is proof of an edge. See the [noise card](../../../../research/tools/price-noise.md).
+
 Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
 questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
 return is market exposure, with Newey-West uncertainty), `alpha tool regimes` (calm versus
@@ -68,7 +71,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 - **Workspaces:** `packages/alpha-validation`
 - **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
-  `investigation-tools`, `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`
+  `investigation-tools`, `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`, `price-noise`, `implausibly-good`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 42731d07fcf174b9
+verified: cb8c32142e0855ce
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -35,6 +35,7 @@ drafted answer against stored run facts, and the computed differences between ru
   Percentages scale the stored value by 100; `x`/`×` denotes a ratio. Decimal rounding uses ties-to-even.
 - Each metric has a unit kind in `spine/facts.py:METRIC_UNITS`: ratio (Sharpe-like), fraction (returns, drawdowns,
   shares, `dsr`, WFE), count or other. Inverted Sharpe and its SE are ratios; control returns are fractions.
+  Price-noise Sharpe percentiles are ratios, sign-flip share a fraction, median trades a count; PSR is a fraction.
   WFE is a practitioner rule of thumb, not a statistical test. `%` is valid only on a fraction; `x` only on a ratio (`UNIT_MISMATCH`).
   The written value must equal the stored value rounded to its precision; a ratio needs one decimal and a
   fraction a whole percent (or two decimals), else `PRECISION_TOO_LOW`. Hyphen, Unicode minus and an en dash
@@ -54,7 +55,7 @@ drafted answer against stored run facts, and the computed differences between ru
   case insensitive), or the next word is `trade(s)`, `percent`, `per cent`, `bps` or `basis points`. `trial` and `ALPHA` do not trigger checking.
   Every other numeric token needs its own immediately following tag. Null facts retain their reasons.
 - Cited runs require visible label phrases from `spine/check.py:LABEL_PHRASES`: quick, source defaulted,
-  short history, no diagnostics (case insensitive; hyphens also work). A matched, tagged `total_trials`
+  short history, no diagnostics, too few trades (case insensitive; hyphens also work). A matched, tagged `total_trials`
   value is required; this is the stored diagnostic-time count, not a fresh count of ledger rows.
 - Problems include line, excerpt, kind, stored value, known choices and next action. JSON adds a
   `warnings` list: `--allow-untagged N` tolerates the first N untagged numbers; excess numbers fail.

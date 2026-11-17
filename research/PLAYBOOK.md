@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: b6c911d0e3974489
+verified: a2c8fdefe252abb9
 ---
 
 # Research playbook: how to work any idea
@@ -66,6 +66,7 @@ Labels and flags are how integrity shows. They go before the numbers, in plain w
 | `all-in` | fully invested or flat; no position sizing |
 | `source-defaulted` | the asset is in more than one store; the first was used |
 | `repeat` | a repeat of an earlier, identical test |
+| `too-few-trades` | too few trades: under 30 closed out-of-sample trades; the grade is capped at C |
 | `no-diagnostics` | the diagnostic pass was skipped |
 
 - A flag (`below-benchmark`, `concentrated-profit`, ...) is an observation, never a verdict. Report every flag
@@ -101,7 +102,7 @@ SPY ran as trial `<N>`; labels in words; then `<value> [<run id>:oos_sharpe]` be
 benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed.
 
 **A surprise.** `alpha diagnose` shows the flag `drawdown-with-market`: "During the worst drawdown
-(<depth>), buy and hold fell <ratio> times as much over the same dates (<fall>)."
+(<depth>), buy and hold fell <percent> less or more than the rule over the same dates (<fall>)."
 
 - Rivals: the loss is the market's; the rule entered late; a data error on those dates.
 - Cheapest separating test: read `drawdowns` and `by_year` in the same diagnose output (free),
@@ -111,7 +112,6 @@ benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed
 
 **A question about the past.** "What was the Sharpe on ETH?" `alpha results --symbol ETH --json`
 returns no rows: answer "That was not tested", and offer the `alpha test` command that would.
-
 ## Where things are
 
 - Tool cards, by symptom: [tools/README.md](tools/README.md). Lessons: [lessons/](lessons/README.md).

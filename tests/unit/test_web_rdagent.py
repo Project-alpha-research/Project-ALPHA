@@ -503,3 +503,30 @@ def test_prose_slashes_survive_but_paths_are_redacted(store: Path) -> None:
     shown = str(rdagent.run_detail("new").factors[0].description.value)
     assert "admitted/approval/promotion" in shown
     assert "someone" not in shown
+
+
+def test_round_outcomes_of_the_loop_guard_and_resume_have_sentences() -> None:
+    root = Path(__file__).resolve().parents[2]
+    guard = ast.parse((root / "workers/rdagent/loop_guard.py").read_text())
+    statuses = next(
+        ast.literal_eval(node.value)
+        for node in guard.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == "ROUND_STATUSES" for t in node.targets)
+    )
+    codes = set(statuses.values())
+    memory = ast.parse((root / "workers/rdagent/research_memory.py").read_text())
+    for node in ast.walk(memory):
+        if isinstance(node, ast.Dict):
+            for key, value in zip(node.keys, node.values, strict=True):
+                if isinstance(key, ast.Constant) and key.value == "status":
+                    branches = [value.body, value.orelse] if isinstance(value, ast.IfExp) else []
+                    codes |= {
+                        n.value
+                        for n in branches
+                        if isinstance(n, ast.Constant) and isinstance(n.value, str)
+                    }
+    assert {"coding_failed_provider_timeout", "abandoned_after_error"} <= codes
+    for code in codes:
+        assert reader.status_sentence(code, None)
+    assert reader.status_sentence("DEFLATION_FAIL", None)

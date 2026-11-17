@@ -100,7 +100,7 @@ def _read_ledger(path: Path) -> LedgerRows:
             statuses = (
                 {"SUPPORT", "CONTRADICTION", "INSUFFICIENT", "INVALID"}
                 if row["schema"] == "AlphaRuleTrialV1"
-                else STATUSES | {"DEFLATION_FAIL"}
+                else STATUSES
             )
             if row["status"] not in statuses or row["stage"] not in {"none", "screen", "replay"}:
                 raise ValueError("invalid trial status or stage")

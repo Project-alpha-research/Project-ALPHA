@@ -34,6 +34,7 @@ from alpha_cli._rdagent_clocks import (
 from alpha_cli._rdagent_stats import autocorrelation_effective_size, screen_statistics
 from alpha_cli.crypto_bulk_store import configured_crypto_bulk_store
 from alpha_core import Bar, DataError
+from alpha_data.context.daily_funding import daily_funding_with_sources
 from alpha_research.panel import cross_sectional_ic
 from alpha_validation.bootstrap import block_bootstrap_ci
 
@@ -270,7 +271,64 @@ def _alpaca_viability(data_dir: Path, spec: dict[str, Any]) -> None:
         )
 
 
-def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str, Any]:
+FUNDING_EXCLUSIONS = {"COCOSUSDT": "perp identity across the 2023 rename is unresolved"}
+FUNDING_COLUMNS = ("funding_sum", "funding_last", "funding_count")
+
+
+def _panel_funding(
+    funding_dir: Path, raw_panel: pl.DataFrame, breaks: list[dict[str, Any]]
+) -> tuple[pl.DataFrame, dict[str, str]]:
+    names = sorted(
+        name
+        for name in raw_panel["instrument"].unique()
+        if name not in FUNDING_EXCLUSIONS and not name.startswith("1000")
+    )
+    daily, sources = daily_funding_with_sources(
+        funding_dir, names, min(raw_panel["date"]), max(raw_panel["date"])
+    )
+    daily = daily.rename({"symbol": "instrument"})
+    for entry in breaks:
+        if entry["reason"] == "ticker_reused":
+            daily = daily.filter(
+                ~(
+                    (pl.col("instrument") == entry["instrument"])
+                    & (pl.col("date") >= date.fromisoformat(entry["new_from"]))
+                )
+            )
+    # Join on the exchange ticker first. Relabel carries the attached values along with bars.
+    attached = raw_panel.join(daily, on=["date", "instrument"], how="left")
+    labelled, _ = identity.relabel(attached, breaks)
+    return (
+        labelled.filter(pl.col("funding_count").is_not_null())
+        .select("date", "instrument", *FUNDING_COLUMNS)
+        .sort("date", "instrument"),
+        sources,
+    )
+
+
+def _funding_receipt(
+    out: Path, funding: pl.DataFrame, panel: pl.DataFrame, sources: dict[str, str]
+) -> dict[str, Any]:
+    buffer = io.BytesIO()
+    funding.write_parquet(buffer)
+    payload = buffer.getvalue()
+    exclusive(out / "funding.parquet", payload)
+    coverage = {
+        str(year): funding.filter(pl.col("date").dt.year() == year).height
+        / panel.filter(pl.col("date").dt.year() == year).height
+        for year in sorted(panel["date"].dt.year().unique())
+    }
+    return {
+        "sha256": sha(payload),
+        "source_table_hashes": sources,
+        "names": sorted(funding["instrument"].unique()),
+        "coverage_by_year": coverage,
+    }
+
+
+def freeze(
+    data_dir: Path, out: Path, universe: Path | None = None, funding_dir: Path | None = None
+) -> dict[str, Any]:
     spec = universes.load(universe)
     data_dir = Path(spec.get("data_dir", data_dir))
     if "data_dir" in spec and not data_dir.is_dir():
@@ -346,6 +404,11 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
                 + (f" (missing {', '.join(missing)})" if missing else "")
                 + f"; cross-sectional thirds need at least {spec['min_universe']}"
             )
+    funding = (
+        _panel_funding(funding_dir, panel, spec.get("identity_breaks", []))
+        if funding_dir is not None
+        else None
+    )
     panel, breaks = identity.relabel(panel, spec.get("identity_breaks", []))
     panel = validate_panel(panel)
     if universe is not None and panel["instrument"].n_unique() < spec["min_universe"]:
@@ -374,6 +437,8 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
     if universe is not None:
         receipt["universe_sha256"] = sha(canonical(spec))
         exclusive(out / "universe.json", canonical(spec))
+    if funding is not None:
+        receipt["funding"] = _funding_receipt(out, funding[0], panel, funding[1])
     exclusive(out / "panel-receipt.json", canonical(receipt))
     return receipt
 

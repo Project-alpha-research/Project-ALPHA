@@ -14,8 +14,10 @@ GENERIC_ESTIMATOR_WORDS = frozenset(
 # Keywords are matched on name tokens (hyphens, spaces and case normalised), longest first,
 # and a matched keyword consumes its tokens. A final keyword token of four or more letters
 # also matches as a prefix (prox -> proximity, skew -> skewness). The table order decides a
-# single name's family when it matches several.
+# single name's family when it matches several; funding comes first, so a funding construct
+# (funding_momentum_7d) is never filed under a price family.
 FAMILY_KEYWORDS = (
+    ("futures funding", ("funding", "carry", "basis", "perp")),
     (
         "price near its high / range position",
         ("high_prox", "near_high", "distance_to_high", "stoch", "rangepos", "range_position", "hp"),

@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 719edbe962b862f4
+verified: aa507733c2b4365b
 ---
 
 # Worker invariants
@@ -70,7 +70,6 @@ The general rule is [research integrity § Models and isolated workers](research
 - W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
   accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
 ## Literature worker
-
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
   Metadata comes only from OpenAlex, Crossref, Unpaywall and arXiv; Google Scholar stays manual. Documents are
   open-access or owner-provided only; no OCR and no paywall bypass.
@@ -117,6 +116,7 @@ The general rule is [research integrity § Models and isolated workers](research
   `WORKER_NOT_INSTALLED` and the one setup step.
 
 ## RD-Agent worker
+- Optional funding inputs and their source-based eligibility: [funding policy](../../../workers/rdagent/README.md#futures-funding).
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.

@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 1f39f9e07f5fc794
+verified: d671bec724c2d3d6
 ---
 
 # RD-Agent worker workspace
@@ -48,6 +48,8 @@ no market, inference or evidence authority.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
   The code-critic guard preserves execution/value feedback and skips later critics in the failed round.
   Restored prompts retain four full same-panel rounds; the other rounds stay as summaries.
+- Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and
+  factor-specific eligibility: [README](README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
   use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,

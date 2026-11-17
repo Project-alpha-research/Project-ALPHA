@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: e0b10b2fbcb85035
+verified: baa28e5a25acaf32
 ---
 
 # RD-Agent
@@ -28,7 +28,6 @@ have it backtested by [Nautilus](nautilus.md), take the verdict of the
 what counts as evidence; [the owner does](research-cases-and-approval.md).
 
 ## Intended design
-
 - One fixed upstream version (commit `484776c`), checked file by file; never copied into ALPHA or edited.
 - It runs as a separate worker program with its own install, started and supervised by the
   [command line](command-line.md). No ALPHA package imports it.
@@ -61,6 +60,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
   Declared renamed tickers join as one instrument under the old name, with each join receipted.
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
+  Optional [futures funding](../../../../workers/rdagent/README.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding

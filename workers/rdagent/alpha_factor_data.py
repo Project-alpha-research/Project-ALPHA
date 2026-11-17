@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import math
 import os
@@ -52,6 +53,45 @@ on the return from the next open to the following open, with costs.
 """
 
 
+FUNDING_COLUMNS = ("$funding_sum", "$funding_last", "$funding_count")
+FUNDING_README = """
+## Futures funding
+
+$funding_sum is the sum of actual perpetual funding settlements during the UTC day.
+$funding_last is the last settlement rate that day; $funding_count is the number of settlements.
+Intervals can change; the sum is never estimated by multiplying a rate by three.
+A missing value means no perpetual contract or no settlement that day. Roughly four in ten
+coin-days have none, and most later-delisted coins never had a perpetual contract.
+Missing values must not be filled with zero or carried forward.
+The day's last included settlement is the one before midnight UTC, using known_from.
+A settlement just after midnight belongs to the following day.
+"""
+
+
+def _funding_frame(path: Path) -> tuple[pd.DataFrame, str]:
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    receipt_path = path.with_name("panel-receipt.json")
+    if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_bytes())
+        if receipt.get("funding", {}).get("sha256") != digest:
+            raise ValueError("funding sha256 differs from panel receipt")
+    frame = pd.read_parquet(io.BytesIO(raw))
+    dates = pd.to_datetime(frame.pop("date"), utc=True)
+    if (
+        dates.isna().any()
+        or not dates.eq(dates.dt.normalize()).all()
+        or dates.ge(pd.Timestamp("2024-01-01", tz="UTC")).any()
+    ):
+        raise ValueError("funding dates must be midnight before the reserved window")
+    frame["datetime"] = dates.dt.tz_localize(None)
+    frame = frame.set_index(["datetime", "instrument"]).sort_index()
+    if frame.index.has_duplicates:
+        raise ValueError("duplicate funding data keys")
+    frame = frame.rename(columns=lambda c: "$" + c).loc[:, list(FUNDING_COLUMNS)]
+    return frame.astype("float64"), digest
+
+
 def prepare(panel: Path, out: Path) -> dict[str, Any]:
     frame = pd.read_parquet(panel)
     dates = pd.to_datetime(frame["date"], utc=True)
@@ -71,6 +111,13 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
         .astype("float64")
     )
     frame["$factor"] = 1.0
+    funding_path = panel.with_name("funding.parquet")
+    funding_hash = None
+    if funding_path.exists():
+        funding, funding_hash = _funding_frame(funding_path)
+        if not funding.index.isin(frame.index).all():
+            raise ValueError("funding keys outside panel")
+        frame = frame.join(funding, how="left")
     # Every instrument starts at one common first day, no later than the first cut, so each cut
     # keeps the full instrument column set (null rows before listing). Each instrument still ends
     # at its own last bar: no row ever follows the last bar, as in the gapped-universe span rule.
@@ -100,7 +147,7 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
         folder.mkdir(parents=True)
         data.to_hdf(folder / "daily_pv.h5", key="data", mode="w")
         if name in {"full", "debug"}:
-            (folder / "README.md").write_text(README)
+            (folder / "README.md").write_text(README + (FUNDING_README if funding_hash else ""))
     receipt = {
         "schema": "AlphaRdagentFactorDataV1",
         "panel_sha256": hashlib.sha256(panel.read_bytes()).hexdigest(),
@@ -110,6 +157,8 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
             if p.is_file()
         },
     }
+    if funding_hash is not None:
+        receipt["funding_sha256"] = funding_hash
     (out / "prepare-receipt.json").write_text(json.dumps(receipt, sort_keys=True) + "\n")
     return receipt
 

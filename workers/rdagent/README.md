@@ -616,25 +616,65 @@ carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself sub
 limit. The match is approximate and over-inclusive: a stray family word adds a family, never
 removes one.
 
-Local embeddings are free and are not counted toward the 60-call cap (owner decision 2026-11-17).
-Only the gateway's built-in local embedding backend (Ollama on a loopback address, or the fake
-test route) is exempt, never a caller flag, a model name or any other backend. They do not count
-toward the monthly call count either; embedding dollars are unchanged (none are charged).
-Their attempts, including chunk retries, have a separate per-run limit of 2,000
-(`LOCAL_EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted` and stops the run.
-All chat calls (including Codex), provider embeddings and paid retries remain counted; the
-60-call, USD 10 per-run and USD 50 monthly limits keep their values. When a coding-memory embedding fails,
-the coder looks at that request's own error (RD-Agent's retry wrapper otherwise hides it): a
-budget refusal stops the worker at once (`BudgetExhausted`) and the receipt names the cap; only
-an input the local embedding model refused is skipped and logged with that cause in
-`memory-skips.jsonl`; any other error stops the run. The receipt's `call_split` shows
-`local_embedding`, `model_chat` and `provider_embedding` attempts and `timeout_retry_attempts`,
-the reserved attempts that retried a provider timeout. Receipt fields `counted_calls` and
-`local_embedding_calls` come from the reserved budget, even if a call was not logged. Monthly
-status separates them too; `calls` remains the compatible alias for counted calls. Unavailable
-receipt counts are null. Old state and logs without the new fields keep past embeddings counted;
-old receipts remain readable and unchanged. The split's `counted_toward_call_cap` aliases
-`counted_calls`, and `local_embedding_calls` counts only exempt attempts.
+The default `--embedding-route local` uses the same Ollama requests and long-input retry as
+before (`ollama` remains a legacy spelling; `fake` is for tests). Select
+`--embedding-route provider --provider-embed-model MODEL --provider-embed-usd-per-mtok PRICE`
+to embed whole inputs through the paid chat provider's `/embeddings` endpoint. Model and positive
+USD-per-million-token price are required; neither has a guessed default. `ApiChat.__init__` in
+`model_gateway.py` and `ProviderEmbeddings.__init__` in `gateway_embeddings.py` read the same
+`ALPHA_GATEWAY_API_BASE` and `ALPHA_GATEWAY_API_KEY`; only the gateway process receives them.
+Provider inputs are never split. Explicit input refusals are skipped with their original cause;
+a budget refusal stops the worker immediately as `BudgetExhausted`.
+
+Both built-in embedding routes are exempt from the 60-call and monthly call counts. Their
+combined attempts, including local chunk retries, have a per-run guard of 2,000
+(`EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted`. The exemption is decided in
+`gateway_embeddings.embedding_attempt` from the actual backend and route, never caller fields
+or model aliases. Unknown injected backends stay counted. Chat and chat retries remain counted;
+the 60-call, USD 10 per-run, USD 50 monthly, 3,000 monthly-call and 180 s paid-call limits keep
+their values. Provider embeddings reserve characters / 3 × price before sending, then settle
+using reported total tokens (prompt tokens if total is absent). Missing usage keeps the estimate.
+An explicit error with no usage or an unavailable connection settles to zero; a timeout or
+unreadable reply retains the estimate because the request may have been billed. No embedding
+retry is made on the provider route.
+
+`call_split` and the receipt report `local_embedding_calls`, `provider_embedding_calls`,
+`provider_embedding_usd` and `provider_embedding_tokens`, plus route and model. Receipt totals
+come from the reserved budget, even if a call was not logged; unavailable totals are null.
+`calls` and `counted_toward_call_cap` remain compatible aliases for counted calls. Old budget
+files, call logs and receipts keep historical counts unchanged. Token totals count only usage
+actually reported by the provider; unknown usage is not invented.
+
+The wrapper's `embedding-models.json` sidecar binds each graph entry's text hash, model id,
+dimension and vector. On the coder's first use, unknown or different-model entries are embedded
+through the gateway before retrieval. Compatible vectors are reused; upstream's model-agnostic
+embedding cache is bypassed for queries and new nodes. Failed entries are hidden for this run,
+retained for a future attempt, and logged in `memory-skips.jsonl`. Re-embedding events go to
+`memory-reembedded.jsonl`; the receipt counts `memory_entries_reembedded`. Malformed sidecars
+fail loud. Unknown legacy entries are re-embedded before their first retrieval.
+
+### Compare embedding retrieval
+
+`embedding_eval.evaluate(entries, queries, embed)` accepts a deterministic callable for offline
+checks, and reports macro recall at 3 and 5, mean reciprocal rank, refused inputs and split
+inputs. Refused queries score zero; refused relevant entries stay in recall denominators.
+Cosine ties use entry ids. Invalid vectors fail loud. Run once per gateway/model on the same set:
+
+```sh
+.venv/bin/python workers/rdagent/embedding_eval.py --entries /abs/ideas.json \
+  --queries /abs/queries.json --gateway-url http://127.0.0.1:PORT
+```
+
+Supply the gateway session token through `ALPHA_GATEWAY_SESSION_TOKEN`, never the provider key.
+Entries are a JSON list with `id` and `text` (plus `idea_family` and `outcome` when labelled);
+queries contain `text`, `relevant_ids`, and optional `exclude_ids`. The harness asks the gateway
+for optional `report_embedding_stats`; ordinary embedding responses remain unchanged.
+`build_labelled_set(ledger, memory)` joins explicit labels by `id` or `code_sha256`; `--ledger`
+accepts JSONL instead of `--queries`. Labels require an explicit idea family and symbol list
+(`symbols` or ledger `instruments`). Same-family entries with identical symbol sets are relevant
+to each other, excluding self matches and ignoring outcomes. The output calls this a proxy,
+not ground truth; missing family labels must be supplied before using a raw ledger.
+
 `--coding-reasoning-tokens` exists but must stay unset: OpenRouter documents `reasoning.max_tokens`,
 but whether the pinned model's providers honour it (the gateway sends `require_parameters`) is
 unconfirmed without a paid call, and the gateway cannot yet tell a coding call from others, so
@@ -774,7 +814,7 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
   calls counted toward it at the time), one after a stuck call; replies that reason for 8-12 minutes and return
   no text (`invalid_provider_response`) occurred in every run.
-- Embeddings stay on local Ollama on both routes.
+- Embeddings default to local Ollama independently of chat; the provider route is opt-in above.
 - Not yet: supervision by `alpha`'s native job supervisor
   ([backlog](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md)); a Nautilus replay;
   the candidate-to-research-case hand-off

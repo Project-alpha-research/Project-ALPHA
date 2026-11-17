@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 494f77fb9be559ce
+verified: 67e9810c6d6714d2
 ---
 
 # Worker invariants
@@ -146,14 +146,14 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   distributions are exactly the locked ones and records an inventory digest. It measures a runtime and grants no authority.
 - Model gateway ([ADR-0044](../../adr/0044-rdagent-model-gateway.md), `model_gateway.py`): the one route from RD-Agent to a
   model. Standard library only; it listens on `127.0.0.1` and imports neither ALPHA nor RD-Agent. Chat is the confined Codex
-  program (read-only, no tools, no web search), embeddings are local Ollama, and the paid route is off unless the owner
+  program (read-only, no tools, no web search); embeddings default to local Ollama or use an explicitly priced provider model. The owner
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
-  Only the built-in loopback Ollama (or fake) embedding backend is exempt (2,000-attempt run guard, `budget_exhausted`;
-  no dollars); receipts and monthly status split `counted_calls` from `local_embedding_calls`, old counts as recorded.
+  Built-in local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens spend money.
+  Receipts split calls, embedding routes, tokens and cost; old counts stay recorded. Memory vectors are bound to model and dimension.
   No automatic route switch; logs hold hashes and lengths, not text; fixture loops clear model settings. Paid calls
-  have a 180 s limit and one retry, both counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+  have a 180 s limit; chat has one retry, both attempts counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes

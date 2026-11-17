@@ -182,7 +182,7 @@ def test_ridge_composite_inherits_every_input_family() -> None:
         "volatility and beta",
         "drawdown",
         "skewness and lottery returns",
-        "momentum and trend",
+        "past return (momentum or reversal)",
     } <= families
     # Before the fix this composite was filed as "other: ml" and escaped every family.
     assert not any(family.startswith("other") for family in families)
@@ -227,7 +227,7 @@ def test_single_family_factor_keeps_its_family() -> None:
     }
     assert families == {
         "amihud_illiquidity_20d": {"illiquidity"},
-        "vol_adjusted_momentum_28d": {"momentum and trend"},
+        "vol_adjusted_momentum_28d": {"past return (momentum or reversal)"},
         "range_compression_10d": {"range and compression"},
     }
 

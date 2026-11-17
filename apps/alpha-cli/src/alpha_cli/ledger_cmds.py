@@ -43,12 +43,28 @@ def _rdagent_ledger(home: Path, rdagent: Path | None) -> Path | None:
 def figures(row: dict[str, Any]) -> str:
     values = row.get("measures", {})
     ic, q = values.get("mean_ic"), values.get("q")
-    return (
+    text = (
         f"{row['measure_clock']}: IC "
         + (f"{ic:.4g}" if ic is not None else "not recorded")
         + ", q "
         + (f"{q:.4g}" if q is not None else "not recorded")
     )
+
+    if values.get("screen_cutoff") is not None:
+        text += (
+            f" (BH diagnostic); screen cutoff {values['screen_cutoff']:.4g} "
+            f"over {values['screen_m']:g} looks, {values['screen_confirmed']:g} confirmed"
+        )
+    if values.get("dsr") is not None:
+        text += f"; stored deflated Sharpe {values['dsr']:.4g}"
+        if values.get("deflation_n") is None:
+            text += "; old rule (fewer looks counted)"
+        else:
+            text += (
+                f" over {values['deflation_n']:g} looks; "
+                f"variance {values['deflation_variance']:.4g}"
+            )
+    return text
 
 
 def _render(output: dict[str, Any]) -> str:

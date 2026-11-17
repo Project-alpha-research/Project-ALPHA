@@ -205,7 +205,8 @@ def judge_parts(*names: str) -> dict[str, Any]:
             n.name in names
             or (
                 ("AlphaFactorRunner" in names or "record_coder_verdicts" in names)
-                and n.name in {"record_coder_verdicts", "_record_coder_verdicts"}
+                and n.name
+                in {"record_coder_verdicts", "_record_coder_verdicts", "family_definitions"}
             )
         )
     ]
@@ -249,7 +250,11 @@ def test_runner_archives_code_exclusively_and_refuses_conflicts(
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(subprocess, "run", evaluator)
-    task = SimpleNamespace(factor_name="test", get_task_information=lambda: "proposal")
+    task = SimpleNamespace(
+        factor_name="test",
+        description="declared_direction: +1; primary_clock: weekly; direction_reason: Persistence.",
+        get_task_information=lambda: "proposal",
+    )
     workspace = SimpleNamespace(file_dict={"factor.py": code})
     exp = SimpleNamespace(
         based_experiments=[],
@@ -367,6 +372,7 @@ def swing_parts() -> dict[str, Any]:
                 isinstance(t, ast.Name)
                 and t.id
                 in (
+                    "DECLARATION_TEMPLATE",
                     "SWING_BRIEF",
                     "FAMILY_KEYWORDS",
                     "COMPOSITE",
@@ -628,7 +634,14 @@ def test_runner_records_code_verdicts_before_evaluator_failure(
     checks = iter([{"status": "LOOKAHEAD"}, {"status": "PASS"}, {"status": "PASS"}])
     namespace["check_prefix_invariance"] = lambda *args: next(checks)
     names = ["leaky", "shape", "screen_fail", "no_code", "not_run", "execution_failed"]
-    tasks = [NS(factor_name=n, get_task_information=lambda n=n: n) for n in names]
+    tasks = [
+        NS(
+            factor_name=n,
+            get_task_information=lambda n=n: n,
+            description="declared_direction: +1; primary_clock: weekly; direction_reason: Demand persists.",
+        )
+        for n in names
+    ]
     workspaces: list[NS | None] = [
         NS(
             file_dict={"factor.py": n},
@@ -760,7 +773,7 @@ def test_family_summary_groups_all_families_and_says_when_to_move_on(
 def test_idea_family_keywords_on_the_health_check_names() -> None:
     family = swing_parts()["idea_family"]
     assert family("vol_scaled_high_prox_252d") == "price near its high / range position"
-    assert family("beta_hedged_momentum_28d_btc") == "momentum and trend"
+    assert family("beta_hedged_momentum_28d_btc") == "past return (momentum or reversal)"
     assert family("downside_semivariance_120d") == "volatility and beta"
     assert family("ret_vol_corr_28d") == "return-volume relation"
     assert family("max_return_28d") == "skewness and lottery returns"

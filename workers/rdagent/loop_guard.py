@@ -28,6 +28,24 @@ class ProviderGuard:
         self.component, self.loop, self.step = component, loop, step
         self.run, self.calls, self.run_id = run, calls, run_id
         self.skip_error, self.feedback_factory = skip_error, feedback_factory
+        if step == "coding" and hasattr(loop, "_propose"):
+            # Installed at the existing guard wiring seam; no upstream loop override.
+            proposal = ProviderGuard(
+                loop._propose, loop, "proposal", run, calls, run_id, skip_error, feedback_factory
+            )
+            loop._propose = proposal.propose
+            if hasattr(loop, "_exp_gen"):
+                experiment = ProviderGuard(
+                    loop._exp_gen,
+                    loop,
+                    "proposal",
+                    run,
+                    calls,
+                    run_id,
+                    skip_error,
+                    feedback_factory,
+                )
+                loop._exp_gen = experiment.propose
 
     def __getattr__(self, name: str) -> Any:
         return getattr(object.__getattribute__(self, "component"), name)
@@ -83,7 +101,9 @@ class ProviderGuard:
         return {
             "schema": "AlphaRdagentRoundV1",
             "iteration": self.round_index(),
-            "status": ROUND_STATUSES[kind],
+            "status": "proposal_failed_" + kind
+            if self.step == "proposal"
+            else ROUND_STATUSES[kind],
             "reason": f"{self.step}: {code}",
             "step": self.step,
             "attempts": sum(int(r.get("attempts", 0)) for r in failed),
@@ -109,6 +129,16 @@ class ProviderGuard:
             f"{row['status']}: {self.step}; {row['attempts']} attempts, "
             f"{row['provider_wait_seconds']:g} seconds waited"
         )
+
+    def propose(self, *args: Any, **kwargs: Any) -> Any:
+        offset = self._offset()
+        try:
+            return self.component(*args, **kwargs)
+        except Exception as error:
+            row = self._failure(error, offset)
+            if row is None:
+                raise
+            raise self.skip_error(self._record(row, None)) from error
 
     def develop(self, exp: Any) -> Any:
         offset = self._offset()

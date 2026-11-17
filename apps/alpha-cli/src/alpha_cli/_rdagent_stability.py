@@ -72,7 +72,12 @@ def deflation_note(replay: dict[str, Any]) -> str:
     value, threshold, count = (result.get(k) for k in ("dsr", "threshold", "n_trials"))
     if value is None or threshold is None:
         return "deflated Sharpe not recorded; multiple-testing test not passed"
-    return f"deflated Sharpe {value:.4g} against {threshold:.4g} over {count} trials"
+    suffix = (
+        ""
+        if result.get("deflation_rule") == "family-looks-x2-floor-1"
+        else "; old rule (fewer looks counted)"
+    )
+    return f"deflated Sharpe {value:.4g} against {threshold:.4g} over {count} trials{suffix}"
 
 
 def deflation_passes(trial: dict[str, Any]) -> bool:

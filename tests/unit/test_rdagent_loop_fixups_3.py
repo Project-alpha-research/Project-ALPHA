@@ -279,7 +279,10 @@ def test_closed_composite_is_refused_before_coding_without_trial(
     monkeypatch.setenv("ALPHA_FACTOR_TRIAL_LEDGER", str(ledger))
     task = SimpleNamespace(
         factor_name="ridge_composite",
-        description="volatility and momentum",
+        description=(
+            "volatility and momentum\ndeclared_direction: +1; "
+            "primary_clock: weekly; direction_reason: Demand persists."
+        ),
         factor_formulation="regression",
         variables={"volatility": "input", "momentum": "input"},
     )
@@ -316,7 +319,11 @@ def closed_volatility_ledger(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
 def proposal(name: str, description: str) -> SimpleNamespace:
     task = SimpleNamespace(
-        factor_name=name, description=description, factor_formulation="", variables={}
+        factor_name=name,
+        description=description
+        + ("\ndeclared_direction: +1; primary_clock: weekly; direction_reason: Demand persists."),
+        factor_formulation="",
+        variables={},
     )
     return SimpleNamespace(
         sub_tasks=[task], hypothesis=SimpleNamespace(hypothesis=name), based_experiments=[]

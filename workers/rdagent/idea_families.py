@@ -21,17 +21,28 @@ FAMILY_KEYWORDS = (
         ("high_prox", "near_high", "distance_to_high", "stoch", "rangepos", "range_position", "hp"),
     ),
     (
-        "short-term reversal and gaps",
-        ("reversal_3d", "reversal_5d", "short_term_reversal", "gap", "gaps", "intraday_reversal"),
+        "intraday return and gaps",
+        ("gap", "gaps", "intraday_reversal"),
     ),
-    ("long-term reversal", ("long_term_reversal", "ltr")),
     ("illiquidity", ("amihud", "illiquid")),
     ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
     ("skewness and lottery returns", ("skew", "coskew", "max_return", "up_day")),
     ("drawdown", ("drawdown", "mdd")),
     (
-        "momentum and trend",
-        ("momentum", "mom", "trend", "sma_distance", "autocorr", "cumret")
+        "past return (momentum or reversal)",
+        (
+            "reversal_3d",
+            "reversal_5d",
+            "short_term_reversal",
+            "long_term_reversal",
+            "ltr",
+            "momentum",
+            "mom",
+            "trend",
+            "sma_distance",
+            "autocorr",
+            "cumret",
+        )
         + ("ac", "m", "ret", "return", "roc"),
     ),
     (
@@ -104,7 +115,11 @@ def name_family(name: str) -> str:
     found = name_matches(name)
     if found:
         return found[0]
-    tokens = name_tokens(name)
+    tokens = [
+        t
+        for t in name_tokens(name)
+        if t not in {"negative", "neg", "inverse", "inverted", "positive"}
+    ]
     while tokens and re.fullmatch(r"(?:skip)?\d+[a-z]*", tokens[-1]):
         tokens.pop()
     return "other: " + "_".join(tokens or name_tokens(name) or ["unnamed"])
@@ -255,7 +270,29 @@ def recorded_status(row: dict[str, Any]) -> str:
         row["status"] == "CANDIDATE"
         and result.get("dsr") is not None
         and result.get("threshold") is not None
-        and result["dsr"] < result["threshold"]
+        and not result["dsr"] >= result["threshold"]
     ):
         return "DEFLATION_FAIL"
     return str(row["status"])
+
+
+DECLARATION_MESSAGE = (
+    "Add declared_direction: +1 or -1; primary_clock: weekly or monthly; "
+    "direction_reason: one non-empty sentence of economic reasoning to each factor description."
+)
+
+
+def declaration(description: str) -> dict[str, Any]:
+    """Explicit, labelled description fields survive upstream's fixed FactorTask schema."""
+    # A field ends at ; , . or a line end, so "+1 or -1" or "weekly or monthly" never parse.
+    end = r"\s*(?:[;,.\n]|$)"
+    direction = re.search(r"\bdeclared_direction\s*[:=]\s*([+\-\u2212]?1)" + end, description)
+    clock = re.search(r"\bprimary_clock\s*[:=]\s*(weekly|monthly)" + end, description, re.I)
+    reason = re.search(r"\bdirection_reason\s*[:=]\s*([^;\n]+)", description)
+    if not direction or not clock or not reason or not reason.group(1).strip():
+        raise ValueError(DECLARATION_MESSAGE)
+    return {
+        "declared_direction": int(direction.group(1).replace("\u2212", "-")),
+        "primary_clock": clock.group(1).lower(),
+        "direction_reason": reason.group(1).strip(),
+    }

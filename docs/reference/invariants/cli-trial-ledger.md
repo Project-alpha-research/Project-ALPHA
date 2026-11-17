@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 7833d80c672e37a2
+verified: ee933562927002ad
 ---
 
 # One trial ledger invariants
@@ -87,6 +87,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   with `UNKNOWN_QUESTION` and missing/unlisted parameters with `BAD_PARAMETER`.
 - `DEFLATION_FAIL` maps to rejected with recorded deflated Sharpe, threshold and trial count. A failed-deflation old
   CANDIDATE is labelled as derived; stored rows and trial counting stay unchanged. Every factor status has a plain reason.
+- New factor rows count one declared primary-clock look; old V3 rows retain their per-clock counts.
+  `family-looks-x2-floor-1` uses twice those looks, with a 1/(T-1) variance floor; q is a BH diagnostic.
+  The reader exposes cutoff, m, confirmed, deflation inputs and expected chance passes; old DSR is labelled old rule.
 - Factor figures name one clock: prefer the lead's per-clock block, otherwise explicitly label the daily mirror.
   New rows mirror all figures from `lead_clock` and record `figures_clock`; old daily mirrors remain readable.
 - `SPREAD_FAIL` maps to rejected, retains its raw status and says "stopped by the spread check".

@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import type { ResearchNote } from '../api/types'
@@ -39,6 +40,6 @@ export function DeskNotes() {
           .finally(() => { if (generation.current === submittedGeneration) setBusy(false) })
       }}>{busy ? 'Saving…' : 'Save observation'}</button>
       <p className="muted">Notes record reasoning; they are not admitted empirical evidence.</p>
-      {notes.map(note => <article key={note.note_id}><strong>{note.author_kind} · {note.created_at.slice(0, 16)}</strong><p>{note.body}</p></article>)}
+      {notes.map(note => <article key={note.note_id}><strong>{note.author_kind} · <Timestamp value={note.created_at} /></strong><p>{note.body}</p></article>)}
     </>}{error ? <p role="alert">{error}</p> : null}</section>
 }

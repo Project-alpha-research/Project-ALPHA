@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Risk — stress a run's realized returns under vol-scaling and tail-shock scenarios and see how
 // Sharpe / vol / drawdown / VaR / CVaR move. Follows the linked run (selected in the Run Browser).
 
@@ -119,7 +120,7 @@ export function RiskMonitor(props: PanelHandleProps) {
             <span>{report.provenance.source_command ?? 'unknown command'}</span>
             <span>snapshot {report.provenance.snapshot_id ?? 'live / unfrozen'}</span>
             <span>cutoff {report.provenance.research_cutoff ?? 'none'}</span>
-            <span>as-of {report.provenance.as_of ?? '—'} · UTC</span>
+            <span>as-of <Timestamp value={report.provenance.as_of} /> · UTC</span>
             <span className="mono" title={report.provenance.source_artifact_sha256}>
               equity sha256 {report.provenance.source_artifact_sha256.slice(0, 12)}
             </span>

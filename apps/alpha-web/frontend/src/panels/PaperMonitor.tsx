@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Durable sandbox paper-session monitor. Sessions live outside deterministic research runs; this
 // panel polls the low-volume journal, incrementally tails events, and cancels only the web job
 // explicitly linked by session_id. A stale heartbeat is surfaced, never used as a PID-kill signal.
@@ -31,11 +32,6 @@ import {
 const OVERVIEW_POLL_MS = 4_000
 const SESSION_POLL_MS = 2_000
 
-function displayTime(value: string | null): string {
-  if (!value) return '—'
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.valueOf()) ? value : parsed.toLocaleString()
-}
 
 function scalarText(value: JsonScalar): string {
   return value === null ? '—' : String(value)
@@ -122,7 +118,7 @@ function EventBlotter({ events }: { events: PaperEvent[] }) {
         {orderEvents.map((event) => (
           <tr key={event.sequence}>
             <td className="num">{event.sequence}</td>
-            <td className="mono muted">{displayTime(event.recorded_at)}</td>
+            <td className="mono muted"><Timestamp value={event.recorded_at} /></td>
             <td>
               <span className={`chip ${event.event_type === 'rejection' ? 'fail' : 'kind'}`}>
                 {event.event_type}
@@ -140,12 +136,9 @@ function EventLog({ events }: { events: PaperEvent[] }) {
   if (!events.length) return <div className="muted">No journal events yet.</div>
   return (
     <pre className="console-out paper-log">
-      {events
-        .map(
-          (event) =>
-            `${String(event.sequence).padStart(6, '0')} ${event.recorded_at} ${event.event_type.toUpperCase()} ${eventSummary(event)}`,
-        )
-        .join('\n')}
+      {events.map((event, index) => <span key={event.sequence}>
+        {index ? '\n' : ''}{String(event.sequence).padStart(6, '0')} <Timestamp value={event.recorded_at} /> {event.event_type.toUpperCase()} {eventSummary(event)}
+      </span>)}
     </pre>
   )
 }
@@ -298,7 +291,7 @@ export function PaperMonitor() {
           <div className="paper-detail" data-state={detailState}>
             {session.stale ? (
               <div className="paper-stale">
-                STALE HEARTBEAT · last observed {displayTime(session.heartbeat_at)} · recorded PID will
+                STALE HEARTBEAT · last observed <Timestamp value={session.heartbeat_at} /> · recorded PID will
                 not be killed automatically
               </div>
             ) : null}
@@ -354,16 +347,16 @@ export function PaperMonitor() {
                 <div>
                   <span className="eyebrow">Heartbeat</span>
                   <div className={`mono ${session.stale ? 'neg' : 'pos'}`}>
-                    {displayTime(session.heartbeat_at)}
+                    <Timestamp value={session.heartbeat_at} />
                   </div>
                 </div>
                 <div>
                   <span className="eyebrow">Started</span>
-                  <div className="mono">{displayTime(session.started_at)}</div>
+                  <div className="mono"><Timestamp value={session.started_at} /></div>
                 </div>
                 <div>
                   <span className="eyebrow">Ended</span>
-                  <div className="mono">{displayTime(session.ended_at)}</div>
+                  <div className="mono"><Timestamp value={session.ended_at} /></div>
                 </div>
                 <div>
                   <span className="eyebrow">Process</span>

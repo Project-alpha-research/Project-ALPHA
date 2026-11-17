@@ -102,6 +102,10 @@ with no edge. Demo data.*
 *A research case: the idea is written down, and the open questions are listed before any test
 runs. Demo case.*
 
+![The RD-Agent panel: a run list, how many ideas passed each check, recorded caps and a factor marked as a candidate](docs/assets/workstation/rdagent-panel.png)
+
+*The RD-Agent panel is read-only and shows what a run recorded. Made-up demo data: these are not real runs.*
+
 ## How to run it
 
 All commands run from the repository root. The full list is

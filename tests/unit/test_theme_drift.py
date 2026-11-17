@@ -1,6 +1,6 @@
 """The stylesheet and the figure theme must not drift.
 
-Option E (spec 2026-09-01 §4.6) puts light chrome around black canvases, so the seam has two
+The dark terminal has coordinated chrome and black canvases, so the seam has two
 halves: the figure theme mirrors into generated ``--canvas-*`` tokens (``alpha figures
 theme-css``), and the hand-written chrome palette in ``index.css`` is contrast-tested against
 every chrome surface a glyph can land on. The canvas-side mirror for canvas-land is guarded by
@@ -18,8 +18,8 @@ from alpha_research.figures import load_theme, theme_document
 _CSS = Path("apps/alpha-web/frontend/src/index.css")
 _GENERATED = Path("apps/alpha-web/frontend/src/theme.generated.css")
 
-#: Chrome text tokens × the chrome surfaces they can sit on (title bars are the darkest).
-_CHROME_TEXT = ("ink", "ink-dim", "muted", "accent", "gold", "up", "down")
+#: Every original chrome text role × every original surface; accent/down use AA text variants.
+_CHROME_TEXT = ("ink", "ink-dim", "muted", "accent-text", "gold", "up", "negative-text")
 _CHROME_SURFACES = ("bg", "panel", "panel-2", "elevated", "title")
 
 
@@ -68,8 +68,7 @@ def _contrast(foreground: str, background: str) -> float:
 
 
 def test_chrome_text_clears_wcag_aa_on_every_chrome_surface() -> None:
-    """The mockup's label/up/down values failed this by design: spec §4.6 says they are a
-    starting point, not exempt. Tested against the darkest chrome surface too (title bars)."""
+    """Every text role must clear AA, including on the lightest dark surface (raised panels)."""
     css = _CSS.read_text(encoding="utf-8")
     problems: list[str] = []
     pair_count = 0
@@ -110,3 +109,24 @@ def test_the_substrate_is_a_figure_only_token() -> None:
     theme = load_theme()
     css = _CSS.read_text(encoding="utf-8")
     assert theme.substrate not in {_token(css, name) for name in _CHROME_TEXT + _CHROME_SURFACES}
+
+
+def test_chrome_palette_is_the_dark_terminal() -> None:
+    css = _CSS.read_text(encoding="utf-8")
+    expected = {
+        "bg": "#0b0b0b",
+        "panel": "#141414",
+        "panel-2": "#1c1c1c",
+        "line": "#2a2a2a",
+        "ink": "#e0e0e0",
+        "ink-dim": "#c8c8c8",
+        "muted": "#8a8a8a",
+        "accent": "#316ac5",
+        "accent-strong": "#4a82d8",
+        "up": "#2fc36a",
+        "down": "#e5484d",
+        "gold": "#ffd400",
+        "selection": "#1f3a66",
+    }
+    assert {name: _token(css, name) for name in expected} == expected
+    assert "color-scheme: dark;" in css

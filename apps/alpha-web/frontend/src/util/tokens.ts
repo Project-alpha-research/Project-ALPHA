@@ -1,6 +1,6 @@
 // Runtime bridge from CSS custom properties to canvas-land (uPlot / lightweight-charts cannot
 // read CSS vars). Charts are canvas surfaces, so they read the generated `--canvas-*` tokens
-// (mirrors of the figure theme), never the light chrome palette. The hardcoded fallbacks keep
+// (mirrors of the figure theme), never the chrome palette. The hardcoded fallbacks keep
 // pure-node tests (vitest, no DOM) working and are drift-tested against the theme document.
 
 export interface ChartTokens {

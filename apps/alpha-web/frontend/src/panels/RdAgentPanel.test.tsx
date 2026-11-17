@@ -7,7 +7,7 @@ vi.mock('react', async importOriginal => ({ ...await importOriginal<typeof impor
 
 const fact = (value: Fact['value'] = null): Fact => ({ value, reason: value === null ? 'not recorded by this run' : null, basis: null })
 const run: Run = {
-  run_id: 'first', folder: 'Recorded run', started_at: fact('2026-11-01'), ended_at: fact(),
+  run_id: 'first', folder: 'Recorded run', started_at: fact('2026-11-17T14:33:00Z'), ended_at: fact(),
   outcome: fact('completed'), rounds_completed: fact(2), counted_calls: fact(12),
   local_embedding_calls: fact(3), provider_embedding_calls: fact(), cost_usd: fact(0.2),
   factors_proposed: fact(), stages: {}, universe_size: fact(), universe_includes_delisted: fact(true),
@@ -37,6 +37,15 @@ describe('RD-Agent recorded panel', () => {
     expect(html).toContain('aria-valuenow="12"')
     expect(html).toContain('<details')
     expect(html).toContain('class="chip">CANDIDATE</span>')
+  })
+
+  it('renders readable list, detail and step times with their original ISO titles', () => {
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
+    expect(html.match(/title="2026-11-17T14:33:00Z"/g)).toHaveLength(2)
+    expect(html.match(/17 Nov 2026, 14:33 UTC/g)).toHaveLength(2)
+    expect(html).toContain('title="2026-11-01T00:00:00Z"')
+    expect(html).toContain('1 Nov 2026, 00:00 UTC')
+    expect(html).toContain('1 min')
   })
 
   it('selects only the requested run using an encoded read URL', async () => {

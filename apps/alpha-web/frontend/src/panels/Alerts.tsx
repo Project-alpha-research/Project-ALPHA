@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Toolbox › Alerts (spec 2026-09-01 §4.2 Phase 5 S5): the scan alert log, newest first. Every row
 // is a signal that *changed* at an `alpha scan check`; the live desk's `alerts` area re-reads the
 // log when the CLI appends to it, and mounting or a `bars` change (a finished pull) checks every
@@ -50,7 +51,7 @@ export function Alerts(_props: PanelHandleProps) {
       <div className="dock-toolbar">
         <span className="muted">
           {alerts.length} alert{alerts.length === 1 ? '' : 's'}
-          {checkedAt ? ` · last check ${checkedAt.slice(0, 16).replace('T', ' ')} UTC` : ''}
+          {checkedAt ? <> · last check <Timestamp value={checkedAt} /></> : ''}
         </span>
         <span className="spacer" />
         <button type="button" className="btn" disabled={busy} onClick={checkAll} title="alpha scan check — every saved scan; only changed signals are new alerts">
@@ -75,7 +76,7 @@ export function Alerts(_props: PanelHandleProps) {
           <tbody>
             {alerts.map((alert, index) => (
               <tr key={`${alert.ts}:${alert.scan}:${alert.symbol}:${index}`} className={`tone-${signalTone(alert.signal)}`}>
-                <td className="mono">{alert.ts.slice(0, 19).replace('T', ' ')}</td>
+                <td className="mono"><Timestamp value={alert.ts} /></td>
                 <td className="mono">{alert.scan}</td>
                 <td>
                   <button type="button" className="watch-select" onClick={() => openScannedMarket(alert.symbol, alert.bar_date)} title="Chart this symbol">

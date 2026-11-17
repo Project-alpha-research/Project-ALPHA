@@ -195,7 +195,7 @@ test('@reference-only PNG download includes header, calendar dates and study leg
     const context = canvas.getContext('2d')!
     context.drawImage(image, 0, 0)
     const pixels = context.getImageData(0, 0, image.width, 30).data
-    const ink = pixels.filter((value, index) => index % 4 !== 3 && value < 180).length
+    const ink = pixels.filter((value, index) => index % 4 !== 3 && value > 180).length
     const scale = image.width / hostBox.width
     const headerHeight = image.height - hostBox.height * scale
     const bars = [1, 4, 6].map(dx => [...context.getImageData(

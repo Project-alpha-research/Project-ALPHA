@@ -194,7 +194,7 @@ export function cryptoCanonicalAction(input: CryptoCanonicalActionInput): Crypto
     return {
       state: 'blocked',
       label: input.storageBlocker === 'bulk_volume_not_mounted'
-        ? 'Reconnect the reviewed Expansion volume, then refresh storage.'
+        ? 'Reconnect the bulk-data volume, then refresh storage.'
         : 'Resolve the reported storage blocker, then refresh storage.',
     }
   }

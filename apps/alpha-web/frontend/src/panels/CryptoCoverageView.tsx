@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import type { CryptoCoverageItem } from '../api/types'
 import { shortId } from '../util/format'
 import { cryptoCoverageStateClass, type CryptoDataSection } from './researchDataModel'
@@ -58,7 +59,7 @@ export function CryptoCoverageView({
             <span className="muted">
               {item.quote_asset ?? 'no quote'} · {item.units}
               {item.fetched_at
-                ? ` · fetched ${new Date(item.fetched_at).toLocaleString()}`
+                ? <> · fetched <Timestamp value={item.fetched_at} /></>
                 : ' · legacy receipt time unavailable'}
             </span>
             <button

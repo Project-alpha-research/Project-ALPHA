@@ -1,5 +1,5 @@
 // Data Manager model — the pure helpers behind the Data Manager panel: profile-driven pull
-// defaults, the date guard that mirrors the CLI's own checks, the Expansion SSD storage row, and
+// defaults, the date guard that mirrors the CLI's own checks, the storage row, and
 // what a venue's first listed bar means for the requested window. No React, no fetch.
 
 import type { CryptoStorage, FirstBar } from '../api/types'
@@ -66,25 +66,25 @@ type StorageStatus = Pick<
   'state' | 'blocker' | 'bulk_root_label' | 'free_bytes' | 'total_bytes'
 >
 
-/** One honest row for the Expansion SSD: mounted with free space, a named blocker, or not loaded. */
+/** One honest row for storage: mounted with free space, a named blocker, or not loaded. */
 export function storageRow(storage: StorageStatus | null): StorageRow {
   if (storage === null) {
-    return { label: 'Expansion SSD', tone: 'amber', detail: 'Storage status not loaded', free: null }
+    return { label: 'Storage: not configured', tone: 'amber', detail: 'Storage status not loaded', free: null }
   }
   if (storage.state === 'blocked') {
     return storage.blocker === 'bulk_volume_not_mounted'
       ? {
-          label: 'Expansion SSD not mounted',
+          label: 'Storage: not configured',
           tone: 'amber',
-          detail: 'Reconnect the Expansion volume, then refresh.',
+          detail: 'Connect the configured storage volume, then refresh.',
           free: null,
         }
-      : { label: 'Expansion SSD blocked', tone: 'amber', detail: storage.blocker ?? 'blocked', free: null }
+      : { label: storage.blocker === 'reserve_exceeded' ? 'Storage: low on free space' : 'Storage: not configured', tone: 'amber', detail: storage.blocker ?? 'blocked', free: null }
   }
   const { free_bytes: free, total_bytes: total } = storage
   const sized = typeof free === 'number' && typeof total === 'number'
   const detail = sized ? `${gigabytes(free)} GB free of ${gigabytes(total)} GB` : storage.bulk_root_label
-  return { label: 'Expansion SSD mounted', tone: 'ok', detail, free: sized ? freeSpace(free) : null }
+  return { label: 'Storage ready', tone: 'ok', detail, free: sized ? freeSpace(free) : null }
 }
 
 function gigabytes(bytes: number): number {

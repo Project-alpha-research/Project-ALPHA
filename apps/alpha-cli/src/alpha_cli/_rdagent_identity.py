@@ -31,10 +31,21 @@ def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, 
             raise DataError("identity_breaks instrument must be a non-empty name")
         if instruments != "all-in-store" and name not in instruments:
             raise DataError(f"identity_breaks instrument {name!r} is absent from the universe")
-        if reason not in ("ticker_reused", "redenominated"):
-            raise DataError("identity_breaks reason must be ticker_reused or redenominated")
+        if reason not in ("ticker_reused", "redenominated", "renamed"):
+            raise DataError(
+                "identity_breaks reason must be ticker_reused, redenominated or renamed"
+            )
         required = {"instrument", "new_from", "reason"}
-        if reason == "redenominated":
+        if reason == "renamed":
+            successor = entry.get("continues_as")
+            if not isinstance(successor, str) or not successor.strip() or successor == name:
+                raise DataError(
+                    f"renamed entry for {name!r} requires a distinct continues_as instrument"
+                )
+            if instruments != "all-in-store" and successor not in instruments:
+                raise DataError(f"renamed successor {successor!r} is absent from the universe")
+            required.add("continues_as")
+        if reason == "redenominated" or reason == "renamed" and "ratio" in entry:
             ratio = entry.get("ratio")
             if (
                 isinstance(ratio, bool)
@@ -43,7 +54,7 @@ def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, 
                 or ratio <= 0
             ):
                 raise DataError(
-                    f"identity_breaks redenominated entry for {name!r} requires a positive "
+                    f"identity_breaks {reason} entry for {name!r} requires a positive "
                     "finite ratio; add ratio = new price units per old unit (for example 100 when "
                     "the first new price is 100 times the last old one). Open, high, low and close "
                     "on and after new_from are divided by it and base volume is multiplied by it"
@@ -73,11 +84,14 @@ def relabel(
     Declarations outside this panel are retained in the universe, but are not applied here.
     """
     validate_breaks(breaks, "all-in-store")
+    panel, joins = join_renames(panel, breaks)
     names = set(panel["instrument"].to_list())
     counts: dict[str, int] = {}
-    applied = []
+    applied = joins
     expression = pl.col("instrument")
     for entry in breaks:
+        if entry["reason"] == "renamed":
+            continue
         name = entry["instrument"]
         if name not in names:
             raise DataError(
@@ -118,6 +132,59 @@ def relabel(
     ), applied
 
 
+def join_renames(
+    panel: pl.DataFrame, breaks: list[dict[str, Any]]
+) -> tuple[pl.DataFrame, list[dict[str, Any]]]:
+    """Join a declared successor forward in time without creating bars in the gap."""
+    applied = []
+    for entry in breaks:
+        if entry["reason"] != "renamed":
+            continue
+        name, successor = entry["instrument"], entry["continues_as"]
+        names = set(panel["instrument"].to_list())
+        for instrument in (name, successor):
+            if instrument not in names:
+                raise DataError(
+                    f"renamed instrument {instrument!r} is absent from the frozen store"
+                )
+        boundary = date.fromisoformat(entry["new_from"])
+        old = panel.filter(pl.col("instrument") == name)
+        new = panel.filter(pl.col("instrument") == successor)
+        if new.filter(pl.col("date") < boundary).height:
+            raise DataError(
+                f"renamed successor {successor!r} has rows before new_from; "
+                "earlier rows cannot change"
+            )
+        old_last, new_first = old["date"].max(), new["date"].min()
+        if not isinstance(old_last, date) or not isinstance(new_first, date):
+            raise DataError("renamed series require dated bars")
+        if old_last >= boundary or old_last >= new_first:
+            raise DataError(
+                f"overlapping renamed series: {name} has bars on or after new_from "
+                f"{entry['new_from']}, where {successor} continues it"
+            )
+        selected = (pl.col("instrument") == successor) & (pl.col("date") >= boundary)
+        ratio = entry.get("ratio", 1)
+        panel = panel.with_columns(
+            [
+                pl.when(selected).then(pl.col(c) / ratio).otherwise(pl.col(c)).alias(c)
+                for c in ("open", "high", "low", "close")
+            ]
+            + [
+                pl.when(selected)
+                .then(pl.col("volume") * ratio)
+                .otherwise(pl.col("volume"))
+                .alias("volume"),
+                pl.when(selected)
+                .then(pl.lit(name))
+                .otherwise(pl.col("instrument"))
+                .alias("instrument"),
+            ]
+        )
+        applied.append({**entry, "ratio": ratio})
+    return panel.sort(["date", "instrument"]) if applied else panel, applied
+
+
 def check_jumps(panel: pl.DataFrame) -> None:
     """Check price jumps across any gap of one or more missing calendar days inside each instrument.
 
@@ -148,4 +215,5 @@ def check_jumps(panel: pl.DataFrame) -> None:
 
 def disclosure(breaks: list[dict[str, Any]]) -> str:
     count = len({entry["instrument"] for entry in breaks})
-    return f"{count} tickers were split at declared identity breaks."
+    noun = "ticker was" if count == 1 else "tickers were"
+    return f"{count} {noun} split at declared identity breaks."

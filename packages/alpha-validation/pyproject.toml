@@ -10,6 +10,9 @@ dependencies = [
     "pandas>=2.0",
     "quantstats-lumi>=1.1.5",
     "matplotlib>=3.9",
+    "statsmodels>=0.14.4,<0.16",
+    "ruptures>=1.1.9,<2",
+    "arch>=8,<9",
 ]
 
 [tool.uv.sources]

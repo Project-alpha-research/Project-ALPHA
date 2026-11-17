@@ -885,7 +885,8 @@ The owner supplies `identity_breaks` in the universe file, a list of entries wit
 must belong to the universe and its dates must be strictly increasing. No real break list is
 shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
 
-A `redenominated` entry additionally requires a finite positive `ratio` (new price units per old).
+A `redenominated` entry additionally requires a finite positive `ratio`: new price units per old
+unit, so 100 when the first new price is 100 times the last old one (DREP 0.026288 then 2.629).
 Freeze divides OHLC on or after `new_from` by this ratio and multiplies base volume by it; quote
 volume is unchanged. The instrument keeps its identity and normal gap handling. Earlier prices
 are untouched. Old declarations without a ratio refuse with an instruction to add it; old frozen

@@ -49,8 +49,12 @@ def test_redenomination_requires_positive_finite_ratio(ratio: Any) -> None:
         entry.pop("ratio")
     else:
         entry["ratio"] = ratio
-    with pytest.raises(DataError, match="redenominated.*ratio"):
+    with pytest.raises(DataError, match="redenominated.*ratio") as raised:
         identity.validate_breaks([entry], ["C0"])
+    # The direction must be unambiguous: new units per old, so later prices are divided by it.
+    assert "C0" in str(raised.value)
+    assert "new price units per old unit" in str(raised.value)
+    assert "divided by" in str(raised.value)
 
 
 def test_rescale_holds_position_and_future_poison_changes_no_past() -> None:

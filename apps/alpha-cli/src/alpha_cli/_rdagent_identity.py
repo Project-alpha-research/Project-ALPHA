@@ -43,8 +43,10 @@ def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, 
                 or ratio <= 0
             ):
                 raise DataError(
-                    "identity_breaks redenominated entry requires a positive finite ratio; "
-                    "add ratio (new price units per old)"
+                    f"identity_breaks redenominated entry for {name!r} requires a positive "
+                    "finite ratio; add ratio = new price units per old unit (for example 100 when "
+                    "the first new price is 100 times the last old one). Open, high, low and close "
+                    "on and after new_from are divided by it and base volume is multiplied by it"
                 )
             required.add("ratio")
         if set(entry) != required:

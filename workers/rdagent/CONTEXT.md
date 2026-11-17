@@ -56,6 +56,10 @@ no market, inference or evidence authority.
 - Editing `alpha_core`, `alpha_patterns` or `alpha_strategies` source changes the installed rule
   profiles' measured environment; rebuild them (see the native file).
 
+- The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
+  Its projection, status wording and record limitations belong to the
+  [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
+
 ## Outputs
 
 - Root tests under `tests/unit/test_native_*.py` and `tests/unit/test_rdagent_model_gateway.py`.

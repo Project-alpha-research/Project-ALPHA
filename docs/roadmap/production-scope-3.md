@@ -23,7 +23,7 @@ Every result visible in the Workstation, in a quant style, with text.
 | Ledger screen: every idea and trial, counts, RD-Agent runs | Missing | `alpha-web` | Path 3 | [ui] |
 | Data screen: what is stored, coverage, quality | Unproven | `alpha-web` | Path 1 | [ui] |
 | Research loop screen: Learn, Live and Findings views | Missing | prototype only | Path 3 | [style] |
-| RD-Agent results readable in the Workstation | Unproven | `alpha-web` | Path 3 | [ui] |
+| RD-Agent results readable in the Workstation | Unproven | `alpha-web`: read-only panel built; browser and real-run check pending | Path 3 | [ui] |
 | Quant style: dense, restrained, light charts with arrows, always with text | Missing | `alpha-web` figures | Path 1 | [style] |
 | Short view first, full detail one tap away | Missing | `alpha-web` | Path 1 | private |
 | Context on the chart: state known on the day, rumour and fact marks | Missing | `alpha-web` | Later | private |

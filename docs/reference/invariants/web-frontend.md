@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 70ed846777cbd510
+verified: 21697c9546d9e773
 ---
 
 # Web frontend invariants
@@ -122,6 +122,10 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   keep the watermark chip. Enforced by `src/panels/ruleTestModel.test.ts`.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
+
+- `RdAgentPanel` uses generated response types, recorded-only meters and factor chips with text. Its View/palette entry
+  comes from the document registry. Async reads are bound to the selected run; missing counts never become zero bars.
+  Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
 
 ## Generated API client
 

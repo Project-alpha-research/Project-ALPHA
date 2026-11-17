@@ -60,6 +60,10 @@ registry, and the blind semantic-read contract. The package is a projection laye
   `pending` / `pending-trigger`, never `no-trigger`. Entry is only the next bar's open.
 - `tests/bias_guards/test_setup_future_poison.py` truncates and poisons later bars (x1000, huge,
   NaN, missing volume) and catches hand-built leaky twins at expression and evaluator level.
+- `event_ts` is the bar on whose close the event became known, not the pattern's extreme. A swing
+  low is written `prev(low, k) == lowest(low, 2k + 1)`, true only k bars after the low; a double
+  bottom so written is never reported before its second low plus k bars, and replacing later bars
+  changes nothing decided by then (`tests/unit/test_setup_known_on.py`).
 
 ## Operator registry
 

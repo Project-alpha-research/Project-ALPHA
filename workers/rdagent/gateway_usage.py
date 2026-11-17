@@ -92,9 +92,11 @@ def chat_usage(calls: list[dict[str, Any]]) -> dict[str, Any]:
     for field in TOKEN_FIELDS:
         values = [a[field] for a in attempts if a.get(field) is not None]
         totals[field] = sum(values) if values else None
-    complete = bool(attempts) and all(
-        a.get("prompt_tokens") is not None and a.get("cached_tokens") is not None for a in attempts
-    )
+    # An attempt with no usage at all (a failed or abandoned call) is counted, not guessed, and
+    # left out of the rate; one that reports prompt tokens but not cached tokens makes it unknown.
+    observed = [a for a in attempts if a.get("prompt_tokens") is not None]
+    totals["usage_unknown_attempts"] = len(attempts) - len(observed)
+    complete = bool(observed) and all(a.get("cached_tokens") is not None for a in observed)
     rate = (
         totals["cached_tokens"] / totals["prompt_tokens"]
         if complete and totals["prompt_tokens"]

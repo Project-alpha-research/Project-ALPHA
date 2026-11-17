@@ -395,3 +395,12 @@ def test_incomplete_usage_never_becomes_zero_cache_rate() -> None:
     assert usage["cached_tokens"] == 60
     assert usage["cache_hit_rate"] is None
     assert launch.call_split([])["chat_usage"]["cache_hit_rate"] is None
+
+
+def test_failed_call_without_usage_is_counted_not_guessed() -> None:
+    calls = logged_calls()
+    calls.append({"endpoint": "/v1/chat/completions", "route": "api", "status": 502})
+    usage = launch.call_split(calls)["chat_usage"]
+    assert usage["usage_unknown_attempts"] == 1
+    assert usage["prompt_tokens"] == 500
+    assert usage["cache_hit_rate"] == 0.2

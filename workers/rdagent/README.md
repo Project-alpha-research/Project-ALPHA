@@ -426,8 +426,9 @@ name>` it forwards `response_format`, so the gateway can enforce RD-Agent's JSON
   `unknown_provider_calls`, `router_session_sent` (whether any attempt sent it) and a plain
   `summary` sentence. Counts use individual attempts when available; old logs still load as
   request observations. Missing provider identities are counted separately, never named by
-  inference; the sentence names the unknown count when needed. A cache rate is null if any attempt lacks prompt/cache counts or the denominator
-  is zero; the sentence then says the rate is unknown. Totals sum reported values only and are
+  inference; the sentence names the unknown count when needed. Attempts with no usage at all (failed or abandoned) are counted in
+  `usage_unknown_attempts` and left out of the rate; a cache rate is null if an attempt reports
+  prompt tokens without cache counts or the denominator is zero, and the sentence then says it is unknown. Totals sum reported values only and are
   null when none are reported. Old session metadata stays unknown, and old receipts are not
   rewritten. `by_step` appears only for existing chat step labels from `calls-labelled.jsonl`
   (excluding `outside-step`), with the same rate and reasoning totals. Without step logs, the

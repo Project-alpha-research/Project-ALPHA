@@ -807,9 +807,32 @@ numbers, checked against the retained canonical replay path. Costs, clocks, thre
 counting and the reserved window are unchanged. A month whose only quality warning is its
 cadence gap is accepted at freeze; any other warning or failure still refuses the panel.
 
-**Known limit: identity across a gap.** The resume rule assumes the same asset in the same
-units on both sides of a gap. The 2026-11-17 system check on the wide store found three pairs
-where that is false: LUNAUSDT restarts as LUNA 2.0 (last close 0.00005, resume close 8.87),
-DREPUSDT and COCOSUSDT were redenominated (about 100x and 1,300x). A factor holding them books
-a fake gain of that size. Until the data layer splits such pairs, do not judge factors on that
-store as is. Serializing HDF in the isolated factor runtime still needs an outside check.
+### Identity breaks across a gap
+
+The wide store may be used once every implausible jump is declared; freeze enforces this.
+The owner supplies `identity_breaks` in the universe file, a list of entries with `instrument`,
+`new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused` or `redenominated`). The instrument
+must belong to the universe and its dates must be strictly increasing. No real break list is
+shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
+
+Before factor inputs, membership, labels or replay read the panel, freeze renames rows on and
+after each boundary to `<INSTRUMENT>~2`, then `~3`, and so on. A daily row belongs to exactly
+one identity; intraday boundaries and generated-name collisions are refused. An old identity
+ends at its last earlier bar and follows the existing waiting and haircut rules. A new identity
+has no inherited history and must earn its own warm-up. Future identities do not change earlier
+membership, ranks, holdings, trades or realised figures. A declaration beyond the frozen panel
+remains in the bound universe but is not listed as applied; numbering follows declaration order.
+
+After relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
+least `IDENTITY_JUMP_MIN_GAP_DAYS = 7` missing calendar days (excluding the two observed days).
+If resume close / last close is above `IDENTITY_JUMP_RATIO = 5.0` or below `1 / 5.0`, freeze
+raises `IdentityJumpError`, naming the instrument, both dates, both closes and their ratio.
+There is no override. Even a genuine large move across such a gap must be declared by the owner
+as a break or the instrument must be left out.
+
+The panel receipt records the applied entries with `new_name`, and `identity_jump_policy`
+(`min_gap_days`, `ratio`). Reports and proposer feedback state the number of distinct tickers
+split. Old universe files and receipts remain readable; no-break panels retain their bytes and
+numerical results. New receipts add the identity metadata and new reports add the count; source
+fingerprints still change when code changes. Serializing HDF in the isolated factor runtime
+still needs an outside check.

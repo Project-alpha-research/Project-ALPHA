@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 4b527b91ee4f3be0
+verified: c38f276200893152
 ---
 
 # RD-Agent worker workspace
@@ -42,6 +42,8 @@ no market, inference or evidence authority.
   or an explicitly priced provider model. Both share the 2,000-attempt guard; paid embeddings
   spend money but no chat calls. Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
   See the worker invariants for accounting and compatibility.
+- Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
+  use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,
   `test_rdagent_embedding_{cap,eval}.py`, `test_setup_rdagent.py`, `test_rdagent_viewer.py`, `test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_{gapped_universe,identity_breaks}.py` (the factor-runtime cases need

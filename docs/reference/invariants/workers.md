@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 67e9810c6d6714d2
+verified: 18abd04b14f39b05
 ---
 
 # Worker invariants
@@ -151,9 +151,10 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
   Built-in local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens spend money.
-  Receipts split calls, embedding routes, tokens and cost; old counts stay recorded. Memory vectors are bound to model and dimension.
-  No automatic route switch; logs hold hashes and lengths, not text; fixture loops clear model settings. Paid calls
-  have a 180 s limit; chat has one retry, both attempts counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+  Receipts split calls, tokens, cache hits and observed providers; labelled calls add step splits. Missing facts stay null;
+  abandoned attempts say usage is unknown. API chat sends the run id as `session_id` unless `--no-router-session` is set;
+  Fixtures clear model settings; provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
+  Memory binds model/dimension; no auto-switch. Paid calls have a 180 s limit; chat retries once, counting both attempts.
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
@@ -195,6 +196,5 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
   never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
-  such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
-  `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.
+  `test_native_loop_conformance.py` and other source-dependent tests skip without `ALPHA_RDAGENT_SOURCE`; skips confer no qualification.
 - Its audit hooks and sanitised subprocesses contain trusted fixture mistakes, not hostile code or same-user access.

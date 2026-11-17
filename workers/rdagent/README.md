@@ -405,6 +405,33 @@ name>` it forwards `response_format`, so the gateway can enforce RD-Agent's JSON
 - **Records:** `<data-dir>/model-gateway/calls.jsonl`, one line per request (route, real model,
   effort, honoured/enforced/waived/refused, attempts, JSON validity, tokens, dollars, time, status,
   prompt and reply hashes). No prompt or reply text unless `--log-content`.
+- **Cache and provider facts:** chat rows add `provider` and generation `id` from the response
+  root; `cached_tokens` and `cache_write_tokens` from `usage.prompt_tokens_details`;
+  `reasoning_tokens` from `usage.completion_tokens_details`; `cache_discount` from
+  `usage.cache_discount`; and `charged_usd` from `usage.cost`. Absent fields stay null. These are
+  observations, never inferred from prices or headers. Existing `usd` settlement and
+  `estimated_usd` computation are unchanged, including OpenRouter's charged-cost settlement.
+  `attempt_usage` retains these facts and prompt/completion tokens for every attempt, including
+  retries. An abandoned attempt has null facts and `usage_known: false`; the request also says
+  false if any attempt has unknown prompt/completion usage. Request-level provider/id are null
+  unless every attempt reports the same value; numeric fields sum reported values only.
+- **Router session:** API chat adds only top-level `session_id: <run-id>` by default, replacing
+  any caller-supplied session value (recorded as enforced). `--no-router-session` on the launcher or gateway omits it.
+  Other routes never add it. The existing OpenRouter `provider: {"require_parameters": true}`
+  is unchanged; no provider order or restriction is added. This asks the router to keep a run on
+  one provider; actual provider affinity still needs a real-provider check. No user, path, email,
+  credential or request header is added to the session or logs.
+- **Receipt usage:** `call_split.chat_usage` adds reported prompt, cached, reasoning and completion
+  token totals, `cache_hit_rate` (cached / prompt), `provider_calls`, `distinct_providers`,
+  `unknown_provider_calls`, `router_session_sent` (whether any attempt sent it) and a plain
+  `summary` sentence. Counts use individual attempts when available; old logs still load as
+  request observations. Missing provider identities are counted separately, never named by
+  inference; the sentence names the unknown count when needed. A cache rate is null if any attempt lacks prompt/cache counts or the denominator
+  is zero; the sentence then says the rate is unknown. Totals sum reported values only and are
+  null when none are reported. Old session metadata stays unknown, and old receipts are not
+  rewritten. `by_step` appears only for existing chat step labels from `calls-labelled.jsonl`
+  (excluding `outside-step`), with the same rate and reasoning totals. Without step logs, the
+  run still gets its overall call split.
 - **No silent switch:** a Codex usage limit returns `codex_usage_limit` (429); the paid route is
   used only when the gateway is started with `--chat-route api` and the owner's
   `ALPHA_GATEWAY_API_BASE`/`ALPHA_GATEWAY_API_KEY` plus `--api-model` and both prices.

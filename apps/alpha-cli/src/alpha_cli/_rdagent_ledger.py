@@ -33,9 +33,9 @@ from alpha_cli._rdagent_judge import (
     WINDOWS,
     canonical,
     outside_git,
-    plain_name,
     sha,
 )
+from alpha_cli._rdagent_stability import plain_name
 from alpha_core import DataError
 
 
@@ -272,6 +272,7 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                 "iteration": item["iteration"],
                 "windows": item["windows"],
                 "status": "IMPORTED",
+                "reason": "historical result imported without re-evaluation",
                 "stage": "none",
                 "p": 1.0,
                 "q": 1.0,

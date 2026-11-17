@@ -292,7 +292,7 @@ def test_provider_batch_requests_stop_at_embedding_cap(
     )
     monkeypatch.setattr(gw, "post_json", sent)
     with pytest.raises(gw.GatewayError, match="EMBEDDING_CALLS_PER_RUN"):
-        model.embeddings({"model": "alpha-embed", "input": ["x"] * 33})
+        model.embeddings({"model": "alpha-embed", "input": [str(i) for i in range(33)]})
     assert sent.call_count == 1
 
 
@@ -316,6 +316,7 @@ def test_receipt_round_counts_and_old_refusal_key(tmp_path: Path) -> None:
         "rounds_with_trial": 1,
         "rounds_no_admissible_idea": 1,
         "proposals_refused": 2,
+        "rounds_failed_provider": 0,
     }
 
 
@@ -395,7 +396,9 @@ def test_bad_last_input_in_partial_batch_keeps_earlier_vectors(
         }
 
     monkeypatch.setattr(gw, "post_json", post)
-    result = model.embeddings({"model": "alpha-embed", "input": ["good"] * 32 + ["bad"]})
+    result = model.embeddings(
+        {"model": "alpha-embed", "input": [f"good{i}" for i in range(32)] + ["bad"]}
+    )
     assert len(result["data"]) == 32 and result["input_errors"][0]["index"] == 32
 
 

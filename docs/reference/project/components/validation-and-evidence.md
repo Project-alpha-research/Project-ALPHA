@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: bcd009d4f61fd230
+verified: 86c8bb967cff5d8a
 ---
 
 # Validation and evidence

@@ -145,7 +145,7 @@ def test_writeoff_sentence_names_only_replayed_clocks() -> None:
     count, message = writeoff_summary(row, 0.3)
     assert count == 1
     assert "weekly" in message and "daily" not in message and "monthly" not in message
-    assert "1 held position was written off" in message
+    assert "1 position in 1 coin was written off" in message
 
 
 def test_writeoff_sentence_skips_errored_and_unreplayed_clocks() -> None:

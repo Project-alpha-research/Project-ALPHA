@@ -494,6 +494,7 @@ def run_backtest(
             trades=_closed_trades(engine),
             equity_curve=recorder.curve,
             rejected=int(getattr(strategy, "rejections", 0)),
+            resized_entries=int(getattr(strategy, "resized_entries", 0)),
             decision_trace=tuple(getattr(strategy, "decision_trace", ())),
             execution_rejections=tuple(getattr(strategy, "execution_rejections", ())),
             indicator_trace=tuple(getattr(strategy, "indicator_trace", ())),

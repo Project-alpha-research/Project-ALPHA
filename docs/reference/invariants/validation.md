@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: 5b9ad96aa2958632
+verified: bf8ee0f3ccc4c1d6
 ---
 
 # Validation statistics invariants
@@ -59,14 +59,15 @@ Gate outcomes are built by `build_outcomes` in `tearsheet.py` (called from `_gau
   ([investigation](../../archive/research-notes/2026-06-23-tier1-surrogate-crediting-bias.md)).
   Tests: `tests/unit/test_gauntlet_tier1.py`.
 - `bootstrap_ci` (gate 4): passes when the Sharpe BCa lower bound is above 0; the interval is always reported.
-- `deflated_sharpe`: PSR/DSR of the OOS stream; a single run has `n_trials = 1`, so DSR equals PSR. Passes
-  when DSR is at least `dsr_threshold`.
+- `deflated_sharpe`: PSR/DSR of the OOS stream. With no ledger family `n_trials = 1` and DSR equals PSR;
+  a rule test, or `alpha validate` of a strategy with a spine family, deflates by the family's trial count
+  ([counting](cli-trial-ledger.md)) and records it as `trial_basis`. Passes when DSR is at least `dsr_threshold`.
 - `cpcv_oos`: passes when the mean OOS Sharpe across CPCV folds of the OOS stream is above 0.
 - A flat or zero-variance OOS short-circuits every gate to a clean FAIL, never an undefined-Sharpe crash
   (`tests/integration/test_gauntlet_degenerate.py`). A zero-variance bootstrap resample scores 0.0 through the one
   statistic `_gauntlet.safe_sharpe_statistic`; the portfolio and cross-sectional runs import it rather than copy it.
-- Multi-trial statistics (DSR deflated by trial-Sharpe variance, PBO, Reality Check, SPA) judge a parameter
-  sweep and belong to `alpha optim` (`_optim.py`), never the single-run gauntlet.
+- Parameter-sweep statistics (PBO, Reality Check, SPA, and a sweep's own DSR) belong to `alpha optim`
+  (`_optim.py`); the gauntlet only counts the ledger family above.
 
 ## Null models and permutation tests
 
@@ -97,7 +98,10 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
 - Splitters are index-only and engine-agnostic. Oracles: `tests/oracles/test_metamorphic_splits.py`.
 - `block_bootstrap_ci` uses the Politis–Romano stationary bootstrap with BCa correction (leave-one-out
   jackknife acceleration, a documented approximation on dependent data). It fails loud when the BCa adjustment
-  is unstable instead of returning an infinite percentile.
+  is unstable instead of returning an infinite percentile. It stays hand-written (checked against `arch` 8.0.0):
+  `arch` draws from the same law but other numbers for the same seed (path by path, block restart on `u <= p`
+  instead of `u < p`), has no other `length`, and lacks the BCa clamp and the fail-loud acceleration check, so
+  a swap would change every stored seeded interval, risk-of-ruin and null path.
 
 ## Multi-trial selection statistics
 
@@ -105,6 +109,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   against the expected maximum Sharpe of `N` trials using the cross-trial variance.
 - PBO via CSCV runs on a `(T × S)` performance matrix and is deterministic (no RNG).
 - Reality Check and SPA judge the best of `S` strategies with stationary-bootstrap means.
+  They, the stationary bootstrap and the proportion statistics stay hand-written: `arch` and `statsmodels` differ
+  by random draws, test statistic or last digits (`tests/unit/test_stats_library_parity.py`).
 
 ## Path risk and scenarios
 

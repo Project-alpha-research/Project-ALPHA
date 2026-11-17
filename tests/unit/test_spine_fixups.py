@@ -19,6 +19,7 @@ from alpha_cli.spine.diagnose import _publish
 from alpha_cli.spine.facts import build_facts
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.stores import annualisation, periods_per_year
+from alpha_cli.spine.trial_reader import LedgerSnapshot
 from alpha_core import Bar, CorporateAction
 from alpha_data.timeframe import DAILY, parse_timeframe
 
@@ -146,7 +147,10 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
     idea = IdeaSpec(assets=("SPY",), rule=Rule(kind="ma_cross", fast=2, slow=5))
     spec = run.assemble_run_spec(idea, "SPY", 252, len(bars))
     prepared = run.Prepared(bars, [], spec, identity)
-    out = SimpleNamespace(oos=SimpleNamespace(oos_timestamps=[b.ts for b in bars[10:]]))
+    out = SimpleNamespace(
+        oos=SimpleNamespace(oos_timestamps=[b.ts for b in bars[10:]]),
+        result=SimpleNamespace(resized_entries=0),
+    )
     monkeypatch.setattr(_gauntlet, "run_gauntlet", lambda *a, **kw: out)
     final = tmp_path / "runs" / identity.run_id
     result: dict[str, Any] = {
@@ -167,7 +171,9 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
         identity: RunIdentity,
         home: Path,
         result: dict[str, Any],
-    ) -> None:
+        *,
+        snapshot: LedgerSnapshot | None = None,
+    ) -> SimpleNamespace:
         _publish(
             Path(result["run_dir"]),
             {
@@ -176,6 +182,7 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
             },
             identity,
         )
+        return out
 
     monkeypatch.setattr(run, "write_diagnostics", diagnose)
     return tmp_path, idea, prepared, result, final

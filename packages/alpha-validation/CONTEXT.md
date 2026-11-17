@@ -3,7 +3,7 @@ owner: validation statistics
 sources:
   - packages/alpha-validation/src/**
   - packages/alpha-validation/pyproject.toml
-verified: b8674b220aa6819e
+verified: 62a7141576f12c2e
 ---
 
 # alpha-validation workspace

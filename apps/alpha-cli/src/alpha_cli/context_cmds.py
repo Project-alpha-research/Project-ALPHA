@@ -10,6 +10,7 @@ from typing import Annotated, Any
 import polars as pl
 import typer
 
+from alpha_cli import context_sources_cmds as sources
 from alpha_cli._cli_json import emit
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
@@ -23,7 +24,7 @@ from alpha_data.context.fred import (
 )
 from alpha_data.context.views import read_provenance
 
-context_app = typer.Typer(help="Macro reference data as first published, separate from bars.")
+context_app = typer.Typer(help="Point-in-time macro, SEC filings and Binance derivatives context.")
 
 
 def _emit(payload: dict[str, Any], json_out: bool) -> None:
@@ -205,3 +206,6 @@ def window(
         },
         json_out,
     )
+
+
+context_app.add_typer(sources.sources_app)

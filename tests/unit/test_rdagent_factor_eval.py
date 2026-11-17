@@ -14,12 +14,26 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_core import DataError
 from alpha_data.crypto.contracts import CryptoDatasetIdentityV1
 from alpha_data.crypto.ingestion import ingest_provider_payload
 from alpha_data.crypto.providers.binance import parse_binance_klines
 from alpha_data.crypto.storage import Capacity, CryptoBulkStore
+
+
+@pytest.fixture
+def recorded_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fix the recording clock so byte comparisons still check every result field."""
+
+    class Clock:
+        @staticmethod
+        def now(zone: object) -> datetime:
+            assert zone is UTC
+            return datetime(2026, 11, 17, tzinfo=UTC)
+
+    monkeypatch.setattr(ev, "datetime", Clock)
 
 
 def fixture(run: Path, *, seed: int = 42, noise: bool = False) -> Path:
@@ -114,7 +128,7 @@ def test_unknown_ledger_rows_count_conservatively_and_do_not_repeat(
     req = fixture(run, seed=43)
     with (
         patch.object(
-            ev,
+            judge,
             "screen",
             side_effect=[{"status": "OK", "p": p, "direction": 1} for p in (0.05, 1.0, 1.0)],
         ),
@@ -162,7 +176,9 @@ def test_ledger_unknown_rows_kept_and_partial_line_fails_loud(tmp_path: Path) ->
         ev._read_ledger(ledger)
 
 
-def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -> None:
+def test_known_only_evaluation_bytes_match_pre_change_baseline(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "baseline"
     req = fixture(run)
     request, panel, values, _ = ev._inputs(run, req)
@@ -171,6 +187,54 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(tmp_path: Path) -
     record = ev._evaluate_locked(
         run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
     )
+    # Check the changed presentation explicitly, then retain the original byte contract
+    # for every decision, metric and trial count. The historical checksum is not replaced.
+    row = record["factors"][0]
+    assert record["lead_factor"] is None
+    record["lead_factor"] = "factor"  # earlier output incorrectly selected this failed factor
+    assert row.pop("universe_includes_delisted") is False
+    assert row.pop("writeoff_count") == 0
+    message = row.pop("writeoff_message")
+    assert message == (
+        "factor: 0 held positions were written off after their coin stopped trading, "
+        "assuming a 30% loss of last value (not a measured recovery), "
+        "across the evaluated holding clocks; none."
+    )
+    assert message in record["feedback_text"]
+    record["feedback_text"] = record["feedback_text"].replace(" " + message, "")
+    current = row["survivorship"]
+    assert current == (
+        "15 instruments, 0 later delisted declared; survivors-only selection; "
+        "survivorship can bias results upward"
+    )
+    assert record["disclosures"]["survivorship"] == current
+    row["survivorship"] = record["disclosures"]["survivorship"] = ev.SURVIVORSHIP
+    record["feedback_text"] = record["feedback_text"].replace(current, ev.SURVIVORSHIP)
+    assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
+    # New recording metadata and presentation are checked before projecting onto the old
+    # byte contract; the original metric/decision checksum remains unchanged.
+    assert record["factors"][0].pop("recorded_at") == "2026-11-17T00:00:00+00:00"
+    assert (
+        "Factor-family trials (each factor x clock, unreadable rows too): 3"
+        in record["feedback_text"]
+    )
+    assert "Ledger rows, all families (rules, repeats too): 1" in record["feedback_text"]
+    assert "Factor failed: reason not recorded." in record["feedback_text"]
+    record["feedback_text"] = (
+        record["feedback_text"]
+        .replace(
+            "Factor-family trials (each factor x clock, unreadable rows too)",
+            "Ledger trials",
+        )
+        .replace(
+            "Ledger rows, all families (rules, repeats too)",
+            "ledger_trials_all_families",
+        )
+    )
+    for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
+        container[key] = container[key].replace(
+            "Factor failed: reason not recorded. ", "Factor execution failed."
+        )
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )
@@ -214,7 +278,7 @@ def test_import_ignores_unknown_identity_and_counts_unknown_trial(
     assert imported["total_trials"] == imported["family_size"] == 2
 
 
-def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path) -> None:
+def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path, recorded_time: None) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     ledger = tmp_path / "trials.jsonl"
@@ -225,7 +289,11 @@ def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path) -> None:
     assert factor["replay"]["net"]["annualized_return"] > 0
     assert result["decision"] is True
     assert result["label"] == ev.LABEL
-    assert ev.SURVIVORSHIP in result["feedback_text"]
+    assert (
+        "15 instruments, 0 later delisted declared; survivors-only selection"
+        in result["feedback_text"]
+    )
+    assert factor["universe_includes_delisted"] is False
     assert all(v is False for v in result["authority"].values())
     original = (run / "result.json").read_bytes()
     original_lines = ledger.read_bytes()
@@ -240,7 +308,7 @@ def test_noise_never_replayed(tmp_path: Path, seed: int) -> None:
     run = tmp_path / "run"
     req = fixture(run, seed=seed, noise=True)
     with patch.object(
-        ev, "run_weight_replay", side_effect=AssertionError("screen failed but replay called")
+        judge, "run_weight_replay", side_effect=AssertionError("screen failed but replay called")
     ):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     assert record["decision"] is False
@@ -343,7 +411,7 @@ def test_one_failing_factor_is_recorded_as_error_and_the_rest_still_land(tmp_pat
         return real(signal, outcome, digest, series=series)
 
     ledger = tmp_path / "ledger.jsonl"
-    with patch.object(ev, "screen", flaky):
+    with patch.object(judge, "screen", flaky):
         result = evaluate(run, req, ledger)
     statuses = {f["name"]: f["status"] for f in result["factors"]}
     assert statuses == {"factor": "CANDIDATE", "broken": "ERROR"}
@@ -442,7 +510,7 @@ def _publish(
 
 
 def _freeze(tmp_path: Path, store: CryptoBulkStore) -> dict[str, Any]:
-    with patch.object(ev, "configured_crypto_bulk_store", lambda _: store):
+    with patch.object(judge, "configured_crypto_bulk_store", lambda _: store):
         return ev.freeze(tmp_path / "control", tmp_path / "out")
 
 
@@ -465,12 +533,21 @@ def test_freeze_two_coins_stops_before_the_reserved_window(tmp_path: Path) -> No
     assert receipt["panel_sha256"] == digest
 
 
-@pytest.mark.parametrize("defect", ["gap", "overlap", "empty"])
-def test_freeze_refuses_gaps_overlaps_and_nothing(tmp_path: Path, defect: str) -> None:
+def test_freeze_records_an_interior_gap_instead_of_refusing_it(tmp_path: Path) -> None:
+    # A missing instrument-day is recorded, never bridged and never a reason to drop the coin
+    # (dropping gapped coins would bring survivorship bias back).
     store = _bulk_store(tmp_path)
-    if defect == "gap":
-        _publish(store, "BTCUSDT", (10.0, 11.0, 12.0, 13.0), skip=1)
-    elif defect == "overlap":
+    _publish(store, "BTCUSDT", (10.0, 11.0, 12.0, 13.0), skip=1)
+    receipt = _freeze(tmp_path, store)
+    assert receipt["missing_instrument_days"] == 1
+    assert receipt["instruments"]["BTCUSDT"]["longest_gap"] == 1
+    assert receipt["rows"] == 3
+
+
+@pytest.mark.parametrize("defect", ["overlap", "empty"])
+def test_freeze_refuses_overlaps_and_nothing(tmp_path: Path, defect: str) -> None:
+    store = _bulk_store(tmp_path)
+    if defect == "overlap":
         _publish(store, "BTCUSDT", (10.0, 11.0, 12.0))
         _publish(store, "BTCUSDT", (10.0, 11.5, 12.0), fetched=datetime(2026, 3, 1, tzinfo=UTC))
     with pytest.raises(DataError):
@@ -626,7 +703,7 @@ def test_imported_identity_is_never_re_evaluated(
     run = tmp_path / "repeat"
     req = fixture(run)
     with (
-        patch.object(ev, "screen", side_effect=AssertionError("import screened")),
+        patch.object(judge, "screen", side_effect=AssertionError("import screened")),
         patch.object(ev, "replay", side_effect=AssertionError("import replayed")),
     ):
         result = evaluate(run, req, ledger)
@@ -683,7 +760,7 @@ def test_imported_rows_count_in_bh_family(tmp_path: Path, monkeypatch: pytest.Mo
     req = fixture(run)
     with (
         patch.object(
-            ev,
+            judge,
             "screen",
             side_effect=[
                 {"status": "OK", "p": 0.05, "direction": 1},
@@ -840,7 +917,9 @@ def test_series_reproduce_metrics_hashes_and_are_byte_identical(tmp_path: Path) 
     }
 
 
-def test_series_failure_changes_no_metrics_or_decisions(tmp_path: Path) -> None:
+def test_series_failure_changes_no_metrics_or_decisions(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     good = evaluate(run, req, tmp_path / "good.jsonl")
@@ -882,7 +961,7 @@ def test_same_request_repeat_has_no_evidence(tmp_path: Path) -> None:
 def test_screen_error_retains_computed_daily_ic_only(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)
-    with patch.object(ev, "block_bootstrap_ci", side_effect=DataError("inference failed")):
+    with patch.object(judge, "block_bootstrap_ci", side_effect=DataError("inference failed")):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
     assert factor["status"] == "ERROR"
@@ -1022,5 +1101,5 @@ def test_rule_family_excluded_from_factor_statistics_and_repeats(tmp_path: Path)
     assert mixed["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["ledger_trials_all_families"] == 2
     assert mixed["factors"][0]["trial_index"] == 2
-    assert "ledger_trials_all_families: 2" in mixed["feedback_text"]
+    assert "Ledger rows, all families (rules, repeats too): 2" in mixed["feedback_text"]
     assert len(ev._read_ledger(ledger)) == 2

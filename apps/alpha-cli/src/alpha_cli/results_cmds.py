@@ -10,7 +10,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
-from alpha_cli.spine.check import check_text, render_check
+from alpha_cli.spine.check import FlagLookup, check_text, render_check
 from alpha_cli.spine.compare import (
     DEFAULT_METRICS,
     Lookup,
@@ -28,6 +28,7 @@ from alpha_cli.spine.facts import (
     tool_outputs,
 )
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -130,7 +131,21 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
 
     rdir, manifest = _run(home, run_id)
     diagnostics = read_json(rdir / "diagnostics.json")
+    rule = manifest.get("spine", {}).get("rule", {}).get("kind")
+    family_id = f"spine:{rule}" if rule else None
+    counts = family_counts(spine_snapshot(home))
+    current = next(
+        (row for row in counts if row["family_id"] == family_id),
+        {"reader_trials": 0, "rows": 0, "outcomes": {}},
+    )
+    at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     return {
+        "family": {
+            "family_id": family_id,
+            "trials_at_run": at_run,
+            "now": {key: current[key] for key in ("reader_trials", "rows", "outcomes")},
+            "reason": None if at_run is not None else "recorded before family counts were used",
+        },
         "run_id": run_id,
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
@@ -162,10 +177,11 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             ids = [run_id]
         else:
             # A test id: show every asset that completed and report each one that did not.
+            # Rows written before investigation tools existed carry no kind: they are rule tests.
             rows = [
                 row
-                for row in read_trials(home)
-                if row.get("test_id") == run_id and row["kind"] == "rule_test"
+                for row in spine_snapshot(home).raw_rows.values()
+                if row.get("test_id") == run_id and row.get("kind", "rule_test") == "rule_test"
             ]
             ids = list(
                 dict.fromkeys(
@@ -178,7 +194,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
                 {
                     "symbol": row.get("symbol"),
                     "run_id": row.get("run_id"),
-                    "trial_index": row["trial_index"],
+                    "trial_index": row.get("trial_index"),
                     "reason": "this asset's trial did not complete; no run is stored for it",
                 }
                 for row in rows
@@ -204,7 +220,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
                         {
                             "symbol": row.get("symbol"),
                             "run_id": value,
-                            "trial_index": row["trial_index"],
+                            "trial_index": row.get("trial_index"),
                             "reason": f"stored run could not be read: {exc}",
                         }
                     )
@@ -254,13 +270,32 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
         _error(exc, json_out)
 
 
-def fact_lookup(home: Path) -> Lookup:
-    """Discover completed runs; read each cited run's facts once, on demand."""
+def _run_paths(home: Path) -> dict[str, Path]:
+    """Discover completed runs in the same precedence order as run lookup."""
     paths: dict[str, Path] = {}
     for directory in RUN_DIRS:
         for manifest in (home / directory).glob("*/manifest.json"):
             if valid_run_id(manifest.parent.name):
                 paths.setdefault(manifest.parent.name, manifest.parent)
+    return paths
+
+
+def flag_lookup(home: Path) -> FlagLookup:
+    """Read stored diagnostic flags for cited runs; missing diagnostics have none."""
+    paths = _run_paths(home)
+
+    def lookup(run_id: str) -> list[dict[str, str]]:
+        flags: list[dict[str, str]] = read_json(
+            paths[resolve_run(run_id, paths)] / "diagnostics.json"
+        ).get("flags", [])
+        return flags
+
+    return lookup
+
+
+def fact_lookup(home: Path) -> Lookup:
+    """Discover completed runs; read each cited run's facts once, on demand."""
+    paths = _run_paths(home)
     cache: dict[str, dict[str, dict[str, Any]]] = {}
 
     def lookup(prefix: str, metric: str) -> dict[str, Any]:
@@ -268,6 +303,12 @@ def fact_lookup(home: Path) -> Lookup:
         run_id = resolve_run(prefix, paths)
         if run_id not in cache:
             cache[run_id] = {fact["metric"]: fact for fact in build_facts(paths[run_id])}
+        if metric not in cache[run_id]:
+            raise SpineError(
+                "METRIC_NOT_STORED",
+                f"Run {run_id} has no stored fact {metric} in its run folder.",
+                "Cite tool facts with alpha results cite <run_id> <metric> --tool-output <id>.",
+            )
         return cache[run_id][metric]
 
     return lookup
@@ -281,13 +322,14 @@ def check_answer(
         0, min=0, help="Tolerate this many untagged numbers as warnings."
     ),
 ) -> None:
-    """Check a draft's tagged numbers and required labels against stored facts."""
+    """Check a draft's tagged numbers, required labels and flags against stored facts."""
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
         fail(unreadable_file(path, exc), json_out)
     try:
-        result = check_text(text, fact_lookup(AlphaSettings().data_dir), allow_untagged)
+        home = AlphaSettings().data_dir
+        result = check_text(text, fact_lookup(home), allow_untagged, flag_lookup(home))
         emit(result, json_out=json_out, fallback=render_check(result))
         if not result["ok"]:
             raise typer.Exit(1)

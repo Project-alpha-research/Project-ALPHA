@@ -53,7 +53,9 @@ def test_problem_kinds(tmp_path: Path, text: str, kind: str) -> None:
         assert problem["stored"] == {"value": 0.8, "rounded": "0.8"}
 
 
-@pytest.mark.parametrize("number,ok", [("75.5%", True), ("75.6%", False), ("+0.755×", True)])
+@pytest.mark.parametrize(
+    "number,ok", [("75.5%", True), ("75.6%", False), ("+0.755", True), ("0.755×", False)]
+)
 def test_precision_percent_and_ratio(tmp_path: Path, number: str, ok: bool) -> None:
     result = check_text(f"{number} [{A}:full_sample_total_return]. {TRIALS}", make_lookup(tmp_path))
     assert result["ok"] is ok

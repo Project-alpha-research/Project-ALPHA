@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-import ruptures  # type: ignore[import-untyped]
+import ruptures
 
 from alpha_validation import changepoints
 from alpha_validation.changepoints import change_points, default_penalty, noise_variance

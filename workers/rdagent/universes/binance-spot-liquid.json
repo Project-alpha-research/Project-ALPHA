@@ -1,0 +1,12 @@
+{
+  "schema": "AlphaRdagentUniverseV1",
+  "name": "binance-spot-liquid",
+  "source": "binance-spot",
+  "instruments": "all-in-store",
+  "calendar": "calendar-days",
+  "annual_periods": 365,
+  "liquidity": {"lookback_days": 90, "min_median_quote_volume": 1000000, "max_names": 50},
+  "min_names": 5,
+  "min_universe": 15,
+  "survivorship": "every Binance USDT spot coin in the local store (15 in 2026-11, all chosen from today's survivors); delisted or collapsed coins (for example LUNA, FTT) are absent, which biases results upward; a coin ranks on a decision day only if its last 90 daily bars exist and their median quote volume is at least USD 1 million"
+}

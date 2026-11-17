@@ -379,13 +379,15 @@ here changes them.
 
 ```sh
 python3 workers/rdagent/model_gateway.py serve --data-dir /absolute/data/dir --run-id <id> \
-  --accept-unhonoured temperature          # writes model-gateway/session.json; logs to stderr
+  --accept-unhonoured temperature          # writes model-gateway/session-<pid>.json and session.json
 python3 workers/rdagent/model_gateway.py status --data-dir /absolute/data/dir
 ```
 
 RD-Agent is pointed at it with `CHAT_MODEL=lm_studio/alpha-chat`,
 `EMBEDDING_MODEL=lm_studio/alpha-embed`, `LM_STUDIO_API_BASE=<base_url>/v1`,
-`LM_STUDIO_API_KEY=<token>` (both from `session.json`, a per-start local token, mode 0600) and
+`LM_STUDIO_API_KEY=<token>` (both from the session file, a per-start local token, mode 0600; the
+launcher reads `session-<pid>.json`, so runs that share one state folder, and so one monthly cap,
+can start together; `session.json` names the latest gateway and is removed only by it) and
 `LITELLM_LOCAL_MODEL_COST_MAP=True` (otherwise LiteLLM downloads its price list at import). The
 `lm_studio/` prefix is LiteLLM's generic OpenAI-compatible provider: unlike `openai/<unknown
 name>` it forwards `response_format`, so the gateway can enforce RD-Agent's JSON mode.
@@ -403,6 +405,34 @@ name>` it forwards `response_format`, so the gateway can enforce RD-Agent's JSON
 - **Records:** `<data-dir>/model-gateway/calls.jsonl`, one line per request (route, real model,
   effort, honoured/enforced/waived/refused, attempts, JSON validity, tokens, dollars, time, status,
   prompt and reply hashes). No prompt or reply text unless `--log-content`.
+- **Cache and provider facts:** chat rows add `provider` and generation `id` from the response
+  root; `cached_tokens` and `cache_write_tokens` from `usage.prompt_tokens_details`;
+  `reasoning_tokens` from `usage.completion_tokens_details`; `cache_discount` from
+  `usage.cache_discount`; and `charged_usd` from `usage.cost`. Absent fields stay null. These are
+  observations, never inferred from prices or headers. Existing `usd` settlement and
+  `estimated_usd` computation are unchanged, including OpenRouter's charged-cost settlement.
+  `attempt_usage` retains these facts and prompt/completion tokens for every attempt, including
+  retries. An abandoned attempt has null facts and `usage_known: false`; the request also says
+  false if any attempt has unknown prompt/completion usage. Request-level provider/id are null
+  unless every attempt reports the same value; numeric fields sum reported values only.
+- **Router session:** API chat adds only top-level `session_id: <run-id>` by default, replacing
+  any caller-supplied session value (recorded as enforced). `--no-router-session` on the launcher or gateway omits it.
+  Other routes never add it. The existing OpenRouter `provider: {"require_parameters": true}`
+  is unchanged; no provider order or restriction is added. This asks the router to keep a run on
+  one provider; actual provider affinity still needs a real-provider check. No user, path, email,
+  credential or request header is added to the session or logs.
+- **Receipt usage:** `call_split.chat_usage` adds reported prompt, cached, reasoning and completion
+  token totals, `cache_hit_rate` (cached / prompt), `provider_calls`, `distinct_providers`,
+  `unknown_provider_calls`, `router_session_sent` (whether any attempt sent it) and a plain
+  `summary` sentence. Counts use individual attempts when available; old logs still load as
+  request observations. Missing provider identities are counted separately, never named by
+  inference; the sentence names the unknown count when needed. Attempts with no usage at all (failed or abandoned) are counted in
+  `usage_unknown_attempts` and left out of the rate; a cache rate is null if an attempt reports
+  prompt tokens without cache counts or the denominator is zero, and the sentence then says it is unknown. Totals sum reported values only and are
+  null when none are reported. Old session metadata stays unknown, and old receipts are not
+  rewritten. `by_step` appears only for existing chat step labels from `calls-labelled.jsonl`
+  (excluding `outside-step`), with the same rate and reasoning totals. Without step logs, the
+  run still gets its overall call split.
 - **No silent switch:** a Codex usage limit returns `codex_usage_limit` (429); the paid route is
   used only when the gateway is started with `--chat-route api` and the owner's
   `ALPHA_GATEWAY_API_BASE`/`ALPHA_GATEWAY_API_KEY` plus `--api-model` and both prices.
@@ -446,8 +476,58 @@ IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `m
 Deflated Sharpe counts every replayed factor x clock. Repeated code hashes
 are not evaluated again. The proposer receives the plain-English swing brief on every context
 call, before the cross-run ledger summary, including when no ledger exists. It asks for slow,
-low-turnover signals with a mechanism and falsifier, and explains the daily ideas that failed
-after costs. All results remain exploratory, not admitted. RD-Agent never sees 2024 or later; no Qlib model, Docker
+low-turnover signals with a mechanism and falsifier, explains the daily ideas that failed
+after costs and the slow ranks whose held top third lost before costs. The summary lists the
+newest distinct factors (at most 30) as whole lines within 4000 characters, rounds IC and q to
+three decimals, gives each replayed clock's annual return before and after costs, its annual
+cost and daily turnover, and states how many older factors it left out (2026-11-16: it had cut
+the 23rd line in half and showed no replay numbers). All results remain exploratory, not admitted.
+
+Spread check, idea families, universe file and call limit
+([ADR-0055](../../docs/adr/0055-spread-check-family-brief-and-universe-file.md), 2026-11-16):
+
+- Before a screened clock (q < 0.10) is replayed, the evaluator checks on the same decision days that
+  the top third the factor would hold beat its bottom third before costs (mean over decision days,
+  positive under both tie orders). If not, the clock is `SPREAD_FAIL`
+  (`top-third-does-not-beat-bottom-third`) whatever its replay shows. Each screened clock records a
+  `spread` object: top- and bottom-third mean returns, spread per hold and per year, t-statistic
+  (autocorrelation-adjusted), bootstrap interval, decision days, the share of the top third replaced
+  per rebalance and the yearly cost that implies. A stricter gate, never a pass. A spread-stopped
+  clock, or one whose spread could not be computed (`ERROR`), is still replayed (marked
+  `counted_only`) so the Deflated Sharpe counts every screened clock as a trial, exactly as before
+  the check; feedback and RD-Agent's result keys show such a replay as "counted only, not a
+  result", never as returns. A universe hash in the panel receipt requires the file.
+- Embeddings: after the local service refuses an input (HTTP 400), the gateway retries once with
+  inputs over `--embed-max-chars` (2,000) split at sentence ends and averages the pieces' vectors
+  (logged as `chunked_inputs`, `chunks`); never truncated. If it still fails, the coding step
+  leaves that memory entry out (`memory-skips.jsonl`) and the receipt counts
+  `memory_entries_skipped`; `call_split` adds `chunked_embedding_inputs` and `embedding_chunks`.
+- The proposer's context starts with every idea family in the ledger (name-keyword groups: tries,
+  best result, failures by status), names the families with `--family-switch-after` (3) or more
+  failed tries and no candidate, and tells it to move to a different family. Ledger lines add the
+  spread numbers for every clock that reached the check.
+- `--universe /abs/file.json` freezes the panel with a universe file (`AlphaRdagentUniverseV1`,
+  examples in `universes/`): source, instruments, a point-in-time liquidity rule, calendar (which
+  fixes the year length and clocks) and minimum universe. The file and its hash are bound into the
+  panel receipt; an unbound or edited file is refused. `binance-spot-liquid.json` (90-day median
+  quote volume of at least USD 1 million, at most 50 coins) keeps all 15 coins of the local store on
+  every exploration day; widening needs more coins in the store. `alpaca-us-stocks.json` is refused:
+  the Alpaca store has 9 single stocks (and 6 funds), fewer than 15, and the exchange-session
+  calendar is not yet evaluable.
+- Gateway: `--api-timeout` (180 s) bounds each paid call in total; a slower call ends as
+  `provider_timeout`, and it or an empty reply is retried `--provider-retries` times (1); every
+  attempt counts toward the caps. The receipt's `call_split` separates model chat calls (requests,
+  attempts, dollars) from free local embedding calls, with provider timeouts, empty replies and
+  retries.
+- Measured 2026-11-16: offline, on the 18 factor × clock trials that had reached the replay, the
+  spread check rejects 16 (all 15 that lost before costs and one daily-only pass); no model calls.
+  Two fresh runs (DeepSeek V4.1 Flash, 3 loops each, USD 0.085 and 0.138): 11 factors judged, 3
+  passed the rank screen, 1 passed the spread check (daily-only), none a swing candidate. Proposals
+  moved from "price near its high" to intraday/overnight drift, return predictability, trend
+  efficiency, co-skewness and drawdown. Five calls hit the 180 s limit; four retries succeeded, one
+  request failed after two attempts and the run went on. Run 2 stopped in its third loop because
+  local Ollama refused a 7,394-character embedding (HTTP 400), not a model timeout; its receipt was
+  written. Embeddings were 21 of 60 and 16 of 47 counted calls. RD-Agent never sees 2024 or later; no Qlib model, Docker
 image, MLflow or conda is involved.
 
 ```sh
@@ -458,6 +538,8 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   --gateway-data-dir /abs/runs/model-gateway-state \
   --trial-ledger /abs/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl \
   --run-id <id> --loop-n 2      # at most 3 loops and 60 model calls; Codex and Ollama routes
+  # optional: --universe /abs/workers/rdagent/universes/binance-spot-liquid.json
+  #           --family-switch-after 3 --api-timeout 180 --provider-retries 1
 ```
 
 - `factor-requirements.lock`: 79 hash-pinned packages (the stock runtime's plus pandas 2.2.3,
@@ -482,7 +564,7 @@ unchanged. This is working knowledge: ALPHA's trial ledger remains the sole evid
 Nothing is copied between memory and the ledger.
 
 ALPHA's code-level verdict reaches coding memory before evaluation: factors that fail the
-look-ahead check (`LOOKAHEAD`) or run but return the wrong output shape (`FAILED`) lose their
+look-ahead or reproducibility check (`LOOKAHEAD`, `UNSTABLE`) or run but return the wrong output shape (`FAILED`) lose their
 successful coding-reference status. Their graph nodes become `alpha_rejected_implement` and
 their attempt history stays available for inspection. Screen and replay failures keep their
 correct implementations as coding references. The coder reloads shared knowledge before each
@@ -524,13 +606,126 @@ programs and research rounds alongside the ledger's verdicts. Without that runti
 shows manifest facts and explains what is missing. It copies the integrity key into a temporary
 HOME for reading signed artifacts and removes the copy afterwards.
 
+A continued run starts at a round boundary (2026-11-17). It loads only a completed round's
+checkpoint (`<loop>/4_record`; if that dump is truncated, an older completed one), takes the
+research trace (hypotheses, experiments, feedback) from it, and runs it in a fresh RD-Agent
+scheduler built from this run's settings, so this run's own round folders are numbered from 0.
+A round the previous session left half-finished (the call cap stopped it) is not resumed: it is
+appended to that run's `rounds.jsonl` as `AlphaRdagentRoundAbandonedV1`, status
+`abandoned_at_cap`, `trial_created: false`, and no trial is invented for it; this run's own
+unfinished round is recorded the same way when it ends. The receipt's `rounds_completed` counts
+this run's completed rounds and `loops_after` = `loops_before` + `rounds_completed` (only this
+run's rounds when the previous session could not be loaded). The model calls already spent on
+an abandoned round stay spent, and its proposal is not re-proposed or evaluated.
+
+The context and feedback system prompt end with a current-universe correction derived from this
+run's frozen receipt and universe, including its instrument count and declared survivorship.
+They refuse missing or unreadable information before any proposal call; the restored pickle stays
+unchanged. Universe prose declaring `N later delisted` (or explicit inclusion of delisted names)
+feeds the new receipt and row's `universe_includes_delisted` flag. Early endings alone do not
+establish delisting. A prose count must describe the selected run, not the store's original size;
+an impossible count refuses the freeze. Explicit inclusion without a count says it is not recorded.
+
 Known limits: a run that crashes before finishing a round keeps the previous session as the one
-to continue (if the newest step dump is truncated, the next-older dump is used). Two runs started
-at the same time from one memory both continue the same session and the later one becomes the
-pointer; the coding knowledge itself is shared safely through RD-Agent's file lock. A continued
-session keeps RD-Agent's pickled scenario description from its first run (the data folders and
-the coder's attempt limit come from the current run). RD-Agent's own logs from a memory run are
-signed with the memory key, so its log viewer needs `ARTIFACT_SIGNING_KEY_PATH` pointed there.
+to continue. Two runs started at the same time from one memory both continue the same session
+and the later one becomes the pointer; the coding knowledge itself is shared safely through
+RD-Agent's file lock. The restored research trace keeps RD-Agent's pickled scenario description
+from its first run (the data folders and the coder come from the current run). RD-Agent's own
+logs from a memory run are signed with the memory key, so its log viewer needs
+`ARTIFACT_SIGNING_KEY_PATH` pointed there.
+
+### Failure reasons, idea families and the call split (2026-11-17)
+
+A factor that produced no usable values is a `FAILED` trial with a `failure_reason`, carried into
+its ledger row, `alpha ledger list` and the next proposal's feedback: `critic_rejected` (the code
+ran; RD-Agent's critic did not accept it), `cap_reached` (the call cap stopped the coder),
+`exception` (the code raised; `failure_detail` keeps the error's own line, never the traceback
+header) or `bad_output` (no `factor.py`, or not one numeric column on a date/instrument index).
+
+Each factor row also keeps the proposal's `description`, `formulation` and `variables`. The idea
+family rule (`--family-switch-after`, ADR-0055) classifies a composite (machine learning, a
+regression, a weighted combination) or a factor whose name has no family keyword by the feature
+families its own words name; it inherits every one, so a ridge composite of volatility, drawdown,
+skew and autocorrelation features counts as a try in each, and it is barred when any of them is
+closed. Only evaluated screen, spread and replay failures (including daily-only passes) count
+toward closing a family; code failures remain trials but do not close families. Before coding,
+`research_memory` wraps the current coder with `FamilyGuard`: a closed-family proposal is refused
+before any code is written or data read, with the closed and open families named, and recorded in
+`rounds.jsonl` as `refused_closed_family` with `trial_created: false`. The guard then asks the
+proposer again inside the same round, repeating upstream's own two proposal calls (propose, then
+experiment) with the refusals added to the proposer's context, at most twice. A third refusal is
+recorded as `no_admissible_idea` and ends the round through upstream's skip exception; upstream
+then records the refusal message as that round's feedback without a feedback-model call. Each
+re-ask spends proposal model calls under the same run cap. Upstream's own step log still shows the
+first, refused proposal for that round; the round record and the trace hold the one coded.
+A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
+carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself subject to the
+limit. The match is approximate and over-inclusive: a stray family word adds a family, never
+removes one.
+
+The default `--embedding-route local` uses the same Ollama requests and long-input retry as
+before (`ollama` remains a legacy spelling; `fake` is for tests). Select
+`--embedding-route provider --provider-embed-model MODEL --provider-embed-usd-per-mtok PRICE`
+to embed whole inputs through the paid chat provider's `/embeddings` endpoint. Model and positive
+USD-per-million-token price are required; neither has a guessed default. `ApiChat.__init__` in
+`model_gateway.py` and `ProviderEmbeddings.__init__` in `gateway_embeddings.py` read the same
+`ALPHA_GATEWAY_API_BASE` and `ALPHA_GATEWAY_API_KEY`; only the gateway process receives them.
+Provider inputs are never split. Explicit input refusals are skipped with their original cause;
+a budget refusal stops the worker immediately as `BudgetExhausted`.
+
+Both built-in embedding routes are exempt from the 60-call and monthly call counts. Their
+combined attempts, including local chunk retries, have a per-run guard of 2,000
+(`EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted`. The exemption is decided in
+`gateway_embeddings.embedding_attempt` from the actual backend and route, never caller fields
+or model aliases. Unknown injected backends stay counted. Chat and chat retries remain counted;
+the 60-call, USD 10 per-run, USD 50 monthly, 3,000 monthly-call and 180 s paid-call limits keep
+their values. Provider embeddings reserve characters / 3 × price before sending, then settle
+using reported total tokens (prompt tokens if total is absent). Missing usage keeps the estimate.
+An explicit error with no usage or an unavailable connection settles to zero; a timeout or
+unreadable reply retains the estimate because the request may have been billed. No embedding
+retry is made on the provider route.
+
+`call_split` and the receipt report `local_embedding_calls`, `provider_embedding_calls`,
+`provider_embedding_usd` and `provider_embedding_tokens`, plus route and model. Receipt totals
+come from the reserved budget, even if a call was not logged; unavailable totals are null.
+`calls` and `counted_toward_call_cap` remain compatible aliases for counted calls. Old budget
+files, call logs and receipts keep historical counts unchanged. Token totals count only usage
+actually reported by the provider; unknown usage is not invented.
+
+The wrapper's `embedding-models.json` sidecar binds each graph entry's text hash, model id,
+dimension and vector. On the coder's first use, unknown or different-model entries are embedded
+through the gateway before retrieval. Compatible vectors are reused; upstream's model-agnostic
+embedding cache is bypassed for queries and new nodes. Failed entries are hidden for this run,
+retained for a future attempt, and logged in `memory-skips.jsonl`. Re-embedding events go to
+`memory-reembedded.jsonl`; the receipt counts `memory_entries_reembedded`. Malformed sidecars
+fail loud. Unknown legacy entries are re-embedded before their first retrieval.
+
+### Compare embedding retrieval
+
+`embedding_eval.evaluate(entries, queries, embed)` accepts a deterministic callable for offline
+checks, and reports macro recall at 3 and 5, mean reciprocal rank, refused inputs and split
+inputs. Refused queries score zero; refused relevant entries stay in recall denominators.
+Cosine ties use entry ids. Invalid vectors fail loud. Run once per gateway/model on the same set:
+
+```sh
+.venv/bin/python workers/rdagent/embedding_eval.py --entries /abs/ideas.json \
+  --queries /abs/queries.json --gateway-url http://127.0.0.1:PORT
+```
+
+Supply the gateway session token through `ALPHA_GATEWAY_SESSION_TOKEN`, never the provider key.
+Entries are a JSON list with `id` and `text` (plus `idea_family` and `outcome` when labelled);
+queries contain `text`, `relevant_ids`, and optional `exclude_ids`. The harness asks the gateway
+for optional `report_embedding_stats`; ordinary embedding responses remain unchanged.
+`build_labelled_set(ledger, memory)` joins explicit labels by `id` or `code_sha256`; `--ledger`
+accepts JSONL instead of `--queries`. Labels require an explicit idea family and symbol list
+(`symbols` or ledger `instruments`). Same-family entries with identical symbol sets are relevant
+to each other, excluding self matches and ignoring outcomes. The output calls this a proxy,
+not ground truth; missing family labels must be supplied before using a raw ledger.
+
+`--coding-reasoning-tokens` exists but must stay unset: OpenRouter documents `reasoning.max_tokens`,
+but whether the pinned model's providers honour it (the gateway sends `require_parameters`) is
+unconfirmed without a paid call, and the gateway cannot yet tell a coding call from others, so
+any value is refused.
 
 ### RD-Agent's own log viewer (2026-11-15)
 
@@ -658,8 +853,116 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   mostly short-term reversal: five failed the screen, one failed to run, three passed the screen
   and failed the replay after costs (daily turnover 0.52-0.79). No candidate. One run per route
   is not a quality comparison.
-- Embeddings stay on local Ollama on both routes.
+- Prices change: re-read 2026-11-16, the same snapshot lists USD 0.15 / 0.60 per million (weekday
+  windows at 0.30 / 1.20), and OpenRouter charged up to twice the gateway's estimate on one call;
+  the budget settles on the charged cost, so caps hold. Four system-test runs that day (one with
+  memory, three without, comparing `deepseek/deepseek-v4-pro-0813` at 0.111 / 4.44 and
+  `deepseek/deepseek-v4-flash-0731` at 0.06 / 0.18) cost USD 0.66 in all, judged 18 factors and
+  found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
+  calls counted toward it at the time), one after a stuck call; replies that reason for 8-12 minutes and return
+  no text (`invalid_provider_response`) occurred in every run.
+- Embeddings default to local Ollama independently of chat; the provider route is opt-in above.
 - Not yet: supervision by `alpha`'s native job supervisor
   ([backlog](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md)); a Nautilus replay;
   the candidate-to-research-case hand-off
   ([backlog](../../docs/roadmap/backlog/rdagent-candidate-to-research-case.md)).
+
+### Missing bars and causal membership
+
+New panel receipts carry `AlphaRdagentGapPolicyV1`. `_rdagent_membership.panel_summary`
+records first/last dates, missing days inside each span, longest gaps and early endings;
+these are descriptions of the frozen input, never trading signals. The universe may provide
+an optional absolute `data_dir`, which must exist when the panel is frozen (a frozen run
+still loads after the store moves); otherwise the launcher's data
+directory applies. This does not change the gateway, ledger or other ALPHA data directories.
+No wide-universe instrument list is supplied by the code.
+
+A name can rank only after `REENTRY_BARS = 20` consecutive daily bars, with a finite factor
+value, and passing any configured liquidity rule. A gap resets the streak. Days below the
+existing five-name minimum are skipped and counted. Factor input gives every instrument null rows
+from the first data day (no later than the first cut) until it lists, and null rows for missing days
+inside its span; no row follows its last bar and nothing is forward-filled. Every cut therefore keeps
+the full panel's instrument columns.
+
+Held names with missing bars stay at their last close and cannot finance other purchases.
+They exit at the first resuming close, with the usual sell costs, or are written off after
+`WRITE_OFF_AFTER_DAYS = 30` calendar days without a bar. The write-off recovers last close
+multiplied by `1 - DELISTING_HAIRCUT`, where `DELISTING_HAIRCUT = 0.30`.
+**This 30% loss is a conservative assumption, not a measured delisting recovery.** An unresolved
+position at panel end uses the same assumption, counted separately as `written_off_at_panel_end`.
+An administrative write-off has no fictitious exchange fee. A later resumption can become a
+new position only after a fresh warm-up. The zero-cost comparison basket follows the same waits.
+
+Ordinary screen labels retain the fixed next-open/open horizon. A missing endpoint uses the
+first available close within 30 days after the endpoint, otherwise the last close with the
+haircut. A label whose entry open is missing is zero (the order never fills). Unresolved labels whose search reaches the reserved boundary remain null. Spread
+holdings instead follow the position waiting rule, including gaps inside a holding period;
+a missing entry open is uninvested cash. Both kinds of fallback are counted separately.
+The report and proposer feedback state early endings, missing instrument-days and position
+haircuts, with per-clock counts for spread legs and replay positions. Replay events and daily
+position/cash snapshots are persisted with the diagnostic series.
+
+Receipts without a gap policy retain the earlier evaluation path; they remain readable and
+are never rewritten. Gap-free, warmed-up panels preserve the old screen, spread and replay
+numbers, checked against the retained canonical replay path. Costs, clocks, thresholds, trial
+counting and the reserved window are unchanged. A month whose only quality warning is its
+cadence gap is accepted at freeze; any other warning or failure still refuses the panel.
+
+### Identity breaks across a gap
+
+The wide store may be used once every implausible jump is declared. Freeze enforces this only
+across any gap of one or more missing days (below); jumps between consecutive daily bars are not checked.
+The owner supplies `identity_breaks` in the universe file, a list of entries with `instrument`,
+`new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused` or `redenominated`). The instrument
+must belong to the universe and its dates must be strictly increasing. No real break list is
+shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
+
+A `redenominated` entry additionally requires a finite positive `ratio`: new price units per old
+unit, so 100 when the first new price is 100 times the last old one (DREP 0.026288 then 2.629).
+Freeze divides OHLC on or after `new_from` by this ratio and multiplies base volume by it; quote
+volume is unchanged. The instrument keeps its identity and normal gap handling. Earlier prices
+are untouched. Old declarations without a ratio refuse with an instruction to add it; old frozen
+receipts remain readable. Each applied rescale is listed in `identity_rescales` with name, date and ratio.
+
+For `ticker_reused`, freeze renames rows on and after each boundary to `<INSTRUMENT>~2`, then
+`~3`, counting ticker reuse only. Each row belongs to one identity; generated-name collisions
+are refused. Old identities follow the waiting and haircut rules; new identities earn their own
+warm-up. Future declarations change no earlier trading decisions. Declarations beyond the panel
+remain in the universe but are not listed as applied.
+
+After rescaling and relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
+least `IDENTITY_JUMP_MIN_GAP_DAYS = 1` missing calendar days (excluding the two observed days).
+If resume close / last close is above `IDENTITY_JUMP_RATIO = 5.0` or below `1 / 5.0`, freeze
+raises `IdentityJumpError`; one refusal names every such jump with its instrument, both dates,
+both closes and their ratio. There is no override. Even a genuine large move across such a gap
+must be declared by the owner as a break or the instrument must be left out.
+
+Known limit: a jump between consecutive daily bars (no missing day) is deliberately not checked, so a genuine crash never refuses a freeze.
+Exchanges often pause a pair for a few days to swap a redenominated token, so such a jump
+passes freeze and, held across the pause, is booked as a real move unless the owner declares it.
+Check the store for short-gap jumps before relying on it; a consecutive-day check would also
+flag genuine crashes, so neither has been added without an owner decision.
+
+The panel receipt records applied ticker splits with `new_name`, and `identity_jump_policy`
+(`min_gap_days`, `ratio`). Reports and proposer feedback state the number of distinct tickers
+split. Old frozen receipts remain readable; no-break panels retain their bytes and
+numerical results. New receipts add the identity metadata and new reports add the count; source
+fingerprints still change when code changes. Serializing HDF in the isolated factor runtime
+still needs an outside check.
+
+### Reproducibility and plain feedback (third loop fix-up)
+
+Prefix comparisons retain the first mismatching cut, row date, instrument and absolute difference
+(null for missing keys or non-finite values). A mismatch triggers exactly one fresh execution on
+an identical copy of the truncated input. A second differing answer is `UNSTABLE`; reproducible
+truncated output that differs from the full run stays `LOOKAHEAD`. Both remain invalid trials,
+counted exactly as before, and neither can be the lead factor. Unavailable checks retain their
+existing classification and record the error; they never demote coding memory. Fixed cuts do not prove
+absence of leakage between cuts; numerical instability is diagnosed, not repaired.
+
+Each factor records a write-off count across its evaluated clocks and a sentence naming up to
+five coins (then “and N more”), including the assumed loss. The feedback writer appends it even
+if the model omits it; proposal ledger lines keep the count. Spread figures are shown only for
+clocks that passed the rank screen. Replay output calls its old `missing_coin_days` metric
+`unrankable_instrument_rebalances`: instrument observations without a finite eligible rank on
+scheduled rebalance days, distinct from missing bar days in the receipt. Readers accept the old name.

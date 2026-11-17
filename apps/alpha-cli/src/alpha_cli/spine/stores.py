@@ -13,7 +13,7 @@ from statistics import median
 
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
-from alpha_data.timeframe import BarTimeframe
+from alpha_data.timeframe import BarTimeframe, parse_timeframe, store_dir
 
 
 def annualisation(
@@ -105,8 +105,12 @@ def _source(path: Path) -> str:
     return source
 
 
-def resolve_asset(asset: str, *, data_dir: Path) -> ResolvedAsset:
-    """Resolve an explicit store or the first provenance match, without reading any bars."""
+def resolve_asset(asset: str, *, data_dir: Path, timeframe: str = "1D") -> ResolvedAsset:
+    """Resolve an explicit store or the first provenance match, without reading any bars.
+
+    ``timeframe`` picks the stored bar size whose store root is searched (daily: ``store/``).
+    """
+    stored = parse_timeframe(timeframe)
     stores = _stores(data_dir)
     symbol, separator, requested = asset.partition("@")
     if separator and requested not in stores:
@@ -114,7 +118,7 @@ def resolve_asset(asset: str, *, data_dir: Path) -> ResolvedAsset:
     searched = {requested: stores[requested]} if separator else stores
     matches: list[tuple[str, Path, Path]] = []
     for name, directory in searched.items():
-        path = ParquetStore(directory / "store")._provenance_path(symbol)
+        path = ParquetStore(store_dir(directory, stored))._provenance_path(symbol)
         if path.exists():
             matches.append((name, directory, path))
     if not matches:

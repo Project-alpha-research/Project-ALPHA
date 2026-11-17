@@ -47,6 +47,8 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
   [ADR-0010](../../../adr/0010-local-kronos-weights-offline-policy.md).
 - Backlog: [re-check the vendored copy](../../../roadmap/backlog/kronos-vendored-copy-recheck.md)
   against the [glue rules](../../../adr/0051-glue-rules-for-outside-projects.md).
+- **Plan:** Kronos rows in [stages 6 and 9](../../../roadmap/production-scope-2.md#6-diagnostics) of
+  the checklist.
 
 ## Decisions and open questions
 

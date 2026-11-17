@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
+import math
 import os
 import signal
 import subprocess
@@ -21,15 +23,20 @@ import time
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from . import gateway_usage, research_memory
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
 if str(WORKER) not in sys.path:
     sys.path.insert(0, str(WORKER))
 
-import research_memory  # noqa: E402
-from source_pin import SOURCE_SHA256  # noqa: E402
+if not TYPE_CHECKING:
+    research_memory = importlib.import_module("research_memory")
+    gateway_usage = importlib.import_module("gateway_usage")
+SOURCE_SHA256: str = importlib.import_module("source_pin").SOURCE_SHA256
 
 MAX_CALLS = 60
 LABEL = "exploratory, not admitted, not yet confirmed"
@@ -103,6 +110,18 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
         raise LaunchError(f"--run-max-calls must be between 1 and {MAX_CALLS}")
     if args.wall_seconds <= 0:
         raise LaunchError("--wall-seconds must be positive")
+    if not 0 < args.api_timeout <= 900:
+        raise LaunchError("--api-timeout must be between 0 and 900 seconds")
+    if not 0 <= args.provider_retries <= 3:
+        raise LaunchError("--provider-retries must be 0, 1, 2 or 3")
+    if args.family_switch_after < 1:
+        raise LaunchError("--family-switch-after must be at least 1")
+    if args.coding_reasoning_tokens is not None:
+        raise LaunchError(
+            "--coding-reasoning-tokens is unset until the provider request field is confirmed"
+        )
+    if args.universe is not None and not args.universe.is_absolute():
+        raise LaunchError("--universe must be an absolute path")
     if args.chat_route == "api":
         if not args.api_model or not args.api_price_in_per_mtok or not args.api_price_out_per_mtok:
             raise LaunchError(
@@ -113,6 +132,17 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
             raise LaunchError(
                 "--chat-route api needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY in the "
                 "launcher's environment (load the owner's file in the same command; never print it)"
+            )
+    if args.embedding_route == "provider":
+        price = args.provider_embed_usd_per_mtok
+        if not args.provider_embed_model or price is None or not math.isfinite(price) or price <= 0:
+            raise LaunchError(
+                "--embedding-route provider needs --provider-embed-model and a positive "
+                "--provider-embed-usd-per-mtok"
+            )
+        if any(not environ.get(key) for key in GATEWAY_SECRETS):
+            raise LaunchError(
+                "--embedding-route provider needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY"
             )
     for name in ("data_dir", "run_dir", "gateway_data_dir", "trial_ledger"):
         if not getattr(args, name).is_absolute():
@@ -151,6 +181,9 @@ def loop_environment(
     home: str,
     memory_env: dict[str, str] | None = None,
     coder_max_loop: int = 2,
+    family_switch_after: int = 3,
+    universe_text: str = "15 surviving coins only",
+    embedding_model: str | None = None,
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -161,6 +194,7 @@ def loop_environment(
         "PATH": f"{factor_python.parent}:/usr/bin:/bin",
         "CHAT_MODEL": "lm_studio/alpha-chat",
         "EMBEDDING_MODEL": "lm_studio/alpha-embed",
+        **({"ALPHA_EMBEDDING_MODEL": embedding_model} if embedding_model is not None else {}),
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
         "LITELLM_LOCAL_MODEL_COST_MAP": "True",
@@ -190,6 +224,9 @@ def loop_environment(
         "ALPHA_FACTOR_RUN_DIR": str(run),
         "ALPHA_FACTOR_EVAL_PYTHON": str(REPO / ".venv" / "bin" / "python"),
         "ALPHA_FACTOR_TRIAL_LEDGER": str(ledger),
+        # ADR-0055: the proposer is told to leave an idea family after this many failed tries.
+        "ALPHA_FACTOR_FAMILY_SWITCH_AFTER": str(family_switch_after),
+        "ALPHA_FACTOR_UNIVERSE_TEXT": universe_text,
         **(memory_env or {}),
     }
 
@@ -206,6 +243,7 @@ class Launch:
         self.bundle = self.factor_python.parents[2]
         self.repo_python = REPO / ".venv" / "bin" / "python"
         self.children: list[subprocess.Popen[bytes]] = []
+        self.universe_text = "15 surviving coins only"
         self.receipt: dict[str, Any] = {
             "schema": "AlphaRdagentFactorRunReceiptV1",
             "label": LABEL,
@@ -236,7 +274,7 @@ class Launch:
             self.log(step, status="failed", exit=result.returncode, detail=tail[0][:300])
             raise LaunchError(f"{step} failed: {tail[0][:300]}")
         self.log(step, status="ok")
-        return result.stdout.strip()
+        return str(result.stdout.strip())
 
     def verify(self) -> None:
         self.log("verify", event="start")
@@ -280,10 +318,37 @@ class Launch:
                 str(self.args.data_dir),
                 "--out",
                 str(panel),
+                *(["--universe", str(self.args.universe)] if self.args.universe else []),
             ],
         )
         receipt = (panel / "panel-receipt.json").read_bytes()
-        self.receipt["panel_sha256"] = json.loads(receipt)["panel_sha256"]
+        frozen = json.loads(receipt)
+        self.receipt["panel_sha256"] = frozen["panel_sha256"]
+        universe = (
+            json.loads((panel / "universe.json").read_bytes())
+            if (panel / "universe.json").exists()
+            else None
+        )
+        self.receipt["universe"] = universe["name"] if universe else "default (all coins in store)"
+        self.universe_text = (
+            f"{len(frozen['instruments'])} instruments ({self.receipt['universe']}); "
+            + (universe["survivorship"] if universe else "surviving coins only")
+        )
+        if "gap_policy" in frozen:
+            self.receipt["missing_bars"] = {
+                key: frozen[key]
+                for key in (
+                    "gap_policy",
+                    "instruments_ended_early",
+                    "missing_instrument_days",
+                    "longest_gap",
+                )
+            }
+            self.universe_text += (
+                f"; {frozen['instruments_ended_early']} instruments ended early; "
+                f"{frozen['missing_instrument_days']} missing instrument-days inside spans. "
+                "Haircut counts are reported per evaluation; 30% is a conservative assumption"
+            )
         self.receipt["panel_receipt_sha256"] = hashlib.sha256(receipt).hexdigest()
         self.check(
             "prepare",
@@ -334,7 +399,18 @@ class Launch:
             self.args.chat_route,
             "--embedding-route",
             self.args.embedding_route,
+            "--api-timeout",
+            str(self.args.api_timeout),
+            "--provider-retries",
+            str(self.args.provider_retries),
         ]
+        if self.args.embedding_route == "provider":
+            command += [
+                "--provider-embed-model",
+                self.args.provider_embed_model,
+                "--provider-embed-usd-per-mtok",
+                str(self.args.provider_embed_usd_per_mtok),
+            ]
         accept = self.args.accept_unhonoured
         if accept is None:  # the owner accepted losing temperature on the Codex route only
             accept = "temperature" if self.args.chat_route == "codex" else ""
@@ -349,15 +425,25 @@ class Launch:
                 "--api-price-out-per-mtok",
                 str(self.args.api_price_out_per_mtok),
             ]
+            if getattr(self.args, "no_router_session", False):
+                command.append("--no-router-session")
             if self.args.api_openrouter:
                 command.append("--api-openrouter")
         self.receipt["route"] = {
             "chat": self.args.chat_route,
+            "embedding": self.args.embedding_route,
+            "embedding_model": embedding_model(self.args),
+            "provider_embed_usd_per_mtok": self.args.provider_embed_usd_per_mtok,
             "api_model": self.args.api_model,
             "api_price_in_per_mtok": self.args.api_price_in_per_mtok,
             "api_price_out_per_mtok": self.args.api_price_out_per_mtok,
             "api_openrouter": self.args.api_openrouter,
+            "router_session_enabled": self.args.chat_route == "api"
+            and not getattr(self.args, "no_router_session", False),
             "accept_unhonoured": accept,
+            "api_timeout_seconds": self.args.api_timeout,
+            "provider_retries": self.args.provider_retries,
+            "coding_reasoning_tokens": self.args.coding_reasoning_tokens,
         }
         # Only the gateway inherits the paid route's settings.
         child = self.spawn(command, "gateway", env=dict(os.environ))
@@ -366,7 +452,7 @@ class Launch:
             if child.poll() is not None:
                 raise LaunchError(f"model gateway exited with {child.returncode}; see logs")
             try:
-                session = json.loads((state / "session.json").read_text())
+                session = json.loads((state / f"session-{child.pid}.json").read_text())
             except (OSError, ValueError):
                 session = {}
             if session.get("pid") == child.pid:
@@ -387,7 +473,7 @@ class Launch:
                     source_sha256=SOURCE_SHA256,
                     judge_sha256=research_memory.judge_sha256(),
                 )
-            except Exception as error:  # noqa: BLE001 - memory is a warning, never a refusal
+            except Exception as error:  # memory is a warning, never a refusal
                 self.receipt["memory_warning"] = (
                     f"memory unavailable ({type(error).__name__}); this run starts fresh"
                 )
@@ -405,6 +491,11 @@ class Launch:
             home=str(self.run / "home"),
             memory_env=self.memory_plan.env if self.memory_plan else None,
             coder_max_loop=self.args.coder_max_loop,
+            family_switch_after=self.args.family_switch_after,
+            universe_text=self.universe_text,
+            embedding_model=embedding_model(self.args)
+            if self.args.embedding_route in ("provider", "fake")
+            else None,
         )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
@@ -480,24 +571,25 @@ class Launch:
         paths = (self.args.gateway_data_dir / "model-gateway/calls.jsonl", self.run / "steps.jsonl")
         try:
             missing = [str(p) for p in paths if not p.exists()]
-            if missing:
+            if not paths[0].exists():
                 output.write_bytes(b"")
                 return {"calls": 0, "reason": "missing files: " + ", ".join(missing)}
             skipped = 0
             parsed: list[list[dict[str, Any]]] = []
             for p in paths:
                 rows = []
-                for line in p.read_text().splitlines():
+                for line in p.read_text().splitlines() if p.exists() else []:
                     try:
                         rows.append(json.loads(line))
                     except ValueError:
                         skipped += 1  # a line cut short by a killed process
                 parsed.append(rows)
             calls = [row for row in parsed[0] if row.get("run_id") == self.args.run_id]
-            labelled = label_calls(calls, parsed[1])
+            labelled = label_calls(calls, parsed[1]) if paths[1].exists() else []
             output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in labelled))
+            self.receipt["call_split"] = call_split(calls, labelled)
             return {"calls": len(labelled), "skipped_lines": skipped}
-        except Exception as error:  # noqa: BLE001 - labelling is best effort, with receipt diagnostics
+        except Exception as error:  # labelling is best effort, with receipt diagnostics
             note = f"{type(error).__name__}: {error}"
             try:
                 output.write_bytes(b"")
@@ -513,9 +605,40 @@ class Launch:
             loop_reason=self.receipt.get("loop_reason", reason),
             gateway_status=self.gateway_status(),
             calls_labelled=self.write_call_labels(),
+            # Coding-memory entries left out because their embedding was refused (ADR-0055).
+            memory_entries_skipped=len((self.run / "memory-skips.jsonl").read_text().splitlines())
+            if (self.run / "memory-skips.jsonl").exists()
+            else 0,
             evaluations_sha256=hashlib.sha256(evaluations.read_bytes()).hexdigest()
             if evaluations.exists()
             else None,
+        )
+        counters = self.receipt["gateway_status"].get("this_run") or {}
+        self.receipt.update(
+            counted_calls=counters.get("counted_calls", counters.get("calls")),
+            local_embedding_calls=counters.get("local_embedding_calls", 0) if counters else None,
+            embedding_route=getattr(self.args, "embedding_route", "local"),
+            embedding_model=embedding_model(self.args),
+            provider_embedding_calls=counters.get("provider_embedding_calls", 0)
+            if counters
+            else None,
+            provider_embedding_usd=counters.get("provider_embedding_usd", 0.0)
+            if counters
+            else None,
+            provider_embedding_tokens=counters.get("provider_embedding_tokens", 0)
+            if counters
+            else None,
+            memory_entries_reembedded=len(
+                (self.run / "memory-reembedded.jsonl").read_text().splitlines()
+            )
+            if (self.run / "memory-reembedded.jsonl").exists()
+            else 0,
+            call_cap_note=(
+                "Provider embeddings count toward money caps and the shared embedding limit, "
+                "not the 60-call cap or monthly call count."
+                if getattr(self.args, "embedding_route", "local") == "provider"
+                else "Local embeddings are free and are not counted toward the 60-call cap."
+            ),
         )
         self.receipt["memory"] = (
             research_memory.record(
@@ -533,10 +656,102 @@ class Launch:
         return exit_status
 
 
+def embedding_model(args: argparse.Namespace) -> str:
+    route = getattr(args, "embedding_route", "local")
+    if route == "provider":
+        return str(args.provider_embed_model)
+    return "fake" if route == "fake" else "nomic-embed-text"
+
+
+def call_split(
+    calls: list[dict[str, Any]], labelled: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """Model calls versus free local embeddings, as the gateway logged them.
+
+    Only embedding rows the gateway marked ``local_embedding`` or ``provider_embedding`` are exempt
+    (owner decision 2026-11-17); old logs without the mark stay counted as they were.
+    """
+    split: dict[str, Any] = {
+        "model_chat": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "local_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "provider_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
+        "counted_calls": 0,
+        "local_embedding_calls": 0,
+        "provider_embedding_calls": 0,
+        "provider_embedding_usd": 0.0,
+        "provider_embedding_tokens": 0,
+        "provider_timeouts": 0,
+        "empty_or_invalid_replies": 0,
+        "retried_attempts": 0,
+        "timeout_retry_attempts": 0,
+        "failed_requests": {},
+        "chunked_embedding_inputs": 0,
+        "embedding_chunks": 0,
+    }
+    routes: set[str] = set()
+    models: set[str] = set()
+    for call in calls:
+        if call.get("endpoint") == "/v1/embeddings":
+            if isinstance(call.get("route"), str):
+                routes.add(call["route"])
+            if isinstance(call.get("model_used"), str):
+                models.add(call["model_used"])
+        kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
+        if kind == "local_embedding" and call.get("local_embedding") is False:
+            kind = "provider_embedding"
+        split[kind]["requests"] += 1
+        split[kind]["attempts"] += int(call.get("attempts") or 0)
+        split[kind]["usd"] += float(call.get("usd") or 0.0)
+        split["chunked_embedding_inputs"] += int(call.get("chunked_inputs") or 0)
+        split["embedding_chunks"] += int(call.get("chunks") or 0)
+        errors = call.get("provider_errors") or []
+        split["provider_timeouts"] += errors.count("provider_timeout")
+        split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
+        attempts = int(call.get("attempts") or 0)
+        local = kind == "local_embedding" and call.get("local_embedding") is True
+        provider = kind == "provider_embedding" and call.get("provider_embedding") is True
+        bucket = (
+            "local_embedding_calls"
+            if local
+            else "provider_embedding_calls"
+            if provider
+            else "counted_calls"
+        )
+        split[bucket] += attempts
+        if provider:
+            split["provider_embedding_usd"] += float(call.get("usd") or 0)
+            split["provider_embedding_tokens"] += int(call.get("prompt_tokens") or 0)
+        split["retried_attempts"] += max(0, attempts - 1)
+        split["timeout_retry_attempts"] += int(
+            call.get(
+                "timeout_retry_attempts", errors[: max(0, attempts - 1)].count("provider_timeout")
+            )
+        )
+        if call.get("status") != 200:
+            code = str(call.get("error_code"))
+            split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
+    split.update(
+        embedding_route=next(iter(routes)) if len(routes) == 1 else None,
+        embedding_model=next(iter(models)) if len(models) == 1 else None,
+        embedding_routes=sorted(routes),
+        embedding_models=sorted(models),
+    )
+    split["chat_usage"] = gateway_usage.receipt_usage(calls, labelled)
+    split["counted_toward_call_cap"] = split["counted_calls"]
+    return split
+
+
 def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
     """A plain reason for a failed loop; names the call cap when the run used all of it."""
+    embedding_limit = importlib.import_module("gateway_embeddings").EMBEDDING_CALLS_PER_RUN
+
     this_run = gateway_state.get("this_run") if isinstance(gateway_state, dict) else None
-    calls = (this_run or {}).get("calls") or 0
+    local = (this_run or {}).get("local_embedding_calls", 0) + (this_run or {}).get(
+        "provider_embedding_calls", 0
+    )
+    if local >= embedding_limit:
+        return f"loop exit {code}: embedding limit reached (EMBEDDING_CALLS_PER_RUN: {local})"
+    calls = (this_run or {}).get("counted_calls", (this_run or {}).get("calls")) or 0
     if calls >= args.run_max_calls:
         return f"loop exit {code}: model call cap reached ({calls} of {args.run_max_calls} calls)"
     return f"loop exit {code}"
@@ -545,6 +760,8 @@ def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     paths = validate(args, environ)
     args.run_dir.mkdir()
+    with (args.run_dir / "run-identity.json").open("x") as stream:
+        stream.write(json.dumps({"run_id": args.run_id}) + "\n")
     (args.run_dir / "logs").mkdir()
     launch = Launch(args, paths)
     launch.api_key = environ.get("ALPHA_GATEWAY_API_KEY", "")
@@ -567,7 +784,7 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     except KeyboardInterrupt:
         launch.log("cancel", status="cancelled")
         reason = "cancelled"
-    except Exception as error:  # noqa: BLE001 - every failure still stops children and writes a receipt
+    except Exception as error:  # every failure still stops children and writes a receipt
         launch.log("error", status="failed", detail=repr(error)[:300])
         reason = f"unexpected error: {error!r}"[:300]
     finally:
@@ -600,12 +817,22 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)
     r.add_argument("--wall-seconds", type=float, default=5400)
     r.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")
-    r.add_argument("--embedding-route", choices=("ollama", "fake"), default="ollama")
+    r.add_argument(
+        "--embedding-route", choices=("local", "provider", "ollama", "fake"), default="local"
+    )
+    r.add_argument("--provider-embed-model")
+    r.add_argument("--provider-embed-usd-per-mtok", type=float)
     r.add_argument("--accept-unhonoured", default=None)
     r.add_argument("--api-model")
     r.add_argument("--api-price-in-per-mtok", type=float)
     r.add_argument("--api-price-out-per-mtok", type=float)
     r.add_argument("--api-openrouter", action="store_true")
+    r.add_argument("--no-router-session", action="store_true")
+    r.add_argument("--api-timeout", type=float, default=180)
+    r.add_argument("--provider-retries", type=int, default=1)
+    r.add_argument("--coding-reasoning-tokens", type=int, default=None)
+    r.add_argument("--family-switch-after", type=int, default=3)
+    r.add_argument("--universe", type=Path)
     return p
 
 

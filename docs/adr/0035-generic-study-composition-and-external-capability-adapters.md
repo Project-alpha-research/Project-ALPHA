@@ -4,6 +4,11 @@
 **Date:** 2026-08-21
 **Deciders:** Project ALPHA owner and AI build agents
 
+**Status note (2026-11-16):** the RD-Agent row of the deferral table is superseded by
+[ADR-0044](0044-rdagent-model-gateway.md) and [ADR-0049](0049-alpha-judges-rdagent-factors.md):
+RD-Agent is a core engine. Current verdicts on every other library listed here are in the
+[outside projects register](../reference/project/outside-projects.md).
+
 ## Context
 
 The attached `/Users/hunternovotny/Desktop/deep-research-report.md` proposes a broad

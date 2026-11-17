@@ -17,7 +17,7 @@ import math
 from typing import Any
 
 import numpy as np
-import statsmodels.api as sm  # type: ignore[import-untyped]
+import statsmodels.api as sm
 
 from alpha_validation.metrics import FloatArray, FloatSeq
 

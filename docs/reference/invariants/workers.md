@@ -4,17 +4,19 @@ sources:
   - workers/qlib/**
   - workers/literature/**
   - workers/rdagent/**
+  - workers/afml/**
+  - apps/alpha-cli/src/alpha_cli/labels_cmds.py
   - scripts/gate_components.py
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 98487c9592866f85
+verified: 485f0a017754d2e2
 ---
 
 # Worker invariants
 
 What must hold for the isolated worker projects under `workers/`: the Qlib ML worker, the literature
-acquisition worker and the RD-Agent native-loop probe. The general rule is
+acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. The general rule is
 [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
 
 ## Shared rules
@@ -25,13 +27,13 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   [ADR-0016](../../adr/0016-isolated-qlib-worker.md).
 - No ALPHA package imports worker code. `alpha_cli` launches a worker as a subprocess and exchanges files
   or JSON with it. [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
-- The qlib and literature gates are `uv run python scripts/gate.py component qlib|literature` (CI jobs of the
-  same name). From `workers/<name>/` they run: `uv lock --check`, `uv sync --locked`,
+- The qlib, literature and afml gates are `uv run python scripts/gate.py component qlib|literature|afml`
+  (CI jobs `qlib-worker`, `literature-worker`, `afml-worker`). From `workers/<name>/` they run:
+  `uv lock --check`, `uv sync --locked`,
   `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
   `gate.py check` does not run worker tests.
-- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib and literature run strict mypy. The one exception is RD-Agent's stock
+- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
-
 ## Qlib worker
 
 - This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or
@@ -70,7 +72,6 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) § Open before v3 is the default).
 - W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
   accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
-
 ## Literature worker
 
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
@@ -94,8 +95,31 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
 - Network work starts only from an explicit owner action, never from opening or refreshing a page. Only owner
   screening raises a claim from draft to screened.
 
-## RD-Agent worker
+## AFML worker
 
+- The only environment with RiskLabAI, quantowl or numba ([ADR-0054](../../adr/0054-afml-worker.md)): RiskLabAI pinned from
+  PyPI, quantowl by commit, `[tool.uv] exclude-newer` keeps releases two weeks old. Never in the root lock; never edited.
+- Two libraries, one answer: a value both implement leaves only when they agree to 1e-10 (draws, events, folds: exactly);
+  otherwise `AgreementError`. A value only one implements is not offered without a hand parity test.
+- Labels default to ALPHA's convention (`basis="high_low"`): decide at the event close, enter at the next open, touch on
+  the bar's high or low, a gap through a barrier exits at the open, a bar reaching both is stop-first with the
+  optimistic reading beside it. `basis="close"` is the libraries' convention, for parity only.
+- Nothing is fitted on the whole sample: barrier widths and CUSUM thresholds use closes strictly before the event; the
+  vertical barrier is a bar count; an undecided event gets no label; fractional-differencing `d` is chosen on the
+  training span (`fracdiff --fit-end`) and frozen; weights take `uniqueness --train-end`.
+- Splits (`cv.py`) are RiskLabAI's combinatorial splitter (also for k-fold: its `PurgedKFold` under-purges labels
+  of varying length), each passed through ALPHA's brute-force leak checker and compared with ALPHA's
+  reference rule; a library may drop more rows (reported), never fewer. Importance (MDI, MDA, SFI) runs quantowl's
+  functions on those checked folds only, never RiskLabAI's unpurged MDA or SFI; it is a report, no gate reads it.
+- Root checks that need the worker skip elsewhere and run in the `afml-worker` job (`AFML_ROOT_TESTS` in
+  `scripts/gate_components.py`): the `alpha labels` smoke check, the future-poison guard, and parity with
+  ALPHA's `barrier.py`, `cpcv.py`, PSR, DSR and PBO. ALPHA's values stay the record.
+- `alpha labels barrier|weights|importance` (`labels_cmds.py`) reads bars point in time, runs the worker with
+  `uv run --locked --no-sync` and a minimal environment, and publishes one immutable folder under `data_dir/labels/`
+  per hash of inputs and worker code, with `result.json` (spine-shaped facts, labels). A missing worker fails with
+  `WORKER_NOT_INSTALLED` and the one setup step.
+
+## RD-Agent worker
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.
@@ -123,9 +147,12 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   program (read-only, no tools, no web search), embeddings are local Ollama, and the paid route is off unless the owner
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
-  dollar budgets (monthly dollars capped at 50, not raisable) are checked before every attempt and fail closed. There is
-  no automatic switch between routes, and the call log holds hashes and lengths, not text. The fixture loops still clear
-  all model settings. `tests/unit/test_rdagent_model_gateway.py`.
+  dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
+  Local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens cost money.
+  Receipts split calls, tokens, cache hits and observed providers; labelled calls add step splits. Missing facts stay null;
+  abandoned attempts say usage is unknown. API chat sends the run id as `session_id` unless `--no-router-session` is set;
+  provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
+  Memory binds model; no auto-switch; paid calls 180 s, one counted retry ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
@@ -134,22 +161,28 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
   evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
-  daily-only pass is `FAST_ONLY`); every record is `exploratory, not admitted, not yet confirmed` with all authority
-  flags false and the survivorship disclosure. Its runtime is built only by `--with-factor-runtime` from
-  `factor-requirements.lock` and recorded by
-  `install_stock_profile.py --profile factor`; generated factor code runs without the gateway's address and token,
-  but as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
+  daily-only pass is `FAST_ONLY`); a screened clock whose top third did not beat its bottom third before costs is
+  `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
+  [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
+  come from a frozen universe file, optionally selecting its own store directory.
+  New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
+  Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
+  Closed-family proposals stop before coding with no trial and are re-asked twice per round; code failures do not close families.
+  Every record is `exploratory, not admitted, not yet confirmed` with all authority
+  flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
+  recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the
+  same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
   A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
-  plain line and exits 2. Research memory is described in the
-  [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`.
+  plain line and exits 2. Research memory and round-boundary resume (no invented trials), failure reasons,
+  composite idea families, budget stops and the call split: [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
+  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
   than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger
   (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
   the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
   family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
-- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, `UNSTABLE`, or `FAILED` for a wrong output
   shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
   recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
@@ -163,7 +196,5 @@ acquisition worker and the RD-Agent native-loop probe. The general rule is
   symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
   never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
-  such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
-  `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.
-- Its audit hooks and sanitised subprocesses contain trusted fixture mistakes; they are not hostile-code
-  or same-user isolation.
+  `test_native_loop_conformance.py` and other source-dependent tests skip without `ALPHA_RDAGENT_SOURCE`; skips confer no qualification.
+- Its audit hooks and sanitised subprocesses contain trusted fixture mistakes, not hostile code or same-user access.

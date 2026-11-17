@@ -21,6 +21,8 @@ dependencies = [
     "matplotlib>=3.9",
     "pyarrow>=23.0.1",
     "exchange-calendars==4.13.2",
+    "duckdb==2.0.0",
+    "lifelines==0.30.3",
 ]
 
 [project.scripts]

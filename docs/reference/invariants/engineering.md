@@ -7,7 +7,7 @@ sources:
   - scripts/gate_components.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_structural_digest.py
-verified: aeddd8baa5cb6180
+verified: 4d1b2c62d9ffbb20
 ---
 
 # Engineering rules
@@ -48,7 +48,9 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 ## Strict typing
 
 - `mypy --strict` covers `packages`, `apps`, `tests` and the harness scripts. Only the overrides in
-  `pyproject.toml` (Nautilus, scipy, quantstats, vendored Kronos) are exempt.
+  `pyproject.toml` (Nautilus, scipy, quantstats, STUMPY, statsmodels, ruptures, vendored Kronos) are exempt.
+- statsmodels and ruptures ship no stubs; the owner decided on 2026-11-17 to use them as untyped
+  libraries through the same `ignore_missing_imports` override as scipy, not with inline ignores.
 - A `type: ignore` must name its error code (semgrep rule `alpha-type-ignore-without-code`).
 
 ## Polars by default
@@ -150,10 +152,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
   [ADR-0039](../../adr/0039-ci-is-the-merge-gate.md)
 - One CI job locally: `uv run python scripts/gate.py component NAME` (`backend` is the whole
   backend; CI runs it as `backend-static`, `backend-tests --shard I/4` and `backend-quant`;
-  also `frontend`, `frontend-full`, `literature`, `qlib`). Every check: [checks](../checks.md).
+  also `frontend`, `frontend-full`, `literature`, `qlib`, `afml`). Every check: [checks](../checks.md).
 - Step by step, with focused checks and owned test processes: [development loop](../../operations/development-loop.md).
 - CI passing changes no application authority: owner actions, approvals and promotion are unchanged by it.
 - A check result holds only for the exact tree and environment it ran on, with its command, exit and scope.
   A linked test, a result from another tree or one reported by someone else is not a pass here.
 - Retire local code that duplicates an upstream capability only after a recorded value-level comparison,
-  dependency and licence review, and a tested migration and backout; until then keep the old route.
+  dependency review, and a tested migration and backout; until then keep the old route.

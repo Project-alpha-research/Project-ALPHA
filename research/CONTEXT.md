@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
-verified: 439f3b3e0a75a22d
+verified: 5c7b12f92c1daa57
 ---
 
 # Research: how any idea is tested
@@ -60,7 +60,7 @@ Its method library, `.agents/skills/alpha-research-protocols/`, stays: the progr
 Nothing a test or a case produces is committed to git. Everything is under the data directory
 (`ALPHA_DATA_DIR`, default `data/`, git-ignored; [layout](../docs/ARCHITECTURE.md#runtime-data-directory-layout)):
 `runs/<run_id>/` (immutable runs; a rule test adds `diagnostics.json`), `ledger/trials.jsonl` (every rule trial,
-failed ones included, append-only), `setups/<find_id>/` (setup finds) and the staged lane's `control/workstation.sqlite3` and `research/projects/<case>/`.
+failed ones included, append-only), `setups/`, `setup-studies/`, the staged lane's `control/workstation.sqlite3` and `research/projects/<case>/`.
 
 ## Authority
 

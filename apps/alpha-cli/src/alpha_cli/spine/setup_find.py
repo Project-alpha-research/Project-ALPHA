@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -233,3 +234,37 @@ def load_spec(path: Path, assets: list[str] | None) -> Any:
                 list(spec.setup.assets),
             )
     return spec
+
+
+def study_inputs(home: Path, manifest: dict[str, Any], spec: Any) -> tuple[dict[str, Any], int]:
+    """Reload the find's exact sources; compile only warm-up lengths, never detect again."""
+    from alpha_cli import _runner
+    from alpha_cli.spine.stores import resolve_asset
+    from alpha_study.setup.expr import compile_expr
+
+    texts = [spec.setup.event, *spec.filters.values(), *spec.reference.values()]
+    if spec.trigger:
+        texts.append(spec.trigger.when)
+    warmup = max(compile_expr(text).warmup for text in texts)
+    bars_by_asset = {}
+    for asset in manifest["assets"]:
+        if asset["error"] is not None:
+            continue  # Failed assets have no recorded candidates; preserve them in the manifest.
+        resolved = resolve_asset(asset["asset"], data_dir=home)
+        bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
+        if (
+            _runner.source_fingerprint(bars) != asset["source_fingerprint"]
+            or resolved.store_name != asset["store"]
+            or resolved.source != asset["source"]
+        ):
+            raise SpineError(
+                "DATA_CHANGED_SINCE_FIND", asset["asset"], "Run alpha setup find again."
+            )
+        bars_by_asset[asset["asset"]] = bars
+    return bars_by_asset, warmup
+
+
+def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:
+    """The context shown in a contact sheet is part of its immutable identity."""
+    payload = spec_sha256 + f"|context={context_bars}|" + "|".join(sorted(keys))
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]

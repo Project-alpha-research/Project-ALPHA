@@ -1,0 +1,292 @@
+"""Counted forward outcomes from immutable, previously detected setup candidates."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+from pathlib import Path
+from typing import Any
+
+from alpha_cli.spine.errors import SpineError, study_error
+from alpha_cli.spine.event_study_figure import draw_event_study
+from alpha_cli.spine.facts import add_study_trial_fact, read_study
+from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.setup_controls import (
+    RANDOM_DRAWS,
+    control_summary,
+    eligible_returns,
+    horizon_summary,
+    reading,
+    study_labels,
+)
+from alpha_cli.spine.setup_find import study_inputs
+from alpha_cli.spine.spec import Costs
+from alpha_core import DataError
+from alpha_core.atomic import write_text
+
+STUDY_RULE_VERSION = "setup-study-1"
+BASIS = (
+    "separate accepted occurrences from candidates.parquet; recorded next-open entry to "
+    "horizon close, price returns less default round-trip costs; no dividends or spec exits; "
+    "controls use all post-warm-up eligible dates, pooled by complete occurrence counts"
+)
+
+
+_LEDGER_KEYS = ("study_id", "find_id", "spec_sha256", "name", "idea", "assets") + (
+    "primary_horizon",
+    "labels",
+    "outcome",
+)
+_CURVE = dict(mean="mean", drift="drift_mean", lower="random_date_5", upper="random_date_95")
+
+
+def _outcomes(candidates: Any, bars: dict[str, Any], horizons: list[int], cost: float) -> Any:
+    import polars as pl
+
+    rows = []
+    positions = {a: {b.ts: i for i, b in enumerate(series)} for a, series in bars.items()}
+    for candidate in candidates.iter_rows(named=True):
+        if candidate["status"] != "accepted" or not candidate["cluster_first"]:
+            continue
+        asset, price = candidate["symbol"], candidate["entry_price"]
+        start = positions[asset][candidate["entry_ts"]]
+        series = bars[asset]
+        if not math.isfinite(price) or price <= 0 or price != series[start].open:
+            raise ValueError(f"{asset}: recorded entry does not match its bar open")
+        # Future closes are measured outcomes only; detection is read from the find folder.
+        path = [
+            series[start + h - 1].close / price - 1 - cost if start + h <= len(series) else None
+            for h in range(1, max(horizons) + 1)
+        ]
+        for horizon in horizons:
+            end = start + horizon - 1
+            complete = end < len(series)
+            rows.append(
+                dict(
+                    asset=asset,
+                    candidate_id=candidate["candidate_id"],
+                    cluster_id=candidate["cluster_id"],
+                    entry_ts=candidate["entry_ts"],
+                    entry_price=price,
+                    horizon=horizon,
+                    exit_ts=series[end].ts if complete else None,
+                    exit_price=series[end].close if complete else None,
+                    gross_return=series[end].close / price - 1 if complete else None,
+                    net_return=path[horizon - 1],
+                    complete=complete,
+                    net_path=path,
+                )
+            )
+    schema: dict[str, Any] = dict(
+        asset=pl.String,
+        candidate_id=pl.Int64,
+        cluster_id=pl.Int64,
+        entry_ts=pl.Datetime("us", "UTC"),
+        entry_price=pl.Float64,
+        horizon=pl.Int64,
+        exit_ts=pl.Datetime("us", "UTC"),
+        exit_price=pl.Float64,
+        gross_return=pl.Float64,
+        net_return=pl.Float64,
+        complete=pl.Boolean,
+        net_path=pl.List(pl.Float64),
+    )
+    return pl.DataFrame(rows, schema=schema)
+
+
+def _summarise(
+    spec: Any,
+    manifest: dict[str, Any],
+    candidates: Any,
+    bars: dict[str, Any],
+    warmup: int,
+    study_id: str,
+    outcomes: Any,
+    cost: float,
+) -> dict[str, Any]:
+    paths = [r for r in outcomes.to_dicts() if r["horizon"] == spec.study.primary]
+    reports, curve = {}, dict(mean=[0.0], drift=[0.0], lower=[0.0], upper=[0.0])
+    for h in range(1, max(spec.study.horizons) + 1):
+        eligible = {
+            a: eligible_returns([b.open for b in s], [b.close for b in s], warmup, h, cost)
+            for a, s in bars.items()
+        }
+        rows = [
+            {**r, "net_return": r["net_path"][h - 1], "complete": r["net_path"][h - 1] is not None}
+            for r in paths
+        ]
+        if h in spec.study.horizons:
+            times = {a: [s[p + 1].ts for p in eligible[a][0]] for a, s in bars.items()}
+            report = horizon_summary(
+                rows, eligible, times, f"{study_id}|{h}", tested=h == spec.study.primary
+            )
+            reports[str(h)] = report
+        else:  # Figure-only bars: the same pooled controls, no halves and no test.
+            chosen = {
+                a: [r["net_return"] for r in rows if r["asset"] == a and r["complete"]]
+                for a in eligible
+            }
+            report = control_summary(eligible, chosen, f"{study_id}|{h}|all", tested=False)
+        pooled = report["pooled"]
+        for key, field in _CURVE.items():
+            curve[key].append(pooled[field])
+    primary = reports[str(spec.study.primary)]["pooled"]
+    labels = study_labels(manifest, primary, paths, bars, spec.study.primary)
+    sentence, outcome = reading(primary, spec.study.primary, labels)
+    fields = dict(
+        occurrences="occurrences",
+        mean_net_return="mean",
+        median_net_return="median",
+        hit_rate="hit_rate",
+        excess_over_drift="excess",
+        random_date_p="random_date_p",
+    )
+    facts = [
+        dict(
+            metric=f"setup_{metric}",
+            value=primary[field],
+            run_id=study_id,
+            basis=f"primary {spec.study.primary} bars; {BASIS}",
+            source=f"summary.json:horizons.{spec.study.primary}.pooled.{field}",
+            labels=labels,
+            reason=primary["reasons"].get(field),
+        )
+        for metric, field in fields.items()
+    ]
+    return dict(
+        study_id=study_id,
+        find_id=manifest["find_id"],
+        spec_sha256=spec.spec_sha256,
+        name=spec.setup.name,
+        idea=spec.setup.idea,
+        primary_horizon=spec.study.primary,
+        occurrences=len(paths),
+        matching_days=sum(candidates["status"] == "accepted"),
+        assets=list(bars),
+        labels=labels,
+        reading=sentence,
+        outcome=outcome,
+        basis=BASIS,
+        horizons=reports,
+        facts=facts,
+        curve=curve,
+        costs={a: Costs().model_dump() for a in bars},
+        controls=dict(
+            draws=RANDOM_DRAWS,
+            pooling="complete occurrence counts per asset",
+            path_basis="each bar uses its complete occurrences and eligible dates",
+            stability="chronological halves, each against controls from its own half",
+        ),
+    )
+
+
+def _publish(
+    folder: Path, summary: dict[str, Any], outcomes: Any, spec: Any, find_manifest: dict[str, Any]
+) -> None:
+    from alpha_research.figures.theme import load_theme
+
+    paths = [r["net_path"] for r in outcomes.to_dicts() if r["horizon"] == spec.study.primary]
+    png = draw_event_study(
+        paths=[[0.0, *p] for p in paths],
+        **summary["curve"],
+        horizons=list(spec.study.horizons),
+        primary=spec.study.primary,
+        theme=load_theme(),
+        title=(
+            f"{spec.setup.name}: {summary['occurrences']} separate occurrences "
+            f"({summary['matching_days']} matching days)"
+        ),
+    )
+    folder.mkdir(parents=True, exist_ok=True)
+    outcomes.write_parquet(folder / "outcomes.parquet")
+    (folder / "event-study.png").write_bytes(png)
+    write_text(folder / "summary.json", json.dumps(summary, allow_nan=False))
+    files = {
+        name: dict(
+            sha256=hashlib.sha256((folder / name).read_bytes()).hexdigest(),
+            size=(folder / name).stat().st_size,
+            rows=outcomes.height if name.endswith("parquet") else None,
+        )
+        for name in ("outcomes.parquet", "summary.json", "event-study.png")
+    }
+    write_text(
+        folder / "manifest.json",
+        json.dumps(
+            dict(
+                schema="AlphaSetupStudyV1",
+                study_id=summary["study_id"],
+                find_id=summary["find_id"],
+                study_rule_version=STUDY_RULE_VERSION,
+                spec_sha256=spec.spec_sha256,
+                assets=find_manifest["assets"],
+                costs=summary["costs"],
+                labels=summary["labels"],
+                files=files,
+            ),
+            allow_nan=False,
+        ),
+    )
+
+
+def _run(find_id: str, home: Path) -> dict[str, Any]:
+    import polars as pl
+
+    from alpha_study.setup.spec import SetupSpec
+
+    folder = home / "setups" / find_id
+    if not re.fullmatch("[0-9a-f]{16}", find_id) or not (folder / "manifest.json").is_file():
+        raise SpineError("FIND_NOT_FOUND", find_id, "Run alpha setup find with a saved spec first.")
+    manifest = json.loads((folder / "manifest.json").read_text())
+    raw = json.loads((folder / "spec.json").read_text())
+    raw.pop("spec_sha256")
+    spec = SetupSpec.load(raw)
+    if spec.study is None:
+        raise SpineError(
+            "SPEC_HAS_NO_STUDY",
+            "The find's spec has no [study] table.",
+            "Add [study] horizons and primary to the spec, "
+            "run alpha setup find again, then study that find.",
+        )
+    if spec.spec_sha256 != manifest["spec_sha256"]:
+        raise ValueError("find spec hash mismatch")
+    bars, warmup = study_inputs(home, manifest, spec)
+    study_id = hashlib.sha256(f"{find_id}|{STUDY_RULE_VERSION}".encode()).hexdigest()[:16]
+    destination = home / "setup-studies" / study_id
+    if (destination / "manifest.json").exists():
+        summary = read_study(destination)
+        summary["labels"] = [*summary["labels"], "repeat"]
+        summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
+    else:
+        candidates = pl.read_parquet(folder / "candidates.parquet")
+        costs = Costs()
+        cost = 2 * (costs.fee_bps + costs.slippage_bps) / 10000
+        outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
+        summary = _summarise(spec, manifest, candidates, bars, warmup, study_id, outcomes, cost)
+        add_study_trial_fact(home, summary)
+        _publish(destination, summary, outcomes, spec, manifest)
+    primary = summary["horizons"][str(spec.study.primary)]["pooled"]
+    ledger = append_trial(
+        home,
+        dict(
+            kind="setup_study",
+            run_id=study_id,
+            **{k: summary[k] for k in _LEDGER_KEYS},
+            occurrences=primary["occurrences"],
+            mean_net_return=primary["mean"],
+            excess_over_drift=primary["excess"],
+            random_date_p=primary["random_date_p"],
+            verdict=None,
+        ),
+    )
+    return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
+
+
+def run_study(find_id: str, *, home: Path) -> dict[str, Any]:
+    from polars.exceptions import PolarsError
+
+    try:
+        return _run(find_id, home)
+    except (ValueError, OSError, DataError, KeyError, TypeError, PolarsError) as exc:
+        raise study_error(exc) from exc

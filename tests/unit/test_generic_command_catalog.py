@@ -47,6 +47,7 @@ def test_empty_generic_command_is_unknown() -> None:
         (["scan", "check"], "safe"),
         (["tool", "attribution"], "empirical"),
         (["setup", "find"], "empirical"),
+        (["setup", "study"], "empirical"),
         (["data", "audit"], "safe"),
         (["data", "repair"], "owner_only"),
         (["paper", "run"], "owner_only"),

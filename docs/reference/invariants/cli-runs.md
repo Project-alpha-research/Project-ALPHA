@@ -33,15 +33,13 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b95d362131073758
+verified: 2ffa32695e01f9fa
 ---
 
 # Command line runs invariants
 
-What must not break when changing how the CLI composes backtests, validation, optimisation, Monte Carlo and figures,
-and how it names and publishes immutable runs. Project-wide rules:
-[research integrity § Immutable, hash-bound artefacts](research-integrity.md#immutable-hash-bound-artefacts) and
-[research integrity § Deterministic seeds and identity](research-integrity.md#deterministic-seeds-and-identity).
+Run composition and publication follow [immutable artifacts](research-integrity.md#immutable-hash-bound-artefacts)
+and [deterministic identity](research-integrity.md#deterministic-seeds-and-identity).
 
 ## Composition
 - `alpha_cli` is the only layer that composes the engine with the gauntlet; engine imports stay lazy.
@@ -73,7 +71,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   and fails loud otherwise.
 
 ## Artifacts and run directories
-
 - `run_store.RUN_DIRS` (`runs`, `portfolio`, `cross_sectional`, `optim`, `propfirm`, `forecast`) lists every run directory; the package root re-exports it.
   Keep `run_store.py` and `catalog.py` free of Polars and engine imports so web and MCP import them cheaply (`tests/unit/test_public_seams.py`).
 - Publish each artifact once (`_artifacts.publish_artifact`): an identical rewrite is a no-op, different bytes fail, and nothing may be added after the
@@ -82,7 +79,6 @@ and how it names and publishes immutable runs. Project-wide rules:
 - V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
 
 ## Validation and optimisation
-
 - The gauntlet and optimiser refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing (`_gauntlet.py`,
   `_optim.py`).
 - `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
@@ -141,11 +137,9 @@ and how it names and publishes immutable runs. Project-wide rules:
   separately from the append-only row index.
 
 ## Draft checks, lookalikes and novelty
-
 - `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
 
 ## Suites
-
 - `alpha suite` runs only the declared actions in `SUITE_ACTIONS` through durable attempt and job lineage; it polls heartbeat and cancellation every 5 seconds
   and reaps child process groups. Plan building lives in `_suite.py` (`build_suite_plan`), the step and plan types in `_suite_types.py`, per-action step
   builders in `_suite_actions.py`.
@@ -153,7 +147,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   capacity](cli-control-store.md#jobs-leases-and-capacity).
 
 ## Figures
-
 - Figures are a derived cache under `data_dir/figures/<run_id>/`, never run artifacts. Writing into a run directory would break the manifest's exact file set.
 - The cache key hashes renderer identity plus the run's declared artifact digests. Legacy runs fall back to size and mtime and are tagged so the two kinds of
   key cannot collide (`figure_cache.input_digest`).
@@ -167,7 +160,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   (`tests/unit/test_run_projection_security.py`).
 
 ## Rules, scans and chart overlays
-
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen
   `--rules-file` needs a matching `--rules-sha256`, canonical bytes and at most 1,000,000 bytes.
@@ -187,14 +179,22 @@ and how it names and publishes immutable runs. Project-wide rules:
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
 
 ## Setup find
-- `alpha setup find` resolves spec assets in order, honours `@store`, and requires daily bars (252 or 365 periods/year).
-- Events use the setup evaluator. No outcome, exit or control is computed: after the trigger bar only the entry open reaches a file.
+- `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
 - Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud.
-- Within each asset, events at most 10 bars after the previous event share a cluster; only its first accepted day is drawn.
-- Counts and six facts retain matching days and separate occurrences. Pending candidates and warm-up rejections are not drawn.
-- Sheets end at the trigger candle plus entry open only; rejected samples stop at their reason's decision boundary.
+- Events at most ten bars apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
+- Sheets stop at the trigger plus entry open; rejected samples stop at their decision boundary. Pending and warm-up rows are not drawn.
 - Accepted sheets are capped and labelled when truncated; rejected sheets sample at most four reasons and four days per reason.
-- `setups/<find_id>` hashes the spec and sorted successful asset fingerprints; atomic `manifest.json` is published last.
-- A completed folder is immutable; repeats append a ledger row and add `repeat` without rewriting its artifacts.
-- One `setup_find` row counts a look, with no run id or verdict; labels include exploratory, outcomes-not-viewed and daily-only.
-- Context and sheet limits do not change identity; a repeat reports the stored context. Outcomes wait for `alpha setup study`.
+- `setups/<find_id>` hashes the spec, context (default 60 bars) and sorted asset fingerprints; sheet limits do not affect identity.
+- The atomic manifest is last; repeats append a ledger row without rewriting artifacts. A `setup_find` row is an uncounted look, with no verdict.
+
+## Setup study
+- `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
+- Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find.
+- Recorded next-open entry to close h−1 positions later, less twice `spine.spec.Costs` (fee 1 bp, slippage 2 bp per side); no exits, dividends or sizing.
+- Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.
+- SHA-256 study/asset/horizon seeds; exact uniform draws of dates more than ten bars apart; tail (b+1)/(2,000+1). Pool by complete occurrence counts.
+- Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
+- Paths use available occurrences per bar. `setup-studies/<id>` hashes find id and `setup-study-1`; nullable paths are stored with outcomes.
+- Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
+- Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
+- One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).

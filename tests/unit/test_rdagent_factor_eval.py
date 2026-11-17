@@ -187,7 +187,29 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
     record = ev._evaluate_locked(
         run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
     )
-    # ADR-0055 adds exactly one disclosure; without it the record is the pre-change bytes.
+    # Check the changed presentation explicitly, then retain the original byte contract
+    # for every decision, metric and trial count. The historical checksum is not replaced.
+    row = record["factors"][0]
+    assert record["lead_factor"] is None
+    record["lead_factor"] = "factor"  # earlier output incorrectly selected this failed factor
+    assert row.pop("universe_includes_delisted") is False
+    assert row.pop("writeoff_count") == 0
+    message = row.pop("writeoff_message")
+    assert message == (
+        "factor: 0 held positions were written off after their coin stopped trading, "
+        "assuming a 30% loss of last value (not a measured recovery), "
+        "across the evaluated holding clocks; none."
+    )
+    assert message in record["feedback_text"]
+    record["feedback_text"] = record["feedback_text"].replace(" " + message, "")
+    current = row["survivorship"]
+    assert current == (
+        "15 instruments, 0 later delisted declared; survivors-only selection; "
+        "survivorship can bias results upward"
+    )
+    assert record["disclosures"]["survivorship"] == current
+    row["survivorship"] = record["disclosures"]["survivorship"] = ev.SURVIVORSHIP
+    record["feedback_text"] = record["feedback_text"].replace(current, ev.SURVIVORSHIP)
     assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
     # New recording metadata and presentation are checked before projecting onto the old
     # byte contract; the original metric/decision checksum remains unchanged.
@@ -267,7 +289,11 @@ def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path, recorded_
     assert factor["replay"]["net"]["annualized_return"] > 0
     assert result["decision"] is True
     assert result["label"] == ev.LABEL
-    assert ev.SURVIVORSHIP in result["feedback_text"]
+    assert (
+        "15 instruments, 0 later delisted declared; survivors-only selection"
+        in result["feedback_text"]
+    )
+    assert factor["universe_includes_delisted"] is False
     assert all(v is False for v in result["authority"].values())
     original = (run / "result.json").read_bytes()
     original_lines = ledger.read_bytes()

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 7118a5fccb592282
+verified: 5506a39a3e8eef1b
 ---
 
 # RD-Agent
@@ -42,8 +42,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([owner decisions](../owner-decisions.md#2026-11-14-rd-agents-ai-models)).
 - RD-Agent reaches every model through ALPHA's local model gateway
   (`workers/rdagent/model_gateway.py`, [ADR-0044](../../../adr/0044-rdagent-model-gateway.md)):
-  chat through the signed-in Codex program; embeddings through local Ollama by default, or a
-  configured paid provider model with explicit pricing. The gateway holds ALPHA's call and dollar budget, refuses or records
+  chat through the signed-in Codex program, embeddings through local Ollama, an owner-keyed paid
+  route only if configured. The gateway holds ALPHA's call and dollar budget, refuses or records
   every setting it cannot honour, and logs each call without its text.
 - RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
@@ -57,11 +57,14 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
   [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
-  The wide store may be used once every implausible gap jump is declared; freeze splits declared identities and
+  The wide store may be used once every implausible gap jump is declared; freeze rescales declared redenominations, splits reused tickers and
   refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
+  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
+  and asks the proposer again, at most twice per round.
+  Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
@@ -135,10 +138,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   candidate. Embeddings were 21 of 60 and 16 of 47 counted calls in those runs. Decided by the owner
   2026-11-17: free local embeddings are exempt, with their own 2,000-attempt guard; the other caps
   keep their values. Historical counts stay as recorded. The stores then held 15 coins and 9 single
-  stocks. Long local memory embeddings are chunked, never truncated. The paid embedding route
-  sends whole inputs, spends money but no chat calls, and shares the local embedding guard. A
-  model change re-embeds memory before retrieval; the offline harness compares retrieval using
-  supplied relevance labels or a disclosed family-and-symbol proxy, never trading evidence.
+  stocks. Long memory embeddings are chunked, never truncated.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned

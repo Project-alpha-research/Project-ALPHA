@@ -10,6 +10,7 @@ import numpy as np
 
 from alpha_backtest.portfolio_replay import WeightTarget
 from alpha_cli import _rdagent_membership as membership
+from alpha_cli._rdagent_stability import failure_message
 from alpha_core import DataError
 
 CLOCKS = {"daily": 1, "weekly": 7, "monthly": 28}
@@ -184,7 +185,9 @@ def clock_feedback(row: dict[str, Any]) -> str:
             f"q={trial['q']:.6g}, {outcome}."
         )
         parts.extend(screen.get("warnings", []))
-        if trial.get("spread", {}).get("status") in ("PASS", "FAIL"):
+        if trial["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS") and trial.get(
+            "spread", {}
+        ).get("status") in ("PASS", "FAIL"):
             parts.append(spread_note(trial["spread"]))
     reason = {
         "CANDIDATE": "A swing clock passed the screen and replay; confirmation is still required.",
@@ -211,7 +214,8 @@ def clock_feedback(row: dict[str, Any]) -> str:
             f"Factor failed: {row.get('failure_reason', 'reason not recorded')}. "
             + str(row.get("failure_detail", "")).split("\n")[0]
         ),
-        "LOOKAHEAD": "The factor failed the look-ahead check.",
+        "LOOKAHEAD": failure_message(row),
+        "UNSTABLE": failure_message(row),
         "REPEAT": "This code was already evaluated and supplies no new evidence.",
     }
     parts.append(reason[row["status"]])

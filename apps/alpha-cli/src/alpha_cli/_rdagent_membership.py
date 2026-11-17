@@ -249,8 +249,24 @@ def replay_weights(
     direction: int,
     min_names: int,
     fraction: float,
+    unseen: np.ndarray | None = None,
 ) -> np.ndarray:
     """Same thirds and drift as the canonical clock; unavailable weights stay cash."""
+    if unseen is not None and unseen.any():
+        # Even inserting a zero into a NumPy reduction can change its rounding and create a
+        # residual trade. Compute on the original columns until a new identity has a bar.
+        weights = np.zeros(len(scores))
+        weights[~unseen] = replay_weights(
+            scores[~unseen],
+            closes[~unseen],
+            base[~unseen],
+            base_closes[~unseen],
+            rebalance=rebalance,
+            direction=direction,
+            min_names=min_names,
+            fraction=fraction,
+        )
+        return weights
     available = [j for j, value in enumerate(scores) if math.isfinite(value)]
     if len(available) < min_names:
         return np.zeros(len(scores))
@@ -280,6 +296,13 @@ def _orders(account: Account, weights: np.ndarray, closes: np.ndarray) -> np.nda
     return deltas
 
 
+def _missing_bar_period(opens: np.ndarray, accounts: list[Account], segments: np.ndarray) -> bool:
+    # A declared future identity has no history yet. Its empty column cannot switch an
+    # earlier ordinary period to the missing-bar diagnostic. Existing receipts are unchanged.
+    unseen = segments & ~np.isfinite(accounts[0].last)
+    return bool((~np.isfinite(opens) & ~unseen).any() or any(a.waiting.any() for a in accounts))
+
+
 def run_gap_replay(
     opens: np.ndarray,
     closes: np.ndarray,
@@ -294,6 +317,7 @@ def run_gap_replay(
     fraction: float,
     fee_bps: float,
     slippage_bps: float,
+    identity_segments: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     """Causal account loop with canonical close-sized orders, sells first and pro-rata buys.
 
@@ -319,11 +343,10 @@ def run_gap_replay(
     costs: dict[int, list[float]] = {}
     previous = [1_000_000.0] * 3
     rebalances = skipped = missing = 0
+    segments = np.array([name in identity_segments for name in symbols])
     equity_curve = [1_000_000.0]
     for i, day in enumerate(sessions):
-        abnormal.append(
-            bool(not np.isfinite(opens[i]).all() or any(a.waiting.any() for a in accounts))
-        )
+        abnormal.append(_missing_bar_period(opens[i], accounts, segments))
         opening = [
             account.equity(np.where(account.waiting, np.nan, opens[i])) for account in accounts
         ]
@@ -388,6 +411,7 @@ def run_gap_replay(
                 direction=direction,
                 min_names=min_names,
                 fraction=fraction,
+                unseen=segments & ~np.isfinite(accounts[0].last),
             )
             if rebalance:
                 base, base_closes = weights.copy(), closes[i].copy()
@@ -507,7 +531,11 @@ def _period(
 ) -> ReplayPeriod:
     gross, benchmark = current[1] / previous[1] - 1, current[2] / previous[2] - 1
     if ordinary:
-        gross = sum(t.target_weight * (opens[1, j] / opens[0, j] - 1) for j, t in enumerate(held))
+        gross = sum(
+            t.target_weight * (opens[1, j] / opens[0, j] - 1)
+            for j, t in enumerate(held)
+            if t.target_weight or np.isfinite(opens[:, j]).all()
+        )
         if len(names):
             benchmark = sum(opens[1, j] / opens[0, j] - 1 for j in names) / len(names)
     net = current[0] / previous[0] - 1

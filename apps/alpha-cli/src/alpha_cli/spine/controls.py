@@ -160,6 +160,8 @@ def control_label(
 ) -> str:
     if min(original_trades, inverted_trades) < 30 or original is None or inverted is None:
         return "inconclusive"
+    if original <= 0:
+        return "inconclusive"
     if original > 0 and inverted > 0 and inverted >= original / 2:
         return "control failed"
     if inverted < 0:
@@ -185,16 +187,12 @@ def _reading(
         )
     if sharpe is None or original["sharpe"] is None:
         return "This check cannot tell either way: a Sharpe ratio is unavailable."
+    if original["sharpe"] <= 0:
+        return f"This check cannot tell: the rule itself did not make money ({pair})."
     if label == "control failed":
         return (
             f"Trading the opposite of this rule also made money on average ({pair}): the result "
             "may come from the market's drift, the data or the costs, not the rule."
-        )
-    if label == "control passed" and original["sharpe"] <= 0:
-        return (
-            f"Trading the opposite of this rule lost money (Sharpe {opposite}), but the rule "
-            f"itself did not make money either (Sharpe {rule}), so this says nothing about an "
-            "edge; both directions losing usually points to trading costs."
         )
     if label == "control passed":
         caveat = (
@@ -207,8 +205,6 @@ def _reading(
             f"Trading the opposite of this rule lost money ({pair}), as a real edge would; "
             f"this alone does not prove an edge.{caveat}"
         )
-    if original["sharpe"] <= 0:
-        return f"This check cannot tell either way: the rule itself did not make money ({pair})."
     return (
         "This check cannot tell either way: the opposite trade roughly broke even or made a "
         f"little money ({pair})."

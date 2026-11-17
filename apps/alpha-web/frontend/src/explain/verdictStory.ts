@@ -11,6 +11,8 @@ import {
   RUIN_BANDS,
   SAMPLE_BANDS,
   gradeAtMost,
+  gradeAtLeast,
+  GPA,
 } from './bands'
 import type { DimensionStory, Tone, ValidateManifest } from './types'
 
@@ -20,7 +22,16 @@ function toneFor(grade: string): Tone {
   return 'bad'
 }
 
-export function verdictStories(m: ValidateManifest): DimensionStory[] {
+// The run response already carries the full manifest, including spine/headline labels.
+// Keep these optional for manifests recorded before the sparse-trade cap existed.
+type RecordedManifest = ValidateManifest & {
+  labels?: readonly string[]
+  spine?: { labels?: readonly string[] }
+  n_trades?: number | null
+  verdict?: ValidateManifest['verdict'] & { labels?: readonly string[] }
+}
+
+export function verdictStories(m: RecordedManifest): DimensionStory[] {
   const v = m.verdict
   if (!v) return []
   const d = v.detail ?? {}
@@ -30,6 +41,15 @@ export function verdictStories(m: ValidateManifest): DimensionStory[] {
   const ruin = d.risk_of_ruin ?? null
   const nOos = d.sample_n_oos ?? null
   const gpa = d.overall_gpa ?? null
+
+  const sparse = [m.labels, m.spine?.labels, v.labels].some(labels => labels?.includes('too-few-trades'))
+  // The stored GPA is itself capped. Explain the dimensions from their recorded letters.
+  const dimensionGpa = [v.edge, v.robustness, v.risk, v.sample].reduce((sum, grade) => sum + (GPA[grade] ?? 0), 0) / 4
+  const dimensionGrade = gradeAtLeast(dimensionGpa, OVERALL_BANDS)
+  const tradeCount = isFiniteNum(m.n_trades) ? `only ${fmtNum(m.n_trades, 0)}` : 'fewer than 30'
+  const sparseStory = dimensionGrade === 'A' || dimensionGrade === 'B'
+    ? `The dimensions alone would give ${dimensionGrade}, but the stored grade is held at ${v.overall} because this run has ${tradeCount} closed trades, which is too few to judge. `
+    : `This run has ${tradeCount} closed trades, which is too few to judge. `
 
   const ddDepth = isFiniteNum(dd) ? Math.abs(dd) : null
   const ddGrade = gradeAtMost(ddDepth, DRAWDOWN_BANDS)
@@ -87,10 +107,11 @@ export function verdictStories(m: ValidateManifest): DimensionStory[] {
     {
       dimension: 'overall',
       grade: v.overall,
-      terse: `GPA ${fmtNum(gpa)} → ${v.overall}`,
+      terse: sparse ? `Stored ${v.overall} · too few trades` : `GPA ${fmtNum(gpa)} → ${v.overall}`,
       narrative:
-        `Overall = ${v.overall}: the equal-weight GPA of the four dimensions is ${fmtNum(gpa)}, ` +
-        `landing in the ${bandInterval(v.overall, OVERALL_BANDS, 'atLeast')} band. ` +
+        (sparse ? `Overall = ${v.overall}. ${sparseStory}` :
+          `Overall = ${v.overall}: the equal-weight GPA of the four dimensions is ${fmtNum(gpa)}, ` +
+          `landing in the ${bandInterval(v.overall, OVERALL_BANDS, 'atLeast')} band. `) +
         `${m.passed ? 'All hard gates also passed.' : 'Independent of the letter, at least one hard gate FAILED — the run does not clear the gauntlet.'}`,
       tone: m.passed ? toneFor(v.overall) : 'bad',
     },

@@ -91,6 +91,16 @@ export interface RecomputedVerdict {
   checks: number
 }
 
+/** Mirror spine.audit.capped_verdict: sparse trades cap the overall grade and stored GPA. */
+export function applyTradeCountCap(verdict: RecomputedVerdict, labels: readonly string[]): RecomputedVerdict {
+  if (!labels.includes('too-few-trades')) return verdict
+  return {
+    ...verdict,
+    overall: verdict.overall === 'A' || verdict.overall === 'B' ? 'C' : verdict.overall,
+    gpa: Math.min(2, verdict.gpa),
+  }
+}
+
 /** Recompute the verdict from raw gate quantities — mirrors grade_verdict() in verdict.py. */
 export function recomputeVerdict(inputs: {
   oosSharpe: number | null
@@ -101,6 +111,7 @@ export function recomputeVerdict(inputs: {
   maxDrawdown: number | null
   riskOfRuin: number | null
   nOos: number
+  labels?: readonly string[]
 }): RecomputedVerdict {
   const edge = gradeAtLeast(inputs.oosSharpe, EDGE_BANDS)
   const checks =
@@ -114,5 +125,5 @@ export function recomputeVerdict(inputs: {
   const sample = gradeAtLeast(inputs.nOos, SAMPLE_BANDS)
   const gpa = ((GPA[edge] ?? 0) + (GPA[robustness] ?? 0) + (GPA[risk] ?? 0) + (GPA[sample] ?? 0)) / 4
   const overall = gradeAtLeast(gpa, OVERALL_BANDS)
-  return { edge, robustness, risk, sample, overall, gpa, checks }
+  return applyTradeCountCap({ edge, robustness, risk, sample, overall, gpa, checks }, inputs.labels ?? [])
 }

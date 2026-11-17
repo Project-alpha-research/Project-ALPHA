@@ -642,31 +642,52 @@ ran; RD-Agent's critic did not accept it), `cap_reached` (the call cap stopped t
 `exception` (the code raised; `failure_detail` keeps the error's own line, never the traceback
 header) or `bad_output` (no `factor.py`, or not one numeric column on a date/instrument index).
 
-Each factor row also keeps the proposal's `description`, `formulation` and `variables`. The idea
-family rule (`--family-switch-after`, ADR-0055) classifies a composite (machine learning, a
-regression, a weighted combination) or a factor whose name has no family keyword by the feature
-families its own words name; it inherits every one, so a ridge composite of volatility, drawdown,
-skew and autocorrelation features counts as a try in each, and it is barred when any of them is
-closed. Only evaluated screen, spread and replay failures (including daily-only passes) count
-toward closing a family; code failures remain trials but do not close families. Before coding,
-`research_memory` wraps the current coder with `FamilyGuard`: a closed-family proposal is refused
-before any code is written or data read, with the closed and open families named, and recorded in
-`rounds.jsonl` as `refused_closed_family` with `trial_created: false`. The guard then asks the
-proposer again inside the same round, repeating upstream's own two proposal calls (propose, then
-experiment) with the refusals added to the proposer's context, at most twice. A third refusal is
-recorded as `no_admissible_idea` and ends the round through upstream's skip exception; upstream
-then records the refusal message as that round's feedback without a feedback-model call. Each
-re-ask spends proposal model calls under the same run cap. Upstream's own step log still shows the
-first, refused proposal for that round; the round record and the trace hold the one coded.
-A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
-carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself subject to the
-limit. The match is approximate and over-inclusive: a stray family word adds a family, never
-removes one.
+Each factor row keeps the proposal's `description`, `formulation` and `variables`. The idea
+family rule (`--family-switch-after`, ADR-0055) classifies a standalone factor by its name only.
+A composite is recognised by mix or learned-model words in its name or description (`COMPOSITE`:
+machine learning, gradient boosting, LightGBM, ridge, ensemble, blend of, weighted sum ...); a
+plain regression or OLS slope (`WEAK_COMPOSITE`) is one construct unless it lists two known
+features. A composite inherits every family of its name and of its listed variable NAMES, never
+variable descriptions or formula text; listed names that match no keyword (`C_{i,s}`,
+`max_depth`, `120`) are symbols, not families, and a composite naming no known feature is
+`composite: unknown inputs`. Case, spaces and hyphens normalize to name tokens; longest terms
+consume their tokens first, so volume-weighted average price remains VWAP distance; a final
+keyword part of four or more letters also matches as a prefix (`high_prox` covers
+`high_proximity`). Window suffixes are removed from unknown name stems (`other: price_delay`).
+Estimator words in `GENERIC_ESTIMATOR_WORDS` never supply families; `market_beta`,
+`downside_beta` and `btc_beta` are explicit. Short abbreviations in `WINDOW_ONLY` (m20, hp120,
+vt60, rv60, ret_60d) classify only with a window, so math symbols such as `m(t)` (a month start)
+or `m_s` (the market return) never do. Unknown constructs are open until their own family reaches
+the unchanged failure limit. Still dodgeable by naming: synonyms not in the table (`roc` without a
+window, `sigma`, `price_change`, a bare `beta`), and a composite whose features carry unfamiliar names.
+Only evaluated screen, spread and replay failures (including daily-only passes) count toward
+closing a family; code failures remain trials but do not close families. Before coding,
+`research_memory` wraps the coder with `FamilyGuard`. A refusal reads no data and creates no trial.
+Both proposer and feedback writer receive the closed families, open known families, and the rule
+that a mechanism belonging to none of the closed families is allowed.
+
+`rounds.jsonl` records the round `iteration`, `attempt`, refused `factor_names`,
+`refused_families` and `all_closed_families`, with `trial_created: false`. Readers still accept
+old `closed_families` rows. The guard repeats upstream's proposal and experiment calls at most
+twice. A third refusal records `no_admissible_idea` and ends through upstream's skip exception;
+feedback then uses the refusal without another model call. Re-asks have nested `proposal_reask`
+intervals in `steps.jsonl`, which label calls and per-step usage independently of coding.
+Receipts report `rounds_with_trial`, `rounds_no_admissible_idea`, `proposals_refused`,
+`reask_calls` and `reask_usd`. Upstream's step log still shows its first proposal; the round record
+and trace hold the coded one. A model explicitly named as a composite without a listed input
+remains `composite: unknown inputs`, subject to its own limit.
 
 The default `--embedding-route local` uses the same Ollama requests and long-input retry as
 before (`ollama` remains a legacy spelling; `fake` is for tests). Select
 `--embedding-route provider --provider-embed-model MODEL --provider-embed-usd-per-mtok PRICE`
-to embed whole inputs through the paid chat provider's `/embeddings` endpoint. Model and positive
+to embed whole inputs through the paid chat provider's `/embeddings` endpoint in batches of up to
+`EMBED_BATCH_INPUTS = 32`. Each provider request reserves and settles once; each request counts
+once toward the shared 2,000-request embedding limit. Refused batches retry inputs singly;
+input-specific errors retain their original indices beside successful vectors, and fatal errors
+(such as budget or model failures) still stop the call. The receipt counts single retries.
+Memory re-embedding uses this batch route only for paid embeddings; local calls stay unchanged.
+A batch that fails as a whole fails each of its inputs through the memory skip policy (a budget
+stop still ends the run) and is never re-sent one input at a time. Model and positive
 USD-per-million-token price are required; neither has a guessed default. `ApiChat.__init__` in
 `model_gateway.py` and `ProviderEmbeddings.__init__` in `gateway_embeddings.py` read the same
 `ALPHA_GATEWAY_API_BASE` and `ALPHA_GATEWAY_API_KEY`; only the gateway process receives them.
@@ -682,11 +703,16 @@ the 60-call, USD 10 per-run, USD 50 monthly, 3,000 monthly-call and 180 s paid-c
 their values. Provider embeddings reserve characters / 3 × price before sending, then settle
 using reported total tokens (prompt tokens if total is absent). Missing usage keeps the estimate.
 An explicit error with no usage or an unavailable connection settles to zero; a timeout or
-unreadable reply retains the estimate because the request may have been billed. No embedding
-retry is made on the provider route.
+unreadable reply retains the estimate because the request may have been billed. Only explicit
+input refusals of a multi-input batch trigger single-input retries; no timeout retry is added.
 
 `call_split` and the receipt report `local_embedding_calls`, `provider_embedding_calls`,
-`provider_embedding_usd` and `provider_embedding_tokens`, plus route and model. Receipt totals
+`provider_embedding_usd` and `provider_embedding_tokens`, plus route and model. `provider_embedding_requests` and `provider_embedding_inputs` separate
+requests from original inputs (single retries are not counted again as original inputs).
+`embedding_single_retries` counts those retry requests; `embedding_model_not_reported` counts
+accepted replies without a model field. Every provider-route embedding log row includes
+`response_model` and `reserved_usd` (local-route rows keep their earlier fields); a missing provider model is `model_not_reported`, never `matched`. A reported
+different model is refused even if billed. Receipt totals
 come from the reserved budget, even if a call was not logged; unavailable totals are null.
 `calls` and `counted_toward_call_cap` remain compatible aliases for counted calls. Old budget
 files, call logs and receipts keep historical counts unchanged. Token totals count only usage
@@ -913,7 +939,7 @@ cadence gap is accepted at freeze; any other warning or failure still refuses th
 The wide store may be used once every implausible jump is declared. Freeze enforces this only
 across any gap of one or more missing days (below); jumps between consecutive daily bars are not checked.
 The owner supplies `identity_breaks` in the universe file, a list of entries with `instrument`,
-`new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused` or `redenominated`). The instrument
+`new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused`, `redenominated` or `renamed`). The instrument
 must belong to the universe and its dates must be strictly increasing. No real break list is
 shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
 
@@ -923,6 +949,14 @@ Freeze divides OHLC on or after `new_from` by this ratio and multiplies base vol
 volume is unchanged. The instrument keeps its identity and normal gap handling. Earlier prices
 are untouched. Old declarations without a ratio refuse with an instruction to add it; old frozen
 receipts remain readable. Each applied rescale is listed in `identity_rescales` with name, date and ratio.
+
+For `renamed`, `continues_as` names a distinct successor in the same store and universe.
+Freeze joins its rows from `new_from` under the old name, removing the separate successor.
+An optional positive finite `ratio` defaults to 1, with the same OHLC/base-volume adjustment
+as redenominations. Quote volume is unchanged. Overlapping series (an old bar on or after
+`new_from`, or on or after the successor's first bar) and successor rows before `new_from` are refused, so no earlier data is changed or discarded. Gaps remain ordinary missing
+days. The minimum universe size is checked again after joining; `identity_joins` lists each join.
+A missing successor fails with its name. No real rename list is supplied.
 
 For `ticker_reused`, freeze renames rows on and after each boundary to `<INSTRUMENT>~2`, then
 `~3`, counting ticker reuse only. Each row belongs to one identity; generated-name collisions
@@ -960,9 +994,15 @@ counted exactly as before, and neither can be the lead factor. Unavailable check
 existing classification and record the error; they never demote coding memory. Fixed cuts do not prove
 absence of leakage between cuts; numerical instability is diagnosed, not repaired.
 
-Each factor records a write-off count across its evaluated clocks and a sentence naming up to
-five coins (then “and N more”), including the assumed loss. The feedback writer appends it even
+Each factor records a write-off count across its replayed clocks and a sentence naming those
+clocks (an errored or absent replay is not named) and up to five coins (then “and N more”),
+including the assumed loss. The feedback writer appends it even
 if the model omits it; proposal ledger lines keep the count. Spread figures are shown only for
 clocks that passed the rank screen. Replay output calls its old `missing_coin_days` metric
 `unrankable_instrument_rebalances`: instrument observations without a finite eligible rank on
 scheduled rebalance days, distinct from missing bar days in the receipt. Readers accept the old name.
+
+Model-facing figures use four significant digits and say "not available" for missing values;
+small nonzero costs and turnover remain visible. Receipt chat usage reports a wholly absent
+`cache_discount` as "not reported by the provider", and labels the gateway's estimate
+"upper-bound estimate at configured prices" beside the provider charge.

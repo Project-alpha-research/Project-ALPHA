@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, fields
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -144,6 +145,26 @@ def _run_date(run_id: str | None) -> tuple[str | None, str]:
     return (prefix, "run-id date") if parsed.isoformat() == prefix else (None, "not recorded")
 
 
+def universe_label(row: dict[str, Any]) -> str:
+    if "universe_includes_delisted" in row:
+        flag = row["universe_includes_delisted"]
+        if type(flag) is not bool:
+            raise ValueError("universe_includes_delisted must be a boolean")
+        return "includes-delisted" if flag else "survivor-universe"
+    value = row.get("survivorship", "")
+    text = (value if isinstance(value, str) else " ".join(_strings(value))).lower()
+    counts = re.findall(r"\b(\d+)\s+(?:(?:instruments?|coins?|names?)\s+)?later\s+delisted\b", text)
+    if any(int(count) > 0 for count in counts):
+        return "includes-delisted"
+    if re.search(
+        r"^survivors?$|survivors?[ -]only|only\s+survivors?|"
+        r"(?:today.s|current)\s+survivors|from.*survivors|are\s+survivors|survivors\s+chosen",
+        text,
+    ):
+        return "survivor-universe"
+    return "universe-not-recorded"
+
+
 def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
     rule = row["schema"] == "AlphaRuleTrialV1"
     status = row["status"]
@@ -180,11 +201,7 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
             ("exploratory", row["label"].startswith("exploratory")),
             ("not-admitted", row["authority"].get("admitted") is False),
             ("previously-exposed", row.get("exposure", {}).get("previously_exposed") is True),
-            (
-                "survivor-universe",
-                bool(row["survivorship"]) and row.get("universe_includes_delisted") is not True,
-            ),
-            ("includes-delisted", row.get("universe_includes_delisted") is True),
+            (universe_label(row), True),
             ("repeat", status == "REPEAT"),
             ("imported", status == "IMPORTED"),
         )

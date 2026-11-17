@@ -29,7 +29,8 @@ def fake_exchange(monkeypatch: pytest.MonkeyPatch, stamps: list[datetime]) -> li
 def test_fetch_full_end_day_and_page_seams(monkeypatch: pytest.MonkeyPatch, text: str) -> None:
     tf = parse_timeframe(text)
     start = datetime(2024, 1, 1, tzinfo=UTC)
-    stamps = [start + i * tf.duration for i in range(3)]
+    count = -(-timedelta(days=1) // tf.duration)  # the whole requested day, as edge gaps are errors
+    stamps = [start + i * tf.duration for i in range(count)]
     calls = fake_exchange(monkeypatch, stamps)
     result = CCXTAdapter(timeframe=tf).fetch("BTC/USD", start.date(), start.date())
     assert result.bars["ts"].to_list() == stamps
@@ -78,12 +79,7 @@ def test_daily_fetch_bounds_and_versions_unchanged(monkeypatch: pytest.MonkeyPat
 
 
 def test_non_divisor_grid_restarts_at_midnight(monkeypatch: pytest.MonkeyPatch) -> None:
-    stamps = [
-        datetime(2024, 1, 1, 14, tzinfo=UTC),
-        datetime(2024, 1, 1, 21, tzinfo=UTC),
-        datetime(2024, 1, 2, tzinfo=UTC),
-        datetime(2024, 1, 2, 7, tzinfo=UTC),
-    ]
+    stamps = [datetime(2024, 1, day, hour, tzinfo=UTC) for day in (1, 2) for hour in (0, 7, 14, 21)]
     fake_exchange(monkeypatch, stamps)
     assert (
         CCXTAdapter(timeframe=parse_timeframe("7h"))
@@ -133,8 +129,9 @@ def test_non_divisor_pagination_does_not_skip_midnight(monkeypatch: pytest.Monke
 
 
 def test_non_divisor_completion_uses_full_duration(monkeypatch: pytest.MonkeyPatch) -> None:
-    start = datetime(2024, 1, 1, 14, tzinfo=UTC)
-    stamps = [start, start + timedelta(hours=7), datetime(2024, 1, 2, tzinfo=UTC)]
+    day = datetime(2024, 1, 1, tzinfo=UTC)
+    stamps = [day, day + timedelta(hours=7), day + timedelta(hours=14), day + timedelta(hours=21)]
+    stamps.append(day + timedelta(days=1))
     fake_exchange(monkeypatch, stamps)
 
     class Clock(datetime):
@@ -144,6 +141,6 @@ def test_non_divisor_completion_uses_full_duration(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(ccxt_adapter, "datetime", Clock)
     result = CCXTAdapter(timeframe=parse_timeframe("7h")).fetch(
-        "BTC/USD", start.date(), date(2024, 1, 2)
+        "BTC/USD", day.date(), date(2024, 1, 2)
     )
-    assert result.bars["ts"].to_list() == [start]
+    assert result.bars["ts"].to_list() == stamps[:3]

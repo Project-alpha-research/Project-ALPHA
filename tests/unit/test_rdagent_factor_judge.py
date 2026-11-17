@@ -183,10 +183,10 @@ def test_hypothesis_context_shows_imported_and_exposed_v2_rows(
     assert flag is True
     summary = context["hypothesis_and_feedback"]
     assert (
-        "imported: IMPORTED; mean rank IC None; q 1.0; run external; protected window previously exposed"
-        in summary
+        "imported: IMPORTED; mean rank IC not available; q 1; run external; "
+        "protected window previously exposed" in summary
     )
-    assert "old: FAILED; mean rank IC None; q 1.0; run old-run" in summary
+    assert "old: FAILED; mean rank IC not available; q 1; run old-run" in summary
     assert "repeat:" not in summary
 
 
@@ -345,6 +345,11 @@ def swing_parts() -> dict[str, Any]:
         "AlphaFactorHypothesisGen",
         "idea_family",
         "input_families",
+        "name_tokens",
+        "name_family",
+        "name_matches",
+        "family_permissions",
+        "percent",
         "spread_line",
         "_rank",
         "family_summary",
@@ -358,7 +363,15 @@ def swing_parts() -> dict[str, Any]:
             isinstance(n, ast.Assign)
             and any(
                 isinstance(t, ast.Name)
-                and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE", "FAMILY_REFUSALS")
+                and t.id
+                in (
+                    "SWING_BRIEF",
+                    "FAMILY_KEYWORDS",
+                    "COMPOSITE",
+                    "WEAK_COMPOSITE",
+                    "WINDOW_ONLY",
+                    "FAMILY_REFUSALS",
+                )
                 for t in n.targets
             )
         )
@@ -476,8 +489,8 @@ def test_ledger_summary_says_why_a_replay_lost() -> None:
     line = swing_parts()["ledger_summary"](_v3_row("volatility_60d", "a" * 64, replay))
     assert line == (
         "volatility_60d: REPLAY_FAIL (daily REPLAY_FAIL, weekly SCREEN_FAIL, monthly SCREEN_FAIL); "
-        "lead daily IC -0.026; q 0.0; daily replay: -28%/yr before costs, -31%/yr after "
-        "4%/yr costs, turnover 6%/day"
+        "lead daily IC -0.0264; q 5.811e-08; daily replay: -27.71%/yr before costs, -31.25%/yr after "
+        "3.68%/yr costs, turnover 6.12%/day"
     )
     malformed = _v3_row("broken", "b" * 64, {"gross": {}})
     with pytest.raises(KeyError):
@@ -697,7 +710,7 @@ def test_rejected_factor_line_gives_spread_turnover_and_cost() -> None:
     row["clocks"]["weekly"]["spread"] = _spread("PASS")  # screen failed: not repeated
     line = swing_parts()["ledger_summary"](row)
     assert line.endswith(
-        "daily spread FAIL: top third -0.40% vs bottom +0.30% per hold (-36%/yr before costs, "
+        "daily spread FAIL: top third -0.4% vs bottom +0.3% per hold (-36%/yr before costs, "
         "t -1.6), top third changes 12% per rebalance, about 5%/yr costs"
     )
     assert "weekly spread" not in line
@@ -729,7 +742,7 @@ def test_family_summary_groups_all_families_and_says_when_to_move_on(
         text = context["hypothesis_and_feedback"]
         assert "- price near its high / range position: 3 tries; best " in text
         assert "- illiquidity: 2 tries" in text
-        assert "- skewness and lottery returns: 1 tries" in text
+        assert "- skewness and lottery returns: 1 try" in text
         assert text.index("ALPHA idea families") < text.index("ALPHA trial ledger")
         moved = text.split("no candidate: ", 1)[1].split(". Do not propose", 1)[0]
         if closed:
@@ -749,7 +762,7 @@ def test_idea_family_keywords_on_the_health_check_names() -> None:
     assert family("downside_semivariance_120d") == "volatility and beta"
     assert family("ret_vol_corr_28d") == "return-volume relation"
     assert family("max_return_28d") == "skewness and lottery returns"
-    assert family("mystery_signal") == "other: mystery"
+    assert family("mystery_signal") == "other: mystery_signal"
     # 2026-11-16 run: the model abbreviated "high proximity" as hp126
     assert family("hp126_skip10_lowvol") == "price near its high / range position"
     assert family("hp126_skip10_lowskew") == "price near its high / range position"

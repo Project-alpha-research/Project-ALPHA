@@ -19,7 +19,14 @@ from alpha_cli.spine.compare import (
     resolve_run,
 )
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
-from alpha_cli.spine.facts import build_facts, read_json, require_metric
+from alpha_cli.spine.facts import (
+    TOOL_METRICS,
+    build_facts,
+    read_json,
+    require_metric,
+    tool_fact,
+    tool_outputs,
+)
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_core import DataError
@@ -86,6 +93,7 @@ def list_results(
                     for key in (
                         "trial_index",
                         "recorded_at",
+                        "kind",
                         "name",
                         "symbol",
                         "verdict",
@@ -102,7 +110,9 @@ def list_results(
         lines = ["\t".join(str(row[key]) for key in row) for row in items]
         for row in items:
             row["reasons"] = {
-                key: "unavailable in the stored ledger row"
+                key: "an investigation-tool row; see alpha results show for its output"
+                if str(row["kind"]).startswith("tool:")
+                else "unavailable in the stored ledger row"
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None
             }
@@ -144,6 +154,11 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         "diagnostics_reason": None
         if diagnostics
         else "diagnostics.json is unavailable; re-run alpha test for this spec",
+        # Investigation-tool outputs live outside the immutable run directory.
+        "tools": [
+            {key: item[key] for key in ("tool", "id", "params", "recorded_at", "file", "labels")}
+            for item in tool_outputs(home, run_id)
+        ],
         "charts": [
             entry.definition.figure_id
             for entry in available_figures(rdir, manifest)
@@ -154,38 +169,85 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
 
 @results_app.command("show")
 def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
-    """Show sourced facts, observations, audit checks and chart names for a run or test."""
+    """Show sourced facts, observations, audit checks, tool outputs and chart names."""
     try:
         home = AlphaSettings().data_dir
+        failed: list[dict[str, Any]] = []
         if find_run_dir(home, run_id) is not None:
             ids = [run_id]
         else:
+            # A test id: show every asset that completed and report each one that did not.
+            # Rows written before investigation tools existed carry no kind: they are rule tests.
+            rows = [
+                row
+                for row in spine_snapshot(home).raw_rows.values()
+                if row.get("test_id") == run_id and row.get("kind", "rule_test") == "rule_test"
+            ]
             ids = list(
                 dict.fromkeys(
                     row["run_id"]
-                    for row in spine_snapshot(home).raw_rows.values()
-                    if row.get("test_id") == run_id and row.get("run_id")
+                    for row in rows
+                    if row.get("run_id") and find_run_dir(home, row["run_id"]) is not None
                 )
             )
-        if not ids:
+            failed = [
+                {
+                    "symbol": row.get("symbol"),
+                    "run_id": row.get("run_id"),
+                    "trial_index": row.get("trial_index"),
+                    "reason": "this asset's trial did not complete; no run is stored for it",
+                }
+                for row in rows
+                if not row.get("run_id") or row["run_id"] not in ids
+            ]
+        if not ids and not failed:
             raise SpineError(
                 "UNKNOWN_RUN",
                 f"Unknown run or test {run_id!r}.",
                 "Run alpha results --json to list recorded runs.",
             )
-        output = {"runs": [_show(home, value) for value in ids]}
+        if ids == [run_id]:
+            runs = [_show(home, run_id)]  # one named run: an unreadable artifact fails loud
+        else:
+            runs = []
+            for value in ids:
+                try:
+                    runs.append(_show(home, value))
+                except (ValueError, OSError, DataError) as exc:
+                    # One unreadable asset must not hide the others; report it by name.
+                    row = next(item for item in rows if item.get("run_id") == value)
+                    failed.append(
+                        {
+                            "symbol": row.get("symbol"),
+                            "run_id": value,
+                            "trial_index": row.get("trial_index"),
+                            "reason": f"stored run could not be read: {exc}",
+                        }
+                    )
+        output = {"runs": runs, "failed": failed}
         emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
 
 
 @results_app.command("cite")
-def cite_result(run_id: str, metric: str, json_out: bool = typer.Option(False, "--json")) -> None:
+def cite_result(
+    run_id: str,
+    metric: str,
+    tool_output: str | None = typer.Option(
+        None, "--tool-output", help="Id of one stored tool output, when a tool ran more than once."
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
     """Quote exactly one stored fact; never recompute a metric."""
     try:
         require_metric(metric)
-        rdir, _ = _run(AlphaSettings().data_dir, run_id)
-        fact = next(item for item in build_facts(rdir) if item["metric"] == metric)
+        home = AlphaSettings().data_dir
+        rdir, _ = _run(home, run_id)
+        if metric in TOOL_METRICS:
+            fact = tool_fact(home, run_id, metric, tool_output)
+        else:
+            fact = next(item for item in build_facts(rdir) if item["metric"] == metric)
         value = "null" if fact["value"] is None else str(fact["value"])
         emit(fact, json_out=json_out, fallback=f"{value} [{run_id}:{metric}] ({fact['basis']})")
     except (ValueError, OSError, DataError) as exc:

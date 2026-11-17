@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
@@ -120,13 +121,25 @@ def delay(returns: FloatSeq, weights: FloatSeq, costs: FloatSeq, ppy: int) -> di
         raise DataError("delay inputs must be finite")
     base, base_reason = score(w * r - c, ppy)
     delayed, delayed_reason = score(np.r_[0.0, w[:-1]] * r - np.r_[0.0, c[:-1]], ppy)
+    # A share of the base is only meaningful against a positive base Sharpe.
+    kept: float | None = None
+    kept_reason: str | None = "base or delayed Sharpe is unavailable"
+    if base is not None and delayed is not None:
+        comparable = math.isfinite(base) and base > 0
+        kept = delayed / base if comparable else None
+        kept_reason = None if comparable else "base Sharpe is not positive, so no share is defined"
     return {
         "basis": "returns-level approximation; weights and turnover costs shifted one bar later",
         "base_sharpe": base,
         "delayed_sharpe": delayed,
+        "delayed_share_of_base": kept,
         "reasons": {
             key: reason
-            for key, reason in (("base_sharpe", base_reason), ("delayed_sharpe", delayed_reason))
+            for key, reason in (
+                ("base_sharpe", base_reason),
+                ("delayed_sharpe", delayed_reason),
+                ("delayed_share_of_base", kept_reason),
+            )
             if reason
         },
     }
@@ -152,8 +165,8 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
                 "flag": "drawdown-with-market",
                 "detail": (
                     f"During the worst drawdown ({abs(episodes[0].get('depth') or 0.0):.0%}), "
-                    f"buy and hold fell {abs(episodes[0]['benchmark_return']):.0%} "
-                    "over the same dates."
+                    f"buy and hold fell {share:.2g} times as much over the same dates "
+                    f"({abs(episodes[0]['benchmark_return']):.0%})."
                 ),
             }
         )
@@ -162,29 +175,44 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
         result.append(
             {
                 "flag": "concentrated-profit",
-                "detail": f"The top three closed trades contributed {top:.0%} of total profit.",
+                "detail": (
+                    f"The top three closed trades made {top:.2g} times the total profit; "
+                    "the rest lost money overall."
+                    if top > 1
+                    else f"The top three closed trades contributed {top:.0%} of total profit."
+                ),
             }
         )
+    positive = base is not None and math.isfinite(base) and base > 0
     for kind, name in (("costs", "fragile-to-costs"), ("parameter", "fragile-to-parameters")):
         weak = [
             v
             for v in sections["sensitivity"]["variants"]
             if v["kind"] == kind
             and v["sharpe"] is not None
-            and (v["sharpe"] <= 0 or (base is not None and v["sharpe"] < base / 2))
+            and (v["sharpe"] <= 0 or (positive and v["sharpe"] < base / 2))
         ]
         if weak:
+            shown = "unavailable" if base is None else f"{base:.3g}"
             result.append(
                 {
                     "flag": name,
                     "detail": (
                         f"A {kind} variant has Sharpe {weak[0]['sharpe']:.3g}; "
-                        f"base Sharpe is {base}."
+                        f"base Sharpe is {shown}."
                     ),
                 }
             )
-    base_delay, later = sections["delay"]["base_sharpe"], sections["delay"]["delayed_sharpe"]
-    if base_delay is not None and later is not None and later < base_delay / 2:
+    delay_section = sections["delay"]
+    # Older stored passes lack the share; it is derived the same way, for a positive base only.
+    base_delay, later = delay_section["base_sharpe"], delay_section["delayed_sharpe"]
+    if (
+        base_delay is not None
+        and later is not None
+        and math.isfinite(base_delay)
+        and base_delay > 0
+        and later < base_delay / 2
+    ):
         result.append(
             {
                 "flag": "fragile-to-delay",

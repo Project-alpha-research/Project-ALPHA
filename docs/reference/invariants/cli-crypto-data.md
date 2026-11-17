@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: caa707ce880bc469
+verified: 0bed3e1e29e927a6
 ---
 
 # Command line data invariants
@@ -36,6 +36,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 - `data candles --timeframe --from-timeframe --session` reads intraday bars point-in-time and can resample
   finer stored bars; `--start`/`--end` take a date or an ISO instant with an offset.
 - `data candles` and `data symbols` read through the same point-in-time loader a backtest uses (`_runner.load_bars`).
+  A missing store or symbol says "not found" with the path and a `next` step; "corrupt" is only an unreadable file.
 - `data universe` and `--with-actions` are read projections with no authority; the plain `--json` picker output stays
   unchanged.
 - Binance spot daily REST reads take an opt-in `RequestBudget` (attempts and body bytes; see

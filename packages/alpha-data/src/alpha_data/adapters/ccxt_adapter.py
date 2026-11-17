@@ -227,6 +227,22 @@ class CCXTAdapter:
                             f"ccxt missing bar start {missing.isoformat()} for {symbol}"
                         )
                 previous = int(row[0])
+            midnight = since // _DAY_MS * _DAY_MS
+            first = min(
+                midnight + ((since - midnight + step_ms - 1) // step_ms) * step_ms,
+                midnight + _DAY_MS,
+            )
+            last = int(clipped[-1][0])
+            following = min(last + step_ms, (last // _DAY_MS + 1) * _DAY_MS)
+            for edge, expected, has_gap in (
+                ("leading", first, clipped[0][0] != first),
+                ("trailing", following, following <= end_ms and following + step_ms <= now_ms),
+            ):
+                if has_gap:
+                    stamp = datetime.fromtimestamp(expected / 1000, tz=UTC)
+                    raise DataError(
+                        f"ccxt {edge} gap: missing bar start {stamp.isoformat()} for {symbol}"
+                    )
         return parse_ccxt_ohlcv(clipped, symbol)
 
     def ticker(self, symbol: str) -> tuple[float, datetime]:

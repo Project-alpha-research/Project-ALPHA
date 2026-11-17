@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: e63ff409076b186c
+verified: 45130e1a0a23d197
 ---
 
 # One trial ledger invariants
@@ -84,7 +84,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   Failed factors show their recorded failure reason and first error line. `LOOKAHEAD` and `UNSTABLE` map to invalid,
   with first-mismatch details in `list`; invalid rows retain their trial counts.
 - New factor rows carry `universe_includes_delisted`: true gives `includes-delisted`, false gives `survivor-universe`.
-  Old rows without the field keep their earlier label; missing bars alone never establish a delisting.
+  Without the field, a positive recorded "later delisted" count gives `includes-delisted`, survivors-only text gives
+  `survivor-universe`, and other text gives `universe-not-recorded`. Strings and older text lists are read without rewriting rows.
+  Missing bars alone never establish a delisting.
 - Factor dates use UTC `recorded_at` when present; old rows keep the run-id date-prefix fallback.
 - `by-asset` and `asset-history` normalise names for grouping only (`BTCUSDT` = `BTC/USDT`);
   names with `:` (perpetuals) stay separate; `list` and `show` keep the original name.

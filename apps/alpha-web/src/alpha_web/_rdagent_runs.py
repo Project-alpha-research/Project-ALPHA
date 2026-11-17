@@ -193,7 +193,7 @@ def _get(row: dict[str, Any], path: str) -> Any:
     return current
 
 
-def counted(value: int, basis: str) -> RecordedFact:
+def counted(value: int | float, basis: str) -> RecordedFact:
     """A figure obtained by counting recorded rows or subtracting two recorded times."""
     return RecordedFact(value=value, basis=basis)
 

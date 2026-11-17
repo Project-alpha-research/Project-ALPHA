@@ -10,6 +10,7 @@ from typing import Any
 
 import httpx
 import pytest
+from fastapi import HTTPException
 
 from alpha_web import _rdagent_runs as reader
 from alpha_web.api import rdagent
@@ -189,7 +190,7 @@ def test_legacy_nulls_missing_ledger_and_directory(store: Path) -> None:
 
 @pytest.mark.parametrize("run_id", ["..", "../new", "/etc/passwd", "%2e%2e%2fnew", "unknown"])
 def test_no_request_path_reaches_filesystem(store: Path, run_id: str) -> None:
-    with pytest.raises(rdagent.HTTPException) as error:
+    with pytest.raises(HTTPException) as error:
         rdagent.run_detail(run_id)
     assert error.value.status_code == 404
 
@@ -202,14 +203,14 @@ def test_symlink_receipt_and_nested_files_refused(store: Path, tmp_path: Path) -
     panel = store / "new/panel/panel-receipt.json"
     panel.unlink()
     panel.symlink_to(outside)
-    with pytest.raises(rdagent.HTTPException) as error:
+    with pytest.raises(HTTPException) as error:
         rdagent.run_detail("new")
     assert error.value.status_code == 422
 
 
 def test_malformed_records_fail_loud(store: Path) -> None:
     (store / "new/steps.jsonl").write_text('{"bad":}\n')
-    with pytest.raises(rdagent.HTTPException) as error:
+    with pytest.raises(HTTPException) as error:
         rdagent.run_detail("new")
     assert error.value.status_code == 422
 

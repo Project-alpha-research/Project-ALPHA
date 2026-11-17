@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 26e552bc75bdcc40
+verified: e0b10b2fbcb85035
 ---
 
 # RD-Agent
@@ -13,7 +13,6 @@ proposes an idea, turns it into an experiment, runs it, judges the result, remem
 repeats. It is a core engine; the owner has said so in plain words.
 
 ## Why it exists
-
 ALPHA's purpose is to test many market ideas carefully. Doing that by hand is slow, and building
 a research agent from scratch would duplicate a mature open-source one. So ALPHA uses RD-Agent to
 drive the loop, and keeps for itself everything that must be exact and owner-controlled.
@@ -66,7 +65,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
   and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Missing declarations use the same refusal limit; proposal provider failures close rounds without trials.
+  Missing declarations use the same refusal limit; proposal provider failures close rounds without trials or empty history.
+  Critic failures retain execution/value feedback; later critics in that round are skipped. Restored prompts keep four full same-panel rounds.
   A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
@@ -125,7 +125,7 @@ child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the 
 | Rounds, calls, embedding calls | Receipt: `memory.rounds_completed`, `counted_calls`, `local_embedding_calls`, `provider_embedding_calls` |
 | Spend, caps, month snapshots | Receipt: `gateway_status.this_run.usd`, `.caps`, `.months`; month selected by receipt end time |
 | Cache and providers | Receipt: `call_split.chat_usage`; no new rate calculation |
-| Funnel and list stage totals | Receipt `funnel` if present; else counted from ledger rows and `rounds.jsonl` refusals (basis shown) |
+| Funnel and list stage totals | Receipt `funnel` if present; else ledger factors plus `rounds.jsonl` refusals and provider losses |
 | Factor name, description, status | Shared ledger: `run_id` or folder name, schemas V1–V3; fixed web-owned status sentences |
 | Clock figures, deflation, write-offs | Ledger: `clocks.*.screen`, `.spread`, `.replay`, `.replay.deflated_sharpe`, `.replay.deflated_sharpe_family` |
 | Universe, gaps, ticker corrections | `panel/panel-receipt.json`: instruments, disclosure, gap counts, `identity_breaks`, `identity_rescales` |

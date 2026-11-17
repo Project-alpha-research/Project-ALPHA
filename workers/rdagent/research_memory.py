@@ -15,6 +15,7 @@ import tempfile
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, redirect_stdout
+from copy import copy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -23,6 +24,114 @@ from typing import Any
 SCHEMA = "AlphaRdagentResearchMemoryV1"
 KNOWLEDGE = "costeer/factor-knowledge.pkl"
 WORKER = Path(__file__).resolve().parent
+RESTORED_ROUNDS_FULL = 4
+
+
+class ProposalHistory:
+    """Project restored history into prompt text, retaining the authoritative trace untouched."""
+
+    def __init__(self, original: Any, restored: int, panel_sha256: str) -> None:
+        self.original, self.restored, self.panel_sha256 = original, restored, panel_sha256
+
+    def _panel(self, exp: Any) -> str | None:
+        # New rounds carry the hash on the experiment; judged rounds record it in their inputs.
+        evaluation = getattr(exp, "alpha_evaluation", None) or {}
+        return getattr(exp, "alpha_panel_sha256", None) or (evaluation.get("inputs") or {}).get(
+            "panel_sha256"
+        )
+
+    def _full(self, trace: Any) -> set[int]:
+        same = [
+            i
+            for i, (exp, _) in enumerate(trace.hist[: self.restored])
+            if self._panel(exp) == self.panel_sha256
+        ]
+        return set(same[-RESTORED_ROUNDS_FULL:])
+
+    def counts(self, trace: Any) -> dict[str, int]:
+        full = len(self._full(trace))
+        return {"history_rounds_full": full, "history_rounds_summarised": self.restored - full}
+
+    def _summary(self, exp: Any, feedback: Any) -> str:
+        families = importlib.import_module(
+            f"{__package__}.idea_families" if __package__ else "idea_families"
+        )
+        tasks = getattr(exp, "sub_tasks", [])
+        names = ", ".join(task.factor_name for task in tasks) or "no factors recorded"
+        family = (
+            "; ".join(
+                dict.fromkeys(
+                    families.idea_family(
+                        task.factor_name,
+                        getattr(task, "description", ""),
+                        getattr(task, "factor_formulation", ""),
+                        getattr(task, "variables", None),
+                    )
+                    for task in tasks
+                )
+            )
+            or "family not recorded"
+        )
+        factors = (getattr(exp, "alpha_evaluation", None) or {}).get("factors", [])
+        status = ", ".join(dict.fromkeys(str(factor["status"]) for factor in factors))
+        if not status:
+            reason_status = str(getattr(feedback, "reason", "")).partition(":")[0]
+            provider_statuses = {
+                f"{step}_failed_provider_{cause}"
+                for step in ("proposal", "coding")
+                for cause in ("timeout", "error")
+            }
+            status = str(
+                (getattr(exp, "alpha_family_refusal", None) or {}).get(
+                    "status",
+                    reason_status if reason_status in provider_statuses else "status not recorded",
+                )
+            )
+        panel = self._panel(exp)
+        suffix = "; different coin panel" if panel and panel != self.panel_sha256 else ""
+        if panel is None:
+            suffix = "; coin panel not recorded"
+        return " ".join(f"Restored round: {names}; {family}; {status}{suffix}".split())
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        trace = kwargs["trace"] if "trace" in kwargs else args[-1]
+        full = self._full(trace)
+        summaries = [
+            self._summary(exp, feedback)
+            for i, (exp, feedback) in enumerate(trace.hist[: self.restored])
+            if i not in full
+        ]
+        # Keep all non-history context (including closed/open families and refusals) exactly as
+        # its author produced it. Only the two upstream history fields use a smaller trace view.
+        context, flag = self.original(*args, **kwargs)
+        view = copy(trace)
+        view.hist = [pair for i, pair in enumerate(trace.hist) if i in full or i >= self.restored]
+        projected_args = args if "trace" in kwargs else (*args[:-1], view)
+        projected_kwargs = {**kwargs, "trace": view} if "trace" in kwargs else kwargs
+        compact, _ = self.original(*projected_args, **projected_kwargs)
+        context["hypothesis_and_feedback"] = "\n".join(
+            [*summaries, compact["hypothesis_and_feedback"]]
+        )
+        if "last_hypothesis_and_feedback" in context:
+            last = len(trace.hist) - 1
+            context["last_hypothesis_and_feedback"] = (
+                self._summary(*trace.hist[-1])
+                if 0 <= last < self.restored and last not in full
+                else compact["last_hypothesis_and_feedback"]
+            )
+        return context, flag
+
+
+def limit_restored_history(loop: Any, environ: Mapping[str, str]) -> None:
+    if not environ.get("ALPHA_FACTOR_RUN_DIR"):
+        return
+    run = Path(environ["ALPHA_FACTOR_RUN_DIR"])
+    panel = json.loads((run / "panel/panel-receipt.json").read_text())["panel_sha256"]
+    restored = len(loop.trace.hist)
+    for component in (loop.hypothesis_gen, loop.hypothesis2experiment):
+        component.prepare_context = ProposalHistory(component.prepare_context, restored, panel)
+    counts = loop.hypothesis_gen.prepare_context.counts(loop.trace)
+    (run / "history-context.json").write_text(_json(counts) + "\n")
 
 
 def _now() -> str:
@@ -474,6 +583,7 @@ def open_factor_loop(
                     f"Completed checkpoint {dump.name}: {error_type}",
                 )
                 continue
+            limit_restored_history(loop, environ)
             _safe_event(
                 environ,
                 "continued",

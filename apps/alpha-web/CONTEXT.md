@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 62a6b148973970d7
+verified: 1abd0e3bcba7d489
 ---
 
 # alpha-web workspace
@@ -46,7 +46,7 @@ grants authority.
   Never edit it by hand.
 - Backend tests: `tests/unit/test_web_*.py`, `tests/integration/test_web_api_*.py`,
   `tests/integration/test_openapi_safe_routes.py`. Frontend unit tests sit next to the code as
-  `frontend/src/**/*.test.ts` (vitest); browser tests in `frontend/e2e/` (Playwright).
+  `frontend/src/**/*.test.{ts,tsx}` (vitest, Node, no jsdom); browser tests in `frontend/e2e/` (Playwright).
 - After a backend route change, from the repository root:
   1. `uv run python scripts/generate_web_openapi.py` (rewrites `frontend/openapi.json`);
   2. `uv run python scripts/check_openapi_operations.py --write` (operation classification and
@@ -63,7 +63,8 @@ grants authority.
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
   Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
-  Old failed-deflation candidates have derived status; new declaration, count and diagnostic fields stay recorded facts.
+  Old failed-deflation candidates have derived status; declaration, count and diagnostic fields stay recorded facts.
+  The funnel counts provider-lost factors as proposed and as its own panel stage, stopped by the model provider.
   Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).
   Vitest discovers `.test.tsx` too, so its Node rendering test runs with the rest.
 

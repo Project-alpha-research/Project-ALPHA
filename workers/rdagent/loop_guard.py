@@ -34,6 +34,8 @@ class ProviderGuard:
                 loop._propose, loop, "proposal", run, calls, run_id, skip_error, feedback_factory
             )
             loop._propose = proposal.propose
+            if hasattr(loop, "record"):
+                loop.record = RoundRecord(loop.record, run)
             if hasattr(loop, "_exp_gen"):
                 experiment = ProviderGuard(
                     loop._exp_gen,
@@ -116,7 +118,8 @@ class ProviderGuard:
         if path.exists():
             for line in reversed(path.read_text().splitlines()):
                 row = json.loads(line)
-                if row.get("event") == "start" and row.get("step") == self.step:
+                step = "direct_exp_gen" if self.step == "proposal" else self.step
+                if row.get("event") == "start" and row.get("step") == step:
                     return int(row["loop"])
         return int(self.loop.loop_idx)
 
@@ -180,9 +183,117 @@ class RoundFeedback:
         exp = (
             previous.get("running")
             or previous.get("coding")
-            or previous.get("direct_exp_gen", {}).get("exp_gen")
+            or (previous.get("direct_exp_gen") or {}).get("exp_gen")
         )
         if getattr(exp, "alpha_family_refusal", None):
             feedback.observations = ""
             feedback.reason += "\n" + "\n".join(getattr(exp, "alpha_refused_before_coding", []))
         return feedback
+
+
+class RoundRecord:
+    """A failed proposal has a round row, but no experiment to add to the research trace."""
+
+    def __init__(self, original: Any, run: Path) -> None:
+        self.original, self.run = original, run
+
+    def __call__(self, previous: dict[str, Any]) -> Any:
+        proposal = previous.get("direct_exp_gen") or {}
+        exp = previous.get("running") or previous.get("coding") or proposal.get("exp_gen")
+        if exp is None:
+            return None
+        panel = self.run / "panel/panel-receipt.json"
+        if panel.exists():
+            exp.alpha_panel_sha256 = json.loads(panel.read_text())["panel_sha256"]
+        return self.original({**previous, "direct_exp_gen": proposal})
+
+
+class CriticEvaluator:
+    """Keep upstream execution/value feedback when its per-factor code opinion is unavailable.
+
+    FactorEvaluatorForCoder calls code_evaluator.evaluate after executing and checking values.
+    Only that call is recoverable here. The final opinion uses those existing value checks when
+    the critic was unavailable. All wrappers are removed before upstream serialises knowledge.
+    One instance lives for one coding round (including all its evolve attempts).
+    """
+
+    def __init__(self, evaluator: Any, guard: ProviderGuard) -> None:
+        self.evaluator, self.guard = evaluator, guard
+        self.failure: dict[str, Any] | None = None
+        self.unavailable: list[str] = []
+        self.skipped: list[str] = []
+
+    def evaluate(self, target_task: Any, implementation: Any, *args: Any, **kwargs: Any) -> Any:
+        evaluator = self.evaluator
+        code = evaluator.code_evaluator.evaluate
+        value = evaluator.value_evaluator.evaluate
+        final = evaluator.final_decision_evaluator.evaluate
+        generated, value_decision, unavailable = False, None, False
+
+        def check_values(*vargs: Any, **vkwargs: Any) -> Any:
+            nonlocal generated, value_decision
+            result = value(*vargs, **vkwargs)
+            generated, value_decision = True, result[1]
+            return result
+
+        def critic(*cargs: Any, **ckwargs: Any) -> Any:
+            nonlocal unavailable
+            name = target_task.factor_name
+            if self.failure is None:
+                offset = self.guard._offset()
+                try:
+                    return code(*cargs, **ckwargs)
+                except Exception as error:
+                    failure = self.guard._failure(error, offset)
+                    if failure is None:
+                        raise
+                    self.failure = failure
+                    self.unavailable.append(name)
+            else:
+                self.skipped.append(name)
+            unavailable = True
+            return self.note(), None
+
+        def decide(*fargs: Any, **fkwargs: Any) -> Any:
+            if unavailable:
+                return generated and value_decision is not False, self.note()
+            return final(*fargs, **fkwargs)
+
+        evaluator.code_evaluator.evaluate = critic
+        evaluator.value_evaluator.evaluate = check_values
+        evaluator.final_decision_evaluator.evaluate = decide
+        try:
+            return evaluator.evaluate(target_task, implementation, *args, **kwargs)
+        finally:
+            evaluator.code_evaluator.evaluate = code
+            evaluator.value_evaluator.evaluate = value
+            evaluator.final_decision_evaluator.evaluate = final
+
+    def note(self) -> str:
+        if self.failure is None:
+            raise RuntimeError("critic fallback requires an attested provider failure")
+        cause = "timeout" if self.failure["status"].endswith("timeout") else "error"
+        return f"code critic unavailable (provider {cause}); judged on execution only"
+
+    def record(self) -> None:
+        if self.failure is None:
+            return
+        unavailable, skipped = (
+            list(dict.fromkeys(self.unavailable)),
+            list(dict.fromkeys(self.skipped)),
+        )
+        row = {
+            **self.failure,
+            "status": self.failure["status"].replace("coding_failed_", "critic_unavailable_"),
+            "step": "code_critic",
+            "reason": self.note(),
+            "critic_unavailable": len(unavailable),
+            "critic_unavailable_factor_names": unavailable,
+            "critic_skipped": len(skipped),
+            "critic_skipped_factor_names": skipped,
+            "factor_names": list(dict.fromkeys(unavailable + skipped)),
+        }
+        # Written before the runner: whether this round creates trials is not known here.
+        row.pop("trial_created")
+        with (self.guard.run / "rounds.jsonl").open("a") as stream:
+            stream.write(json.dumps(row, sort_keys=True) + "\n")

@@ -13,7 +13,7 @@ const run: Run = {
   factors_proposed: fact(), stages: {}, universe_size: fact(), universe_includes_delisted: fact(true),
 }
 const detail: Detail = {
-  run, funnel: { proposed: { value: 3, reason: null, basis: 'counted from the recorded factor trials' }, passed_deflation: fact() },
+  run, funnel: { proposed: { value: 3, reason: null, basis: 'counted from the recorded factor trials' }, stopped_by_provider: fact(2), passed_deflation: fact() },
   factors: [{ name: fact('slow_rank'), description: fact('Slow relative returns.'),
     status: 'CANDIDATE', sentence: 'Confirmation is still required.', failure_reason: fact(),
     idea_families: fact(), figures: {}, clocks: {} }],
@@ -27,9 +27,17 @@ const detail: Detail = {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('RD-Agent recorded panel', () => {
+  it('uses terminal panel surfaces and ink instead of figure-canvas colours', () => {
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
+    expect(html).toContain('background:var(--panel)')
+    expect(html).toContain('color:var(--ink)')
+    expect(html).toContain('background:var(--accent)')
+    expect(html).not.toContain('--canvas-')
+  })
+
   it('shows runs, funnel, three labelled meters, factor chips and exploratory notice', () => {
     const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
-    for (const text of ['Recorded run', 'ideas proposed', 'counted from the recorded factor trials', 'survived the multiple-testing check',
+    for (const text of ['Recorded run', 'ideas proposed', 'stopped by the model provider: 2', 'counted from the recorded factor trials', 'survived the multiple-testing check',
       'Calls', 'USD this run', 'USD this month', 'slow_rank', 'CANDIDATE', 'Confirmation is still required.',
       'Exploratory results. Nothing here is evidence of an edge until a candidate is confirmed on reserved data.',
       'Universe', 'Cost and cache', 'Step timing', 'end time minus the start time', 'not recorded by this run']) expect(html).toContain(text)

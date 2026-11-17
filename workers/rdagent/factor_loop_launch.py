@@ -646,6 +646,12 @@ class Launch:
             else None,
         )
         self.receipt.update(round_counts(self.run))
+        history = self.run / "history-context.json"
+        self.receipt.update(
+            json.loads(history.read_text())
+            if history.exists()
+            else {"history_rounds_full": 0, "history_rounds_summarised": 0}
+        )
         split = self.receipt.get("call_split", {})
         for key in (
             "reask_calls",
@@ -657,9 +663,11 @@ class Launch:
             "embedding_cache_hits",
             "embedding_requests",
             "embedding_inputs_sent",
-            "provider_wait_seconds",
         ):
             self.receipt[key] = split.get(key, 0)
+        self.receipt["provider_call_seconds_with_retries"] = split.get(
+            "provider_call_seconds_with_retries", split.get("provider_wait_seconds", 0)
+        )
         counters = self.receipt["gateway_status"].get("this_run") or {}
         self.receipt.update(
             counted_calls=counters.get("counted_calls", counters.get("calls")),
@@ -708,7 +716,7 @@ class Launch:
         return exit_status
 
 
-def round_counts(run: Path) -> dict[str, int]:
+def round_counts(run: Path) -> dict[str, int | float]:
     rounds_path, evaluations = run / "rounds.jsonl", run / "evaluations.jsonl"
     rounds = (
         [json.loads(line) for line in rounds_path.read_text().splitlines()]
@@ -736,8 +744,13 @@ def round_counts(run: Path) -> dict[str, int]:
             {
                 r["iteration"]
                 for r in rounds
-                if str(r.get("status", "")).startswith("coding_failed_provider_")
+                if str(r.get("status", "")).startswith(
+                    ("coding_failed_provider_", "proposal_failed_provider_")
+                )
             }
+        ),
+        "provider_failed_wait_seconds": sum(
+            float(r.get("provider_wait_seconds", 0)) for r in rounds
         ),
     }
 
@@ -780,7 +793,7 @@ def call_split(
         "embedding_cache_hits": 0,
         "embedding_requests": 0,
         "embedding_inputs_sent": 0,
-        "provider_wait_seconds": 0.0,
+        "provider_call_seconds_with_retries": 0.0,
     }
     routes: set[str] = set()
     models: set[str] = set()
@@ -789,7 +802,7 @@ def call_split(
         if call.get("cache_only"):
             continue
         if call.get("endpoint") == "/v1/chat/completions" and call.get("provider_errors"):
-            split["provider_wait_seconds"] += float(call.get("latency_ms", 0)) / 1000
+            split["provider_call_seconds_with_retries"] += float(call.get("latency_ms", 0)) / 1000
         if call.get("endpoint") == "/v1/embeddings":
             split["embedding_requests"] += int(call.get("attempts", 0))
             split["embedding_inputs_sent"] += int(call.get("embedding_inputs_sent", 0))

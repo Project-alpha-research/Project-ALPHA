@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: c432774df36467f5
+verified: 719edbe962b862f4
 ---
 
 # Worker invariants
@@ -18,7 +18,6 @@ verified: c432774df36467f5
 Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
 The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
 ## Shared rules
-
 - Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
   (root members are `packages/*` and `apps/*`). Never add a worker dependency to the root `pyproject.toml`
   or `uv.lock`. For Qlib this is enforced by `tests/unit/test_qlib_isolation.py`.
@@ -155,7 +154,7 @@ The general rule is [research integrity § Models and isolated workers](research
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
   named in its `QLIB_FACTOR_*` settings are ALPHA's (`alpha_factor_judge.py`, and `alpha_factor_coder.py`, which only
-  restarts one upstream counter per experiment), and they import RD-Agent and pandas, never an ALPHA package: the
+  resets coding memory and guards the per-factor critic), and they import RD-Agent and pandas, never an ALPHA package: the
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
   evidence); `decision` is ALPHA's rule. A declared sign and weekly/monthly primary clock must pass screen, spread, replay
@@ -172,7 +171,8 @@ The general rule is [research integrity § Models and isolated workers](research
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway
   address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
-  loop names its exit. Provider failures, including proposal, close rounds via `loop_guard.py`; budgets end the run. Memory resume (no
+  loop names its exit. Proposal failures close rounds without empty trace entries; critic failures retain execution/value feedback.
+  Later critics in that round are skipped; budgets still end the run. Restored prompts keep four full same-panel rounds. Memory resume (no
   invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.

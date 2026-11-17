@@ -310,6 +310,7 @@ def test_recorded_funnel_is_copied_without_deriving_counts(store: Path) -> None:
         "code_ran": 2,
         "passed_rank_screen": 1,
         "refused_closed_family": 1,
+        "stopped_by_provider": 0,
         "passed_spread_check": 1,
         "passed_deflation": 0,
     }
@@ -397,6 +398,7 @@ def test_funnel_is_counted_from_recorded_rows_and_receipt_wins(store: Path) -> N
     assert funnel == {
         "proposed": 5,  # four own trials and one refused proposal
         "refused_closed_family": 1,
+        "stopped_by_provider": 0,
         "code_ran": 3,
         "passed_rank_screen": 2,
         "passed_spread_check": 1,

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: d06c161c075ffc39
+verified: 5506a39a3e8eef1b
 ---
 
 # RD-Agent
@@ -62,7 +62,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
-  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding.
+  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
+  and asks the proposer again, at most twice per round.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's

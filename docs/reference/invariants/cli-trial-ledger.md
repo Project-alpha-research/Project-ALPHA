@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 80253903c4193b10
+verified: e63ff409076b186c
 ---
 
 # One trial ledger invariants
@@ -95,7 +95,8 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 
 - Spine evidence resolves under the home directory. Factor evidence resolves under the
   RD-Agent file's grandparent, matching either folder name or `run-identity.json` to the recorded run id. Rule evidence requires a unique
-  match one study directory below that root. Paths escaping the root and ambiguous matches fail.
+  match one study directory below that root. Paths escaping the root and ambiguous matches fail; another run's
+  unreadable `run-identity.json` only fails to match.
 - `show` reports presence, current SHA-256 and match to the recorded digest; match is null
   when no digest was recorded. Missing evidence with a recorded digest does not match.
 - These checks describe recorded evidence only; no test or research conclusion is recomputed.

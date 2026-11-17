@@ -621,11 +621,15 @@ families its own words name; it inherits every one, so a ridge composite of vola
 skew and autocorrelation features counts as a try in each, and it is barred when any of them is
 closed. Only evaluated screen, spread and replay failures (including daily-only passes) count
 toward closing a family; code failures remain trials but do not close families. Before coding,
-`research_memory` wraps the current coder with `FamilyGuard`: a closed-family proposal is refused,
-with the closed and open families named. It records `refused_closed_family` as the reason for a
-`no_admissible_idea` round, `trial_created: false`, and sends that message to the trace without a
-feedback-model call. The wrapper ends the round using upstream's skip exception. Same-round
-re-proposal is not implemented; the pinned upstream scheduler integration needs an outside check.
+`research_memory` wraps the current coder with `FamilyGuard`: a closed-family proposal is refused
+before any code is written or data read, with the closed and open families named, and recorded in
+`rounds.jsonl` as `refused_closed_family` with `trial_created: false`. The guard then asks the
+proposer again inside the same round, repeating upstream's own two proposal calls (propose, then
+experiment) with the refusals added to the proposer's context, at most twice. A third refusal is
+recorded as `no_admissible_idea` and ends the round through upstream's skip exception; upstream
+then records the refusal message as that round's feedback without a feedback-model call. Each
+re-ask spends proposal model calls under the same run cap. Upstream's own step log still shows the
+first, refused proposal for that round; the round record and the trace hold the one coded.
 A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
 carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself subject to the
 limit. The match is approximate and over-inclusive: a stray family word adds a family, never

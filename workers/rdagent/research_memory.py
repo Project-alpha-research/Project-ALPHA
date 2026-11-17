@@ -360,7 +360,7 @@ def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -
         except ValueError as error:
             raise SystemExit(str(error)) from error
         loop = loop_cls(settings)
-        loop.coder = FamilyGuard(loop.coder)
+        loop.coder = FamilyGuard(loop.coder, loop)
         return loop
     return loop_cls(settings)
 

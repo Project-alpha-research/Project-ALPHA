@@ -357,7 +357,8 @@ def swing_parts() -> dict[str, Any]:
         or (
             isinstance(n, ast.Assign)
             and any(
-                isinstance(t, ast.Name) and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE")
+                isinstance(t, ast.Name)
+                and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE", "FAMILY_REFUSALS")
                 for t in n.targets
             )
         )

@@ -163,6 +163,13 @@ def _rank(row: dict[str, Any]) -> tuple[int, float]:
     return score, -abs(ic) if isinstance(ic, (int, float)) else 0.0
 
 
+# The first proposal plus at most two re-asks within one round; then the round ends.
+FAMILY_PROPOSALS_PER_ROUND = 3
+# This round's closed-family refusals, shown to the proposer when it is asked again; FamilyGuard
+# clears them when the round's coding step ends.
+FAMILY_REFUSALS = list[str]()
+
+
 def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
     families: dict[str, list[dict[str, Any]]] = {}
@@ -246,8 +253,11 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
     universe = current_universe()
     context["hypothesis_and_feedback"] += "\n" + SWING_BRIEF
     correction = f"\nCurrent universe: {universe}; earlier text saying otherwise is out of date"
-    append_ledger_context(context, ledger_name, universe, len(correction))
-    context["hypothesis_and_feedback"] += correction
+    refusals = "".join(
+        f"\nALPHA refused this round's earlier proposal: {message}" for message in FAMILY_REFUSALS
+    )
+    append_ledger_context(context, ledger_name, universe, len(correction) + len(refusals))
+    context["hypothesis_and_feedback"] += refusals + correction
 
 
 def append_ledger_context(
@@ -720,88 +730,132 @@ class AlphaFactorFeedback(Experiment2Feedback):
         return feedback
 
 
-class FamilyGuard:
-    """Check proposed tasks at the coder boundary; a refusal creates no trial.
+def closed_families() -> set[str]:
+    """Families with enough evaluated failed tries and no candidate, from the trial ledger."""
+    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
+    raw = Path(path).read_bytes() if path and Path(path).exists() else b""
+    rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+    known = {
+        "AlphaRdagentFactorTrialV1",
+        "AlphaRdagentFactorTrialV2",
+        "AlphaRdagentFactorTrialV3",
+    }
+    distinct: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row["schema"] in known and row["status"] not in {"REPEAT", "IMPORTED"}:
+            distinct.setdefault(row["code_sha256"], row)
+    families: dict[str, list[str]] = {}
+    for row in distinct.values():
+        if row["status"] not in {
+            "SCREEN_FAIL",
+            "SPREAD_FAIL",
+            "REPLAY_FAIL",
+            "FAST_ONLY",
+            "CANDIDATE",
+        }:
+            continue
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            families.setdefault(family, []).append(row["status"])
+    limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+    return {
+        family
+        for family, statuses in families.items()
+        if len(statuses) >= limit and "CANDIDATE" not in statuses
+    }
 
-    Upstream owns the round scheduler. Its FactorEmptyError ends this round through the
-    native skipped-step path; ALPHA does not rewind the scheduler or replay proposal calls.
+
+class FamilyGuard:
+    """Check proposed tasks at the coder boundary; a refusal creates no trial and reads no data.
+
+    A refused proposal is replaced by asking the proposer again, through the loop's own propose
+    and experiment steps, at most twice per round; the refusal text is added to its context. A
+    third refusal ends the round through upstream's FactorEmptyError skip path.
     """
 
-    def __init__(self, coder: Any) -> None:
+    def __init__(self, coder: Any, loop: Any = None) -> None:
         self.coder = coder
+        self.loop = loop
 
     def __getattr__(self, name: str) -> Any:
         return getattr(object.__getattribute__(self, "coder"), name)
 
     def develop(self, exp: Any) -> Any:
-        path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
-        raw = Path(path).read_bytes() if path and Path(path).exists() else b""
-        rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
-        known = {
-            "AlphaRdagentFactorTrialV1",
-            "AlphaRdagentFactorTrialV2",
-            "AlphaRdagentFactorTrialV3",
-        }
-        distinct: dict[str, dict[str, Any]] = {}
-        for row in rows:
-            if row["schema"] in known and row["status"] not in {"REPEAT", "IMPORTED"}:
-                distinct.setdefault(row["code_sha256"], row)
-        families: dict[str, list[str]] = {}
-        for row in distinct.values():
-            if row["status"] not in {
-                "SCREEN_FAIL",
-                "SPREAD_FAIL",
-                "REPLAY_FAIL",
-                "FAST_ONLY",
-                "CANDIDATE",
-            }:
-                continue
-            for family in idea_family(
-                row["name"],
-                row.get("description") or "",
-                row.get("formulation") or "",
-                row.get("variables"),
-            ).split("; "):
-                families.setdefault(family, []).append(row["status"])
-        limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
-        closed = {
-            family
-            for family, statuses in families.items()
-            if len(statuses) >= limit and "CANDIDATE" not in statuses
-        }
-        proposed = set()
-        for task in exp.sub_tasks:
-            proposed.update(
-                idea_family(
-                    task.factor_name,
-                    getattr(task, "description", "") or "",
-                    getattr(task, "factor_formulation", "") or "",
-                    getattr(task, "variables", None),
-                ).split("; ")
+        try:
+            for attempt in range(1, FAMILY_PROPOSALS_PER_ROUND + 1):
+                closed = closed_families()
+                proposed = set()
+                for task in exp.sub_tasks:
+                    proposed.update(
+                        idea_family(
+                            task.factor_name,
+                            getattr(task, "description", "") or "",
+                            getattr(task, "factor_formulation", "") or "",
+                            getattr(task, "variables", None),
+                        ).split("; ")
+                    )
+                refused = sorted(proposed & closed)
+                if not refused:
+                    return self.coder.develop(exp)
+                final = attempt == FAMILY_PROPOSALS_PER_ROUND or self.loop is None
+                self._refuse(exp, refused, proposed, closed, attempt, final)
+                exp = self._propose_again()
+        finally:
+            FAMILY_REFUSALS.clear()
+        raise AssertionError("unreachable: the last refusal ends the round")
+
+    def _refuse(
+        self,
+        exp: Any,
+        refused: list[str],
+        proposed: set[str],
+        closed: set[str],
+        attempt: int,
+        final: bool,
+    ) -> None:
+        open_families = sorted(({name for name, _ in FAMILY_KEYWORDS} | proposed) - closed)
+        message = (
+            "Refused closed families: "
+            + "; ".join(refused)
+            + ". open families: "
+            + "; ".join(open_families)
+            + (
+                ". No admissible idea; round ended before coding, no trial created."
+                if final
+                else f". Proposal {attempt} refused before coding, no trial created; "
+                "the proposer is asked again."
             )
-        refused = sorted(proposed & closed)
-        if refused:
-            open_families = sorted(({name for name, _ in FAMILY_KEYWORDS} | proposed) - closed)
-            message = (
-                "Refused closed families: "
-                + "; ".join(refused)
-                + ". open families: "
-                + "; ".join(open_families)
-                + ". No admissible idea; round ended before coding, no trial created."
-            )
-            run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
-            row = {
-                "schema": "AlphaRdagentRoundV1",
-                "status": "no_admissible_idea",
-                "reason": "refused_closed_family",
-                "trial_created": False,
-                "closed_families": refused,
-                "open_families": open_families,
-                "hypothesis": str(exp.hypothesis),
-                "message": message,
-            }
-            with (run / "rounds.jsonl").open("a") as stream:
-                stream.write(json.dumps(row, sort_keys=True) + "\n")
+        )
+        row = {
+            "schema": "AlphaRdagentRoundV1",
+            "status": "no_admissible_idea" if final else "refused_closed_family",
+            "reason": "refused_closed_family",
+            "attempt": attempt,
+            "trial_created": False,
+            "closed_families": refused,
+            "open_families": open_families,
+            "hypothesis": str(exp.hypothesis),
+            "message": message,
+        }
+        run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+        with (run / "rounds.jsonl").open("a") as stream:
+            stream.write(json.dumps(row, sort_keys=True) + "\n")
+        if final:
             exp.alpha_family_refusal = row
             raise FactorEmptyError(message)
-        return self.coder.develop(exp)
+        FAMILY_REFUSALS.append(message)
+
+    def _propose_again(self) -> Any:
+        """The same two calls and plan fields as upstream RDLoop.direct_exp_gen, nothing more."""
+        loop = self.loop
+        exp = loop._exp_gen(loop._propose())
+        exp.base_features = loop.plan["features"]
+        exp.base_feature_codes = loop.plan["feature_codes"]
+        if exp.based_experiments:
+            exp.based_experiments[-1].base_features = loop.plan["features"]
+            exp.based_experiments[-1].base_feature_codes = loop.plan["feature_codes"]
+        return exp

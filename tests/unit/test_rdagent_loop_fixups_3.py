@@ -296,6 +296,113 @@ def test_closed_composite_is_refused_before_coding_without_trial(
     assert ledger.read_bytes() == before
 
 
+def closed_volatility_ledger(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    ledger = tmp_path / "ledger"
+    rows = [
+        {
+            "name": f"volatility_{i}",
+            "status": "SCREEN_FAIL",
+            "code_sha256": str(i),
+            "schema": "AlphaRdagentFactorTrialV2",
+            "screen": {},
+        }
+        for i in range(3)
+    ]
+    ledger.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    monkeypatch.setenv("ALPHA_FACTOR_RUN_DIR", str(tmp_path))
+    monkeypatch.setenv("ALPHA_FACTOR_TRIAL_LEDGER", str(ledger))
+    return ledger
+
+
+def proposal(name: str, description: str) -> SimpleNamespace:
+    task = SimpleNamespace(
+        factor_name=name, description=description, factor_formulation="", variables={}
+    )
+    return SimpleNamespace(
+        sub_tasks=[task], hypothesis=SimpleNamespace(hypothesis=name), based_experiments=[]
+    )
+
+
+class ProposingLoop:
+    """The two upstream calls the guard may repeat; records what the proposer was shown."""
+
+    def __init__(self, ns: dict[str, Any], proposals: list[SimpleNamespace]) -> None:
+        self.ns = ns
+        self.proposals = proposals
+        self.shown: list[list[str]] = []
+        self.plan = {"features": ["f"], "feature_codes": {"f.py": "code"}}
+
+    def _propose(self) -> str:
+        self.shown.append(list(self.ns["FAMILY_REFUSALS"]))
+        return "hypothesis"
+
+    def _exp_gen(self, hypothesis: str) -> SimpleNamespace:
+        return self.proposals.pop(0)
+
+
+def test_closed_family_refusal_asks_the_proposer_again_within_the_round(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = closed_volatility_ledger(tmp_path, monkeypatch)
+    before = ledger.read_bytes()
+    ns = judge_namespace()
+    admissible = proposal("liquidity_gap", "turnover and illiquidity")
+    loop = ProposingLoop(ns, [proposal("vol_two", "volatility again"), admissible])
+    coder = SimpleNamespace(develop=Mock(return_value="coded"))
+    guard = ns["FamilyGuard"](coder, loop)
+    assert guard.develop(proposal("vol_one", "volatility")) == "coded"
+    coder.develop.assert_called_once_with(admissible)
+    assert admissible.base_features == ["f"] and admissible.base_feature_codes == {"f.py": "code"}
+    # The proposer saw every refusal of this round, and the next round starts clean.
+    assert len(loop.shown) == 2 and len(loop.shown[0]) == 1 and len(loop.shown[1]) == 2
+    assert "volatility" in loop.shown[0][0] and "asked again" in loop.shown[0][0]
+    assert ns["FAMILY_REFUSALS"] == []
+    records = [json.loads(line) for line in (tmp_path / "rounds.jsonl").read_text().splitlines()]
+    assert [(r["status"], r["attempt"]) for r in records] == [
+        ("refused_closed_family", 1),
+        ("refused_closed_family", 2),
+    ]
+    assert all(r["trial_created"] is False for r in records)
+    assert ledger.read_bytes() == before
+
+
+def test_third_closed_family_refusal_ends_the_round_without_a_trial(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = closed_volatility_ledger(tmp_path, monkeypatch)
+    before = ledger.read_bytes()
+    ns = judge_namespace()
+    loop = ProposingLoop(
+        ns, [proposal("vol_two", "volatility"), proposal("vol_three", "volatility")]
+    )
+    coder = SimpleNamespace(develop=Mock())
+    guard = ns["FamilyGuard"](coder, loop)
+    with pytest.raises(ValueError, match="No admissible idea"):
+        guard.develop(proposal("vol_one", "volatility"))
+    coder.develop.assert_not_called()
+    assert ns["FAMILY_REFUSALS"] == []
+    records = [json.loads(line) for line in (tmp_path / "rounds.jsonl").read_text().splitlines()]
+    assert [r["status"] for r in records] == [
+        "refused_closed_family",
+        "refused_closed_family",
+        "no_admissible_idea",
+    ]
+    assert ledger.read_bytes() == before
+
+
+def test_refusals_reach_the_proposer_context_before_the_universe_correction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    universe_run(tmp_path, monkeypatch)
+    ns = judge_namespace()
+    ns["FAMILY_REFUSALS"].append("Refused closed families: volatility. open families: momentum.")
+    context = {"hypothesis_and_feedback": ""}
+    ns["append_swing_context"](context, None)
+    text = context["hypothesis_and_feedback"]
+    assert "ALPHA refused this round's earlier proposal: Refused closed families" in text
+    assert text.endswith("earlier text saying otherwise is out of date")
+
+
 def test_new_loop_installs_family_guard_before_any_coder_call(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -314,6 +421,7 @@ def test_new_loop_installs_family_guard_before_any_coder_call(
     loop, count = memory.open_factor_loop(factory, "settings", 2, os.environ)
     assert isinstance(loop.coder, ns["FamilyGuard"])
     assert loop.coder.coder is original and count == 2
+    assert loop.coder.loop is loop
 
 
 def test_refused_round_feedback_reaches_trace_without_model_call() -> None:

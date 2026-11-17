@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 3910919612ef1f26
+verified: 598f81d7a938f0b8
 ---
 
 # Worker invariants
@@ -165,8 +165,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
   New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
-  Frozen counts correct stale scenario text. Identical-input mismatches are `UNSTABLE`; both invalid code statuses count as trials.
-  Closed-family proposals stop before coding with no trial; code failures do not close families. Write-offs reach feedback.
+  Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
+  Closed-family proposals stop before coding with no trial and are re-asked twice per round; code failures do not close families.
   Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
   recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the

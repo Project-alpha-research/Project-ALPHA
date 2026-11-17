@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 9b791d9bcbcc5095
+verified: 9b67e573cd93e413
 ---
 
 # RD-Agent
@@ -67,8 +67,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
   and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Refusals, exhausted-provider rounds and re-ask spend are explicit; identical embeddings are cached per process.
-  Failed deflation is `DEFLATION_FAIL`, including a labelled derivation for old candidates; counts stay unchanged.
+  Refusals, provider-failed rounds and re-ask spend are explicit; identical embeddings are cached per process; a failed deflation is `DEFLATION_FAIL`.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's

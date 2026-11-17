@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: cc714827d0d8bd65
+verified: 2eaf5174d3a5df88
 ---
 
 # Worker invariants
@@ -167,7 +167,7 @@ The general rule is [research integrity § Models and isolated workers](research
   New panels rescale redenominations, split reused tickers, join declared renamed successors and refuse unexplained gap jumps;
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
-  `idea_families.py` reads named inputs (including placeholder values); unfamiliar inputs each retain an `other:` family.
+  `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
   Closed proposals stop before coding, with two re-asks; admitted history names earlier refusals, and code failures never close families.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway

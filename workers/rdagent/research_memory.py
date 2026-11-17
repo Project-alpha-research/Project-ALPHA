@@ -352,15 +352,16 @@ def _load_knowledge(path: Path) -> Any:
 
 def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -> Any:
     if environ.get("ALPHA_FACTOR_RUN_DIR"):
-        from alpha_factor_judge import FamilyGuard, current_universe
+        # A sibling entry module that imports RD-Agent; loaded only inside the factor runtime.
+        judge = importlib.import_module("alpha_factor_judge")
 
         # Refuse before any model call, with one plain line at the entry-point boundary.
         try:
-            current_universe()
+            judge.current_universe()
         except ValueError as error:
             raise SystemExit(str(error)) from error
         loop = loop_cls(settings)
-        loop.coder = FamilyGuard(loop.coder, loop)
+        loop.coder = judge.FamilyGuard(loop.coder, loop)
         return loop
     return loop_cls(settings)
 

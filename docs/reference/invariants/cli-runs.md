@@ -25,7 +25,6 @@ sources:
   - apps/alpha-cli/src/alpha_cli/*lookalike*.py
   - apps/alpha-cli/src/alpha_cli/spine/**
   - tests/unit/test_spine_spec.py
-  - tests/smoke/test_rule_test_smoke.py
   - tests/smoke/test_rule_*_smoke.py
   - tests/unit/test_run*.py
   - tests/unit/test_gauntlet*.py
@@ -33,28 +32,23 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 21842994555b9955
+verified: 1bc80d2b7eeab14a
 ---
 
 # Command line runs invariants
-
 Run composition and publication follow [immutable artifacts](research-integrity.md#immutable-hash-bound-artefacts)
 and [deterministic identity](research-integrity.md#deterministic-seeds-and-identity).
-
 ## Composition
 - `alpha_cli` is the only layer that composes the engine with the gauntlet; engine imports stay lazy.
   [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md), [engineering § Import layers](engineering.md#import-layers)
-- Strategies read bars only through `_runner.load_bars` with an `as_of` cutoff (any bar timeframe: [bar
-  timeframes](data-bar-timeframes.md#reading-intraday-bars)), and decisions fill at the next open. See [research integrity § Point-in-time
-  reads](research-integrity.md#point-in-time-reads) and [research integrity § Decide at close, fill at next
-  open](research-integrity.md#decide-at-close-fill-at-next-open).
+- Strategies use `_runner.load_bars` with `as_of` ([timeframes](data-bar-timeframes.md#reading-intraday-bars)); decide at close, fill next open.
+  [Point-in-time reads](research-integrity.md#point-in-time-reads); [fills](research-integrity.md#decide-at-close-fill-at-next-open).
 - `_gauntlet.py`, `_optim.py`, `_runner.py`, `_synth.py`, `_surrogate.py`, `_seeds.py` and `_identity.py` are high-risk statistical or identity code; follow
   [engineering § Quant tier](engineering.md#quant-tier). They sit outside `gate.py::matches_quant` (packages only), so CI runs no mutation gate on them: their
   tests and the oracles are the binding check; ask the `reviewer` agent to review the diff (advisory, ADR-0039; stage 04 of the delivery pipeline).
 - `_schemas.py` is the one canonical home of strategy parameter definitions, bounds and defaults; `_strategies.py` and `_runner.parse_strategy_params` read
   from it, and values are normalised to the stable floats stored in `RunSpec`.
 - Slash symbols (`BTC/USD`) are crypto pairs and need `--account-type MARGIN`; a CASH account fails loud (`_runner.py`).
-
 ## Run identity
 - A run id is a deterministic 16-hex digest of the canonical payload plus identity version 3, the execution fingerprint, the strategy fingerprint and the
   verified snapshot hash (`_runner.run_identity_for`, `_identity.py`). No wall-clock value may enter it.
@@ -69,18 +63,14 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - An owner research-gate override and the Workstation run context both fork identity; see [command line research § Strategy promotion and
   overrides](cli-research.md#strategy-promotion-and-overrides). `run_context.py` accepts only a schema-1 `standalone_sandbox` or `governed_project` context
   and fails loud otherwise.
-
 ## Artifacts and run directories
 - `run_store.RUN_DIRS` (`runs`, `portfolio`, `cross_sectional`, `optim`, `propfirm`, `forecast`) lists every run directory; the package root re-exports it.
   Keep `run_store.py` and `catalog.py` free of Polars and engine imports so web and MCP import them cheaply (`tests/unit/test_public_seams.py`).
-- Publish each artifact once (`_artifacts.publish_artifact`): an identical rewrite is a no-op, different bytes fail, and nothing may be added after the
-  manifest exists.
+- `_artifacts.publish_artifact`: identical rewrites are no-ops, different bytes fail; nothing may be added after the manifest exists.
 - The manifest is the completion marker: `write_manifest` hashes every sidecar (schema, sha256, size, rows), publishes last and refuses different bytes.
 - V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
-
 ## Validation and optimisation
-- The gauntlet and optimiser refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing (`_gauntlet.py`,
-  `_optim.py`).
+- `_gauntlet.py`/`_optim.py` refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing.
 - `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
 - `--snapshot` verifies and reads the frozen snapshot, never the live store.
 - The headline null must be beaten in every null tier that runs. [ADR-0006](../../adr/0006-two-tier-null-model.md); method rules in [research integrity §
@@ -96,7 +86,6 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   boundary, Student-t); Kronos replays its synthetic tails through the full engine.
 - Monte Carlo path risk (`monte_carlo_cmds.py`) answers a different question from the null tests and is not edge proof; a warning stage needs the CLI-only
   owner review. [ADR-0029](../../adr/0029-four-family-monte-carlo-validation.md)
-
 ## General rule trials
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing, and publishes ordinary `validate` artifacts under
   the home data directory, even for another store's bars.
@@ -115,7 +104,6 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all remaining history. These exploratory results and
   trial counts grant no research or owner authority.
-
 ## Stored facts and diagnostics
 - Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
 - Diagnostics and the manifest are staged together and the completed run directory is renamed into place. `diagnostics.json` stores benchmark comparisons,
@@ -135,17 +123,14 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an imperative `next` command; JSON under `--json`), including
   when every asset of a test fails. Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts sensitivity re-runs
   separately from the append-only row index.
-
 ## Draft checks, lookalikes and novelty
 - `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
-
 ## Suites
 - `alpha suite` runs only the declared actions in `SUITE_ACTIONS` through durable attempt and job lineage; it polls heartbeat and cancellation every 5 seconds
   and reaps child process groups. Plan building lives in `_suite.py` (`build_suite_plan`), the step and plan types in `_suite_types.py`, per-action step
   builders in `_suite_actions.py`.
 - Suite Qlib, Kronos and Monte Carlo kinds share the heavyweight capacity class; see [command line control plane § Jobs, leases and
   capacity](cli-control-store.md#jobs-leases-and-capacity).
-
 ## Figures
 - Figures are a derived cache under `data_dir/figures/<run_id>/`, never run artifacts. Writing into a run directory would break the manifest's exact file set.
 - The cache key hashes renderer identity plus the run's declared artifact digests. Legacy runs fall back to size and mtime and are tagged so the two kinds of
@@ -158,7 +143,6 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
   `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
   (`tests/unit/test_run_projection_security.py`).
-
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen
@@ -177,7 +161,6 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   window. Each indicator refuses a window shorter than its longest lookback, and each pattern names in `reason` the bar it became drawable. Enforced by
   `tests/unit/test_chart_overlays_bias_guard.py`.
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
-
 ## Setup find
 - `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
 - Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud.
@@ -186,15 +169,32 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Accepted sheets are capped and labelled when truncated; rejected sheets sample at most four reasons and four days per reason.
 - `setups/<find_id>` hashes the spec, context (default 60 bars) and sorted asset fingerprints; sheet limits do not affect identity.
 - The atomic manifest is last; repeats append a ledger row without rewriting artifacts. A `setup_find` row is an uncounted look, with no verdict.
-
 ## Setup study
 - `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
 - Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find.
-- Recorded next-open entry to close h−1 positions later, less twice `spine.spec.Costs` (fee 1 bp, slippage 2 bp per side); no exits, dividends or sizing.
+- Recorded next-open entry to close h−1 positions later, less per-asset round-trip `setup_costs` (stocks/ETFs: 1+2 bp per side; crypto: 10+5 bp); no exits,
+  dividends or sizing.
 - Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.
 - SHA-256 study/asset/horizon seeds; exact uniform draws of dates more than ten bars apart; tail (b+1)/(2,000+1). Pool by complete occurrence counts.
 - Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
-- Paths use available occurrences per bar. `setup-studies/<id>` hashes find id and `setup-study-1`; nullable paths are stored with outcomes.
+- `setup-studies/<id>` hashes find id and `setup-study-2`; old folders read with `older-cost-rule`. Re-studying a find that has an older-rule study is
+  labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
 - Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
 - Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
 - One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).
+## Setup trade
+- `alpha setup trade FIND_ID` shares verified find inputs; missing/empty exits raise `SPEC_HAS_NO_EXIT`. [Details](../../../research/tools/setup-trade.md).
+- Freeze percent, evaluator ATR and numeric/reference levels at trigger close; entry is the recorded next open. CLI aliases preserve original hashed names.
+- Bar order: stop gap at open, stop touch, target touch at target, opposite at next open, time at close. Both-touch is a counted stop.
+- Entry is bar one; exits at an open exclude that new bar from duration. No time limit implies 250 bars and `no-time-exit`.
+- One position per asset, including the exit bar. Count skipped/invalid/open-at-end separately; only completed trades enter tested means.
+- Mark open-at-end to final close. Adverse move sees only an exit open or stop fill, never the later low; target exits conservatively include the bar's low.
+- Costs use the dataset asset class, then slash pairs or a crypto provider (any `:` part), then a stock provider (yfinance, alpaca, tiingo, stooq);
+  unknown markets use crypto costs with `costs-assumed-high`.
+- Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, weight assets by completed trades.
+- Use 2,000 exact spaced draws; causal expressions evaluate at arbitrary bars. Pattern-only levels or undefined draw means null controls with reasons.
+- Halves use their own entry-date ranges. Support requires 30 completed trades, positive excess, p ≤ 0.05, agreeing halves and available controls; exploratory
+  only.
+- Hash find id with `setup-trade-1`; publish parquet, summary and deterministic 1600 × 900 PNG before a hash-bound manifest in `setup-trades/<trade_id>`.
+- Repeats rewrite nothing and do not count; changed exits count anew in `setup:<idea>`. Trade ids support citations/checks; no sizing, dividends or funding.
+- Find output derives `outcomes-viewed` from sibling study/trade manifests without rewriting its folder.

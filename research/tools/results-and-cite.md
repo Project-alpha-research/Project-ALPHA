@@ -3,11 +3,9 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 22c23183788f6ede
+verified: 883f23d4915715d7
 ---
-
 # Results and cite
-
 **Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time a number goes into an answer.
 **Commands**
 ```text
@@ -17,7 +15,6 @@ uv run alpha results cite <run_id> <metric>
 uv run alpha results compare <run_id> <run_id>
 uv run alpha results check <file>
 ```
-
 **How to read it**
 - `alpha results` lists ledger rows (newest first, failures too) and `total_trials`; `show <id>`: `facts`, `labels`, `flags`, `audit`, `charts`,
   `tools`, `family` (recorded and live family counts); for a test id, failed assets under `failed` with a reason.
@@ -34,6 +31,8 @@ uv run alpha results check <file>
   `market_alpha_p`, `market_r_squared`, `regime_turbulent_share_of_return`, `regime_turbulent_share_of_time`, `changepoint_count`.
 - Setup study ids support cite/check: `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`,
   `setup_hit_rate`, `setup_excess_over_drift`, `setup_random_date_p` ([limits](setup-study.md)).
+- Trade facts: `setup_trades`, `setup_trade_mean_net_return`, `setup_trade_hit_rate`, `setup_trade_mean_bars_held`,
+  `setup_trade_excess_over_drift`, `setup_trade_random_date_p`, `setup_trade_mean_r` ([limits](setup-trade.md)).
 **What it cannot tell you**
 - `cite` never computes: missing values are `null` with reasons; unknown metric/id: `UNKNOWN_METRIC` / `UNKNOWN_RUN`.
   No word search (use `--symbol` or `--name`); `check` cannot judge reasoning.

@@ -1324,3 +1324,16 @@ real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT
 needs = []
 state = "Working"
 docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+
+[[capability]]
+id = "setup-trade"
+name = "Trade setup occurrences with declared exits"
+what = "Apply frozen stops, targets and time or opposite exits with conservative fills and per-asset costs, compared with identical-rule drift and random dates."
+see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> setup_trade_mean_net_return"]
+entry_points = ["cli: alpha setup", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions"]
+proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repeat"]
+real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]

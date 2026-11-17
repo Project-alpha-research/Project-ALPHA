@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
+import math
 import os
 import signal
 import subprocess
@@ -21,15 +23,19 @@ import time
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from . import research_memory
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
 if str(WORKER) not in sys.path:
     sys.path.insert(0, str(WORKER))
 
-import research_memory  # noqa: E402
-from source_pin import SOURCE_SHA256  # noqa: E402
+if not TYPE_CHECKING:
+    research_memory = importlib.import_module("research_memory")
+SOURCE_SHA256: str = importlib.import_module("source_pin").SOURCE_SHA256
 
 MAX_CALLS = 60
 LABEL = "exploratory, not admitted, not yet confirmed"
@@ -126,6 +132,17 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
                 "--chat-route api needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY in the "
                 "launcher's environment (load the owner's file in the same command; never print it)"
             )
+    if args.embedding_route == "provider":
+        price = args.provider_embed_usd_per_mtok
+        if not args.provider_embed_model or price is None or not math.isfinite(price) or price <= 0:
+            raise LaunchError(
+                "--embedding-route provider needs --provider-embed-model and a positive "
+                "--provider-embed-usd-per-mtok"
+            )
+        if any(not environ.get(key) for key in GATEWAY_SECRETS):
+            raise LaunchError(
+                "--embedding-route provider needs ALPHA_GATEWAY_API_BASE and ALPHA_GATEWAY_API_KEY"
+            )
     for name in ("data_dir", "run_dir", "gateway_data_dir", "trial_ledger"):
         if not getattr(args, name).is_absolute():
             raise LaunchError(f"--{name.replace('_', '-')} must be an absolute path")
@@ -165,6 +182,7 @@ def loop_environment(
     coder_max_loop: int = 2,
     family_switch_after: int = 3,
     universe_text: str = "15 surviving coins only",
+    embedding_model: str | None = None,
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -175,6 +193,7 @@ def loop_environment(
         "PATH": f"{factor_python.parent}:/usr/bin:/bin",
         "CHAT_MODEL": "lm_studio/alpha-chat",
         "EMBEDDING_MODEL": "lm_studio/alpha-embed",
+        **({"ALPHA_EMBEDDING_MODEL": embedding_model} if embedding_model is not None else {}),
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
         "LITELLM_LOCAL_MODEL_COST_MAP": "True",
@@ -384,6 +403,13 @@ class Launch:
             "--provider-retries",
             str(self.args.provider_retries),
         ]
+        if self.args.embedding_route == "provider":
+            command += [
+                "--provider-embed-model",
+                self.args.provider_embed_model,
+                "--provider-embed-usd-per-mtok",
+                str(self.args.provider_embed_usd_per_mtok),
+            ]
         accept = self.args.accept_unhonoured
         if accept is None:  # the owner accepted losing temperature on the Codex route only
             accept = "temperature" if self.args.chat_route == "codex" else ""
@@ -402,6 +428,9 @@ class Launch:
                 command.append("--api-openrouter")
         self.receipt["route"] = {
             "chat": self.args.chat_route,
+            "embedding": self.args.embedding_route,
+            "embedding_model": embedding_model(self.args),
+            "provider_embed_usd_per_mtok": self.args.provider_embed_usd_per_mtok,
             "api_model": self.args.api_model,
             "api_price_in_per_mtok": self.args.api_price_in_per_mtok,
             "api_price_out_per_mtok": self.args.api_price_out_per_mtok,
@@ -439,7 +468,7 @@ class Launch:
                     source_sha256=SOURCE_SHA256,
                     judge_sha256=research_memory.judge_sha256(),
                 )
-            except Exception as error:  # noqa: BLE001 - memory is a warning, never a refusal
+            except Exception as error:  # memory is a warning, never a refusal
                 self.receipt["memory_warning"] = (
                     f"memory unavailable ({type(error).__name__}); this run starts fresh"
                 )
@@ -459,6 +488,9 @@ class Launch:
             coder_max_loop=self.args.coder_max_loop,
             family_switch_after=self.args.family_switch_after,
             universe_text=self.universe_text,
+            embedding_model=embedding_model(self.args)
+            if self.args.embedding_route in ("provider", "fake")
+            else None,
         )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
@@ -552,7 +584,7 @@ class Launch:
             output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in labelled))
             self.receipt["call_split"] = call_split(calls)
             return {"calls": len(labelled), "skipped_lines": skipped}
-        except Exception as error:  # noqa: BLE001 - labelling is best effort, with receipt diagnostics
+        except Exception as error:  # labelling is best effort, with receipt diagnostics
             note = f"{type(error).__name__}: {error}"
             try:
                 output.write_bytes(b"")
@@ -580,7 +612,28 @@ class Launch:
         self.receipt.update(
             counted_calls=counters.get("counted_calls", counters.get("calls")),
             local_embedding_calls=counters.get("local_embedding_calls", 0) if counters else None,
-            call_cap_note="Local embeddings are free and are not counted toward the 60-call cap.",
+            embedding_route=getattr(self.args, "embedding_route", "local"),
+            embedding_model=embedding_model(self.args),
+            provider_embedding_calls=counters.get("provider_embedding_calls", 0)
+            if counters
+            else None,
+            provider_embedding_usd=counters.get("provider_embedding_usd", 0.0)
+            if counters
+            else None,
+            provider_embedding_tokens=counters.get("provider_embedding_tokens", 0)
+            if counters
+            else None,
+            memory_entries_reembedded=len(
+                (self.run / "memory-reembedded.jsonl").read_text().splitlines()
+            )
+            if (self.run / "memory-reembedded.jsonl").exists()
+            else 0,
+            call_cap_note=(
+                "Provider embeddings count toward money caps and the shared embedding limit, "
+                "not the 60-call cap or monthly call count."
+                if getattr(self.args, "embedding_route", "local") == "provider"
+                else "Local embeddings are free and are not counted toward the 60-call cap."
+            ),
         )
         self.receipt["memory"] = (
             research_memory.record(
@@ -598,10 +651,17 @@ class Launch:
         return exit_status
 
 
+def embedding_model(args: argparse.Namespace) -> str:
+    route = getattr(args, "embedding_route", "local")
+    if route == "provider":
+        return str(args.provider_embed_model)
+    return "fake" if route == "fake" else "nomic-embed-text"
+
+
 def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
     """Model calls versus free local embeddings, as the gateway logged them.
 
-    Only embedding rows the gateway itself marked ``local_embedding`` are outside the 60-call cap
+    Only embedding rows the gateway marked ``local_embedding`` or ``provider_embedding`` are exempt
     (owner decision 2026-11-17); old logs without the mark stay counted as they were.
     """
     split: dict[str, Any] = {
@@ -610,6 +670,9 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         "provider_embedding": {"requests": 0, "attempts": 0, "usd": 0.0},
         "counted_calls": 0,
         "local_embedding_calls": 0,
+        "provider_embedding_calls": 0,
+        "provider_embedding_usd": 0.0,
+        "provider_embedding_tokens": 0,
         "provider_timeouts": 0,
         "empty_or_invalid_replies": 0,
         "retried_attempts": 0,
@@ -618,7 +681,14 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         "chunked_embedding_inputs": 0,
         "embedding_chunks": 0,
     }
+    routes: set[str] = set()
+    models: set[str] = set()
     for call in calls:
+        if call.get("endpoint") == "/v1/embeddings":
+            if isinstance(call.get("route"), str):
+                routes.add(call["route"])
+            if isinstance(call.get("model_used"), str):
+                models.add(call["model_used"])
         kind = "model_chat" if call.get("endpoint") == "/v1/chat/completions" else "local_embedding"
         if kind == "local_embedding" and call.get("local_embedding") is False:
             kind = "provider_embedding"
@@ -632,7 +702,18 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         split["empty_or_invalid_replies"] += errors.count("invalid_provider_response")
         attempts = int(call.get("attempts") or 0)
         local = kind == "local_embedding" and call.get("local_embedding") is True
-        split["local_embedding_calls" if local else "counted_calls"] += attempts
+        provider = kind == "provider_embedding" and call.get("provider_embedding") is True
+        bucket = (
+            "local_embedding_calls"
+            if local
+            else "provider_embedding_calls"
+            if provider
+            else "counted_calls"
+        )
+        split[bucket] += attempts
+        if provider:
+            split["provider_embedding_usd"] += float(call.get("usd") or 0)
+            split["provider_embedding_tokens"] += int(call.get("prompt_tokens") or 0)
         split["retried_attempts"] += max(0, attempts - 1)
         split["timeout_retry_attempts"] += int(
             call.get(
@@ -642,21 +723,26 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         if call.get("status") != 200:
             code = str(call.get("error_code"))
             split["failed_requests"][code] = split["failed_requests"].get(code, 0) + 1
+    split.update(
+        embedding_route=next(iter(routes)) if len(routes) == 1 else None,
+        embedding_model=next(iter(models)) if len(models) == 1 else None,
+        embedding_routes=sorted(routes),
+        embedding_models=sorted(models),
+    )
     split["counted_toward_call_cap"] = split["counted_calls"]
     return split
 
 
 def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
     """A plain reason for a failed loop; names the call cap when the run used all of it."""
-    from model_gateway import LOCAL_EMBEDDING_CALLS_PER_RUN
+    embedding_limit = importlib.import_module("gateway_embeddings").EMBEDDING_CALLS_PER_RUN
 
     this_run = gateway_state.get("this_run") if isinstance(gateway_state, dict) else None
-    local = (this_run or {}).get("local_embedding_calls", 0)
-    if local >= LOCAL_EMBEDDING_CALLS_PER_RUN:
-        return (
-            f"loop exit {code}: local embedding limit reached "
-            f"(LOCAL_EMBEDDING_CALLS_PER_RUN: {local})"
-        )
+    local = (this_run or {}).get("local_embedding_calls", 0) + (this_run or {}).get(
+        "provider_embedding_calls", 0
+    )
+    if local >= embedding_limit:
+        return f"loop exit {code}: embedding limit reached (EMBEDDING_CALLS_PER_RUN: {local})"
     calls = (this_run or {}).get("counted_calls", (this_run or {}).get("calls")) or 0
     if calls >= args.run_max_calls:
         return f"loop exit {code}: model call cap reached ({calls} of {args.run_max_calls} calls)"
@@ -690,7 +776,7 @@ def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     except KeyboardInterrupt:
         launch.log("cancel", status="cancelled")
         reason = "cancelled"
-    except Exception as error:  # noqa: BLE001 - every failure still stops children and writes a receipt
+    except Exception as error:  # every failure still stops children and writes a receipt
         launch.log("error", status="failed", detail=repr(error)[:300])
         reason = f"unexpected error: {error!r}"[:300]
     finally:
@@ -723,7 +809,11 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)
     r.add_argument("--wall-seconds", type=float, default=5400)
     r.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")
-    r.add_argument("--embedding-route", choices=("ollama", "fake"), default="ollama")
+    r.add_argument(
+        "--embedding-route", choices=("local", "provider", "ollama", "fake"), default="local"
+    )
+    r.add_argument("--provider-embed-model")
+    r.add_argument("--provider-embed-usd-per-mtok", type=float)
     r.add_argument("--accept-unhonoured", default=None)
     r.add_argument("--api-model")
     r.add_argument("--api-price-in-per-mtok", type=float)

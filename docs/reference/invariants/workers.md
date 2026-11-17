@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: ba73ebe3ea5186b1
+verified: 485f0a017754d2e2
 ---
 
 # Worker invariants
@@ -34,7 +34,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `gate.py check` does not run worker tests.
 - Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
-
 ## Qlib worker
 
 - This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or
@@ -73,7 +72,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) § Open before v3 is the default).
 - W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
   accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
-
 ## Literature worker
 
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
@@ -150,10 +148,11 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
-  Only the built-in loopback Ollama (or fake) embedding backend is exempt (2,000-attempt run guard, `budget_exhausted`;
-  no dollars); receipts and monthly status split `counted_calls` from `local_embedding_calls`, old counts as recorded.
-  No automatic route switch; logs hold hashes and lengths, not text; fixture loops clear model settings. Paid calls
-  have a 180 s limit and one retry, both counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+  Local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens cost money.
+  Receipts split calls, tokens, cache hits and observed providers; labelled calls add step splits. Missing facts stay null;
+  abandoned attempts say usage is unknown. API chat sends the run id as `session_id` unless `--no-router-session` is set;
+  provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
+  Memory binds model; no auto-switch; paid calls 180 s, one counted retry ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
@@ -166,7 +165,9 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
-  New panels split identities and refuse unexplained jumps across 7+ missing days; reports and feedback count splits. Old receipts keep their policy.
+  New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
+  Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
+  Closed-family proposals stop before coding with no trial and are re-asked twice per round; code failures do not close families.
   Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
   recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the
@@ -181,7 +182,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
   the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
   family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
-- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, `UNSTABLE`, or `FAILED` for a wrong output
   shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
   recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
@@ -195,6 +196,5 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
   never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
 - There is no gate component or CI job (`scripts/gate_components.py` lists none). Its checks are root tests
-  such as `tests/unit/test_native_loop_conformance.py`; the source-dependent ones skip without
-  `ALPHA_RDAGENT_SOURCE`, and a skipped run confers no native qualification.
+  `test_native_loop_conformance.py` and other source-dependent tests skip without `ALPHA_RDAGENT_SOURCE`; skips confer no qualification.
 - Its audit hooks and sanitised subprocesses contain trusted fixture mistakes, not hostile code or same-user access.

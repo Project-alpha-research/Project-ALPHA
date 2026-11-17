@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: a612601272ba6780
+verified: bff36c2f2d08e24d
 ---
 
 # RD-Agent
@@ -42,9 +42,11 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([owner decisions](../owner-decisions.md#2026-11-14-rd-agents-ai-models)).
 - RD-Agent reaches every model through ALPHA's local model gateway
   (`workers/rdagent/model_gateway.py`, [ADR-0044](../../../adr/0044-rdagent-model-gateway.md)):
-  chat through the signed-in Codex program, embeddings through local Ollama, an owner-keyed paid
-  route only if configured. The gateway holds ALPHA's call and dollar budget, refuses or records
-  every setting it cannot honour, and logs each call without its text.
+  chat through the signed-in Codex program; embeddings through local Ollama by default, or a
+  configured paid provider model with explicit pricing. The gateway holds ALPHA's call and dollar budget, refuses or records
+  every setting it cannot honour, and logs each call without its text. Cache and serving-provider
+  facts reach the receipt; API calls use a run-only router session, with a comparison-run opt-out.
+  Recording details: [worker README](../../../../workers/rdagent/README.md#model-gateway-2026-11-14).
 - RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
@@ -57,11 +59,14 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
   [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
-  The wide store may be used once every implausible gap jump is declared; freeze splits declared identities and
-  refuses unexplained jumps across gaps of 7+ missing days (shorter pauses are not checked). Not survivorship-free.
+  The wide store may be used once every implausible gap jump is declared; freeze rescales declared redenominations, splits reused tickers and
+  refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
+  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
+  and asks the proposer again, at most twice per round.
+  Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).

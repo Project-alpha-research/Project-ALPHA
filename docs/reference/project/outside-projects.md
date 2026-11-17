@@ -9,7 +9,7 @@ sources:
   - apps/alpha-web/frontend/package.json
   - docs/adr/0051-glue-rules-for-outside-projects.md
   - docs/adr/0052-licence-is-not-a-criterion.md
-verified: 8fa45d3fb634b1d5
+verified: 715e13c1554d2c03
 ---
 
 # Outside projects: the register
@@ -73,8 +73,8 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | DuckDB 2.0.0 | Asks one question across many stored files | Pinned in `alpha-cli`; in memory only | In use | A query tool, never the store |
 | lifelines 0.30.3 | Which exit comes first, with censoring | Pinned in `alpha-cli` | In use | Proven estimator; replaces a biased hand count |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
-| statsmodels | Regression, factor exposure, regimes | For `alpha-validation` | Approved, not yet added | Closes missing rows; replaces hand-written code |
-| arch | Block bootstraps and best-of-many checks | For `alpha-validation` | Approved, not yet added | Proven maths; replaces two ALPHA files |
+| statsmodels | Regression, Holm adjustment | `alpha-validation`, `alpha-research` | In use | Holm matches the old code exactly; the rest stays hand-written |
+| arch | Side-by-side checks of bootstrap and SPA | `alpha-validation` tests only | In use (checks) | Replaces nothing: different draws and SPA statistic |
 | ruptures | Finds dates where behaviour changed | For `alpha-validation` | Approved, not yet added | New ability; needs only numpy and SciPy |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
 | TimesFM 3.0, Chronos | General forecasting models | — | Later | Compare with Kronos on the Dell, scored by ALPHA; re-judged 2026-11-16 |

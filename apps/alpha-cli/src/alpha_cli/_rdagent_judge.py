@@ -121,6 +121,7 @@ STATUSES = frozenset(
     {
         "FAILED",
         "LOOKAHEAD",
+        "UNSTABLE",
         "DEGENERATE",
         "ERROR",
         "SCREEN_FAIL",
@@ -345,8 +346,10 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
                 + f"; cross-sectional thirds need at least {spec['min_universe']}"
             )
     panel, breaks = identity.relabel(panel, spec.get("identity_breaks", []))
+    panel = validate_panel(panel)
     identity.check_jumps(panel)
     summary = membership.panel_summary(panel)
+    summary.update(universes.disclosure(spec, summary))
     out.mkdir(parents=True, exist_ok=False)
     buffer = io.BytesIO()
     panel.write_parquet(buffer)
@@ -355,7 +358,8 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
     receipt = {
         "schema": "AlphaRdagentFactorPanelV1",
         "manifests": manifests,
-        "identity_breaks": breaks,
+        "identity_breaks": [b for b in breaks if b["reason"] == "ticker_reused"],
+        "identity_rescales": [b for b in breaks if b["reason"] == "redenominated"],
         "identity_jump_policy": identity.JUMP_POLICY,
         **summary,
         "rows": panel.height,
@@ -579,7 +583,7 @@ def replay(
             / len(result.periods)
         ),
         "rebalances": rebalances,
-        "missing_coin_days": missing,
+        "unrankable_instrument_rebalances": missing,
         "cash_days": cash_days,
         "tie_break": "instrument name ascending",
         "available_at": (
@@ -806,12 +810,19 @@ def _gap_replay(
         * ANNUAL_DAYS
         / len(periods),
         "gap_policy": membership.POLICY,
+        "unrankable_instrument_rebalances": data["missing_coin_days"],
+        "writeoff_instruments": sorted(
+            {
+                e["instrument"]
+                for e in data["events"]
+                if e["basis"] in ("writeoff", "panel-end-writeoff")
+            }
+        ),
         **{
             key: data[key]
             for key in (
                 "rebalances",
                 "breadth_skipped_days",
-                "missing_coin_days",
                 "haircuts_applied",
                 "written_off_at_panel_end",
                 "benchmark_haircuts_applied",

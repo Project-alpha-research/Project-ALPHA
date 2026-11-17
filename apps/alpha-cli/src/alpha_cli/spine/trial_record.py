@@ -8,6 +8,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli._rdagent_stability import failure_message
+
 OUTCOMES = ("supported", "rejected", "inconclusive", "invalid", "error", "recorded")
 FACTOR_OUTCOMES = {
     "CANDIDATE": "supported",
@@ -17,6 +19,7 @@ FACTOR_OUTCOMES = {
     "FAST_ONLY": "rejected",
     "DEGENERATE": "invalid",
     "LOOKAHEAD": "invalid",
+    "UNSTABLE": "invalid",
     "FAILED": "error",
     "ERROR": "error",
     "IMPORTED": "recorded",
@@ -177,12 +180,18 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
             ("exploratory", row["label"].startswith("exploratory")),
             ("not-admitted", row["authority"].get("admitted") is False),
             ("previously-exposed", row.get("exposure", {}).get("previously_exposed") is True),
-            ("survivor-universe", bool(row["survivorship"])),
+            (
+                "survivor-universe",
+                bool(row["survivorship"]) and row.get("universe_includes_delisted") is not True,
+            ),
+            ("includes-delisted", row.get("universe_includes_delisted") is True),
             ("repeat", status == "REPEAT"),
             ("imported", status == "IMPORTED"),
         )
         if present
     )
+    if "universe_includes_delisted" in row and type(row["universe_includes_delisted"]) is not bool:
+        raise ValueError("universe_includes_delisted must be a boolean")
     created, basis = _run_date(row["run_id"])
     if "recorded_at" in row:
         stamp = datetime.fromisoformat(row["recorded_at"])
@@ -206,6 +215,8 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
         reason=(
             "stopped by the spread check"
             if status == "SPREAD_FAIL"
+            else failure_message(row)
+            if status in {"LOOKAHEAD", "UNSTABLE"}
             else ": ".join(str(row[k]) for k in ("failure_reason", "failure_detail") if row.get(k))
             or None
         ),

@@ -33,12 +33,17 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from filelock import FileLock
 from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERRAGStrategyV2
 from rdagent.components.coder.factor_coder import FactorCoSTEER
 from rdagent.core.serialization import dump, load
+
+if TYPE_CHECKING:
+    from .research_memory import EmbeddingMemory, gateway_embedding
+else:
+    from research_memory import EmbeddingMemory, gateway_embedding
 
 
 def _code_sha256(unit: Any) -> str | None:
@@ -230,4 +235,72 @@ class AlphaFactorCoSTEER(FactorCoSTEER):
             with lock:
                 self.rag.load_dumped_knowledge_base()
         self.rag.current_generated_trace_count = 0
-        return super().develop(exp)
+        run = os.environ.get("ALPHA_FACTOR_RUN_DIR")
+        if not run:
+            return super().develop(exp)
+        if not hasattr(self, "_alpha_embedding_memory"):
+            root = Path(os.environ.get("ALPHA_RDAGENT_MEMORY_DIR", run))
+            self._alpha_embedding_memory = EmbeddingMemory(
+                root / "embedding-models.json",
+                Path(run) / "memory-reembedded.jsonl",
+                os.environ.get("ALPHA_EMBEDDING_MODEL", "nomic-embed-text"),
+                gateway_embedding,
+            )
+        with compatible_embeddings(self.rag, self._alpha_embedding_memory, Path(run)):
+            return super().develop(exp)
+
+
+@contextmanager
+def compatible_embeddings(rag: Any, memory: EmbeddingMemory, run: Path) -> Iterator[None]:
+    """Keep upstream vectors in one model space, including queries and cached new nodes."""
+    from rdagent.oai.backend.base import APIBackend
+
+    graph = rag.knowledgebase.graph
+    original = APIBackend._create_embedding_with_cache
+
+    def skip(node: Any, error: Exception) -> None:
+        embedding_failure(error)
+        _record_skip(run / "memory-skips.jsonl", node, error)
+
+    def embed(
+        self: Any, input_content_list: list[str], *args: Any, **kwargs: Any
+    ) -> list[list[float]]:
+        try:
+            return [memory.vector(text) for text in input_content_list]
+        except Exception as error:
+            embedding_failure(error)
+            raise
+
+    removed = memory.prepare(graph, skip)
+    APIBackend._create_embedding_with_cache = embed
+    try:
+        yield
+    finally:
+        APIBackend._create_embedding_with_cache = original
+        for node_id, node in graph.nodes.items():
+            if node.embedding is not None:
+                memory.remember(node_id, node)
+        memory.save()
+        graph.nodes.update(removed)
+        if removed and rag.dump_knowledge_base_path is not None:
+            restore_skipped_nodes(Path(rag.dump_knowledge_base_path), removed)
+
+
+def restore_skipped_nodes(path: Path, removed: dict[str, Any]) -> None:
+    """Upstream dumps while failed nodes are hidden. Retain their text for the next run."""
+    with FileLock(str(path.with_suffix(".lock"))):
+        if not path.exists():
+            return
+        with path.open("rb") as stream:
+            knowledge = load(stream)
+        for node_id, node in removed.items():
+            knowledge.graph.nodes.setdefault(node_id, node)
+        descriptor, temporary = tempfile.mkstemp(prefix=".coder-embeddings-", dir=path.parent)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                dump(knowledge, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        finally:
+            Path(temporary).unlink(missing_ok=True)

@@ -139,6 +139,7 @@ from alpha_cli._rdagent_ledger import (
 from alpha_cli._rdagent_ledger import (
     import_historical as import_historical,
 )
+from alpha_cli._rdagent_stability import failure_message, replay_output, writeoff_summary
 from alpha_core import DataError
 from alpha_validation.dsr import (
     deflated_sharpe,
@@ -162,7 +163,7 @@ def _inputs(
         raise DataError("invalid factor request")
     names = []
     for factor in request["factors"]:
-        if factor["status"] not in {"OK", "FAILED", "LOOKAHEAD"} or not re.fullmatch(
+        if factor["status"] not in {"OK", "FAILED", "LOOKAHEAD", "UNSTABLE"} or not re.fullmatch(
             "[0-9a-f]{64}", factor["code_sha256"]
         ):
             raise DataError("invalid factor status or identity")
@@ -199,6 +200,7 @@ def _inputs(
         + Path(__file__).with_name("_rdagent_identity.py").read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
         + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_stability.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
     )
     return (
@@ -277,7 +279,7 @@ def _deflate(
 def shown(trial: dict[str, Any]) -> dict[str, Any]:
     """A trial's replay as a result; a counted-only replay (ADR-0055) shows nothing."""
     replay: dict[str, Any] = trial["replay"]
-    return {} if "counted_only" in replay else replay
+    return {} if "counted_only" in replay else replay_output(replay)
 
 
 def _report(
@@ -286,12 +288,17 @@ def _report(
     family: dict[tuple[str, str], dict[str, Any]],
     trials: list[float],
     spec: dict[str, Any] | None = None,
+    universe_text: str | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], dict[str, Any], bool, str]:
     """Lead factor, RD-Agent's result keys, disclosures, ALPHA's decision and feedback text."""
     # The lead is the best candidate when there is one, so RD-Agent's stored result matches the
     # decision; otherwise the lowest q among this request's new factors.
     candidates = [row for row in rows if row["status"] == "CANDIDATE"]
-    eligible = candidates or [row for row in rows if row["status"] != "REPEAT"]
+    eligible = candidates or [
+        row
+        for row in rows
+        if row["status"] in {"FAST_ONLY", "REPLAY_FAIL", "SPREAD_FAIL", "SCREEN_FAIL"}
+    ]
     lead = (
         min(eligible, key=lambda r: (r["clocks"][r["lead_clock"]]["q"], r["name"]))
         if eligible
@@ -326,8 +333,9 @@ def _report(
             )
         legacy[f"{row['name']}.feedback"] = clock_feedback(row)
     spec = spec or universes.DEFAULT
+    survivorship = universe_text or spec["survivorship"]
     disclosures = {
-        "survivorship": spec["survivorship"],
+        "survivorship": survivorship,
         "multiple_testing": "screening only, adaptive family, no error rate claimed",
         "direction": "chosen in-sample",
         "replay_engine": "ALPHA canonical synchronized replay, not Nautilus",
@@ -348,7 +356,7 @@ def _report(
         disclosures["universe"] = spec
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
-        f"{LABEL}. {spec['survivorship']}. "
+        f"{LABEL}. {survivorship}. "
         f"Factor-family trials (each factor x clock, unreadable rows too): {len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
@@ -360,7 +368,9 @@ def _report(
         "fee + 6 bps slippage per side. Prefix invariance is a fixed-cut check, not proof. "
     )
     feedback += CONFIG["residual_trades"] + " "
-    feedback += " ".join(clock_feedback(row) for row in rows)
+    feedback += " ".join(
+        clock_feedback(row) + " " + row.get("writeoff_message", "") for row in rows
+    )
     for row in rows:
         exposure = row["exposure"]
         if exposure["previously_exposed"]:
@@ -894,6 +904,7 @@ def _evaluate_locked(
         )
     receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
     breaks = receipt.get("identity_breaks", [])
+    universe_info = universes.disclosure(spec, receipt)
     eligible, gap_policy = _eligibility(run, panel, days, symbols, spec)
     closes = matrix(panel, "close", open_days, symbols) if gap_policy else None
     series: dict[str, dict[str, Any]] = {}
@@ -911,13 +922,19 @@ def _evaluate_locked(
         open_days,
         series,
         eligible,
-        spec["survivorship"],
+        universe_info["universe_text"],
         gap_policy,
         closes,
     )
     all_count = len(all_history) + len(rows)
     for index, row in enumerate(rows, len(all_history) + 1):
-        row.update(trial_index=index, ledger_trials_all_families=all_count)
+        row.update(
+            trial_index=index,
+            ledger_trials_all_families=all_count,
+            universe_includes_delisted=universe_info["universe_includes_delisted"],
+        )
+        if row["status"] in {"LOOKAHEAD", "UNSTABLE"}:
+            row.update(failure_reason=row["status"], failure_detail=failure_message(row))
     family = _ledger_family([*history, *unknown, *rows])
     replay_returns, qvalues = _replay_clocks(
         rows,
@@ -930,11 +947,17 @@ def _evaluate_locked(
         gap_policy,
         frozenset(entry["new_name"] for entry in breaks),
     )
+    for row in rows:
+        row["writeoff_count"], row["writeoff_message"] = writeoff_summary(
+            row, membership.DELISTING_HAIRCUT
+        )
     series_note = _record_series(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
-    lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
+    lead, legacy, disclosures, decision, feedback = _report(
+        rows, history, family, trials, spec, universe_info["universe_text"]
+    )
     if "identity_breaks" in receipt:
         note = identity.disclosure(breaks)
         disclosures["identity_breaks"] = {

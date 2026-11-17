@@ -4,7 +4,7 @@ sources:
   - packages/*/pyproject.toml
   - apps/*/pyproject.toml
   - workers/*/pyproject.toml
-verified: f7799dc959f87c3e
+verified: fe23863d02ebd749
 ---
 
 # Project ALPHA — where to start

@@ -26,7 +26,7 @@ def declaration(day: str = "2021-02-10", instrument: str = "C0") -> dict[str, st
 
 
 def freeze_panel(
-    root: Path, panel: pl.DataFrame, breaks: list[dict[str, str]] | None = None
+    root: Path, panel: pl.DataFrame, breaks: list[dict[str, Any]] | None = None
 ) -> tuple[dict[str, Any], pl.DataFrame]:
     """Exercise freeze with small verified-artifact stand-ins, no real store."""
     manifests = root / "control/crypto/manifests"
@@ -104,15 +104,16 @@ def test_undeclared_jump_refuses_freeze_with_typed_context(tmp_path: Path, ratio
     assert not (tmp_path / "panel").exists()
 
 
-@pytest.mark.parametrize(("gap", "ratio"), [(3, 10.0), (10, 3.0), (6, 10.0), (7, 5.0), (7, 0.2)])
+@pytest.mark.parametrize(("gap", "ratio"), [(10, 3.0), (7, 5.0), (7, 0.2), (0, 10.0), (0, 0.1)])
 def test_allowed_gap_and_ratio_boundaries(tmp_path: Path, gap: int, ratio: float) -> None:
     _, actual = freeze_panel(tmp_path, jump_panel(gap, ratio))
     assert actual.equals(jump_panel(gap, ratio))
 
 
-def test_seven_missing_days_is_the_first_checked_gap(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("gap", "ratio"), [(1, 5.01), (3, 10.0), (3, 0.1)])
+def test_one_missing_day_is_the_first_checked_gap(tmp_path: Path, gap: int, ratio: float) -> None:
     with pytest.raises(DataError, match="identity_breaks"):
-        freeze_panel(tmp_path, jump_panel(7, 5.01))
+        freeze_panel(tmp_path, jump_panel(gap, ratio))
 
 
 def test_declared_break_splits_and_receipt_binds_policy(tmp_path: Path) -> None:
@@ -121,7 +122,7 @@ def test_declared_break_splits_and_receipt_binds_policy(tmp_path: Path) -> None:
     assert panel.filter(pl.col("instrument") == "C0")["date"].to_list() == [date(2021, 1, 1)]
     assert panel.filter(pl.col("instrument") == "C0~2")["date"].to_list() == [date(2021, 1, 12)]
     assert receipt["identity_breaks"] == [{**breaks[0], "new_name": "C0~2"}]
-    assert receipt["identity_jump_policy"] == {"min_gap_days": 7, "ratio": 5.0}
+    assert receipt["identity_jump_policy"] == {"min_gap_days": 1, "ratio": 5.0}
     frozen = universes.frozen(tmp_path / "panel")
     assert receipt["universe_sha256"] == judge.sha(judge.canonical(frozen))
 
@@ -164,18 +165,20 @@ def test_all_store_membership_and_name_collision_are_checked_at_freeze(tmp_path:
 
 def test_multiple_breaks_relabel_once_without_crossing_boundaries(tmp_path: Path) -> None:
     bars = walk_panel()
-    breaks = [declaration("2021-01-10"), {**declaration("2021-02-10"), "reason": "redenominated"}]
+    breaks: list[dict[str, Any]] = [
+        declaration("2021-01-10"),
+        {**declaration("2021-02-10"), "reason": "redenominated", "ratio": 1.0},
+    ]
     receipt, actual = freeze_panel(tmp_path, bars, breaks)
     assert actual.height == bars.height
-    assert [b["new_name"] for b in receipt["identity_breaks"]] == ["C0~2", "C0~3"]
+    assert [b["new_name"] for b in receipt["identity_breaks"]] == ["C0~2"]
+    assert receipt["identity_rescales"] == [breaks[1]]
     for day, symbol in (
         actual.filter(pl.col("instrument").str.starts_with("C0"))
         .select("date", "instrument")
         .iter_rows()
     ):
-        assert symbol == (
-            "C0" if day < date(2021, 1, 10) else "C0~2" if day < date(2021, 2, 10) else "C0~3"
-        )
+        assert symbol == ("C0" if day < date(2021, 1, 10) else "C0~2")
 
 
 def test_split_position_writes_off_and_new_asset_earns_warmup(tmp_path: Path) -> None:
@@ -298,7 +301,7 @@ def test_run_report_and_proposer_receive_split_count(tmp_path: Path, declared: b
     path = run / "panel/panel-receipt.json"
     receipt = json.loads(path.read_bytes())
     breaks = [{**declaration(), "new_name": "C0~2"}] if declared else []
-    receipt.update(identity_breaks=breaks, identity_jump_policy={"min_gap_days": 7, "ratio": 5.0})
+    receipt.update(identity_breaks=breaks, identity_jump_policy={"min_gap_days": 1, "ratio": 5.0})
     path.write_text(json.dumps(receipt))
     result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
     expected = f"{int(declared)} tickers were split at declared identity breaks."

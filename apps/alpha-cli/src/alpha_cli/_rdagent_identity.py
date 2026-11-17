@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import date
 from typing import Any
 
@@ -9,7 +10,7 @@ import polars as pl
 
 from alpha_core import DataError
 
-IDENTITY_JUMP_MIN_GAP_DAYS = 7
+IDENTITY_JUMP_MIN_GAP_DAYS = 1
 IDENTITY_JUMP_RATIO = 5.0
 JUMP_POLICY = {"min_gap_days": IDENTITY_JUMP_MIN_GAP_DAYS, "ratio": IDENTITY_JUMP_RATIO}
 
@@ -18,12 +19,12 @@ class IdentityJumpError(DataError):
     """A gap may join different assets or units; the owner must resolve its identity."""
 
 
-def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, str]]:
+def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         raise DataError("identity_breaks must be a list")
     previous: dict[str, date] = {}
     for entry in value:
-        if not isinstance(entry, dict) or set(entry) != {"instrument", "new_from", "reason"}:
+        if not isinstance(entry, dict) or not {"instrument", "new_from", "reason"} <= set(entry):
             raise DataError("identity_breaks entries need instrument, new_from and reason")
         name, start, reason = (entry[k] for k in ("instrument", "new_from", "reason"))
         if not isinstance(name, str) or not name.strip():
@@ -32,6 +33,24 @@ def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, 
             raise DataError(f"identity_breaks instrument {name!r} is absent from the universe")
         if reason not in ("ticker_reused", "redenominated"):
             raise DataError("identity_breaks reason must be ticker_reused or redenominated")
+        required = {"instrument", "new_from", "reason"}
+        if reason == "redenominated":
+            ratio = entry.get("ratio")
+            if (
+                isinstance(ratio, bool)
+                or not isinstance(ratio, (int, float))
+                or not math.isfinite(ratio)
+                or ratio <= 0
+            ):
+                raise DataError(
+                    f"identity_breaks redenominated entry for {name!r} requires a positive "
+                    "finite ratio; add ratio = new price units per old unit (for example 100 when "
+                    "the first new price is 100 times the last old one). Open, high, low and close "
+                    "on and after new_from are divided by it and base volume is multiplied by it"
+                )
+            required.add("ratio")
+        if set(entry) != required:
+            raise DataError("identity_breaks entry has unexpected fields")
         try:
             day = date.fromisoformat(start) if isinstance(start, str) else None
         except ValueError as error:
@@ -45,8 +64,8 @@ def validate_breaks(value: Any, instruments: list[str] | str) -> list[dict[str, 
 
 
 def relabel(
-    panel: pl.DataFrame, breaks: list[dict[str, str]]
-) -> tuple[pl.DataFrame, list[dict[str, str]]]:
+    panel: pl.DataFrame, breaks: list[dict[str, Any]]
+) -> tuple[pl.DataFrame, list[dict[str, Any]]]:
     """Partition daily rows at each boundary before any feature, label or trading read.
 
     The original name/date columns select every segment, so later declarations cannot relabel
@@ -64,6 +83,25 @@ def relabel(
             raise DataError(
                 f"identity_breaks instrument {name!r} is absent from the frozen universe"
             )
+        boundary = date.fromisoformat(entry["new_from"])
+        selected = (pl.col("instrument") == name) & (pl.col("date") >= boundary)
+        if entry["reason"] == "redenominated":
+            ratio = entry["ratio"]
+            panel = panel.with_columns(
+                [
+                    pl.when(selected).then(pl.col(c) / ratio).otherwise(pl.col(c)).alias(c)
+                    for c in ("open", "high", "low", "close")
+                ]
+                + [
+                    pl.when(selected)
+                    .then(pl.col("volume") * ratio)
+                    .otherwise(pl.col("volume"))
+                    .alias("volume")
+                ]
+            )
+            if panel.filter(selected).height:
+                applied.append(dict(entry))
+            continue
         counts[name] = counts.get(name, 1) + 1
         new_name = f"{name}~{counts[name]}"
         if new_name in names:
@@ -81,7 +119,9 @@ def relabel(
 
 
 def check_jumps(panel: pl.DataFrame) -> None:
-    """Check missing calendar days inside each already separated instrument's span.
+    """Check price jumps across any gap of one or more missing calendar days inside each instrument.
+
+    Missing days are (later date - earlier date).days - 1; consecutive daily bars are not checked.
 
     Every offending gap is named in one refusal, so the owner can fix the list in one pass.
     """
@@ -106,6 +146,6 @@ def check_jumps(panel: pl.DataFrame) -> None:
         )
 
 
-def disclosure(breaks: list[dict[str, str]]) -> str:
+def disclosure(breaks: list[dict[str, Any]]) -> str:
     count = len({entry["instrument"] for entry in breaks})
     return f"{count} tickers were split at declared identity breaks."

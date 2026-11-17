@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import importlib
 import json
 import os
 import shutil
@@ -12,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -336,14 +337,33 @@ def _event(environ: Mapping[str, str], code: str, message: str) -> None:
 
 
 def _load_knowledge(path: Path) -> Any:
-    from rdagent.components.coder.CoSTEER.knowledge_management import CoSTEERKnowledgeBaseV2
-    from rdagent.core.serialization import load
+    # These modules exist only in the verified factor runtime, not the root environment.
+    knowledge_module = importlib.import_module(
+        "rdagent.components.coder.CoSTEER.knowledge_management"
+    )
+    serialization = importlib.import_module("rdagent.core.serialization")
 
     with path.open("rb") as stream:
-        knowledge = load(stream)
-    if not isinstance(knowledge, CoSTEERKnowledgeBaseV2):
+        knowledge = serialization.load(stream)
+    if not isinstance(knowledge, knowledge_module.CoSTEERKnowledgeBaseV2):
         raise TypeError("Unexpected knowledge type")
     return knowledge
+
+
+def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -> Any:
+    if environ.get("ALPHA_FACTOR_RUN_DIR"):
+        # A sibling entry module that imports RD-Agent; loaded only inside the factor runtime.
+        judge = importlib.import_module("alpha_factor_judge")
+
+        # Refuse before any model call, with one plain line at the entry-point boundary.
+        try:
+            judge.current_universe()
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+        loop = loop_cls(settings)
+        loop.coder = judge.FamilyGuard(loop.coder, loop)
+        return loop
+    return loop_cls(settings)
 
 
 def open_factor_loop(
@@ -351,7 +371,7 @@ def open_factor_loop(
 ) -> tuple[Any, int]:
     """Load signed upstream artifacts, falling back with explicit, secret-free events."""
     if not environ.get("ALPHA_RDAGENT_MEMORY_DIR"):
-        return loop_cls(settings), loop_n
+        return _new_factor_loop(loop_cls, settings, environ), loop_n
     root = Path(environ["ALPHA_RDAGENT_MEMORY_DIR"])
     knowledge = Path(environ["FACTOR_CoSTEER_knowledge_base_path"])
     if knowledge.exists():
@@ -359,7 +379,7 @@ def open_factor_loop(
             _load_knowledge(knowledge)
         except ImportError:
             pass  # a broken runtime is not a broken knowledge file: never quarantine for it
-        except Exception as error:  # noqa: BLE001 - corrupt upstream artifacts must not stop a run
+        except Exception as error:  # corrupt upstream artifacts must not stop a run
             warning = _warning(
                 "knowledge-unloadable",
                 f"Coding knowledge could not be loaded ({type(error).__name__}); starting empty.",
@@ -398,7 +418,7 @@ def open_factor_loop(
                 previous = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
                 if getattr(previous, "trace", None) is None:
                     raise ValueError("completed checkpoint has no research trace")
-                loop = loop_cls(settings)
+                loop = _new_factor_loop(loop_cls, settings, environ)
                 loop.trace = previous.trace
             except Exception as error:
                 error_type = type(error).__name__
@@ -420,7 +440,7 @@ def open_factor_loop(
             "session-unloadable",
             f"The previous session could not be loaded ({error_type}); starting a fresh loop.",
         )
-    return loop_cls(settings), loop_n
+    return _new_factor_loop(loop_cls, settings, environ), loop_n
 
 
 def _safe_event(environ: Mapping[str, str], code: str, message: str) -> None:
@@ -562,7 +582,7 @@ def record(
     }
     try:
         _record(plan, run_id, run_dir, started_at, ended_at, secrets, result)
-    except Exception as error:  # noqa: BLE001 - finishing always returns a diagnostic receipt
+    except Exception as error:  # finishing always returns a diagnostic receipt
         result["warnings"].append(
             _warning(
                 "memory-record-failed", f"Memory could not be recorded ({type(error).__name__})."
@@ -602,10 +622,9 @@ def _runtime_view(source: Path, root: Path) -> dict[str, Any]:
     # Install the same verified source finder as the entry; no RD-Agent imports in the launcher.
     if str(WORKER) not in sys.path:
         sys.path.insert(0, str(WORKER))
-    from factor_loop_entry import install_source
-
-    install_source(source)
-    from rdagent.core.serialization import load
+    entry = importlib.import_module("factor_loop_entry")
+    entry.install_source(source)
+    serialization = importlib.import_module("rdagent.core.serialization")
 
     manifest = _read(root)
     result: dict[str, Any] = {"schema": "AlphaRdagentMemoryViewV1", "rounds": [], "knowledge": None}
@@ -621,7 +640,7 @@ def _runtime_view(source: Path, root: Path) -> dict[str, Any]:
         if files:
             newest = max(files, key=lambda p: (int(p.parent.name), int(p.name.split("_")[0])))
             with newest.open("rb") as stream:
-                loop = load(stream)
+                loop = serialization.load(stream)
             for experiment, feedback in loop.trace.hist:
                 result["rounds"].append(
                     {
@@ -785,6 +804,153 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         result = show(args.memory_dir.resolve(), ledger=args.trial_ledger)
         print(_json(result) if args.json else _plain(result))
+
+
+class MemoryEmbeddingError(Exception):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+def gateway_embedding(text: str) -> tuple[str, list[float]]:
+    """Use the run's gateway session, bypassing upstream's model-agnostic vector cache."""
+    import urllib.error
+    import urllib.request
+
+    request = urllib.request.Request(
+        os.environ["LM_STUDIO_API_BASE"].rstrip("/") + "/embeddings",
+        data=json.dumps({"model": "alpha-embed", "input": text}).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + os.environ["LM_STUDIO_API_KEY"],
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=180) as response:
+            body = json.load(response)
+    except urllib.error.HTTPError as error:
+        body = json.loads(error.read())
+        detail = body.get("error", {})
+        raise MemoryEmbeddingError(
+            str(detail.get("code", "gateway_error")),
+            str(detail.get("message", "gateway embedding failed")),
+        ) from None
+    return str(body["model"]), list(body["data"][0]["embedding"])
+
+
+class EmbeddingMemory:
+    """Per-entry sidecar, checked lazily when the coder first uses its graph.
+
+    Sidecar vectors are bound to text, model and dimension. Unknown legacy vectors are
+    re-embedded. Failed entries are removed from the active graph and returned for restoration
+    after retrieval; the original persistent knowledge is retained for a later run.
+    """
+
+    def __init__(
+        self,
+        sidecar: Path,
+        events: Path,
+        model: str,
+        embed: Callable[[str], tuple[str, list[float]]],
+    ) -> None:
+        self.sidecar, self.events, self.model, self.embed = sidecar, events, model, embed
+        self.dimension: int | None = None
+        self.failed: set[str] = set()
+        try:
+            data = json.loads(sidecar.read_text())
+        except FileNotFoundError:
+            data = {"schema": "AlphaEmbeddingMemoryV1", "entries": {}}
+        if data.get("schema") != "AlphaEmbeddingMemoryV1" or not isinstance(
+            data.get("entries"), dict
+        ):
+            raise ValueError("invalid embedding memory sidecar")
+        self.entries: dict[str, Any] = data["entries"]
+
+    def checked(self, vector: Any) -> list[float]:
+        import math
+
+        if (
+            not isinstance(vector, list)
+            or not vector
+            or any(type(v) not in (int, float) or not math.isfinite(v) for v in vector)
+        ):
+            raise ValueError("invalid memory vector")
+        if self.dimension is not None and len(vector) != self.dimension:
+            raise ValueError("memory embedding dimension changed")
+        self.dimension = len(vector)
+        return list(vector)
+
+    def vector(self, text: str) -> list[float]:
+        model, vector = self.embed(text)
+        if model != self.model:
+            raise ValueError("gateway returned a different embedding model")
+        return self.checked(vector)
+
+    def save(self) -> None:
+        self.sidecar.parent.mkdir(parents=True, exist_ok=True)
+        with _lock(self.sidecar.parent):
+            descriptor, name = tempfile.mkstemp(prefix=".embedding-", dir=self.sidecar.parent)
+            try:
+                with os.fdopen(descriptor, "w") as stream:
+                    json.dump(
+                        {"schema": "AlphaEmbeddingMemoryV1", "entries": self.entries},
+                        stream,
+                        allow_nan=False,
+                    )
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(name, self.sidecar)
+            finally:
+                Path(name).unlink(missing_ok=True)
+
+    def remember(self, node_id: str, node: Any) -> None:
+        vector = self.checked(node.embedding)
+        self.entries[node_id] = {
+            "model": self.model,
+            "dimension": len(vector),
+            "vector": vector,
+            "text_sha256": hashlib.sha256(node.content.encode()).hexdigest(),
+        }
+
+    def prepare(self, graph: Any, skip: Callable[[Any, Exception], None]) -> dict[str, Any]:
+        removed = {}
+        for node_id, node in list(graph.nodes.items()):
+            if node_id in self.failed:
+                removed[node_id] = graph.nodes.pop(node_id)
+                continue
+            cached = self.entries.get(node_id, {})
+            text_hash = hashlib.sha256(node.content.encode()).hexdigest()
+            if cached.get("model") == self.model and cached.get("text_sha256") == text_hash:
+                vector = self.checked(cached["vector"])
+                if cached.get("dimension") != len(vector):
+                    raise ValueError("sidecar dimension differs")
+                node.embedding = vector
+                continue
+            try:
+                vector = self.vector(node.content)
+            except Exception as error:
+                skip(node, error)  # budget errors must raise SystemExit before marking a skip
+                self.failed.add(node_id)
+                removed[node_id] = graph.nodes.pop(node_id)
+                # No stale vector can be reached by a retained neighbour reference either.
+                node.embedding = None
+                continue
+            node.embedding = vector
+            self.remember(node_id, node)
+            self.save()
+            with self.events.open("a") as stream:
+                stream.write(
+                    _json(
+                        {
+                            "node_id": node_id,
+                            "model": self.model,
+                            "dimension": len(vector),
+                            "text_sha256": text_hash,
+                        }
+                    )
+                    + "\n"
+                )
+        return removed
 
 
 if __name__ == "__main__":

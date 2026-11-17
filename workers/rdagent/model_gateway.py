@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
-import hashlib
-import ipaddress
+import importlib
 import json
 import math
 import os
@@ -22,11 +21,38 @@ import urllib.parse
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from . import gateway_embeddings as embeddings_impl
+    from . import gateway_usage as usage_impl
+else:
+    if not __package__:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+    embeddings_impl = importlib.import_module(
+        f"{__package__}.gateway_embeddings" if __package__ else "gateway_embeddings"
+    )
+
+    usage_impl = importlib.import_module(
+        f"{__package__}.gateway_usage" if __package__ else "gateway_usage"
+    )
+
+GatewayError = embeddings_impl.GatewayError
+EmbeddingResult = embeddings_impl.EmbeddingResult
+EmbeddingBackend = embeddings_impl.EmbeddingBackend
+FakeEmbeddings = embeddings_impl.FakeEmbeddings
+OllamaEmbeddings = embeddings_impl.OllamaEmbeddings
+ProviderEmbeddings = embeddings_impl.ProviderEmbeddings
+EMBEDDING_CALLS_PER_RUN = embeddings_impl.EMBEDDING_CALLS_PER_RUN
+digest = embeddings_impl.digest
+loopback_url = embeddings_impl.loopback_url
+unsupported = embeddings_impl.unsupported
+split_for_embedding = embeddings_impl.split_for_embedding
+mean_by_owner = embeddings_impl.mean_by_owner
 
 GATEWAY_DISABLED_FEATURES = (
     "shell_tool",
@@ -51,7 +77,6 @@ GATEWAY_DISABLED_FEATURES = (
     "workspace_dependencies",
     "code_mode_host",
 )
-LOCAL_EMBEDDING_CALLS_PER_RUN = 2000
 MAX_BODY = 4 * 1024 * 1024
 
 
@@ -63,63 +88,14 @@ def month() -> str:
     return datetime.now(UTC).strftime("%Y-%m")
 
 
-def digest(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-class GatewayError(Exception):
-    def __init__(
-        self,
-        status: int,
-        code: str,
-        message: str,
-        param: str | None = None,
-        payload: dict[str, Any] | None = None,
-        tool_events: int = 0,
-    ) -> None:
-        super().__init__(message)
-        self.status = status
-        self.code = code
-        self.message = message
-        self.param = param
-        self.payload = payload
-        self.tool_events = tool_events
-
-    def body(self) -> dict[str, Any]:
-        if self.payload is not None:
-            return self.payload
-        return {
-            "error": {
-                "message": self.message,
-                "type": "invalid_request_error" if self.status < 500 else "gateway_error",
-                "code": self.code,
-                "param": self.param,
-            }
-        }
-
-
-def unsupported(param: str, reason: str) -> GatewayError:
-    return GatewayError(400, "unsupported_parameter", f"{param}: {reason}", param)
-
-
-def loopback_url(url: str) -> bool:
-    parsed = urllib.parse.urlsplit(url)
-    if parsed.scheme not in ("http", "https") or parsed.username or parsed.password:
-        return False
-    if parsed.hostname == "localhost":
-        return True
-    try:
-        return ipaddress.ip_address(parsed.hostname or "").is_loopback
-    except ValueError:
-        return False
-
-
 @dataclass
 class Settings:
     data_dir: Path
     run_id: str
     chat_route: str = "codex"
-    embedding_route: str = "ollama"
+    embedding_route: str = "local"
+    provider_embed_model: str | None = None
+    provider_embed_usd_per_mtok: float | None = None
     chat_model_alias: str = "alpha-chat"
     embedding_model_alias: str = "alpha-embed"
     codex_bin: str = "codex"
@@ -139,6 +115,7 @@ class Settings:
     api_price_out_per_mtok: float | None = None
     api_reserve_output_tokens: int = 4096
     api_openrouter: bool = False
+    no_router_session: bool = False
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_embed_model: str = "nomic-embed-text"
     run_max_calls: int = 60
@@ -148,6 +125,13 @@ class Settings:
     max_concurrency: int = 2
     queue_timeout: float = 600
     log_content: bool = False
+
+    def post_json(
+        self, url: str, body: dict[str, Any], key: str | None = None, timeout: float | None = None
+    ) -> dict[str, Any]:
+        if key is None and timeout is None:
+            return post_json(url, body)
+        return post_json(url, body, key, timeout=900 if timeout is None else timeout)
 
     @property
     def state_dir(self) -> Path:
@@ -190,11 +174,10 @@ class Settings:
             raise ValueError("ollama-url must be loopback")
         if self.chat_route not in ("codex", "api", "fake"):
             raise ValueError("invalid chat route")
-        if self.embedding_route not in ("ollama", "fake"):
-            raise ValueError("invalid embedding route")
+        embeddings_impl.validate_settings(self)
         if self.codex_effort not in ("low", "medium", "high"):
             raise ValueError("invalid codex effort")
-        if self.chat_route == "api":
+        if self.chat_route == "api" or self.embedding_route == "provider":
             for key in ("ALPHA_GATEWAY_API_KEY", "ALPHA_GATEWAY_API_BASE"):
                 if not os.environ.get(key):
                     raise ValueError(f"missing {key}")
@@ -210,6 +193,7 @@ class Settings:
                 or not (parsed.scheme == "https" or local)
             ):
                 raise ValueError("ALPHA_GATEWAY_API_BASE must be HTTPS or local HTTP")
+        if self.chat_route == "api":
             if not self.api_model:
                 raise ValueError("missing api_model (--api-model)")
             for name in ("api_price_in_per_mtok", "api_price_out_per_mtok"):
@@ -259,10 +243,7 @@ class Budget:
                     if (
                         not key
                         or not isinstance(entry, dict)
-                        or set(entry)
-                        not in ({"calls", "usd"}, {"calls", "usd", "local_embedding_calls"})
-                        or type(entry.get("local_embedding_calls", 0)) is not int
-                        or entry.get("local_embedding_calls", 0) < 0
+                        or not embeddings_impl.valid_counters(entry)
                         or type(entry["calls"]) is not int
                         or entry["calls"] < 0
                         or type(entry["usd"]) not in (int, float)
@@ -299,29 +280,20 @@ class Budget:
             for group in ("runs", "months"):
                 for entry in state[group].values():
                     entry.update(counted_calls=entry["calls"])
-                    entry.setdefault("local_embedding_calls", 0)
+                    embeddings_impl.counter_defaults(entry)
             return state
 
     def reserve(self, usd: float, *, local_embedding: bool = False) -> tuple[str, str, float]:
-        if local_embedding and usd != 0:
-            raise ValueError("local embeddings must have zero provider cost")
+        if local_embedding:
+            if usd != 0:
+                raise ValueError("local embeddings must have zero provider cost")
+            return embeddings_impl.reserve_embedding(self, 0, provider=False)
         current_month, run = month(), self.settings.run_id
         with self.locked():
             state = self.read()
             for group, key, prefix in (("runs", run, "run"), ("months", current_month, "month")):
                 entry = state[group].setdefault(key, {"calls": 0, "usd": 0.0})
                 entry.setdefault("local_embedding_calls", 0)
-                if local_embedding:
-                    limit = LOCAL_EMBEDDING_CALLS_PER_RUN
-                    if prefix == "run" and entry["local_embedding_calls"] >= limit:
-                        raise GatewayError(
-                            429,
-                            "budget_exhausted",
-                            f"budget exhausted: local embedding limit "
-                            f"LOCAL_EMBEDDING_CALLS_PER_RUN ({limit}) reached",
-                        )
-                    entry["local_embedding_calls"] += 1
-                    continue
                 for field, increment in (("calls", 1), ("usd", usd)):
                     cap = f"{prefix}_max_{field}"
                     if entry[field] + increment > getattr(self.settings, cap):
@@ -356,13 +328,11 @@ class ChatResult:
     usd: float = 0.0
     response: dict[str, Any] | None = None
     estimated_usd: float | None = None
-
-
-@dataclass
-class EmbeddingResult:
-    vectors: list[list[float]]
-    model: str
-    tokens: int | None = None
+    provider: str | None = None
+    id: str | None = None
+    cache_write_tokens: int | None = None
+    cache_discount: float | None = None
+    charged_usd: float | None = None
 
 
 class ChatBackend(Protocol):
@@ -374,10 +344,6 @@ class ChatBackend(Protocol):
         effort: str,
         schema: dict[str, Any] | None,
     ) -> ChatResult: ...
-
-
-class EmbeddingBackend(Protocol):
-    def embed(self, inputs: list[str]) -> EmbeddingResult: ...
 
 
 class FakeChat:
@@ -415,63 +381,6 @@ class FakeChat:
             self.remaining_bad -= int(bad)
         reply = "not json" if bad else json.dumps({"fake": True, "prompt_sha256": digest(prompt)})
         return ChatResult(reply, "fake", len(prompt) // 4, completion_tokens=len(reply) // 4)
-
-
-def split_for_embedding(text: str, limit: int) -> list[str]:
-    """Pieces of at most ``limit`` characters, cut at sentence ends, then at spaces, then hard.
-
-    Only the whitespace between pieces is dropped; every other character is kept in order.
-    """
-    if len(text) <= limit:
-        return [text]
-    pieces: list[str] = []
-    current = ""
-    for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):
-        units = [sentence] if len(sentence) <= limit else sentence.split()
-        for unit in units:
-            while len(unit) > limit:  # a single word longer than the limit
-                if current:
-                    pieces.append(current)
-                    current = ""
-                pieces.append(unit[:limit])
-                unit = unit[limit:]
-            candidate = f"{current} {unit}" if current else unit
-            if len(candidate) <= limit:
-                current = candidate
-            else:
-                pieces.append(current)
-                current = unit
-    if current:
-        pieces.append(current)
-    return [piece for piece in pieces if piece]
-
-
-def mean_by_owner(vectors: list[Any], owners: list[int], count: int) -> list[list[float]]:
-    """Each input's vector: the mean of its pieces' vectors (one piece: unchanged)."""
-    if len(vectors) != len(owners):
-        raise GatewayError(502, "invalid_provider_response", "embedding count differs")
-    grouped: list[list[list[float]]] = [[] for _ in range(count)]
-    for owner, vector in zip(owners, vectors, strict=True):
-        grouped[owner].append(vector)
-    return [
-        [math.fsum(column) / len(group) for column in zip(*group, strict=True)]
-        if len(group) > 1
-        else group[0]
-        for group in grouped
-    ]
-
-
-class FakeEmbeddings:
-    def embed(self, inputs: list[str]) -> EmbeddingResult:
-        vectors = [
-            [
-                int.from_bytes(hashlib.sha256(text.encode()).digest()[i : i + 4], "big")
-                / (2**32 - 1)
-                for i in range(0, 32, 4)
-            ]
-            for text in inputs
-        ]
-        return EmbeddingResult(vectors, "fake", sum(len(text) // 4 for text in inputs))
 
 
 def sanitise(message: str, sensitive: tuple[str, ...] = ()) -> str:
@@ -647,7 +556,7 @@ def post_json(
     def call() -> None:
         try:
             box["result"] = _post_json(url, body, key, timeout)
-        except BaseException as exc:  # noqa: BLE001 - re-raised in the caller's thread
+        except BaseException as exc:  # re-raised in the caller's thread
             box["error"] = exc
 
     worker = threading.Thread(target=call, name="provider-call", daemon=True)
@@ -723,9 +632,14 @@ class ApiChat:
         response = post_json(
             self.base + "/chat/completions",
             {
-                **{k: v for k, v in request.items() if k != "stream_options"},
+                **{k: v for k, v in request.items() if k not in ("stream_options", "session_id")},
                 "model": s.api_model,
                 "stream": False,
+                **(
+                    {"session_id": s.run_id}
+                    if s.chat_route == "api" and not s.no_router_session
+                    else {}
+                ),
                 # Require parameter fidelity and the provider's charged cost in usage.
                 **(
                     {"provider": {"require_parameters": True}, "usage": {"include": True}}
@@ -758,6 +672,7 @@ class ApiChat:
                 if type(charged) not in (int, float) or not math.isfinite(charged) or charged < 0:
                     raise ValueError("provider omitted its charged cost")
                 cost = float(charged)
+            facts = usage_impl.response_facts(response)
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise GatewayError(
                 502, "invalid_provider_response", "provider omitted text or usage"
@@ -767,44 +682,12 @@ class ApiChat:
             text,
             s.api_model or "",
             incoming,
-            (usage.get("prompt_tokens_details") or {}).get("cached_tokens"),
-            outgoing,
-            (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"),
+            completion_tokens=outgoing,
             usd=cost,
             response=response,
             estimated_usd=estimate,
+            **facts,
         )
-
-
-class OllamaEmbeddings:
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
-
-    def embed(self, inputs: list[str]) -> EmbeddingResult:
-        response = post_json(
-            self.settings.ollama_url.rstrip("/") + "/api/embed",
-            {"model": self.settings.ollama_embed_model, "input": inputs},
-        )
-        vectors = response.get("embeddings")
-        if (
-            not isinstance(vectors, list)
-            or len(vectors) != len(inputs)
-            or any(
-                not isinstance(v, list)
-                or not v
-                or any(type(x) not in (float, int) or not math.isfinite(x) for x in v)
-                for v in vectors
-            )
-        ):
-            raise GatewayError(
-                502, "invalid_provider_response", "Ollama returned invalid embeddings"
-            )
-        tokens = response.get("prompt_eval_count")
-        if tokens is not None and (type(tokens) is not int or tokens < 0):
-            raise GatewayError(
-                502, "invalid_provider_response", "Ollama returned invalid token usage"
-            )
-        return EmbeddingResult(vectors, self.settings.ollama_embed_model, tokens)
 
 
 @dataclass
@@ -835,7 +718,11 @@ class Gateway:
         else:
             self.chat_backend = FakeChat()
         self.embedding_backend = embedding_backend or (
-            FakeEmbeddings() if settings.embedding_route == "fake" else OllamaEmbeddings(settings)
+            ProviderEmbeddings(settings)
+            if settings.embedding_route == "provider"
+            else FakeEmbeddings()
+            if settings.embedding_route == "fake"
+            else OllamaEmbeddings(settings)
         )
         self.slots = threading.BoundedSemaphore(settings.max_concurrency)
         self.log_lock = threading.Lock()
@@ -852,10 +739,13 @@ class Gateway:
             else s.api_model
             if route == "api"
             else s.ollama_embed_model
-            if route == "ollama"
+            if route in ("local", "ollama")
+            else s.provider_embed_model
+            if route == "provider"
             else "fake"
         )
         return dict(
+            **(usage_impl.record_defaults() if chat else {}),
             ts=now(),
             run_id=s.run_id,
             endpoint=endpoint,
@@ -897,6 +787,7 @@ class Gateway:
             self.session_token,
             os.environ.get("ALPHA_GATEWAY_API_KEY", ""),
             getattr(getattr(self, "chat_backend", None), "key", ""),
+            getattr(getattr(self, "embedding_backend", None), "key", ""),
         ):
             if secret:
                 line = line.replace(json.dumps(secret)[1:-1], "[redacted]")
@@ -939,8 +830,9 @@ class Gateway:
         json_required = False
         if api:
             # The provider is called without streaming; the reply is replayed as a stream.
-            row["honoured"] = [k for k in request if k not in ("stream", "stream_options")]
-            row["enforced"] += [k for k in request if k in ("stream", "stream_options")]
+            enforced = ("stream", "stream_options", "session_id")
+            row["honoured"] = [k for k in request if k not in enforced]
+            row["enforced"] += [k for k in request if k in enforced]
             fmt = request.get("response_format", {})
             json_required = isinstance(fmt, dict) and fmt.get("type") == "json_object"
             if json_required:
@@ -1096,18 +988,23 @@ class Gateway:
                     row["timeout_retry_attempts"] += int(timeout_retry)
                     timeout_retry = False
                     row["usd"] += reserve
+                    row["router_session_sent"] = (
+                        self.settings.chat_route == "api" and not self.settings.no_router_session
+                    )
                     try:
                         result = self.chat_backend.complete(
                             request, prompt, plan.instructions, plan.effort, plan.schema
                         )
                     except GatewayError as exc:
                         # The reservation stays charged: a provider may bill an abandoned call.
+                        usage_impl.record_attempt(row, error=exc.code)
                         row["provider_errors"].append(exc.code)
                         retried = len(row["provider_errors"]) <= self.settings.provider_retries
                         if exc.code in PROVIDER_RETRYABLE and retried:
                             timeout_retry = exc.code == "provider_timeout"
                             continue
                         raise
+                    usage_impl.record_attempt(row, result)
                     self.budget.settle(ticket, result.usd)
                     row["usd"] += result.usd - reserve
                     if result.estimated_usd is not None:
@@ -1176,102 +1073,13 @@ class Gateway:
             self.log(row, prompt, reply, instructions)
 
     def chunked(self, inputs: list[str], row: dict[str, Any]) -> tuple[list[str], list[int]]:
-        pieces: list[str] = []
-        owners: list[int] = []
-        for index, text in enumerate(inputs):
-            parts = split_for_embedding(text, self.settings.embed_max_chars)
-            if len(parts) > 1:
-                row["chunked_inputs"] += 1
-                row["chunks"] += len(parts)
-            pieces += parts
-            owners += [index] * len(parts)
-        return pieces, owners
+        return embeddings_impl.chunked(self, inputs, row)
 
     def embedding_attempt(self, inputs: list[str], row: dict[str, Any]) -> EmbeddingResult:
-        """Only the built-in fake or loopback Ollama backend skips the call cap (2026-11-17)."""
-        backend = self.embedding_backend
-        local = type(backend) is FakeEmbeddings or (
-            type(backend) is OllamaEmbeddings and loopback_url(self.settings.ollama_url)
-        )
-        row["local_embedding"] = local
-        ticket = self.budget.reserve(0, local_embedding=local)
-        row["attempts"] += 1
-        try:
-            return backend.embed(inputs)
-        finally:
-            if not local:
-                self.budget.settle(ticket, 0)
+        return embeddings_impl.embedding_attempt(self, inputs, row)
 
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
-        row = self.record("/v1/embeddings", request)
-        start = time.monotonic()
-        prompt = reply = ""
-        try:
-            self.check_model(request, self.settings.embedding_model_alias)
-            for key, value in request.items():
-                if key not in ("model", "input", "encoding_format"):
-                    raise unsupported(key, "parameter is not supported for embeddings")
-                if key == "encoding_format" and value != "float":
-                    raise unsupported(key, "only float encoding is supported")
-                row["honoured"].append(key)
-            inputs = request.get("input")
-            if isinstance(inputs, str):
-                inputs = [inputs]
-            if not isinstance(inputs, list) or any(not isinstance(text, str) for text in inputs):
-                raise unsupported(
-                    "input", "must be a string or list of strings; token arrays are unsupported"
-                )
-            prompt = json.dumps(inputs, ensure_ascii=False)
-            row.update(prompt_sha256=digest(prompt), prompt_chars=sum(map(len, inputs)))
-            with self.slot(row):
-                try:
-                    result = self.embedding_attempt(inputs, row)
-                    pieces = None
-                except GatewayError as exc:
-                    if exc.status != 400 or not any(
-                        len(text) > self.settings.embed_max_chars for text in inputs
-                    ):
-                        raise
-                    row["provider_errors"].append(exc.code)
-                    pieces, owners = self.chunked(inputs, row)
-                if pieces is not None:
-                    result = self.embedding_attempt(pieces, row)
-                    result.vectors = mean_by_owner(result.vectors, owners, len(inputs))
-            reply = json.dumps(result.vectors)
-            row.update(
-                model_used=result.model,
-                prompt_tokens=result.tokens,
-                reply_sha256=digest(reply),
-                reply_chars=len(reply),
-            )
-            return {
-                "object": "list",
-                "data": [
-                    {"object": "embedding", "index": i, "embedding": vector}
-                    for i, vector in enumerate(result.vectors)
-                ],
-                "model": result.model,
-                "usage": {"prompt_tokens": result.tokens, "total_tokens": result.tokens},
-            }
-        except GatewayError as exc:
-            row.update(status=exc.status, error_code=exc.code)
-            if exc.status == 400 and (
-                exc.code in {"context_length_exceeded", "input_too_long", "embedding_input_refused"}
-                or exc.code == "provider_error"
-                and re.search(
-                    r"(?:input|context).*(?:length|limit|window)|too many tokens", str(exc), re.I
-                )
-            ):
-                row["error_code"] = "embedding_input_refused"
-                raise GatewayError(
-                    400, "embedding_input_refused", f"local embedding input refused: {exc}"
-                ) from exc
-            if exc.param:
-                row["refused"].append(exc.param)
-            raise
-        finally:
-            row["latency_ms"] = (time.monotonic() - start) * 1000
-            self.log(row, prompt, reply)
+        return embeddings_impl.embeddings(self, request)
 
 
 def sse_chunks(response: dict[str, Any], include_usage: bool) -> Iterator[bytes]:
@@ -1403,7 +1211,11 @@ def parser() -> argparse.ArgumentParser:
             continue
         p.add_argument("--port", type=int, default=0)
         p.add_argument("--chat-route", choices=("codex", "api", "fake"), default="codex")
-        p.add_argument("--embedding-route", choices=("ollama", "fake"), default="ollama")
+        p.add_argument(
+            "--embedding-route", choices=("local", "provider", "ollama", "fake"), default="local"
+        )
+        p.add_argument("--provider-embed-model")
+        p.add_argument("--provider-embed-usd-per-mtok", type=float)
         p.add_argument("--chat-model-alias", default="alpha-chat")
         p.add_argument("--embedding-model-alias", default="alpha-embed")
         p.add_argument("--codex-bin", default="codex")
@@ -1421,6 +1233,7 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--api-price-out-per-mtok", type=float)
         p.add_argument("--api-reserve-output-tokens", type=int, default=4096)
         p.add_argument("--api-openrouter", action="store_true")
+        p.add_argument("--no-router-session", action="store_true")
         p.add_argument("--ollama-url", default="http://127.0.0.1:11434")
         p.add_argument("--ollama-embed-model", default="nomic-embed-text")
         p.add_argument("--max-concurrency", type=int, default=2)
@@ -1431,9 +1244,14 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     cli = parser()
-    options = vars(cli.parse_args(argv))
-    command = options.pop("command")
-    port = options.pop("port", 0)
+    parsed = cli.parse_args(argv)
+    options = {
+        field.name: getattr(parsed, field.name)
+        for field in fields(Settings)
+        if hasattr(parsed, field.name)
+    }
+    command = parsed.command
+    port = getattr(parsed, "port", 0)
     if "accept_unhonoured" in options:
         options["accept_unhonoured"] = tuple(filter(None, options["accept_unhonoured"].split(",")))
     try:

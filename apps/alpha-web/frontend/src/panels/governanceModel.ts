@@ -175,7 +175,7 @@ export function governancePages(input: GovernanceInput): GovernancePage[] {
       },
     },
     page('storage', 'Storage', [
-      { label: 'Expansion SSD', value: ssd.label, tone: ssd.tone === 'amber' ? 'warn' : 'ok', detail: ssd.detail },
+      { label: 'Storage', value: ssd.label, tone: ssd.tone === 'amber' ? 'warn' : 'ok', detail: ssd.detail },
     ]),
     page('glossary', input.profile ? `Glossary (${glossaryEntries(input.profile).length})` : 'Glossary', []),
   ]

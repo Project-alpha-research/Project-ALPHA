@@ -1,3 +1,4 @@
+import { Timestamp } from '../../util/formatTime'
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import type { RunDetail } from '../../api/types'
@@ -35,7 +36,7 @@ export function BacktestResultCard({ detail, runId }: { detail: RunDetail; runId
       <thead><tr><th scope="col">Measure</th><th scope="col">Value</th><th scope="col">Unit</th></tr></thead>
       <tbody>
         <tr><th scope="row">Final drawdown</th><td className="mono">{selected.result.drawdown}</td><td>fraction of running peak equity</td></tr>
-        <tr><th scope="row">Final observation time</th><td className="mono">{selected.result.timestampUtc}</td><td>UTC (whole seconds)</td></tr>
+        <tr><th scope="row">Final observation time</th><td className="mono"><Timestamp value={selected.result.timestampUtc} /></td><td>UTC (whole seconds)</td></tr>
         <tr><th scope="row">Curve observations</th><td className="mono">{selected.result.observations}</td><td>count</td></tr>
       </tbody>
     </table>

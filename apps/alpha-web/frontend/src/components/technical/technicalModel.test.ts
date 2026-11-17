@@ -255,11 +255,11 @@ describe('layout', () => {
     expect(crowded.price).toBe(454)
     expect(panelHeights(500, 0)).toEqual({ price: 500, study: 0 })
   })
-  it('pins StockCharts study colours per style', () => {
-    expect(studyColors(CLASSIC, ['sma:50', 'sma:200']).get('sma:200')).toBe('#d00030')
+  it('pins readable dark-terminal study colours per style', () => {
+    expect(studyColors(CLASSIC, ['sma:50', 'sma:200']).get('sma:200')).toBe('#e64d52')
     const def = studyColors(DEFAULT_STYLE, ['ema:20', 'sma:50', 'sma:200', 'ema:9'])
-    expect([def.get('ema:20'), def.get('sma:50'), def.get('sma:200')]).toEqual(['#006400', '#00008b', '#dd0000'])
-    expect(def.get('ema:9')).toBe('#8b4513')
+    expect([def.get('ema:20'), def.get('sma:50'), def.get('sma:200')]).toEqual(['#2fc36a', '#5584cf', '#e64d52'])
+    expect(def.get('ema:9')).toBe('#e9a35d')
   })
 })
 

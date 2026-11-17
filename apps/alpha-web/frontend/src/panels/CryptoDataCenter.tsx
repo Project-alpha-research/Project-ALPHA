@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { api } from '../api/client'
@@ -935,7 +936,7 @@ export function CryptoDataCenter({
               >
                 {(profiles?.items ?? []).map((item) => (
                   <option key={item.profile_id} value={item.profile_id}>
-                    {new Date(item.as_of).toLocaleString()} · {item.task_count.toLocaleString()} tasks
+                    <Timestamp value={item.as_of} /> · {item.task_count.toLocaleString()} tasks
                   </option>
                 ))}
               </select>
@@ -1015,7 +1016,7 @@ export function CryptoDataCenter({
         ) : null}
 
         <section className="provider-card">
-          <div className="rd-head">Expansion storage</div>
+          <div className="rd-head">Storage</div>
           <div className="crypto-storage-stats"><span className={storage.state === 'ready' ? 'chip pass' : 'chip fail'}>{storage.state.toUpperCase()}</span><span>{fmtBytes(storage.free_bytes)} free of {fmtBytes(storage.total_bytes)}</span><span>{storage.manifest_count} immutable manifests</span><span>{fmtBytes(storage.cache_bytes)} removable cache</span><span>Reserve {storage.reserve_fraction == null ? '—' : `${Math.round(storage.reserve_fraction * 100)}%`} · minimum {fmtBytes(storage.minimum_free_bytes)}</span></div>
           <p className="muted">The browser receives only the volume label and capacity—not the private absolute path. Missing or substituted media fails closed.</p>
           <div className="crypto-actions"><button className="btn" type="button" disabled={busyAction !== null} onClick={() => void inspectStorage()}>{busyAction === 'storage-inventory' ? 'Inspecting…' : 'Inspect storage inventory'}</button><button className="btn" type="button" disabled={busyAction !== null} onClick={() => void verifyStorage()}>{busyAction === 'storage-verify' ? 'Verifying every artifact…' : 'Verify all immutable data'}</button><button className={cleanupArmed ? 'btn danger' : 'btn'} type="button" disabled={busyAction !== null || storage.cache_bytes === 0} onClick={() => void cleanCache()}>{busyAction === 'cache-clean' ? 'Cleaning cache…' : cleanupArmed ? 'Confirm clean removable cache' : 'Review cache cleanup'}</button></div>

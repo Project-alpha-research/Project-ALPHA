@@ -238,6 +238,10 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
         for field in ("mean rank IC", "net annual excess", "turnover per day"):
             assert f"{field} not available" in container[key]
             container[key] = container[key].replace(f"{field} not available", f"{field} None")
+    # New clock-labelled presentation fields are tested separately; keep the old metric hash.
+    for row in record["factors"]:
+        for key in ("reason", "figures_clock", "mean_ic", "spread"):
+            row.pop(key, None)
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )
@@ -281,16 +285,22 @@ def test_import_ignores_unknown_identity_and_counts_unknown_trial(
     assert imported["total_trials"] == imported["family_size"] == 2
 
 
-def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path, recorded_time: None) -> None:
+def test_planted_factor_fails_swing_deflation_and_is_deterministic(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     ledger = tmp_path / "trials.jsonl"
     result = evaluate(run, req, ledger)
     factor = result["factors"][0]
-    assert factor["status"] == "CANDIDATE"
+    assert factor["status"] == "DEFLATION_FAIL"
+    assert (
+        factor["replay"]["deflated_sharpe"]["dsr"]
+        < factor["replay"]["deflated_sharpe"]["threshold"]
+    )
     assert factor["q"] < 0.10
     assert factor["replay"]["net"]["annualized_return"] > 0
-    assert result["decision"] is True
+    assert result["decision"] is False
     assert result["label"] == ev.LABEL
     assert (
         "15 instruments, 0 later delisted declared; survivors-only selection"
@@ -417,7 +427,7 @@ def test_one_failing_factor_is_recorded_as_error_and_the_rest_still_land(tmp_pat
     with patch.object(judge, "screen", flaky):
         result = evaluate(run, req, ledger)
     statuses = {f["name"]: f["status"] for f in result["factors"]}
-    assert statuses == {"factor": "CANDIDATE", "broken": "ERROR"}
+    assert statuses == {"factor": "DEFLATION_FAIL", "broken": "ERROR"}
     assert result["family_size"] == 6
     assert result["distinct_factors"] == 2
     assert len(ledger.read_bytes().splitlines()) == 2
@@ -433,10 +443,14 @@ def test_a_day_with_too_few_names_is_degenerate_not_a_crash(tmp_path: Path) -> N
     result = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = result["factors"][0]
     assert factor["clocks"]["daily"]["status"] == "DEGENERATE"
-    assert factor["screen"]["thin_days"] == 1
+    assert factor["clocks"]["daily"]["screen"]["thin_days"] == 1
     assert factor["clocks"]["weekly"]["screen"]["thin_days"] == 0
     assert factor["clocks"]["monthly"]["screen"]["thin_days"] == 0
     assert factor["status"] == "CANDIDATE"
+    assert (
+        factor["replay"]["deflated_sharpe"]["dsr"]
+        >= factor["replay"]["deflated_sharpe"]["threshold"]
+    )
 
 
 # --- freeze: real store API on synthetic provider payloads (no market data) ------------------
@@ -801,7 +815,7 @@ def test_import_refuses_a_different_reserved_start(
         ("VOL_ret_21d", "Volatility return over 21 days"),
         (
             "vwap_ic_xs_ma_sma_std_atr_pct_zscore",
-            "Volume-weighted average price information coefficient cross-sectional "
+            "VWAP distance information coefficient cross-sectional "
             "moving average moving average standard deviation average true range percent z-score",
         ),
         ("7d_ret", "7d return"),
@@ -987,7 +1001,7 @@ def test_partial_series_write_failure_is_not_a_scoring_failure(tmp_path: Path) -
     with patch.object(ev, "_series_file", fail_buckets):
         record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
-    assert factor["status"] == "CANDIDATE" and record["decision"] is True
+    assert factor["status"] == "DEFLATION_FAIL" and record["decision"] is False
     assert "bucket write failed" in factor["series_note"]
     folder, manifest = trial_series(run)
     assert [f["name"] for f in manifest["factors"][0]["files"]] == [

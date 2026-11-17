@@ -110,7 +110,7 @@ export function navigatorTree(input: NavigatorInput): NavigatorGroup[] {
     }
   })
   dataLeaves.push({
-    id: 'storage:expansion',
+    id: 'storage:bulk',
     label: input.storage.label,
     sub: null,
     tone: input.storage.tone === 'ok' ? 'ok' : 'warn',

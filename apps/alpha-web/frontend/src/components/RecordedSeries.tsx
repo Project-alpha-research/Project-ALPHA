@@ -1,3 +1,5 @@
+import { withAlpha } from '../util/tokens'
+import { formatTime } from '../util/formatTime'
 import { useEffect, useRef } from 'react'
 import { AreaSeries, ColorType, CrosshairMode, LineSeries, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from 'lightweight-charts'
 import { logicalRangeForUTC, type ChartLinkRegistry } from '../shell/chartLinkRegistry'
@@ -22,8 +24,8 @@ function MarketRecordedSeries({ points, label, unit, panelId, registry, area = f
   useEffect(() => {
     if (!host.current) return
     const node = host.current
-    const chart = createChart(node, { layout: { background: { type: ColorType.Solid, color: CHART.bg }, textColor: CHART.muted, fontFamily: 'JetBrains Mono Variable, monospace', fontSize: 11 }, grid: { vertLines: { color: CHART.grid }, horzLines: { color: CHART.grid } }, timeScale: { borderColor: CHART.line }, rightPriceScale: { borderColor: CHART.line } })
-    const series = area ? chart.addSeries(AreaSeries, { lineColor: CHART.down, topColor: '#e5484d44', bottomColor: '#e5484d08', lineWidth: 1 }) : chart.addSeries(LineSeries, { color: CHART.ink, lineWidth: 1 })
+    const chart = createChart(node, { layout: { background: { type: ColorType.Solid, color: CHART.bg }, textColor: CHART.muted, fontFamily: 'JetBrains Mono Variable, monospace', fontSize: 11 }, grid: { vertLines: { color: CHART.grid }, horzLines: { color: CHART.grid } }, crosshair: { vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } }, timeScale: { borderColor: CHART.line }, rightPriceScale: { borderColor: CHART.line } })
+    const series = area ? chart.addSeries(AreaSeries, { lineColor: CHART.down, topColor: withAlpha(CHART.down, 0.27), bottomColor: withAlpha(CHART.down, 0.03), lineWidth: 1 }) : chart.addSeries(LineSeries, { color: CHART.ink, lineWidth: 1 })
     chartRef.current = chart; seriesRef.current = series; zoom.current = 0
     const localGesture = () => { remoteRange.current = false }
     node.addEventListener('pointerdown', localGesture, true); node.addEventListener('wheel', localGesture, true); node.addEventListener('keydown', localGesture, true)
@@ -32,7 +34,11 @@ function MarketRecordedSeries({ points, label, unit, panelId, registry, area = f
     chart.subscribeCrosshairMove(event => {
       const time = typeof event.time === 'number' ? event.time : null
       const value = time === null ? undefined : values.current.get(time)
-      if (readout.current) readout.current.textContent = time !== null && value != null ? `${new Date(time * 1000).toISOString()} · ${value.toPrecision(6)} ${unit}` : 'Cursor —'
+      if (readout.current) {
+        const iso = time !== null ? new Date(time * 1000).toISOString() : ''
+        readout.current.title = iso
+        readout.current.textContent = iso && value != null ? `${formatTime(iso)} · ${value.toPrecision(6)} ${unit}` : 'Cursor —'
+      }
       registry?.publish(panelId, 'cursor', ...(time !== null ? [time] : []))
     })
     chart.timeScale().subscribeVisibleTimeRangeChange(range => { if (!remoteRange.current && range && typeof range.from === 'number' && typeof range.to === 'number') registry?.publish(panelId, 'range', range.from, range.to) })

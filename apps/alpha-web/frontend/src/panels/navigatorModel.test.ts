@@ -14,7 +14,7 @@ const script = (name: string) => ({ name, supports_live_paper: false }) as Strat
 const session = (id: string, status: PaperSession['status']) =>
   ({ session_id: id, symbol: 'BTC/USDT', strategy: 'sma', execution_mode: 'local_sandbox', status }) as PaperSession
 
-const READY = storageRow({ state: 'ready', blocker: null, bulk_root_label: 'Expansion', free_bytes: 1e12, total_bytes: 2e12 })
+const READY = storageRow({ state: 'ready', blocker: null, bulk_root_label: 'Bulk', free_bytes: 1e12, total_bytes: 2e12 })
 
 function tree(overrides: Partial<Parameters<typeof navigatorTree>[0]> = {}) {
   return navigatorTree({
@@ -67,7 +67,7 @@ describe('navigatorModel', () => {
     expect(groups[2].leaves[0]).toMatchObject({ id: 'project:p2', sub: 'research gate open', tone: 'warn' })
   })
 
-  it('lists the venues by display name with their stored pair counts, and the Expansion SSD', () => {
+  it('lists the venues by display name with their stored pair counts, and storage', () => {
     const data = tree({ pairsByVenue: { Binance: 5, Coinbase: 2, Bybit: 1 } })[3]
     expect(data.leaves.map((leaf) => leaf.label)).toEqual([
       'CCXT',
@@ -76,13 +76,13 @@ describe('navigatorModel', () => {
       'CoinGecko',
       'GeckoTerminal',
       'Coin Metrics',
-      'Expansion SSD mounted',
+      'Storage ready',
     ])
     expect(data.leaves.every((leaf) => leaf.sub === null)).toBe(true)
     expect(tree()[3].leaves[1].label).toBe('Binance')
-    const unmounted = storageRow({ state: 'blocked', blocker: 'bulk_volume_not_mounted', bulk_root_label: 'Expansion', free_bytes: null, total_bytes: null })
+    const unmounted = storageRow({ state: 'blocked', blocker: 'bulk_volume_not_mounted', bulk_root_label: 'Bulk', free_bytes: null, total_bytes: null })
     const ssd = tree({ storage: unmounted })[3].leaves.at(-1)
-    expect(ssd).toMatchObject({ label: 'Expansion SSD not mounted', tone: 'warn' })
+    expect(ssd).toMatchObject({ label: 'Storage: not configured', tone: 'warn' })
   })
 
   it('lists scripts and paper sessions', () => {

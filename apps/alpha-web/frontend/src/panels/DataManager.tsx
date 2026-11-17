@@ -1,6 +1,7 @@
+import { Timestamp } from '../util/formatTime'
 // Data Manager — one home for getting data into ALPHA: pull OHLC bars through the CLI (the
 // profile picks the defaults, the venue's first listed bar sizes the request and names the retry
-// start), the stored pairs, the Expansion SSD research datasets and the reviewed crypto assets.
+// start), the stored pairs, the Storage research datasets and the reviewed crypto assets.
 // The second tab keeps the governed Research Data explorer (Crypto Data Center + research dataset
 // bindings) intact. Every read is a CLI projection; nothing here holds authority.
 
@@ -36,7 +37,7 @@ const TAB_HELP: Readonly<Record<Tab, string>> = {
   Pull: 'Pull OHLC into the store and see the stored pairs',
   Snapshots: 'Every immutable data snapshot (alpha data snapshots), verify one, or freeze a new one',
   Quality: 'The governed Research Data explorer: datasets, quality checks, snapshots',
-  Storage: 'Expansion SSD research datasets and the reviewed crypto assets',
+  Storage: 'Storage research datasets and the reviewed crypto assets',
 }
 const REVIEWED_ASSETS = ['BTC', 'ETH', 'XRP', 'SOL']
 const ASSET_MASTER_RECIPE = [
@@ -313,7 +314,7 @@ function PullAndStore({ profile, section }: { profile: Profile; section: 'pull' 
         </>
       ) : (
         <>
-      <div className="rd-head de-pull">Expansion SSD — research datasets</div>
+      <div className="rd-head de-pull">Storage — research datasets</div>
       <div className="lab-row">
         <span className={`chip ${ssd.tone === 'ok' ? 'pass' : 'warn'}`}>{ssd.label}</span>
         <span className="muted mono">{ssd.detail}</span>
@@ -475,7 +476,7 @@ function SnapshotsTab({ profile }: { profile: Profile }) {
                 <td className="mono">{row.snapshot_id ?? '—'}</td>
                 <td>{row.source ?? '—'}</td>
                 <td className="mono">{row.symbols.join(' ')}</td>
-                <td className="mono">{row.created_at ?? '—'}</td>
+                <td className="mono"><Timestamp value={row.created_at} /></td>
                 <td><button className="btn" type="button" onClick={() => run(`verify ${row.snapshot_id ?? ''}`, `verify ${row.snapshot_id ?? ''}`)} disabled={!row.snapshot_id}>Verify</button></td>
               </tr>
             ))}

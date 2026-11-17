@@ -248,7 +248,8 @@ def test_harness_can_request_split_counts_without_changing_default_reply(
     monkeypatch.setattr(gw, "post_json", post)
     request = {"model": "alpha-embed", "input": "word. " * 600}
     assert "chunked_inputs" not in model.embeddings(request)
-    assert model.embeddings({**request, "report_embedding_stats": True})["chunked_inputs"] == 1
+    assert model.embeddings({**request, "report_embedding_stats": True})["chunked_inputs"] == 0
+    assert attempts == 2  # cached vectors do not repeat chunking or a provider request
 
 
 def test_launcher_provider_options_and_receipt(

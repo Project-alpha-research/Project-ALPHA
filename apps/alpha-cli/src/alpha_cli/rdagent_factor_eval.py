@@ -104,9 +104,6 @@ from alpha_cli._rdagent_judge import (
 )
 from alpha_cli._rdagent_judge import panel_membership
 from alpha_cli._rdagent_judge import (
-    plain_name as plain_name,
-)
-from alpha_cli._rdagent_judge import (
     replay as replay,
 )
 from alpha_cli._rdagent_judge import (
@@ -139,7 +136,13 @@ from alpha_cli._rdagent_ledger import (
 from alpha_cli._rdagent_ledger import (
     import_historical as import_historical,
 )
-from alpha_cli._rdagent_stability import failure_message, replay_output, writeoff_summary
+from alpha_cli._rdagent_stability import (
+    failure_message,
+    replay_output,
+    status_reason,
+    writeoff_summary,
+)
+from alpha_cli._rdagent_stability import plain_name as plain_name
 from alpha_core import DataError
 from alpha_validation.dsr import (
     deflated_sharpe,
@@ -250,7 +253,9 @@ def _deflate(
                     }
                 )
             row["lead_clock"] = earliest.get("lead_clock", "daily")
-            row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
+            row.update(
+                {k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")}
+            )
             continue
         for clock, trial in trial_clocks(row).items():
             key = (row["code_sha256"], clock)
@@ -274,6 +279,17 @@ def _deflate(
                     "reason": "fewer than two replayed trials: no cross-trial variance",
                 }
     return trials
+
+
+def finalize_rows(rows: list[dict[str, Any]]) -> None:
+    for row in rows:
+        if row["status"] in {"CANDIDATE", "DEFLATION_FAIL"}:
+            row["status"], row["lead_clock"] = overall_status(row["clocks"])
+        row.update({k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")})
+        row["figures_clock"] = row["lead_clock"]
+        row["mean_ic"] = row["screen"].get("mean_ic")
+        row["spread"] = row["clocks"][row["lead_clock"]].get("spread", {})
+        row["reason"] = status_reason(row)
 
 
 def shown(trial: dict[str, Any]) -> dict[str, Any]:
@@ -805,7 +821,7 @@ def _replay_clocks(
                 replay_returns[(digest, clock)] = net
         if row["status"] == "OK":
             row["status"], row["lead_clock"] = overall_status(row["clocks"])
-        row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
+        row.update({k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")})
     return replay_returns, qvalues
 
 
@@ -955,6 +971,7 @@ def _evaluate_locked(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
+    finalize_rows(rows)
     lead, legacy, disclosures, decision, feedback = _report(
         rows, history, family, trials, spec, universe_info["universe_text"]
     )

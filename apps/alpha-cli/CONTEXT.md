@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 86dd16e72e029116
+verified: 06aaf7bdd8d1b2da
 ---
 
 # alpha-cli workspace
@@ -63,7 +63,7 @@ do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
   light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Renamed ticker joins are recorded at freeze. Invalid-code messages and replay field compatibility: `_rdagent_stability`; policy in the worker README.
+  Deflation gates candidates; ticker joins are frozen. Diagnostics and replay compatibility: `_rdagent_stability`; policy in the worker README.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

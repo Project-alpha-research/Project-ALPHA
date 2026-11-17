@@ -128,6 +128,7 @@ STATUSES = frozenset(
         "SPREAD_FAIL",
         "REPLAY_FAIL",
         "CANDIDATE",
+        "DEFLATION_FAIL",
         "FAST_ONLY",
         "REPEAT",
         "IMPORTED",

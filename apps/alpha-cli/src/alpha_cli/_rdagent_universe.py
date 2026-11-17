@@ -167,3 +167,48 @@ def eligibility(
         kept = sorted(passing, key=lambda j: (-medians[j], j))[: rule["max_names"]]
         mask[row, kept] = True
     return mask
+
+
+def disclosure(spec: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
+    """Run-sized description; early endings alone are not evidence of delisting.
+
+    Legacy universe files declare survivorship in prose. Recognise affirmative delisting
+    counts, or an explicit inclusion statement; never classify from the word 'delisted' alone
+    (the default says those coins are absent). New receipts bind the resulting structured flag.
+    """
+    import re
+
+    series = len(receipt["instruments"])
+    # A reused ticker's later identity (`NAME~2`) is another price series of the same pair.
+    count = len({name.split("~")[0] for name in receipt["instruments"]})
+    splits = series - count
+    size = (
+        f"{count} instruments ({series} price series after {splits} ticker "
+        f"split{'s' if splits > 1 else ''})"
+        if splits
+        else f"{count} instruments"
+    )
+    text = spec["survivorship"].lower()
+    match = re.search(r"\b(\d+)\s+(?:later\s+)?delisted\b", text)
+    includes = bool(match and int(match[1]) > 0) or bool(
+        re.search(r"\b(?:includes?|including)\s+(?:later\s+)?delisted\b", text)
+    )
+    delisted = int(match[1]) if match else None
+    if delisted is not None and delisted > count:
+        raise DataError("universe delisted count exceeds this run's instrument count")
+    if includes:
+        status = "includes-delisted; selection is not survivorship-free"
+        detail = (
+            f"{delisted} later delisted"
+            if delisted is not None
+            else "later-delisted count not recorded"
+        )
+    else:
+        if "surviv" not in text and delisted != 0:
+            raise DataError("universe survivorship status cannot be derived from frozen files")
+        status = "survivors-only selection; survivorship can bias results upward"
+        detail = "0 later delisted declared"
+    return {
+        "universe_includes_delisted": includes,
+        "universe_text": f"{size}, {detail}; {status}",
+    }

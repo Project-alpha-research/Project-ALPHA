@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 67e9810c6d6714d2
+verified: bb7bcc54bb0b4790
 ---
 
 # Worker invariants
@@ -34,7 +34,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `gate.py check` does not run worker tests.
 - Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
-
 ## Qlib worker
 
 - This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or
@@ -73,7 +72,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) § Open before v3 is the default).
 - W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
   accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
-
 ## Literature worker
 
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
@@ -146,14 +144,14 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   distributions are exactly the locked ones and records an inventory digest. It measures a runtime and grants no authority.
 - Model gateway ([ADR-0044](../../adr/0044-rdagent-model-gateway.md), `model_gateway.py`): the one route from RD-Agent to a
   model. Standard library only; it listens on `127.0.0.1` and imports neither ALPHA nor RD-Agent. Chat is the confined Codex
-  program (read-only, no tools, no web search); embeddings default to local Ollama or use an explicitly priced provider model. The owner
+  program (read-only, no tools, no web search), embeddings are local Ollama, and the paid route is off unless the owner
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
-  Built-in local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens spend money.
-  Receipts split calls, embedding routes, tokens and cost; old counts stay recorded. Memory vectors are bound to model and dimension.
+  Only the built-in loopback Ollama (or fake) embedding backend is exempt (2,000-attempt run guard, `budget_exhausted`;
+  no dollars); receipts and monthly status split `counted_calls` from `local_embedding_calls`, old counts as recorded.
   No automatic route switch; logs hold hashes and lengths, not text; fixture loops clear model settings. Paid calls
-  have a 180 s limit; chat has one retry, both attempts counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+  have a 180 s limit and one retry, both counted ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
   [ADR-0050](../../adr/0050-swing-clocks-in-the-factor-judge.md)): the one model-connected real-data route, started by
   `factor_loop_launch.py` (not yet an `alpha` command). RD-Agent's own factor loop runs unmodified; only the classes
@@ -166,7 +164,9 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
-  New panels split identities and refuse jumps across any gap of one or more missing days; old receipts keep their policy.
+  New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
+  Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
+  Closed-family proposals stop before coding with no trial and are re-asked twice per round; code failures do not close families.
   Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
   recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the
@@ -181,7 +181,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
   the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
   family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
-- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, `UNSTABLE`, or `FAILED` for a wrong output
   shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
   recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a

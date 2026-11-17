@@ -2,7 +2,7 @@
 owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: 288f7640492fbef0
+verified: 3776a9dc52dec07c
 ---
 
 # Benchmark and drawdowns

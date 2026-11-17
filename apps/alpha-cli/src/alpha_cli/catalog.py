@@ -35,6 +35,7 @@ _EMPIRICAL_ROOTS = frozenset(
         "lookalike",
         "labels",
         "tool",
+        "setup",
     }
 )
 _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})

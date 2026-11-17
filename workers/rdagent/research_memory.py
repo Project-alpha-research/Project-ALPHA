@@ -38,7 +38,13 @@ def _hash(path: Path) -> str | None:
 
 
 def judge_sha256() -> str:
-    names = ("alpha_factor_judge.py", "alpha_factor_data.py", "factor_loop_entry.py")
+    names = (
+        "alpha_factor_judge.py",
+        "alpha_factor_data.py",
+        "factor_loop_entry.py",
+        "idea_families.py",
+        "loop_guard.py",
+    )
     return hashlib.sha256(
         _json({name: _hash(WORKER / name) for name in names}).encode()
     ).hexdigest()
@@ -209,7 +215,7 @@ def completed_loops(session_dir: Path) -> int:
     return max(indexes) + 1 if indexes else 0
 
 
-def close_unfinished_rounds(session: Path) -> None:
+def close_unfinished_rounds(session: Path, *, exit_reason: str = "") -> None:
     """Append an idempotent abandonment record beside the previous session, never a trial."""
     if not session.is_dir():
         return
@@ -217,7 +223,22 @@ def close_unfinished_rounds(session: Path) -> None:
     existing = (
         [json.loads(line) for line in record.read_text().splitlines()] if record.exists() else []
     )
-    closed = {r["loop"] for r in existing if r.get("status") == "abandoned_at_cap"}
+    closed = {
+        r["loop"]
+        for r in existing
+        if r.get("status") in {"abandoned_at_cap", "abandoned_after_error"}
+    }
+    receipt = record.parent / "receipt.json"
+    reason = exit_reason or (
+        json.loads(receipt.read_text()).get("loop_reason", "") if receipt.exists() else ""
+    )
+    steps = record.parent / "steps.jsonl"
+    failed = {
+        r["loop"]
+        for line in (steps.read_text().splitlines() if steps.exists() else [])
+        if (r := json.loads(line)).get("event") == "end" and r.get("status") == "error"
+    }
+    cap = any(word in reason for word in ("cap", "limit", "budget"))
     pending = [
         folder
         for folder in session.iterdir()
@@ -235,7 +256,9 @@ def close_unfinished_rounds(session: Path) -> None:
                         {
                             "schema": "AlphaRdagentRoundAbandonedV1",
                             "loop": int(folder.name),
-                            "status": "abandoned_at_cap",
+                            "status": "abandoned_after_error"
+                            if int(folder.name) in failed and not cap
+                            else "abandoned_at_cap",
                             "recorded_at": _now(),
                             "session_dir": str(session),
                             "trial_created": False,
@@ -283,7 +306,8 @@ def prepare(
                 )
             )
             previous = None
-        if previous and previous["judge_sha256"] != judge_sha256:
+        previous_run = manifest["runs"][-1] if manifest["runs"] else previous
+        if previous_run and previous_run["judge_sha256"] != judge_sha256:
             warnings.append(
                 _warning(
                     "judge-version-changed",
@@ -362,6 +386,28 @@ def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -
             raise SystemExit(str(error)) from error
         loop = loop_cls(settings)
         loop.coder = judge.FamilyGuard(loop.coder, loop)
+        guards = importlib.import_module("loop_guard")
+        if environ.get("ALPHA_GATEWAY_CALLS"):
+            loop.feedback = guards.RoundFeedback(loop.feedback)
+            for attribute, step in (
+                ("coder", "coding"),
+                ("runner", "running"),
+                ("summarizer", "feedback"),
+            ):
+                setattr(
+                    loop,
+                    attribute,
+                    guards.ProviderGuard(
+                        getattr(loop, attribute),
+                        loop,
+                        step,
+                        Path(environ["ALPHA_FACTOR_RUN_DIR"]),
+                        Path(environ["ALPHA_GATEWAY_CALLS"]),
+                        environ["ALPHA_GATEWAY_RUN_ID"],
+                        judge.FactorEmptyError,
+                        judge.HypothesisFeedback,
+                    ),
+                )
         return loop
     return loop_cls(settings)
 
@@ -471,6 +517,7 @@ def _record(
     ended_at: str,
     secrets: Sequence[str],
     result: dict[str, Any],
+    exit_reason: str,
 ) -> None:
     root = plan.memory_dir
     knowledge = root / KNOWLEDGE
@@ -537,7 +584,7 @@ def _record(
         inherited = 0 if "session-unloadable" in codes else plan.loops_before
         result["loops_after"] = inherited + completed
         progressed = completed > 0
-        close_unfinished_rounds(session)
+        close_unfinished_rounds(session, exit_reason=exit_reason)
         if not found and progressed:
             manifest["latest_session"] = {
                 "run_id": run_id,
@@ -568,6 +615,7 @@ def record(
     started_at: str,
     ended_at: str,
     secrets: Sequence[str],
+    exit_reason: str = "",
 ) -> dict[str, Any]:
     """Best-effort receipt after children stop; never expose exception text or secret values."""
     result: dict[str, Any] = {
@@ -581,7 +629,7 @@ def record(
         "warnings": list(plan.warnings),
     }
     try:
-        _record(plan, run_id, run_dir, started_at, ended_at, secrets, result)
+        _record(plan, run_id, run_dir, started_at, ended_at, secrets, result, exit_reason)
     except Exception as error:  # finishing always returns a diagnostic receipt
         result["warnings"].append(
             _warning(
@@ -647,7 +695,11 @@ def _runtime_view(source: Path, root: Path) -> dict[str, Any]:
                         "hypothesis": experiment.hypothesis.hypothesis,
                         "factor_names": [task.factor_name for task in experiment.sub_tasks],
                         "decision": feedback.decision,
-                        "reason": feedback.reason[:300],
+                        "reason": str(feedback.reason or "")[:300],
+                        "observation": str(getattr(feedback, "observations", "") or ""),
+                        "refused_before_coding": getattr(
+                            experiment, "alpha_refused_before_coding", []
+                        ),
                     }
                 )
     return result
@@ -774,6 +826,9 @@ def _plain(view: dict[str, Any]) -> str:
             f"Factors: {', '.join(round_['factor_names'])}\n"
             f"RD-Agent decision: {round_['decision']}; {round_['reason']}"
         )
+        lines.extend(round_.get("refused_before_coding", []))
+        if round_.get("observation"):
+            lines.append(round_["observation"])
         if "alpha_verdicts" in round_:
             lines.append("ALPHA's verdicts: " + _json(round_["alpha_verdicts"]))
     if "message" in view:

@@ -200,7 +200,7 @@ def loop_environment(
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
         "LITELLM_LOCAL_MODEL_COST_MAP": "True",
-        "MAX_RETRY": "2",
+        "MAX_RETRY": "1",
         "CONDA_DEFAULT_ENV": "alpha-no-conda",
         # RD-Agent runs generated factor code as a shell string `<python_bin> factor.py` that
         # inherits this environment; strip the gateway settings so that code cannot read them.
@@ -500,6 +500,10 @@ class Launch:
             if self.args.embedding_route in ("provider", "fake")
             else None,
         )
+        environment.update(
+            ALPHA_GATEWAY_CALLS=str(self.args.gateway_data_dir / "model-gateway/calls.jsonl"),
+            ALPHA_GATEWAY_RUN_ID=self.args.run_id,
+        )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
         child = self.spawn(
@@ -625,6 +629,10 @@ class Launch:
             "provider_embedding_inputs",
             "embedding_single_retries",
             "embedding_model_not_reported",
+            "embedding_cache_hits",
+            "embedding_requests",
+            "embedding_inputs_sent",
+            "provider_wait_seconds",
         ):
             self.receipt[key] = split.get(key, 0)
         counters = self.receipt["gateway_status"].get("this_run") or {}
@@ -662,10 +670,15 @@ class Launch:
                 started_at=self.receipt["started_at"],
                 ended_at=self.receipt["ended_at"],
                 secrets=(self.token, self.api_key),
+                exit_reason=self.receipt["loop_reason"],
             )
             if self.memory_plan
             else {"enabled": False}
         )
+        self.log(
+            "loop", event="end", exit_reason=self.receipt["loop_reason"], exit_status=exit_status
+        )
+        print(f"RD-Agent loop ended: {self.receipt['loop_reason']}.")
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
 
@@ -694,6 +707,13 @@ def round_counts(run: Path) -> dict[str, int]:
             row.get("status") == "no_admissible_idea" for row in rounds
         ),
         "proposals_refused": len(refused),
+        "rounds_failed_provider": len(
+            {
+                r["iteration"]
+                for r in rounds
+                if str(r.get("status", "")).startswith("coding_failed_provider_")
+            }
+        ),
     }
 
 
@@ -732,11 +752,22 @@ def call_split(
         "failed_requests": {},
         "chunked_embedding_inputs": 0,
         "embedding_chunks": 0,
+        "embedding_cache_hits": 0,
+        "embedding_requests": 0,
+        "embedding_inputs_sent": 0,
+        "provider_wait_seconds": 0.0,
     }
     routes: set[str] = set()
     models: set[str] = set()
     for call in calls:
+        split["embedding_cache_hits"] += int(call.get("embedding_cache_hits", 0))
+        if call.get("cache_only"):
+            continue
+        if call.get("endpoint") == "/v1/chat/completions" and call.get("provider_errors"):
+            split["provider_wait_seconds"] += float(call.get("latency_ms", 0)) / 1000
         if call.get("endpoint") == "/v1/embeddings":
+            split["embedding_requests"] += int(call.get("attempts", 0))
+            split["embedding_inputs_sent"] += int(call.get("embedding_inputs_sent", 0))
             if isinstance(call.get("route"), str):
                 routes.add(call["route"])
             if isinstance(call.get("model_used"), str):

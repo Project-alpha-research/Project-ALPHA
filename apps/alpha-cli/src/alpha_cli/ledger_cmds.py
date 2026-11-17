@@ -40,12 +40,24 @@ def _rdagent_ledger(home: Path, rdagent: Path | None) -> Path | None:
     return rdagent
 
 
+def figures(row: dict[str, Any]) -> str:
+    values = row.get("measures", {})
+    ic, q = values.get("mean_ic"), values.get("q")
+    return (
+        f"{row['measure_clock']}: IC "
+        + (f"{ic:.4g}" if ic is not None else "not recorded")
+        + ", q "
+        + (f"{q:.4g}" if q is not None else "not recorded")
+    )
+
+
 def _render(output: dict[str, Any]) -> str:
     rows = output.get(
         "records", output.get("families", output.get("rows", output.get("sources", [])))
     )
     if "record" in output:
         rows = [output["record"]]
+    rows = [{**row, "figures": figures(row)} if row.get("measure_clock") else row for row in rows]
     keys = [
         key
         for key in (
@@ -57,6 +69,7 @@ def _render(output: dict[str, Any]) -> str:
             "outcome",
             "raw_status",
             "reason",
+            "figures",
             "month",
             "asset",
             "rows",

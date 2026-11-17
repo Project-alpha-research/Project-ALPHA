@@ -439,6 +439,10 @@ def test_launcher_memory_default_opt_out_and_determinism(
         ledger=parsed.trial_ledger,
         home=str(job.run / "home"),
     )
+    base.update(
+        ALPHA_GATEWAY_CALLS=str(parsed.gateway_data_dir / "model-gateway/calls.jsonl"),
+        ALPHA_GATEWAY_RUN_ID=parsed.run_id,
+    )
     assert {k: captured[k] for k in base} == base
     assert captured["ALPHA_FACTOR_EVAL_PYTHON"] == base["ALPHA_FACTOR_EVAL_PYTHON"]
     assert captured["ALPHA_FACTOR_TRIAL_LEDGER"] == str(parsed.trial_ledger)

@@ -339,6 +339,8 @@ def swing_parts() -> dict[str, Any]:
     tree = ast.parse((WORKER / "alpha_factor_judge.py").read_text())
     names = {
         "append_swing_context",
+        "family_definitions",
+        "known_families",
         "ledger_summary",
         "replay_note",
         "_rounded",
@@ -490,7 +492,8 @@ def test_ledger_summary_says_why_a_replay_lost() -> None:
     assert line == (
         "volatility_60d: REPLAY_FAIL (daily REPLAY_FAIL, weekly SCREEN_FAIL, monthly SCREEN_FAIL); "
         "lead daily IC -0.0264; q 5.811e-08; daily replay: -27.71%/yr before costs, -31.25%/yr after "
-        "3.68%/yr costs, turnover 6.12%/day"
+        "3.68%/yr costs, turnover 6.12%/day; daily deflated Sharpe not available "
+        "against not available over not recorded trials"
     )
     malformed = _v3_row("broken", "b" * 64, {"gross": {}})
     with pytest.raises(KeyError):
@@ -516,7 +519,7 @@ def test_ledger_summary_keeps_whole_lines_and_counts_the_rest(tmp_path: Path) ->
     summary = context["hypothesis_and_feedback"].split("ALPHA trial ledger", 1)[1]
     shown = [line for line in summary.splitlines()[1:] if line.startswith("factor_")]
     assert len(summary) <= 4000
-    assert all(line.endswith("turnover 10%/day") for line in shown)
+    assert all(line.endswith("against not available over not recorded trials") for line in shown)
     assert shown[0].startswith("factor_39_")  # newest first
     assert summary.rstrip().endswith(
         f"({40 - len(shown)} older distinct factors not shown)\n"
@@ -777,5 +780,8 @@ def test_a_counted_only_replay_is_never_shown_to_the_proposer_as_a_result() -> N
         "counted_only": "spread check FAIL; replayed only to count the trial, not a result",
     }
     note = swing_parts()["replay_note"]("weekly", replay)
-    assert note == "; weekly replay counted only, not a result"
+    assert note == (
+        "; weekly replay counted only, not a result; weekly deflated Sharpe "
+        "not available against not available over not recorded trials"
+    )
     assert "%" not in note

@@ -117,7 +117,8 @@ def test_spread_never_turns_a_failure_into_a_pass(tmp_path: Path) -> None:
     req = fixture(run)
     record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
-    assert factor["status"] == "CANDIDATE"
+    assert factor["status"] == "DEFLATION_FAIL"
+    assert factor["replay"]["deflated_sharpe"]["passed"] is False
     for trial in factor["clocks"].values():
         assert trial["spread"]["status"] == "PASS"
         assert trial["status"] == ("PASS" if trial["replay"]["net"]["annualized_return"] > 0
@@ -190,7 +191,7 @@ def test_liquidity_rule_masks_names_and_is_recorded(tmp_path: Path) -> None:
     # Fixture quote volume is 10,000 per day: a 20,000 threshold leaves nobody, so every clock
     # becomes DEGENERATE and says the universe caused it; 5,000 keeps all fifteen. The fixture
     # has no history before 2021, so the look-back is one day.
-    for threshold, expected in ((5000, "CANDIDATE"), (20000, "DEGENERATE")):
+    for threshold, expected in ((5000, "DEFLATION_FAIL"), (20000, "DEGENERATE")):
         target = tmp_path / f"run-{threshold}"
         shutil.copytree(run, target)
         rule = {"lookback_days": 1, "min_median_quote_volume": threshold, "max_names": 15}

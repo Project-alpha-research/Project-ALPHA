@@ -467,9 +467,10 @@ initial allocation), annual cost (total fees and slippage divided by mean canoni
 annualised over the replay days), and rebalance count. The engine's final liquidation is
 charged and included in turnover and costs.
 
-Only a weekly or monthly PASS (q < 0.10 and positive net annual excess) makes a CANDIDATE.
+Only a passing swing lead clock whose recorded deflated Sharpe meets its unchanged threshold makes a CANDIDATE.
+A passing screen, spread and replay with failed deflation is DEFLATION_FAIL; trial counting is unchanged.
 A daily-only pass is FAST_ONLY and ALPHA's decision remains false. New evaluations write one
-V3 ledger row per factor with all three clock results; top-level screen/replay/p/q mirror daily.
+V3 ledger row per factor with all three clock results; top-level screen/replay/p/q, mean IC and spread mirror the named lead clock.
 The lead is the lowest-q passing swing clock, otherwise the lowest-q clock; RD-Agent's legacy
 IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `mean_ic`,
 `q`, `net_annual_excess` and `mean_turnover`, plus `<factor>.feedback` with the explanation.
@@ -612,7 +613,7 @@ research trace (hypotheses, experiments, feedback) from it, and runs it in a fre
 scheduler built from this run's settings, so this run's own round folders are numbered from 0.
 A round the previous session left half-finished (the call cap stopped it) is not resumed: it is
 appended to that run's `rounds.jsonl` as `AlphaRdagentRoundAbandonedV1`, status
-`abandoned_at_cap`, `trial_created: false`, and no trial is invented for it; this run's own
+`abandoned_at_cap` (or `abandoned_after_error` for an error ending), `trial_created: false`, and no trial is invented for it; this run's own
 unfinished round is recorded the same way when it ends. The receipt's `rounds_completed` counts
 this run's completed rounds and `loops_after` = `loops_before` + `rounds_completed` (only this
 run's rounds when the previous session could not be loaded). The model calls already spent on
@@ -647,10 +648,12 @@ family rule (`--family-switch-after`, ADR-0055) classifies a standalone factor b
 A composite is recognised by mix or learned-model words in its name or description (`COMPOSITE`:
 machine learning, gradient boosting, LightGBM, ridge, ensemble, blend of, weighted sum ...); a
 plain regression or OLS slope (`WEAK_COMPOSITE`) is one construct unless it lists two known
-features. A composite inherits every family of its name and of its listed variable NAMES, never
-variable descriptions or formula text; listed names that match no keyword (`C_{i,s}`,
-`max_depth`, `120`) are symbols, not families, and a composite naming no known feature is
-`composite: unknown inputs`. Case, spaces and hyphens normalize to name tokens; longest terms
+features. A composite inherits one family per named input in its variable keys. Generic keys
+(`x1`, `x_2`, `f3`, `feat1`, `feature_4`, `z1`, including index subscripts) instead supply
+identifier-like feature tokens from their values. Other prose and formulas never classify.
+Unrecognised named inputs each contribute `other: <stem>`; letters, Greek symbols, index-only
+symbols, numbers and estimator settings are ignored. Only no names at all gives
+`composite: unknown inputs`; refusal asks for input names. Case, spaces and hyphens normalize to name tokens; longest terms
 consume their tokens first, so volume-weighted average price remains VWAP distance; a final
 keyword part of four or more letters also matches as a prefix (`high_prox` covers
 `high_proximity`). Window suffixes are removed from unknown name stems (`other: price_delay`).
@@ -659,11 +662,11 @@ Estimator words in `GENERIC_ESTIMATOR_WORDS` never supply families; `market_beta
 vt60, rv60, ret_60d) classify only with a window, so math symbols such as `m(t)` (a month start)
 or `m_s` (the market return) never do. Unknown constructs are open until their own family reaches
 the unchanged failure limit. Still dodgeable by naming: synonyms not in the table (`roc` without a
-window, `sigma`, `price_change`, a bare `beta`), and a composite whose features carry unfamiliar names.
-Only evaluated screen, spread and replay failures (including daily-only passes) count toward
+window or `price_change`); named unfamiliar inputs now retain their own families.
+Only evaluated screen, spread, replay and deflation failures (including daily-only passes) count toward
 closing a family; code failures remain trials but do not close families. Before coding,
 `research_memory` wraps the coder with `FamilyGuard`. A refusal reads no data and creates no trial.
-Both proposer and feedback writer receive the closed families, open known families, and the rule
+Both proposer and feedback writer receive the closed families, open table and recorded `other:` families, and the rule
 that a mechanism belonging to none of the closed families is allowed.
 
 `rounds.jsonl` records the round `iteration`, `attempt`, refused `factor_names`,
@@ -673,8 +676,8 @@ twice. A third refusal records `no_admissible_idea` and ends through upstream's 
 feedback then uses the refusal without another model call. Re-asks have nested `proposal_reask`
 intervals in `steps.jsonl`, which label calls and per-step usage independently of coding.
 Receipts report `rounds_with_trial`, `rounds_no_admissible_idea`, `proposals_refused`,
-`reask_calls` and `reask_usd`. Upstream's step log still shows its first proposal; the round record
-and trace hold the coded one. A model explicitly named as a composite without a listed input
+`reask_calls` and `reask_usd`. The wrapper updates upstream public `loop_prev_out` to the admitted
+proposal; its history lists earlier refusals after it. An exhausted refusal round has no observation. A model explicitly named as a composite without a listed input
 remains `composite: unknown inputs`, subject to its own limit.
 
 The default `--embedding-route local` uses the same Ollama requests and long-input retry as
@@ -1006,3 +1009,29 @@ Model-facing figures use four significant digits and say "not available" for mis
 small nonzero costs and turnover remain visible. Receipt chat usage reports a wholly absent
 `cache_discount` as "not reported by the provider", and labels the gateway's estimate
 "upper-bound estimate at configured prices" beside the provider charge.
+
+
+### Provider failures, cache reuse and deflation (fourth loop fix-up)
+
+`loop_guard.ProviderGuard` surrounds coding, running and feedback. A fresh matching gateway chat
+receipt plus upstream's exhausted-chat RuntimeError records `coding_failed_provider_timeout` or
+`coding_failed_provider_error`, step, attempts and waited seconds. Coding/running use upstream's
+FactorEmptyError skip path; feedback returns a negative result. Neither path invents a trial;
+completed evaluator trials survive a feedback failure. Budget refusals still end the run.
+`MAX_RETRY=1` is upstream's total attempt count; its LiteLLM transport already sets max_retries=0.
+The gateway's existing retry is the only provider retry. Receipts add `rounds_failed_provider`
+and `provider_wait_seconds`; launch.jsonl gets an end event and the console names the exit reason.
+
+The gateway caches vectors in memory by route, configured model and SHA-256 of exact text.
+Mixed batches send only unique uncached inputs, preserving original order and input error indices.
+Hits cost no money or embedding attempts; receipts count `embedding_requests`, `embedding_inputs_sent`
+and `embedding_cache_hits`. A new gateway process starts empty. Unknown-usage attempts keep
+`usage_known: false`; booked amounts say "reserved estimate, not confirmed by the provider".
+
+Deflation uses the already recorded `deflated_sharpe.dsr`, `threshold` and `n_trials`, with no
+estimator or count change. Feedback gives them for every replayed clock. Only CANDIDATE can replace
+the best result. The read model derives DEFLATION_FAIL from old failed-deflation candidates and
+labels the derivation, without rewriting rows. New figures mirror `lead_clock` with `figures_clock`;
+old daily mirrors remain valid and readers prefer the per-clock block, or explicitly label daily.
+All factor statuses have a plain reason. Write-offs say positions in coins; common name stems expand
+for the owner. Judge-change warnings compare against the previous run's recorded judge version.

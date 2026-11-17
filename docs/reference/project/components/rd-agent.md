@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 4fdd5a8aa70c3a81
+verified: 9b791d9bcbcc5095
 ---
 
 # RD-Agent
@@ -52,7 +52,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
-  makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+  plus recorded deflation makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
   A screened factor passes only if the top third it would hold beat its bottom third before
   costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
   the universe is a frozen file; each paid model call has a time limit
@@ -67,7 +67,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
   and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Refusals and re-ask spend are explicit in receipts; paid memory embeddings batch inputs without changing caps.
+  Refusals, exhausted-provider rounds and re-ask spend are explicit; identical embeddings are cached per process.
+  Failed deflation is `DEFLATION_FAIL`, including a labelled derivation for old candidates; counts stay unchanged.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's

@@ -3,6 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
+  - packages/alpha-study/CONTEXT.md
 verified: e3b0c44298fc1c14
 ---
 
@@ -35,6 +36,11 @@ one of these rules.
   ([rule](../../invariants/research-integrity.md#research-before-strategy)).
 
 ## What is real today
+
+The daily setup spec in `alpha_study.setup` is the new way to describe an idea and inspect every
+candidate before a backtest: causal expressions, ordered filters, optional triggers and named
+reference levels. It does not simulate exits. The older rule language remains for the screens
+that use it until it is replaced; see [study invariants](../../invariants/study.md).
 
 Plain long/flat all-in sizing is available beside volatility targeting for moving-average crossover,
 Donchian breakout and time-series momentum; it holds entry units until the rule exits.

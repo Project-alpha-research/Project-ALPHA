@@ -5,7 +5,7 @@ sources:
   - tests/unit/study/test_*.py
   - tests/bias_guards/test_study_double_bottom_future_poison.py
   - tests/bias_guards/test_verified_semantic_read_future_poison.py
-verified: 74be65a24954a910
+verified: 45f660a33236b489
 ---
 
 # Study invariants
@@ -50,6 +50,20 @@ registry, and the blind semantic-read contract. The package is a projection laye
 - Timestamps must be timezone-aware and serialise as UTC; floats must be finite; key sets must match
   exactly. Hash with `canonical_study_sha256`, the `alpha_research` canonical JSON convention.
   [research integrity § Immutable, hash-bound artefacts](research-integrity.md#immutable-hash-bound-artefacts).
+
+## Setup causality
+
+- Daily `setup/` expressions read only the current and earlier rows: shifts of n ≥ 1, trailing
+  full windows, causal EWM and row-wise logic. Non-finite values become null; text length, nesting
+  and emitted size are bounded so a pathological expression fails loud.
+- Filters decide the reason in file order. A trigger window that runs past the last bar is
+  `pending` / `pending-trigger`, never `no-trigger`. Entry is only the next bar's open.
+- `tests/bias_guards/test_setup_future_poison.py` truncates and poisons later bars (x1000, huge,
+  NaN, missing volume) and catches hand-built leaky twins at expression and evaluator level.
+- `event_ts` is the bar on whose close the event became known, not the pattern's extreme. A swing
+  low is written `prev(low, k) == lowest(low, 2k + 1)`, true only k bars after the low; a double
+  bottom so written is never reported before its second low plus k bars, and replacing later bars
+  changes nothing decided by then (`tests/unit/test_setup_known_on.py`).
 
 ## Operator registry
 

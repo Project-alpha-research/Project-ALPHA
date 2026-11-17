@@ -1151,6 +1151,19 @@ missing = "end-to-end smoke verification outside the builder sandbox"
 docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
+id = "investigation-tools"
+name = "Investigation tools: market attribution, regimes, change points"
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted."
+see_it = ["alpha tool attribution <run_id> --json", "alpha tool regimes <run_id> --json", "alpha tool changepoints <run_id> --json", "alpha results show <run_id> --json"]
+entry_points = ["cli: alpha tool", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
+proof_synthetic = ["tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
+proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test"]
+real_data = "yes, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data)"
+needs = []
+state = "Working"
+docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
+
+[[capability]]
 id = "price-lookalikes"
 name = "Has price action like this happened before?"
 codes = ["STUMPY matrix profile"]

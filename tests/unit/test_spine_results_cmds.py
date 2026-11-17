@@ -209,6 +209,79 @@ def test_failed_sensitivity_attempt_is_counted(
     assert result["variants_evaluated"] == 1
 
 
+def test_null_dsr_does_not_crash_show_or_cite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    run_id = "0123456789abcdef"
+    rdir = tmp_path / "runs" / run_id
+    rdir.mkdir(parents=True)
+    (rdir / "manifest.json").write_text(json.dumps({"command": "validate", "dsr": None}))
+    cited = CliRunner().invoke(app(), ["results", "cite", run_id, "dsr", "--json"])
+    assert cited.exit_code == 0, cited.output
+    fact = json.loads(cited.stdout)
+    assert fact["value"] is None
+    assert fact["reason"]
+    shown = CliRunner().invoke(app(), ["results", "show", run_id, "--json"])
+    assert shown.exit_code == 0, shown.output
+    assert json.loads(shown.stdout)["failed"] == []
+
+
+def test_show_test_id_keeps_completed_assets_and_reports_failed_ones(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    good, bad = "0123456789abcdef", "fedcba9876543210"
+    rdir = tmp_path / "runs" / good
+    rdir.mkdir(parents=True)
+    (rdir / "manifest.json").write_text(json.dumps({"command": "validate"}))
+    append_trial(tmp_path, {"run_id": good, "test_id": "t1", "symbol": "SPY", "labels": []})
+    append_trial(tmp_path, {"run_id": bad, "test_id": "t1", "symbol": "QQQ", "labels": ["error"]})
+    append_trial(tmp_path, {"run_id": None, "test_id": "t1", "symbol": "NOPE", "labels": ["error"]})
+    append_trial(
+        tmp_path,
+        {"kind": "tool:regimes", "run_id": good, "test_id": "t1", "tool_output": "x", "labels": []},
+    )
+    result = CliRunner().invoke(app(), ["results", "show", "t1", "--json"])
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.stdout)
+    assert [run["run_id"] for run in output["runs"]] == [good]
+    assert [(item["symbol"], item["run_id"], item["trial_index"]) for item in output["failed"]] == [
+        ("QQQ", bad, 2),
+        ("NOPE", None, 3),
+    ]
+    assert all("did not complete" in item["reason"] for item in output["failed"])
+    append_trial(tmp_path, {"run_id": bad, "test_id": "t2", "symbol": "QQQ", "labels": ["error"]})
+    only_failed = CliRunner().invoke(app(), ["results", "show", "t2", "--json"])
+    assert only_failed.exit_code == 0
+    assert json.loads(only_failed.stdout)["runs"] == []
+    assert len(json.loads(only_failed.stdout)["failed"]) == 1
+
+
+def test_show_test_id_reports_an_unreadable_asset_and_keeps_the_rest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    good, broken = "0123456789abcdef", "fedcba9876543210"
+    for run_id in (good, broken):
+        (tmp_path / "runs" / run_id).mkdir(parents=True)
+        append_trial(
+            tmp_path, {"run_id": run_id, "test_id": "t3", "symbol": run_id[:3], "labels": []}
+        )
+    (tmp_path / "runs" / good / "manifest.json").write_text(json.dumps({"command": "validate"}))
+    (tmp_path / "runs" / broken / "manifest.json").write_text("{not json")
+    result = CliRunner().invoke(app(), ["results", "show", "t3", "--json"])
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.stdout)
+    assert [run["run_id"] for run in output["runs"]] == [good]
+    (failed,) = output["failed"]
+    assert failed["run_id"] == broken
+    assert failed["reason"].startswith("stored run could not be read")
+    # Naming the broken run directly still fails loud.
+    direct = CliRunner().invoke(app(), ["results", "show", broken, "--json"])
+    assert direct.exit_code != 0
+
+
 def test_rule_run_publishes_diagnostics_and_reads_them_back(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

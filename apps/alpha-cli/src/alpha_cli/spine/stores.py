@@ -4,28 +4,62 @@ from __future__ import annotations
 
 import json
 import tomllib
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from statistics import median
 
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
-from alpha_data.timeframe import parse_timeframe, store_dir
+from alpha_data.timeframe import BarTimeframe, parse_timeframe, store_dir
 
 
-def periods_per_year(timestamps: Sequence[datetime]) -> int:
-    """Infer bar frequency from elapsed years, snapping daily exchange/crypto calendars."""
+def annualisation(
+    timestamps: Sequence[datetime], bar_size: BarTimeframe | None = None
+) -> tuple[int, str]:
+    """Periods per year and a short note on how it was derived.
+
+    Intraday: median bars per trading date times 252, or 365 when at least a fifth of the
+    distinct bar dates (UTC) fall on a weekend; weekend dates are then left out of the median
+    only for non-weekend instruments. Daily: elapsed calendar years, snapped to 252 or 365.
+    """
     if len(timestamps) < 30:
         raise ValueError("periods_per_year requires at least 30 bars")
     if any(right <= left for left, right in zip(timestamps, timestamps[1:], strict=False)):
         raise ValueError("periods_per_year requires strictly increasing timestamps")
+    intraday = (
+        not bar_size.is_daily
+        if bar_size is not None
+        else median(
+            (right - left).total_seconds()
+            for left, right in zip(timestamps, timestamps[1:], strict=False)
+        )
+        < 86400
+    )
+    counts = Counter(stamp.date() for stamp in timestamps)
+    weekend = sum(day.weekday() >= 5 for day in counts) / len(counts)
+    if intraday:
+        trades_weekends = weekend >= 0.2
+        days = 365 if trades_weekends else 252
+        per_day = median(n for day, n in counts.items() if trades_weekends or day.weekday() < 5)
+        basis = (
+            f"median {per_day:g} bars per {'date' if trades_weekends else 'weekday'} times "
+            f"{days} days; {weekend:.0%} of bar dates fall on weekends"
+        )
+        return round(per_day * days), basis
     years = (timestamps[-1] - timestamps[0]).total_seconds() / (365.25 * 86400)
     frequency = len(timestamps) / years
+    note = f"elapsed calendar years; {weekend:.0%} of bar dates fall on weekends"
     for daily in (252, 365):
         if abs(frequency - daily) <= daily * 0.03:
-            return daily
-    return round(frequency)
+            return daily, f"{note}; daily snap to {daily}"
+    return round(frequency), note
+
+
+def periods_per_year(timestamps: Sequence[datetime], bar_size: BarTimeframe | None = None) -> int:
+    return annualisation(timestamps, bar_size)[0]
 
 
 @dataclass(frozen=True)

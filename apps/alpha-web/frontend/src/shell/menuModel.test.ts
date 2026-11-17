@@ -33,6 +33,7 @@ const CATALOG_GROUPS = [
   'strategy-candidate',
   'suite',
   'test',
+  'tool',
   'unusual',
   'validate',
 ]

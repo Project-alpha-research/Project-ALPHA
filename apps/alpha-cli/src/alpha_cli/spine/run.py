@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import hashlib
+import io
 import json
 import math
 from dataclasses import dataclass, replace
@@ -18,15 +20,16 @@ from alpha_cli.spine.deflation import (
     family_sharpes,
     spine_test_key,
 )
-from alpha_cli.spine.diagnose import write_diagnostics
+from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
-from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
+from alpha_data.timeframe import DAILY
 
 
 def _fields(obj: Any) -> dict[str, Any]:
@@ -91,8 +94,9 @@ def _prepare(
     )
     if (bars[-1].ts - bars[0].ts).total_seconds() < 3 * 365.25 * 86400:
         result["labels"].append("short-history")
-    ppy = periods_per_year([bar.ts for bar in bars])
+    ppy, basis = annualisation([bar.ts for bar in bars], bar_size=DAILY)
     result["periods_per_year"] = ppy
+    result["periods_per_year_basis"] = basis
     spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars))
     identity = _runner.run_identity_for(
         {
@@ -126,69 +130,14 @@ def _execute(
         manifest = _artifacts.read_manifest(rdir)
         result["labels"].append("repeat")
     else:
-        snapshot = spine_snapshot(home)
-        bars, ppy = prepared.bars, prepared.spec.periods_per_year
-        current = spine_test_key(
-            idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
-        )
-        count = count_snapshot(snapshot, idea.rule.kind, current)
-        sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
-        n = count.prior_trials + count.this_run + count.unknown_rows
-        out = _gauntlet.run_gauntlet(
-            prepared.bars,
-            prepared.spec,
-            knobs,
-            run_id=prepared.identity.run_id,
-            snapshot_id=None,
-            dividends=prepared.dividends,
-            trial_sharpes=sharpes,
-            trial_family=TrialFamily(count.family_id, n, n, len(sharpes) + 1, count.repeats),
-        )
-        _artifacts.publish_artifact(
-            rdir / "spec.json",
-            lambda path: path.write_text(
-                json.dumps(
-                    {**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256},
-                    sort_keys=True,
-                    separators=(",", ":"),
-                    allow_nan=False,
-                ),
-                encoding="utf-8",
-            ),
-        )
-        if "no-diagnostics" not in result["labels"]:
-            out = write_diagnostics(
-                idea,
-                prepared.bars,
-                prepared.dividends,
-                prepared.spec,
-                out,
-                prepared.identity,
-                home,
-                result,
-                snapshot=snapshot,
-            )
-        _, manifest = write_validation_run(
-            home,
-            prepared.bars,
-            prepared.spec,
-            out,
-            prepared.identity,
-            extra_manifest={
-                "source": result["source"],
-                "resized_entries": out.result.resized_entries,
-                "spine": {
-                    "test_id": test_id,
-                    "spec_sha256": idea.spec_sha256,
-                    "name": idea.name,
-                    "idea": idea.idea,
-                    "rule": idea.rule.model_dump(),
-                    "store": result["store"],
-                    "deflation": result.get("deflation"),
-                    "labels": list(result["labels"]),
-                },
-            },
-        )
+        printed = io.StringIO()
+        with staged_run(result) as staged_home, contextlib.redirect_stdout(printed):
+            manifest = _write_run(idea, prepared, home, staged_home, knobs, test_id, result)
+        # The report library names the staging folder; say only where the run really is.
+        for line in printed.getvalue().splitlines():
+            if not line.startswith("HTML report saved to:"):
+                print(line)
+        print(f"HTML report saved to: {rdir / 'tearsheet.html'}")
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
@@ -211,6 +160,95 @@ def _execute(
             f"{result['asset']}: {result['resized_entries']} cash entries resized to fit "
             "the opening price including fees."
         )
+
+
+def _write_run(
+    idea: IdeaSpec,
+    prepared: Prepared,
+    home: Path,
+    staged_home: Path,
+    knobs: _gauntlet.GauntletParams,
+    test_id: str,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    rdir = Path(result["run_dir"])
+    # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
+    snapshot = spine_snapshot(home)
+    bars, ppy = prepared.bars, prepared.spec.periods_per_year
+    current = spine_test_key(
+        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+    )
+    count = count_snapshot(snapshot, idea.rule.kind, current)
+    sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
+    n = count.prior_trials + count.this_run + count.unknown_rows
+    out = _gauntlet.run_gauntlet(
+        prepared.bars,
+        prepared.spec,
+        knobs,
+        run_id=prepared.identity.run_id,
+        snapshot_id=None,
+        dividends=prepared.dividends,
+        trial_sharpes=sharpes,
+        trial_family=TrialFamily(count.family_id, n, n, len(sharpes) + 1, count.repeats),
+    )
+    _artifacts.publish_artifact(
+        rdir / "spec.json",
+        lambda path: path.write_text(
+            json.dumps(
+                {**idea.model_dump(mode="json"), "spec_sha256": idea.spec_sha256},
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ),
+            encoding="utf-8",
+        ),
+    )
+    if "no-diagnostics" not in result["labels"]:
+        out = write_diagnostics(
+            idea,
+            prepared.bars,
+            prepared.dividends,
+            prepared.spec,
+            out,
+            prepared.identity,
+            home,
+            result,
+            snapshot=snapshot,
+        )
+    _, manifest = write_validation_run(
+        staged_home,
+        prepared.bars,
+        prepared.spec,
+        out,
+        prepared.identity,
+        extra_manifest={
+            "source": result["source"],
+            "resized_entries": out.result.resized_entries,
+            "spine": {
+                "test_id": test_id,
+                "spec_sha256": idea.spec_sha256,
+                "name": idea.name,
+                "idea": idea.idea,
+                "rule": idea.rule.model_dump(),
+                "store": result["store"],
+                "deflation": result.get("deflation"),
+                "labels": list(result["labels"]),
+                "annualisation": {
+                    "periods_per_year": prepared.spec.periods_per_year,
+                    "basis": result["periods_per_year_basis"],
+                },
+                "data_period": {
+                    "first_ts": prepared.bars[0].ts.isoformat(),
+                    "last_ts": prepared.bars[-1].ts.isoformat(),
+                },
+                "traded_period": {
+                    "first_ts": out.oos.oos_timestamps[0].isoformat(),
+                    "last_ts": out.oos.oos_timestamps[-1].isoformat(),
+                },
+            },
+        },
+    )
+    return manifest
 
 
 def run_idea(
@@ -281,6 +319,7 @@ def run_idea(
         row = append_trial(
             home,
             {
+                "kind": "rule_test",
                 "test_id": test_id,
                 "name": idea.name,
                 "idea": idea.idea,

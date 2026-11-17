@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from bisect import bisect_right
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -40,6 +43,24 @@ from alpha_validation.metrics import to_returns
 
 if TYPE_CHECKING:
     from alpha_backtest.results import BacktestResult
+
+
+@contextmanager
+def staged_run(result: dict[str, Any]) -> Iterator[Path]:
+    """Publish diagnostics and their manifest together by renaming a completed directory."""
+    final = Path(result["run_dir"])
+    final.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".pending-", dir=final.parent) as temporary:
+        staged_home = Path(temporary)
+        staged = _artifacts.run_dir(staged_home, final.name)
+        result["run_dir"] = str(staged)
+        try:
+            yield staged_home
+            if not (staged / "manifest.json").is_file():
+                raise DataError("cannot publish a staged run without its manifest")
+            staged.rename(final)
+        finally:
+            result["run_dir"] = str(final)
 
 
 def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str, _runner.RunSpec]]:
@@ -134,6 +155,18 @@ def trials(
     }
 
 
+def full_sample(
+    bars: list[Bar], dividends: list[CorporateAction], spec: _runner.RunSpec
+) -> tuple[Any, tuple[Any, ...], tuple[float, ...]]:
+    """The one full-sample backtest path: the result, its bar dates and its equity curve.
+
+    The diagnostic pass and the investigation tools (``spine/tools.py``) both read this.
+    """
+    full = _runner.run_full_backtest(bars, spec, dividends=dividends)
+    dates, equity = zip(*full.equity_curve, strict=True)
+    return full, dates, equity
+
+
 def _publish(rdir: Path, document: dict[str, Any], identity: RunIdentity) -> None:
     # Verify the currently published sidecars against their freshly built contract. The shared
     # validation writer subsequently verifies the complete set, including diagnostics, before
@@ -226,8 +259,7 @@ def write_diagnostics(
         trace_result=out.result,
         periods_per_year=spec.periods_per_year,
     )
-    full = _runner.run_full_backtest(bars, spec, dividends=dividends)
-    dates, equity = zip(*full.equity_curve, strict=True)
+    full, dates, equity = full_sample(bars, dividends, spec)
     closes = {bar.ts: float(bar.close) for bar in bars}
     market = [closes[date] for date in dates]
     ppy = spec.periods_per_year

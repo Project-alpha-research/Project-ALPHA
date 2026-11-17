@@ -45,6 +45,11 @@ is computed or drawn, and the count leads with separate occurrences (days within
 other are one). The older rule language remains for the screens that use it until it is replaced;
 see [study invariants](../../invariants/study.md).
 
+`alpha setup study FIND_ID` measures forward returns after recorded occurrences, with drift and
+random-date controls, citable facts and one counted exploratory trial. Only its declared primary
+horizon is tested; exits and sizing remain deferred. Its end-to-end smoke check passes; see
+[setup study](../../../../research/tools/setup-study.md).
+
 Plain long/flat all-in sizing is available beside volatility targeting for moving-average crossover,
 Donchian breakout and time-series momentum; it holds entry units until the rule exits.
 
@@ -65,7 +70,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 - **Workspaces:** `packages/alpha-strategies`, `packages/alpha-patterns`
 - **Capabilities:** `rules-and-scans`, `strategy-development`, `price-lookalikes`, `price-novelty`,
-  `setup-find`
+  `setup-find`, `setup-study`
 - Code: `packages/alpha-strategies/src/`, `packages/alpha-patterns/src/`; the `alpha rules`,
   `alpha scan`, `alpha suite`, `alpha lookalike`, `alpha unusual` and `alpha setup` commands in
   `apps/alpha-cli/`.

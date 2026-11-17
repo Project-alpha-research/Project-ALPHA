@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 from collections import Counter
@@ -51,7 +50,7 @@ def _text(output: dict[str, Any]) -> str:
             *lines,
             output["folder"],
             "Outcomes were not looked at. Next: open the sheets; "
-            "outcomes come with alpha setup study (not built yet).",
+            f"measure outcomes with alpha setup study {output['find_id']}.",
         ]
     )
 
@@ -60,7 +59,7 @@ def _text(output: dict[str, Any]) -> str:
 def find_command(
     spec: Path,
     asset: Annotated[list[str] | None, typer.Option("--asset", help="Keep a spec asset.")] = None,
-    context_bars: int = typer.Option(30, min=5, max=250, help="Bars before the event."),
+    context_bars: int = typer.Option(60, min=5, max=250, help="Bars before the event."),
     max_sheets: int = typer.Option(10, min=1, max=50, help="Maximum accepted sheets."),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
@@ -118,13 +117,13 @@ def run_find(
     *,
     home: Path,
     assets: list[str] | None = None,
-    context_bars: int = 30,
+    context_bars: int = 60,
     max_sheets: int = 10,
 ) -> dict[str, Any]:
     """A find counts one exploratory look; completed folders are never rewritten."""
     import polars as pl
 
-    from alpha_cli.spine.setup_find import _counts, load_spec, prepare_assets
+    from alpha_cli.spine.setup_find import _counts, find_identity, load_spec, prepare_assets
 
     if not 5 <= context_bars <= 250 or not 1 <= max_sheets <= 50:
         raise ValueError("context-bars must be 5–250 and max-sheets 1–50")
@@ -139,7 +138,7 @@ def run_find(
             "Correct the asset errors and run alpha setup find again.",
         )
     keys = sorted(f"{r['asset']}={r['source_fingerprint']}" for r in results if r["error"] is None)
-    find_id = hashlib.sha256((spec.spec_sha256 + "|" + "|".join(keys)).encode()).hexdigest()[:16]
+    find_id = find_identity(spec.spec_sha256, keys, context_bars)
     identity = dict(find_id=find_id, spec_sha256=spec.spec_sha256, name=spec.setup.name)
     folder = home / "setups" / find_id
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]
@@ -232,3 +231,51 @@ def run_find(
         sheets=[str((folder / s).relative_to(home)) for s in sheets],
         facts=[{**f, "labels": labels} for f in summary["facts"]],
     )
+
+
+def _study_text(output: dict[str, Any]) -> str:
+    lines = [output["reading"]]
+    primary = str(output["primary_horizon"])
+    for group, keys in (
+        ("Primary horizon", [primary]),
+        ("Also looked at, not tested", [k for k in output["horizons"] if k != primary]),
+    ):
+        if not keys:
+            continue
+        lines.extend([group.lower(), "bars\toccurrences\tmean\tmedian\thit rate\tdrift\texcess"])
+        for key in keys:
+            row = output["horizons"][key]["pooled"]
+            values = [
+                "unavailable" if row[k] is None else f"{row[k]:.2%}"
+                for k in ("mean", "median", "hit_rate", "drift_mean", "excess")
+            ]
+            lines.append(
+                "\t".join(
+                    [
+                        key + (" (primary)" if key == primary else ""),
+                        str(row["occurrences"]),
+                        *values,
+                    ]
+                )
+            )
+    lines.extend(
+        [
+            "Labels: " + ", ".join(label.replace("-", " ") for label in output["labels"]),
+            output["folder"],
+            f"Next: alpha results cite {output['study_id']} setup_mean_net_return",
+        ]
+    )
+    return "\n".join(lines)
+
+
+@setup_app.command("study")
+def study_command(find_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
+    """Measure forward returns and honest controls; record one exploratory trial."""
+    from alpha_cli.spine.setup_study import run_study
+
+    try:
+        with redirect_stdout(sys.stderr if json_out else sys.stdout):
+            output = run_study(find_id, home=AlphaSettings().data_dir)
+    except SpineError as exc:
+        fail(exc, json_out)
+    emit(output, json_out=json_out, fallback=_study_text(output))

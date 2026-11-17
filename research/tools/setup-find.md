@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: b656334df3e53521
+verified: 759782b3678929b8
 ---
 
 # Setup find
@@ -28,12 +28,12 @@ uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
   occurrence (`accepted_clusters` against `accepted` in `totals`).
 - `sheets` lists contact sheets: accepted matches (the first day of each occurrence), and one greyed sheet
   of rejected samples with the reason in each panel title. Every panel stops at the entry open.
-- A second run on the same spec and data adds the label `repeat` and redraws nothing.
+- The default context is 60 bars. A second run on the same spec, data and context adds `repeat` and redraws nothing.
 
 **What it cannot tell you**
 
 - Nothing about what happened after entry: no return, exit or control is computed. A match count is not
-  evidence of an edge. Outcomes, the event study and random-date controls are not available yet.
+  evidence of an edge. Use [setup study](setup-study.md) for a counted look at outcomes and controls.
 - Daily bars only; the evaluator records the day a pattern became known, not the dates of its own lows.
 
 **Next** Show the owner the sheets and ask whether the matches look like the setup they meant; adjust the

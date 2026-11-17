@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: de8e2bcc294496ac
+verified: 56ea8d25dbaa0766
 ---
 
 # Research tools, by symptom
@@ -29,6 +29,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
+| Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
 | "How bad could it get?" | [path risk](path-risk.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
@@ -38,15 +39,16 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 
 Say "not available yet" and name the gap; never invent the output. Planned, not built:
 
-- regime detection and change-point detection;
-- factor and beta attribution (market, size, momentum, Bitcoin);
+- regime detection with models refitted only on the past (today's regime parameters are fitted in sample),
+  and change-point detection known on the day (today's change points are hindsight);
+- factor attribution for size and momentum (market or one chosen asset works today);
 - capacity and size-aware costs (costs are flat basis points today);
 - an event calendar (scheduled releases and earnings dates);
 - an event study and random-date controls as plain commands (they exist only inside the older
   staged lane);
 - a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
-- the planned plain verbs that would wrap these tools (get, idea, tool, vary, learn, promote): none is a
+- the planned plain verbs that would wrap these tools (get, idea, vary, learn, promote): none is a
   command yet, so never type one; use the cards above.
 
 ## How to change it

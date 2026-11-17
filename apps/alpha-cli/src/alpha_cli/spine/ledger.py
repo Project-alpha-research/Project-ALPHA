@@ -1,4 +1,4 @@
-"""Append-only, locked and durable record of every general rule trial."""
+"""Append-only, locked and durable record of every rule trial and investigation-tool run."""
 
 from __future__ import annotations
 
@@ -29,6 +29,8 @@ def _history(path: Path) -> list[dict[str, Any]]:
                 raise ValueError("schema or trial index mismatch")
         except ValueError as exc:
             raise DataError(f"corrupt trial ledger {path} at line {index}: {exc}") from exc
+        # Rows written before investigation tools existed carry no kind: they are rule tests.
+        row.setdefault("kind", "rule_test")
         rows.append(row)
     return rows
 
@@ -41,9 +43,12 @@ def append_trial(home: Path, values: dict[str, Any]) -> dict[str, Any]:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         rows = _history(path)
         labels = list(values["labels"])
+        # A repeat is the same run recorded again by the same kind of row (and tool output).
+        same = ("run_id", "kind", "tool_output")
+        values = {"kind": "rule_test", **values}
         if (
             values.get("run_id") is not None
-            and any(row.get("run_id") == values["run_id"] for row in rows)
+            and any(all(row.get(key) == values.get(key) for key in same) for row in rows)
             and "repeat" not in labels
         ):
             labels.append("repeat")
@@ -67,7 +72,7 @@ def append_trial(home: Path, values: dict[str, Any]) -> dict[str, Any]:
 
 
 def read_trials(home: Path) -> list[dict[str, Any]]:
-    """Read a consistent ledger snapshot, accepting older rows without variant counts."""
+    """Read a consistent ledger snapshot; older rows may lack variant counts or a kind."""
     path = home / "ledger" / "trials.jsonl"
     if not path.exists():
         return []

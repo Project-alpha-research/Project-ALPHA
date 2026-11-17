@@ -281,6 +281,7 @@ def run_idea(
         row = append_trial(
             home,
             {
+                "kind": "rule_test",
                 "test_id": test_id,
                 "name": idea.name,
                 "idea": idea.idea,

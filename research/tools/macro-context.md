@@ -33,7 +33,7 @@ uv run alpha context show DGS10 --start 2022-01-01 --end 2022-12-31 --json
 **What it cannot tell you**
 
 - Cause. A rate rise during a drawdown is a coincidence until a test separates it: say "Hypothesis:".
-- Regimes or market states: there is no regime label yet. These numbers are not covered by
+- Regimes or market states: see [regimes](attribution-regimes-changepoints.md). These numbers are not covered by
   `alpha results cite`; quote them with the command, the dates and the series id.
 
 **Next** Test the leading explanation: the same rule on a second asset or a different period with the

@@ -73,9 +73,9 @@ not a criterion for any project ([ADR-0052](../../adr/0052-licence-is-not-a-crit
 | DuckDB 2.0.0 | Asks one question across many stored files | Pinned in `alpha-cli`; in memory only | In use | A query tool, never the store |
 | lifelines 0.30.3 | Which exit comes first, with censoring | Pinned in `alpha-cli` | In use | Proven estimator; replaces a biased hand count |
 | pytest, Hypothesis, mypy, ruff, import-linter | Tests and code checks | Development tools only | In use | Never part of a result |
-| statsmodels | Regression, Holm adjustment | `alpha-validation`, `alpha-research` | In use | Holm matches the old code exactly; the rest stays hand-written |
+| statsmodels | Regression, regimes, Holm adjustment | `alpha-validation`, `alpha-research` | In use | Holm matches the old code exactly |
 | arch | Side-by-side checks of bootstrap and SPA | `alpha-validation` tests only | In use (checks) | Replaces nothing: different draws and SPA statistic |
-| ruptures | Finds dates where behaviour changed | For `alpha-validation` | Approved, not yet added | New ability; needs only numpy and SciPy |
+| ruptures | Finds dates where behaviour changed | Imported in `alpha-validation` | In use | New ability; needs only numpy and SciPy |
 | pandas-datareader | Downloads the Fama-French factor series | For `alpha-data` | Approved, not yet added | That one reader only; lightly maintained |
 | TimesFM 3.0, Chronos | General forecasting models | — | Later | Compare with Kronos on the Dell, scored by ALPHA; re-judged 2026-11-16 |
 | scikit-survival | Survival models: target or stop first | — (worker or root) | Later | Re-judged 2026-11-16; ties lifelines; needs sklearn 1.9 |

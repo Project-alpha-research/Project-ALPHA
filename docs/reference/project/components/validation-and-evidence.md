@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: 9c2e873daba64a03
+verified: 451d5c95101ecce3
 ---
 
 # Validation and evidence
@@ -54,13 +54,20 @@ practitioner rule of thumb, not a statistical test. See the
 [inversion card](../../../../research/tools/inverted-signal-control.md) and
 [efficiency card](../../../../research/tools/walk-forward.md).
 
+Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
+questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
+return is market exposure, with Newey-West uncertainty), `alpha tool regimes` (calm versus
+turbulent markets from a Markov-switching model) and `alpha tool changepoints` (dates where the
+behaviour shifted). They are glue over statsmodels and ruptures, write no new statistics, and
+label what they cannot avoid: `hindsight`, `parameters-fit-in-sample`, `benchmark-is-same-asset`.
+
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`, `answer-check`,
-  `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
+  `investigation-tools`, `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.

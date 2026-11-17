@@ -77,7 +77,8 @@ def test_inversion_next_open_known_pnl_and_ledger_unchanged(
         (1, 0, 30, 30, "inconclusive"),
         (-1, 0.6, 30, 30, "inconclusive"),
         (0, 0.6, 30, 30, "inconclusive"),
-        (-1, -0.6, 30, 30, "control passed"),
+        (-1, -0.6, 30, 30, "inconclusive"),
+        (0, -0.6, 30, 30, "inconclusive"),
         (1, -0.4, 29, 30, "inconclusive"),
         (1, 0.6, 30, 29, "inconclusive"),
         (None, -0.4, 30, 30, "inconclusive"),
@@ -126,14 +127,14 @@ def test_passed_control_on_a_rising_market_says_the_check_is_weak() -> None:
     assert "this check is weak here" in section["sentence"]
 
 
-def test_passed_label_on_a_losing_rule_does_not_read_as_evidence() -> None:
-    losing = {"sharpe": -0.3, "total_return": -0.1, "trades": 40}
+@pytest.mark.parametrize("original_sharpe", [-0.3, 0.0])
+def test_nonpositive_rule_is_inconclusive(original_sharpe: float) -> None:
+    losing = {"sharpe": original_sharpe, "total_return": -0.1, "trades": 40}
     section = controls.inverted_summary(
         losing, [100, 110, 98], 40, 2, hypothetical=False, market_return=None
     )
-    assert section["label"] == "control passed"  # the binding label order, step 3
-    assert "the rule itself did not make money either" in section["sentence"]
-    assert "says nothing about an edge" in section["sentence"]
+    assert section["label"] == "inconclusive"
+    assert "cannot tell: the rule itself did not make money" in section["sentence"]
 
 
 def test_failed_and_few_trade_sentences() -> None:

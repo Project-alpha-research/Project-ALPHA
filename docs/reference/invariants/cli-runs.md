@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 410ccc9460fc33a2
+verified: 179b5164f38c868d
 ---
 
 # Command line runs invariants
@@ -59,7 +59,6 @@ and how it names and publishes immutable runs. Project-wide rules:
 - Slash symbols (`BTC/USD`) are crypto pairs and need `--account-type MARGIN`; a CASH account fails loud (`_runner.py`).
 
 ## Run identity
-
 - A run id is a deterministic 16-hex digest of the canonical payload plus identity version 3, the execution
   fingerprint, the strategy fingerprint and the verified snapshot hash (`_runner.run_identity_for`, `_identity.py`).
   No wall-clock value may enter it. [ADR-0013](../../adr/0013-run-identity-v3-and-causal-artifacts.md)
@@ -108,7 +107,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   a warning stage needs the CLI-only owner review. [ADR-0029](../../adr/0029-four-family-monte-carlo-validation.md)
 
 ## General rule trials
-
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
@@ -120,11 +118,13 @@ and how it names and publishes immutable runs. Project-wide rules:
   carry an `error` label and retain unavailable metrics as null; their explanation is in the command output.
 - Quick mode uses 20/4/4 null paths and 50 resamples, with a `quick` label. All runs carry `all-in` and
   `dev-machine-data`; ambiguous default sources and history shorter than three years receive labels too.
+- CASH equity-sized long entries from flat are capped at the affordable size step including fees at the open; the existing buffer stays.
+  The manifest/result counts `resized_entries` in scored execution and prints a line above zero; older runs load without it.
+- Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all
   remaining history. These exploratory results and trial counts grant no research or owner authority.
 
 ## Stored facts and diagnostics
-
 - Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
 - `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
   drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict (see [counting](cli-trial-ledger.md)), flags and

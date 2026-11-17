@@ -176,6 +176,7 @@ def _execute(
             prepared.identity,
             extra_manifest={
                 "source": result["source"],
+                "resized_entries": out.result.resized_entries,
                 "spine": {
                     "test_id": test_id,
                     "spec_sha256": idea.spec_sha256,
@@ -191,6 +192,7 @@ def _execute(
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
+        resized_entries=manifest.get("resized_entries", 0),
         verdict=verdict.get("overall") if isinstance(verdict, dict) else None,
         oos_sharpe=manifest.get("oos_metrics", {}).get("sharpe"),
         benchmark_sharpe=manifest.get("oos_metrics", {}).get("benchmark_sharpe"),
@@ -203,6 +205,12 @@ def _execute(
         variants_evaluated=diagnostics.get("variants_evaluated", 0),
         facts=build_facts(rdir),
     )
+
+    if result["resized_entries"] > 0:
+        print(
+            f"{result['asset']}: {result['resized_entries']} cash entries resized to fit "
+            "the opening price including fees."
+        )
 
 
 def run_idea(

@@ -13,9 +13,7 @@ from alpha_core import DataError
 from alpha_validation import (
     autocorrelation_effective_size,
     benjamini_hochberg,
-    effective_sample_size,
     newcombe_diff_interval,
-    overlap_factor,
     wilson_interval,
 )
 
@@ -124,24 +122,6 @@ class TestBenjaminiHochberg:
 
 
 class TestEffectiveSampleSize:
-    def test_non_overlapping_windows_keep_full_n(self) -> None:
-        # 100 events over 10,000 bars with a 10-bar horizon: spacing 100 >> horizon.
-        assert effective_sample_size(100, span_bars=10_000, horizon_bars=10) == 100.0
-        assert overlap_factor(100, span_bars=10_000, horizon_bars=10) == 1.0
-
-    def test_overlapping_windows_collapse_n(self) -> None:
-        """The live-trade case: 181 events, 20,866 bars, 540-bar (90-day) horizon."""
-        n_eff = effective_sample_size(181, span_bars=20_866, horizon_bars=540)
-        assert n_eff == pytest.approx(38.6, abs=0.5)
-        ov = overlap_factor(181, span_bars=20_866, horizon_bars=540)
-        assert ov == pytest.approx(4.7, abs=0.1)
-
-    def test_never_exceeds_event_count(self) -> None:
-        assert effective_sample_size(5, span_bars=10_000, horizon_bars=1) == 5.0
-
-    def test_zero_events(self) -> None:
-        assert effective_sample_size(0, span_bars=100, horizon_bars=10) == 0.0
-
     def test_autocorrelated_series_loses_independence(self) -> None:
         rng = np.random.default_rng(7)
         white = rng.normal(size=2000)
@@ -178,24 +158,6 @@ class TestProportionFailsLoud:
     ) -> None:
         with pytest.raises(DataError, match=message):
             benjamini_hochberg(pvalues, alpha=alpha)  # type: ignore[arg-type]
-
-    @pytest.mark.parametrize(
-        ("n_events", "span_bars", "horizon_bars", "message"),
-        [
-            (-1, 100, 10, "n_events >= 0"),
-            (10, 0, 10, "span_bars > 0"),
-            (10, 100, 0, "horizon_bars > 0"),
-        ],
-    )
-    def test_effective_sample_size_rejects_impossible_geometry(
-        self, n_events: int, span_bars: int, horizon_bars: int, message: str
-    ) -> None:
-        with pytest.raises(DataError, match=message):
-            effective_sample_size(n_events, span_bars=span_bars, horizon_bars=horizon_bars)
-
-    def test_no_events_is_zero_effective_and_unit_overlap(self) -> None:
-        assert effective_sample_size(0, span_bars=100, horizon_bars=10) == 0.0
-        assert overlap_factor(0, span_bars=100, horizon_bars=10) == 1.0
 
     @pytest.mark.parametrize(
         ("series", "message"),

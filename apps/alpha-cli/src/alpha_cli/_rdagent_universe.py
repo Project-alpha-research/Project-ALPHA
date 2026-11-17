@@ -17,6 +17,7 @@ from typing import Any
 
 import numpy as np
 
+from alpha_cli._rdagent_identity import validate_breaks
 from alpha_core import DataError
 
 SCHEMA = "AlphaRdagentUniverseV1"
@@ -54,7 +55,7 @@ def validate(spec: Any) -> dict[str, Any]:
     """A universe file, checked; a malformed one fails loud."""
     if (
         not isinstance(spec, dict)
-        or set(spec) not in (KEYS, KEYS | {"data_dir"})
+        or not KEYS <= set(spec) <= KEYS | {"data_dir", "identity_breaks"}
         or spec["schema"] != SCHEMA
     ):
         raise DataError(f"universe file must be {SCHEMA} with exactly the keys {sorted(KEYS)}")
@@ -82,6 +83,8 @@ def validate(spec: Any) -> dict[str, Any]:
         or any(not isinstance(s, str) or not s.strip() for s in instruments)
     ):
         raise DataError("universe instruments must be 'all-in-store' or distinct names")
+    if "identity_breaks" in spec:
+        validate_breaks(spec["identity_breaks"], instruments)
     for key in ("min_names", "min_universe"):
         if type(spec[key]) is not int or spec[key] < 1:
             raise DataError(f"universe {key} must be a positive integer")

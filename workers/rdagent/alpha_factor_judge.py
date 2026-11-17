@@ -662,6 +662,10 @@ class AlphaFactorFeedback(Experiment2Feedback):
         )
         record = exp.alpha_evaluation
         feedback.decision = record["decision"]
+        identity = record.get("disclosures", {}).get("identity_breaks")
+        if identity is not None:
+            # Keep ALPHA's count in the next proposer's trace even if the model omits it.
+            feedback.observations += "\n" + identity["message"]
         row = {
             "iteration": record["iteration"],
             "model_decision": response.get("Replace Best Result", "no"),

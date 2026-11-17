@@ -616,13 +616,25 @@ carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself sub
 limit. The match is approximate and over-inclusive: a stray family word adds a family, never
 removes one.
 
-Local embedding calls still count toward the 60-call cap. When a coding-memory embedding fails,
+Local embeddings are free and are not counted toward the 60-call cap (owner decision 2026-11-17).
+Only the gateway's built-in local embedding backend (Ollama on a loopback address, or the fake
+test route) is exempt, never a caller flag, a model name or any other backend. They do not count
+toward the monthly call count either; embedding dollars are unchanged (none are charged).
+Their attempts, including chunk retries, have a separate per-run limit of 2,000
+(`LOCAL_EMBEDDING_CALLS_PER_RUN`); exceeding it returns `budget_exhausted` and stops the run.
+All chat calls (including Codex), provider embeddings and paid retries remain counted; the
+60-call, USD 10 per-run and USD 50 monthly limits keep their values. When a coding-memory embedding fails,
 the coder looks at that request's own error (RD-Agent's retry wrapper otherwise hides it): a
 budget refusal stops the worker at once (`BudgetExhausted`) and the receipt names the cap; only
 an input the local embedding model refused is skipped and logged with that cause in
 `memory-skips.jsonl`; any other error stops the run. The receipt's `call_split` shows
-`local_embedding` and `model_chat` attempts (summing to `counted_toward_call_cap`) and
-`timeout_retry_attempts`, the reserved attempts that retried a provider timeout.
+`local_embedding`, `model_chat` and `provider_embedding` attempts and `timeout_retry_attempts`,
+the reserved attempts that retried a provider timeout. Receipt fields `counted_calls` and
+`local_embedding_calls` come from the reserved budget, even if a call was not logged. Monthly
+status separates them too; `calls` remains the compatible alias for counted calls. Unavailable
+receipt counts are null. Old state and logs without the new fields keep past embeddings counted;
+old receipts remain readable and unchanged. The split's `counted_toward_call_cap` aliases
+`counted_calls`, and `local_embedding_calls` counts only exempt attempts.
 `--coding-reasoning-tokens` exists but must stay unset: OpenRouter documents `reasoning.max_tokens`,
 but whether the pinned model's providers honour it (the gateway sends `require_parameters`) is
 unconfirmed without a paid call, and the gateway cannot yet tell a coding call from others, so
@@ -760,7 +772,7 @@ bash -c 'set -a; . ~/.config/alpha/openrouter.env; set +a; exec .venv/bin/python
   memory, three without, comparing `deepseek/deepseek-v4-pro-0813` at 0.111 / 4.44 and
   `deepseek/deepseek-v4-flash-0731` at 0.06 / 0.18) cost USD 0.66 in all, judged 18 factors and
   found no candidate. Two runs stopped at the 60-call cap during coding (free local embedding
-  calls count toward it), one after a stuck call; replies that reason for 8-12 minutes and return
+  calls counted toward it at the time), one after a stuck call; replies that reason for 8-12 minutes and return
   no text (`invalid_provider_response`) occurred in every run.
 - Embeddings stay on local Ollama on both routes.
 - Not yet: supervision by `alpha`'s native job supervisor
@@ -807,9 +819,39 @@ numbers, checked against the retained canonical replay path. Costs, clocks, thre
 counting and the reserved window are unchanged. A month whose only quality warning is its
 cadence gap is accepted at freeze; any other warning or failure still refuses the panel.
 
-**Known limit: identity across a gap.** The resume rule assumes the same asset in the same
-units on both sides of a gap. The 2026-11-17 system check on the wide store found three pairs
-where that is false: LUNAUSDT restarts as LUNA 2.0 (last close 0.00005, resume close 8.87),
-DREPUSDT and COCOSUSDT were redenominated (about 100x and 1,300x). A factor holding them books
-a fake gain of that size. Until the data layer splits such pairs, do not judge factors on that
-store as is. Serializing HDF in the isolated factor runtime still needs an outside check.
+### Identity breaks across a gap
+
+The wide store may be used once every implausible jump is declared. Freeze enforces this only
+across any gap of one or more missing days (below); jumps between consecutive daily bars are not checked.
+The owner supplies `identity_breaks` in the universe file, a list of entries with `instrument`,
+`new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused` or `redenominated`). The instrument
+must belong to the universe and its dates must be strictly increasing. No real break list is
+shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
+
+Before factor inputs, membership, labels or replay read the panel, freeze renames rows on and
+after each boundary to `<INSTRUMENT>~2`, then `~3`, and so on. A daily row belongs to exactly
+one identity; intraday boundaries and generated-name collisions are refused. An old identity
+ends at its last earlier bar and follows the existing waiting and haircut rules. A new identity
+has no inherited history and must earn its own warm-up. Future identities do not change earlier
+membership, ranks, holdings, trades or realised figures. A declaration beyond the frozen panel
+remains in the bound universe but is not listed as applied; numbering follows declaration order.
+
+After relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
+least `IDENTITY_JUMP_MIN_GAP_DAYS = 1` missing calendar days (excluding the two observed days).
+If resume close / last close is above `IDENTITY_JUMP_RATIO = 5.0` or below `1 / 5.0`, freeze
+raises `IdentityJumpError`; one refusal names every such jump with its instrument, both dates,
+both closes and their ratio. There is no override. Even a genuine large move across such a gap
+must be declared by the owner as a break or the instrument must be left out.
+
+Known limit: a jump between consecutive daily bars (no missing day) is deliberately not checked, so a genuine crash never refuses a freeze.
+Exchanges often pause a pair for a few days to swap a redenominated token, so such a jump
+passes freeze and, held across the pause, is booked as a real move unless the owner declares it.
+Check the store for short-gap jumps before relying on it; a consecutive-day check would also
+flag genuine crashes, so neither has been added without an owner decision.
+
+The panel receipt records the applied entries with `new_name`, and `identity_jump_policy`
+(`min_gap_days`, `ratio`). Reports and proposer feedback state the number of distinct tickers
+split. Old universe files and receipts remain readable; no-break panels retain their bytes and
+numerical results. New receipts add the identity metadata and new reports add the count; source
+fingerprints still change when code changes. Serializing HDF in the isolated factor runtime
+still needs an outside check.

@@ -16,10 +16,17 @@ def failure_message(row: dict[str, Any]) -> str:
         message = "The factor failed the look-ahead check."
     mismatch = row.get("lookahead", {}).get("first_mismatch")
     if mismatch:
+        difference = (
+            "not recorded"
+            if "absolute_difference" not in mismatch
+            else "not computable (a missing or non-finite value)"
+            if mismatch["absolute_difference"] is None
+            else mismatch["absolute_difference"]
+        )
         message += (
             f" First mismatch: cut {mismatch.get('cut')}, row {mismatch.get('date')}, "
             f"instrument {mismatch.get('instrument')}, "
-            f"absolute difference {mismatch.get('absolute_difference')}; "
+            f"absolute difference {difference}; "
             f"{mismatch.get('reason', 'values differ')}."
         )
     return message

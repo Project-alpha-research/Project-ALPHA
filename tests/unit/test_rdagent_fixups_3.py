@@ -280,3 +280,27 @@ def test_universe_text_counts_pairs_not_split_series() -> None:
     )
     assert plain["universe_text"].startswith("3 instruments, 1 later delisted")
     assert split["universe_includes_delisted"] is plain["universe_includes_delisted"] is True
+
+
+def test_failure_message_never_prints_none_for_the_difference() -> None:
+    """Old rows lack the difference; structural or non-finite mismatches have none to give."""
+    from alpha_cli._rdagent_stability import failure_message
+
+    base = {"cut": "2020-12-31", "date": "2019-02-01", "instrument": "ADAUSDT"}
+    old = failure_message({"status": "LOOKAHEAD", "lookahead": {"first_mismatch": base}})
+    none = failure_message(
+        {
+            "status": "LOOKAHEAD",
+            "lookahead": {"first_mismatch": {**base, "absolute_difference": None}},
+        }
+    )
+    value = failure_message(
+        {
+            "status": "UNSTABLE",
+            "lookahead": {"first_mismatch": {**base, "absolute_difference": 0.25}},
+        }
+    )
+    assert "None" not in old + none
+    assert "absolute difference not recorded" in old
+    assert "absolute difference not computable" in none
+    assert "absolute difference 0.25" in value

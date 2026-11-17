@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 25 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 25 working, 31 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -63,6 +63,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
+- **Trade setup occurrences with declared exits** — The end-to-end smoke check has not run outside the sandbox.. Needs: Run the setup-trade smoke check outside the sandbox.. More: [research/tools/setup-trade.md](research/tools/setup-trade.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 

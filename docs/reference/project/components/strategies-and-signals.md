@@ -1,10 +1,12 @@
 ---
 owner: project layer
 sources:
+  - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
+  - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
   - packages/alpha-study/CONTEXT.md
-verified: e3b0c44298fc1c14
+verified: f2678bed92c45397
 ---
 
 # Strategies and signals
@@ -47,8 +49,12 @@ see [study invariants](../../invariants/study.md).
 
 `alpha setup study FIND_ID` measures forward returns after recorded occurrences, with drift and
 random-date controls, citable facts and one counted exploratory trial. Only its declared primary
-horizon is tested; exits and sizing remain deferred. Its end-to-end smoke check passes; see
+horizon is tested; sizing remains deferred. Its end-to-end smoke check passes; see
 [setup study](../../../../research/tools/setup-study.md).
+
+`alpha setup trade FIND_ID` applies declared exits with conservative fills and identical-rule controls,
+with one counted trial and stored facts. Its smoke check awaits an outside-sandbox run; see
+[setup trade](../../../../research/tools/setup-trade.md).
 
 Plain long/flat all-in sizing is available beside volatility targeting for moving-average crossover,
 Donchian breakout and time-series momentum; it holds entry units until the rule exits.
@@ -70,7 +76,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 - **Workspaces:** `packages/alpha-strategies`, `packages/alpha-patterns`
 - **Capabilities:** `rules-and-scans`, `strategy-development`, `price-lookalikes`, `price-novelty`,
-  `setup-find`, `setup-study`
+  `setup-find`, `setup-study`, `setup-trade`
 - Code: `packages/alpha-strategies/src/`, `packages/alpha-patterns/src/`; the `alpha rules`,
   `alpha scan`, `alpha suite`, `alpha lookalike`, `alpha unusual` and `alpha setup` commands in
   `apps/alpha-cli/`.

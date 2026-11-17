@@ -143,7 +143,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Descriptive first looks: gaps, distributions, seasonality | Unproven | `alpha-research` | Path 2 | [status] |
 | Dense multi-panel price charts, full screen, trade markers, two chart styles | Unproven | `alpha-web` charts | Path 2 | [ui] |
 | Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
-| Which came first after each match, target or stop, with still-open trades counted | Unproven | lifelines; pull request 213 | Path 2 | private |
+| Which came first after each match, target or stop, with still-open trades counted | Partial | `alpha setup trade`; outside-sandbox smoke pending | Path 2 | private |
 | A pattern detector checked against a hand-labelled set of examples before it is trusted | Missing | new Setup Lab; [note](backlog/rescued-test-fixtures.md) | Path 2 | private |
 | What winners and losers looked like before entry, beside a random-date control | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 

@@ -10,7 +10,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 41a5212eda0e4317
+verified: db13353d153bf96c
 ---
 
 # Investigation tools invariants

@@ -48,7 +48,7 @@ def test_returns_incomplete_facts_repeat_and_blindness(tmp_path: Path) -> None:
     found = make_find(tmp_path)
     before = snapshot(Path(found["folder"]))
     out = setup_study.run_study(found["find_id"], home=tmp_path)
-    expected_id = hashlib.sha256((found["find_id"] + "|setup-study-1").encode()).hexdigest()[:16]
+    expected_id = hashlib.sha256((found["find_id"] + "|setup-study-2").encode()).hexdigest()[:16]
     assert out["study_id"] == expected_id
     assert out["matching_days"] == 5 and out["occurrences"] == 4
     rows = pl.read_parquet(Path(out["folder"]) / "outcomes.parquet")
@@ -237,3 +237,23 @@ def test_changing_the_primary_horizon_is_a_new_counted_trial(tmp_path: Path) -> 
     assert [r.counts_for_deflation for r in studies] == [True, True]
     assert {r.family_id for r in studies} == {"setup:inspect matches"}
     assert sum(r["reader_trials"] for r in family_counts(spine_snapshot(tmp_path))) == 2
+
+
+def test_study_shared_crypto_costs_and_old_rule_reader(tmp_path: Path) -> None:
+    from alpha_cli.spine.facts import read_study
+    from alpha_data.store import ParquetStore
+
+    found = make_find(tmp_path)
+    store = ParquetStore(tmp_path / "store")
+    store.write_provenance("SPY", source="binance", adapter_version="1", parser_version="1")
+    store.write_bars("SPY", store.read_bars("SPY").with_columns((pl.col("high") + 1).alias("high")))
+    found = setup_cmds.run_find(tmp_path / "spec.toml", home=tmp_path)
+    out = setup_study.run_study(found["find_id"], home=tmp_path)
+    assert setup_study.STUDY_RULE_VERSION == "setup-study-2"
+    assert out["costs"]["SPY"] == {"fee_bps": 10.0, "slippage_bps": 5.0}
+    assert out["horizons"]["5"]["pooled"]["mean"] == pytest.approx((0.07 + 0.35 + 0.65) / 3 - 0.003)
+    folder = Path(out["folder"])
+    manifest = json.loads((folder / "manifest.json").read_text())
+    manifest["study_rule_version"] = "setup-study-1"
+    (folder / "manifest.json").write_text(json.dumps(manifest))
+    assert "older-cost-rule" in read_study(folder)["labels"]

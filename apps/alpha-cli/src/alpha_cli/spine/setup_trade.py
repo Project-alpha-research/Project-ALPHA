@@ -1,0 +1,281 @@
+"""One counted setup trade study; shared exits for occurrences and controls."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+from typing import Any
+
+from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.facts import add_study_trial_fact, read_study
+from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.setup_controls import (
+    RANDOM_DRAWS,
+    _comparison,
+    _draw_means,
+    null_trade_controls,
+)
+from alpha_cli.spine.setup_costs import asset_costs, round_trip
+from alpha_cli.spine.setup_exits import prepare_exits, simulate, trade_candidates, trades_frame
+from alpha_cli.spine.setup_find import load_find, study_inputs
+from alpha_core import DataError
+from alpha_core.atomic import write_text
+
+TRADE_RULE_VERSION = "setup-trade-1"
+BASIS = (
+    "long trades with frozen trigger-close levels, conservative fills "
+    "and per-asset round-trip costs"
+)
+
+
+def trade_controls(
+    cache: dict[str, dict[int, Any]],
+    chosen: dict[str, list[float]],
+    counts: dict[str, int],
+    seed: str,
+    *,
+    tested: bool,
+    control_reason: str | None = None,
+) -> dict[str, Any]:
+    """Exact spaced date sets, then occupancy; asset weights match completed occurrences.
+
+    Tail (b+1)/(m+1): Phipson & Smyth (2010), doi:10.2202/1544-6115.1585.
+    """
+    import numpy as np
+
+    baseline: list[float] = []
+    assets, weights, pooled = {}, [], np.zeros(RANDOM_DRAWS)
+    unavailable = control_reason
+    all_values = [v for a in sorted(chosen) for v in chosen[a]]
+    for asset in sorted(cache):
+        values = chosen[asset]
+        returns = np.asarray([r["net_return"] for r in cache[asset].values() if r["complete"]])
+        means = (
+            _draw_means(cache[asset], counts[asset], f"{seed}|{asset}")
+            if values and not control_reason
+            else None
+        )
+        if values and means is None:
+            unavailable = (
+                unavailable
+                or "random dates cannot supply a completed mean in every draw, "
+                "or spacing is impossible"
+            )
+        if values and not len(returns):
+            unavailable = unavailable or "no eligible completed control trades"
+        if values and len(returns):
+            baseline.extend(returns)
+            weights.extend([len(values) / len(returns)] * len(returns))
+        if means is not None:
+            pooled += means * len(values)
+        # _comparison expects a drift when values exist; use a placeholder then explicitly
+        # null every comparison below when the requested control is unavailable.
+        drift = returns if len(returns) else np.asarray([0.0])
+        result = _comparison(values, (drift, np.ones(len(drift))), means, tested=False)
+        if control_reason or not len(returns):
+            null_trade_controls(result, control_reason or "no eligible completed control trades")
+        assets[asset] = result
+    drift = np.asarray(baseline) if baseline else np.asarray([0.0])
+    weight = np.asarray(weights) if weights else np.asarray([1.0])
+    result = _comparison(
+        all_values,
+        (drift, weight),
+        None if unavailable else pooled / max(1, len(all_values)),
+        tested=tested,
+    )
+    if (
+        control_reason
+        or not baseline
+        or any(chosen[a] and not any(r["complete"] for r in cache[a].values()) for a in cache)
+    ):
+        null_trade_controls(result, control_reason or "no eligible completed control trades")
+    elif unavailable:
+        for key in ("random_date_5", "random_date_50", "random_date_95", "random_date_p"):
+            result["reasons"][key] = unavailable
+    return dict(pooled=result, assets=assets)
+
+
+def _summary(
+    spec: Any,
+    manifest: dict[str, Any],
+    rows: list[dict[str, Any]],
+    cache: dict[str, dict[int, Any]],
+    trade_id: str,
+    costs: dict[str, Any],
+    cost_labels: list[str],
+    control_reason: str | None,
+) -> dict[str, Any]:
+    from alpha_cli.spine.setup_controls import trade_labels, trade_reading, trade_report
+
+    report = trade_report(rows, cache, trade_id, control_reason)
+    primary = report["pooled"]
+    labels = trade_labels(manifest, primary, spec, len(cache), len(rows)) + cost_labels
+    sentence, outcome = trade_reading(primary, labels)
+    fields = dict(
+        setup_trades="trades",
+        setup_trade_mean_net_return="mean",
+        setup_trade_hit_rate="hit_rate",
+        setup_trade_mean_bars_held="mean_bars_held",
+        setup_trade_excess_over_drift="excess",
+        setup_trade_random_date_p="random_date_p",
+        setup_trade_mean_r="mean_r",
+    )
+    facts = [
+        dict(
+            metric=metric,
+            value=primary[field],
+            run_id=trade_id,
+            basis=BASIS,
+            source=f"summary.json:pooled.{field}",
+            labels=labels,
+            reason=primary["reasons"].get(field),
+        )
+        for metric, field in fields.items()
+    ]
+    return dict(
+        trade_id=trade_id,
+        find_id=manifest["find_id"],
+        spec_sha256=spec.spec_sha256,
+        name=spec.setup.name,
+        idea=spec.setup.idea,
+        assets=list(cache),
+        occurrences=len(rows),
+        pooled=report["pooled"],
+        per_asset=report["assets"],
+        labels=labels,
+        reading=sentence,
+        outcome=outcome,
+        facts=facts,
+        basis=BASIS,
+        costs=costs,
+        controls=dict(
+            draws=RANDOM_DRAWS,
+            pooling="complete occurrence trade counts per asset; fixed across draws",
+            sampling="separate occurrence counts, then one position per asset",
+            stability="chronological halves, each against eligible entries in its own years",
+        ),
+    )
+
+
+def _publish(
+    folder: Path, summary: dict[str, Any], rows: list[dict[str, Any]], manifest: dict[str, Any]
+) -> None:
+    from alpha_cli.spine.setup_trade_figure import draw_trades
+    from alpha_research.figures.theme import load_theme
+
+    png = draw_trades(
+        rows=rows,
+        primary=summary["pooled"],
+        theme=load_theme(),
+        title=f"{summary['name']}: {summary['pooled']['trades']} trades from "
+        f"{summary['occurrences']} separate occurrences",
+    )
+    folder.mkdir(parents=True, exist_ok=True)
+    trades_frame(rows).write_parquet(folder / "trades.parquet")
+    (folder / "trades.png").write_bytes(png)
+    write_text(folder / "summary.json", json.dumps(summary, allow_nan=False))
+    files = {
+        name: dict(
+            sha256=hashlib.sha256((folder / name).read_bytes()).hexdigest(),
+            size=(folder / name).stat().st_size,
+            rows=len(rows) if name.endswith("parquet") else None,
+        )
+        for name in ("trades.parquet", "summary.json", "trades.png")
+    }
+    write_text(
+        folder / "manifest.json",
+        json.dumps(
+            dict(
+                schema="AlphaSetupTradeV1",
+                trade_id=summary["trade_id"],
+                find_id=summary["find_id"],
+                trade_rule_version=TRADE_RULE_VERSION,
+                spec_sha256=summary["spec_sha256"],
+                assets=manifest["assets"],
+                costs=summary["costs"],
+                labels=summary["labels"],
+                files=files,
+            ),
+            allow_nan=False,
+        ),
+    )
+
+
+def _run(find_id: str, home: Path) -> dict[str, Any]:
+    import polars as pl
+
+    folder, manifest, spec = load_find(home, find_id)
+    if spec.exit is None or not any(spec.exit.model_dump().values()):
+        raise SpineError(
+            "SPEC_HAS_NO_EXIT",
+            "The find's spec has no exit fields.",
+            "Add [exit] to the spec, run alpha setup find again, then trade that find.",
+        )
+    bars, warmup = study_inputs(home, manifest, spec)
+    trade_id = hashlib.sha256(f"{find_id}|{TRADE_RULE_VERSION}".encode()).hexdigest()[:16]
+    destination = home / "setup-trades" / trade_id
+    if (destination / "manifest.json").exists():
+        summary = read_study(destination)
+        summary["labels"] = [*summary["labels"], "repeat"]
+        summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
+    else:
+        prepared = {a: prepare_exits(spec, s) for a, s in bars.items()}
+        costs, cost_labels = asset_costs(home, list(bars))
+        charges = {a: round_trip(c) for a, c in costs.items()}
+        rows = trade_candidates(
+            pl.read_parquet(folder / "candidates.parquet").to_dicts(), prepared, charges
+        )
+        cache = {
+            a: {
+                p: simulate(s, p + 1, charges[a])
+                for p in range(max(warmup, s.warmup), len(s.bars) - 1)
+            }
+            for a, s in prepared.items()
+        }
+        reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
+        summary = _summary(spec, manifest, rows, cache, trade_id, costs, cost_labels, reason)
+        add_study_trial_fact(home, summary)
+        _publish(destination, summary, rows, manifest)
+    primary = summary["pooled"]
+    ledger = append_trial(
+        home,
+        dict(
+            kind="setup_trade",
+            run_id=trade_id,
+            **{
+                k: summary[k]
+                for k in (
+                    "trade_id",
+                    "find_id",
+                    "spec_sha256",
+                    "name",
+                    "idea",
+                    "assets",
+                    "labels",
+                    "outcome",
+                )
+            },
+            occurrences=primary["trades"],
+            mean_net_return=primary["mean"],
+            excess_over_drift=primary["excess"],
+            random_date_p=primary["random_date_p"],
+            verdict=None,
+        ),
+    )
+    return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
+
+
+def run_trade(find_id: str, *, home: Path) -> dict[str, Any]:
+    from polars.exceptions import PolarsError
+
+    try:
+        return _run(find_id, home)
+    except (ValueError, OSError, DataError, KeyError, TypeError, PolarsError) as exc:
+        if isinstance(exc, SpineError):
+            raise
+        raise SpineError(
+            "TRADE_FAILED",
+            str(exc),
+            "Correct the reported data or trade error, then run alpha setup trade again.",
+        ) from exc

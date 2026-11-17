@@ -1,7 +1,4 @@
-"""Local, budgeted model boundary for the isolated RD-Agent worker.
-
-Run directly; neither RD-Agent nor ALPHA is imported into this process.
-"""
+"""Local RD-Agent model boundary; run directly without importing RD-Agent or ALPHA."""
 
 from __future__ import annotations
 
@@ -54,6 +51,7 @@ GATEWAY_DISABLED_FEATURES = (
     "workspace_dependencies",
     "code_mode_host",
 )
+LOCAL_EMBEDDING_CALLS_PER_RUN = 2000
 MAX_BODY = 4 * 1024 * 1024
 
 
@@ -88,18 +86,16 @@ class GatewayError(Exception):
         self.tool_events = tool_events
 
     def body(self) -> dict[str, Any]:
-        return (
-            self.payload
-            if self.payload is not None
-            else {
-                "error": {
-                    "message": self.message,
-                    "type": "invalid_request_error" if self.status < 500 else "gateway_error",
-                    "code": self.code,
-                    "param": self.param,
-                }
+        if self.payload is not None:
+            return self.payload
+        return {
+            "error": {
+                "message": self.message,
+                "type": "invalid_request_error" if self.status < 500 else "gateway_error",
+                "code": self.code,
+                "param": self.param,
             }
-        )
+        }
 
 
 def unsupported(param: str, reason: str) -> GatewayError:
@@ -131,6 +127,12 @@ class Settings:
     codex_effort: str = "medium"
     codex_timeout: float = 900
     json_retries: int = 2
+    # Total paid-call deadline; retries reserve against every cap (ADR-0055).
+    api_timeout: float = 180
+    provider_retries: int = 1
+    coding_reasoning_tokens: int | None = None
+    # Retry refused long embeddings as averaged sentence chunks, never truncated (ADR-0055).
+    embed_max_chars: int = 2000
     accept_unhonoured: tuple[str, ...] = ()
     api_model: str | None = None
     api_price_in_per_mtok: float | None = None
@@ -152,6 +154,10 @@ class Settings:
         return self.data_dir / "model-gateway"
 
     def validate(self) -> None:
+        if self.coding_reasoning_tokens is not None:
+            raise ValueError(
+                "coding_reasoning_tokens cannot be sent: provider request field is unconfirmed"
+            )
         if not self.data_dir.is_absolute() or not self.data_dir.is_dir():
             raise ValueError("data-dir must be an existing absolute directory")
         root = self.data_dir.resolve()
@@ -166,6 +172,7 @@ class Settings:
             "month_max_calls",
             "max_concurrency",
             "codex_timeout",
+            "api_timeout",
             "queue_timeout",
             "month_max_usd",
             "run_max_usd",
@@ -175,6 +182,10 @@ class Settings:
                 raise ValueError(f"{name} must be positive and finite")
         if self.json_retries < 0 or self.api_reserve_output_tokens < 0:
             raise ValueError("json_retries and api_reserve_output_tokens must be nonnegative")
+        if type(self.provider_retries) is not int or not 0 <= self.provider_retries <= 3:
+            raise ValueError("provider_retries must be 0, 1, 2 or 3")
+        if type(self.embed_max_chars) is not int or self.embed_max_chars < 100:
+            raise ValueError("embed_max_chars must be an integer of at least 100")
         if not loopback_url(self.ollama_url):
             raise ValueError("ollama-url must be loopback")
         if self.chat_route not in ("codex", "api", "fake"):
@@ -248,7 +259,10 @@ class Budget:
                     if (
                         not key
                         or not isinstance(entry, dict)
-                        or set(entry) != {"calls", "usd"}
+                        or set(entry)
+                        not in ({"calls", "usd"}, {"calls", "usd", "local_embedding_calls"})
+                        or type(entry.get("local_embedding_calls", 0)) is not int
+                        or entry.get("local_embedding_calls", 0) < 0
                         or type(entry["calls"]) is not int
                         or entry["calls"] < 0
                         or type(entry["usd"]) not in (int, float)
@@ -281,14 +295,33 @@ class Budget:
 
     def status(self) -> dict[str, Any]:
         with self.locked():
-            return self.read()
+            state = self.read()
+            for group in ("runs", "months"):
+                for entry in state[group].values():
+                    entry.update(counted_calls=entry["calls"])
+                    entry.setdefault("local_embedding_calls", 0)
+            return state
 
-    def reserve(self, usd: float) -> tuple[str, str, float]:
+    def reserve(self, usd: float, *, local_embedding: bool = False) -> tuple[str, str, float]:
+        if local_embedding and usd != 0:
+            raise ValueError("local embeddings must have zero provider cost")
         current_month, run = month(), self.settings.run_id
         with self.locked():
             state = self.read()
             for group, key, prefix in (("runs", run, "run"), ("months", current_month, "month")):
                 entry = state[group].setdefault(key, {"calls": 0, "usd": 0.0})
+                entry.setdefault("local_embedding_calls", 0)
+                if local_embedding:
+                    limit = LOCAL_EMBEDDING_CALLS_PER_RUN
+                    if prefix == "run" and entry["local_embedding_calls"] >= limit:
+                        raise GatewayError(
+                            429,
+                            "budget_exhausted",
+                            f"budget exhausted: local embedding limit "
+                            f"LOCAL_EMBEDDING_CALLS_PER_RUN ({limit}) reached",
+                        )
+                    entry["local_embedding_calls"] += 1
+                    continue
                 for field, increment in (("calls", 1), ("usd", usd)):
                     cap = f"{prefix}_max_{field}"
                     if entry[field] + increment > getattr(self.settings, cap):
@@ -382,6 +415,50 @@ class FakeChat:
             self.remaining_bad -= int(bad)
         reply = "not json" if bad else json.dumps({"fake": True, "prompt_sha256": digest(prompt)})
         return ChatResult(reply, "fake", len(prompt) // 4, completion_tokens=len(reply) // 4)
+
+
+def split_for_embedding(text: str, limit: int) -> list[str]:
+    """Pieces of at most ``limit`` characters, cut at sentence ends, then at spaces, then hard.
+
+    Only the whitespace between pieces is dropped; every other character is kept in order.
+    """
+    if len(text) <= limit:
+        return [text]
+    pieces: list[str] = []
+    current = ""
+    for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):
+        units = [sentence] if len(sentence) <= limit else sentence.split()
+        for unit in units:
+            while len(unit) > limit:  # a single word longer than the limit
+                if current:
+                    pieces.append(current)
+                    current = ""
+                pieces.append(unit[:limit])
+                unit = unit[limit:]
+            candidate = f"{current} {unit}" if current else unit
+            if len(candidate) <= limit:
+                current = candidate
+            else:
+                pieces.append(current)
+                current = unit
+    if current:
+        pieces.append(current)
+    return [piece for piece in pieces if piece]
+
+
+def mean_by_owner(vectors: list[Any], owners: list[int], count: int) -> list[list[float]]:
+    """Each input's vector: the mean of its pieces' vectors (one piece: unchanged)."""
+    if len(vectors) != len(owners):
+        raise GatewayError(502, "invalid_provider_response", "embedding count differs")
+    grouped: list[list[list[float]]] = [[] for _ in range(count)]
+    for owner, vector in zip(owners, vectors, strict=True):
+        grouped[owner].append(vector)
+    return [
+        [math.fsum(column) / len(group) for column in zip(*group, strict=True)]
+        if len(group) > 1
+        else group[0]
+        for group in grouped
+    ]
 
 
 class FakeEmbeddings:
@@ -557,13 +634,42 @@ class CodexChat:
             )
 
 
-def post_json(url: str, body: dict[str, Any], key: str | None = None) -> dict[str, Any]:
+PROVIDER_RETRYABLE = ("provider_timeout", "invalid_provider_response")
+
+
+def post_json(
+    url: str, body: dict[str, Any], key: str | None = None, timeout: float = 900
+) -> dict[str, Any]:
+    """Bound the whole call; abandon its daemon thread at the deadline.
+    The connection closes when the process ends or the reply arrives."""
+    box: dict[str, Any] = {}
+
+    def call() -> None:
+        try:
+            box["result"] = _post_json(url, body, key, timeout)
+        except BaseException as exc:  # noqa: BLE001 - re-raised in the caller's thread
+            box["error"] = exc
+
+    worker = threading.Thread(target=call, name="provider-call", daemon=True)
+    worker.start()
+    worker.join(timeout)
+    if worker.is_alive():
+        raise GatewayError(
+            504, "provider_timeout", f"provider gave no complete reply within {timeout:g} s"
+        )
+    if "error" in box:
+        raise box["error"]
+    result: dict[str, Any] = box["result"]
+    return result
+
+
+def _post_json(url: str, body: dict[str, Any], key: str | None, timeout: float) -> dict[str, Any]:
     headers = {"Content-Type": "application/json"}
     if key is not None:
         headers["Authorization"] = f"Bearer {key}"
     request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=900) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             result = json.load(response)
     except urllib.error.HTTPError as exc:
         try:
@@ -578,8 +684,17 @@ def post_json(url: str, body: dict[str, Any], key: str | None = None) -> dict[st
                 str(error.get("message", "provider error")),
                 payload=payload,
             ) from exc
-        raise GatewayError(exc.code, "provider_error", "provider returned an HTTP error") from exc
+        message = payload.get("error") if isinstance(payload, dict) else None
+        raise GatewayError(
+            exc.code,
+            "provider_error",
+            message if isinstance(message, str) else "provider returned an HTTP error",
+        ) from exc
+    except TimeoutError as exc:
+        raise GatewayError(504, "provider_timeout", "provider read timed out") from exc
     except (OSError, urllib.error.URLError) as exc:
+        if isinstance(getattr(exc, "reason", None), TimeoutError):
+            raise GatewayError(504, "provider_timeout", "provider connection timed out") from exc
         raise GatewayError(502, "provider_unavailable", "model provider unavailable") from exc
     except (ValueError, UnicodeError) as exc:
         raise GatewayError(
@@ -611,9 +726,7 @@ class ApiChat:
                 **{k: v for k, v in request.items() if k != "stream_options"},
                 "model": s.api_model,
                 "stream": False,
-                # OpenRouter: route only to providers that honour every parameter sent (so
-                # temperature and response_format are not dropped silently) and return the
-                # charged cost in usage.
+                # Require parameter fidelity and the provider's charged cost in usage.
                 **(
                     {"provider": {"require_parameters": True}, "usage": {"include": True}}
                     if s.api_openrouter
@@ -621,6 +734,7 @@ class ApiChat:
                 ),
             },
             self.key,
+            timeout=s.api_timeout,
         )
         try:
             text = response["choices"][0]["message"]["content"]
@@ -710,7 +824,6 @@ class Gateway:
         embedding_backend: EmbeddingBackend | None = None,
     ) -> None:
         self.settings = settings
-        settings.validate()
         self.budget = Budget(settings)
         self.chat_backend: ChatBackend
         if chat_backend is not None:
@@ -747,6 +860,7 @@ class Gateway:
             run_id=s.run_id,
             endpoint=endpoint,
             route=route,
+            local_embedding=False,
             requested_model=request.get("model"),
             model_used=model,
             effort=None,
@@ -755,6 +869,10 @@ class Gateway:
             waived=[],
             refused=[],
             attempts=0,
+            timeout_retry_attempts=0,
+            provider_errors=[],
+            chunked_inputs=0,
+            chunks=0,
             json_valid=None,
             prompt_tokens=None,
             cached_tokens=None,
@@ -958,7 +1076,9 @@ class Gateway:
             plan = self.chat_plan(request, row)
             prompt, instructions = plan.prompt, plan.instructions
             row.update(effort=plan.effort, prompt_sha256=digest(prompt), prompt_chars=len(prompt))
-            for _ in range(self.settings.json_retries + 1):
+            json_failures = 0
+            timeout_retry = False
+            while True:
                 with self.slot(row):
                     reserve = 0.0
                     if self.settings.chat_route == "api":
@@ -973,10 +1093,21 @@ class Gateway:
                         ) / 1e6
                     ticket = self.budget.reserve(reserve)
                     row["attempts"] += 1
+                    row["timeout_retry_attempts"] += int(timeout_retry)
+                    timeout_retry = False
                     row["usd"] += reserve
-                    result = self.chat_backend.complete(
-                        request, prompt, plan.instructions, plan.effort, plan.schema
-                    )
+                    try:
+                        result = self.chat_backend.complete(
+                            request, prompt, plan.instructions, plan.effort, plan.schema
+                        )
+                    except GatewayError as exc:
+                        # The reservation stays charged: a provider may bill an abandoned call.
+                        row["provider_errors"].append(exc.code)
+                        retried = len(row["provider_errors"]) <= self.settings.provider_retries
+                        if exc.code in PROVIDER_RETRYABLE and retried:
+                            timeout_retry = exc.code == "provider_timeout"
+                            continue
+                        raise
                     self.budget.settle(ticket, result.usd)
                     row["usd"] += result.usd - reserve
                     if result.estimated_usd is not None:
@@ -1003,6 +1134,9 @@ class Gateway:
                     except ValueError:
                         row["json_valid"] = False
                     if not row["json_valid"]:
+                        json_failures += 1
+                        if json_failures > self.settings.json_retries:
+                            break
                         continue
                 return (
                     result.response
@@ -1041,6 +1175,33 @@ class Gateway:
             row["latency_ms"] = (time.monotonic() - start) * 1000
             self.log(row, prompt, reply, instructions)
 
+    def chunked(self, inputs: list[str], row: dict[str, Any]) -> tuple[list[str], list[int]]:
+        pieces: list[str] = []
+        owners: list[int] = []
+        for index, text in enumerate(inputs):
+            parts = split_for_embedding(text, self.settings.embed_max_chars)
+            if len(parts) > 1:
+                row["chunked_inputs"] += 1
+                row["chunks"] += len(parts)
+            pieces += parts
+            owners += [index] * len(parts)
+        return pieces, owners
+
+    def embedding_attempt(self, inputs: list[str], row: dict[str, Any]) -> EmbeddingResult:
+        """Only the built-in fake or loopback Ollama backend skips the call cap (2026-11-17)."""
+        backend = self.embedding_backend
+        local = type(backend) is FakeEmbeddings or (
+            type(backend) is OllamaEmbeddings and loopback_url(self.settings.ollama_url)
+        )
+        row["local_embedding"] = local
+        ticket = self.budget.reserve(0, local_embedding=local)
+        row["attempts"] += 1
+        try:
+            return backend.embed(inputs)
+        finally:
+            if not local:
+                self.budget.settle(ticket, 0)
+
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
         row = self.record("/v1/embeddings", request)
         start = time.monotonic()
@@ -1063,10 +1224,19 @@ class Gateway:
             prompt = json.dumps(inputs, ensure_ascii=False)
             row.update(prompt_sha256=digest(prompt), prompt_chars=sum(map(len, inputs)))
             with self.slot(row):
-                ticket = self.budget.reserve(0)
-                row["attempts"] += 1
-                result = self.embedding_backend.embed(inputs)
-                self.budget.settle(ticket, 0)
+                try:
+                    result = self.embedding_attempt(inputs, row)
+                    pieces = None
+                except GatewayError as exc:
+                    if exc.status != 400 or not any(
+                        len(text) > self.settings.embed_max_chars for text in inputs
+                    ):
+                        raise
+                    row["provider_errors"].append(exc.code)
+                    pieces, owners = self.chunked(inputs, row)
+                if pieces is not None:
+                    result = self.embedding_attempt(pieces, row)
+                    result.vectors = mean_by_owner(result.vectors, owners, len(inputs))
             reply = json.dumps(result.vectors)
             row.update(
                 model_used=result.model,
@@ -1085,6 +1255,17 @@ class Gateway:
             }
         except GatewayError as exc:
             row.update(status=exc.status, error_code=exc.code)
+            if exc.status == 400 and (
+                exc.code in {"context_length_exceeded", "input_too_long", "embedding_input_refused"}
+                or exc.code == "provider_error"
+                and re.search(
+                    r"(?:input|context).*(?:length|limit|window)|too many tokens", str(exc), re.I
+                )
+            ):
+                row["error_code"] = "embedding_input_refused"
+                raise GatewayError(
+                    400, "embedding_input_refused", f"local embedding input refused: {exc}"
+                ) from exc
             if exc.param:
                 row["refused"].append(exc.param)
             raise
@@ -1126,23 +1307,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         self.dispatch()
 
-    def do_POST(self) -> None:
-        self.dispatch()
-
-    def do_PUT(self) -> None:
-        self.dispatch()
-
-    def do_DELETE(self) -> None:
-        self.dispatch()
-
-    def do_PATCH(self) -> None:
-        self.dispatch()
-
-    def do_HEAD(self) -> None:
-        self.dispatch()
-
-    def do_OPTIONS(self) -> None:
-        self.dispatch()
+    do_POST = do_PUT = do_DELETE = do_PATCH = do_HEAD = do_OPTIONS = do_GET
 
     def dispatch(self) -> None:
         gateway = self.server.gateway
@@ -1246,6 +1411,10 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--codex-effort", choices=("low", "medium", "high"), default="medium")
         p.add_argument("--codex-timeout", type=float, default=900)
         p.add_argument("--json-retries", type=int, default=2)
+        p.add_argument("--api-timeout", type=float, default=180)
+        p.add_argument("--provider-retries", type=int, default=1)
+        p.add_argument("--coding-reasoning-tokens", type=int, default=None)
+        p.add_argument("--embed-max-chars", type=int, default=2000)
         p.add_argument("--accept-unhonoured", default="")
         p.add_argument("--api-model")
         p.add_argument("--api-price-in-per-mtok", type=float)

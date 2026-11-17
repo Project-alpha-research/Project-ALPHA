@@ -12,11 +12,19 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine.deflation import (
+    TrialFamily,
+    count_snapshot,
+    family_sharpes,
+    spine_test_key,
+)
 from alpha_cli.spine.diagnose import write_diagnostics
+from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
 
@@ -118,6 +126,14 @@ def _execute(
         manifest = _artifacts.read_manifest(rdir)
         result["labels"].append("repeat")
     else:
+        snapshot = spine_snapshot(home)
+        bars, ppy = prepared.bars, prepared.spec.periods_per_year
+        current = spine_test_key(
+            idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        )
+        count = count_snapshot(snapshot, idea.rule.kind, current)
+        sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
+        n = count.prior_trials + count.this_run + count.unknown_rows
         out = _gauntlet.run_gauntlet(
             prepared.bars,
             prepared.spec,
@@ -125,6 +141,8 @@ def _execute(
             run_id=prepared.identity.run_id,
             snapshot_id=None,
             dividends=prepared.dividends,
+            trial_sharpes=sharpes,
+            trial_family=TrialFamily(count.family_id, n, n, len(sharpes) + 1, count.repeats),
         )
         _artifacts.publish_artifact(
             rdir / "spec.json",
@@ -139,7 +157,7 @@ def _execute(
             ),
         )
         if "no-diagnostics" not in result["labels"]:
-            write_diagnostics(
+            out = write_diagnostics(
                 idea,
                 prepared.bars,
                 prepared.dividends,
@@ -148,6 +166,7 @@ def _execute(
                 prepared.identity,
                 home,
                 result,
+                snapshot=snapshot,
             )
         _, manifest = write_validation_run(
             home,
@@ -157,6 +176,7 @@ def _execute(
             prepared.identity,
             extra_manifest={
                 "source": result["source"],
+                "resized_entries": out.result.resized_entries,
                 "spine": {
                     "test_id": test_id,
                     "spec_sha256": idea.spec_sha256,
@@ -164,6 +184,7 @@ def _execute(
                     "idea": idea.idea,
                     "rule": idea.rule.model_dump(),
                     "store": result["store"],
+                    "deflation": result.get("deflation"),
                     "labels": list(result["labels"]),
                 },
             },
@@ -171,6 +192,7 @@ def _execute(
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
+        resized_entries=manifest.get("resized_entries", 0),
         verdict=verdict.get("overall") if isinstance(verdict, dict) else None,
         oos_sharpe=manifest.get("oos_metrics", {}).get("sharpe"),
         benchmark_sharpe=manifest.get("oos_metrics", {}).get("benchmark_sharpe"),
@@ -183,6 +205,12 @@ def _execute(
         variants_evaluated=diagnostics.get("variants_evaluated", 0),
         facts=build_facts(rdir),
     )
+
+    if result["resized_entries"] > 0:
+        print(
+            f"{result['asset']}: {result['resized_entries']} cash entries resized to fit "
+            "the opening price including fees."
+        )
 
 
 def run_idea(
@@ -242,6 +270,10 @@ def run_idea(
         if item is not None:
             try:
                 _execute(idea, item, home, knobs, test_id, result)
+            except SpineError as exc:
+                if exc.payload["code"] == "LEDGER_UNREADABLE":
+                    raise
+                result["error"] = f"{type(exc).__name__}: {exc}"
             except Exception as exc:  # Preserve the failed attempt as well as successful results.
                 result["error"] = f"{type(exc).__name__}: {exc}"
         if result["error"] is not None:

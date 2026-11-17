@@ -26,7 +26,8 @@ CUTS = (
 )
 README = """# Daily price and volume data
 
-15 Binance USDT spot coins, daily bars. Row d is the bar that opened at 00:00 UTC
+The frozen universe of Binance USDT spot coins, daily bars.
+Row d is the bar that opened at 00:00 UTC
 on day d and is known at its close. Data ends 2023-12-31; 2024 onward is reserved.
 
 Read with `pd.read_hdf('daily_pv.h5', key='data')`.
@@ -41,7 +42,9 @@ Read with `pd.read_hdf('daily_pv.h5', key='data')`.
 | $volume | Base-asset volume |
 | $factor | 1.0, no adjustments |
 
-All fields are float64. Factors are decided after the full day's close and judged
+Missing days inside each instrument span are explicit null rows; ALPHA never forward-fills.
+No rows precede the first bar or follow the last bar. All fields are float64.
+Factors are decided after the full day's close and judged
 on the return from the next open to the following open, with costs.
 """
 
@@ -65,6 +68,15 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
         .astype("float64")
     )
     frame["$factor"] = 1.0
+    pieces = []
+    for instrument, group in frame.groupby(level="instrument", sort=True):
+        span_dates = group.index.get_level_values("datetime")
+        index = pd.MultiIndex.from_product(
+            [pd.date_range(span_dates.min(), span_dates.max(), freq="D"), [instrument]],
+            names=["datetime", "instrument"],
+        )
+        pieces.append(group.reindex(index))
+    frame = pd.concat(pieces).sort_index()
     out.mkdir(parents=True, exist_ok=False)
     parts = {
         "full": frame,
@@ -164,6 +176,8 @@ def check_prefix_invariance(
                 if result.returncode:
                     raise ValueError(f"truncated factor exit {result.returncode}")
                 truncated = pd.read_hdf(work / "result.h5", key="data")
+                if not isinstance(truncated, pd.DataFrame):
+                    raise ValueError("factor output must be a DataFrame")
                 mismatch = compare_prefix(full_values, truncated, cut)
         except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
             checked.append({"cut": cut, "status": "ERROR"})

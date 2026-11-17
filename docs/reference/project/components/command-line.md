@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 3fd6b69956c22395
+verified: 8d947d79a930d9dd
 ---
 
 # Command line
@@ -41,11 +41,14 @@ Every capability on [STATUS.md](../../../../STATUS.md) runs through it; each is 
 it belongs to. `alpha test` takes an idea spec or flags and evaluates a long/flat rule across
 assets and named data stores. Each result appears in the Workstation Run Browser, while the general
 trial ledger retains every attempt and labels repeats and development-machine data.
+`alpha lookalike` and `alpha unusual` answer two chart questions for one asset and write a
+labelled figure ([strategies and signals](strategies-and-signals.md)); a lookalike run is recorded
+in the same ledger as an exploratory trial.
 
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** `rule-test`
+- **Capabilities:** `rule-test`, `one-trial-ledger`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),
@@ -54,6 +57,8 @@ trial ledger retains every attempt and labels repeats and development-machine da
   [ADR-0002](../../../adr/0002-cli-sole-composer-subprocess-surfaces.md),
   [ADR-0014](../../../adr/0014-cli-owned-development-control-plane.md),
   [ADR-0015](../../../adr/0015-evidence-ledger-not-agent-memory.md).
+- **Plan:** the verbs in [stage 8](../../../roadmap/production-scope-2.md#8-ai-partner) and records
+  in [stage 7](../../../roadmap/production-scope-2.md#7-records-and-memory) of the checklist.
 
 ## Decisions and open questions
 

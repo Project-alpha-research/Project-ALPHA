@@ -39,8 +39,8 @@ Nothing is designed or built here; the job is to agree what "done" means before 
 4. A request to shelve, delete or cut a part starts from its component file and the owner
    decisions log ([rule](../../../docs/reference/project/overview.md#before-you-recommend-removing-anything)).
    Being uninstalled, skipped or unfinished is a task to finish, not a reason to shelve.
-5. A market idea is research, not a feature: it goes to the research pipeline (a research case),
-   never straight to strategy code.
+5. A market idea is research, not a feature: it goes to the research route
+   ([`research/CONTEXT.md`](../../../research/CONTEXT.md): the playbook and `alpha test`), never straight to strategy code.
 6. Write the output below in plain English the owner can read without the code.
 
 ## Outputs

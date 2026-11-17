@@ -30,6 +30,10 @@ Every result visible in the Workstation, in a quant style, with text.
 | Payoff picture for an idea expressed as an option | Missing | `alpha-web` | Later | private |
 | The screens opened from a phone over private remote access | Missing | Dell setup | Path 1 | [spine] |
 | Chat panels and demo views folded away once their content shows elsewhere | Missing | `alpha-web` | Later | [grade] |
+| Pages fit a phone screen without sideways scrolling | Missing | `alpha-web` menu bar | Path 1 | [ui] |
+| The owner's terminal-style screen mock-ups kept as a design reference beside the built screens | Missing | `docs/assets`; [note](backlog/rescued-partner-ideas.md) | Later | private |
+| Signals and indicators handed to the owner's own charting platform, so the owner can keep the final call | Missing | `alpha-web`; [note](backlog/workstation-ui-ideas-from-owner-references.md) | Later | private |
+| Further screen ideas from the owner's references: event bands, card gallery, model cards, explorers | Missing | `alpha-web`; [note](backlog/workstation-ui-ideas-from-owner-references.md) | Later | private |
 
 ## 11. Paper and live
 
@@ -43,6 +47,7 @@ The one approval gate, practice trading, then live trading in a later phase.
 | Separate alerts while trading: data, execution, exposure shift, performance | Missing | none yet | Phase | private |
 | Live trading: broker link, reconciliation, risk limits, kill switch | Missing | backlog | Phase | [live] |
 | Confirmation on the Mac with a paid, authoritative data source | Unproven | `alpha-data` | Phase | [mac] |
+| A set response to each failure while trading; a pause never changes the strategy | Missing | none yet | Phase | private |
 
 ## 12. Health and hygiene
 
@@ -59,6 +64,11 @@ Keeping the project tidy, honest and never a mess.
 | Weekly mutation sweep passing | Missing | backlog | Later | [status] |
 | Backup and restore of stored data and results | Missing | backlog | Later | [status] |
 | Never high-frequency trading: nothing built for ticks, order books or speed | Working | scope rule | Now | [no-hft] |
+| Every capability traced to a checklist row, every command to a capability | Working | [trace](capability-trace.md); contract test | Now | [files] |
+| Stale branches listed and removed with the owner's sign-off | Missing | [health plan](health-plan.md) | Later | [mess] |
+| Changelog generated from pull requests, or dropped | Missing | [health plan](health-plan.md) | Later | [mess] |
+| A fresh agent's navigation measured: bytes read and the right answer | Missing | [health plan](health-plan.md) | Later | [files] |
+| Nightly list of code that nothing calls, on the status page | Missing | [health plan](health-plan.md) | Later | [mess] |
 
 ## Lost-feature check
 
@@ -93,6 +103,11 @@ counted), the old daily-rule study lane (into Path 1), and the literature worker
 feeder). Rules, scans and patterns are reshaped into the Setup Lab, never cut: they are the
 only route to "show every match first".
 
+Made on 2026-11-15 with Path 1: the staged lane's instruction files (six stage files and its
+routing skill) were replaced by the research playbook, tool cards and six skills. The lane's
+commands, screens and protocol library are untouched; the stage files can be read at commit
+`0c8b0535`.
+
 ## Questions put to the owner
 
 The owner answered all five on 2026-11-15; the answers are in the [decisions log][answers].
@@ -108,6 +123,22 @@ The owner answered all five on 2026-11-15; the answers are in the [decisions log
 5. **Code map.** Is "how this was computed" on each finding enough, or do you want a picture
    of the whole code back as well?
 
+## Questions from the file-system audit
+
+Raised on 2026-11-16 by the audit; not yet answered. Each blocks only the item named.
+
+1. **Textbook toolkit.** May a separate worker hold two textbook-method libraries
+   ([note](backlog/afml-toolkit-worker.md))? And is a barrier touched by a bar's high and low,
+   as ALPHA does today, or by its close only, as the libraries do?
+2. **Advisory reminder hook.** A fifth Claude Code hook now tells an AI which documents describe a
+   file it edited. It cannot block anything. Keep it (pull request 203 asked)?
+3. **Research protocols.** The fourteen old research protocols and their two tool-server tools
+   survive the staged lane. Delete them with the tool-server cut?
+4. **Old material.** Keep or drop: unfinished local work copied off the Mac, an orphaned earlier
+   trading project, the old local folders on the Dell ([health plan](health-plan.md)).
+5. **Cloud documents.** Hand over the project documents kept in the cloud workspace so they can
+   be imported as reference.
+
 [answers]: ../reference/project/owner-decisions-3.md#2026-11-15-five-scope-answers
 [delegate]: ../reference/project/owner-decisions.md#2026-11-14-agents-merge-and-decide-routine-matters
 [files]: ../reference/project/owner-decisions.md#2026-11-14-what-the-file-system-is-for
@@ -118,11 +149,11 @@ The owner answered all five on 2026-11-15; the answers are in the [decisions log
 [mac]: ../reference/project/owner-decisions.md#2026-11-14-dell-now-mac-later
 [mess]: ../reference/project/owner-decisions.md#2026-11-14-steady-progress-never-a-mess
 [no-hft]: ../reference/project/owner-decisions-2.md#2026-11-14-never-high-frequency-trading
-[partner]: https://github.com/tradingsystem1880-eng/Project-ALPHA/pull/182
+[partner]: ../reference/project/owner-decisions-3.md#2026-11-15-the-ai-must-be-a-research-partner-not-an-instruction-follower
 [precise]: ../reference/project/owner-decisions.md#2026-11-14-precision-and-live-capital
 [quantpad]: ../reference/project/owner-decisions.md#2026-11-14-quantpad-no-longer-used
 [slim]: ../reference/project/owner-decisions-3.md#2026-11-15-always-slimmer
-[spine]: https://github.com/tradingsystem1880-eng/Project-ALPHA/pull/182
+[spine]: ../reference/project/owner-decisions-3.md#2026-11-15-build-the-thin-spine-clean-then-switch-over
 [status]: ../../STATUS.md
 [struct]: ../reference/project/owner-decisions-2.md#2026-11-14-approvals-follow-code-structure-not-exact-bytes
 [style]: ../reference/project/owner-decisions-2.md#2026-11-14-the-interface-shows-charts-with-text-in-a-quant-style-and-is-finished-later

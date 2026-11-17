@@ -12,7 +12,7 @@ from alpha_cli.spine.errors import SpineError
 METRICS = {
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
-    "dsr": "The validation gauntlet's stored deflated Sharpe probability.",
+    "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
     **{
         f"{prefix}_{metric}": f"{label} {meaning}."
         for prefix, label in (
@@ -26,6 +26,18 @@ METRICS = {
             ("max_drawdown", "maximum drawdown"),
         )
     },
+    "inverted_sharpe": "Net Sharpe of the opposite-direction research control.",
+    "inverted_sharpe_se": "Annualised IID-normal approximate standard error of the control Sharpe.",
+    "inverted_total_return": "Net total return of the opposite-direction research control.",
+    "inverted_trades": "Closed trades in the opposite-direction research control.",
+    "inverted_label": "The recorded inverted-signal control reading.",
+    "wfe": (
+        "Median annualised OOS / IS return; a practitioner rule of thumb, not a statistical test."
+    ),
+    "wfe_fold_count": (
+        "Recorded WFE fold count; a practitioner rule of thumb, not a statistical test."
+    ),
+    "resized_entries": "Cash entries reduced to affordable size at the open in the scored run.",
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
@@ -33,10 +45,67 @@ METRICS = {
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
     "total_trials": "Ledger trial count observed for this diagnostic pass.",
-    "trial_dsr": "Deflated Sharpe using available symbol trials and sensitivity variants.",
+    "trial_dsr": "Deflated Sharpe using the idea family's trial count from the one ledger.",
+    "family_trials": (
+        "Trials counted for the deflated Sharpe: the idea's family in the one ledger, "
+        "this run and its variants."
+    ),
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
+# Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
+# 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
+# valid on a fraction.
+METRIC_UNITS = {
+    "verdict": "other",
+    "oos_sharpe": "ratio",
+    "dsr": "fraction",
+    "inverted_sharpe": "ratio",
+    "inverted_sharpe_se": "ratio",
+    "inverted_total_return": "fraction",
+    "inverted_trades": "count",
+    "inverted_label": "other",
+    "wfe": "fraction",
+    "wfe_fold_count": "count",
+    "resized_entries": "count",
+    "trades": "count",
+    "exposure": "fraction",
+    "top_1_profit_share": "fraction",
+    "top_3_profit_share": "fraction",
+    "delay_base_sharpe": "ratio",
+    "delayed_sharpe": "ratio",
+    "total_trials": "count",
+    "family_trials": "count",
+    "trial_dsr": "fraction",
+    "variants_evaluated": "count",
+    **{
+        f"{prefix}_{metric}": kind
+        for prefix in ("full_sample", "benchmark")
+        for metric, kind in (
+            ("total_return", "fraction"),
+            ("cagr", "fraction"),
+            ("sharpe", "ratio"),
+            ("max_drawdown", "fraction"),
+        )
+    },
+}
+# Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
+NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
+_CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
+_WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
+    "resized_entries": ("manifest.json", "resized_entries", "scored engine execution"),
+    **{
+        name: ("diagnostics.json", f"inverted_signal.{name}", _CONTROL_BASIS)
+        for name in (
+            "inverted_sharpe",
+            "inverted_sharpe_se",
+            "inverted_total_return",
+            "inverted_trades",
+        )
+    },
+    "inverted_label": ("diagnostics.json", "inverted_signal.label", _CONTROL_BASIS),
+    "wfe": ("diagnostics.json", "walk_forward_efficiency.wfe", _WFE_BASIS),
+    "wfe_fold_count": ("diagnostics.json", "walk_forward_efficiency.fold_count", _WFE_BASIS),
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),
@@ -66,7 +135,12 @@ _FIELDS = {
             ("delay_base_sharpe", "delay.base_sharpe", "returns-level approximation"),
             ("delayed_sharpe", "delay.delayed_sharpe", "returns-level approximation"),
             ("total_trials", "trials.total_trials", "ledger at the time of the run"),
-            ("trial_dsr", "trials.dsr", "available symbol trial Sharpes and sensitivity variants"),
+            ("trial_dsr", "trials.dsr", "one trial ledger, idea family at the time of the run"),
+            (
+                "family_trials",
+                "trials.family.n_trials_used",
+                "one trial ledger, idea family at the time of the run",
+            ),
             ("variants_evaluated", "variants_evaluated", "full-sample sensitivity engine re-runs"),
         )
     },
@@ -93,6 +167,8 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
             parent = parent.get(part, {})
         value = parent.get(parts[-1])
         reason = parent.get("reasons", {}).get(parts[-1]) or f"{filename}:{field} is unavailable"
+        if metric == "family_trials" and value is None:
+            reason = "recorded before family counts were used"
         facts.append(
             {
                 "metric": metric,

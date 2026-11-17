@@ -4,745 +4,148 @@ from __future__ import annotations
 
 import argparse
 import fcntl
-import hashlib
 import io
 import json
 import math
 import os
 import re
-import subprocess
 import sys
 from collections.abc import Iterator
 from dataclasses import asdict
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import polars as pl
 
-from alpha_backtest.portfolio_replay import run_weight_replay
+from alpha_cli import _rdagent_identity as identity
+from alpha_cli import _rdagent_membership as membership
+from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
 )
 from alpha_cli._rdagent_clocks import (
-    SWING_CLOCKS,
     clock_feedback,
-    clock_samples,
-    clock_targets,
     overall_status,
     trial_clocks,
-    trial_family,
-    validate_clock_row,
 )
-from alpha_cli.crypto_bulk_store import configured_crypto_bulk_store
-from alpha_core import Bar, DataError
-from alpha_research.panel import cross_sectional_ic
-from alpha_validation.bootstrap import block_bootstrap_ci
+from alpha_cli._rdagent_judge import (
+    ANNUAL_DAYS as ANNUAL_DAYS,
+)
+from alpha_cli._rdagent_judge import (
+    AUTHORITY as AUTHORITY,
+)
+from alpha_cli._rdagent_judge import (
+    CONFIG as CONFIG,
+)
+from alpha_cli._rdagent_judge import (
+    EXPLORATION as EXPLORATION,
+)
+from alpha_cli._rdagent_judge import (
+    LABEL as LABEL,
+)
+from alpha_cli._rdagent_judge import (
+    LEDGER_SCHEMAS as LEDGER_SCHEMAS,
+)
+from alpha_cli._rdagent_judge import (
+    LOOP_UNIVERSE as LOOP_UNIVERSE,
+)
+from alpha_cli._rdagent_judge import (
+    MIN_NAMES as MIN_NAMES,
+)
+from alpha_cli._rdagent_judge import (
+    PANEL_END as PANEL_END,
+)
+from alpha_cli._rdagent_judge import (
+    Q_THRESHOLD as Q_THRESHOLD,
+)
+from alpha_cli._rdagent_judge import (
+    RESERVED_DAY as RESERVED_DAY,
+)
+from alpha_cli._rdagent_judge import (
+    RESERVED_START as RESERVED_START,
+)
+from alpha_cli._rdagent_judge import (
+    SPREAD_REASON as SPREAD_REASON,
+)
+from alpha_cli._rdagent_judge import (
+    SURVIVORSHIP as SURVIVORSHIP,
+)
+from alpha_cli._rdagent_judge import (
+    TOP_FRACTION as TOP_FRACTION,
+)
+from alpha_cli._rdagent_judge import (
+    TRIAL_SCHEMA as TRIAL_SCHEMA,
+)
+from alpha_cli._rdagent_judge import (
+    WINDOWS as WINDOWS,
+)
+from alpha_cli._rdagent_judge import (
+    _days as _days,
+)
+from alpha_cli._rdagent_judge import (
+    _thirds as _thirds,
+)
+from alpha_cli._rdagent_judge import (
+    canonical as canonical,
+)
+from alpha_cli._rdagent_judge import (
+    exclusive as exclusive,
+)
+from alpha_cli._rdagent_judge import (
+    freeze as freeze,
+)
+from alpha_cli._rdagent_judge import (
+    matrix as matrix,
+)
+from alpha_cli._rdagent_judge import (
+    outside_git as outside_git,
+)
+from alpha_cli._rdagent_judge import panel_membership
+from alpha_cli._rdagent_judge import (
+    plain_name as plain_name,
+)
+from alpha_cli._rdagent_judge import (
+    replay as replay,
+)
+from alpha_cli._rdagent_judge import (
+    screen as screen,
+)
+from alpha_cli._rdagent_judge import (
+    screen_at_clock as screen_at_clock,
+)
+from alpha_cli._rdagent_judge import (
+    sha as sha,
+)
+from alpha_cli._rdagent_judge import (
+    spread as spread,
+)
+from alpha_cli._rdagent_judge import (
+    spread_at_clock as spread_at_clock,
+)
+from alpha_cli._rdagent_judge import (
+    validate_panel as validate_panel,
+)
+from alpha_cli._rdagent_ledger import (
+    LedgerRows as LedgerRows,
+)
+from alpha_cli._rdagent_ledger import (
+    _ledger_family as _ledger_family,
+)
+from alpha_cli._rdagent_ledger import (
+    _read_ledger as _read_ledger,
+)
+from alpha_cli._rdagent_ledger import (
+    import_historical as import_historical,
+)
+from alpha_core import DataError
 from alpha_validation.dsr import (
     deflated_sharpe,
     expected_max_sharpe,
     probabilistic_sharpe_ratio,
 )
-from alpha_validation.proportion import autocorrelation_effective_size, benjamini_hochberg
-
-RESERVED_START = "2024-01-01"
-PANEL_END = "2023-12-31"
-EXPLORATION = ("2021-01-01", "2023-12-24")
-CUTS = (
-    ("2020-12-31",)
-    + tuple(
-        f"{year}-{day}"
-        for year in (2021, 2022, 2023)
-        for day in ("03-31", "06-30", "09-30", "12-31")
-        if f"{year}-{day}" <= "2023-09-30"
-    )
-    + ("2023-12-24",)
-)
-FEE_BPS, SLIPPAGE_BPS = 10.0, 6.0
-TOP_FRACTION, ANNUAL_DAYS, MIN_NAMES = 1 / 3, 365, 5
-Q_THRESHOLD, BOOTSTRAP_RESAMPLES = 0.10, 2000
-LABEL = "exploratory, not admitted, not yet confirmed"
-SURVIVORSHIP = (
-    "15 coins chosen in 2026-11 from today's survivors; coins that were delisted or collapsed "
-    "(for example LUNA, FTT) are absent, which biases results upward"
-)
-AUTHORITY = dict.fromkeys(("admitted", "evidence", "approval", "promotion"), False)
-WINDOWS = {
-    "history": ["2017-08-17", "2020-12-31"],
-    "exploration": list(EXPLORATION),
-    "panel_end": PANEL_END,
-    "reserved_start": RESERVED_START,
-}
-CONFIG: dict[str, Any] = {
-    "windows": WINDOWS,
-    "clocks": CLOCKS,
-    "swing_clocks": SWING_CLOCKS,
-    "clock_phase": EXPLORATION[0],
-    "forward_windows": "non-overlapping; open(d+1+h) / open(d+1) - 1",
-    "residual_trades": (
-        "Drifted holdings between rebalances; fill-price and fee differences cause small "
-        "residual trades, executed and charged."
-    ),
-    "cuts": CUTS,
-    "fee_bps": FEE_BPS,
-    "slippage_bps": SLIPPAGE_BPS,
-    "top_fraction": TOP_FRACTION,
-    "annual_days": ANNUAL_DAYS,
-    "min_names": MIN_NAMES,
-    "q_threshold": Q_THRESHOLD,
-    "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
-}
-TRIAL_SCHEMA = "AlphaRdagentFactorTrialV3"
-LEDGER_SCHEMAS = {
-    "AlphaRdagentFactorTrialV1",
-    "AlphaRdagentFactorTrialV2",
-    TRIAL_SCHEMA,
-    "AlphaRuleTrialV1",
-}
-LOOP_UNIVERSE = (
-    "ADAUSDT",
-    "ATOMUSDT",
-    "AVAXUSDT",
-    "BCHUSDT",
-    "BNBUSDT",
-    "BTCUSDT",
-    "DOGEUSDT",
-    "DOTUSDT",
-    "ETHUSDT",
-    "LINKUSDT",
-    "LTCUSDT",
-    "SOLUSDT",
-    "TRXUSDT",
-    "XLMUSDT",
-    "XRPUSDT",
-)
-STATUSES = frozenset(
-    {
-        "FAILED",
-        "LOOKAHEAD",
-        "DEGENERATE",
-        "ERROR",
-        "SCREEN_FAIL",
-        "REPLAY_FAIL",
-        "CANDIDATE",
-        "FAST_ONLY",
-        "REPEAT",
-        "IMPORTED",
-    }
-)
-
-
-def sha(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def plain_name(name: str) -> str:
-    glossary = {
-        "vol": "volatility",
-        "ret": "return",
-        "vwap": "volume-weighted average price",
-        "ic": "information coefficient",
-        "xs": "cross-sectional",
-        "ma": "moving average",
-        "sma": "moving average",
-        "std": "standard deviation",
-        "atr": "average true range",
-        "pct": "percent",
-        "zscore": "z-score",
-    }
-    tokens = name.lower().split("_")
-    words = [glossary.get(token, token) for token in tokens]
-    if re.fullmatch(r"[0-9]+d", tokens[-1]):
-        words[-1] = f"over {tokens[-1][:-1]} days"
-    return " ".join(words).capitalize()
-
-
-def canonical(value: Any) -> bytes:
-    # RD-Agent's Series contract explicitly represents unreplayed metrics as NaN.
-    return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
-
-
-def exclusive(path: Path, data: bytes) -> None:
-    with path.open("xb") as stream:
-        stream.write(data)
-        stream.flush()
-        os.fsync(stream.fileno())
-
-
-def outside_git(path: Path) -> None:
-    if not path.is_absolute():
-        raise DataError("trial ledger must be absolute and outside every git work tree")
-    if not path.parent.is_dir():
-        raise DataError("trial ledger parent must exist")
-    result = subprocess.run(
-        ["git", "-C", str(path.parent.resolve()), "rev-parse", "--is-inside-work-tree"],
-        env={"PATH": "/usr/bin:/bin", "LANG": "C"},
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode == 0 and result.stdout.strip() == "true":
-        raise DataError("trial ledger must be outside every git work tree")
-    if result.returncode not in (0, 128):
-        raise DataError("cannot determine trial ledger git location")
-
-
-RESERVED_DAY = date.fromisoformat(RESERVED_START)
-PRICE_COLUMNS = ("open", "high", "low", "close")
-PANEL_COLUMNS = ("date", "instrument", *PRICE_COLUMNS, "volume", "quote_volume")
-
-
-def _days(frame: pl.DataFrame, column: str = "date") -> pl.Series:
-    """The column as calendar days; a timestamp must be exactly UTC midnight."""
-    values = frame[column]
-    if values.dtype == pl.Date:
-        days = values
-    elif isinstance(values.dtype, pl.Datetime):
-        stamps = (
-            values.dt.replace_time_zone("UTC")
-            if values.dtype.time_zone is None
-            else values.dt.convert_time_zone("UTC")
-        )
-        if (stamps != stamps.dt.truncate("1d")).any():
-            raise DataError("panel dates must be UTC-midnight days")
-        days = stamps.dt.date()
-    else:
-        raise DataError(f"{column} must be a date or timestamp column")
-    if days.null_count():
-        raise DataError("panel dates must be UTC-midnight days")
-    return days.alias(column)
-
-
-def validate_panel(frame: pl.DataFrame) -> pl.DataFrame:
-    if frame.is_empty():
-        raise DataError("empty panel")
-    frame = frame.with_columns(_days(frame)).sort(["date", "instrument"])
-    if (frame["date"] >= RESERVED_DAY).any():
-        raise DataError("panel reaches reserved window")
-    if frame.select(["date", "instrument"]).is_duplicated().any():
-        raise DataError("overlapping instrument-day artifacts")
-    gaps = frame.group_by("instrument").agg(
-        pl.col("date").diff().drop_nulls().dt.total_days().alias("step")
-    )
-    for name, steps in gaps.iter_rows():
-        if any(step != 1 for step in steps):
-            raise DataError(f"disordered or gapped daily bars for {name}")
-    prices = frame.select(PRICE_COLUMNS).to_numpy().astype(float)
-    volumes = frame.select(["volume", "quote_volume"]).to_numpy().astype(float)
-    if (
-        not np.isfinite(prices).all()
-        or (prices <= 0).any()
-        or not np.isfinite(volumes).all()
-        or (volumes < 0).any()
-    ):
-        raise DataError("invalid OHLC or volumes")
-    low, high, open_, close = (frame[c].to_numpy() for c in ("low", "high", "open", "close"))
-    if (low > np.minimum(open_, close)).any() or (high < np.maximum(open_, close)).any():
-        raise DataError("inconsistent OHLC")
-    return frame
-
-
-def freeze(data_dir: Path, out: Path) -> dict[str, Any]:
-    store = configured_crypto_bulk_store(data_dir)
-    frames: list[pl.DataFrame] = []
-    manifests, hashes = [], set()
-    selector = {
-        "family": "market_bars",
-        "venue": "binance",
-        "market_type": "spot",
-        "frequency": "1d",
-        "timestamp_convention": "interval_start_utc",
-    }
-    for path in sorted((data_dir / "crypto/manifests").glob("*.json")):
-        manifest = json.loads(path.read_bytes())
-        if manifest.get("artifact_kind") != "normalized" or any(
-            manifest.get("dataset", {}).get(k) != v for k, v in selector.items()
-        ):
-            continue
-        verified, payload = store.read_verified_normalized(path.stem, max_bytes=32 * 1024 * 1024)
-        quality: Any = verified["quality"]
-        dataset: Any = verified["dataset"]
-        if quality["state"] != "qualified" or quality["failures"]:
-            raise DataError(f"unqualified normalized artifact: {path.stem}")
-        digest = str(verified["artifact_sha256"])
-        manifests.append({"manifest_id": path.stem, "artifact_sha256": digest})
-        if digest in hashes:
-            continue
-        hashes.add(digest)
-        raw = pl.read_parquet(io.BytesIO(payload))
-        days = _days(raw, "open_time")
-        # Validate order within each artifact before merging chronological captures.
-        if not days.is_sorted():
-            raise DataError("disordered artifact")
-        frame = (
-            raw.with_columns(
-                days.alias("date"), pl.lit(str(dataset["instrument"])).alias("instrument")
-            )
-            .rename({"base_volume": "volume"})
-            .filter(pl.col("date") < RESERVED_DAY)
-            .select(PANEL_COLUMNS)
-            .with_columns(pl.col(PANEL_COLUMNS[2:]).cast(pl.Float64))
-        )
-        frames.append(frame)
-    if not frames:
-        raise DataError("no qualified Binance spot daily bars")
-    panel = validate_panel(pl.concat(frames))
-    summary = panel.group_by("instrument").agg(
-        pl.len().alias("rows"),
-        pl.col("date").min().alias("first"),
-        pl.col("date").max().alias("last"),
-    )
-    instruments = {
-        str(name): {"rows": int(rows), "first_day": first.isoformat(), "last_day": last.isoformat()}
-        for name, rows, first, last in summary.sort("instrument").iter_rows()
-    }
-    out.mkdir(parents=True, exist_ok=False)
-    buffer = io.BytesIO()
-    panel.write_parquet(buffer)
-    payload = buffer.getvalue()
-    exclusive(out / "panel.parquet", payload)
-    receipt = {
-        "schema": "AlphaRdagentFactorPanelV1",
-        "manifests": manifests,
-        "instruments": instruments,
-        "rows": panel.height,
-        "panel_sha256": sha(payload),
-    }
-    exclusive(out / "panel-receipt.json", canonical(receipt))
-    return receipt
-
-
-def matrix(frame: pl.DataFrame, value: str, days: list[date], symbols: list[str]) -> np.ndarray:
-    """Dense days x symbols float matrix of one column; absent cells are NaN."""
-    wide = frame.select(["date", "instrument", value]).pivot(
-        on="instrument", index="date", values=value
-    )
-    grid = pl.DataFrame({"date": days}, schema={"date": pl.Date}).join(wide, on="date", how="left")
-    columns = [
-        grid[name].cast(pl.Float64).fill_null(float("nan")).to_numpy()
-        if name in grid.columns
-        else np.full(len(days), np.nan)
-        for name in symbols
-    ]
-    return np.column_stack(columns).astype(float)
-
-
-def screen(
-    signal: np.ndarray,
-    outcome: np.ndarray,
-    digest: str,
-    *,
-    series: dict[str, Any] | None = None,
-    n_resamples: int | None = None,
-) -> dict[str, Any]:
-    values = np.asarray(signal, dtype=float)
-    finite = np.isfinite(values)
-    coverage = float(finite.mean())
-    ties = sum(
-        bool(row.size and np.ptp(row) == 0) for row in (r[np.isfinite(r)] for r in values)
-    ) / len(values)
-    thin_days = int((finite.sum(axis=1) < MIN_NAMES).sum())
-    result: dict[str, Any] = {"coverage": coverage, "tie_share": ties, "thin_days": thin_days}
-    if coverage < 0.8 or ties > 0.05 or thin_days:
-        # thin_days: the canonical replay needs a full weight cross-section every day and
-        # cannot hold cash, so a factor with any day under MIN_NAMES names cannot be replayed.
-        return {**result, "status": "DEGENERATE", "p": 1.0}
-    ic = cross_sectional_ic(values, np.asarray(outcome, dtype=float), min_names=MIN_NAMES)
-    if series is not None:
-        series.update(daily_ic=ic.values, names=(finite & np.isfinite(outcome)).sum(axis=1))
-    daily = np.asarray([v for v in ic.values if v is not None], dtype=float)
-    effective = autocorrelation_effective_size(daily)
-    mean, sd = float(daily.mean()), float(daily.std(ddof=1))
-    z = mean / (sd / math.sqrt(effective))
-    interval = block_bootstrap_ci(
-        daily,
-        lambda x: float(np.mean(x)),
-        seed=int(digest[:8], 16),
-        n_resamples=BOOTSTRAP_RESAMPLES if n_resamples is None else n_resamples,
-    )
-    return {
-        **result,
-        "status": "OK",
-        "mean_ic": mean,
-        "n": len(daily),
-        "warnings": [f"low_sample: n={len(daily)}"] if len(daily) < 20 else [],
-        "effective_n": effective,
-        "z": z,
-        "p": math.erfc(abs(z) / math.sqrt(2)),
-        "mean_ci_95": asdict(interval),
-        "direction": 1 if mean > 0 else -1 if mean < 0 else 0,
-        "direction_selection": "chosen in-sample",
-    }
-
-
-def screen_at_clock(
-    signal: np.ndarray,
-    opens: np.ndarray,
-    days: list[date],
-    digest: str,
-    clock: str,
-    *,
-    open_days: list[date],
-    series: dict[str, Any] | None = None,
-    n_resamples: int | None = None,
-) -> dict[str, Any]:
-    data = clock_samples(signal, opens, days, open_days, clock)
-    if series is not None:
-        series.update(data)
-    seed_digest = digest if clock == "daily" else sha((digest + clock).encode())
-    options = {} if n_resamples is None else {"n_resamples": n_resamples}
-    return screen(data["signal"], data["outcome"], seed_digest, series=series, **options)
-
-
-def _return_metrics(values: np.ndarray) -> dict[str, float]:
-    sd = float(values.std(ddof=1))
-    if not np.isfinite(values).all() or sd <= 0:
-        raise DataError("degenerate replay excess return series")
-    curve = np.concatenate(([1.0], np.cumprod(1 + values)))
-    return {
-        "annualized_return": float(values.mean()) * ANNUAL_DAYS,
-        "compounded_return": float(curve[-1] - 1),
-        "sharpe": float(values.mean()) / sd * math.sqrt(ANNUAL_DAYS),
-        "per_observation_sharpe": float(values.mean()) / sd,
-        "max_drawdown": float(np.min(curve / np.maximum.accumulate(curve) - 1)),
-    }
-
-
-def replay(
-    panel: pl.DataFrame,
-    signal: np.ndarray,
-    days: list[date],
-    direction: int,
-    *,
-    clock: str = "daily",
-    series: dict[str, Any] | None = None,
-) -> tuple[dict[str, Any], np.ndarray]:
-    sessions = [days[0] + timedelta(days=n) for n in range((days[-1] - days[0]).days + 3)]
-    if sessions[-1] >= RESERVED_DAY or (panel["date"] >= RESERVED_DAY).any():
-        raise DataError("replay reaches reserved window")
-    rows = panel.filter(pl.col("date").is_between(sessions[0], sessions[-1]))
-    symbols = sorted(panel["instrument"].unique().to_list())
-    bars = {}
-    for name in symbols:
-        group = rows.filter(pl.col("instrument") == name).sort("date")
-        if group["date"].to_list() != sessions:
-            raise DataError("replay requires a complete daily session rectangle")
-        bars[name] = [
-            Bar(
-                symbol=name,
-                ts=datetime.combine(r["date"], time(), UTC),
-                open=r["open"],
-                high=r["high"],
-                low=r["low"],
-                close=r["close"],
-                volume=r["volume"],
-            )
-            for r in group.iter_rows(named=True)
-        ]
-    targets, missing, cash_days, rebalances = clock_targets(
-        signal,
-        matrix(panel, "close", days, symbols),
-        days,
-        symbols,
-        direction,
-        clock,
-        top_fraction=TOP_FRACTION,
-        min_names=MIN_NAMES,
-    )
-    result = run_weight_replay(bars, targets, fee_bps=FEE_BPS, slippage_bps=SLIPPAGE_BPS)
-    if series is not None:
-        series.update(periods=result.periods, targets=targets)
-    net = np.array([p.excess_return for p in result.periods])
-    gross = np.array([p.gross_return - p.benchmark_return for p in result.periods])
-    return {
-        "net": _return_metrics(net),
-        "gross": _return_metrics(gross),
-        "mean_turnover": float(np.mean([p.turnover for p in result.periods])),
-        "turnover_per_rebalance": sum(p.turnover for p in result.periods) / rebalances,
-        "annual_cost": (
-            sum(p.fees + p.slippage_cost for p in result.periods)
-            / float(np.mean([equity for _, equity in result.backtest.equity_curve]))
-            * ANNUAL_DAYS
-            / len(result.periods)
-        ),
-        "rebalances": rebalances,
-        "missing_coin_days": missing,
-        "cash_days": cash_days,
-        "tie_break": "instrument name ascending",
-        "available_at": (
-            "origin session + 23h (ALPHA canonical daily close stamp; bar d contains the full "
-            "UTC day)"
-        ),
-    }, net
-
-
-class LedgerRows(list[dict[str, Any]]):
-    """Physical ledger rows; iteration exposes supported schemas only.
-
-    Length and indices retain physical line numbering for existing appenders. Unknown
-    contents are available separately for conservative counting, never normal row logic.
-    """
-
-    def __iter__(self) -> Iterator[dict[str, Any]]:
-        return (row for row in super().__iter__() if row["schema"] in LEDGER_SCHEMAS)
-
-    @property
-    def unknown_rows(self) -> list[dict[str, Any]]:
-        return [row for row in super().__iter__() if row["schema"] not in LEDGER_SCHEMAS]
-
-
-def _read_ledger(path: Path) -> LedgerRows:
-    if not path.exists():
-        return LedgerRows()
-    raw = path.read_bytes()
-    if raw and not raw.endswith(b"\n"):
-        # Writers append under the ledger lock, so a partial last line is a crashed writer;
-        # appending after it would corrupt the next row. Fail loud (research-integrity rule).
-        raise DataError("incomplete trial ledger line")
-    records = LedgerRows()
-    for index, line in enumerate(raw.splitlines(), 1):
-        try:
-            row = json.loads(line)
-            if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
-                raise ValueError("invalid schema or trial identity")
-            if row["trial_index"] != index:
-                raise ValueError("invalid schema or trial identity")
-            if row["schema"] not in LEDGER_SCHEMAS:
-                records.append(row)
-                continue
-            if not re.fullmatch("[0-9a-f]{64}", row["code_sha256"]):
-                raise ValueError("invalid schema or trial identity")
-            for key in (
-                "name",
-                "run_id",
-                "iteration",
-                "panel_sha256",
-                "windows",
-                "stage",
-                "status",
-                "p",
-                "q",
-                "family_size",
-                "screen",
-                "replay",
-                "label",
-                "survivorship",
-                "authority",
-                "total_trials",
-            ):
-                if key not in row:
-                    raise ValueError(f"missing {key}")
-            if not 0 <= row["p"] <= 1 or not 0 <= row["q"] <= 1 or row["authority"] != AUTHORITY:
-                raise ValueError("invalid trial metrics or authority")
-            statuses = (
-                {"SUPPORT", "CONTRADICTION", "INSUFFICIENT", "INVALID"}
-                if row["schema"] == "AlphaRuleTrialV1"
-                else STATUSES
-            )
-            if row["status"] not in statuses or row["stage"] not in {"none", "screen", "replay"}:
-                raise ValueError("invalid trial status or stage")
-            if row["schema"] in {
-                "AlphaRdagentFactorTrialV2",
-                TRIAL_SCHEMA,
-                "AlphaRuleTrialV1",
-            } and (
-                not isinstance(row["instruments"], list)
-                or not row["instruments"]
-                or any(not isinstance(s, str) or not s.strip() for s in row["instruments"])
-                or not isinstance(row["exposure"], dict)
-                or not {"previously_exposed", "worst_status", "matches"} <= row["exposure"].keys()
-            ):
-                raise ValueError("invalid V2 instruments or exposure")
-            if row["schema"] == "AlphaRuleTrialV1":
-                _validate_rule_row(row)
-            if row["schema"] == TRIAL_SCHEMA:
-                validate_clock_row(row)
-            if row["status"] == "IMPORTED":
-                _validate_imported(row["imported"])
-                if (
-                    row["schema"] not in {"AlphaRdagentFactorTrialV2", TRIAL_SCHEMA}
-                    or row["stage"] != "none"
-                    or row["p"] != 1.0
-                ):
-                    raise ValueError("invalid imported trial")
-        except (ValueError, TypeError, KeyError) as error:
-            raise DataError(f"invalid trial ledger line {index}: {error}") from error
-        records.append(row)
-    unknown = records.unknown_rows
-    if unknown:
-        schemas = sorted({row["schema"] for row in unknown})
-        print(
-            f"rdagent-factor-eval: warning: {len(unknown)} ledger rows of other kinds "
-            f"were skipped ({', '.join(schemas)}); counted with p = 1.0",
-            file=sys.stderr,
-        )
-    return records
-
-
-def _ledger_family(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
-    """Unknown rows contribute only a conservative trial, never a factor identity."""
-    family = trial_family(
-        [
-            row
-            for row in rows
-            if row["schema"] in LEDGER_SCHEMAS and row["schema"] != "AlphaRuleTrialV1"
-        ]
-    )
-    for row in rows:
-        if row["schema"] not in LEDGER_SCHEMAS:
-            family[(str(row["trial_index"]), "unknown")] = {"p": 1.0, "replay": {}}
-    return family
-
-
-def _validate_rule_row(row: dict[str, Any]) -> None:
-    for key in ("family_id", "plain_name", "evidence", "warnings"):
-        if key not in row:
-            raise ValueError(f"missing {key}")
-    if (
-        not isinstance(row["family_id"], str)
-        or not row["family_id"]
-        or not isinstance(row["plain_name"], str)
-        or not row["plain_name"]
-        or not isinstance(row["warnings"], list)
-        or any(not isinstance(w, str) for w in row["warnings"])
-        or row["stage"] != "replay"
-        or not isinstance(row["family_size"], int)
-        or row["family_size"] < 1
-        or row["total_trials"] < row["trial_index"]
-        or row["windows"]["reserved_start"] != RESERVED_START
-        or not {"history_start", "scored_start", "scored_end", "exploration_end"}
-        <= row["windows"].keys()
-        or not isinstance(row["evidence"]["trial"], str)
-        or not re.fullmatch("[0-9a-f]{64}", row["evidence"]["sha256"])
-    ):
-        raise ValueError("invalid rule family metadata")
-
-
-def _validate_imported(value: Any) -> None:
-    if (
-        not isinstance(value, dict)
-        or set(value) != {"evaluated_by", "result_summary", "source", "code_path"}
-        or any(not isinstance(v, str) or not v.strip() for v in value.values())
-        or not Path(value["code_path"]).is_absolute()
-    ):
-        raise ValueError("invalid imported provenance")
-
-
-def _historical_item(item: Any) -> dict[str, Any]:
-    if not isinstance(item, dict) or set(item) != {
-        "name",
-        "code_path",
-        "run_id",
-        "iteration",
-        "windows",
-        "evaluated_by",
-        "result_summary",
-        "source",
-    }:
-        raise ValueError("invalid historical item fields")
-    provenance = {k: item[k] for k in ("evaluated_by", "result_summary", "source", "code_path")}
-    _validate_imported(provenance)
-    if (
-        any(not isinstance(item[k], str) or not item[k].strip() for k in ("name", "run_id"))
-        or type(item["iteration"]) is not int
-        or item["iteration"] < 0
-        or not isinstance(item["windows"], dict)
-        or set(item["windows"]) != set(WINDOWS)
-    ):
-        raise ValueError("invalid historical trial metadata")
-    windows = item["windows"]
-    for key in ("history", "exploration"):
-        bounds = windows[key]
-        if not isinstance(bounds, list) or len(bounds) != 2:
-            raise ValueError("invalid historical window bounds")
-        if any(
-            not isinstance(d, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", d)
-            for d in bounds
-        ):
-            raise ValueError("invalid historical window date")
-        if date.fromisoformat(bounds[0]) > date.fromisoformat(bounds[1]):
-            raise ValueError("reversed historical window")
-    for key in ("panel_end", "reserved_start"):
-        if not isinstance(windows[key], str) or not re.fullmatch(
-            r"[0-9]{4}-[0-9]{2}-[0-9]{2}", windows[key]
-        ):
-            raise ValueError("invalid historical window date")
-        date.fromisoformat(windows[key])
-    if windows["reserved_start"] != RESERVED_START:
-        # The exposure label is computed from this date; it must be the ledger's protected start.
-        raise ValueError(f"historical reserved_start must be {RESERVED_START}")
-    return provenance
-
-
-def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
-    from alpha_cli.rdagent_exposure import label_for, read_entries
-
-    outside_git(ledger)
-    try:
-        items = json.loads(source.read_bytes())
-    except (ValueError, UnicodeError) as error:
-        raise DataError(f"invalid historical input: {error}") from error
-    if not isinstance(items, list):
-        raise DataError("historical input must be a list")
-    with Path(str(ledger) + ".lock").open("a+b") as lock:
-        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-        history = _read_ledger(ledger)
-        identities = {r["code_sha256"] for r in history if r["schema"] in LEDGER_SCHEMAS}
-        entries = read_entries(ledger)
-        rows: list[dict[str, Any]] = []
-        for item in items:
-            try:
-                provenance = _historical_item(item)
-                digest = sha(Path(item["code_path"]).read_bytes())
-                if digest in identities:
-                    raise ValueError("historical code hash already in trial ledger or batch")
-            except (ValueError, TypeError, KeyError, OSError) as error:
-                raise DataError(f"invalid historical item {len(rows) + 1}: {error}") from error
-            row = {
-                "schema": "AlphaRdagentFactorTrialV2",
-                "trial_index": len(history) + len(rows) + 1,
-                "name": item["name"],
-                "plain_name": plain_name(item["name"]),
-                "code_sha256": digest,
-                "run_id": item["run_id"],
-                "iteration": item["iteration"],
-                "windows": item["windows"],
-                "status": "IMPORTED",
-                "stage": "none",
-                "p": 1.0,
-                "q": 1.0,
-                "screen": {},
-                "replay": {},
-                "panel_sha256": "0" * 64,
-                "instruments": list(LOOP_UNIVERSE),
-                "imported": provenance,
-                "label": LABEL,
-                "survivorship": SURVIVORSHIP,
-                "authority": AUTHORITY,
-            }
-            row["exposure"] = label_for(row, entries)
-            rows.append(row)
-            identities.add(digest)
-        for row in rows:
-            row.update(
-                family_size=len(_ledger_family([*history, *history.unknown_rows, *rows])),
-                distinct_factors=len(
-                    {
-                        r["code_sha256"]
-                        for r in [*history, *rows]
-                        if r["schema"] != "AlphaRuleTrialV1"
-                    }
-                ),
-                total_trials=len(history) + len(rows),
-            )
-        with ledger.open("ab", buffering=0) as stream:
-            for row in rows:
-                line = canonical(row)
-                if stream.write(line) != len(line):
-                    raise DataError("short trial ledger write")
-                os.fsync(stream.fileno())
-    return rows
+from alpha_validation.proportion import benjamini_hochberg
 
 
 def _inputs(
@@ -772,6 +175,11 @@ def _inputs(
         raise DataError("panel sha256 differs from receipt")
     if any(item["last_day"] >= RESERVED_START for item in receipt["instruments"].values()):
         raise DataError("panel receipt reaches reserved window")
+    bound = (run / "panel/universe.json").exists() or "universe_sha256" in receipt
+    if bound and receipt.get("universe_sha256") != sha(canonical(universes.frozen(run / "panel"))):
+        # A universe chosen or edited after the freeze is a researcher choice made after seeing
+        # data; only the file the freeze bound into its receipt is accepted.
+        raise DataError("panel universe file differs from the one bound in the panel receipt")
     panel = validate_panel(pl.read_parquet(io.BytesIO(panel_bytes)))
     value_path = request_path.parent / request["values_file"]
     value_bytes = value_path.read_bytes()
@@ -786,7 +194,11 @@ def _inputs(
         raise DataError("factor instruments outside panel")
     fingerprint = sha(
         Path(__file__).read_bytes()
+        + Path(__file__).with_name("_rdagent_judge.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_membership.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_identity.py").read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
     )
     return (
@@ -799,6 +211,7 @@ def _inputs(
             "factors_sha256": sha(value_bytes),
             "evaluator_fingerprint": fingerprint,
             "configuration_sha256": sha(canonical(CONFIG)),
+            "universe_sha256": sha(canonical(universes.frozen(run / "panel"))),
         },
     )
 
@@ -828,7 +241,11 @@ def _deflate(
             }
             for clock, trial in trial_clocks(earliest).items():
                 row["clocks"][clock].update(
-                    {k: trial[k] for k in ("status", "p", "screen", "replay")}
+                    {
+                        k: trial[k]
+                        for k in ("status", "p", "screen", "replay", "spread")
+                        if k in trial
+                    }
                 )
             row["lead_clock"] = earliest.get("lead_clock", "daily")
             row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
@@ -857,11 +274,18 @@ def _deflate(
     return trials
 
 
+def shown(trial: dict[str, Any]) -> dict[str, Any]:
+    """A trial's replay as a result; a counted-only replay (ADR-0055) shows nothing."""
+    replay: dict[str, Any] = trial["replay"]
+    return {} if "counted_only" in replay else replay
+
+
 def _report(
     rows: list[dict[str, Any]],
     history: list[dict[str, Any]],
     family: dict[tuple[str, str], dict[str, Any]],
     trials: list[float],
+    spec: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any], dict[str, Any], bool, str]:
     """Lead factor, RD-Agent's result keys, disclosures, ALPHA's decision and feedback text."""
     # The lead is the best candidate when there is one, so RD-Agent's stored result matches the
@@ -874,6 +298,8 @@ def _report(
         else None
     )
     lead_trial = lead["clocks"][lead["lead_clock"]] if lead else None
+    if lead_trial is not None and "counted_only" in lead_trial["replay"]:
+        lead_trial = {**lead_trial, "replay": {}}  # a failed clock's replay is not a result
     legacy = {
         "IC": lead_trial["screen"].get("mean_ic", float("nan")) if lead_trial else float("nan")
     }
@@ -892,15 +318,16 @@ def _report(
                     prefix + "status": trial["status"],
                     prefix + "mean_ic": trial["screen"].get("mean_ic", float("nan")),
                     prefix + "q": trial["q"],
-                    prefix + "net_annual_excess": trial["replay"]
+                    prefix + "net_annual_excess": shown(trial)
                     .get("net", {})
                     .get("annualized_return", float("nan")),
-                    prefix + "mean_turnover": trial["replay"].get("mean_turnover", float("nan")),
+                    prefix + "mean_turnover": shown(trial).get("mean_turnover", float("nan")),
                 }
             )
         legacy[f"{row['name']}.feedback"] = clock_feedback(row)
+    spec = spec or universes.DEFAULT
     disclosures = {
-        "survivorship": SURVIVORSHIP,
+        "survivorship": spec["survivorship"],
         "multiple_testing": "screening only, adaptive family, no error rate claimed",
         "direction": "chosen in-sample",
         "replay_engine": "ALPHA canonical synchronized replay, not Nautilus",
@@ -917,9 +344,12 @@ def _report(
         ),
         **CONFIG,
     }
+    if spec != universes.DEFAULT:
+        disclosures["universe"] = spec
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
-        f"{LABEL}. {SURVIVORSHIP}. Ledger trials: {len(family)}; "
+        f"{LABEL}. {spec['survivorship']}. "
+        f"Factor-family trials (each factor x clock, unreadable rows too): {len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction chosen in-sample. Exploration "
@@ -1027,6 +457,27 @@ def _clock_series_frames(
                     for t in data["targets"]
                 ]
             ).sort(["clock", "date", "instrument"]),
+        )
+
+    if data.get("events"):
+        yield "events", pl.DataFrame(data["events"]).with_columns(pl.lit("daily").alias("clock"))
+    if data.get("positions"):
+        yield (
+            "positions",
+            pl.DataFrame(
+                [
+                    {
+                        "clock": "daily",
+                        "date": snapshot["date"],
+                        "instrument": name,
+                        "quantity": snapshot["quantities"][j],
+                        "cash": snapshot["cash"],
+                        "equity": snapshot["equity"],
+                    }
+                    for snapshot in data["positions"]
+                    for j, name in enumerate(symbols)
+                ]
+            ),
         )
 
 
@@ -1138,11 +589,24 @@ def _screen_factors(
     opens: np.ndarray,
     open_days: list[date],
     series: dict[str, dict[str, Any]],
+    eligible: np.ndarray | None = None,
+    survivorship: str = SURVIVORSHIP,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     from alpha_cli.rdagent_exposure import label_for
 
+    screen_options: dict[str, Any] = {"gap_policy": True, "closes": closes} if gap_policy else {}
+    if eligible is not None:
+        screen_options["eligible"] = eligible
     rows: list[dict[str, Any]] = []
     signals: dict[str, np.ndarray] = {}
+    identity_path = run / "run-identity.json"
+    identity = (
+        json.loads(identity_path.read_bytes()) if identity_path.exists() else {"run_id": run.name}
+    )
+    if not isinstance(identity.get("run_id"), str) or not identity["run_id"].strip():
+        raise DataError("invalid run identity")
     for factor in request["factors"]:
         digest = factor["code_sha256"]
         row = {
@@ -1150,7 +614,8 @@ def _screen_factors(
             "schema": TRIAL_SCHEMA,
             "plain_name": plain_name(factor["name"]),
             "trial_index": len(history) + len(rows) + 1,
-            "run_id": run.name,
+            "run_id": identity["run_id"],
+            "recorded_at": datetime.now(UTC).isoformat(),
             "iteration": request["iteration"],
             "panel_sha256": inputs["panel_sha256"],
             "windows": WINDOWS,
@@ -1162,7 +627,7 @@ def _screen_factors(
             "replay": {},
             "lead_clock": "daily",
             "label": LABEL,
-            "survivorship": SURVIVORSHIP,
+            "survivorship": survivorship,
             "authority": AUTHORITY,
             "clocks": {
                 c: {"status": "ERROR", "p": 1.0, "q": 1.0, "screen": {}, "replay": {}}
@@ -1178,7 +643,11 @@ def _screen_factors(
             }
             # Copy: repeats must never mutate the original trial or create replay evidence.
             for c, trial in trial_clocks(earliest).items():
-                row["clocks"][c] = {k: trial[k] for k in ("status", "p", "q", "screen", "replay")}
+                row["clocks"][c] = {
+                    k: trial[k]
+                    for k in ("status", "p", "q", "screen", "replay", "spread")
+                    if k in trial
+                }
             row["lead_clock"] = earliest.get("lead_clock", "daily")
         else:
             if factor["status"] == "OK":
@@ -1189,7 +658,14 @@ def _screen_factors(
                         if factor["name"] not in values.columns:
                             raise DataError(f"no value column for factor {factor['name']!r}")
                         if digest not in signals:
-                            signals[digest] = matrix(values, factor["name"], days, symbols)
+                            values_matrix = matrix(values, factor["name"], days, symbols)
+                            # ADR-0055: a name outside the point-in-time liquid universe on a
+                            # decision day has no rank that day.
+                            signals[digest] = (
+                                values_matrix
+                                if eligible is None
+                                else np.where(eligible, values_matrix, np.nan)
+                            )
                         stats = screen_at_clock(
                             signals[digest],
                             opens,
@@ -1198,6 +674,7 @@ def _screen_factors(
                             clock,
                             open_days=open_days,
                             series=block,
+                            **screen_options,
                         )
                     except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                         stats = {
@@ -1206,9 +683,52 @@ def _screen_factors(
                             "error": f"{type(error).__name__}: {error}",
                         }
                     row["clocks"][clock].update(status=stats["status"], p=stats["p"], screen=stats)
+                    if stats["status"] == "OK":
+                        row["clocks"][clock]["spread"] = _spread_or_error(
+                            signals[digest],
+                            opens,
+                            days,
+                            digest,
+                            clock,
+                            open_days,
+                            stats,
+                            symbols,
+                            gap_policy=gap_policy,
+                            closes=closes,
+                        )
             identities[digest] = row
         rows.append(row)
     return rows, signals
+
+
+def _spread_or_error(
+    signal: np.ndarray,
+    opens: np.ndarray,
+    days: list[date],
+    digest: str,
+    clock: str,
+    open_days: list[date],
+    stats: dict[str, Any],
+    symbols: list[str],
+    *,
+    gap_policy: bool = False,
+    closes: np.ndarray | None = None,
+) -> dict[str, Any]:
+    try:
+        return spread_at_clock(
+            signal,
+            opens,
+            days,
+            digest,
+            clock,
+            open_days=open_days,
+            direction=stats["direction"],
+            symbols=symbols,
+            gap_policy=gap_policy,
+            closes=closes,
+        )
+    except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
+        return {"status": "ERROR", "error": f"{type(error).__name__}: {error}"}
 
 
 def _replay_clocks(
@@ -1219,6 +739,8 @@ def _replay_clocks(
     series: dict[str, dict[str, Any]],
     family: dict[tuple[str, str], dict[str, Any]],
     total_rows: int,
+    gap_policy: bool = False,
+    identity_segments: frozenset[str] = frozenset(),
 ) -> tuple[dict[tuple[str, str], np.ndarray], dict[str, dict[str, float]]]:
     q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
     qvalues: dict[str, dict[str, float]] = {}
@@ -1226,6 +748,9 @@ def _replay_clocks(
         if clock != "unknown":
             qvalues.setdefault(digest, {})[clock] = float(value)
     replay_returns = {}
+    replay_options: dict[str, Any] = {"gap_policy": True} if gap_policy else {}
+    if identity_segments:
+        replay_options["identity_segments"] = identity_segments
     for row in rows:
         digest = row["code_sha256"]
         row.update(family_size=len(family), distinct_factors=len(qvalues), total_trials=total_rows)
@@ -1235,6 +760,13 @@ def _replay_clocks(
                 continue
             trial["status"] = "SCREEN_FAIL"
             if trial["q"] < Q_THRESHOLD:
+                # ADR-0055: a screened clock must first show its top third beating its bottom
+                # third; only then is it replayed. A stricter, cheaper failure, never a pass.
+                checked = trial.get("spread", {"status": "ERROR", "error": "spread not computed"})
+                # A clock whose spread failed or could not be computed is still replayed, only so
+                # the Deflated Sharpe counts it as a trial exactly as before ADR-0055; that replay
+                # can never turn it into a pass.
+                verdict = {"PASS": None, "ERROR": "ERROR"}.get(checked["status"], "SPREAD_FAIL")
                 row["stage"] = "replay"
                 try:
                     metrics, net = replay(
@@ -1244,21 +776,79 @@ def _replay_clocks(
                         trial["screen"]["direction"],
                         clock=clock,
                         series=series[digest][clock],
+                        **replay_options,
                     )
                 except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                     trial.update(
                         status="ERROR", replay={"error": f"{type(error).__name__}: {error}"}
                     )
                     continue
-                trial.update(
-                    replay=metrics,
-                    status="PASS" if metrics["net"]["annualized_return"] > 0 else "REPLAY_FAIL",
-                )
+                if verdict is not None:
+                    metrics["counted_only"] = (
+                        f"spread check {checked['status']}; replayed only to count the trial, "
+                        "not a result"
+                    )
+                    status = verdict
+                else:
+                    status = "PASS" if metrics["net"]["annualized_return"] > 0 else "REPLAY_FAIL"
+                trial.update(replay=metrics, status=status)
                 replay_returns[(digest, clock)] = net
         if row["status"] == "OK":
             row["status"], row["lead_clock"] = overall_status(row["clocks"])
         row.update({k: row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")})
     return replay_returns, qvalues
+
+
+def _eligibility(
+    run: Path,
+    panel: pl.DataFrame,
+    days: list[date],
+    symbols: list[str],
+    spec: dict[str, Any],
+) -> tuple[np.ndarray | None, bool]:
+    receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
+    policy = receipt.get("gap_policy")
+    if policy is not None and policy != membership.POLICY:
+        raise DataError("unknown frozen gap policy")
+    mask = panel_membership(panel, days, symbols) if policy is not None else None
+    if spec["liquidity"] is not None:
+        start = min(panel["date"].to_list())
+        volume_days = [start + timedelta(days=n) for n in range((days[-1] - start).days + 1)]
+        liquidity = universes.eligibility(
+            matrix(panel, "quote_volume", volume_days, symbols),
+            volume_days,
+            days,
+            spec["liquidity"],
+        )
+        mask = liquidity if mask is None else mask & liquidity
+    return mask, policy is not None
+
+
+def _gap_disclosure(panel: pl.DataFrame, rows: list[dict[str, Any]]) -> tuple[dict[str, Any], str]:
+    summary = membership.panel_summary(panel)
+    replays = [
+        t["replay"] for row in rows if row["status"] != "REPEAT" for t in row["clocks"].values()
+    ]
+    spreads = [
+        t.get("spread", {})
+        for row in rows
+        if row["status"] != "REPEAT"
+        for t in row["clocks"].values()
+    ]
+    summary["spread_haircuts_applied"] = sum(s.get("haircuts_applied", 0) for s in spreads)
+    count = sum(r.get("haircuts_applied", 0) for r in replays)
+    summary["haircuts_applied"] = count
+    summary["written_off_at_panel_end"] = sum(r.get("written_off_at_panel_end", 0) for r in replays)
+    note = (
+        f" {summary['instruments_ended_early']} instruments ended early; "
+        f"{summary['missing_instrument_days']} instrument-days were missing inside their spans; "
+        f"{count} position haircuts across the new factor/clock replays "
+        f"({summary['written_off_at_panel_end']} at panel end); "
+        f"{summary['spread_haircuts_applied']} spread-leg haircuts. "
+        + str(membership.POLICY["assumption"])
+        + " "
+    )
+    return summary, note
 
 
 def _evaluate_locked(
@@ -1295,6 +885,17 @@ def _evaluate_locked(
     ]
     opens = matrix(panel, "open", open_days, symbols)
     outcome = opens[2 : len(days) + 2] / opens[1 : len(days) + 1] - 1
+    spec = universes.frozen(run / "panel")
+    universes.evaluable(spec)
+    if spec["min_names"] != MIN_NAMES or spec["annual_periods"] != ANNUAL_DAYS:
+        raise DataError(
+            f"universe {spec['name']!r}: min_names {MIN_NAMES} and {ANNUAL_DAYS} days a year are "
+            "the only values the evaluator applies yet"
+        )
+    receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
+    breaks = receipt.get("identity_breaks", [])
+    eligible, gap_policy = _eligibility(run, panel, days, symbols, spec)
+    closes = matrix(panel, "close", open_days, symbols) if gap_policy else None
     series: dict[str, dict[str, Any]] = {}
     rows, signals = _screen_factors(
         run,
@@ -1309,20 +910,49 @@ def _evaluate_locked(
         opens,
         open_days,
         series,
+        eligible,
+        spec["survivorship"],
+        gap_policy,
+        closes,
     )
     all_count = len(all_history) + len(rows)
     for index, row in enumerate(rows, len(all_history) + 1):
         row.update(trial_index=index, ledger_trials_all_families=all_count)
     family = _ledger_family([*history, *unknown, *rows])
     replay_returns, qvalues = _replay_clocks(
-        rows, panel, signals, days, series, family, len(history) + len(unknown) + len(rows)
+        rows,
+        panel,
+        signals,
+        days,
+        series,
+        family,
+        len(history) + len(unknown) + len(rows),
+        gap_policy,
+        frozenset(entry["new_name"] for entry in breaks),
     )
     series_note = _record_series(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
-    lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials)
-    feedback += f" ledger_trials_all_families: {all_count}."
+    lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
+    if "identity_breaks" in receipt:
+        note = identity.disclosure(breaks)
+        disclosures["identity_breaks"] = {
+            "applied": breaks,
+            "message": note,
+            "jump_policy": receipt["identity_jump_policy"],
+        }
+        feedback += " " + note
+        for row in rows:
+            legacy[f"{row['name']}.feedback"] += " " + note
+    if gap_policy:
+        disclosure, note = _gap_disclosure(panel, rows)
+        disclosures["missing_bars"] = disclosure
+        feedback += note
+        for row in rows:
+            row["missing_bars"] = disclosure
+            legacy[f"{row['name']}.feedback"] += note
+    feedback += f" Ledger rows, all families (rules, repeats too): {all_count}."
     record = {
         "schema": "AlphaRdagentFactorEvaluationV1",
         "ledger_trials_all_families": all_count,
@@ -1381,6 +1011,7 @@ def main() -> None:
     freezing = sub.add_parser("freeze")
     freezing.add_argument("--data-dir", type=Path, required=True)
     freezing.add_argument("--out", type=Path, required=True)
+    freezing.add_argument("--universe", type=Path, help="universe file (ADR-0055)")
     evaluating = sub.add_parser("evaluate")
     for name in ("run-dir", "request", "out", "ledger"):
         evaluating.add_argument(f"--{name}", type=Path, required=True)
@@ -1389,7 +1020,7 @@ def main() -> None:
     importing.add_argument("--file", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "freeze":
-        freeze(args.data_dir, args.out)
+        freeze(args.data_dir, args.out, args.universe)
     elif args.command == "import-historical":
         import_historical(args.ledger, args.file)
     else:

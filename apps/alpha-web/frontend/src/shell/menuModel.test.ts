@@ -14,11 +14,15 @@ const CATALOG_GROUPS = [
   'evidence',
   'forecast',
   'info',
+  'labels',
+  'ledger',
+  'lookalike',
   'ml',
   'monte-carlo',
   'optim',
   'owner-auth',
   'paper',
+  'partner',
   'project',
   'propfirm',
   'provider',
@@ -29,10 +33,17 @@ const CATALOG_GROUPS = [
   'strategy-candidate',
   'suite',
   'test',
+  'unusual',
   'validate',
 ]
 
 describe('menuModel', () => {
+  it('places the honesty self-test under Research', () => {
+    expect(assignCommands([command('partner selftest')]).Research).toEqual([
+      { kind: 'command', id: 'partner selftest', label: 'partner selftest' },
+    ])
+  })
+
   it('lists the eleven menus in spec order', () => {
     expect([...MENUS]).toEqual([
       'File',
@@ -146,4 +157,10 @@ describe('chart windows', () => {
       checked: false,
     })
   })
+})
+
+it('puts the trial ledger in Research', () => {
+  expect(assignCommands([command('ledger summary')]).Research).toEqual([
+    { kind: 'command', id: 'ledger summary', label: 'ledger summary' },
+  ])
 })

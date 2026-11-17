@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 
 from alpha_backtest.portfolio_replay import WeightTarget
+from alpha_cli import _rdagent_membership as membership
 from alpha_core import DataError
 
 CLOCKS = {"daily": 1, "weekly": 7, "monthly": 28}
@@ -24,6 +25,9 @@ def clock_samples(
     days: list[date],
     open_days: list[date],
     clock: str,
+    *,
+    closes: np.ndarray | None = None,
+    gap_policy: bool = False,
 ) -> dict[str, Any]:
     """Non-overlapping decide-close/next-open windows, with explicit dated endpoints."""
     h = CLOCKS[clock]
@@ -60,7 +64,14 @@ def clock_samples(
     # drops it for that day, as the daily screen always did, instead of failing the whole clock.
     with np.errstate(invalid="ignore"):
         outcome = opens[end] / opens[start] - 1
-    return {"days": chosen, "signal": signal[selected], "outcome": outcome}
+    result = {"days": chosen, "signal": signal[selected], "outcome": outcome}
+    if gap_policy:
+        if closes is None:
+            raise DataError("gap labels require closes")
+        result["outcome"], result["gap_counts"] = membership.forward_returns(
+            opens, closes, open_days, start, end, counted=np.isfinite(signal[selected])
+        )
+    return result
 
 
 def clock_targets(
@@ -142,7 +153,11 @@ def overall_status(clocks: dict[str, dict[str, Any]]) -> tuple[str, str]:
         status = "FAST_ONLY"
     elif any(t["q"] < 0.10 and t["status"] == "ERROR" for t in clocks.values()):
         status = "ERROR"  # a clock passed the screen but its replay failed to run
-    elif "REPLAY_FAIL" in statuses or any(t["q"] < 0.10 for t in clocks.values()):
+    elif "REPLAY_FAIL" in statuses:
+        status = "REPLAY_FAIL"
+    elif "SPREAD_FAIL" in statuses:
+        status = "SPREAD_FAIL"  # screened, but the top third never beat the bottom third
+    elif any(t["q"] < 0.10 for t in clocks.values()):
         status = "REPLAY_FAIL"
     elif all(s == "DEGENERATE" for s in statuses):
         status = "DEGENERATE"
@@ -157,13 +172,20 @@ def clock_feedback(row: dict[str, Any]) -> str:
     parts = [f"{row['name']}: {row['status']}."]
     for clock, trial in trial_clocks(row).items():
         screen, replay = trial["screen"], trial["replay"]
+        if "counted_only" in replay:  # ADR-0055: replayed only to count the trial
+            outcome = "net annual excess counted only, not a result"
+        else:
+            outcome = (
+                f"net annual excess {replay.get('net', {}).get('annualized_return')}, "
+                f"turnover per day {replay.get('mean_turnover')}"
+            )
         parts.append(
             f"{clock}: {trial['status']}, mean rank IC {screen.get('mean_ic')}, "
-            f"q={trial['q']:.6g}, net annual excess "
-            f"{replay.get('net', {}).get('annualized_return')}, turnover per day "
-            f"{replay.get('mean_turnover')}."
+            f"q={trial['q']:.6g}, {outcome}."
         )
         parts.extend(screen.get("warnings", []))
+        if trial.get("spread", {}).get("status") in ("PASS", "FAIL"):
+            parts.append(spread_note(trial["spread"]))
     reason = {
         "CANDIDATE": "A swing clock passed the screen and replay; confirmation is still required.",
         "FAST_ONLY": (
@@ -173,18 +195,37 @@ def clock_feedback(row: dict[str, Any]) -> str:
             "A clock passed the screen but no clock retained positive excess after costs; "
             "only a weekly or monthly pass can be a candidate."
         ),
+        "SPREAD_FAIL": (
+            "A clock passed the rank screen, but the top third it would hold did not beat the "
+            "bottom third before costs (top-third-does-not-beat-bottom-third). It was "
+            "replayed only to count the trial; its result is not used. "
+            "Only a weekly or monthly pass can be a candidate."
+        ),
         "SCREEN_FAIL": (
             "No swing clock passed both the screen and replay; "
             "only a weekly or monthly pass can be a candidate."
         ),
         "DEGENERATE": "Every clock has degenerate signal coverage, ties or thin decision days.",
         "ERROR": "Evaluation failed; the recorded clock errors require investigation.",
-        "FAILED": "Factor execution failed.",
+        "FAILED": (
+            f"Factor failed: {row.get('failure_reason', 'reason not recorded')}. "
+            + str(row.get("failure_detail", "")).split("\n")[0]
+        ),
         "LOOKAHEAD": "The factor failed the look-ahead check.",
         "REPEAT": "This code was already evaluated and supplies no new evidence.",
     }
     parts.append(reason[row["status"]])
     return " ".join(parts)
+
+
+def spread_note(result: dict[str, Any]) -> str:
+    """One plain line: top minus bottom third, before costs, with its uncertainty."""
+    return (
+        f"top third {result['top_third_mean_return']:+.2%} vs bottom third "
+        f"{result['bottom_third_mean_return']:+.2%} per {result['horizon_days']}-day hold "
+        f"(spread {result['annualized_spread']:+.0%}/yr before costs, t={result['t']:.2f}, "
+        f"{result['decision_days']} decision days): spread {result['status']}."
+    )
 
 
 def validate_clock_row(row: dict[str, Any]) -> None:
@@ -193,7 +234,7 @@ def validate_clock_row(row: dict[str, Any]) -> None:
         raise ValueError("invalid V3 clocks or lead")
     if not 1 <= row["distinct_factors"] <= row["family_size"]:
         raise ValueError("invalid V3 family counts")
-    statuses = {"SCREEN_FAIL", "REPLAY_FAIL", "PASS", "DEGENERATE", "ERROR"}
+    statuses = {"SCREEN_FAIL", "SPREAD_FAIL", "REPLAY_FAIL", "PASS", "DEGENERATE", "ERROR"}
     for trial in row["clocks"].values():
         if not 0 <= trial["p"] <= 1 or not 0 <= trial["q"] <= 1:
             raise ValueError("invalid V3 clock metrics")

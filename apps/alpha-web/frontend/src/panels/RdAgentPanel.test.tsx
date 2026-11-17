@@ -27,6 +27,14 @@ const detail: Detail = {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('RD-Agent recorded panel', () => {
+  it('uses terminal panel surfaces and ink instead of figure-canvas colours', () => {
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
+    expect(html).toContain('background:var(--panel)')
+    expect(html).toContain('color:var(--ink)')
+    expect(html).toContain('background:var(--accent)')
+    expect(html).not.toContain('--canvas-')
+  })
+
   it('shows runs, funnel, three labelled meters, factor chips and exploratory notice', () => {
     const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
     for (const text of ['Recorded run', 'ideas proposed', 'stopped by the model provider: 2', 'counted from the recorded factor trials', 'survived the multiple-testing check',

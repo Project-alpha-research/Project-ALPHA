@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 65ad8c7a2bea4557
+verified: fc36cde6dd136b87
 ---
 
 # Web frontend invariants
@@ -31,8 +31,11 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the
   server and never grants anything. Selecting a project confers no research authority either.
 - `explain/bands.ts` mirrors the grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py` so the UI
-  can explain a grade. The persisted manifest verdict is always authoritative; change both files together.
-  Drift is caught by `src/explain/explain.test.ts`, which recomputes grades from real manifest fixtures.
+  can explain a grade. The persisted manifest verdict is always authoritative; band changes must stay mirrored.
+  The named `applyTradeCountCap` step mirrors the spine's `too-few-trades` cap: A/B become C, C/D/F stay,
+  and GPA is capped at 2. Stories use recorded labels and closed-trade counts (`fewer than 30` if absent),
+  explaining the dimensions' uncapped grade without replacing the stored grade or claiming C/D/F were lowered.
+  Drift is caught by `src/explain/explain.test.ts`, including synthetic capped copies of manifest fixtures.
 - The Market Watch live ticker is display only: never stored, never read by anything else.
 
 ## Shell and navigation
@@ -50,7 +53,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The toolbar status chip (`shell/statusModel.statusChip`) shows the strongest state: the selected run's research-gate
   watermark verbatim, else `Research gate open` for the linked project (reason in `title`), else `Paper only`.
 - The project selector allows `No project — browse data`. A failed project inventory is shown as an error with retry,
-  never as an empty list.
+  never as an empty list. Loading settles after request or projection failure as well as an empty success;
+  disposed reads cannot update the selector. Enforced by `src/shell/ContextBar.test.tsx`.
 
 ## Market data views
 
@@ -135,6 +139,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 - `RdAgentPanel` uses generated response types, recorded-only meters and factor chips with text. Its View/palette entry
   comes from the document registry. Async reads are bound to the selected run; missing counts never become zero bars.
+  It uses terminal chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
   Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
 
 ## Generated API client
@@ -159,8 +164,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 ## Tests
 
-- Vitest runs `src/**/*.test.ts` only, in the Node environment — no jsdom, no component tests. Put branch logic in pure
-  `*Model.ts` modules next to their `*.test.ts`.
+- Vitest runs `src/**/*.test.{ts,tsx}` in Node — no jsdom. Rendering/effect checks use Node and mocked hooks;
+  put branch logic in pure `*Model.ts` modules next to their `*.test.ts`.
 - Coverage is measured only over the pure-model files listed in `vitest.config.ts` (thresholds 85 % statements, lines and
   functions; 70 % branches). Add a new pure model to that list.
 - Playwright specs live in `e2e/`. The default config starts its own real backend on port 8802

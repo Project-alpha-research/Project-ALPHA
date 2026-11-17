@@ -32,10 +32,21 @@ import validateA from './__fixtures__/validate-a.json'
 import validateB from './__fixtures__/validate-b.json'
 import validateD from './__fixtures__/validate-d-kronos.json'
 
-const VALIDATE_FIXTURES: [string, ValidateManifest][] = [
+// Synthetic capped copies retain the original dimensions and raw gate quantities.
+const capped = (fixture: ValidateManifest, overall: string): ValidateManifest & { spine: { labels: string[] }; n_trades: number } => ({
+  ...fixture,
+  spine: { labels: ['too-few-trades'] },
+  n_trades: 7,
+  verdict: { ...fixture.verdict!, overall, detail: { ...fixture.verdict!.detail, overall_gpa: Math.min(2, fixture.verdict!.detail.overall_gpa!) } },
+})
+
+const VALIDATE_FIXTURES: [string, ValidateManifest & { spine?: { labels: string[] } }][] = [
   ['validate-a', validateA as unknown as ValidateManifest],
   ['validate-b', validateB as unknown as ValidateManifest],
   ['validate-d-kronos', validateD as unknown as ValidateManifest],
+  ['capped-a', capped(validateA as unknown as ValidateManifest, 'C')],
+  ['capped-b', capped(validateB as unknown as ValidateManifest, 'C')],
+  ['capped-d', capped(validateD as unknown as ValidateManifest, 'D')],
 ]
 
 describe('drift guard: TS bands vs persisted Python verdicts', () => {
@@ -53,6 +64,7 @@ describe('drift guard: TS bands vs persisted Python verdicts', () => {
       maxDrawdown: m.oos_metrics?.max_drawdown ?? null,
       riskOfRuin: m.oos_metrics?.risk_of_ruin ?? null,
       nOos: v.detail.sample_n_oos ?? NaN,
+      labels: 'spine' in m ? m.spine?.labels : [],
     })
     expect(recomputed.edge).toBe(v.edge)
     expect(recomputed.robustness).toBe(v.robustness)
@@ -140,6 +152,52 @@ describe('gate stories', () => {
 })
 
 describe('verdict stories', () => {
+  it.each([
+    ['A', 'C', 'A', 4], ['B', 'C', 'B', 3], ['C', 'C', 'C', 2],
+    ['D', 'D', 'D', 1], ['F', 'F', 'F', 0],
+  ])('explains sparse %s dimensions with stored grade %s', (raw, stored, dimension, gpa) => {
+    const manifest = {
+      ...capped(validateB as unknown as ValidateManifest, stored),
+      verdict: { edge: raw, robustness: raw, risk: dimension, sample: dimension, overall: stored,
+        detail: { overall_gpa: Math.min(2, gpa) } },
+    }
+    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
+    expect(story.grade).toBe(stored)
+    expect(story.narrative).toContain('only 7 closed trades')
+    expect(story.narrative).toContain('too few to judge')
+    expect(story.terse).toContain('too few trades')
+    if (raw === 'A' || raw === 'B') {
+      expect(story.narrative).toContain(`dimensions alone would give ${raw}`)
+      expect(story.narrative).toContain('held at C')
+    } else {
+      expect(story.narrative).not.toContain('held at C')
+      expect(story.narrative).not.toContain('lowered')
+    }
+  })
+
+  it.each(['spine', 'verdict', 'root'])('reads the recorded %s label and uses the unknown-count wording', location => {
+    const base = validateB as unknown as ValidateManifest
+    const manifest = {
+      ...base, n_trades: null,
+      ...(location === 'root' ? { labels: ['too-few-trades'] } : {}),
+      ...(location === 'spine' ? { spine: { labels: ['too-few-trades'] } } : {}),
+      verdict: { ...base.verdict!, overall: 'C', detail: { ...base.verdict!.detail, overall_gpa: 2 },
+        ...(location === 'verdict' ? { labels: ['too-few-trades'] } : {}) },
+    }
+    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
+    expect(story.narrative).toContain('fewer than 30 closed trades')
+    expect(story.narrative).toContain('dimensions alone would give B')
+    expect(story.grade).toBe('C')
+  })
+
+  it('preserves a recorded zero and the stored grade even when dimensions disagree', () => {
+    const manifest = { ...capped(validateA as unknown as ValidateManifest, 'D'), n_trades: 0 }
+    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
+    expect(story.grade).toBe('D')
+    expect(story.narrative).toContain('only 0 closed trades')
+    expect(story.narrative).not.toContain('Overall = C')
+  })
+
   it('explains each dimension against its band (fixture B: C/C/B/A → B overall)', () => {
     const stories = verdictStories(validateB as unknown as ValidateManifest)
     const byDim = Object.fromEntries(stories.map((s) => [s.dimension, s]))

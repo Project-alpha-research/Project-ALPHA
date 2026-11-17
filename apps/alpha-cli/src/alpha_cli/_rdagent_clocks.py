@@ -10,7 +10,7 @@ import numpy as np
 
 from alpha_backtest.portfolio_replay import WeightTarget
 from alpha_cli import _rdagent_membership as membership
-from alpha_cli._rdagent_stability import failure_message
+from alpha_cli._rdagent_stability import deflation_note, deflation_passes, failure_message
 from alpha_core import DataError
 
 CLOCKS = {"daily": 1, "weekly": 7, "monthly": 28}
@@ -149,7 +149,7 @@ def overall_status(clocks: dict[str, dict[str, Any]]) -> tuple[str, str]:
     lead = min(passing or list(CLOCKS), key=lambda c: clocks[c]["q"])
     statuses = [trial["status"] for trial in clocks.values()]
     if passing:
-        status = "CANDIDATE"
+        status = "CANDIDATE" if deflation_passes(clocks[lead]) else "DEFLATION_FAIL"
     elif clocks["daily"]["status"] == "PASS":
         status = "FAST_ONLY"
     elif any(t["q"] < 0.10 and t["status"] == "ERROR" for t in clocks.values()):
@@ -190,13 +190,19 @@ def clock_feedback(row: dict[str, Any]) -> str:
             f"{clock}: {trial['status']}, mean rank IC {figure(screen.get('mean_ic'))}, "
             f"q={figure(trial.get('q'))}, {outcome}."
         )
+        if replay and "error" not in replay and "counted_only" not in replay:
+            parts.append(f"{clock}: {deflation_note(replay)}.")
         parts.extend(screen.get("warnings", []))
         if trial["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS") and trial.get(
             "spread", {}
         ).get("status") in ("PASS", "FAIL"):
             parts.append(spread_note(trial["spread"]))
     reason = {
-        "CANDIDATE": "A swing clock passed the screen and replay; confirmation is still required.",
+        "CANDIDATE": (
+            "A swing clock passed the screen, spread, replay and deflation; "
+            "confirmation is still required."
+        ),
+        "DEFLATION_FAIL": "Passed the checks but not the multiple-testing test.",
         "FAST_ONLY": (
             "Only the daily clock passed; only a weekly or monthly pass can be a candidate."
         ),
@@ -254,5 +260,8 @@ def validate_clock_row(row: dict[str, Any]) -> None:
             raise ValueError("invalid V3 clock status")
         if not isinstance(trial["screen"], dict) or not isinstance(trial["replay"], dict):
             raise ValueError("invalid V3 clock results")
-    if any(row[k] != row["clocks"]["daily"][k] for k in ("p", "q", "screen", "replay")):
-        raise ValueError("V3 daily mirror differs")
+    mirror = row.get("figures_clock", "daily")
+    if mirror not in CLOCKS or ("figures_clock" in row and mirror != row["lead_clock"]):
+        raise ValueError("V3 figures clock differs from lead")
+    if any(row[k] != row["clocks"][mirror][k] for k in ("p", "q", "screen", "replay")):
+        raise ValueError("V3 clock mirror differs")

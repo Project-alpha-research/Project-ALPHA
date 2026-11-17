@@ -7,6 +7,7 @@ import json
 import tempfile
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from itertools import count
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -42,8 +43,11 @@ def chat() -> dict[str, Any]:
     }
 
 
+_INPUT_IDS = count()
+
+
 def embed(model: gw.Gateway, **extra: Any) -> dict[str, Any]:
-    return model.embeddings({"model": "alpha-embed", "input": "hello", **extra})
+    return model.embeddings({"model": "alpha-embed", "input": f"{next(_INPUT_IDS):05d}", **extra})
 
 
 def rows(model: gw.Gateway) -> list[dict[str, Any]]:

@@ -48,6 +48,10 @@ STATUS_SENTENCES = {
     "CANDIDATE": (
         "A weekly or monthly clock passed screening and replay; confirmation is still required."
     ),
+    "DEFLATION_FAIL": (
+        "A weekly or monthly clock passed screening, the spread check and replay, but not the"
+        " multiple-testing (deflated Sharpe) test."
+    ),
     "FAST_ONLY": "Only the daily clock passed; this is not a swing candidate.",
     "REPEAT": "This code was already evaluated and supplies no new evidence.",
     "IMPORTED": "This is a recorded historical trial, not a new evaluation by this run.",
@@ -56,6 +60,15 @@ STATUS_SENTENCES = {
     ),
     "no_admissible_idea": "Repeated closed-family proposals ended this round before coding.",
     "abandoned_at_cap": "The cap stopped an unfinished round; no trial was created for it.",
+    "abandoned_after_error": "An error stopped an unfinished round; no trial was created for it.",
+    "coding_failed_provider_timeout": (
+        "The model provider did not reply in time after the allowed attempts, so this round"
+        " stopped; no trial was invented and the next round ran."
+    ),
+    "coding_failed_provider_error": (
+        "The model provider failed after the allowed attempts, so this round stopped; no trial"
+        " was invented and the next round ran."
+    ),
 }
 REFUSED_STATUSES = frozenset({"refused_closed_family", "no_admissible_idea"})
 SCREENED = frozenset({"SPREAD_FAIL", "REPLAY_FAIL", "PASS"})
@@ -612,7 +625,14 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
             }
             for row in rounds
             if row.get("status")
-            in {"refused_closed_family", "no_admissible_idea", "abandoned_at_cap"}
+            in {
+                "refused_closed_family",
+                "no_admissible_idea",
+                "abandoned_at_cap",
+                "abandoned_after_error",
+                "coding_failed_provider_timeout",
+                "coding_failed_provider_error",
+            }
         ],
         refusal_reason=refusal_reason,
         timing=_timing(steps),

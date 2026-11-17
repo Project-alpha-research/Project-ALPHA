@@ -55,7 +55,11 @@ def record_defaults() -> dict[str, Any]:
 
 
 def record_attempt(
-    row: dict[str, Any], result: ChatResult | None = None, *, error: str | None = None
+    row: dict[str, Any],
+    result: ChatResult | None = None,
+    *,
+    error: str | None = None,
+    reserved_usd: float = 0.0,
 ) -> None:
     """Keep each attempt, including unknown usage, inside the existing request row."""
     fields = (*TOKEN_FIELDS, *EXTRA_FIELDS)
@@ -64,11 +68,20 @@ def record_attempt(
         usage_known=result is not None
         and result.prompt_tokens is not None
         and result.completion_tokens is not None,
+        cost_basis="reserved estimate, not confirmed by the provider"
+        if result is None
+        else "provider response",
+        booked_usd=reserved_usd if result is None else result.usd,
         error_code=error,
         router_session_sent=row["router_session_sent"],
     )
     row["attempt_usage"].append(attempt)
     row["usage_known"] = all(item["usage_known"] for item in row["attempt_usage"])
+    row["cost_basis"] = (
+        "provider response"
+        if row["usage_known"]
+        else "reserved estimate, not confirmed by the provider"
+    )
     for field in EXTRA_FIELDS:
         values = [item[field] for item in row["attempt_usage"]]
         known = [value for value in values if value is not None]

@@ -728,6 +728,8 @@ class Gateway:
         self.log_lock = threading.Lock()
         self.log_path = settings.state_dir / "calls.jsonl"
         self.session_token = ""
+        self.embedding_cache: dict[tuple[str, str, str], list[float]] = {}
+        self.embedding_cache_lock = threading.Lock()
 
     def record(self, endpoint: str, request: dict[str, Any]) -> dict[str, Any]:
         chat = endpoint == "/v1/chat/completions"
@@ -997,7 +999,7 @@ class Gateway:
                         )
                     except GatewayError as exc:
                         # The reservation stays charged: a provider may bill an abandoned call.
-                        usage_impl.record_attempt(row, error=exc.code)
+                        usage_impl.record_attempt(row, error=exc.code, reserved_usd=reserve)
                         row["provider_errors"].append(exc.code)
                         retried = len(row["provider_errors"]) <= self.settings.provider_retries
                         if exc.code in PROVIDER_RETRYABLE and retried:
@@ -1079,7 +1081,7 @@ class Gateway:
         return embeddings_impl.embedding_attempt(self, inputs, row)
 
     def embeddings(self, request: dict[str, Any]) -> dict[str, Any]:
-        return embeddings_impl.embeddings(self, request)
+        return embeddings_impl.cached_embeddings(self, request)
 
 
 def sse_chunks(response: dict[str, Any], include_usage: bool) -> Iterator[bytes]:

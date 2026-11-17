@@ -9,11 +9,12 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
-from alpha_cli._rdagent_stability import failure_message
+from alpha_cli._rdagent_stability import plain_name, recorded_status, status_reason
 
 OUTCOMES = ("supported", "rejected", "inconclusive", "invalid", "error", "recorded")
 FACTOR_OUTCOMES = {
     "CANDIDATE": "supported",
+    "DEFLATION_FAIL": "rejected",
     "SCREEN_FAIL": "rejected",
     "SPREAD_FAIL": "rejected",
     "REPLAY_FAIL": "rejected",
@@ -62,6 +63,7 @@ class TrialRecord:
     source_file: str
     source_line: int
     reason: str | None = None
+    measure_clock: str | None = None
 
 
 def _strings(value: Any) -> tuple[str, ...]:
@@ -190,7 +192,7 @@ def universe_label(row: dict[str, Any]) -> str:
 
 def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
     rule = row["schema"] == "AlphaRuleTrialV1"
-    status = row["status"]
+    status = row["status"] if rule else recorded_status(row)
     outcomes = RULE_OUTCOMES if rule else FACTOR_OUTCOMES
     if status not in outcomes:
         raise ValueError(f"unknown status: {status}")
@@ -207,6 +209,7 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
         "scored_end": window["scored_end"] if rule else window["exploration"][1],
         "reserved_start": window["reserved_start"],
     }
+    measure_clock = None if rule else "daily"
     measures = {k: row[k] for k in ("p", "q")}
     if rule:
         measures["annualised_excess"] = row["replay"].get("annualised_excess")
@@ -216,7 +219,13 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
             for clock in ("daily", "weekly", "monthly"):
                 if not isinstance(row["clocks"][clock], dict):
                     raise ValueError("invalid clock")
-            screen = row["clocks"][row["lead_clock"]]["screen"]
+            lead = row["clocks"][row["lead_clock"]]
+            if all(k in lead for k in ("p", "q")):
+                measures.update({k: lead[k] for k in ("p", "q")})
+                screen = lead["screen"]
+                measure_clock = row["lead_clock"]
+            else:
+                screen = row["clocks"].get("daily", {}).get("screen", row["screen"])
         measures["mean_ic"] = screen.get("mean_ic")
     labels = tuple(
         label
@@ -245,21 +254,15 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
         family_id=f"rule:{row['family_id']}" if rule else "rdagent-factors",
         family_size_recorded=row["family_size"],
         counts_for_deflation=rule or status != "REPEAT",
-        name=row.get("plain_name") or row.get("name"),
+        name=(row.get("plain_name") or row.get("name")) if rule else plain_name(row["name"]),
         spec_hash=row["code_sha256"],
         assets=_strings(row["instruments"] if rule else row.get("instruments", [])),
         bar_size="1D",
         windows=windows,
         outcome=outcomes[status],
         raw_status=status,
-        reason=(
-            "stopped by the spread check"
-            if status == "SPREAD_FAIL"
-            else failure_message(row)
-            if status in {"LOOKAHEAD", "UNSTABLE"}
-            else ": ".join(str(row[k]) for k in ("failure_reason", "failure_detail") if row.get(k))
-            or None
-        ),
+        reason=status_reason(row),
+        measure_clock=measure_clock,
         measures=measures,
         evidence_path=evidence.get("trial" if rule else "series_manifest"),
         evidence_sha256=evidence.get("sha256"),

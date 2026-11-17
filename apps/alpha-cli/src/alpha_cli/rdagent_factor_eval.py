@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 
+from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
@@ -195,6 +196,7 @@ def _inputs(
         Path(__file__).read_bytes()
         + Path(__file__).with_name("_rdagent_judge.py").read_bytes()
         + Path(__file__).with_name("_rdagent_membership.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_identity.py").read_bytes()
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
         + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
@@ -738,6 +740,7 @@ def _replay_clocks(
     family: dict[tuple[str, str], dict[str, Any]],
     total_rows: int,
     gap_policy: bool = False,
+    identity_segments: frozenset[str] = frozenset(),
 ) -> tuple[dict[tuple[str, str], np.ndarray], dict[str, dict[str, float]]]:
     q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
     qvalues: dict[str, dict[str, float]] = {}
@@ -745,6 +748,9 @@ def _replay_clocks(
         if clock != "unknown":
             qvalues.setdefault(digest, {})[clock] = float(value)
     replay_returns = {}
+    replay_options: dict[str, Any] = {"gap_policy": True} if gap_policy else {}
+    if identity_segments:
+        replay_options["identity_segments"] = identity_segments
     for row in rows:
         digest = row["code_sha256"]
         row.update(family_size=len(family), distinct_factors=len(qvalues), total_trials=total_rows)
@@ -770,7 +776,7 @@ def _replay_clocks(
                         trial["screen"]["direction"],
                         clock=clock,
                         series=series[digest][clock],
-                        **({"gap_policy": True} if gap_policy else {}),
+                        **replay_options,
                     )
                 except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
                     trial.update(
@@ -886,6 +892,8 @@ def _evaluate_locked(
             f"universe {spec['name']!r}: min_names {MIN_NAMES} and {ANNUAL_DAYS} days a year are "
             "the only values the evaluator applies yet"
         )
+    receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
+    breaks = receipt.get("identity_breaks", [])
     eligible, gap_policy = _eligibility(run, panel, days, symbols, spec)
     closes = matrix(panel, "close", open_days, symbols) if gap_policy else None
     series: dict[str, dict[str, Any]] = {}
@@ -920,12 +928,23 @@ def _evaluate_locked(
         family,
         len(history) + len(unknown) + len(rows),
         gap_policy,
+        frozenset(entry["new_name"] for entry in breaks),
     )
     series_note = _record_series(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
     lead, legacy, disclosures, decision, feedback = _report(rows, history, family, trials, spec)
+    if "identity_breaks" in receipt:
+        note = identity.disclosure(breaks)
+        disclosures["identity_breaks"] = {
+            "applied": breaks,
+            "message": note,
+            "jump_policy": receipt["identity_jump_policy"],
+        }
+        feedback += " " + note
+        for row in rows:
+            legacy[f"{row['name']}.feedback"] += " " + note
     if gap_policy:
         disclosure, note = _gap_disclosure(panel, rows)
         disclosures["missing_bars"] = disclosure

@@ -20,6 +20,7 @@ import numpy as np
 import polars as pl
 
 from alpha_backtest.portfolio_replay import run_weight_replay
+from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli._rdagent_clocks import (
@@ -343,6 +344,8 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
                 + (f" (missing {', '.join(missing)})" if missing else "")
                 + f"; cross-sectional thirds need at least {spec['min_universe']}"
             )
+    panel, breaks = identity.relabel(panel, spec.get("identity_breaks", []))
+    identity.check_jumps(panel)
     summary = membership.panel_summary(panel)
     out.mkdir(parents=True, exist_ok=False)
     buffer = io.BytesIO()
@@ -352,6 +355,8 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
     receipt = {
         "schema": "AlphaRdagentFactorPanelV1",
         "manifests": manifests,
+        "identity_breaks": breaks,
+        "identity_jump_policy": identity.JUMP_POLICY,
         **summary,
         "rows": panel.height,
         "panel_sha256": sha(payload),
@@ -513,9 +518,18 @@ def replay(
     clock: str = "daily",
     series: dict[str, Any] | None = None,
     gap_policy: bool = False,
+    identity_segments: frozenset[str] = frozenset(),
 ) -> tuple[dict[str, Any], np.ndarray]:
     if gap_policy:
-        return _gap_replay(panel, signal, days, direction, clock=clock, series=series)
+        return _gap_replay(
+            panel,
+            signal,
+            days,
+            direction,
+            clock=clock,
+            series=series,
+            identity_segments=identity_segments,
+        )
     sessions = [days[0] + timedelta(days=n) for n in range((days[-1] - days[0]).days + 3)]
     if sessions[-1] >= RESERVED_DAY or (panel["date"] >= RESERVED_DAY).any():
         raise DataError("replay reaches reserved window")
@@ -747,6 +761,7 @@ def _gap_replay(
     *,
     clock: str,
     series: dict[str, Any] | None,
+    identity_segments: frozenset[str] = frozenset(),
 ) -> tuple[dict[str, Any], np.ndarray]:
     if (panel["date"] >= RESERVED_DAY).any() or days[-1] + timedelta(days=2) >= RESERVED_DAY:
         raise DataError("replay reaches reserved window")
@@ -774,6 +789,7 @@ def _gap_replay(
         fraction=TOP_FRACTION,
         fee_bps=FEE_BPS,
         slippage_bps=SLIPPAGE_BPS,
+        identity_segments=identity_segments,
     )
     periods = data["periods"]
     net = np.array([p.excess_return for p in periods])

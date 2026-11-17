@@ -31,6 +31,20 @@ start supported actions. It never does the work itself: each action is a call to
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md). Start it with `uv run alpha-web`.
 
+A run made by `alpha test` (a rule test) opens with its own first section, above the summary:
+
+- **What was tested**: the idea in the owner's words, the rule as one plain sentence, the asset,
+  data source, period, costs, the trial count at the time and the run's labels.
+- **Worth a look**: each flag from the diagnostic pass, as its stored sentence.
+- **Audit**: each mechanical check with PASS, FLAG or NOT-CHECKED and its detail. No grade.
+- **Against buy and hold**, **If things were slightly different**, **By year** and
+  **Macro during the worst drawdown** (or one line saying why it is not available).
+
+Every number comes from the run's stored `manifest.json` and `diagnostics.json`; a missing one
+reads `not recorded` with the stored reason. The toolbar says `rule test` and lists the labels,
+and the Run library names the run `rule test <name> <bar size> — <asset> · …` (for example `D1`).
+The rule-test capability itself belongs to the [command line](command-line.md); this part shows it.
+
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-web`
@@ -40,6 +54,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md). Start it with 
 - How to change it: [apps/alpha-web/CONTEXT.md](../../../../apps/alpha-web/CONTEXT.md).
 - Decision records: [ADR-0021](../../../adr/0021-research-workstation-read-plane-and-command-center.md).
 - Screens for other parts (for example RD-Agent's native job result) are claimed by those parts.
+- **Plan:** [stage 10](../../../roadmap/production-scope-3.md#10-screens) of the checklist.
 
 ## Decisions and open questions
 

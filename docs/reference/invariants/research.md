@@ -7,7 +7,7 @@ sources:
   - tests/bias_guards/test_market_state_future_poison.py
   - tests/bias_guards/test_poison_variants.py
   - tests/unit/test_figure_*.py
-verified: e91236d17161d681
+verified: 81be68837ffb60c6
 ---
 
 # Research primitive invariants
@@ -99,7 +99,9 @@ General rule: [research integrity § Statistical evidence](research-integrity.md
   `SUPPORTED` only when the interval clears the minimum effect in the claimed direction.
   ([ADR-0027](../../adr/0027-tiered-research-readiness-semantics.md)).
 - Low power or a weak effect is `INCONCLUSIVE`, never silently a failed hypothesis.
-- Secondary hypotheses are adjusted by Holm over one immutable, preregistered family (`multiple_testing.py`).
+- Secondary hypotheses are adjusted by Holm over one immutable, preregistered family (`multiple_testing.py`). The
+  adjusted values come from `statsmodels` and equal the earlier hand-written loop bit for bit
+  (`tests/unit/test_stats_library_parity.py`); the rejection rule (adjusted `<=` alpha) stays ALPHA's.
 - Power is prospective, under an explicit known-sigma model, with an explicit seed (default 7).
 
 ## Gate packets

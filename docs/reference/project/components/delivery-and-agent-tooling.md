@@ -63,6 +63,8 @@ documents, flaky tests and unfinished work, opens small draft clean-up pull requ
   [ADR-0039](../../../adr/0039-ci-is-the-merge-gate.md),
   [ADR-0040](../../../adr/0040-one-file-system-atlas-retired.md),
   [ADR-0041](../../../adr/0041-no-hidden-test-suite.md).
+- **Plan:** [stage 12](../../../roadmap/production-scope-3.md#12-health-and-hygiene) of the
+  checklist; [health plan](../../../roadmap/health-plan.md).
 
 ## Decisions and open questions
 - Decided: a weekly automatic health check that opens small clean-up pull requests and never merges

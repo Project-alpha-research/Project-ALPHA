@@ -23,7 +23,7 @@ from rdagent.utils import convert2bool
 from rdagent.utils.agent.tpl import T
 
 from alpha_factor_coder import demote_in_file
-from alpha_factor_data import check_prefix_invariance
+from alpha_factor_data import check_prefix_invariance, current_universe
 
 LEGACY_KEYS = ["IC"] + [
     f"1day.excess_return_{cost}_cost.{metric}"
@@ -44,8 +44,175 @@ SWING_BRIEF = (
     "Every trade costs 10 bps fee plus 6 bps slippage on each side; turning over half the book "
     "every day costs about 29% a year. Fast daily reversal, gap and range ideas already passed "
     "the daily screen but lost money after costs because they traded 19%-79% of the portfolio "
-    "per day; avoid re-proposing them. Exploratory, not admitted."
+    "per day; avoid re-proposing them. Slow volatility, illiquidity, max-return and "
+    "return-volume ranks then passed the daily rank screen, yet the top third they would hold "
+    "lost 28%-43% a year before costs: a few volatile coins' rallies can dominate the "
+    "mean, so rank order and the top third's return can disagree. ALPHA now rejects such a "
+    "factor unless the top third it would hold beat the bottom third "
+    "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
 )
+# Idea families by name pattern (regular expressions), first match wins (ADR-0055). Approximate
+# by design: it groups near-variants so the proposer sees how often one idea has already failed.
+FAMILY_KEYWORDS = (
+    ("price near its high / range position", ("high_prox", "stoch", "rangepos", r"(^|_)hp\d")),
+    ("short-term reversal and gaps", ("reversal_3d", "reversal_5d", "gap", "intraday_reversal")),
+    ("long-term reversal", ("long_term_reversal",)),
+    ("illiquidity", ("amihud", "illiquid")),
+    ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
+    ("skewness and lottery returns", ("skew", "max_return", "up_day")),
+    ("drawdown", ("drawdown",)),
+    ("momentum and trend", ("momentum", "mom_", "trend", "sma_distance", "autocorr")),
+    ("volatility and beta", ("volatil", "semivariance", "beta", "vol_")),
+    ("range and compression", ("range",)),
+    ("volume level and trend", ("volume", "dollar_volume")),
+    ("VWAP distance", ("vwap", "clv", "close_location")),
+)
+
+
+# A proposal that mixes several features (machine learning, a regression, a weighted combination).
+COMPOSITE = re.compile(
+    r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|regression|"
+    r"gradient boost\w*|random forest|neural|lightgbm|xgboost|pca|principal component\w*|"
+    r"linear combination|weighted (?:sum|average|combination)|(?:combination|blend|mix) of)\b"
+)
+
+
+def input_families(*texts: str) -> set[str]:
+    """Families of the features a proposal's own words name, matched at word starts."""
+    found = set()
+    for word in re.findall(r"[a-z][a-z0-9_]*", " ".join(texts).lower()):
+        for family, keywords in FAMILY_KEYWORDS:
+            if any(re.search(rf"(?:^|_)(?:{keyword})", word) for keyword in keywords):
+                found.add(family)
+                break
+    return found
+
+
+def idea_family(
+    name: str, description: str = "", formulation: str = "", variables: Any = None
+) -> str:
+    """One family, or every family a composite draws on joined by "; " (ADR-0055).
+
+    A composite (by its words) or a name with no family keyword is classified by the features
+    its description, formulation and variables name, so renaming cannot leave the family rule;
+    a composite with no identifiable input is "composite: unknown inputs". Over-inclusive by
+    design: a stray family word in the text adds a family, it never removes one.
+    """
+    lowered = name.lower()
+    named = next(
+        (
+            family
+            for family, keywords in FAMILY_KEYWORDS
+            if any(re.search(keyword, lowered) for keyword in keywords)
+        ),
+        None,
+    )
+    words = " ".join(
+        f"{key} {value}"
+        for key, value in (variables.items() if isinstance(variables, dict) else ())
+    )
+    composite = COMPOSITE.search(f"{name} {description} {formulation}".lower().replace("_", " "))
+    if named is not None and not composite:
+        return named
+    families = input_families(description, formulation, words) | ({named} if named else set())
+    if families:
+        return "; ".join(sorted(families))
+    return "composite: unknown inputs" if composite else "other: " + lowered.split("_")[0]
+
+
+def _rounded(value: Any) -> Any:
+    # Seventeen digits tell the proposer nothing and crowd other trials out of its budget.
+    return round(value, 3) if isinstance(value, float) else value
+
+
+def replay_note(clock: str, replay: Any) -> str:
+    """Why a replayed clock won or lost: before costs, after costs, the costs and the turnover."""
+    if not replay:
+        return ""
+    if "counted_only" in replay:  # ADR-0055: a failed clock's replay only counts the trial
+        return f"; {clock} replay counted only, not a result"
+    gross = replay["gross"]["annualized_return"]
+    net = replay["net"]["annualized_return"]
+    return (
+        f"; {clock} replay: {gross:+.0%}/yr before costs, {net:+.0%}/yr after "
+        f"{replay['annual_cost']:.0%}/yr costs, turnover {replay['mean_turnover']:.0%}/day"
+    )
+
+
+def spread_line(clock: str, result: Any) -> str:
+    """Top versus bottom third before costs (ADR-0055), with turnover and the cost it implies."""
+    if not result or result.get("status") not in ("PASS", "FAIL"):
+        return ""
+    return (
+        f"; {clock} spread {result['status']}: top third {result['top_third_mean_return']:+.2%} vs "
+        f"bottom {result['bottom_third_mean_return']:+.2%} per hold "
+        f"({result['annualized_spread']:+.0%}/yr before costs, t {result['t']:.1f}), "
+        f"top third changes {result['top_share_changed_per_rebalance']:.0%} per rebalance, "
+        f"about {result['estimated_annual_cost']:.0%}/yr costs"
+    )
+
+
+def _rank(row: dict[str, Any]) -> tuple[int, float]:
+    order = ("CANDIDATE", "FAST_ONLY", "REPLAY_FAIL", "SPREAD_FAIL", "SCREEN_FAIL")
+    status = row["status"]
+    score = order.index(status) if status in order else len(order)
+    if row["schema"] == "AlphaRdagentFactorTrialV3":
+        ic = row["clocks"][row["lead_clock"]]["screen"].get("mean_ic")
+    else:
+        ic = row["screen"].get("mean_ic")
+    return score, -abs(ic) if isinstance(ic, (int, float)) else 0.0
+
+
+# The first proposal plus at most two re-asks within one round; then the round ends.
+FAMILY_PROPOSALS_PER_ROUND = 3
+# This round's closed-family refusals, shown to the proposer when it is asked again; FamilyGuard
+# clears them when the round's coding step ends.
+FAMILY_REFUSALS = list[str]()
+
+
+def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
+    """Every idea family: tries, best result, how each failed, and which to leave."""
+    families: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if row["status"] not in {
+            "SCREEN_FAIL",
+            "SPREAD_FAIL",
+            "REPLAY_FAIL",
+            "FAST_ONLY",
+            "CANDIDATE",
+        }:
+            continue
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            families.setdefault(family, []).append(row)
+    lines, closed = [], []
+    for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        best = min(members, key=_rank)
+        counts: dict[str, int] = {}
+        for member in members:
+            counts[member["status"]] = counts.get(member["status"], 0) + 1
+        failed = ", ".join(f"{n} {status}" for status, n in sorted(counts.items()))
+        lines.append(
+            f"- {family}: {len(members)} tries; best {best['name']} ({best['status']}); {failed}"
+        )
+        if len(members) >= switch_after and not any(m["status"] == "CANDIDATE" for m in members):
+            closed.append(family)
+    text = "\nALPHA idea families (all runs; tries, best result, how they failed)\n" + "\n".join(
+        lines
+    )
+    if closed:
+        text += (
+            f"\nThese families have {switch_after} or more failed tries and no candidate: "
+            + "; ".join(closed)
+            + ". Do not propose another near-variant of them (a new window, skip or scaling of "
+            "the same idea), including composites using ANY of these families; "
+            "move to a different family with a different economic mechanism."
+        )
+    return text
 
 
 def ledger_summary(row: dict[str, Any]) -> str:
@@ -61,20 +228,41 @@ def ledger_summary(row: dict[str, Any]) -> str:
         lead = clocks[row["lead_clock"]]
         line = (
             f"{row['name']}: {row['status']} ({statuses}); lead {row['lead_clock']} "
-            f"IC {lead['screen'].get('mean_ic')}; q {lead['q']}"
+            f"IC {_rounded(lead['screen'].get('mean_ic'))}; q {_rounded(lead['q'])}"
         )
+        for clock in ("daily", "weekly", "monthly"):
+            if clocks[clock]["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS"):
+                line += spread_line(clock, clocks[clock].get("spread"))
+            line += replay_note(clock, clocks[clock].get("replay"))
     else:
         line = (
-            f"{row['name']}: {row['status']}; mean rank IC {row['screen'].get('mean_ic')}; "
-            f"q {row['q']}; run {row['run_id']}"
+            f"{row['name']}: {row['status']}; "
+            f"mean rank IC {_rounded(row['screen'].get('mean_ic'))}; "
+            f"q {_rounded(row['q'])}; run {row['run_id']}"
         )
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
+    if "writeoff_count" in row:
+        line += f"; {row['writeoff_count']} write-offs"
+    if row.get("failure_reason"):
+        line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
     return line
 
 
 def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> None:
+    universe = current_universe()
     context["hypothesis_and_feedback"] += "\n" + SWING_BRIEF
+    correction = f"\nCurrent universe: {universe}; earlier text saying otherwise is out of date"
+    refusals = "".join(
+        f"\nALPHA refused this round's earlier proposal: {message}" for message in FAMILY_REFUSALS
+    )
+    append_ledger_context(context, ledger_name, universe, len(correction) + len(refusals))
+    context["hypothesis_and_feedback"] += refusals + correction
+
+
+def append_ledger_context(
+    context: dict[str, Any], ledger_name: str | None, universe: str, reserved_chars: int
+) -> None:
     if not ledger_name or not Path(ledger_name).exists():
         return
     raw = Path(ledger_name).read_bytes()
@@ -82,10 +270,9 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
     rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
     if not rows:
         return
-    heading = (
-        "\nALPHA trial ledger (all runs; exploratory, not admitted; 15 surviving coins only)\n"
-    )
-    lines, seen = [], set()
+    heading = "\nALPHA trial ledger (all runs; exploratory, not admitted; " + universe + ")\n"
+    lines: list[str] = []
+    seen: set[str] = set()
     unknown: list[str] = []
     known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
     for row in rows:
@@ -95,15 +282,28 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
             unknown.append(row["schema"])
         elif row["schema"] in known:
             ledger_summary(row)  # Validate known rows even outside the 30-row summary.
+    # Newest first, whole lines only, within 4000 characters; the count of the rest is stated so
+    # the proposer knows the list is partial instead of reading a line cut in half.
+    used, omitted = len(heading) + reserved_chars, 0
     for row in (r for r in reversed(rows) if r["schema"] in known):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
         seen.add(row["code_sha256"])
+        if omitted or len(lines) == 30 or used + len(line) + 1 > 4000 - 80:
+            omitted += 1
+            continue
         lines.append(line)
-        if len(lines) == 30:
-            break
-    context["hypothesis_and_feedback"] += (heading + "\n".join(lines))[:4000]
+        used += len(line) + 1
+    if omitted:
+        lines.append(f"({omitted} older distinct factors not shown)")
+    distinct: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row["schema"] in known and row["status"] not in ("REPEAT", "IMPORTED"):
+            distinct.setdefault(row["code_sha256"], row)
+    switch_after = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+    context["hypothesis_and_feedback"] += family_summary(list(distinct.values()), switch_after)
+    context["hypothesis_and_feedback"] += heading + "\n".join(lines)
     if unknown:
         context["hypothesis_and_feedback"] += (
             f"\n{len(unknown)} ledger rows of other kinds were skipped "
@@ -235,16 +435,22 @@ class AlphaFactorScenario(QlibFactorScenario):
             "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
             "365 days/year. Direction chosen in-sample. BH q < 0.10 screens the cross-run trial "
-            "ledger, counting each factor x clock as a trial; only screened clocks are replayed. "
+            "ledger, counting each factor x clock as a trial; a screened clock can pass only "
+            "if the top third it would hold beat its bottom third before costs. "
             "Hold drifted weights between rebalances; residual trades are executed and charged. "
+            "New frozen panels require 20 consecutive daily bars and a non-null factor to rank. "
+            "Missing rows are null. Held missing names wait at last close, exit at the first "
+            "resuming close, or lose 30% after 30 calendar days without a bar. Outstanding "
+            "waits at panel end also lose 30%; this haircut is an assumption, not a measurement. "
             "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "
             "a daily-only pass is FAST_ONLY, never admission, evidence, approval or promotion."
         )
 
     @property
     def experiment_setting(self) -> str:
+        universe_text: str = current_universe()
         return (
-            "15 surviving Binance USDT spot coins, daily bars. History only: "
+            "Binance USDT spot coins, daily bars: " + universe_text + ". History only: "
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
             "2023-12-31. 2024-01-01 onward is reserved and never available to this loop. "
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
@@ -255,6 +461,70 @@ class AlphaFactorScenario(QlibFactorScenario):
 
 
 class AlphaFactorRunner(Developer):
+    @staticmethod
+    def text_reason(text: str) -> str | None:
+        """cap_reached or exception when the text says so; otherwise None."""
+        lowered = text.lower()
+        if any(t in lowered for t in ("budget_exhausted", "budget exhausted", "call cap reached")):
+            return "cap_reached"
+        if "Traceback" in text or re.search(r"\b\w*(?:Error|Exception)\b", text):
+            return "exception"
+        return None
+
+    @staticmethod
+    def error_line(text: str) -> str:
+        """The error's own first line: after a traceback, its final "SomeError: ..." line."""
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if "Traceback" in text:
+            errors = [line for line in lines if re.match(r"[\w.]*(?:Error|Exception)\b", line)]
+            if errors:
+                return errors[-1]
+        return lines[0] if lines else ""
+
+    @staticmethod
+    def execute_factor(workspace: Any, feedback: Any) -> tuple[Any, str | None, str]:
+        """Separate execution, critic and output failures before they reach the ledger."""
+        detail = str(getattr(feedback, "execution_feedback", "") or "")
+        reason: str | None
+        if not feedback:
+            reason = AlphaFactorRunner.text_reason(detail) or "critic_rejected"
+            line = AlphaFactorRunner.error_line(detail)
+            return None, reason, line or "RD-Agent critic did not accept the code"
+        try:
+            execution, values = workspace.execute("All")
+        except Exception as error:
+            reason = AlphaFactorRunner.text_reason(f"{getattr(error, 'code', '')} {error}")
+            return None, reason or "exception", f"{type(error).__name__}: {error}".split("\n")[0]
+        if not isinstance(values, pd.DataFrame):
+            text = str(execution)
+            reason = AlphaFactorRunner.text_reason(text) or "bad_output"
+            return (
+                None,
+                reason,
+                AlphaFactorRunner.error_line(text) or "factor returned no data frame",
+            )
+        if (
+            values.empty
+            or len(values.columns) != 1
+            or not isinstance(values.index, pd.MultiIndex)
+            or values.index.nlevels != 2
+        ):
+            return (
+                values,
+                "bad_output",
+                "one output column and a date/instrument index required per factor task",
+            )
+        try:
+            dates = pd.to_datetime(values.index.get_level_values(0), utc=True, errors="raise")
+            pd.to_numeric(values.iloc[:, 0], errors="raise")
+            if dates.hasnans or any(
+                not isinstance(name, str) or not name for name in values.index.get_level_values(1)
+            ):
+                raise ValueError("factor dates and instrument names must be present")
+        except (ValueError, TypeError, OverflowError) as error:
+            return values, "bad_output", f"{type(error).__name__}: {error}".split("\n")[0]
+        return values, None, ""
+
     def develop(self, exp: Any) -> Any:
         if exp.based_experiments and exp.based_experiments[-1].result is None:
             self.develop(exp.based_experiments[-1])
@@ -289,12 +559,25 @@ class AlphaFactorRunner(Developer):
                 "code_sha256": hashlib.sha256(identity).hexdigest(),
                 "status": "FAILED",
                 "lookahead": {"status": "NOT_RUN"},
+                "description": getattr(task, "description", None),
+                "formulation": getattr(task, "factor_formulation", None),
+                # The feature names and meanings a composite is classified by (ADR-0055).
+                "variables": getattr(task, "variables", None),
+                # No code: the coder stopped (the call cap, an error) or produced no file.
+                "failure_reason": self.text_reason(
+                    str(getattr(feedback, "execution_feedback", "") or "")
+                )
+                or "bad_output",
+                "failure_detail": "factor.py was not produced",
             }
             if code:
                 record_code(run, str(factor["code_sha256"]), code)
-            if code and feedback:
-                execution, values = workspace.execute("All")
-                if values is not None:
+            if code:
+                values, failure, detail = self.execute_factor(workspace, feedback)
+                factor.update(failure_reason=failure, failure_detail=detail)
+                if values is not None and failure is None:
+                    factor.pop("failure_reason")
+                    factor.pop("failure_detail")
                     check = check_prefix_invariance(
                         code,
                         values,
@@ -303,21 +586,21 @@ class AlphaFactorRunner(Developer):
                         120.0,
                     )
                     factor["lookahead"] = check
-                    factor["status"] = "OK" if check["status"] == "PASS" else "LOOKAHEAD"
-                    if factor["status"] == "OK" and len(values.columns) != 1:
-                        factor["status"] = "FAILED"
-                        factor["failure_detail"] = "one output column required per factor task"
+                    factor["status"] = {"PASS": "OK", "UNSTABLE": "UNSTABLE"}.get(
+                        check["status"], "LOOKAHEAD"
+                    )
                     if factor["status"] == "OK":
                         frame = values.copy()
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
-                    elif factor["status"] == "FAILED" or check["status"] == "LOOKAHEAD":
+                    elif check["status"] in {"LOOKAHEAD", "UNSTABLE"}:
                         # Only ALPHA's verdict on the code itself: a check that merely errored
                         # (timeout, subprocess failure) says nothing about the code.
                         rejected.append((task, factor))
                 else:
-                    factor["failure_detail"] = execution
+                    if failure == "bad_output" and isinstance(values, pd.DataFrame):
+                        rejected.append((task, factor))
             factors.append(factor)
         record_coder_verdicts(run, iteration, rejected)
         if frames:
@@ -377,10 +660,23 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
 
 class AlphaFactorFeedback(Experiment2Feedback):
     def generate_feedback(self, exp: Any, trace: Any, exception: Exception | None = None) -> Any:
+        refusal = getattr(exp, "alpha_family_refusal", None)
+        if refusal:
+            return HypothesisFeedback(
+                observations=refusal["message"],
+                hypothesis_evaluation="refused_closed_family",
+                new_hypothesis="Choose one of the open families named above.",
+                reason="no_admissible_idea; no data read and no trial created",
+                decision=False,
+            )
         scenario = (
             self.scen.get_scenario_all_desc(action="factor")
             if isinstance(self.scen, QlibQuantScenario)
             else self.scen.get_scenario_all_desc()
+        )
+        scenario += (
+            f"\nCurrent universe: {current_universe()}; "
+            "earlier text saying otherwise is out of date"
         )
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
@@ -406,6 +702,13 @@ class AlphaFactorFeedback(Experiment2Feedback):
         )
         record = exp.alpha_evaluation
         feedback.decision = record["decision"]
+        identity = record.get("disclosures", {}).get("identity_breaks")
+        if identity is not None:
+            # Keep ALPHA's count in the next proposer's trace even if the model omits it.
+            feedback.observations += "\n" + identity["message"]
+        for factor in record.get("factors", []):
+            if factor.get("writeoff_message"):
+                feedback.observations += "\n" + factor["writeoff_message"]
         row = {
             "iteration": record["iteration"],
             "model_decision": response.get("Replace Best Result", "no"),
@@ -425,3 +728,134 @@ class AlphaFactorFeedback(Experiment2Feedback):
                     + "\n"
                 )
         return feedback
+
+
+def closed_families() -> set[str]:
+    """Families with enough evaluated failed tries and no candidate, from the trial ledger."""
+    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
+    raw = Path(path).read_bytes() if path and Path(path).exists() else b""
+    rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+    known = {
+        "AlphaRdagentFactorTrialV1",
+        "AlphaRdagentFactorTrialV2",
+        "AlphaRdagentFactorTrialV3",
+    }
+    distinct: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row["schema"] in known and row["status"] not in {"REPEAT", "IMPORTED"}:
+            distinct.setdefault(row["code_sha256"], row)
+    families: dict[str, list[str]] = {}
+    for row in distinct.values():
+        if row["status"] not in {
+            "SCREEN_FAIL",
+            "SPREAD_FAIL",
+            "REPLAY_FAIL",
+            "FAST_ONLY",
+            "CANDIDATE",
+        }:
+            continue
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            families.setdefault(family, []).append(row["status"])
+    limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+    return {
+        family
+        for family, statuses in families.items()
+        if len(statuses) >= limit and "CANDIDATE" not in statuses
+    }
+
+
+class FamilyGuard:
+    """Check proposed tasks at the coder boundary; a refusal creates no trial and reads no data.
+
+    A refused proposal is replaced by asking the proposer again, through the loop's own propose
+    and experiment steps, at most twice per round; the refusal text is added to its context. A
+    third refusal ends the round through upstream's FactorEmptyError skip path.
+    """
+
+    def __init__(self, coder: Any, loop: Any = None) -> None:
+        self.coder = coder
+        self.loop = loop
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(object.__getattribute__(self, "coder"), name)
+
+    def develop(self, exp: Any) -> Any:
+        try:
+            for attempt in range(1, FAMILY_PROPOSALS_PER_ROUND + 1):
+                closed = closed_families()
+                proposed = set()
+                for task in exp.sub_tasks:
+                    proposed.update(
+                        idea_family(
+                            task.factor_name,
+                            getattr(task, "description", "") or "",
+                            getattr(task, "factor_formulation", "") or "",
+                            getattr(task, "variables", None),
+                        ).split("; ")
+                    )
+                refused = sorted(proposed & closed)
+                if not refused:
+                    return self.coder.develop(exp)
+                final = attempt == FAMILY_PROPOSALS_PER_ROUND or self.loop is None
+                self._refuse(exp, refused, proposed, closed, attempt, final)
+                exp = self._propose_again()
+        finally:
+            FAMILY_REFUSALS.clear()
+        raise AssertionError("unreachable: the last refusal ends the round")
+
+    def _refuse(
+        self,
+        exp: Any,
+        refused: list[str],
+        proposed: set[str],
+        closed: set[str],
+        attempt: int,
+        final: bool,
+    ) -> None:
+        open_families = sorted(({name for name, _ in FAMILY_KEYWORDS} | proposed) - closed)
+        message = (
+            "Refused closed families: "
+            + "; ".join(refused)
+            + ". open families: "
+            + "; ".join(open_families)
+            + (
+                ". No admissible idea; round ended before coding, no trial created."
+                if final
+                else f". Proposal {attempt} refused before coding, no trial created; "
+                "the proposer is asked again."
+            )
+        )
+        row = {
+            "schema": "AlphaRdagentRoundV1",
+            "status": "no_admissible_idea" if final else "refused_closed_family",
+            "reason": "refused_closed_family",
+            "attempt": attempt,
+            "trial_created": False,
+            "closed_families": refused,
+            "open_families": open_families,
+            "hypothesis": str(exp.hypothesis),
+            "message": message,
+        }
+        run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+        with (run / "rounds.jsonl").open("a") as stream:
+            stream.write(json.dumps(row, sort_keys=True) + "\n")
+        if final:
+            exp.alpha_family_refusal = row
+            raise FactorEmptyError(message)
+        FAMILY_REFUSALS.append(message)
+
+    def _propose_again(self) -> Any:
+        """The same two calls and plan fields as upstream RDLoop.direct_exp_gen, nothing more."""
+        loop = self.loop
+        exp = loop._exp_gen(loop._propose())
+        exp.base_features = loop.plan["features"]
+        exp.base_feature_codes = loop.plan["feature_codes"]
+        if exp.based_experiments:
+            exp.based_experiments[-1].base_features = loop.plan["features"]
+            exp.based_experiments[-1].base_feature_codes = loop.plan["feature_codes"]
+        return exp

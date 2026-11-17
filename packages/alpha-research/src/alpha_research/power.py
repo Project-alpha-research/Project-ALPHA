@@ -1,4 +1,15 @@
-"""Prospective one-sided power under an explicit known-sigma mean model."""
+"""Prospective one-sided power under an explicit known-sigma mean model.
+
+**Hand-written on purpose (checked against statsmodels 0.15.0, 2026-11-15).**
+``statsmodels.stats.power.normal_sample_size_one_tail`` is the same closed form as
+:func:`required_observations_known_sigma`, but when the exact answer is a whole number its
+last-digit difference (``norm.isf(alpha)`` against ``norm.ppf(1 - alpha)``) rounds up to one
+observation more or fewer. ``normal_power_het`` gives the exact power that
+:func:`simulate_prospective_power_known_sigma` estimates by a seeded simulation; the stored number
+is the seeded estimate, which differs from the exact value by Monte Carlo error. Replacing either
+would change stored numbers, so it is an owner decision.
+``tests/unit/test_stats_library_parity.py`` holds both comparisons.
+"""
 
 from __future__ import annotations
 

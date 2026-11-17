@@ -89,7 +89,8 @@ export function RunBrowser(props: PanelHandleProps) {
       {
         header: 'Command',
         accessorKey: 'command',
-        cell: (c) => c.row.original.command ?? '—',
+        // a rule test (`alpha test`) reads as what it is, not as the engine command it ran
+        cell: (c) => (c.row.original.rule_test_labels ? 'rule test' : c.row.original.command ?? '—'),
         meta: { className: 'mono' },
       },
       {

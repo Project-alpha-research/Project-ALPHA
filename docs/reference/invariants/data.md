@@ -10,24 +10,22 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: fbd2d49ca3ad0595
+verified: 2df56c78ae38fea8
 ---
 
 # Data layer invariants
 
-What must hold in `alpha_data` (`packages/alpha-data/src/alpha_data/`): the raw store, the point-in-time
-(PIT) readers, vendor receipts and promotion, snapshots, and the crypto data house. Project-wide rules are
-stated once in [research integrity](research-integrity.md); this file holds the data-layer mechanics.
+Rules for `alpha_data`: raw storage, point-in-time readers, receipts, promotion, snapshots and crypto storage.
+Project-wide rules live in [research integrity](research-integrity.md); this file holds the data-layer mechanics.
 
 ## Package boundary
 
-- Import only `alpha_core` (plus numpy/polars) — import-linter contract `alpha_data depends only on core`
-  in `pyproject.toml`. See [engineering § Import layers](engineering.md#import-layers).
+- Import only `alpha_core` (plus numpy/polars); see [engineering § Import layers](engineering.md#import-layers).
 - Never import `alpha_patterns` for a shared formula — copy the closed form and pin it equal by test.
   `crypto/features.py` re-implements `alpha_patterns.vsa.rolling_ols_residual`; parity is pinned in
   `tests/unit/test_crypto_defi_tvl_feature.py`.
 - pandas appears only in `adapters/yfinance_adapter.py` — [engineering § Polars by default](engineering.md#polars-by-default).
-- Commands and composition live in `alpha_cli`, not here. FRED vintages (`context/`) stay apart from bars: [data layer](../project/components/data-layer.md).
+- Commands live in `alpha_cli`. FRED, SEC, Binance and Bybit context stays apart from bars: [data layer](../project/components/data-layer.md).
 
 ## Point-in-time store
 
@@ -149,38 +147,31 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
 
 [ADR-0032](../../adr/0032-governed-crypto-data-house.md).
 
-- Bulk bytes live on the configured external volume; manifests and the control database stay internal.
-  Before any write, `verify_ready` checks volume UUID, writability and the free-space reserve, failing closed.
-  `verify_readable` checks mount and UUID only, without a write probe.
-- Publish external bytes first and the internal manifest last. A manifest id is the SHA-256 of its canonical
-  body; an existing path may be republished only with identical bytes.
-- Normalized bytes publish only after every input raw manifest re-verifies and the bytes match the quality
-  report hash. Derived artifacts accept only normalized inputs.
-- Bybit derivative trades and order-book snapshots require a `CryptoAcquisitionScopeV1` (research case,
-  revision, reason); any other family refuses a scope. Unscoped historical captures stay readable but cannot
-  enter governed snapshots.
+- Bulk bytes live on the configured external volume; manifests and the control database stay internal. Before any write, `verify_ready` checks volume UUID,
+  writability and the free-space reserve, failing closed. `verify_readable` checks mount and UUID only, without a write probe.
+- Publish external bytes first and the internal manifest last. A manifest id is the SHA-256 of its canonical body; an existing path may be republished only
+  with identical bytes. Revision lookup uses a per-store in-memory raw-manifest index, built once and updated on each write: discovery only, never evidence.
+- Normalized bytes publish only after every input raw manifest re-verifies and the bytes match the quality report hash. Derived artifacts accept only
+  normalized inputs.
+- Bybit derivative trades and order-book snapshots require a `CryptoAcquisitionScopeV1` (research case, revision, reason); any other family refuses a
+  scope. Unscoped historical captures stay readable but cannot enter governed snapshots.
 - Storage paths are confined to their root; symlinks are refused.
-- Cleanup deletes only `bulk/cache`. Staging, raw, normalized, snapshot, manifest and control roots are never
-  removed.
-- Retirement appends a hash-bound receipt under the admission lock and never deletes manifests, raw lineage or
-  payloads. Only `inactive_quarantined` and `revoked_units_error` are valid reasons. Retired inputs are
-  excluded from new admission and active inventories; full audits include them. `scripts/crypto_data_hygiene.py`
-  audits references (`--report`) and repeats the audit under the lock before `--apply`; it fails closed on
-  unreadable evidence and never retires referenced artifacts.
+- Cleanup deletes only `bulk/cache`. Staging, raw, normalized, snapshot, manifest and control roots are never removed.
+- Retirement appends a hash-bound receipt under the admission lock and never deletes manifests, raw lineage or payloads. Only `inactive_quarantined` and
+  `revoked_units_error` are valid reasons. Retired inputs are excluded from new admission and active inventories; full audits include them.
+  `scripts/crypto_data_hygiene.py` audits references (`--report`) and repeats the audit under the lock before `--apply`; it fails closed on unreadable
+  evidence and never retires referenced artifacts.
 - Normalized reads are capped at 32 MiB and re-verify the artifact while reading.
-- A governed snapshot member is its content (dataset, artifact key, artifact hash). Creation and every
-  verification resolve it with one rule (`alpha_cli/_crypto_snapshot_members.py`): several retained
-  captures of the same bytes count as one only if they agree on everything except per-fetch provenance
-  (manifest ids, raw storage keys, receipt ids, fetch times); any other difference fails as ambiguous.
-  Creation freezes members in canonical order, refuses a capture named twice, and members of one
-  dataset must cover disjoint observed ranges.
+- A governed snapshot member is its content (dataset, artifact key, artifact hash). Creation and every verification resolve it with one rule
+  (`alpha_cli/_crypto_snapshot_members.py`): several retained captures of the same bytes count as one only if they agree on everything except per-fetch
+  provenance (manifest ids, raw storage keys, receipt ids, fetch times); any other difference fails as ambiguous. Creation freezes members in canonical
+  order, refuses a capture named twice, and members of one dataset must cover disjoint observed ranges.
   [ADR-0046](../../adr/0046-crypto-snapshot-members-are-content-addressed.md)
-- Archive charts ([ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)): inventory is
-  discovery only; a chart read runs full manifest and raw-lineage verification, then checks dataset identity,
-  units and the completed-bar cutoff. Reconstructed archive history does not establish point-in-time
-  availability or research admission. A listed venue pair is no proof that bars are stored.
-- A chart group joins archive segments only for one identical identity; overlapping bars must agree exactly or
-  the read fails loud (`alpha_cli/_chart_data.py`).
+- Archive charts ([ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)): inventory is discovery only; a chart read runs full
+  manifest and raw-lineage verification, then checks dataset identity, units and the completed-bar cutoff. Reconstructed archive history does not establish
+  point-in-time availability or research admission. A listed venue pair is no proof that bars are stored.
+- A chart group joins archive segments only for one identical identity; overlapping bars must agree exactly or the read fails loud
+  (`alpha_cli/_chart_data.py`).
 
 ## Crypto identity and features
 
@@ -198,3 +189,12 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   feature reads a later observation. Enforced by `tests/bias_guards/test_crypto_features_future_poison.py`.
 - Per-provider fetch, parse, budget and availability rules (Binance, Bybit, CoinGecko, GeckoTerminal,
   DefiLlama) and coverage profiles are in [crypto providers](crypto-providers.md).
+
+## Offline Bybit context
+
+- Import qualified normalized Bybit linear artifacts into separate `context/bybit/linear/{funding,open_interest}/<SYMBOL>.parquet` tables.
+  Verify manifest identity, Parquet size/SHA-256 and raw lineage (`input_manifest_ids`); provenance keeps source ids, fetch times and output hashes.
+- Funding is known at settlement; intervals use the preceding 1/2/4/8-hour gap (first row: next gap; 2h after 1h is a missed settlement). Unknown stays null.
+  Hourly open interest is known at interval start + one hour + five minutes. These historical clocks do not use late fetch times.
+- Skip retired manifests. Collapse duplicates; latest linked raw fetch wins conflicts (no receipt: lowest), then manifest id. Over ten conflicts fails a symbol.
+  Stage both families; caught publication errors restore previous files. Interrupted table/provenance pairs fail their hash check. Other symbols still import.

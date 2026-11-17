@@ -120,6 +120,23 @@ module = ["quantstats_lumi.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# STUMPY ships no stubs; it is imported only in alpha_patterns.lookalike (ADR-0051).
+module = ["stumpy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# statsmodels ships no stubs (owner decision 2026-11-17: use it as an untyped library);
+# it supplies the Holm adjustment and the market-attribution regressions in alpha_validation.
+module = ["statsmodels.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# ruptures ships no stubs (owner decision 2026-11-17: use it as an untyped library);
+# it is used only for change-point detection in alpha_validation.
+module = ["ruptures.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # vendored upstream Kronos model code (pinned; MIT) is not strict-clean and is excluded from
 # analysis above — skip import-following so the alpha_forecast facade sees it as untyped,
 # exactly like the nautilus Cython modules.

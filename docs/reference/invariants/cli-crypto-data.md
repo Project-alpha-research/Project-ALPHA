@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: 377710b899bc0411
+verified: 0bed3e1e29e927a6
 ---
 
 # Command line data invariants
@@ -36,6 +36,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 - `data candles --timeframe --from-timeframe --session` reads intraday bars point-in-time and can resample
   finer stored bars; `--start`/`--end` take a date or an ISO instant with an offset.
 - `data candles` and `data symbols` read through the same point-in-time loader a backtest uses (`_runner.load_bars`).
+  A missing store or symbol says "not found" with the path and a `next` step; "corrupt" is only an unreadable file.
 - `data universe` and `--with-actions` are read projections with no authority; the plain `--json` picker output stays
   unchanged.
 - Binance spot daily REST reads take an opt-in `RequestBudget` (attempts and body bytes; see
@@ -90,6 +91,13 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 - The JSON ledger under `data_dir/crypto/backfill/` is operational progress, not evidence; manifests remain the only
   evidence. A provider `DataError` on one window is recorded and the run continues; an accounting refusal
   (`FixtureAccountingBlocked`) stops the run and never splits or retries.
+- Backfill reuses one lazily opened bulk store per command, including completed-window verification.
+  Archive revision lookup uses the store's in-memory discovery index ([data storage](data.md#crypto-storage));
+  each acquisition still checks capacity and verifies its new raw inputs.
+- Progress loads once under ownership. Saves detect stale/replaced files through device, inode, size and
+  nanosecond modification/change metadata, then fsync and atomically replace the same version-1 JSON once
+  per recorded step. Serialization still grows with ledger size; no persistent index or new format is added.
+  Preflight indexes retained ranges in memory and still refuses orphaned split children.
 - One owner at a time: the ledger takes a non-blocking `flock` on a persistent `.lock` sidecar and checks the sidecar
   identity; never delete the sidecar or unlock an inherited descriptor in a child.
 - `--end` is exclusive: the last month planned is the month of the day before `--end`, so `--end 2026-11-01` plans

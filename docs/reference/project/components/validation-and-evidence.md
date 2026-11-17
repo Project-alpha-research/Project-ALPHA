@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-validation/CONTEXT.md
   - apps/alpha-cli/src/alpha_cli/spine/**
-verified: c471d54c14daa489
+verified: 288f7640492fbef0
 ---
 
 # Validation and evidence
@@ -41,14 +41,34 @@ run with `--no-diagnose` and labelled `no-diagnostics`: benchmark comparisons, d
 concentration, sensitivity re-runs and explicitly counted variants. The owner can read these
 through `alpha results` and `alpha diagnose`; flags identify observations to examine and grant no
 research authority. [Stored facts](../../invariants/cli-runs.md#stored-facts-and-diagnostics)
-retain the basis and source for each number, including a reason when it is unavailable.
+retain the basis and source for each number, including a reason when it is unavailable. A run's diagnostics
+and manifest appear together or not at all.
+`alpha results check <file>` reads a drafted answer and verifies each tagged number, run label,
+the trial count and any sentence that contradicts a stored flag against those stored facts, and `alpha results compare` computes differences
+between runs in code. Both are mechanical: they catch an invented or mistyped number, not bad
+reasoning. `alpha partner selftest` runs 25 planted honest and dishonest answers through the check.
+
+The inverted-signal research control trades the opposite direction without adding a trial; CASH shorts
+are hypothetical and no borrow or funding cost is charged. Walk-forward efficiency compares each fold's
+out-of-sample return with the rule's return over that fold's recorded training window; it is a
+practitioner rule of thumb, not a statistical test. See the
+[inversion card](../../../../research/tools/inverted-signal-control.md) and
+[efficiency card](../../../../research/tools/walk-forward.md).
+
+Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
+questions the flags raise, on one recorded rule test: `alpha tool attribution` (how much of the
+return is market exposure, with Newey-West uncertainty), `alpha tool regimes` (calm versus
+turbulent markets from a Markov-switching model) and `alpha tool changepoints` (dates where the
+behaviour shifted). They are glue over statsmodels and ruptures, write no new statistics, and
+label what they cannot avoid: `hindsight`, `parameters-fit-in-sample`, `benchmark-is-same-asset`.
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`
+- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
+  `investigation-tools`, `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.
@@ -56,6 +76,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.
 - Decision records: [ADR-0006](../../../adr/0006-two-tier-null-model.md),
   [ADR-0029](../../../adr/0029-four-family-monte-carlo-validation.md).
+- **Plan:** [stages 5 and 6](../../../roadmap/production-scope-2.md#5-overfit-tests) of the
+  checklist; [toolkit](../../../roadmap/backlog/afml-toolkit-worker.md).
 
 ## Decisions and open questions
 

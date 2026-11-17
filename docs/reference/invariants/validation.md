@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: af03ecd465736f1d
+verified: bf8ee0f3ccc4c1d6
 ---
 
 # Validation statistics invariants
@@ -21,11 +21,18 @@ covered with the CLI; the gate meanings are here.
 ## Package boundary
 
 - Quant tier: changes here carry the obligations in [engineering § Quant tier](engineering.md#quant-tier).
-- Import only `alpha_core` (numpy/scipy allowed) — import-linter contract `alpha_validation depends only on core`.
+- Import only `alpha_core` (numpy, scipy, statsmodels and ruptures allowed) — import-linter contract
+  `alpha_validation depends only on core`.
   Never import the engine, a strategy, an optimiser or a model; callers pass a `score`/`strategy_fn` callable.
 - pandas and QuantStats-Lumi appear only in `tearsheet.py` — [engineering § Polars by default](engineering.md#polars-by-default).
 - Fail loud on degenerate input with `DataError` — [research integrity § Invalid data fails loud](research-integrity.md#invalid-data-fails-loud).
   The documented exceptions return a typed "undefined" instead (below); never return NaN as a silent answer.
+- The investigation-tool statistics (`attribution.py`, `regimes.py`, `changepoints.py`) wrap statsmodels
+  and ruptures without new maths. They raise plain `ValueError` on bad input, and `volatility_regimes`
+  returns `converged: false` with a reason instead of raising; `alpha tool` turns both into structured
+  errors. Regime labels used to split returns are causal (filtered, one bar later); smoothed labels and
+  change points are hindsight and labelled so. Their `regimes.py` Markov model is unrelated to the
+  `regime_switching` Monte Carlo family below.
 - Primitives take `seed: int | None`; `None` draws fresh entropy and is for interactive use only. Every
   composer passes a semantic, settings-derived seed, except the D0/D1 research protocols, whose seeds are
   frozen in code — [research integrity § Deterministic seeds and identity](research-integrity.md#deterministic-seeds-and-identity).
@@ -52,14 +59,15 @@ Gate outcomes are built by `build_outcomes` in `tearsheet.py` (called from `_gau
   ([investigation](../../archive/research-notes/2026-06-23-tier1-surrogate-crediting-bias.md)).
   Tests: `tests/unit/test_gauntlet_tier1.py`.
 - `bootstrap_ci` (gate 4): passes when the Sharpe BCa lower bound is above 0; the interval is always reported.
-- `deflated_sharpe`: PSR/DSR of the OOS stream; a single run has `n_trials = 1`, so DSR equals PSR. Passes
-  when DSR is at least `dsr_threshold`.
+- `deflated_sharpe`: PSR/DSR of the OOS stream. With no ledger family `n_trials = 1` and DSR equals PSR;
+  a rule test, or `alpha validate` of a strategy with a spine family, deflates by the family's trial count
+  ([counting](cli-trial-ledger.md)) and records it as `trial_basis`. Passes when DSR is at least `dsr_threshold`.
 - `cpcv_oos`: passes when the mean OOS Sharpe across CPCV folds of the OOS stream is above 0.
 - A flat or zero-variance OOS short-circuits every gate to a clean FAIL, never an undefined-Sharpe crash
   (`tests/integration/test_gauntlet_degenerate.py`). A zero-variance bootstrap resample scores 0.0 through the one
   statistic `_gauntlet.safe_sharpe_statistic`; the portfolio and cross-sectional runs import it rather than copy it.
-- Multi-trial statistics (DSR deflated by trial-Sharpe variance, PBO, Reality Check, SPA) judge a parameter
-  sweep and belong to `alpha optim` (`_optim.py`), never the single-run gauntlet.
+- Parameter-sweep statistics (PBO, Reality Check, SPA, and a sweep's own DSR) belong to `alpha optim`
+  (`_optim.py`); the gauntlet only counts the ledger family above.
 
 ## Null models and permutation tests
 
@@ -90,7 +98,10 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
 - Splitters are index-only and engine-agnostic. Oracles: `tests/oracles/test_metamorphic_splits.py`.
 - `block_bootstrap_ci` uses the Politis–Romano stationary bootstrap with BCa correction (leave-one-out
   jackknife acceleration, a documented approximation on dependent data). It fails loud when the BCa adjustment
-  is unstable instead of returning an infinite percentile.
+  is unstable instead of returning an infinite percentile. It stays hand-written (checked against `arch` 8.0.0):
+  `arch` draws from the same law but other numbers for the same seed (path by path, block restart on `u <= p`
+  instead of `u < p`), has no other `length`, and lacks the BCa clamp and the fail-loud acceleration check, so
+  a swap would change every stored seeded interval, risk-of-ruin and null path.
 
 ## Multi-trial selection statistics
 
@@ -98,6 +109,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   against the expected maximum Sharpe of `N` trials using the cross-trial variance.
 - PBO via CSCV runs on a `(T × S)` performance matrix and is deterministic (no RNG).
 - Reality Check and SPA judge the best of `S` strategies with stationary-bootstrap means.
+  They, the stationary bootstrap and the proportion statistics stay hand-written: `arch` and `statsmodels` differ
+  by random draws, test statistic or last digits (`tests/unit/test_stats_library_parity.py`).
 
 ## Path risk and scenarios
 

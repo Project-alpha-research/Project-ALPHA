@@ -20,6 +20,11 @@ drawdown (or at the worst point by search), labelled as such, with a metamorphic
 can only deepen the drawdown it is inserted into) and an option to leave flat days flat under
 volatility scaling. A versioned change to the scenario panel's contract and the Risk tab.
 
+Related stress ideas, each its own checklist row: replay of named crises (2008, March 2020, the
+2022 crypto bear, flash crashes) with settings unchanged, and synthetic crisis stress with
+correlations pushed toward one, liquidity that dries up (two to ten times normal slippage) and
+partial fills.
+
 ## Dependencies
 
 `packages/alpha-validation/src/alpha_validation/scenario.py` is quant tier and feeds the

@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -204,33 +205,41 @@ def test_observation_thresholds(share: float, top: float, benchmark: float, expe
         assert (name in names) is expected
 
 
-def test_trials_normalize_each_frequency_and_count_current(
+def test_trials_spread_is_the_family_and_this_run_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from types import SimpleNamespace
-
-    from alpha_cli.spine import diagnose
+    """Same-asset rows of other rules widen the count only; variants count but stay out."""
+    from alpha_cli.spine import deflation, diagnose
     from alpha_cli.spine.ledger import append_trial
 
     append_trial(tmp_path, {"symbol": "SPY", "labels": [], "oos_sharpe": 2, "periods_per_year": 4})
     append_trial(
         tmp_path, {"symbol": "OTHER", "labels": [], "oos_sharpe": 999, "periods_per_year": 1}
     )
-    seen: list[float] = []
+    seen: list[list[float]] = []
+    original = deflation.deflate
 
-    def dsr(returns: object, *, trial_sharpes: list[float]) -> SimpleNamespace:
-        seen.extend(trial_sharpes)
-        return SimpleNamespace(dsr=0.75)
+    def spy(
+        returns: list[float],
+        trial_sharpes: list[float],
+        n_trials: int,
+        *,
+        variance_floor: float = 0.0,
+    ) -> dict[str, object]:
+        seen.append(list(trial_sharpes))
+        return original(returns, trial_sharpes, n_trials, variance_floor=variance_floor)
 
-    monkeypatch.setattr(diagnose, "deflated_sharpe", dsr)
-    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}])
+    monkeypatch.setattr(deflation, "deflate", spy)
+    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}], "ma_cross")
     assert result["total_trials"] == 3
-    assert result["dsr"] == pytest.approx(0.75)
-    assert seen[0] == pytest.approx(1)
-    assert seen[-1] == pytest.approx(2)
-    result = diagnose.trials(tmp_path / "empty", "SPY", [0.1, -0.1, 0.2], 4, [])
-    assert result["dsr"] is None
-    assert result["reasons"]["dsr"]
+    assert result["available_sharpes"] == 3  # the SPY row, this run and its one variant
+    assert seen[-1] == pytest.approx(
+        [float(np.mean([0.1, -0.1, 0.2]) / np.std([0.1, -0.1, 0.2], ddof=1))]
+    )
+    assert result["spread_floored"] is True
+    assert result["family"]["variants_scored"] == 1
+    assert result["family"]["n_trials"] == 4  # this run, its variant and two unmapped rows
+    assert result["dsr"] is not None
 
 
 def test_performance_hand_computed() -> None:
@@ -240,6 +249,58 @@ def test_performance_hand_computed() -> None:
     assert result["cagr"] == pytest.approx(-0.01)
     assert result["max_drawdown"] == pytest.approx(-0.1)
     assert result["sharpe"] == pytest.approx(0, abs=1e-12)
+
+
+def _flag_sections(base: float | None, delayed: float, variant: float) -> dict[str, Any]:
+    return {
+        "full_sample": {"sharpe": base},
+        "benchmark": {"sharpe": None},
+        "sensitivity": {"variants": [{"kind": "costs", "sharpe": variant}]},
+        "delay": {"base_sharpe": base, "delayed_sharpe": delayed},
+        "concentration": {"top_3": None},
+        "drawdowns": {"episodes": []},
+    }
+
+
+@pytest.mark.parametrize("base", [-1.0, 0.0, float("inf"), float("nan")])
+def test_delay_flag_needs_a_positive_finite_base(base: float) -> None:
+    # A delayed Sharpe of -0.8 is "below half" of a base of -1 arithmetically; that is no finding.
+    names = {item["flag"] for item in flags(_flag_sections(base, -0.8, 0.3))}
+    assert "fragile-to-delay" not in names
+    assert {item["flag"] for item in flags(_flag_sections(1.0, 0.4, 0.6))} == {"fragile-to-delay"}
+
+
+def test_negative_base_does_not_make_a_better_variant_fragile() -> None:
+    assert flags(_flag_sections(-1.0, -1.0, -0.8)) != []  # a losing variant is still flagged
+    assert flags(_flag_sections(-1.0, -1.0, 0.2)) == []
+    assert flags(_flag_sections(2.0, 2.0, 0.9))[0]["flag"] == "fragile-to-costs"
+
+
+def test_flag_text_never_prints_none() -> None:
+    (flag,) = flags(_flag_sections(None, 0.0, -0.2))
+    assert flag["flag"] == "fragile-to-costs"
+    assert "None" not in flag["detail"]
+    assert flag["detail"].endswith("base Sharpe is unavailable.")
+    (rounded,) = flags(_flag_sections(1.23456, 1.0, 0.1))
+    assert rounded["detail"].endswith("base Sharpe is 1.23.")
+
+
+def test_delay_share_is_null_with_a_reason_unless_base_is_positive() -> None:
+    returns = np.array([0.01, 0.03, -0.01, 0.02, 0.01, -0.02])
+    costs = np.zeros(6)
+    winning = delay(returns, np.ones(6), costs, 252)
+    assert winning["base_sharpe"] > 0
+    assert winning["delayed_share_of_base"] == pytest.approx(
+        winning["delayed_sharpe"] / winning["base_sharpe"]
+    )
+    assert "delayed_share_of_base" not in winning["reasons"]
+    losing = delay(-returns, np.ones(6), costs, 252)
+    assert losing["base_sharpe"] < 0
+    assert losing["delayed_share_of_base"] is None
+    assert "not positive" in losing["reasons"]["delayed_share_of_base"]
+    flat = delay(returns, np.zeros(6), costs, 252)
+    assert flat["delayed_share_of_base"] is None
+    assert "unavailable" in flat["reasons"]["delayed_share_of_base"]
 
 
 def test_variants_skip_unchanged_neighbour_and_move_tsmom_lookback() -> None:
@@ -261,14 +322,14 @@ def test_variants_skip_unchanged_neighbour_and_move_tsmom_lookback() -> None:
 def test_trials_report_a_refused_dsr_as_its_reason(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from alpha_cli.spine import diagnose
+    from alpha_cli.spine import deflation, diagnose
     from alpha_core import DataError
 
-    def refuse(returns: object, *, trial_sharpes: list[float]) -> None:
+    def refuse(variance: float, n_trials: int) -> None:
         raise DataError("degenerate trial Sharpes")
 
-    monkeypatch.setattr(diagnose, "deflated_sharpe", refuse)
-    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}])
+    monkeypatch.setattr(deflation, "expected_max_sharpe", refuse)
+    result = diagnose.trials(tmp_path, "SPY", [0.1, -0.1, 0.2], 4, [{"sharpe": 4}], "ma_cross")
     assert result["available_sharpes"] == 2
     assert result["dsr"] is None
     assert result["reasons"] == {"dsr": "degenerate trial Sharpes"}
@@ -324,9 +385,12 @@ def test_macro_window_unavailable_reasons(tmp_path: Path, monkeypatch: pytest.Mo
     episode = [{"start": "2020-03-02T00:00:00+00:00", "trough": "2020-03-20T00:00:00+00:00"}]
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", None)
     missing = macro_window(tmp_path, episode)
-    assert missing == {"available": False, "reason": "the context data module is not installed"}
+    assert missing["reason"] == "macro data was not installed when this run was made"
+    assert missing["available"] is False and "detail" in missing
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", SimpleNamespace())
-    assert macro_window(tmp_path, episode)["reason"] == "no stored FRED context series"
+    absent = macro_window(tmp_path, episode)
+    assert absent["reason"] == "macro data was not installed when this run was made"
+    assert "no stored FRED context series" in absent["detail"]
     (tmp_path / "context" / "fred").mkdir(parents=True)
     assert macro_window(tmp_path, [])["reason"] == "no drawdown episode to describe"
 
@@ -399,5 +463,115 @@ def test_macro_window_reads_each_series_as_known_at_the_trough(
     assert rows["DGS10"]["change"] == pytest.approx(-0.4)
     assert rows["VIXCLS"]["trough_value"] == pytest.approx(76.0)
     assert rows["T10Y2Y"] == {"series_id": "T10Y2Y", "reason": "no observation known by then"}
-    assert rows["DFF"] == {"series_id": "DFF", "reason": "DataError"}
+    assert rows["DFF"]["reason"] == "macro data could not be read"
+    assert rows["DFF"]["detail"].startswith("DataError")
     assert rows["UNRATE"]["reason"] == "no observation known by then"
+
+
+def test_control_facts_are_citable_with_units_and_old_runs_load(tmp_path: Path) -> None:
+    import json
+
+    from alpha_cli.spine.check import check_text
+    from alpha_cli.spine.facts import METRIC_UNITS, build_facts
+
+    run_id = "abcdef0123456789"
+    (tmp_path / "diagnostics.json").write_text(json.dumps({"full_sample": {"sharpe": 1.0}}))
+    old = {f["metric"]: f for f in build_facts(tmp_path)}
+    for metric in (
+        "inverted_sharpe",
+        "inverted_sharpe_se",
+        "inverted_total_return",
+        "inverted_trades",
+        "inverted_label",
+        "wfe",
+        "wfe_fold_count",
+    ):
+        assert old[metric]["value"] is None
+        assert old[metric]["reason"]
+    (tmp_path / "diagnostics.json").write_text(
+        json.dumps(
+            {
+                "inverted_signal": {
+                    "inverted_sharpe": -0.4,
+                    "inverted_sharpe_se": 0.1,
+                    "inverted_total_return": -0.2,
+                    "inverted_trades": 35,
+                    "label": "control passed",
+                },
+                "walk_forward_efficiency": {"wfe": 0.65, "fold_count": 2},
+                "trials": {"total_trials": 1},
+            }
+        )
+    )
+    facts = {f["metric"]: f for f in build_facts(tmp_path)}
+    assert METRIC_UNITS["inverted_sharpe_se"] == "ratio"
+    assert METRIC_UNITS["inverted_total_return"] == "fraction"
+    assert METRIC_UNITS["inverted_trades"] == METRIC_UNITS["wfe_fold_count"] == "count"
+    assert METRIC_UNITS["wfe"] == "fraction"
+    assert METRIC_UNITS["inverted_label"] == "other"
+    assert "practitioner rule of thumb, not a statistical test" in facts["wfe"]["basis"]
+    result = check_text(
+        f"Sharpe -0.4 [{run_id}:inverted_sharpe], return -20% [{run_id}:inverted_total_return], "
+        f"efficiency 65% [{run_id}:wfe]. A practitioner rule of thumb, not a statistical test. "
+        f"Trial count 1 [{run_id}:total_trials].",
+        lambda _run, metric: facts[metric],
+    )
+    assert result["ok"], result
+    assert not check_text(
+        f"Sharpe 0.4 [{run_id}:inverted_sharpe]", lambda _run, metric: facts[metric]
+    )["ok"]
+
+
+def test_rule_test_publishes_controls_without_counting_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine.facts import read_json
+    from alpha_cli.spine.ledger import read_trials
+    from alpha_cli.spine.run import run_idea
+    from alpha_cli.spine.spec import load_spec
+    from alpha_data.store import ParquetStore
+    from tests.fixtures.cli_fixtures import seed_store
+
+    seed_store(tmp_path, symbol="SPY", n=160)
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    output = run_idea(idea, home=tmp_path, quick=True)
+    result = output["results"][0]
+    assert result["error"] is None, result
+    stored = read_json(Path(result["run_dir"]) / "diagnostics.json")
+    assert stored["inverted_signal"]["sentence"]
+    efficiency = stored["walk_forward_efficiency"]
+    assert efficiency["folds_total"] > 0
+    assert efficiency["wfe"] is not None or efficiency["reasons"]["wfe"]
+    assert "practitioner rule of thumb, not a statistical test" in efficiency["sentence"]
+    # Every in-sample window is the fold's recorded train window, trimmed only of warm-up bars.
+    folds = read_json(Path(result["run_dir"]) / "manifest.json")["folds"]
+    for row, fold in zip(efficiency["folds"], folds, strict=True):
+        assert row["is_end"] == fold["train_end"]
+        assert fold["train_start"] <= row["is_start"] <= fold["train_end"]
+        # The rule cannot hold a position during its warm-up, so no window starts at bar 0.
+        assert row["is_start"] > 0
+    # The first fold trains on the warm-up alone: nothing to compare, said in words.
+    assert efficiency["folds"][0]["reason"] == (
+        "in-sample window is warm-up only; the rule could not trade yet"
+    )
+    assert result["variants_evaluated"] == stored["variants_evaluated"] == 5
+    assert stored["trials"]["family"]["n_trials"] == 6
+    assert len(read_trials(tmp_path)) == output["trials_total"] == 1
+
+    from typer.testing import CliRunner
+
+    from alpha_cli.main import app
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    ledger = tmp_path / "ledger/trials.jsonl"
+    before = ledger.read_bytes()
+    shown = CliRunner().invoke(app, ["diagnose", result["run_id"]])
+    assert shown.exit_code == 0, shown.output
+    assert "standard error" in shown.output
+    assert "Shorts are not tradable here; this is a control only." in shown.output
+    assert "No borrowing or funding cost is charged" in shown.output
+    assert "practitioner rule of thumb, not a statistical test" in shown.output
+    assert ledger.read_bytes() == before

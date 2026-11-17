@@ -10,9 +10,11 @@ from alpha_cli.spine.errors import SpineError
 
 # Public vocabulary: one plain-English meaning per metric.
 METRICS = {
+    "data_period": "First and last loaded bar.",
+    "traded_period": "First and last stored equity point.",
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
-    "dsr": "The validation gauntlet's stored deflated Sharpe probability.",
+    "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
     **{
         f"{prefix}_{metric}": f"{label} {meaning}."
         for prefix, label in (
@@ -26,17 +28,129 @@ METRICS = {
             ("max_drawdown", "maximum drawdown"),
         )
     },
+    "inverted_sharpe": "Net Sharpe of the opposite-direction research control.",
+    "inverted_sharpe_se": "Annualised IID-normal approximate standard error of the control Sharpe.",
+    "inverted_total_return": "Net total return of the opposite-direction research control.",
+    "inverted_trades": "Closed trades in the opposite-direction research control.",
+    "inverted_label": "The recorded inverted-signal control reading.",
+    "wfe": (
+        "Median annualised OOS / IS return; a practitioner rule of thumb, not a statistical test."
+    ),
+    "wfe_fold_count": (
+        "Recorded WFE fold count; a practitioner rule of thumb, not a statistical test."
+    ),
+    "resized_entries": "Cash entries reduced to affordable size at the open in the scored run.",
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
-    "top_3_profit_share": "Share of total closed profit from the largest three trades.",
+    "top_3_profit_share": "Top three trades vs total profit; above 1 if the rest lost.",
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
     "total_trials": "Ledger trial count observed for this diagnostic pass.",
-    "trial_dsr": "Deflated Sharpe using available symbol trials and sensitivity variants.",
+    "trial_dsr": "Deflated Sharpe using the idea family's trial count from the one ledger.",
+    "family_trials": (
+        "Trials counted for the deflated Sharpe: the idea's family in the one ledger, "
+        "this run and its variants."
+    ),
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
+# Facts written by the investigation tools (alpha tool ...): metric -> (tool, meaning).
+TOOL_METRICS = {
+    "market_beta": (
+        "attribution",
+        "How much the strategy moves when the benchmark moves by one (1 = one for one).",
+    ),
+    "market_alpha_annual": (
+        "attribution",
+        "Yearly return left over after removing the benchmark exposure.",
+    ),
+    "market_alpha_p": (
+        "attribution",
+        "Chance of a leftover return this large if the true leftover were zero (p-value).",
+    ),
+    "market_r_squared": (
+        "attribution",
+        "Share of the strategy's return variation explained by the benchmark.",
+    ),
+    "regime_turbulent_share_of_return": (
+        "regimes",
+        "Share of the strategy's total log return earned in the most turbulent market regime.",
+    ),
+    "regime_turbulent_share_of_time": (
+        "regimes",
+        "Share of bars the market spent in its most turbulent regime.",
+    ),
+    "changepoint_count": (
+        "changepoints",
+        "Number of dates at which the run's behaviour shifted, found with hindsight.",
+    ),
+}
+METRICS.update({metric: meaning for metric, (_, meaning) in TOOL_METRICS.items()})
+# Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
+# 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
+# valid on a fraction.
+METRIC_UNITS = {
+    "data_period": "other",
+    "traded_period": "other",
+    "verdict": "other",
+    "oos_sharpe": "ratio",
+    "dsr": "fraction",
+    "inverted_sharpe": "ratio",
+    "inverted_sharpe_se": "ratio",
+    "inverted_total_return": "fraction",
+    "inverted_trades": "count",
+    "inverted_label": "other",
+    "wfe": "fraction",
+    "wfe_fold_count": "count",
+    "resized_entries": "count",
+    "trades": "count",
+    "exposure": "fraction",
+    "top_1_profit_share": "fraction",
+    "top_3_profit_share": "fraction",
+    "delay_base_sharpe": "ratio",
+    "delayed_sharpe": "ratio",
+    "total_trials": "count",
+    "family_trials": "count",
+    "trial_dsr": "fraction",
+    "variants_evaluated": "count",
+    "market_beta": "ratio",
+    "market_alpha_annual": "fraction",
+    "market_alpha_p": "fraction",
+    "market_r_squared": "fraction",
+    "regime_turbulent_share_of_return": "fraction",
+    "regime_turbulent_share_of_time": "fraction",
+    "changepoint_count": "count",
+    **{
+        f"{prefix}_{metric}": kind
+        for prefix in ("full_sample", "benchmark")
+        for metric, kind in (
+            ("total_return", "fraction"),
+            ("cagr", "fraction"),
+            ("sharpe", "ratio"),
+            ("max_drawdown", "fraction"),
+        )
+    },
+}
+# Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
+NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
+_CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
+_WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
+    "data_period": ("manifest.json", "spine.data_period", "loaded bars"),
+    "traded_period": ("manifest.json", "spine.traded_period", "stored out-of-sample equity curve"),
+    "resized_entries": ("manifest.json", "resized_entries", "scored engine execution"),
+    **{
+        name: ("diagnostics.json", f"inverted_signal.{name}", _CONTROL_BASIS)
+        for name in (
+            "inverted_sharpe",
+            "inverted_sharpe_se",
+            "inverted_total_return",
+            "inverted_trades",
+        )
+    },
+    "inverted_label": ("diagnostics.json", "inverted_signal.label", _CONTROL_BASIS),
+    "wfe": ("diagnostics.json", "walk_forward_efficiency.wfe", _WFE_BASIS),
+    "wfe_fold_count": ("diagnostics.json", "walk_forward_efficiency.fold_count", _WFE_BASIS),
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),
@@ -66,7 +180,12 @@ _FIELDS = {
             ("delay_base_sharpe", "delay.base_sharpe", "returns-level approximation"),
             ("delayed_sharpe", "delay.delayed_sharpe", "returns-level approximation"),
             ("total_trials", "trials.total_trials", "ledger at the time of the run"),
-            ("trial_dsr", "trials.dsr", "available symbol trial Sharpes and sensitivity variants"),
+            ("trial_dsr", "trials.dsr", "one trial ledger, idea family at the time of the run"),
+            (
+                "family_trials",
+                "trials.family.n_trials_used",
+                "one trial ledger, idea family at the time of the run",
+            ),
             ("variants_evaluated", "variants_evaluated", "full-sample sensitivity engine re-runs"),
         )
     },
@@ -87,12 +206,19 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
     labels = documents["manifest.json"].get("spine", {}).get("labels", [])
     facts = []
     for metric, (filename, field, basis) in _FIELDS.items():
-        parent = documents[filename]
+        parent: Any = documents[filename]
         parts = field.split(".")
         for part in parts[:-1]:
-            parent = parent.get(part, {})
+            # A stored null or bare number where an object is expected is an unavailable fact.
+            parent = parent.get(part) if isinstance(parent, dict) else None
+        parent = parent if isinstance(parent, dict) else {}
         value = parent.get(parts[-1])
-        reason = parent.get("reasons", {}).get(parts[-1]) or f"{filename}:{field} is unavailable"
+        reasons = parent.get("reasons")
+        reason = (reasons.get(parts[-1]) if isinstance(reasons, dict) else None) or (
+            f"{filename}:{field} is unavailable"
+        )
+        if metric == "family_trials" and value is None:
+            reason = "recorded before family counts were used"
         facts.append(
             {
                 "metric": metric,
@@ -115,3 +241,47 @@ def require_metric(metric: str) -> None:
             "Run alpha results cite with one of the known metrics.",
             list(METRICS),
         )
+
+
+def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
+    """Stored investigation-tool outputs for a run, oldest first; they live outside the run."""
+    outputs = []
+    for path in sorted((home / "diagnostics" / run_id).glob("*-*.json")):
+        document = read_json(path)
+        if document.get("run_id") != run_id or "tool" not in document:
+            raise ValueError(f"{path} is not a tool output of run {run_id}")
+        outputs.append(
+            {
+                "id": path.stem.rsplit("-", 1)[1],
+                "file": str(path.relative_to(home)),
+                **{key: document.get(key) for key in ("tool", "params", "recorded_at", "labels")},
+                "facts": document.get("facts", []),
+            }
+        )
+    return sorted(outputs, key=lambda item: (str(item["recorded_at"]), item["file"]))
+
+
+def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> dict[str, Any]:
+    """Quote one stored tool fact; several outputs of the tool need an explicit choice."""
+    tool = TOOL_METRICS[metric][0]
+    outputs = [item for item in tool_outputs(home, run_id) if item["tool"] == tool]
+    known = [item["id"] for item in outputs]
+    if output_id is not None:
+        outputs = [item for item in outputs if item["id"] == output_id]
+    if not outputs:
+        raise SpineError(
+            "NO_TOOL_OUTPUT",
+            f"Run {run_id} has no stored {tool} output"
+            + (f" with id {output_id!r}." if output_id is not None else "."),
+            f"Run alpha tool {tool} {run_id} --json first.",
+            known,
+        )
+    if len(outputs) > 1:
+        raise SpineError(
+            "AMBIGUOUS_TOOL_OUTPUT",
+            f"Run {run_id} has {len(outputs)} stored {tool} outputs with different settings.",
+            f"Run alpha results cite {run_id} {metric} --tool-output with one of the known ids.",
+            known,
+        )
+    fact: dict[str, Any] = next(item for item in outputs[0]["facts"] if item["metric"] == metric)
+    return fact

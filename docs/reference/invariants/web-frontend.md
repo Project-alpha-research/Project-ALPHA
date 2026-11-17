@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 51a80adc08648ac0
+verified: 4f1e00560f789cb4
 ---
 
 # Web frontend invariants
@@ -114,6 +114,12 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - `reportModel.summaryRows` shows recorded manifest values only (`not recorded` otherwise) — no client arithmetic.
 - `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot
   do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
+- A rule test (`detail.rule_test` set) opens the Summary view with `rundetail/RuleTestReport.tsx`, fed by
+  `panels/ruleTestModel.ts`: stored values only, `not recorded` plus the stored reason for a null, audit statuses on the
+  existing chip tones and no overall grade. The one display difference is between two stored Sharpe values in the
+  variants table; the yearly bars are a drawing scale only, and stored basis notes are shown as sentences with their
+  words unchanged. The toolbar shows `rule test` and the run's labels instead of the launch-context watermark; other runs
+  keep the watermark chip. Enforced by `src/panels/ruleTestModel.test.ts`.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
 

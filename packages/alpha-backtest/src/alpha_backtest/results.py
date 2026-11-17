@@ -114,6 +114,7 @@ class BacktestResult:
     portfolio_state_trace: tuple[PortfolioStateTrace, ...] = ()
     benchmark_curve: tuple[tuple[datetime, float], ...] = ()
     benchmark_kind: str | None = None
+    resized_entries: int = 0  # CASH equity-sized buys reduced to fit the actual opening price
 
     @property
     def starting_equity(self) -> float:

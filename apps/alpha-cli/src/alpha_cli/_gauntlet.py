@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from importlib.metadata import version
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -25,6 +25,12 @@ from alpha_cli._seeds import semantic_seeds
 from alpha_cli._strategies import surrogate_for
 from alpha_cli._surrogate import Surrogate
 from alpha_cli._synth import bar_permutation_null, full_engine_null
+from alpha_cli.spine.deflation import (
+    DEFLATION_RULE,
+    FLOOR_BELOW,
+    TrialFamily,
+    family_deflation,
+)
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation import (
     CISummary,
@@ -118,6 +124,8 @@ def run_gauntlet(
     snapshot_id: str | None,
     dividends: Sequence[CorporateAction] = (),
     tier2_spec_for_path: Callable[[list[Bar]], RunSpec] | None = None,
+    trial_sharpes: Sequence[float] | None = None,
+    trial_family: TrialFamily | None = None,
 ) -> GauntletOutput:
     """Run the full gauntlet over ``bars`` and assemble the ``GauntletReport``."""
     # Validate the Tier-1 null choice up front with the full accepted set (the deeper parametric
@@ -194,13 +202,12 @@ def run_gauntlet(
             _degenerate_ci("sharpe", params.confidence),
             _degenerate_ci("cagr", params.confidence),
         )
-        dsr = _degenerate_dsr(params.dsr_threshold)
+        dsr = _degenerate_dsr(params.dsr_threshold, trial_family, trial_sharpes)
         cpcv = _degenerate_cpcv()
     else:
         safe_sharpe = safe_sharpe_statistic(ppy)
         # Tier 1 — cheap returns-level null: the strategy's surrogate on synthetic return paths.
-        # "bootstrap" resamples the observed returns; "student_t"/"garch" draw from a fat-tailed
-        # parametric model (heavier-tailed / volatility-clustered → a more adversarial null).
+        # "bootstrap" resamples observed returns; "student_t"/"garch" draw fat-tailed paths.
         # The statistic is scored on the walk-forward OOS index window (not the full sample), so
         # Tier-1's observed measures the same window as Tier-2 and every other gate.
         price_returns = to_returns(np.array([b.close for b in bars], dtype=np.float64))
@@ -293,9 +300,8 @@ def run_gauntlet(
         )
         cis = (_ci_summary("sharpe", sharpe_ci), _ci_summary("cagr", cagr_ci))
 
-        # Deflated/Probabilistic Sharpe on the OOS stream (single-config: n_trials=1 → DSR=PSR) and
-        # the CPCV distribution of OOS Sharpe across combinatorial time-slice folds.
-        dsr = _dsr_summary(oos.oos_returns, params.dsr_threshold)
+        # Deflated Sharpe of the OOS stream: one trial, or the ledger family (spine.deflation).
+        dsr = _dsr_summary(oos.oos_returns, params.dsr_threshold, trial_sharpes, trial_family)
         cpcv = _cpcv_summary(oos.oos_returns, params, ppy)
 
     outcomes = build_outcomes(oos_metrics=oos_metrics, nulls=nulls, cis=cis, dsr=dsr, cpcv=cpcv)
@@ -462,30 +468,158 @@ def _degenerate_ci(metric: str, confidence: float) -> CISummary:
     )
 
 
-def _dsr_summary(oos_returns: FloatArray, threshold: float) -> DSRSummary:
-    """Deflated/Probabilistic Sharpe of the OOS stream (single config → n_trials=1, DSR=PSR)."""
+@dataclass(frozen=True)
+class TrialDSRSummary(DSRSummary):
+    """The gauntlet's DSR with the trial count's basis and the inputs that fixed it.
+
+    ``prior_sharpes`` are the other counted trials' per-bar Sharpes (the ledger family's, plus a
+    rule test's variants), this run's own excluded. With ``family_id``, ``family_count``,
+    ``n_trials``, ``comparable_trials`` and ``repeats`` they let a re-run of the same run id
+    reproduce the stored verdict instead of recounting a grown ledger; ``deflation_rule`` names
+    the counting rule (it is not part of the run id).
+    """
+
+    trial_basis: str = "no ledger family: counted as one trial"
+    reason: str | None = None
+    family_id: str | None = None
+    prior_sharpes: tuple[float, ...] = ()
+    family_count: int | None = None
+    comparable_trials: int | None = None
+    repeats: int = 0
+    spread_floored: bool = False
+    deflation_rule: str = DEFLATION_RULE
+
+
+def _trial_basis(family: TrialFamily | None, count: int, floored: bool) -> str:
+    """Name, in plain words, where the count comes from and how it was adjusted."""
+    if family is None:
+        return "no ledger family: counted as one trial"
+    text = f"ledger family {family.family_id}, {count} trial{'' if count == 1 else 's'}"
+    if count > family.family_count:
+        text += (
+            " (the wider count of same-asset tests of any rule; the family alone has "
+            f"{family.family_count})"
+        )
+    if family.repeats:
+        plural = "" if family.repeats == 1 else "s"
+        text += f", {family.repeats} repeat{plural} of earlier tests not counted"
+    if floored:
+        text += f", spread floored: fewer than {FLOOR_BELOW} comparable trials"
+    return text
+
+
+def _family_fields(family: TrialFamily | None, prior: tuple[float, ...]) -> dict[str, Any]:
+    if family is None:
+        return {}
+    return {
+        "family_id": family.family_id,
+        "prior_sharpes": prior,
+        "family_count": family.family_count,
+        "comparable_trials": family.comparable,
+        "repeats": family.repeats,
+    }
+
+
+def _dsr_summary(
+    oos_returns: FloatArray,
+    threshold: float,
+    trial_sharpes: Sequence[float] | None = None,
+    trial_family: TrialFamily | None = None,
+) -> TrialDSRSummary:
+    """Bailey & López de Prado (2014) through the public package functions.
+
+    Without a ledger family, N = 1 and DSR = PSR. With one, this run's own per-bar Sharpe joins
+    the family's prior Sharpes, N is the larger of the recorded count and the Sharpes available,
+    and below ``FLOOR_BELOW`` comparable trials the cross-trial variance is floored at the
+    sampling variance of this run's Sharpe estimate (a handful of trials cannot measure a spread
+    smaller than the noise in one Sharpe).
+    """
     res = deflated_sharpe(oos_returns, threshold=threshold)
-    return DSRSummary(
+    prior = tuple(float(value) for value in trial_sharpes or ()) if trial_family else ()
+    value, sr0, reason, count, floored = res.dsr, res.expected_max_sharpe, None, 1, False
+    if trial_family is not None:
+        counted = family_deflation(oos_returns, prior, trial_family)
+        floored, count = counted["spread_floored"], counted["n_trials_used"]
+        value = counted["dsr"] if counted["dsr"] is not None else math.nan
+        sr0 = (
+            counted["expected_max_sharpe"]
+            if counted["expected_max_sharpe"] is not None
+            else math.nan
+        )
+        reason = counted["reasons"].get("dsr")
+    return TrialDSRSummary(
         sharpe=res.sharpe,
         psr=res.psr,
-        dsr=res.dsr,
-        expected_max_sharpe=res.expected_max_sharpe,
-        n_trials=res.n_trials,
+        dsr=value,
+        expected_max_sharpe=sr0,
+        n_trials=count,
         threshold=res.threshold,
-        passed=res.passed,
+        passed=value >= threshold,
+        trial_basis=_trial_basis(trial_family, count, floored),
+        reason=reason,
+        spread_floored=floored,
+        **_family_fields(trial_family, prior),
     )
 
 
-def _degenerate_dsr(threshold: float) -> DSRSummary:
+def _degenerate_dsr(
+    threshold: float,
+    family: TrialFamily | None = None,
+    sharpes: Sequence[float] | None = None,
+) -> TrialDSRSummary:
     """A not-passed DSR summary for a flat OOS (PSR/DSR undefined on zero variance)."""
-    return DSRSummary(
+    prior = tuple(float(value) for value in sharpes or ()) if family else ()
+    count = max(family.count, len(prior)) if family else 1
+    return TrialDSRSummary(
         sharpe=math.nan,
         psr=math.nan,
         dsr=math.nan,
         expected_max_sharpe=math.nan,
-        n_trials=1,
+        n_trials=count,
         threshold=threshold,
         passed=False,
+        trial_basis=_trial_basis(family, count, False),
+        reason="zero-variance out-of-sample returns",
+        **_family_fields(family, prior),
+    )
+
+
+def apply_trial_deflation(
+    out: GauntletOutput, sharpes: Sequence[float], family: TrialFamily
+) -> GauntletOutput:
+    """Rebuild every verdict consumer before publication after sensitivity runs finish."""
+    report = out.report
+    if report.dsr is None or report.cpcv is None:
+        raise DataError("family deflation requires the gauntlet's DSR and CPCV summaries")
+    dsr = (
+        _dsr_summary(out.oos.oos_returns, report.dsr.threshold, sharpes, family)
+        if _has_variance(out.oos.oos_returns)
+        else _degenerate_dsr(report.dsr.threshold, family, sharpes)
+    )
+    outcomes = build_outcomes(
+        oos_metrics=report.oos_metrics,
+        nulls=report.nulls,
+        cis=report.cis,
+        dsr=dsr,
+        cpcv=report.cpcv,
+    )
+    verdict = _verdict_summary(
+        dict(report.oos_metrics),
+        report.nulls,
+        report.cis,
+        dsr,
+        report.cpcv,
+        n_oos=int(out.oos.oos_returns.size),
+    )
+    return replace(
+        out,
+        report=replace(
+            report,
+            dsr=dsr,
+            outcomes=outcomes,
+            passed=all(o.passed for o in outcomes),
+            verdict=verdict,
+        ),
     )
 
 

@@ -1179,6 +1179,7 @@ const WATERMARKED_RUN_ITEM: components['schemas']['RunListItem'] = {
   run_context_kind: 'governed_project',
   run_context_project_id: 'project-overridden',
   run_context_watermark: RESEARCH_GATE_WATERMARK,
+  rule_test_labels: null,
   mtime: 1,
 }
 
@@ -1204,6 +1205,7 @@ const WATERMARKED_RUN_DETAIL: components['schemas']['RunDetail'] = {
   run_context_kind: 'governed_project',
   run_context_project_id: 'project-overridden',
   run_context_watermark: RESEARCH_GATE_WATERMARK,
+  rule_test: null,
   has_equity: false,
   has_trades: false,
   has_tearsheet: false,
@@ -1689,6 +1691,7 @@ export const HEAVY_LIBRARY_RUN: components['schemas']['RunListItem'] = {
   run_context_kind: 'standalone_sandbox',
   run_context_project_id: null,
   run_context_watermark: 'STANDALONE_UNQUALIFIED',
+  rule_test_labels: null,
   mtime: 1_700_000_100,
 }
 

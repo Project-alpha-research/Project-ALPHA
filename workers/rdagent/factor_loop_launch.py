@@ -346,11 +346,19 @@ class Launch:
                 "--out",
                 str(panel),
                 *(["--universe", str(self.args.universe)] if self.args.universe else []),
+                *(
+                    ["--funding-dir", str(self.args.funding_dir)]
+                    if getattr(self.args, "funding_dir", None) is not None
+                    else []
+                ),
             ],
         )
         receipt = (panel / "panel-receipt.json").read_bytes()
         frozen = json.loads(receipt)
         self.receipt["panel_sha256"] = frozen["panel_sha256"]
+        if getattr(self.args, "funding_dir", None) is not None:
+            self.receipt["funding_dir"] = str(self.args.funding_dir)
+            self.receipt["funding"] = frozen["funding"]
         universe = (
             json.loads((panel / "universe.json").read_bytes())
             if (panel / "universe.json").exists()
@@ -936,6 +944,7 @@ def parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     r = sub.add_parser("run")
     r.add_argument("--data-dir", type=Path, required=True)
+    r.add_argument("--funding-dir", type=Path)
     r.add_argument("--run-dir", type=Path, required=True)
     r.add_argument("--gateway-data-dir", type=Path, required=True)
     r.add_argument("--trial-ledger", type=Path, required=True)

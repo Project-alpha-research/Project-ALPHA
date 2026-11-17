@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 2df56c78ae38fea8
+verified: e24d1e3dbb7bbcde
 ---
 
 # Data layer invariants
@@ -26,6 +26,7 @@ Project-wide rules live in [research integrity](research-integrity.md); this fil
   `tests/unit/test_crypto_defi_tvl_feature.py`.
 - pandas appears only in `adapters/yfinance_adapter.py` — [engineering § Polars by default](engineering.md#polars-by-default).
 - Commands live in `alpha_cli`. FRED, SEC, Binance and Bybit context stays apart from bars: [data layer](../project/components/data-layer.md).
+- Daily Binance funding uses verified source bytes and UTC `known_from` days; [RD-Agent policy](../../../workers/rdagent/README.md#futures-funding).
 
 ## Point-in-time store
 
@@ -191,7 +192,6 @@ General rule: [research integrity § Immutable, hash-bound artefacts](research-i
   DefiLlama) and coverage profiles are in [crypto providers](crypto-providers.md).
 
 ## Offline Bybit context
-
 - Import qualified normalized Bybit linear artifacts into separate `context/bybit/linear/{funding,open_interest}/<SYMBOL>.parquet` tables.
   Verify manifest identity, Parquet size/SHA-256 and raw lineage (`input_manifest_ids`); provenance keeps source ids, fetch times and output hashes.
 - Funding is known at settlement; intervals use the preceding 1/2/4/8-hour gap (first row: next gap; 2h after 1h is a missed settlement). Unknown stays null.

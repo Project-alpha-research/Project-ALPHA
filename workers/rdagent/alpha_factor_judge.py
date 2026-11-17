@@ -431,6 +431,22 @@ def record_round(run: Path, exp: Any, feedback: Any, row: dict[str, Any]) -> Non
         stream.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+def current_funding_setting() -> str:
+    run = os.environ.get("ALPHA_FACTOR_RUN_DIR")
+    path = Path(run) / "factor_data/full/daily_pv.h5" if run else None
+    if path is None or not path.exists():
+        return ""
+    frame = pd.read_hdf(path, key="data")
+    if not {"$funding_sum", "$funding_last", "$funding_count"} <= set(frame.columns):
+        return ""
+    return (
+        " Futures funding inputs: $funding_sum, $funding_last, $funding_count. "
+        "Missing funding stays NaN, never zero or forward-filled; only settlements known "
+        "before the day's midnight UTC close are included. Funding factors rank only names "
+        "with a funding row that day; outcomes remain spot returns."
+    )
+
+
 class AlphaFactorScenario(QlibFactorScenario):
     def get_runtime_environment(self) -> str:
         # Upstream runs `python runtime_info.py` through a conda-derived PATH; without conda that
@@ -476,6 +492,7 @@ class AlphaFactorScenario(QlibFactorScenario):
     @property
     def experiment_setting(self) -> str:
         universe_text: str = current_universe()
+        funding_text: str = current_funding_setting()
         return (
             "Binance USDT spot coins, daily bars: " + universe_text + ". History only: "
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
@@ -483,7 +500,7 @@ class AlphaFactorScenario(QlibFactorScenario):
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
             "not all. Daily, weekly (7-day) and monthly (28-day) holding/rebalance clocks are "
             "fixed in advance; only a weekly or monthly pass can become a candidate. "
-            "exploratory, not admitted, not yet confirmed."
+            "exploratory, not admitted, not yet confirmed." + funding_text
         )
 
 

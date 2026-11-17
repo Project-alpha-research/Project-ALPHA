@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import fcntl
 import io
 import json
@@ -643,6 +644,74 @@ def _record_series(
     return None
 
 
+def reads_funding(code: bytes) -> bool:
+    """Literal column selectors in Python syntax; comments and standalone strings do not count.
+
+    This is syntax detection, not data-flow proof: dynamic column construction is not detected,
+    and an unused subscript still counts. The factor output never chooses its eligibility.
+    """
+    tree = ast.parse(code)
+    selectors = [node.slice for node in ast.walk(tree) if isinstance(node, ast.Subscript)]
+    selectors.extend(
+        argument
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in {"get", "filter", "__getitem__"}
+        for argument in [*node.args, *(kw.value for kw in node.keywords)]
+    )
+    return any(
+        isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and node.value.startswith("$funding_")
+        for selector in selectors
+        for node in ast.walk(selector)
+    )
+
+
+def funding_eligibility(
+    run: Path, days: list[date], symbols: list[str], eligible: np.ndarray | None
+) -> np.ndarray:
+    path = run / "panel/funding.parquet"
+    receipt = json.loads((run / "panel/panel-receipt.json").read_bytes())
+    raw = path.read_bytes()
+    if receipt.get("funding", {}).get("sha256") != sha(raw):
+        raise DataError("funding sha256 differs from panel receipt")
+    funding = pl.read_parquet(io.BytesIO(raw))
+    funding = funding.with_columns(_days(funding))
+    if funding.filter(pl.col("date") >= RESERVED_DAY).height:
+        raise DataError("funding reaches reserved window")
+    if funding.select("date", "instrument").is_duplicated().any():
+        raise DataError("duplicate funding data keys")
+    present = np.isfinite(matrix(funding, "funding_count", days, symbols))
+    return np.asarray(present if eligible is None else present & eligible, dtype=bool)
+
+
+def _factor_eligibility(
+    run: Path,
+    factor: dict[str, Any],
+    row: dict[str, Any],
+    days: list[date],
+    symbols: list[str],
+    eligible: np.ndarray | None,
+) -> np.ndarray | None:
+    path = run / "code" / f"{factor['code_sha256']}.py"
+    if not path.exists():
+        if (run / "panel/funding.parquet").exists() and factor["status"] == "OK":
+            raise DataError("funding-enabled evaluation requires archived factor source")
+        return eligible
+    code = path.read_bytes()
+    if sha(code) != factor["code_sha256"]:
+        raise DataError("factor source sha256 differs from request")
+    if factor["status"] != "OK" or not reads_funding(code):
+        return eligible
+    mask = funding_eligibility(run, days, symbols, eligible)
+    row.update(eligibility="perp-funding", mean_eligible_names=float(mask.sum(axis=1).mean()))
+    row["funding_sha256"] = sha((run / "panel/funding.parquet").read_bytes())
+    row["input_columns"] = ["$funding_sum", "$funding_last", "$funding_count"]
+    return mask
+
+
 def _screen_factors(
     run: Path,
     request: dict[str, Any],
@@ -663,9 +732,6 @@ def _screen_factors(
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     from alpha_cli.rdagent_exposure import label_for
 
-    screen_options: dict[str, Any] = {"gap_policy": True, "closes": closes} if gap_policy else {}
-    if eligible is not None:
-        screen_options["eligible"] = eligible
     rows: list[dict[str, Any]] = []
     signals: dict[str, np.ndarray] = {}
     identity_path = run / "run-identity.json"
@@ -686,6 +752,12 @@ def _screen_factors(
             survivorship,
             datetime.now(UTC).isoformat(),
         )
+        factor_eligible = _factor_eligibility(run, factor, row, days, symbols, eligible)
+        screen_options: dict[str, Any] = (
+            {"gap_policy": True, "closes": closes} if gap_policy else {}
+        )
+        if factor_eligible is not None:
+            screen_options["eligible"] = factor_eligible
         row["exposure"] = label_for(row, entries)
         if (
             digest not in identities
@@ -734,8 +806,8 @@ def _screen_factors(
                             # decision day has no rank that day.
                             signals[digest] = (
                                 values_matrix
-                                if eligible is None
-                                else np.where(eligible, values_matrix, np.nan)
+                                if factor_eligible is None
+                                else np.where(factor_eligible, values_matrix, np.nan)
                             )
                         stats = screen_at_clock(
                             signals[digest],
@@ -1149,6 +1221,7 @@ def main() -> None:
     freezing.add_argument("--data-dir", type=Path, required=True)
     freezing.add_argument("--out", type=Path, required=True)
     freezing.add_argument("--universe", type=Path, help="universe file (ADR-0055)")
+    freezing.add_argument("--funding-dir", type=Path)
     evaluating = sub.add_parser("evaluate")
     for name in ("run-dir", "request", "out", "ledger"):
         evaluating.add_argument(f"--{name}", type=Path, required=True)
@@ -1157,7 +1230,7 @@ def main() -> None:
     importing.add_argument("--file", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "freeze":
-        freeze(args.data_dir, args.out, args.universe)
+        freeze(args.data_dir, args.out, args.universe, args.funding_dir)
     elif args.command == "import-historical":
         import_historical(args.ledger, args.file)
     else:

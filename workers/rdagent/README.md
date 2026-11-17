@@ -575,6 +575,52 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   `logs/` and `receipt.json`. The trial ledger is shared by all runs and append-only.
 - Generated factor code runs with the gateway's address and token removed from its environment.
 
+### Futures funding
+
+`factor_loop_launch.py run --funding-dir <data_dir>` (also the evaluator's `freeze` option)
+reads existing `context/binance/um/funding/<SYMBOL>.parquet` tables; no downloads.
+`alpha_data.context.daily_funding_with_sources` verifies each sidecar SHA-256 and returns daily
+sums, last rates and settlement counts plus source hashes. The settlement's `known_from` instant
+chooses its UTC day: `[d 00:00, (d+1) 00:00)`. A settlement at the next midnight plus 8 ms belongs
+to the next day. Actual rates are summed regardless of 8h/4h/2h or unknown intervals. Empty days
+have no row. A table containing any 2024-or-later row is refused even outside the requested range.
+
+Freeze keeps `PANEL_COLUMNS` and `panel.parquet` unchanged. `_panel_funding` joins the raw ticker
+and date before identity relabelling; successors bring their own perp's rates. Reused tickers
+lose funding on and after their declared break. `FUNDING_EXCLUSIONS` omits COCOSUSDT because
+"perp identity across the 2023 rename is unresolved"; 1000-prefixed perps are not mapped.
+Only panel keys survive. `panel/funding.parquet` and the receipt's optional `funding` block bind
+the side table hash, source hashes, funded names and annual panel instrument-day coverage.
+The launcher records the supplied directory in its arguments and receipt.
+
+`alpha_factor_data.prepare` adds float64 `$funding_sum`, `$funding_last`, `$funding_count` to full,
+debug and every cut, and records `funding_sha256`. Missing stays NaN: no perpetual or no settlement
+that day (roughly four in ten coin-days, and most later-delisted coins never had a perpetual).
+Never fill with zero or carry forward. The generated README explains the columns and midnight
+boundary; the scenario mentions them only when they exist in the prepared data. Without the
+option, freeze and prepare retain their original outputs, including receipts (HDF5 files embed
+write times, so their bytes differ between any two runs, even of unchanged code; frames are equal).
+
+The open `futures funding` family recognises funding, carry, basis and perp and is matched first,
+so `funding_momentum_7d` is a funding idea, not a closed price family; no existing counts change. Eligibility uses the archived, hash-checked source: literal `$funding_` selectors in
+Python subscripts or `.get`, `.filter`, `.__getitem__` calls intersect the normal mask with that
+day's funding rows. Comments and standalone strings do not count. This is syntax, not data-flow
+analysis: dynamic column names can be missed, and an unused selector or a selector on a different
+object can count. Output values never choose the mask. Funding-enabled successful factors require
+archived source. Trial rows (also in evaluation records) include `eligibility: "perp-funding"`,
+`mean_eligible_names` over exploration days, funding hash and available funding input columns.
+
+The unchanged coverage threshold is 80%; half of funded names is still DEGENERATE. At least five
+finite names are needed on a decision day (the existing gap policy skips thin days). Thirds use
+`max(1, round(n/3))` among finite ranks, with instrument-name tie orders checked both ways. About
+85 funded names can be screened and give 28 names per third if all have values; breadth alone
+never grants a pass. Outcomes remain panel spot returns; clocks, costs, spread, replay, deflation,
+counting and twin rules are unchanged. Price-only evaluations retain the original eligibility.
+
+Synthetic checks: `test_context_daily_funding.py` (poison, prefixes, intervals, absent days,
+reserved rows, checksum); `test_rdagent_funding_columns.py` (identity join, partitions, source
+selectors, coverage, price-only parity, pre-change freeze bytes and prepare frames).
+
 ### Research memory (2026-11-15)
 
 Memory is enabled by default. RD-Agent keeps CoSTEER's working factor programs and failed

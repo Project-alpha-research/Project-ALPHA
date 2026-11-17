@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useState } from 'react'
 import { api, type ArchiveChartDataset } from '../api/client'
 import { edgeApi, type RuleExplanation } from '../api/edgeClient'
@@ -36,7 +37,7 @@ export function ConditionChecklist({ archive }: { archive: ArchiveChartDataset |
       <p>{current.symbol} · {current.bar_ts ? new Date(current.bar_ts * 1000).toISOString().slice(0, 10) : 'No evaluated bar'} · {current.signal === 1 ? 'Long condition' : current.signal === -1 ? 'Short condition' : current.signal === 0 ? 'Flat / no direction' : 'Unavailable'}</p>
       {current.error ? <p role="alert">{current.error}</p> : null}
       <ul className="condition-rows">{current.conditions.map(row => <li key={`${row.side}:${row.index}`}><strong>{row.side} · {row.status}</strong><span className="mono">{row.label}</span><span>{row.left ?? '—'} / {row.right ?? '—'}</span>{row.reason ? <small>{row.reason}</small> : null}</li>)}</ul>
-      <small className="mono">Rules {current.rules_sha256?.slice(0, 12) ?? 'unavailable'} · cutoff {current.as_of ?? 'latest stored'}</small>
+      <small className="mono">Rules {current.rules_sha256?.slice(0, 12) ?? 'unavailable'} · cutoff {current.as_of ? <Timestamp value={current.as_of} /> : 'latest stored'}</small>
     </> : null}
     <div className="edge-actions"><button className="btn" onClick={() => setAttempt(value => value + 1)}>Refresh conditions</button><button className="btn" onClick={() => openRuleBuilder()}>Edit / test rules</button><button className="btn" onClick={openScanner}>Scan markets</button></div>
     <p className="muted">A matching setup is an observation. Test after costs and against a baseline before calling it an edge.</p>

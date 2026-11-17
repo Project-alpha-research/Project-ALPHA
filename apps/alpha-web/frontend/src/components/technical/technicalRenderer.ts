@@ -1,3 +1,4 @@
+import { formatTime } from '../../util/formatTime'
 // The ALPHA technical chart: one standalone BokehJS document holding a shared-border panel stack
 // (RSI above, price + volume underlay, MACD and other studies below) on an observation-indexed x
 // axis. Canvas draws the series; a DOM layer per panel draws the calendar date strip, legends,
@@ -333,18 +334,18 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
     const base = { position: 'absolute', inset: '0', pointerEvents: 'none', font, color: style.text } as Partial<CSSStyleDeclaration>
     p.layers = { legend: el(root, base) as HTMLDivElement, marks: el(root, base) as HTMLDivElement, cursor: el(root, base) as HTMLDivElement }
     const bbox = view.frame.bbox
-    const legend = el(p.layers.legend, { position: 'absolute', left: `${bbox.left + 3}px`, top: `${bbox.top + 2}px`, lineHeight: '11px', whiteSpace: 'nowrap', background: 'transparent' })
+    const legend = el(p.layers.legend, { position: 'absolute', left: `${bbox.left + 3}px`, top: `${bbox.top + 2}px`, lineHeight: '11px', whiteSpace: 'nowrap', background: 'var(--transparent)' })
     legend.className = 'technical-legend'
     const rows: { text: HTMLElement[]; values: (i: number) => string[] }[] = []
     const addRow = (label: string, swatchColor: string, colorsFor: string[], values: (i: number) => string[], bar = false) => {
-      const row = el(legend, { display: 'flex', alignItems: 'center', gap: '3px', color: swatchColor })
+      const row = el(legend, { display: 'flex', alignItems: 'center', gap: '3px', color: style.text })
       if (bar) {
         // Simple native rectangles preserve the same three bars in DOM and PNG compositing.
         const swatch = el(row, { width: '7px', height: '7px', display: 'flex', gap: '1px' })
         for (const width of [2, 2, 1]) el(swatch, { width: `${width}px`, height: '7px', backgroundColor: style.volumeUp.fill })
       } else el(row, { width: '9px', height: '0', borderTop: `1px solid ${swatchColor}` })
       el(row, {}, label, 'span')
-      const text = colorsFor.map(col => el(row, { color: col }, '', 'span'))
+      const text = colorsFor.map(() => el(row, { color: style.text }, '', 'span'))
       text.forEach((t, i) => { if (i < text.length - 1) t.dataset.sep = ',' })
       rows.push({ text, values })
     }
@@ -399,7 +400,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
     inFrame.sort((a, b) => a.y - b.y)
     for (let k = 1; k < inFrame.length; k++) if (inFrame[k].y - inFrame[k - 1].y < 12) inFrame[k].y = inFrame[k - 1].y + 12
     for (const tag of inFrame) {
-      const node = marks.take('technical-tag', tagStyle(style, bbox.right + 1, tag.y, tag.color, tag.bold))
+      const node = marks.take('technical-tag', tagStyle(style, bbox.right + 1, tag.y, style.text, tag.bold))
       if (node.textContent !== tag.text) node.textContent = tag.text
     }
     if (p.dateAxis) {
@@ -456,7 +457,8 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
     }
     show(c.date, visible && p.dateAxis)
     if (visible && p.dateAxis) {
-      const label = new Date(times[cursorIndex!] * 1000).toISOString().slice(0, intraday ? 16 : 10).replace('T', ' ')
+      c.date.title = new Date(times[cursorIndex!] * 1000).toISOString()
+      const label = formatTime(c.date.title)
       if (c.date.textContent !== label) c.date.textContent = label
       move(c.date, cx - label.length * 3.3, bbox.bottom + 3)
     }

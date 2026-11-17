@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useMemo, useState } from 'react'
 
 import { api } from '../api/client'
@@ -240,7 +241,7 @@ export function KronosStudio(props: PanelHandleProps) {
               <div className="kronos-chart-column">
                 <div className="kronos-chart-head"><span>HISTORICAL ACTUAL + MODEL SAMPLE K-LINE</span><label><span className="eyebrow">complete path</span><select value={sample.sample} onChange={(event) => setSampleId(Number(event.target.value))}>{paths.samples.map((path) => <option key={path.sample} value={path.sample}>MODEL SAMPLE {path.sample}</option>)}</select></label></div>
                 {forecast.history_ohlcv_available ? <KronosKlineCanvas history={history} sample={sample} forecastTs={paths.ts} originTs={originTs} /> : <Placeholder big="OHLCV TRACE UNAVAILABLE">This legacy forecast stored close-only history. Rerun it to freeze the complete observed candles; ALPHA will not reconstruct them from the current store.</Placeholder>}
-                <div className="chart-foot mono"><span>PRICE · native quote units</span><span>TIME · UTC</span><span>AS OF {new Date(originTs * 1_000).toISOString()}</span></div>
+                <div className="chart-foot mono"><span>PRICE · native quote units</span><span>TIME · UTC</span><span>AS OF <Timestamp value={originTs} /></span></div>
               </div>
               <Inspector manifest={manifest} visibleSamples={paths.samples.length} />
             </div>
@@ -253,7 +254,7 @@ export function KronosStudio(props: PanelHandleProps) {
               <div className="paper-blotter-scroll">
                 <table className="blotter compact">
                   <thead><tr><th>UTC</th><th className="r">q05</th><th className="r">q25</th><th className="r">median</th><th className="r">q75</th><th className="r">q95</th><th className="r">mean</th></tr></thead>
-                  <tbody>{forecast.forecast_ts.map((ts, index) => <tr key={ts}><td className="mono">{new Date(ts * 1_000).toISOString()}</td><td className="num">{forecast.p10[index].toFixed(4)}</td><td className="num">{forecast.q25[index].toFixed(4)}</td><td className="num">{forecast.forecast[index].toFixed(4)}</td><td className="num">{forecast.q75[index].toFixed(4)}</td><td className="num">{forecast.p90[index].toFixed(4)}</td><td className="num">{forecast.mean[index].toFixed(4)}</td></tr>)}</tbody>
+                  <tbody>{forecast.forecast_ts.map((ts, index) => <tr key={ts}><td className="mono"><Timestamp value={ts} /></td><td className="num">{forecast.p10[index].toFixed(4)}</td><td className="num">{forecast.q25[index].toFixed(4)}</td><td className="num">{forecast.forecast[index].toFixed(4)}</td><td className="num">{forecast.q75[index].toFixed(4)}</td><td className="num">{forecast.p90[index].toFixed(4)}</td><td className="num">{forecast.mean[index].toFixed(4)}</td></tr>)}</tbody>
                 </table>
               </div>
             </details>
@@ -263,8 +264,8 @@ export function KronosStudio(props: PanelHandleProps) {
                 <table className="blotter compact">
                   <thead><tr><th>segment</th><th>UTC</th><th className="r">open</th><th className="r">high</th><th className="r">low</th><th className="r">close</th><th className="r">volume</th></tr></thead>
                   <tbody>
-                    {history.map((bar) => <tr key={`actual-${bar.t}`}><td>ACTUAL</td><td className="mono">{new Date(bar.t * 1_000).toISOString()}</td><td className="num">{bar.o.toFixed(4)}</td><td className="num">{bar.h.toFixed(4)}</td><td className="num">{bar.l.toFixed(4)}</td><td className="num">{bar.c.toFixed(4)}</td><td className="num">{bar.v.toFixed(2)}</td></tr>)}
-                    {paths.ts.map((ts, index) => <tr key={`sample-${ts}`}><td>MODEL SAMPLE {sample.sample}</td><td className="mono">{new Date(ts * 1_000).toISOString()}</td><td className="num">{sample.opens[index].toFixed(4)}</td><td className="num">{sample.highs[index].toFixed(4)}</td><td className="num">{sample.lows[index].toFixed(4)}</td><td className="num">{sample.closes[index].toFixed(4)}</td><td className="num">{sample.volumes[index].toFixed(2)}</td></tr>)}
+                    {history.map((bar) => <tr key={`actual-${bar.t}`}><td>ACTUAL</td><td className="mono"><Timestamp value={bar.t} /></td><td className="num">{bar.o.toFixed(4)}</td><td className="num">{bar.h.toFixed(4)}</td><td className="num">{bar.l.toFixed(4)}</td><td className="num">{bar.c.toFixed(4)}</td><td className="num">{bar.v.toFixed(2)}</td></tr>)}
+                    {paths.ts.map((ts, index) => <tr key={`sample-${ts}`}><td>MODEL SAMPLE {sample.sample}</td><td className="mono"><Timestamp value={ts} /></td><td className="num">{sample.opens[index].toFixed(4)}</td><td className="num">{sample.highs[index].toFixed(4)}</td><td className="num">{sample.lows[index].toFixed(4)}</td><td className="num">{sample.closes[index].toFixed(4)}</td><td className="num">{sample.volumes[index].toFixed(2)}</td></tr>)}
                   </tbody>
                 </table>
               </div>

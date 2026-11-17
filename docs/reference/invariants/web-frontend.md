@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 21697c9546d9e773
+verified: 4929ba7e090b7d7b
 ---
 
 # Web frontend invariants
@@ -64,8 +64,17 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   close and its date in place.
 - `components/AssetSelect.tsx` defaults to the canonical stored inventory; archive navigation is opt-in. A manually typed
   symbol is labelled `availability not verified` and is never treated as verified provider inventory.
-- The Data Manager shows the Expansion SSD state honestly: not mounted is a named blocker, never a cached ready.
+- The Data Manager and status bar relay storage readiness without device names; blocked details remain visible.
   `controlPlane.buildDataPullArgs` throws the date problem the CLI would reject.
+
+## Dark terminal theme
+
+- One dark theme, no light toggle; square corners and 11 px terminal type. `index.css` owns chrome tokens;
+  generated canvas tokens and the Python figure theme stay mirrored. Technical chart styles share dark surfaces.
+- No literal colours in styles or components outside explicit token definitions (`index.css`, `theme.generated.css`,
+  `util/tokens.ts`, `technicalTokens.ts`); the frontend theme contract scans CSS, TS and TSX, excluding tests/generated code.
+- Text pairs clear WCAG AA 4.5:1; control boundaries and focus indicators clear 3:1. Accent/negative text use AA variants.
+  Status retains words; disabled controls have a dashed boundary/struck text. Root `color-scheme: dark` covers native controls.
 
 ## Charts
 
@@ -96,7 +105,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 ## UTC and exact exports
 
-- Show and export every timestamp in UTC. CSV exports use ISO-8601 UTC timestamps and the exact returned values —
+- Display timestamps through `util/formatTime.ts`: `17 Nov 2026, 14:33 UTC`, with raw ISO in the element title.
+  Recorded durations use whole minutes/hours (`<1 min` below a minute). CSV exports keep ISO-8601 UTC and exact values —
   zero and negative kept, an empty cell for a missing value. Enforced by `src/panels/chartTableModel.test.ts` and
   `src/components/scientificPlotModel.test.ts`.
 - Preserve backend null gaps; never join or fill them. Show a missing study value as `—`.

@@ -1,3 +1,5 @@
+import { withAlpha } from '../util/tokens'
+import { formatTime } from '../util/formatTime'
 // TradingView Lightweight Charts candlestick + volume canvas, themed to the workstation palette.
 
 import {
@@ -111,7 +113,7 @@ export function PriceChartCanvas({
       width: renderedWidth,
       height: renderedHeight,
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
+        background: { type: ColorType.Solid, color: CHART.bg },
         textColor: CHART.muted,
         fontFamily: 'JetBrains Mono Variable, JetBrains Mono, ui-monospace, monospace',
         fontSize: 11,
@@ -122,7 +124,7 @@ export function PriceChartCanvas({
       },
       rightPriceScale: { borderColor: CHART.line },
       timeScale: { borderColor: CHART.line },
-      crosshair: { mode: CrosshairMode.Normal },
+      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } },
     })
     chartRef.current = chart
     zoomRef.current = 0
@@ -144,7 +146,8 @@ export function PriceChartCanvas({
     const barAt = (time: unknown) => typeof time === 'number' ? byTime.current.get(time) : undefined
     const handleCrosshair = (param: MouseEventParams) => {
       const candle = barAt(param.time)
-      crosshair.textContent = candle ? `${new Date(candle.t * 1000).toISOString()} O ${candle.o.toFixed(4)} H ${candle.h.toFixed(4)} L ${candle.l.toFixed(4)} C ${candle.c.toFixed(4)} V ${candle.v.toFixed(0)}` : 'CROSSHAIR —'
+      crosshair.title = candle ? new Date(candle.t * 1000).toISOString() : ''
+      crosshair.textContent = candle ? `${formatTime(crosshair.title)} O ${candle.o.toFixed(4)} H ${candle.h.toFixed(4)} L ${candle.l.toFixed(4)} C ${candle.c.toFixed(4)} V ${candle.v.toFixed(0)}` : 'CROSSHAIR —'
       setChartHover({ bar: candle ?? null })
       registry?.publish(panelId, 'cursor', ...(candle ? [candle.t] : []))
     }
@@ -212,7 +215,7 @@ export function PriceChartCanvas({
       bars.map((b) => ({
         time: b.t as UTCTimestamp,
         value: b.v,
-        color: b.c >= b.o ? 'rgba(46, 160, 74, 0.35)' : 'rgba(239, 83, 80, 0.35)',
+        color: b.c >= b.o ? withAlpha(CHART.up, 0.35) : withAlpha(CHART.down, 0.35),
       })),
     )
     // Overlays: price-pane lines share the candle scale; each oscillator gets its own pane below.

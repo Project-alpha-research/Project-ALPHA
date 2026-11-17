@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { RetainedBarCoverage } from './RetainedBarCoverage'
 import type {
   CryptoFeature,
@@ -153,7 +154,7 @@ export function CryptoQualityView({
               <span>
                 {createdFeature.row_count.toLocaleString()} rows · {createdFeature.input_count} exact
                 input{createdFeature.input_count === 1 ? '' : 's'} · available{' '}
-                {new Date(createdFeature.available_at).toLocaleString()}
+                <Timestamp value={createdFeature.available_at} />
               </span>
               <span className="mono muted advanced-only">
                 feature {createdFeature.feature_id} · artifact {createdFeature.artifact_sha256}

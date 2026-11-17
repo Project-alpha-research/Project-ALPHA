@@ -1,5 +1,5 @@
-/* Reference terminal: one compact grey chrome theme over the shared canvas tokens. */
-.workflow-shell.shell { display: flex; flex-direction: column; height: 100%; font: 12px Tahoma, 'Segoe UI', Arial, sans-serif; --font-size: 12px; --r: 0px; --r-lg: 0px; --panel: #f2f2f2; --panel-2: #e0e0e0; --bg: #d4d4d4; background: var(--bg); }
+/* Reference terminal: one compact dark chrome theme over the shared canvas tokens. */
+.workflow-shell.shell { display: flex; flex-direction: column; height: 100%; font: 11px Tahoma, 'Segoe UI', Arial, sans-serif; --font-size: 11px; --r: 0px; --r-lg: 0px; background: var(--bg); }
 .terminal-titlebar { height: 23px; padding: 3px 7px; box-sizing: border-box; margin: 0; font-weight: 400; font-size: 12px; background: var(--title); border-bottom: 1px solid var(--line-strong); flex-shrink: 0; }
 .workflow-content { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
 .workflow-topbar { display: flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 5px; background: var(--panel); border-bottom: 1px solid var(--line-strong); flex-wrap: wrap; }
@@ -16,7 +16,7 @@
 .workflow-shell .btn.primary, .workflow-shell .btn[aria-pressed=true], .workflow-shell .btn[aria-selected=true] { background: var(--selection); color: var(--selection-ink); }
 .workflow-shell .btn:disabled { color: var(--muted); }
 .workflow-shell .field { background: var(--field-bg); border: 1px solid var(--line-strong); }
-.workflow-shell .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.workflow-shell .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
 .workflow-main { flex: 1; min-height: 0; overflow: auto; padding: 2px; display: flex; flex-direction: column; gap: 2px; }
 .document-caption { padding: 3px 5px; background: var(--panel-2); border: 1px solid var(--line-strong); font-weight: 700; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .workflow-panel { flex: 1; min-height: 0; border: 1px solid var(--line-strong); overflow: auto; display: flex; flex-direction: column; background: var(--panel); }
@@ -37,7 +37,7 @@
 .workflow-shell .context-pop { left: 0; right: auto; width: min(480px, calc(100vw - 12px)); max-width: calc(100vw - 12px); max-height: 75vh; overflow: auto; }
 .workflow-shell .chip { border-radius: 0; }
 .workflow-shell .watch-row.active td, .workflow-shell .watch-row.active .num, .workflow-shell .watch-row.active .watch-glyph { color: var(--selection-ink); opacity: 1; }
-.workflow-shell .chip.fail { color: #781b19; background: #f4dddd; }
+.workflow-shell .chip.fail { color: var(--negative-text); background: var(--down-soft); }
 .workflow-shell .num, .workflow-shell .blotter { font-variant-numeric: tabular-nums; }
 .chart-document { flex: 1; min-height: 0; display: flex; }
 .market-desk { display: flex; flex-direction: column; flex: 1; min-height: 0; position: relative; }
@@ -86,7 +86,7 @@
 .workspace-splitter { position: absolute; z-index: 3; background: var(--line-strong); touch-action: none; }
 .splitter-vertical { top: 0; bottom: 0; width: 5px; transform: translateX(-50%); cursor: col-resize; }
 .splitter-horizontal { left: 0; right: 0; height: 5px; transform: translateY(-50%); cursor: row-resize; }
-.workspace-splitter:focus-visible { outline: 2px solid var(--accent); }
+.workspace-splitter:focus-visible { outline: 2px solid var(--ink); }
 .panel-source-editor { position: absolute; z-index: 90; right: 8px; top: 8px; width: min(460px, calc(100vw - 20px)); max-height: 80vh; overflow: auto; padding: 8px; background: var(--panel); border: 1px solid var(--line-strong); box-shadow: 2px 2px 0 var(--bevel-dark); }
 .panel-source-editor header { display: flex; justify-content: space-between; font-weight: bold; }
 .panel-source-editor label { display: grid; gap: 4px; margin: 8px 0; }
@@ -115,7 +115,7 @@
 .rule-test .summary-table tfoot td { font-size: 10px; border-bottom: 0; }
 .rule-test-col { min-width: 0; display: flex; flex-direction: column; gap: var(--pad); }
 .rule-test .summary-table td.num.pos { color: var(--up); }
-.rule-test .summary-table td.num.neg { color: var(--down); }
+.rule-test .summary-table td.num.neg { color: var(--negative-text); }
 .rule-test-tested td:not(.k) { overflow-wrap: anywhere; }
 .rule-test-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .rule-test-status { width: 1%; white-space: nowrap; }
@@ -138,8 +138,8 @@
 .asset-select { position: relative; min-width: 0; }
 .asset-select-control { display: flex; }
 .asset-select-control input { min-width: 0; width: 100%; }
-.asset-select-popup { position: relative; min-width: 300px; width: 100%; max-height: 340px; overflow: auto; background: #fff; border: 1px solid var(--line-strong); border-radius: 0; box-shadow: 0 8px 28px #18263826; z-index: 80; padding: 8px; }
-.asset-select-popup [role=option] { display: flex; flex-direction: column; width: 100%; align-items: flex-start; background: transparent; border: 0; padding: 10px; color: var(--ink); text-align: left; cursor: pointer; }
+.asset-select-popup { position: relative; min-width: 300px; width: 100%; max-height: 340px; overflow: auto; background: var(--elevated); border: 1px solid var(--line-strong); border-radius: 0; box-shadow: 0 8px 28px var(--shadow); z-index: 80; padding: 8px; }
+.asset-select-popup [role=option] { display: flex; flex-direction: column; width: 100%; align-items: flex-start; background: var(--transparent); border: 0; padding: 10px; color: var(--ink); text-align: left; cursor: pointer; }
 .asset-select-popup [role=option][aria-selected=true] { background: var(--accent-soft); }
 .asset-select-popup [role=option] span, .asset-select-caption { color: var(--muted); font-size: 12px; }
 .asset-select-popup p { padding: 8px; white-space: normal; }
@@ -166,7 +166,7 @@
 .scientific-explore { flex: 0 0 auto; background: var(--tc-canvas); color: var(--tc-text); border-bottom: 1px solid var(--tc-border); }
 .scientific-range-buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 2px 5px; font-size: 11px; }
 .scientific-range-buttons .btn { min-height: 24px; padding: 1px 6px; font-size: 11px; }
-.scientific-range-buttons details { padding: 0; max-height: 180px; overflow: auto; background: #ececec; color: #333; }
+.scientific-range-buttons details { padding: 0; max-height: 180px; overflow: auto; background: var(--panel-2); color: var(--ink); }
 .scientific-range-buttons details[open] { flex-basis: 100%; }
 .scientific-range-buttons summary { cursor: pointer; padding: 3px 5px; }
 .scientific-range-buttons form { display: flex; flex-wrap: wrap; align-items: end; gap: 5px; padding: 5px; }
@@ -174,7 +174,7 @@
 .scientific-coverage dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; padding: 5px; margin: 0; }
 .scientific-coverage dd { margin: 0; overflow-wrap: anywhere; font-family: 'JetBrains Mono Variable', monospace; }
 .scientific-coverage p { padding: 5px; margin: 0; }
-.scientific-cursor-data { flex: 0 0 auto; background: #ececec; color: #333; font-size: 11px; max-height: 120px; overflow: auto; }
+.scientific-cursor-data { flex: 0 0 auto; background: var(--panel-2); color: var(--ink); font-size: 11px; max-height: 120px; overflow: auto; }
 .scientific-cursor-data summary { padding: 2px 5px; cursor: pointer; }
 .scientific-cursor-data .cursor-values { display: block; padding: 5px; font-family: 'JetBrains Mono Variable', monospace; overflow-wrap: anywhere; }
 .scientific-cursor-data p { padding: 0 5px 5px; margin: 0; }
@@ -189,7 +189,7 @@
 .technical-ohlc[data-tone='down'] { color: var(--tc-down); }
 .technical-skipped { color: var(--tc-muted); }
 .technical-tools { margin-left: auto; display: flex; align-items: baseline; gap: 6px; }
-.technical-tools .scientific-explore { background: transparent; border: 0; color: inherit; }
+.technical-tools .scientific-explore { background: var(--transparent); border: 0; color: inherit; }
 .technical-tools .scientific-range-buttons { padding: 0; gap: 0 6px; font: var(--tc-font); }
 .technical-tools .scientific-range-buttons > span:first-child { display: none; }
 .technical-tools .scientific-range-buttons .btn,

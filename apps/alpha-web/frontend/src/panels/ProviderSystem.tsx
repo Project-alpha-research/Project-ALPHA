@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Provider and system control plane — local readiness only. The backend projection deliberately
 // performs no implicit network probes and exposes credential names/presence, never values.
 
@@ -230,7 +231,7 @@ export function ProviderSystem() {
                           </td>
                           <td className="mono">{override.actor}</td>
                           <td>{override.reason}</td>
-                          <td className="mono">{override.recorded_at}</td>
+                          <td className="mono"><Timestamp value={override.recorded_at} /></td>
                         </tr>
                       ))}
                     </tbody>

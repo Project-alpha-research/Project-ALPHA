@@ -1619,7 +1619,7 @@ interface MockOptions {
   capturedOverlays?: (query: string) => void
   /** Opt-in public tickers keyed `SYMBOL@exchange`; a missing key answers 422 like the CLI. */
   tickers?: Record<string, { last: number; ts: string }>
-  /** Opt-in: the Expansion volume is not mounted. */
+  /** Opt-in: the bulk-data volume is not mounted. */
   storageUnmounted?: boolean
 }
 
@@ -1658,7 +1658,7 @@ const FIGURE_META = {
 
 const FIGURE_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="200" viewBox="0 0 440 200">'
-  + '<rect width="440" height="200" fill="#fff"/><polyline points="10,180 200,120 430,20" fill="none" stroke="#1d4ed8" stroke-width="3"/></svg>'
+  + '<rect width="440" height="200" fill="#000000"/><polyline points="10,180 200,120 430,20" fill="none" stroke="#316ac5" stroke-width="3"/></svg>'
 
 const LIBRARY_RUN = {
   run_id: 'abcdef0123456789',
@@ -1920,7 +1920,7 @@ function responseFor(route: Route, options: MockOptions): unknown {
         blocker: 'bulk_volume_not_mounted',
         bulk_root_label: 'crypto-data',
         manifest_count: 0,
-        next_action: 'Reconnect the Expansion volume.',
+        next_action: 'Reconnect the bulk-data volume.',
         free_bytes: null,
         total_bytes: null,
         reserve_fraction: 0.15,
@@ -2725,7 +2725,7 @@ test('the status bar tells the truth about the SSD and paper routing', async ({ 
   await preparePage(page, { storageUnmounted: true })
   const bar = page.getByRole('contentinfo', { name: 'Status bar' })
   const ssd = bar.locator('.status-segment--ssd')
-  await expect(ssd).toHaveText('Expansion SSD not mounted')
+  await expect(ssd).toHaveText('Storage: not configured')
   await expect(ssd).toHaveClass(/tone-warn/)
   await expect(bar.locator('.status-segment--paper')).toHaveText('Paper only · no live routing')
   await expect(bar.locator('.status-segment--help')).toHaveText('For Help, press F1')

@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 0cb8679274e75b5f
+verified: b9e5e5080a574777
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -31,6 +31,7 @@ drafted answer against stored run facts, and the computed differences between ru
 
 - Tag each quoted number as `0.75 [9a99cb94971d54dc:oos_sharpe]`; unique hex prefixes of at least
   eight characters work. `check` reads the same stored facts as `cite`, including diagnostics.
+  Completed setup study ids also resolve; their sidecar hashes are verified before any stored fact is read.
   Percentages scale the stored value by 100; `x`/`×` denotes a ratio. Decimal rounding uses ties-to-even.
 - Each metric has a unit kind in `spine/facts.py:METRIC_UNITS`: ratio (Sharpe-like), fraction (returns, drawdowns,
   shares, `dsr`, WFE), count or other. Inverted Sharpe and its SE are ratios; control returns are fractions.

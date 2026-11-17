@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -147,6 +148,17 @@ METRIC_UNITS = {
         )
     },
 }
+SETUP_METRICS = {
+    "setup_occurrences": "Complete separate occurrences at the primary horizon.",
+    "setup_mean_net_return": "Mean primary-horizon return after round-trip costs.",
+    "setup_median_net_return": "Median primary-horizon return after round-trip costs.",
+    "setup_hit_rate": "Share of complete primary-horizon returns above zero.",
+    "setup_excess_over_drift": "Primary-horizon mean net return less matched asset drift.",
+    "setup_random_date_p": "Exploratory pooled primary-horizon random-date tail probability.",
+}
+METRICS.update(SETUP_METRICS)
+METRIC_UNITS.update({k: "count" if k == "setup_occurrences" else "fraction" for k in SETUP_METRICS})
+
 # Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
 NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
 _CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
@@ -223,9 +235,23 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def build_facts(rdir: Path) -> list[dict[str, Any]]:
+    if read_json(rdir / "manifest.json").get("schema") == "AlphaSetupStudyV1":
+        facts: list[dict[str, Any]] = read_study(rdir)["facts"]
+        return facts
     documents = {name: read_json(rdir / name) for name in ("manifest.json", "diagnostics.json")}
     labels = documents["manifest.json"].get("spine", {}).get("labels", [])
-    facts = []
+    facts = [
+        dict(
+            metric=metric,
+            value=None,
+            run_id=rdir.name,
+            basis="setup study primary horizon",
+            source="summary.json:facts",
+            labels=labels,
+            reason="this run is not a setup study",
+        )
+        for metric in SETUP_METRICS
+    ]
     for metric, (filename, field, basis) in _FIELDS.items():
         parent: Any = documents[filename]
         parts = field.split(".")
@@ -307,3 +333,32 @@ def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> di
         )
     fact: dict[str, Any] = next(item for item in outputs[0]["facts"] if item["metric"] == metric)
     return fact
+
+
+def read_study(folder: Path) -> dict[str, Any]:
+    """Verify completed sidecars before citing or repeating stored results."""
+    manifest = json.loads((folder / "manifest.json").read_text())
+    for name in ("outcomes.parquet", "summary.json", "event-study.png"):
+        data, expected = (folder / name).read_bytes(), manifest["files"][name]
+        if hashlib.sha256(data).hexdigest() != expected["sha256"] or len(data) != expected["size"]:
+            raise ValueError(f"study artifact changed: {name}")
+    result: dict[str, Any] = json.loads((folder / "summary.json").read_text())
+    return result
+
+
+def add_study_trial_fact(home: Path, summary: dict[str, Any]) -> None:
+    """Freeze the observed row count plus this trial for the existing draft checker."""
+    from alpha_cli.spine.ledger import read_trials
+
+    summary["total_trials"] = len(read_trials(home)) + 1
+    summary["facts"].append(
+        dict(
+            metric="total_trials",
+            value=summary["total_trials"],
+            run_id=summary["study_id"],
+            basis="ledger rows observed before publication plus this study; not a deflation count",
+            source="summary.json:total_trials",
+            labels=summary["labels"],
+            reason=None,
+        )
+    )

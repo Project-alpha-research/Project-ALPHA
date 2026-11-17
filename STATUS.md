@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 26 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 27 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -40,6 +40,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Find every match of a chart setup** — alpha setup find <spec.toml> --json (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
 - **Price-noise robustness controls** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/price-noise.md](research/tools/price-noise.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Implausible-result observation** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/diagnose-and-audit.md](research/tools/diagnose-and-audit.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
+- **Study outcomes after every separate setup occurrence** — alpha setup study <find_id> --json (a real run is recorded) More: [research/tools/setup-study.md](research/tools/setup-study.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
 
 ## Partly working
 

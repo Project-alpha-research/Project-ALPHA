@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 2e5854459d411c1d
+verified: 2008ab42cbfd8940
 ---
 
 # alpha-cli workspace
@@ -27,7 +27,7 @@ did not give, and never route live capital.
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, owner decisions, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
 | [trial ledger](../../docs/reference/invariants/cli-trial-ledger.md) | — | `alpha ledger`, `spine/trial_*` |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, tools, suites, figures, rules, scans |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, setups, tools, suites, figures, scans |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | Read-only queries | a read-only report or query, such as bar coverage |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | — | `alpha data` or `alpha crypto-data` acquisition, storage or backfill |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
@@ -63,7 +63,7 @@ do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
   light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Renamed ticker joins are recorded at freeze. Invalid-code messages and replay field compatibility: `_rdagent_stability`; policy in the worker README.
+  Deflation gates candidates; ticker joins are frozen. Diagnostics and replay compatibility: `_rdagent_stability`; policy in the worker README.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

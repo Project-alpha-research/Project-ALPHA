@@ -125,8 +125,10 @@ def test_family_counts_factor_times_clock(tmp_path: Path, recorded_time: None) -
     assert row["schema"] == "AlphaRdagentFactorTrialV3"
     assert list(row["clocks"]) == ["daily", "weekly", "monthly"]
     for key in ("p", "q", "screen", "replay"):
-        assert row[key] == row["clocks"]["daily"][key]
-    assert result["legacy_result"]["IC"] == row["clocks"][row["lead_clock"]]["screen"]["mean_ic"]
+        assert row[key] == row["clocks"][row["lead_clock"]][key]
+    assert row["status"] == "DEFLATION_FAIL"
+    assert np.isnan(result["legacy_result"]["IC"])
+    assert result["decision"] is False
     assert result["disclosures"]["clocks"] == {"daily": 1, "weekly": 7, "monthly": 28}
     assert "distinct factors: 1" in result["feedback_text"]
     folder, manifest = trial_series(run)
@@ -242,7 +244,8 @@ def test_status_precedence_and_lead(
     from alpha_cli._rdagent_clocks import overall_status
 
     clocks: dict[str, dict[str, Any]] = {
-        c: {"status": s, "q": q} for c, s, q in zip(ev.CLOCKS, statuses, qs, strict=True)
+        c: {"status": s, "q": q, "replay": {"deflated_sharpe": {"dsr": 0.95, "threshold": 0.95}}}
+        for c, s, q in zip(ev.CLOCKS, statuses, qs, strict=True)
     }
     assert overall_status(clocks) == (expected, lead)
 

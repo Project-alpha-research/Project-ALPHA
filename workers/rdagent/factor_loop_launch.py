@@ -46,6 +46,29 @@ SETUP_HINT = "bash scripts/setup_rdagent.sh --with-factor-runtime"
 GATEWAY_SECRETS = ("ALPHA_GATEWAY_API_KEY", "ALPHA_GATEWAY_API_BASE")
 
 
+# The only environment values launch-command.json may hold: paths that locate the runtimes and
+# data. Any other variable, a key above all, is never written; secrets are named, not valued.
+LAUNCH_ENVIRONMENT = (
+    "ALPHA_RDAGENT_SOURCE",
+    "ALPHA_FACTOR_PYTHON",
+    "ALPHA_DATA_DIR",
+    "ALPHA_STOCK_PYTHON",
+)
+
+
+def write_launch_command(run_dir: Path, argv: Sequence[str], environ: dict[str, str]) -> None:
+    """Record how this run was started, so the next run can repeat it exactly."""
+    secrets = [environ[k] for k in GATEWAY_SECRETS if environ.get(k)]
+    record = {
+        "schema": "AlphaRdagentLaunchCommandV1",
+        "program": "workers/rdagent/factor_loop_launch.py",
+        "argv": ["[redacted]" if a in secrets else a for a in argv],
+        "environment": {k: environ[k] for k in LAUNCH_ENVIRONMENT if k in environ},
+        "secret_names_set": sorted(k for k in GATEWAY_SECRETS if environ.get(k)),
+    }
+    (run_dir / "launch-command.json").write_text(json.dumps(record, indent=2) + "\n")
+
+
 def _without_secrets() -> dict[str, str]:
     return {k: v for k, v in os.environ.items() if k not in GATEWAY_SECRETS}
 
@@ -200,6 +223,8 @@ def loop_environment(
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
         "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+        # Upstream's attempt count for every chat failure, provider or unusable reply alike:
+        # its one retry is the only retry of a reply that fails upstream's own schema check.
         "MAX_RETRY": "2",
         "CONDA_DEFAULT_ENV": "alpha-no-conda",
         # RD-Agent runs generated factor code as a shell string `<python_bin> factor.py` that
@@ -500,6 +525,10 @@ class Launch:
             if self.args.embedding_route in ("provider", "fake")
             else None,
         )
+        environment.update(
+            ALPHA_GATEWAY_CALLS=str(self.args.gateway_data_dir / "model-gateway/calls.jsonl"),
+            ALPHA_GATEWAY_RUN_ID=self.args.run_id,
+        )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
         child = self.spawn(
@@ -625,6 +654,10 @@ class Launch:
             "provider_embedding_inputs",
             "embedding_single_retries",
             "embedding_model_not_reported",
+            "embedding_cache_hits",
+            "embedding_requests",
+            "embedding_inputs_sent",
+            "provider_wait_seconds",
         ):
             self.receipt[key] = split.get(key, 0)
         counters = self.receipt["gateway_status"].get("this_run") or {}
@@ -662,10 +695,15 @@ class Launch:
                 started_at=self.receipt["started_at"],
                 ended_at=self.receipt["ended_at"],
                 secrets=(self.token, self.api_key),
+                exit_reason=self.receipt["loop_reason"],
             )
             if self.memory_plan
             else {"enabled": False}
         )
+        self.log(
+            "loop", event="end", exit_reason=self.receipt["loop_reason"], exit_status=exit_status
+        )
+        print(f"RD-Agent loop ended: {self.receipt['loop_reason']}.")
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
 
@@ -694,6 +732,13 @@ def round_counts(run: Path) -> dict[str, int]:
             row.get("status") == "no_admissible_idea" for row in rounds
         ),
         "proposals_refused": len(refused),
+        "rounds_failed_provider": len(
+            {
+                r["iteration"]
+                for r in rounds
+                if str(r.get("status", "")).startswith("coding_failed_provider_")
+            }
+        ),
     }
 
 
@@ -732,11 +777,22 @@ def call_split(
         "failed_requests": {},
         "chunked_embedding_inputs": 0,
         "embedding_chunks": 0,
+        "embedding_cache_hits": 0,
+        "embedding_requests": 0,
+        "embedding_inputs_sent": 0,
+        "provider_wait_seconds": 0.0,
     }
     routes: set[str] = set()
     models: set[str] = set()
     for call in calls:
+        split["embedding_cache_hits"] += int(call.get("embedding_cache_hits", 0))
+        if call.get("cache_only"):
+            continue
+        if call.get("endpoint") == "/v1/chat/completions" and call.get("provider_errors"):
+            split["provider_wait_seconds"] += float(call.get("latency_ms", 0)) / 1000
         if call.get("endpoint") == "/v1/embeddings":
+            split["embedding_requests"] += int(call.get("attempts", 0))
+            split["embedding_inputs_sent"] += int(call.get("embedding_inputs_sent", 0))
             if isinstance(call.get("route"), str):
                 routes.add(call["route"])
             if isinstance(call.get("model_used"), str):
@@ -820,6 +876,7 @@ def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     paths = validate(args, environ)
     args.run_dir.mkdir()
+    write_launch_command(args.run_dir, getattr(args, "command_line", sys.argv[1:]), environ)
     with (args.run_dir / "run-identity.json").open("x") as stream:
         stream.write(json.dumps({"run_id": args.run_id}) + "\n")
     (args.run_dir / "logs").mkdir()
@@ -898,6 +955,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None, *, runner: Callable[..., int] = run) -> int:
     args = parser().parse_args(argv)
+    args.command_line = list(sys.argv[1:] if argv is None else argv)
     try:
         return runner(args, dict(os.environ))
     except LaunchError as error:

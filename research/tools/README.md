@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: b378b32f6d74ab38
+verified: 83bd7e074daeb0b2
 ---
 
 # Research tools, by symptom
@@ -19,6 +19,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 |---|---|
 | An idea to test | [rule test](rule-test.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
+| What followed each separate setup occurrence | [setup study](setup-study.md) |
 | "Did we test this?", "what was the number?" | [results and cite](results-and-cite.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
 | The result looks too good after many tries | [deflated Sharpe and trials](deflated-sharpe-and-trials.md) |
@@ -46,8 +47,6 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 - factor attribution for size and momentum (market or one chosen asset works today);
 - capacity and size-aware costs (costs are flat basis points today);
 - an event calendar (scheduled releases and earnings dates);
-- an event study and random-date controls as plain commands (they exist only inside the older
-  staged lane);
 - a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
 - the planned plain verbs that would wrap these tools (get, idea, vary, learn, promote): none is a

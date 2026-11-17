@@ -246,6 +246,9 @@ def embeddings(
             if pieces is not None:
                 result = self.embedding_attempt(pieces, row)
                 result.vectors = mean_by_owner(result.vectors, owners, len(inputs))
+        # Retain successful earlier batches even if a later batch is refused by a cap.
+        for text, vector in zip(inputs, result.vectors, strict=True):
+            self.embedding_cache[(row["route"], row["model_used"], digest(text))] = list(vector)
         reply = json.dumps(result.vectors)
         row.update(
             model_used=result.model,
@@ -509,6 +512,7 @@ def embedding_attempt(self: Gateway, inputs: list[str], row: dict[str, Any]) -> 
     if not provider:
         ticket = self.budget.reserve(0, local_embedding=local)
         row["attempts"] += 1
+        row["embedding_inputs_sent"] = row.get("embedding_inputs_sent", 0) + len(inputs)
         try:
             return backend.embed(inputs)
         finally:
@@ -522,6 +526,7 @@ def embedding_attempt(self: Gateway, inputs: list[str], row: dict[str, Any]) -> 
     ticket = reserve_embedding(self.budget, reserved, provider=True)
     row["reserved_usd"] = reserved
     row["attempts"] += 1
+    row["embedding_inputs_sent"] = row.get("embedding_inputs_sent", 0) + len(inputs)
     actual, tokens = reserved, None
     try:
         result = backend.embed(inputs)
@@ -570,3 +575,76 @@ def embedding_attempt(self: Gateway, inputs: list[str], row: dict[str, Any]) -> 
         settle_embedding(self.budget, ticket, actual, tokens)
         row["usd"] += actual
         row["prompt_tokens"] = tokens
+
+
+def cached_embeddings(self: Gateway, request: dict[str, Any]) -> dict[str, Any]:
+    """Cache exact texts only for this gateway process; retain partial-batch input errors."""
+    inputs = request.get("input")
+    texts = [inputs] if isinstance(inputs, str) else inputs
+    allowed = {"model", "input", "encoding_format", "report_embedding_stats"}
+    valid = (
+        isinstance(texts, list)
+        and bool(texts)
+        and all(isinstance(t, str) for t in texts)
+        and set(request) <= allowed
+        and request.get("encoding_format", "float") == "float"
+        and type(request.get("report_embedding_stats", False)) is bool
+        and request.get("model") == self.settings.embedding_model_alias
+    )
+    if not valid:
+        return embeddings(self, request)
+    assert isinstance(texts, list)
+    with self.embedding_cache_lock:
+        row = self.record("/v1/embeddings", request)
+        route, model = row["route"], row["model_used"]
+        keys = [(route, model, digest(text)) for text in texts]
+        pending: dict[tuple[str, str, str], str] = {}
+        hits = 0
+        for key, text in zip(keys, texts, strict=True):
+            if key in self.embedding_cache or key in pending:
+                hits += 1
+            else:
+                pending[key] = text
+        reply = (
+            embeddings(self, {**request, "input": list(pending.values())})
+            if pending
+            else {
+                "model": model,
+                "data": [],
+                "usage": {"prompt_tokens": 0, "total_tokens": 0},
+                **({"chunked_inputs": 0} if request.get("report_embedding_stats") else {}),
+            }
+        )
+        requested = list(pending)
+        for item in reply["data"]:
+            self.embedding_cache[requested[item["index"]]] = list(item["embedding"])
+        failures = {requested[item["index"]]: item for item in reply.get("input_errors", [])}
+        if hits:
+            row.update(
+                embedding_cache_hits=hits, cache_only=True, local_embedding=route != "provider"
+            )
+            self.log(row)
+        return {
+            **reply,
+            "object": "list",
+            "data": [
+                {
+                    "object": "embedding",
+                    "index": index,
+                    "embedding": list(self.embedding_cache[key]),
+                }
+                for index, key in enumerate(keys)
+                if key in self.embedding_cache
+            ],
+            **(
+                {
+                    "input_errors": [
+                        {**failures[key], "index": index}
+                        for index, key in enumerate(keys)
+                        if key in failures
+                    ]
+                }
+                if failures
+                else {}
+            ),
+        }

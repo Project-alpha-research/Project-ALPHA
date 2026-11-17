@@ -149,3 +149,5 @@ per-run and USD 50 monthly limits keep their values; dollar accounting is unchan
 monthly totals show counted calls and local embeddings separately; past counts stay as recorded.
 
 **Amendment — owner decision 2026-11-17 (paid embeddings):** Explicitly configured provider embeddings send whole inputs, reserve and settle token-priced money, and share `EMBEDDING_CALLS_PER_RUN = 2000` with local embeddings; neither route spends chat/monthly call counts. Cap values and chat accounting are unchanged; memory is model/dimension-bound and receipts separate embedding costs and re-embeddings.
+
+**Amendment — 2026-11-17:** CANDIDATE also requires the lead clock’s recorded deflated Sharpe to meet its unchanged threshold; otherwise DEFLATION_FAIL, with trial counting unchanged.

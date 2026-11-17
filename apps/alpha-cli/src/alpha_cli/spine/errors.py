@@ -99,3 +99,16 @@ def setup_error(exc: Exception, stores: list[str] | None = None) -> SpineError:
         message,
         "Run alpha setup find again after correcting the reported input or data error.",
     )
+
+
+def study_error(exc: Exception) -> SpineError:
+    """Preserve specific study failures and fail loud on computation/publication errors."""
+    return (
+        exc
+        if isinstance(exc, SpineError)
+        else SpineError(
+            "STUDY_FAILED",
+            str(exc),
+            "Correct the reported data or study error, then run alpha setup study again.",
+        )
+    )

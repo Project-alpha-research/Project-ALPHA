@@ -51,15 +51,15 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-214 capabilities: 42 working, 67 built but unproven, 103 missing, 1 to rebuild,
+214 capabilities: 44 working, 66 built but unproven, 102 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material,
-then two diagnostics rows made working by the investigation tools, and the setup contact sheets).
+then two diagnostics rows made working by the investigation tools, the setup contact sheets and the setup study).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 5 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
-| 3. Look before testing | 2 | 7 | 5 | 0 | 0 |
+| 3. Look before testing | 4 | 6 | 4 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
 | 6. Diagnostics | 7 | 6 | 12 | 0 | 0 |
@@ -69,7 +69,7 @@ then two diagnostics rows made working by the investigation tools, and the setup
 | 10. Screens | 1 | 3 | 14 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **42** | **67** | **103** | **1** | **1** |
+| **All** | **44** | **66** | **102** | **1** | **1** |
 
 ## 1. Idea
 
@@ -136,8 +136,8 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure | Working | `alpha lookalike` (STUMPY); no screen yet | Now | private |
 | Pattern and indicator detectors that use only bars already seen | Unproven | `alpha-patterns` | Path 2 | [status] |
 | Scan many markets for a rule | Unproven | `alpha scan` | Path 2 | [status] |
-| What happened after each match (event study) | Unproven | `alpha-research` | Path 2 | private |
-| The same study against random dates and plain market drift | Missing | `alpha-research` | Path 2 | private |
+| What happened after each match (event study) | Working | `alpha setup study` event-study figure; no screen yet | Path 2 | private |
+| The same study against random dates and plain market drift | Working | `alpha setup study` (2,000 spaced random-date draws, asset drift) | Path 2 | private |
 | Follow-up battery: move size, weekday, trend state, other assets, crypto against stocks | Unproven | `alpha-research` | Path 2 | private |
 | Event-based sampling compared with fixed-time sampling | Missing | `alpha-research` | Later | private |
 | Descriptive first looks: gaps, distributions, seasonality | Unproven | `alpha-research` | Path 2 | [status] |

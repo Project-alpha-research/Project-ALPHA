@@ -39,6 +39,10 @@ results_app = typer.Typer(
 
 def _run(home: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
     rdir = find_run_dir(home, run_id)
+    if rdir is None and valid_run_id(run_id):
+        study = home / "setup-studies" / run_id
+        if (study / "manifest.json").is_file():
+            return study, read_json(study / "manifest.json")
     if rdir is None:
         raise SpineError(
             "UNKNOWN_RUN",
@@ -138,6 +142,10 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.figures import available_figures
 
     rdir, manifest = _run(home, run_id)
+    if manifest.get("schema") == "AlphaSetupStudyV1":
+        from alpha_cli.spine.facts import read_study
+
+        return dict(run_id=run_id, **read_study(rdir))
     diagnostics = read_json(rdir / "diagnostics.json")
     rule = manifest.get("spine", {}).get("rule", {}).get("kind")
     family_id = f"spine:{rule}" if rule else None
@@ -182,7 +190,9 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
     try:
         home = AlphaSettings().data_dir
         failed: list[dict[str, Any]] = []
-        if find_run_dir(home, run_id) is not None:
+        if find_run_dir(home, run_id) is not None or (
+            valid_run_id(run_id) and (home / "setup-studies" / run_id / "manifest.json").is_file()
+        ):
             ids = [run_id]
         else:
             # A test id: show every asset that completed and report each one that did not.
@@ -256,7 +266,7 @@ def cite_result(
         if metric in TOOL_METRICS:
             fact = tool_fact(home, run_id, metric, tool_output)
         else:
-            fact = next(item for item in build_facts(rdir) if item["metric"] == metric)
+            fact = fact_lookup(home)(run_id, metric)
         value = "null" if fact["value"] is None else str(fact["value"])
         caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
         emit(
@@ -287,7 +297,7 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
 def _run_paths(home: Path) -> dict[str, Path]:
     """Discover completed runs in the same precedence order as run lookup."""
     paths: dict[str, Path] = {}
-    for directory in RUN_DIRS:
+    for directory in (*RUN_DIRS, "setup-studies"):
         for manifest in (home / directory).glob("*/manifest.json"):
             if valid_run_id(manifest.parent.name):
                 paths.setdefault(manifest.parent.name, manifest.parent)

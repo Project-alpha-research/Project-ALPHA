@@ -147,3 +147,5 @@ cap, nor toward the monthly call count; they have their own per-run guard,
 any other embedding backend and every retry of a counted call still count. The 60-call, USD 10
 per-run and USD 50 monthly limits keep their values; dollar accounting is unchanged. Receipts and
 monthly totals show counted calls and local embeddings separately; past counts stay as recorded.
+
+**Amendment — owner decision 2026-11-17 (paid embeddings):** Explicitly configured provider embeddings send whole inputs, reserve and settle token-priced money, and share `EMBEDDING_CALLS_PER_RUN = 2000` with local embeddings; neither route spends chat/monthly call counts. Cap values and chat accounting are unchanged; memory is model/dimension-bound and receipts separate embedding costs and re-embeddings.

@@ -22,7 +22,7 @@ used only to choose which strategies to recentre, so its ``studentize`` flag doe
 p-value, whereas :func:`spa_test` divides each mean by its bootstrap long-run standard deviation
 as Hansen (2005) defines the statistic. (2) Its p-value is ``#{null > observed} / B``; here it is
 ``(1 + #{null >= observed}) / (1 + B)``, which is never zero. (3) It draws different random
-numbers for the same seed (see ``bootstrap.py``). :func:`reality_check` matches arch's "upper"
+numbers for the same seed (validation invariants). :func:`reality_check` matches arch's "upper"
 p-value within Monte Carlo error; :func:`spa_test` is a different statistic and can disagree
 completely. ``tests/unit/test_stats_library_parity.py`` pins both facts. ALPHA has no
 hand-written StepM or Model Confidence Set; arch's are available if those are wanted.

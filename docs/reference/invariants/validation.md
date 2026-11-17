@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: 9c3b821e1ec4d259
+verified: e697cf3f6bc7a5bc
 ---
 
 # Validation statistics invariants
@@ -91,7 +91,10 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
 - Splitters are index-only and engine-agnostic. Oracles: `tests/oracles/test_metamorphic_splits.py`.
 - `block_bootstrap_ci` uses the Politis–Romano stationary bootstrap with BCa correction (leave-one-out
   jackknife acceleration, a documented approximation on dependent data). It fails loud when the BCa adjustment
-  is unstable instead of returning an infinite percentile.
+  is unstable instead of returning an infinite percentile. It stays hand-written (checked against `arch` 8.0.0):
+  `arch` draws from the same law but other numbers for the same seed (path by path, block restart on `u <= p`
+  instead of `u < p`), has no other `length`, and lacks the BCa clamp and the fail-loud acceleration check, so
+  a swap would change every stored seeded interval, risk-of-ruin and null path.
 
 ## Multi-trial selection statistics
 

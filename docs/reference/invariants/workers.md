@@ -10,14 +10,13 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 485f0a017754d2e2
+verified: 2753e84caeaff991
 ---
 
 # Worker invariants
 
-What must hold for the isolated worker projects under `workers/`: the Qlib ML worker, the literature
-acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. The general rule is
-[research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
+Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
+The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
 
 ## Shared rules
 
@@ -137,8 +136,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).
 - The native fixture loop (`native_fixture.py::NativeFixtureLoop`) is a `LoopMeta` subclass of upstream
   `LoopBase` that never overrides `run`, `_run_step`, `dump` or `load`, so upstream's own loop drives it.
-  Every executed stage is charged to the fixture owner, and interrupted admitted work stays charged
-  (`conformance.py`).
+  Every executed stage is charged to the fixture owner; interrupted work stays charged (`conformance.py`).
 - Stock RDLoop runtime: built only by `scripts/setup_rdagent.sh --with-stock-runtime` from the hash-pinned
   `stock-requirements.lock` on CPython 3.11 (`--require-hashes --no-deps`); `install_stock_profile.py` proves the installed
   distributions are exactly the locked ones and records an inventory digest. It measures a runtime and grants no authority.
@@ -148,7 +146,8 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   configures it (`--chat-route api`; `--api-openrouter` requires every parameter to be honoured and settles on the
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
-  Local and provider embeddings share a 2,000-attempt guard, exempt from call counts; provider tokens cost money.
+  Local and provider embeddings share a 2,000-request guard, exempt from chat call counts; provider tokens cost money.
+  Paid inputs batch by 32; refusals retry singly. Receipts separate requests, inputs, retries and unreported models.
   Receipts split calls, tokens, cache hits and observed providers; labelled calls add step splits. Missing facts stay null;
   abandoned attempts say usage is unknown. API chat sends the run id as `session_id` unless `--no-router-session` is set;
   provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
@@ -165,17 +164,18 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
-  New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
+  New panels rescale redenominations, split reused tickers, join declared renamed successors and refuse unexplained gap jumps;
+  old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
-  Closed-family proposals stop before coding with no trial and are re-asked twice per round; code failures do not close families.
-  Every record is `exploratory, not admitted, not yet confirmed` with all authority
-  flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
-  recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the
-  same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only).
-  A failed loop's receipt names the model call cap when the run used all of it; an evaluator refusal prints one
-  plain line and exits 2. Research memory and round-boundary resume (no invented trials), failure reasons,
-  composite idea families, budget stops and the call split: [worker README](../../../workers/rdagent/README.md#research-memory-2026-11-15).
-  Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`, `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
+  Families use construct names or composite input names only; code failures never close families.
+  Closed proposals stop before coding, with two `proposal_reask`s per round; receipts name refusals, trials and re-ask spend.
+  Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
+  `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway
+  address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
+  loop names an exhausted model call cap in its receipt; an evaluator refusal prints one plain line and exits 2. Research memory and round-boundary resume (no
+  invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
+  README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
+  `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
   than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger

@@ -21,6 +21,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `funding-download` | Crypto context: funding rates, open interest, listings |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
+| `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |
 | `price-lookalikes` | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure |
 | `price-novelty` | "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day |
 | `afml-labels-and-weights` | Textbook labels and overlap weights from two pinned libraries that must agree |

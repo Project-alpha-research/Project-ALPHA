@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: bff36c2f2d08e24d
+verified: 4fdd5a8aa70c3a81
 ---
 
 # RD-Agent
@@ -61,11 +61,13 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
   The wide store may be used once every implausible gap jump is declared; freeze rescales declared redenominations, splits reused tickers and
   refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
+  Declared renamed tickers join as one instrument under the old name, with each join receipted.
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
-  and asks the proposer again, at most twice per round.
+  and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
+  Refusals and re-ask spend are explicit in receipts; paid memory embeddings batch inputs without changing caps.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
@@ -113,10 +115,9 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 
 ### Workstation recorded fields
 
-View → RD-Agent and the command palette open the read-only panel in either market profile.
-Runs are direct child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`).
-The ledger is read from `rdagent-trial-ledger/rdagent-factor-trials.jsonl` inside that runs folder.
-The panel cannot launch or approve runs, call models, read key files or show raw model feedback.
+View → RD-Agent and the command palette open the read-only panel in either market profile. Runs are direct
+child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the ledger is
+`rdagent-trial-ledger/rdagent-factor-trials.jsonl` inside it. It cannot launch, approve, call models or read keys.
 
 | Response fields | Recorded source (relative to the run folder unless noted) |
 |---|---|

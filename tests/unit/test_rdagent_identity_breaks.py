@@ -304,7 +304,11 @@ def test_run_report_and_proposer_receive_split_count(tmp_path: Path, declared: b
     receipt.update(identity_breaks=breaks, identity_jump_policy={"min_gap_days": 1, "ratio": 5.0})
     path.write_text(json.dumps(receipt))
     result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
-    expected = f"{int(declared)} tickers were split at declared identity breaks."
+    expected = (
+        "1 ticker was split at declared identity breaks."
+        if declared
+        else "0 tickers were split at declared identity breaks."
+    )
     assert expected in result["feedback_text"]
     assert result["disclosures"]["identity_breaks"]["message"] == expected
     assert result["disclosures"]["identity_breaks"]["applied"] == breaks
@@ -333,6 +337,9 @@ def test_feedback_keeps_authoritative_split_message(
     from tests.unit.test_rdagent_factor_judge import judge_parts
 
     ns = judge_parts("record_round")
+    from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
+
+    ns.update({key: judge_namespace()[key] for key in ("family_permissions", "closed_families")})
     ns["Experiment2Feedback"] = object
     source = Path(__file__).resolve().parents[2] / "workers/rdagent/alpha_factor_judge.py"
     nodes: list[ast.stmt] = [

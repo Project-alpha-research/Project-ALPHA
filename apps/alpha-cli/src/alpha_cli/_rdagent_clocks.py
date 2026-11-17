@@ -169,6 +169,12 @@ def overall_status(clocks: dict[str, dict[str, Any]]) -> tuple[str, str]:
     return status, lead
 
 
+def figure(value: Any, *, percent: bool = False) -> str:
+    if value is None:
+        return "not available"
+    return f"{value * 100:.4g}%" if percent else f"{value:.4g}"
+
+
 def clock_feedback(row: dict[str, Any]) -> str:
     parts = [f"{row['name']}: {row['status']}."]
     for clock, trial in trial_clocks(row).items():
@@ -177,12 +183,12 @@ def clock_feedback(row: dict[str, Any]) -> str:
             outcome = "net annual excess counted only, not a result"
         else:
             outcome = (
-                f"net annual excess {replay.get('net', {}).get('annualized_return')}, "
-                f"turnover per day {replay.get('mean_turnover')}"
+                f"net annual excess {figure(replay.get('net', {}).get('annualized_return'))}, "
+                f"turnover per day {figure(replay.get('mean_turnover'))}"
             )
         parts.append(
-            f"{clock}: {trial['status']}, mean rank IC {screen.get('mean_ic')}, "
-            f"q={trial['q']:.6g}, {outcome}."
+            f"{clock}: {trial['status']}, mean rank IC {figure(screen.get('mean_ic'))}, "
+            f"q={figure(trial.get('q'))}, {outcome}."
         )
         parts.extend(screen.get("warnings", []))
         if trial["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS") and trial.get(
@@ -225,9 +231,11 @@ def clock_feedback(row: dict[str, Any]) -> str:
 def spread_note(result: dict[str, Any]) -> str:
     """One plain line: top minus bottom third, before costs, with its uncertainty."""
     return (
-        f"top third {result['top_third_mean_return']:+.2%} vs bottom third "
-        f"{result['bottom_third_mean_return']:+.2%} per {result['horizon_days']}-day hold "
-        f"(spread {result['annualized_spread']:+.0%}/yr before costs, t={result['t']:.2f}, "
+        f"top third {figure(result.get('top_third_mean_return'), percent=True)} vs bottom third "
+        f"{figure(result.get('bottom_third_mean_return'), percent=True)} per "
+        f"{result['horizon_days']}-day hold "
+        f"(spread {figure(result.get('annualized_spread'), percent=True)}/yr before costs, "
+        f"t={figure(result.get('t'))}, "
         f"{result['decision_days']} decision days): spread {result['status']}."
     )
 

@@ -32,6 +32,7 @@ const CATALOG_GROUPS = [
   'risk',
   'strategy-candidate',
   'suite',
+  'setup',
   'test',
   'tool',
   'unusual',
@@ -176,4 +177,10 @@ it('opens RD-Agent from View and the shared command-palette document registry', 
   expect(showsWindow('crypto', 'rdagent')).toBe(true)
   expect(showsWindow('equities', 'rdagent')).toBe(true)
   expect(documentRoute('rdagent')).toEqual({ page: 'research', pane: 'RdAgentPanel' })
+})
+
+it('puts setup finding in Research', () => {
+  expect(assignCommands([command('setup find')]).Research).toEqual([
+    { kind: 'command', id: 'setup find', label: 'setup find' },
+  ])
 })

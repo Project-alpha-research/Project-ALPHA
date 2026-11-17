@@ -347,6 +347,10 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
             )
     panel, breaks = identity.relabel(panel, spec.get("identity_breaks", []))
     panel = validate_panel(panel)
+    if universe is not None and panel["instrument"].n_unique() < spec["min_universe"]:
+        raise DataError(
+            f"universe after identity joins needs at least {spec['min_universe']} instruments"
+        )
     identity.check_jumps(panel)
     summary = membership.panel_summary(panel)
     summary.update(universes.disclosure(spec, summary))
@@ -360,6 +364,7 @@ def freeze(data_dir: Path, out: Path, universe: Path | None = None) -> dict[str,
         "manifests": manifests,
         "identity_breaks": [b for b in breaks if b["reason"] == "ticker_reused"],
         "identity_rescales": [b for b in breaks if b["reason"] == "redenominated"],
+        "identity_joins": [b for b in breaks if b["reason"] == "renamed"],
         "identity_jump_policy": identity.JUMP_POLICY,
         **summary,
         "rows": panel.height,

@@ -51,104 +51,184 @@ SWING_BRIEF = (
     "factor unless the top third it would hold beat the bottom third "
     "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
 )
-# Idea families by name pattern (regular expressions), first match wins (ADR-0055). Approximate
-# by design: it groups near-variants so the proposer sees how often one idea has already failed.
+# Construct names only (ADR-0055). Estimator words say how an idea is fitted, not its
+# mechanism, so they are never family keywords ("volatility and beta" keeps explicit betas).
+GENERIC_ESTIMATOR_WORDS = frozenset(
+    {"beta", "slope", "regression", "ols", "ridge", "huber", "lasso", "lightgbm", "gbm"}
+    | {"model", "residual", "rank", "zscore"}
+)
+# Keywords are matched on name tokens (hyphens, spaces and case normalised), longest first,
+# and a matched keyword consumes its tokens. A final keyword token of four or more letters
+# also matches as a prefix (prox -> proximity, skew -> skewness). The table order decides a
+# single name's family when it matches several.
 FAMILY_KEYWORDS = (
-    ("price near its high / range position", ("high_prox", "stoch", "rangepos", r"(^|_)hp\d")),
-    ("short-term reversal and gaps", ("reversal_3d", "reversal_5d", "gap", "intraday_reversal")),
-    ("long-term reversal", ("long_term_reversal",)),
+    (
+        "price near its high / range position",
+        ("high_prox", "near_high", "distance_to_high", "stoch", "rangepos", "range_position", "hp"),
+    ),
+    (
+        "short-term reversal and gaps",
+        ("reversal_3d", "reversal_5d", "short_term_reversal", "gap", "gaps", "intraday_reversal"),
+    ),
+    ("long-term reversal", ("long_term_reversal", "ltr")),
     ("illiquidity", ("amihud", "illiquid")),
     ("return-volume relation", ("ret_vol_corr", "volume_return", "signed_volume", "flow_conf")),
-    ("skewness and lottery returns", ("skew", "max_return", "up_day")),
-    ("drawdown", ("drawdown",)),
-    ("momentum and trend", ("momentum", "mom_", "trend", "sma_distance", "autocorr")),
-    ("volatility and beta", ("volatil", "semivariance", "beta", "vol_")),
+    ("skewness and lottery returns", ("skew", "coskew", "max_return", "up_day")),
+    ("drawdown", ("drawdown", "mdd")),
+    (
+        "momentum and trend",
+        ("momentum", "mom", "trend", "sma_distance", "autocorr", "cumret")
+        + ("ac", "m", "ret", "return", "roc"),
+    ),
+    (
+        "volatility and beta",
+        ("volatil", "vol", "semivariance", "std", "stdev", "rv")
+        + ("market_beta", "downside_beta", "btc_beta"),
+    ),
     ("range and compression", ("range",)),
-    ("volume level and trend", ("volume", "dollar_volume")),
-    ("VWAP distance", ("vwap", "clv", "close_location")),
+    ("volume level and trend", ("volume", "dollar_volume", "turnover", "vt", "ldv")),
+    ("VWAP distance", ("vwap", "volume_weighted_average_price", "clv", "close_location")),
 )
-
-
-# A proposal that mixes several features (machine learning, a regression, a weighted combination).
+# Short or generic abbreviations classify only with a window (m20, hp126, ret_60d), so math
+# symbols in a variable list (m(t) a month start, m_s the market return, ret_{i,t}) never do.
+WINDOW_ONLY = frozenset({"m", "hp", "vt", "ac", "rv", "ldv", "ret", "return", "roc"})
+# A mix or learned model over several features. Prose may identify a mix; it never classifies.
 COMPOSITE = re.compile(
-    r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|regression|"
-    r"gradient boost\w*|random forest|neural|lightgbm|xgboost|pca|principal component\w*|"
-    r"linear combination|weighted (?:sum|average|combination)|(?:combination|blend|mix) of)\b"
+    r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|gradient boost\w*|"
+    r"random forest|neural|lightgbm|lgbm|xgboost|catboost|gbm|gbdt|pca|principal component\w*|"
+    r"linear combination|weighted (?:sum|average|combination)|(?:combination|blend|mix) of|"
+    r"multi factor)\b"
 )
+# A regression is one construct (price delay, a lag slope) unless it lists two known features.
+WEAK_COMPOSITE = re.compile(r"\b(?:regress\w*|ols)\b")
 
 
-def input_families(*texts: str) -> set[str]:
-    """Families of the features a proposal's own words name, matched at word starts."""
-    found = set()
-    for word in re.findall(r"[a-z][a-z0-9_]*", " ".join(texts).lower()):
-        for family, keywords in FAMILY_KEYWORDS:
-            if any(re.search(rf"(?:^|_)(?:{keyword})", word) for keyword in keywords):
-                found.add(family)
-                break
-    return found
+def name_tokens(name: str) -> list[str]:
+    """Lower-case tokens of a name, a window number attached to letters removed (vol60 -> vol)."""
+    return [
+        re.sub(r"(?<=[a-z])\d+$", "", token) for token in re.findall(r"[a-z0-9]+", name.lower())
+    ]
+
+
+def name_matches(name: str) -> list[str]:
+    """Every family whose keyword a name contains, in table order; estimator words never match."""
+    raw = re.findall(r"[a-z0-9]+", name.lower())
+    tokens = name_tokens(name)
+    keywords = sorted(
+        ((word.split("_"), family) for family, words in FAMILY_KEYWORDS for word in words),
+        key=lambda pair: (-len(pair[0]), -len("".join(pair[0]))),
+    )
+    matched: set[str] = set()
+    consumed: set[int] = set()
+    for keyword, family in keywords:
+        last = len(keyword) - 1
+        for start in range(len(tokens) - last):
+            span = tokens[start : start + last + 1]
+            if set(range(start, start + last + 1)) & consumed or span[:last] != keyword[:last]:
+                continue
+            tail = keyword[last]
+            if not (span[last] == tail or len(tail) >= 4 and span[last].startswith(tail)):
+                continue
+            if "_".join(keyword) in WINDOW_ONLY and not (
+                raw[start] != tokens[start]
+                or start + 1 < len(raw)
+                and re.fullmatch(r"\d+[a-z]{0,2}", raw[start + 1])
+            ):
+                continue
+            matched.add(family)
+            consumed.update(range(start, start + last + 1))
+    return [family for family, _ in FAMILY_KEYWORDS if family in matched]
+
+
+def input_families(*names: str) -> set[str]:
+    """One family per named feature: the first its name matches in table order."""
+    return {found[0] for name in names if (found := name_matches(name))}
+
+
+def name_family(name: str) -> str:
+    found = name_matches(name)
+    if found:
+        return found[0]
+    tokens = name_tokens(name)
+    while tokens and re.fullmatch(r"\d+[a-z]*", tokens[-1]):
+        tokens.pop()
+    return "other: " + "_".join(tokens or name_tokens(name) or ["unnamed"])
 
 
 def idea_family(
     name: str, description: str = "", formulation: str = "", variables: Any = None
 ) -> str:
-    """One family, or every family a composite draws on joined by "; " (ADR-0055).
+    """A single factor's family from its NAME; a composite's from its listed input NAMES.
 
-    A composite (by its words) or a name with no family keyword is classified by the features
-    its description, formulation and variables name, so renaming cannot leave the family rule;
-    a composite with no identifiable input is "composite: unknown inputs". Over-inclusive by
-    design: a stray family word in the text adds a family, it never removes one.
+    The name and description may say that an idea is a mix (COMPOSITE), but only feature
+    names classify: a composite takes every family of its name and listed variable names,
+    and one naming no known feature is "composite: unknown inputs" (its own family). Listed
+    names that match no keyword (C_{i,s}, max_depth, 120) are symbols, not families. The
+    formulation never classifies and is accepted only for the callers' uniform signature.
     """
-    lowered = name.lower()
-    named = next(
-        (
-            family
-            for family, keywords in FAMILY_KEYWORDS
-            if any(re.search(keyword, lowered) for keyword in keywords)
-        ),
-        None,
-    )
-    words = " ".join(
-        f"{key} {value}"
-        for key, value in (variables.items() if isinstance(variables, dict) else ())
-    )
-    composite = COMPOSITE.search(f"{name} {description} {formulation}".lower().replace("_", " "))
-    if named is not None and not composite:
-        return named
-    families = input_families(description, formulation, words) | ({named} if named else set())
-    if families:
-        return "; ".join(sorted(families))
-    return "composite: unknown inputs" if composite else "other: " + lowered.split("_")[0]
+    listed = [str(key) for key in variables] if isinstance(variables, (dict, list, tuple)) else []
+    inputs = {family for feature in listed for family in name_matches(feature)}
+    text = " ".join(re.findall(r"[a-z0-9]+", f"{name} {description}".lower()))
+    if COMPOSITE.search(text) or (WEAK_COMPOSITE.search(text) and len(inputs) >= 2):
+        families = inputs | set(name_matches(name))
+        return "; ".join(sorted(families)) or "composite: unknown inputs"
+    return name_family(name)
 
 
-def _rounded(value: Any) -> Any:
-    # Seventeen digits tell the proposer nothing and crowd other trials out of its budget.
-    return round(value, 3) if isinstance(value, float) else value
+def _rounded(value: Any) -> str:
+    return (
+        "not available"
+        if value is None
+        else f"{value:.4g}"
+        if isinstance(value, (float, int))
+        else str(value)
+    )
+
+
+def percent(value: Any, *, signed: bool = False) -> str:
+    if value is None:
+        return "not available"
+    return (f"{value * 100:+.4g}" if signed else f"{value * 100:.4g}") + "%"
 
 
 def replay_note(clock: str, replay: Any) -> str:
-    """Why a replayed clock won or lost: before costs, after costs, the costs and the turnover."""
+    """Returns, costs and turnover at four significant digits, including small nonzero costs."""
     if not replay:
         return ""
-    if "counted_only" in replay:  # ADR-0055: a failed clock's replay only counts the trial
+    if "counted_only" in replay:
         return f"; {clock} replay counted only, not a result"
-    gross = replay["gross"]["annualized_return"]
-    net = replay["net"]["annualized_return"]
     return (
-        f"; {clock} replay: {gross:+.0%}/yr before costs, {net:+.0%}/yr after "
-        f"{replay['annual_cost']:.0%}/yr costs, turnover {replay['mean_turnover']:.0%}/day"
+        f"; {clock} replay: {percent(replay['gross'].get('annualized_return'), signed=True)}/yr "
+        "before costs, "
+        f"{percent(replay['net'].get('annualized_return'), signed=True)}/yr after "
+        f"{percent(replay.get('annual_cost'))}/yr costs, "
+        f"turnover {percent(replay.get('mean_turnover'))}/day"
     )
 
 
 def spread_line(clock: str, result: Any) -> str:
-    """Top versus bottom third before costs (ADR-0055), with turnover and the cost it implies."""
     if not result or result.get("status") not in ("PASS", "FAIL"):
         return ""
     return (
-        f"; {clock} spread {result['status']}: top third {result['top_third_mean_return']:+.2%} vs "
-        f"bottom {result['bottom_third_mean_return']:+.2%} per hold "
-        f"({result['annualized_spread']:+.0%}/yr before costs, t {result['t']:.1f}), "
-        f"top third changes {result['top_share_changed_per_rebalance']:.0%} per rebalance, "
-        f"about {result['estimated_annual_cost']:.0%}/yr costs"
+        f"; {clock} spread {result['status']}: top third "
+        f"{percent(result.get('top_third_mean_return'), signed=True)} vs "
+        f"bottom {percent(result.get('bottom_third_mean_return'), signed=True)} per hold "
+        f"({percent(result.get('annualized_spread'), signed=True)}/yr before costs, "
+        f"t {_rounded(result.get('t'))}), "
+        f"top third changes {percent(result.get('top_share_changed_per_rebalance'))} "
+        "per rebalance, "
+        f"about {percent(result.get('estimated_annual_cost'))}/yr costs"
+    )
+
+
+def family_permissions(closed: set[str], proposed: set[str] | None = None) -> str:
+    opened = ({name for name, _ in FAMILY_KEYWORDS} | (proposed or set())) - closed
+    return (
+        "Closed families: "
+        + ("; ".join(sorted(closed)) or "none")
+        + ". open families: "
+        + "; ".join(sorted(opened))
+        + ". A mechanism that belongs to none of the closed families is allowed."
     )
 
 
@@ -197,7 +277,8 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
             counts[member["status"]] = counts.get(member["status"], 0) + 1
         failed = ", ".join(f"{n} {status}" for status, n in sorted(counts.items()))
         lines.append(
-            f"- {family}: {len(members)} tries; best {best['name']} ({best['status']}); {failed}"
+            f"- {family}: {len(members)} {'try' if len(members) == 1 else 'tries'}; "
+            f"best {best['name']} ({best['status']}); {failed}"
         )
         if len(members) >= switch_after and not any(m["status"] == "CANDIDATE" for m in members):
             closed.append(family)
@@ -212,7 +293,7 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
             "the same idea), including composites using ANY of these families; "
             "move to a different family with a different economic mechanism."
         )
-    return text
+    return text + "\n" + family_permissions(set(closed), set(families))
 
 
 def ledger_summary(row: dict[str, Any]) -> str:
@@ -243,7 +324,7 @@ def ledger_summary(row: dict[str, Any]) -> str:
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
     if "writeoff_count" in row:
-        line += f"; {row['writeoff_count']} write-offs"
+        line += f"; {row['writeoff_count']} write-off" + ("" if row["writeoff_count"] == 1 else "s")
     if row.get("failure_reason"):
         line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
     return line
@@ -665,7 +746,9 @@ class AlphaFactorFeedback(Experiment2Feedback):
             return HypothesisFeedback(
                 observations=refusal["message"],
                 hypothesis_evaluation="refused_closed_family",
-                new_hypothesis="Choose one of the open families named above.",
+                new_hypothesis=(
+                    "A mechanism that belongs to none of the closed families is allowed."
+                ),
                 reason="no_admissible_idea; no data read and no trial created",
                 decision=False,
             )
@@ -678,6 +761,7 @@ class AlphaFactorFeedback(Experiment2Feedback):
             f"\nCurrent universe: {current_universe()}; "
             "earlier text saying otherwise is out of date"
         )
+        scenario += "\n" + family_permissions(closed_families())
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
             hypothesis_text=exp.hypothesis.hypothesis,
@@ -821,12 +905,12 @@ class FamilyGuard:
         message = (
             "Refused closed families: "
             + "; ".join(refused)
-            + ". open families: "
-            + "; ".join(open_families)
+            + ". "
+            + family_permissions(closed, proposed)
             + (
-                ". No admissible idea; round ended before coding, no trial created."
+                " No admissible idea; round ended before coding, no trial created."
                 if final
-                else f". Proposal {attempt} refused before coding, no trial created; "
+                else f" Proposal {attempt} refused before coding, no trial created; "
                 "the proposer is asked again."
             )
         )
@@ -836,7 +920,22 @@ class FamilyGuard:
             "reason": "refused_closed_family",
             "attempt": attempt,
             "trial_created": False,
-            "closed_families": refused,
+            "iteration": self.round_index(),
+            "factor_names": [
+                task.factor_name
+                for task in exp.sub_tasks
+                if set(
+                    idea_family(
+                        task.factor_name,
+                        getattr(task, "description", "") or "",
+                        getattr(task, "factor_formulation", "") or "",
+                        getattr(task, "variables", None),
+                    ).split("; ")
+                )
+                & closed
+            ],
+            "refused_families": refused,
+            "all_closed_families": sorted(closed),
             "open_families": open_families,
             "hypothesis": str(exp.hypothesis),
             "message": message,
@@ -852,10 +951,42 @@ class FamilyGuard:
     def _propose_again(self) -> Any:
         """The same two calls and plan fields as upstream RDLoop.direct_exp_gen, nothing more."""
         loop = self.loop
-        exp = loop._exp_gen(loop._propose())
+        from datetime import UTC, datetime
+
+        row = {
+            "schema": "AlphaRdagentStepV1",
+            "loop": self.round_index(),
+            "step_index": -1,
+            "step": "proposal_reask",
+        }
+        path = Path(os.environ["ALPHA_FACTOR_RUN_DIR"]) / "steps.jsonl"
+
+        def append(event: dict[str, Any]) -> None:  # the same line shape as record_steps
+            with path.open("a") as stream:
+                line = {**row, **event, "ts": datetime.now(UTC).isoformat()}
+                stream.write(json.dumps(line, sort_keys=True) + "\n")
+
+        append({"event": "start"})
+        status, error_type = "ok", None
+        try:
+            exp = loop._exp_gen(loop._propose())
+        except BaseException as error:
+            status, error_type = "error", type(error).__name__
+            raise
+        finally:
+            append({"event": "end", "status": status, "error_type": error_type})
         exp.base_features = loop.plan["features"]
         exp.base_feature_codes = loop.plan["feature_codes"]
         if exp.based_experiments:
             exp.based_experiments[-1].base_features = loop.plan["features"]
             exp.based_experiments[-1].base_feature_codes = loop.plan["feature_codes"]
         return exp
+
+    def round_index(self) -> int:
+        path = Path(os.environ["ALPHA_FACTOR_RUN_DIR"]) / "steps.jsonl"
+        if path.exists():
+            for line in reversed(path.read_text().splitlines()):
+                row = json.loads(line)
+                if row["step"] == "coding" and row["event"] == "start":
+                    return int(row["loop"])
+        return int(getattr(self.loop, "loop_idx", 0))

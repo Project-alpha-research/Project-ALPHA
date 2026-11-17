@@ -51,15 +51,15 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-214 capabilities: 41 working, 67 built but unproven, 104 missing, 1 to rebuild,
+214 capabilities: 42 working, 67 built but unproven, 103 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material,
-then two diagnostics rows made working by the investigation tools).
+then two diagnostics rows made working by the investigation tools, and the setup contact sheets).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 5 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
-| 3. Look before testing | 1 | 7 | 6 | 0 | 0 |
+| 3. Look before testing | 2 | 7 | 5 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
 | 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
 | 6. Diagnostics | 7 | 6 | 12 | 0 | 0 |
@@ -69,7 +69,7 @@ then two diagnostics rows made working by the investigation tools).
 | 10. Screens | 1 | 3 | 14 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **41** | **67** | **104** | **1** | **1** |
+| **All** | **42** | **67** | **103** | **1** | **1** |
 
 ## 1. Idea
 
@@ -132,7 +132,7 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
-| Every match of a setup on the chart, rejected ones greyed, before any rule is fixed | Missing | new Setup Lab | Path 2 | private |
+| Every match of a setup on the chart, rejected ones greyed, before any rule is fixed | Working | `alpha setup find` contact sheets; the Workstation chart view later | Path 2 | private |
 | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure | Working | `alpha lookalike` (STUMPY); no screen yet | Now | private |
 | Pattern and indicator detectors that use only bars already seen | Unproven | `alpha-patterns` | Path 2 | [status] |
 | Scan many markets for a rule | Unproven | `alpha scan` | Path 2 | [status] |

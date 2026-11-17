@@ -1298,3 +1298,16 @@ real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder:
 needs = []
 state = "Working"
 docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "setup-find"
+name = "Find every match of a chart setup"
+what = "Record daily setup matches and separate occurrences, then inspect contact sheets ending at the entry open without viewing outcomes."
+see_it = ["alpha setup find <spec.toml> --json"]
+entry_points = ["cli: alpha setup"]
+proof_synthetic = ["tests/unit/test_setup_find.py::test_worked_counts_ledger_and_cluster_sheets", "tests/unit/test_setup_find.py::test_nothing_after_the_trigger_reaches_any_file_or_sheet", "tests/unit/test_contact_sheet.py::test_outcome_blindness_dimensions_and_determinism"]
+proof_smoke = ["tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat"]
+real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily bars, Yahoo) and BTC/USDT (3,361) found 19 and 26 separate occurrences (21 and 30 matching days), as the evaluator's own check did; a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]

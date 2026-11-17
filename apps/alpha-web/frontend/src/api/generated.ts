@@ -2052,6 +2052,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rdagent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Runs
+         * @description List direct-child factor-loop receipts, newest first; no execution or mutation.
+         */
+        get: operations["list_runs_api_rdagent_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rdagent/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run Detail
+         * @description Select an identity from the run list, never a request-supplied path.
+         */
+        get: operations["run_detail_api_rdagent_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/research-gate-overrides": {
         parameters: {
             query?: never;
@@ -9954,6 +9994,153 @@ export interface components {
         };
         /** @enum {string} */
         PublicStageStateValue: "not_started" | "ready" | "queued" | "running" | "stale";
+        /** RdAgentCap */
+        RdAgentCap: {
+            limit: components["schemas"]["RecordedFact"];
+            used: components["schemas"]["RecordedFact"];
+        };
+        /** RdAgentClock */
+        RdAgentClock: {
+            /** Deflation */
+            deflation: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Family Deflation */
+            family_deflation: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Figures */
+            figures: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Replay */
+            replay: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Screen */
+            screen: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Spread */
+            spread: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+        };
+        /** RdAgentDetail */
+        RdAgentDetail: {
+            /** Cache */
+            cache: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Caps */
+            caps: {
+                [key: string]: components["schemas"]["RdAgentCap"];
+            };
+            /** Factor Reason */
+            factor_reason?: string | null;
+            /** Factors */
+            factors: components["schemas"]["RdAgentFactor"][];
+            /** Funnel */
+            funnel: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Identity Rescales */
+            identity_rescales: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            }[];
+            /** Identity Splits */
+            identity_splits: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            }[];
+            /** Months */
+            months: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["RecordedFact"];
+                };
+            };
+            /** Notes */
+            notes: string[];
+            /** Providers */
+            providers: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            /** Refusal Reason */
+            refusal_reason?: string | null;
+            /** Refusals */
+            refusals: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            }[];
+            run: components["schemas"]["RdAgentRun"];
+            /** Timing */
+            timing: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            }[];
+            /** Timing Reason */
+            timing_reason?: string | null;
+            /** Universe */
+            universe: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+        };
+        /** RdAgentFactor */
+        RdAgentFactor: {
+            /** Clocks */
+            clocks: {
+                [key: string]: components["schemas"]["RdAgentClock"];
+            };
+            description: components["schemas"]["RecordedFact"];
+            failure_reason: components["schemas"]["RecordedFact"];
+            /** Figures */
+            figures: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            idea_families: components["schemas"]["RecordedFact"];
+            name: components["schemas"]["RecordedFact"];
+            /** Sentence */
+            sentence: string;
+            /** Status */
+            status: string;
+        };
+        /** RdAgentRun */
+        RdAgentRun: {
+            cost_usd: components["schemas"]["RecordedFact"];
+            counted_calls: components["schemas"]["RecordedFact"];
+            ended_at: components["schemas"]["RecordedFact"];
+            factors_proposed: components["schemas"]["RecordedFact"];
+            /** Folder */
+            folder: string;
+            local_embedding_calls: components["schemas"]["RecordedFact"];
+            outcome: components["schemas"]["RecordedFact"];
+            provider_embedding_calls: components["schemas"]["RecordedFact"];
+            rounds_completed: components["schemas"]["RecordedFact"];
+            /** Run Id */
+            run_id: string;
+            /** Stages */
+            stages: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            started_at: components["schemas"]["RecordedFact"];
+            universe_includes_delisted: components["schemas"]["RecordedFact"];
+            universe_size: components["schemas"]["RecordedFact"];
+        };
+        /** RdAgentRunList */
+        RdAgentRunList: {
+            /** Items */
+            items: components["schemas"]["RdAgentRun"][];
+            /** Ledger Reason */
+            ledger_reason?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** RecordedFact */
+        RecordedFact: {
+            /** Basis */
+            basis?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Value */
+            value: string | number | boolean | string[] | null;
+        };
         /** ResearchAnswerBundleV1 */
         ResearchAnswerBundleV1: {
             answers: components["schemas"]["ResearchMaterialAnswers"];
@@ -16654,6 +16841,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProviderCheckReceipt"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    list_runs_api_rdagent_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RdAgentRunList"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    run_detail_api_rdagent_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RdAgentDetail"];
                 };
             };
             /** @description Stable, redacted Workstation error */

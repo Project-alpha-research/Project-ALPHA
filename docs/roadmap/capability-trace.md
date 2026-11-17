@@ -67,6 +67,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `ai-stock-research` | Call and dollar caps on RD-Agent's model use |
 | `rdagent-run-viewer` | RD-Agent's own report reader and run viewer used instead of rebuilt |
 | `native-job-result` | RD-Agent results readable in the Workstation |
+| `rdagent-workstation-panel` | RD-Agent results readable in the Workstation |
 | `daily-rule-study` | Say an idea in plain English to Claude or ChatGPT and the whole pipeline runs it |
 | `ai-research-team` | Small autonomous research team around RD-Agent |
 | `mac-real-data` | Confirmation on the Mac with a paid, authoritative data source |

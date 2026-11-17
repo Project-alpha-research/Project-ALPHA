@@ -16638,6 +16638,456 @@
         ],
         "type": "string"
       },
+      "RdAgentCap": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "used": {
+            "$ref": "#/components/schemas/RecordedFact"
+          }
+        },
+        "required": [
+          "used",
+          "limit"
+        ],
+        "title": "RdAgentCap",
+        "type": "object"
+      },
+      "RdAgentClock": {
+        "additionalProperties": false,
+        "properties": {
+          "deflation": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Deflation",
+            "type": "object"
+          },
+          "family_deflation": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Family Deflation",
+            "type": "object"
+          },
+          "figures": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Figures",
+            "type": "object"
+          },
+          "replay": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Replay",
+            "type": "object"
+          },
+          "screen": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Screen",
+            "type": "object"
+          },
+          "spread": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Spread",
+            "type": "object"
+          }
+        },
+        "required": [
+          "figures",
+          "screen",
+          "spread",
+          "replay",
+          "deflation",
+          "family_deflation"
+        ],
+        "title": "RdAgentClock",
+        "type": "object"
+      },
+      "RdAgentDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "cache": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Cache",
+            "type": "object"
+          },
+          "caps": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RdAgentCap"
+            },
+            "title": "Caps",
+            "type": "object"
+          },
+          "factor_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factor Reason"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/RdAgentFactor"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "funnel": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Funnel",
+            "type": "object"
+          },
+          "identity_rescales": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/RecordedFact"
+              },
+              "type": "object"
+            },
+            "title": "Identity Rescales",
+            "type": "array"
+          },
+          "identity_splits": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/RecordedFact"
+              },
+              "type": "object"
+            },
+            "title": "Identity Splits",
+            "type": "array"
+          },
+          "months": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/RecordedFact"
+              },
+              "type": "object"
+            },
+            "title": "Months",
+            "type": "object"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "providers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Providers",
+            "type": "object"
+          },
+          "refusal_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refusal Reason"
+          },
+          "refusals": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/RecordedFact"
+              },
+              "type": "object"
+            },
+            "title": "Refusals",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/RdAgentRun"
+          },
+          "timing": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/RecordedFact"
+              },
+              "type": "object"
+            },
+            "title": "Timing",
+            "type": "array"
+          },
+          "timing_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Reason"
+          },
+          "universe": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Universe",
+            "type": "object"
+          }
+        },
+        "required": [
+          "run",
+          "funnel",
+          "factors",
+          "refusals",
+          "timing",
+          "caps",
+          "months",
+          "cache",
+          "providers",
+          "universe",
+          "identity_splits",
+          "identity_rescales",
+          "notes"
+        ],
+        "title": "RdAgentDetail",
+        "type": "object"
+      },
+      "RdAgentFactor": {
+        "additionalProperties": false,
+        "properties": {
+          "clocks": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RdAgentClock"
+            },
+            "title": "Clocks",
+            "type": "object"
+          },
+          "description": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "failure_reason": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "figures": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Figures",
+            "type": "object"
+          },
+          "idea_families": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "name": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "sentence": {
+            "title": "Sentence",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "idea_families",
+          "status",
+          "sentence",
+          "failure_reason",
+          "figures",
+          "clocks"
+        ],
+        "title": "RdAgentFactor",
+        "type": "object"
+      },
+      "RdAgentRun": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_usd": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "counted_calls": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "ended_at": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "factors_proposed": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "folder": {
+            "title": "Folder",
+            "type": "string"
+          },
+          "local_embedding_calls": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "provider_embedding_calls": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "rounds_completed": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "stages": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Stages",
+            "type": "object"
+          },
+          "started_at": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "universe_includes_delisted": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "universe_size": {
+            "$ref": "#/components/schemas/RecordedFact"
+          }
+        },
+        "required": [
+          "run_id",
+          "folder",
+          "started_at",
+          "ended_at",
+          "outcome",
+          "rounds_completed",
+          "counted_calls",
+          "local_embedding_calls",
+          "provider_embedding_calls",
+          "cost_usd",
+          "factors_proposed",
+          "stages",
+          "universe_size",
+          "universe_includes_delisted"
+        ],
+        "title": "RdAgentRun",
+        "type": "object"
+      },
+      "RdAgentRunList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RdAgentRun"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "ledger_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Reason"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RdAgentRunList",
+        "type": "object"
+      },
+      "RecordedFact": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "RecordedFact",
+        "type": "object"
+      },
       "ResearchAnswerBundleV1": {
         "additionalProperties": false,
         "properties": {
@@ -31544,6 +31994,81 @@
         "summary": "Check Provider",
         "tags": [
           "control-plane"
+        ]
+      }
+    },
+    "/api/rdagent/runs": {
+      "get": {
+        "description": "List direct-child factor-loop receipts, newest first; no execution or mutation.",
+        "operationId": "list_runs_api_rdagent_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RdAgentRunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "rdagent"
+        ]
+      }
+    },
+    "/api/rdagent/runs/{run_id}": {
+      "get": {
+        "description": "Select an identity from the run list, never a request-supplied path.",
+        "operationId": "run_detail_api_rdagent_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RdAgentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Run Detail",
+        "tags": [
+          "rdagent"
         ]
       }
     },

@@ -42,6 +42,7 @@ from alpha_web.api import ml as ml_api
 from alpha_web.api import native_results as native_results_api
 from alpha_web.api import owner_auth as owner_auth_api
 from alpha_web.api import paper as paper_api
+from alpha_web.api import rdagent as rdagent_api
 from alpha_web.api import research as research_api
 from alpha_web.api import risk as risk_api
 from alpha_web.api import rules as rules_api
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     app.include_router(runs_api.router)
     app.include_router(jobs_api.router)
     app.include_router(native_results_api.router)
+    app.include_router(rdagent_api.router)
     app.include_router(investigations_api.router)
     app.include_router(activity_api.router)
     app.include_router(assistant_api.router)

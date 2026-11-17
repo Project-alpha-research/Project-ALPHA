@@ -46,7 +46,7 @@ def test_placeholder_values_name_real_inputs() -> None:
     }
     family = judge_namespace()["idea_family"]("ridge_mix", variables=variables)
     assert set(family.split("; ")) == {
-        "long-term reversal",
+        "past return (momentum or reversal)",
         "drawdown",
         "VWAP distance",
         "other: overnight_drift",
@@ -58,7 +58,10 @@ def test_math_symbols_ignored_and_closed_input_retained() -> None:
     family = judge_namespace()["idea_family"]
     symbols = dict.fromkeys(["C", "O", "r", "m_s", "c_i_s", "sigma", "beta"], "momentum prose")
     assert family("ridge_mix", variables=symbols) == "composite: unknown inputs"
-    assert family("ridge_mix", variables={**symbols, "mom_60d": "x"}) == "momentum and trend"
+    assert (
+        family("ridge_mix", variables={**symbols, "mom_60d": "x"})
+        == "past return (momentum or reversal)"
+    )
 
 
 def test_proposer_admission_instructions() -> None:
@@ -313,7 +316,7 @@ def test_old_failed_deflation_does_not_keep_family_open() -> None:
     }
     ns = judge_namespace()
     assert "derived" in ns["ledger_summary"](row)
-    assert "no candidate: momentum and trend" in ns["family_summary"]([row] * 3, 3)
+    assert "no candidate: past return (momentum or reversal)" in ns["family_summary"]([row] * 3, 3)
     assert row["status"] == "CANDIDATE"
 
 
@@ -389,7 +392,7 @@ def test_successful_batch_is_cached_even_when_later_batch_hits_cap(
                     1,
                 )
             },
-            False,
+            True,
         ),
         ({"mom_60d": "momentum"}, True),
     ],
@@ -408,7 +411,7 @@ def test_third_run_proposals_at_coding_boundary(
     coder = SimpleNamespace(develop=Mock(return_value="coded"))
     guard = ns["FamilyGuard"](coder)
     if refused:
-        with pytest.raises(ValueError, match="momentum and trend"):
+        with pytest.raises(ValueError, match=r"past return \(momentum or reversal\)"):
             guard.develop(exp)
         coder.develop.assert_not_called()
     else:

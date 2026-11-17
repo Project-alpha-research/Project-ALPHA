@@ -452,13 +452,22 @@ judge ([ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md)). RD-Agen
 codes factors; its settings `QLIB_FACTOR_SCEN`, `QLIB_FACTOR_HYPOTHESIS_GEN`, `QLIB_FACTOR_RUNNER`
 and `QLIB_FACTOR_SUMMARIZER` name four classes in `alpha_factor_judge.py`; the runner sends the
 factor values to `alpha_cli.rdagent_factor_eval` in ALPHA's environment, which screens each new
-factor at daily (1-day), weekly (7-day) and monthly (28-day) holding clocks. Decision days
-start at 2021-01-01 and advance by the clock's calendar days; screens use non-overlapping
-next-open-to-open forward returns ending by 2023-12-31, autocorrelation-adjusted inference and
-seeded stationary-bootstrap intervals. Fewer than 20 observations carry a low-sample warning.
-BH counts every factor x clock as a trial across runs; V1, V2 and imported historical results
-each count once at daily. Records disclose both trial count and distinct factor count.
-Only clocks with q < 0.10 replay through ALPHA's canonical synchronized engine. Replays choose
+factor on its declared weekly (7-day) or monthly (28-day) primary clock. Its description must
+contain `declared_direction: +1` (buy high ranks) or `-1` (buy low ranks), `primary_clock: weekly`
+or `monthly`, and `direction_reason: <one sentence of economic reasoning>`. The scenario's simulator
+text (which the step writing each factor's description reads) and the swing brief both give this
+exact line; `idea_families.declaration` reads it. Missing declarations
+are refused before coding, with the closed-family guard's same two re-asks. Missing request fields
+are refused before panel reads. Decision days start at 2021-01-01; outcomes are next-open to open.
+Daily, other-clock and opposite-sign screens are stored as diagnostics and cannot pass or replay.
+Choosing the sign or clock after seeing this is a new trial and will be counted.
+The screen retains the larger uncertainty from historical inference, Newey-West and date/instrument
+clustering. When the two-way sandwich is not positive (it happens for a near-constant IC), the larger
+one-way clustered variance is used, as Cameron, Gelbach and Miller advise, and recorded; it is never
+smaller than the date-only variance the old screen used, so it adds no significance. Its one-sided p must be at most half `0.10 * (1 + confirmed) / m`: only earlier
+candidates under the new deflation rule count as confirmed. BH q remains a diagnostic.
+New factors count once in m; historical V3 rows keep their three clocks and V1/V2/imports count once.
+A screened primary clock replays through ALPHA's canonical synchronized engine. Replays choose
 the top third on clock decision days, then drift holdings by closes between rebalances. Small
 residual trades caused by fill prices and fees are executed and charged. Costs remain 10 bps
 fee plus 6 bps slippage per side; annualisation uses 365 days. Each clock reports net/gross
@@ -467,15 +476,25 @@ initial allocation), annual cost (total fees and slippage divided by mean canoni
 annualised over the replay days), and rebalance count. The engine's final liquidation is
 charged and included in turnover and costs.
 
-Only a passing swing lead clock whose recorded deflated Sharpe meets its unchanged threshold makes a CANDIDATE.
-A passing screen, spread and replay with failed deflation is DEFLATION_FAIL; trial counting is unchanged.
-A daily-only pass is FAST_ONLY and ALPHA's decision remains false. New evaluations write one
-V3 ledger row per factor with all three clock results; top-level screen/replay/p/q, mean IC and spread mirror the named lead clock.
-The lead is the lowest-q passing swing clock, otherwise the lowest-q clock; RD-Agent's legacy
-IC uses that lead. The legacy result also includes `<factor>.<clock>.status`, `mean_ic`,
-`q`, `net_annual_excess` and `mean_turnover`, plus `<factor>.feedback` with the explanation.
-Deflated Sharpe counts every replayed factor x clock. Repeated code hashes
-are not evaluated again. The proposer receives the plain-English swing brief on every context
+A CANDIDATE passed its declared primary screen, spread, costed replay and deflation. It is a lead
+for one owner-approved check on reserved data, never evidence by itself. DEFLATION_FAIL means the
+first three passed but deflation did not. The primary clock is always the lead; no new FAST_ONLY
+result is possible. Old rows retain their recorded figures and are labelled old rule.
+`family-looks-x2-floor-1` deflates with N twice every counted factor-clock look, including this
+request, and variance max(sample variance of replayed per-observation Sharpes, 1/(T-1)).
+The threshold stays unchanged. The variance and winning term, N and rule id are recorded; the
+separate family PSR is diagnostic. Earlier spread failures still replay only to count their Sharpe.
+Every receipt and pass includes expected chance passes: evaluable factors times the pure-noise rate
+0.001, measured 2026-11-17 (0 of 6,000 noise factors became CANDIDATE on the frozen 141-coin panel;
+0.001 rounds up the 95% upper bound). It must be re-measured when these rules change.
+Code repeats and same-panel rank twins (mean absolute daily correlation at least 0.98) add no look.
+New rows point to hash-bound factor values; unavailable earlier values are explicitly counted.
+Sign does not distinguish idea families: long-term reversal and short-term past-return reversal
+join momentum in "past return (momentum or reversal)"; intraday returns and gaps remain together.
+The momentum family already held 7- to 20-day momentum, the sign mirror of short-term reversal, so
+the merge follows the sign rule; the table does not split past returns by horizon (an owner choice).
+Closure is recomputed from the ledger, including the merged failures. No closure threshold changes.
+The proposer receives the plain-English swing brief on every context
 call, before the cross-run ledger summary, including when no ledger exists. It asks for slow,
 low-turnover signals with a mechanism and falsifier, explains the daily ideas that failed
 after costs and the slow ranks whose held top third lost before costs. The summary lists the
@@ -1013,7 +1032,9 @@ small nonzero costs and turnover remain visible. Receipt chat usage reports a wh
 
 ### Provider failures, cache reuse and deflation (fourth loop fix-up)
 
-`loop_guard.ProviderGuard` surrounds coding, running and feedback. A fresh matching gateway chat
+`loop_guard.ProviderGuard` surrounds proposal, coding, running and feedback. Proposal failures
+record `proposal_failed_provider_timeout` or `proposal_failed_provider_error` and skip the round
+without inventing a trial; budget refusals and programming errors retain their existing behavior. A fresh matching gateway chat
 receipt plus upstream's exhausted-chat RuntimeError records `coding_failed_provider_timeout` or
 `coding_failed_provider_error`, step, attempts and waited seconds. Coding/running use upstream's
 FactorEmptyError skip path; feedback returns a negative result. Neither path invents a trial;
@@ -1034,8 +1055,8 @@ Hits cost no money or embedding attempts; receipts count `embedding_requests`, `
 and `embedding_cache_hits`. A new gateway process starts empty. Unknown-usage attempts keep
 `usage_known: false`; booked amounts say "reserved estimate, not confirmed by the provider".
 
-Deflation uses the already recorded `deflated_sharpe.dsr`, `threshold` and `n_trials`, with no
-estimator or count change. Feedback gives them for every replayed clock. Only CANDIDATE can replace
+Readers use the stored `deflated_sharpe.dsr`, `threshold` and `n_trials`; new trials use
+the counting and variance rule described above. Feedback gives them for every replayed clock. Only CANDIDATE can replace
 the best result. The read model derives DEFLATION_FAIL from old failed-deflation candidates and
 labels the derivation, without rewriting rows. New figures mirror `lead_clock` with `figures_clock`;
 old daily mirrors remain valid and readers prefer the per-clock block, or explicitly label daily.

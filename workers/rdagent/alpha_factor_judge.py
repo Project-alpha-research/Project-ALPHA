@@ -35,13 +35,22 @@ LEGACY_KEYS = ["IC"] + [
 VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
 
 
+# The experiment step writes each factor's "description" and sees the scenario's simulator text,
+# not the hypothesis context, so both carry this line; idea_families.declaration reads it.
+DECLARATION_TEMPLATE = (
+    'End every factor "description" with this line, filled in: declared_direction: +1; '
+    "primary_clock: weekly; direction_reason: <one sentence of economic reasoning>. Write +1 "
+    "when high factor values are bought or -1 when low values are bought, and weekly (7-day "
+    "hold) or monthly (28-day hold); daily cannot be chosen."
+)
 SWING_BRIEF = (
     "Single mechanisms are as welcome as learned mixes. A mix must list each input feature by name "
     "in its variables. Open families include every listed other: family and any mechanism not "
     "in the closed list. The trader is a retail swing trader holding days to weeks, "
     "never high frequency. "
-    "ALPHA judges every factor at daily, weekly (7-day) and monthly (28-day) holding clocks; "
-    "only a weekly or monthly pass can become a candidate. Wanted: slow signals whose "
+    + DECLARATION_TEMPLATE
+    + " Only that declared sign and clock can pass; all other results are diagnostic only: "
+    "cannot pass. Wanted: slow signals whose "
     "cross-sectional ranks change rarely (low turnover). State an economic or behavioural "
     "mechanism in the hypothesis and a falsifier: what result would show it wrong. "
     "Every trade costs 10 bps fee plus 6 bps slippage on each side; turning over half the book "
@@ -251,6 +260,13 @@ def ledger_summary(row: dict[str, Any]) -> str:
         line += f"; {row['writeoff_count']} write-off" + ("" if row["writeoff_count"] == 1 else "s")
     if row.get("failure_reason"):
         line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
+    if row.get("chance_pass_message"):
+        line += "; " + row["chance_pass_message"]
+    if row.get("diagnostics"):
+        line += (
+            "; diagnostic only: cannot pass. Choosing the sign or clock after "
+            "seeing this is a new trial and will be counted."
+        )
     return line
 
 
@@ -440,16 +456,18 @@ class AlphaFactorScenario(QlibFactorScenario):
             "screen windows phased at 2021-01-01. ALPHA canonical synchronized long-only replay "
             "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
-            "365 days/year. Direction chosen in-sample. BH q < 0.10 screens the cross-run trial "
-            "ledger, counting each factor x clock as a trial; a screened clock can pass only "
+            "365 days/year. " + DECLARATION_TEMPLATE + " The conservative screen "
+            "counts each new factor once; "
+            "historical per-clock looks remain counted. A screened primary clock can pass only "
             "if the top third it would hold beat its bottom third before costs. "
             "Hold drifted weights between rebalances; residual trades are executed and charged. "
             "New frozen panels require 20 consecutive daily bars and a non-null factor to rank. "
             "Missing rows are null. Held missing names wait at last close, exit at the first "
             "resuming close, or lose 30% after 30 calendar days without a bar. Outstanding "
             "waits at panel end also lose 30%; this haircut is an assumption, not a measurement. "
-            "Positive net excess at a weekly or monthly clock makes an exploratory candidate; "
-            "a daily-only pass is FAST_ONLY, never admission, evidence, approval or promotion."
+            "A candidate must pass the declared primary screen, spread, costed"
+            " replay and deflation. "
+            "It is a lead for one owner-approved reserved-data check, never evidence by itself."
         )
 
     @property
@@ -562,6 +580,7 @@ class AlphaFactorRunner(Developer):
                 identity = code
             factor = {
                 "name": task.factor_name,
+                **family_definitions().declaration(getattr(task, "description", "") or ""),
                 "code_sha256": hashlib.sha256(identity).hexdigest(),
                 "status": "FAILED",
                 "lookahead": {"status": "NOT_RUN"},
@@ -831,6 +850,15 @@ class FamilyGuard:
                         ).split("; ")
                     )
                 refused = sorted(proposed & closed)
+                missing = []
+                for task in exp.sub_tasks:
+                    try:
+                        family_definitions().declaration(getattr(task, "description", "") or "")
+                    except ValueError as error:
+                        missing.append(
+                            f"missing declaration in {task.factor_name}: {str(error).rstrip('.')}"
+                        )
+                refused.extend(missing)
                 if not refused:
                     if self.loop is not None and hasattr(self.loop, "loop_prev_out"):
                         previous = self.loop.loop_prev_out[self.round_index()]
@@ -857,7 +885,7 @@ class FamilyGuard:
             ({name for name, _ in FAMILY_KEYWORDS} | known_families() | proposed) - closed
         )
         message = (
-            "Refused closed families: "
+            ("Refused closed families: " if proposed & closed else "Refused: ")
             + "; ".join(refused)
             + ". "
             + family_permissions(closed, proposed)
@@ -881,8 +909,14 @@ class FamilyGuard:
         )
         row: dict[str, Any] = {
             "schema": "AlphaRdagentRoundV1",
-            "status": "no_admissible_idea" if final else "refused_closed_family",
-            "reason": "refused_closed_family",
+            "status": "no_admissible_idea"
+            if final
+            else "refused_missing_declaration"
+            if any(r.startswith("missing declaration") for r in refused)
+            else "refused_closed_family",
+            "reason": "refused_missing_declaration"
+            if any(r.startswith("missing declaration") for r in refused)
+            else "refused_closed_family",
             "attempt": attempt,
             "trial_created": False,
             "iteration": self.round_index(),
@@ -898,6 +932,7 @@ class FamilyGuard:
                     ).split("; ")
                 )
                 & closed
+                or any(item.startswith("missing declaration") for item in refused)
             ],
             "refused_families": refused,
             "all_closed_families": sorted(closed),

@@ -231,6 +231,28 @@ def _rdagent(row: dict[str, Any]) -> dict[str, Any]:
             else:
                 screen = row["clocks"].get("daily", {}).get("screen", row["screen"])
         measures["mean_ic"] = screen.get("mean_ic")
+        result = (
+            row.get("clocks", {})
+            .get(row.get("lead_clock", "daily"), row)
+            .get("replay", {})
+            .get("deflated_sharpe", {})
+        )
+        measures.update(
+            {k: result[k] for k in ("dsr", "deflation_n", "deflation_variance") if k in result}
+        )
+        measures.update(
+            {
+                k: row.get(k)
+                for k in (
+                    "screen_cutoff",
+                    "screen_m",
+                    "screen_confirmed",
+                    "bh_q_diagnostic",
+                    "expected_chance_passes",
+                )
+                if k in row
+            }
+        )
     labels = tuple(
         label
         for label, present in (

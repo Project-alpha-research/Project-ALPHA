@@ -132,6 +132,8 @@ def trial_clocks(row: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Older rows and imported results each contribute exactly one daily trial."""
     if row["status"] == "IMPORTED" or row["schema"] != "AlphaRdagentFactorTrialV3":
         return {"daily": row}
+    if "primary_clock" in row:
+        return {row["primary_clock"]: row["clocks"][row["primary_clock"]]}
     return {clock: row["clocks"][clock] for clock in CLOCKS}
 
 
@@ -144,7 +146,15 @@ def trial_family(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
     return family
 
 
-def overall_status(clocks: dict[str, dict[str, Any]]) -> tuple[str, str]:
+def overall_status(
+    clocks: dict[str, dict[str, Any]], primary_clock: str | None = None
+) -> tuple[str, str]:
+    if primary_clock is not None:
+        trial = clocks[primary_clock]
+        status = trial["status"]
+        if status == "PASS":
+            status = "CANDIDATE" if deflation_passes(trial) else "DEFLATION_FAIL"
+        return status, primary_clock
     passing = [c for c in SWING_CLOCKS if clocks[c]["status"] == "PASS"]
     lead = min(passing or list(CLOCKS), key=lambda c: clocks[c]["q"])
     statuses = [trial["status"] for trial in clocks.values()]
@@ -188,7 +198,7 @@ def clock_feedback(row: dict[str, Any]) -> str:
             )
         parts.append(
             f"{clock}: {trial['status']}, mean rank IC {figure(screen.get('mean_ic'))}, "
-            f"q={figure(trial.get('q'))}, {outcome}."
+            f"BH q diagnostic={figure(trial.get('q'))}, {outcome}."
         )
         if replay and "error" not in replay and "counted_only" not in replay:
             parts.append(f"{clock}: {deflation_note(replay)}.")
@@ -231,6 +241,15 @@ def clock_feedback(row: dict[str, Any]) -> str:
         "REPEAT": "This code was already evaluated and supplies no new evidence.",
     }
     parts.append(reason[row["status"]])
+    if row.get("screen_rule"):
+        parts.append(
+            f"One-sided screen cutoff {figure(row.get('screen_cutoff', 0) / 2)} "
+            f"({row.get('screen_m')} looks, {row.get('screen_confirmed')} confirmed)."
+        )
+    if row.get("diagnostics"):
+        parts.append(diagnostic_feedback(row))
+    if row.get("chance_pass_message"):
+        parts.append(row["chance_pass_message"])
     return " ".join(parts)
 
 
@@ -252,7 +271,15 @@ def validate_clock_row(row: dict[str, Any]) -> None:
         raise ValueError("invalid V3 clocks or lead")
     if not 1 <= row["distinct_factors"] <= row["family_size"]:
         raise ValueError("invalid V3 family counts")
-    statuses = {"SCREEN_FAIL", "SPREAD_FAIL", "REPLAY_FAIL", "PASS", "DEGENERATE", "ERROR"}
+    statuses = {
+        "SCREEN_FAIL",
+        "SPREAD_FAIL",
+        "REPLAY_FAIL",
+        "PASS",
+        "DEGENERATE",
+        "ERROR",
+        "DIAGNOSTIC",
+    }
     for trial in row["clocks"].values():
         if not 0 <= trial["p"] <= 1 or not 0 <= trial["q"] <= 1:
             raise ValueError("invalid V3 clock metrics")
@@ -265,3 +292,23 @@ def validate_clock_row(row: dict[str, Any]) -> None:
         raise ValueError("V3 figures clock differs from lead")
     if any(row[k] != row["clocks"][mirror][k] for k in ("p", "q", "screen", "replay")):
         raise ValueError("V3 clock mirror differs")
+
+
+def diagnostic_feedback(row: dict[str, Any]) -> str:
+    details = []
+    for clock, entry in row["diagnostics"].items():
+        stats = entry.get("screen", entry)
+        if clock == "opposite_direction":
+            details.append(f"primary opposite-sign p={figure(stats.get('opposite_direction_p'))}")
+        else:
+            details.append(
+                f"{clock}: IC {figure(stats.get('mean_ic'))}, "
+                f"declared-sign p={figure(stats.get('p'))}, "
+                "opposite-sign p="
+                + figure(stats.get("diagnostics", {}).get("opposite_direction_p"))
+            )
+    return (
+        "diagnostic only: cannot pass. "
+        + "; ".join(details)
+        + ". Choosing the sign or clock after seeing this is a new trial and will be counted."
+    )

@@ -125,11 +125,11 @@ def test_repeat_immutable_and_asset_identity(
     first = find.run_find(spec, home=tmp_path)
     folder = Path(first["folder"])
     before = {p: (p.stat().st_mtime_ns, p.read_bytes()) for p in folder.rglob("*") if p.is_file()}
-    again = find.run_find(spec, home=tmp_path, context_bars=5, max_sheets=1)
+    again = find.run_find(spec, home=tmp_path, context_bars=60, max_sheets=1)
     assert first["find_id"] == again["find_id"] and "repeat" in again["labels"]
     assert again["trials_total"] == 2
-    assert again["context_bars"] == 30  # the sheets on disk, not the ignored request
-    assert "nothing was redrawn (its sheets show 30 bars" in find._text(again)
+    assert again["context_bars"] == 60
+    assert "nothing was redrawn (its sheets show 60 bars" in find._text(again)
     assert before == {p: (p.stat().st_mtime_ns, p.read_bytes()) for p in before}
     subset = find.run_find(spec, home=tmp_path, assets=["SPY"])
     assert subset["find_id"] != first["find_id"]
@@ -471,3 +471,15 @@ def test_command_json_errors_and_human_output(
         ("--max-sheets", "51"),
     ]:
         assert runner.invoke(find.setup_app, ["find", str(path), option, value]).exit_code == 2
+
+
+def test_context_window_changes_find_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worked_store(tmp_path)
+    monkeypatch.setattr(find, "draw_sheet", lambda *a, **k: b"png")
+    spec = spec_file(tmp_path, worked=True)
+    default = find.run_find(spec, home=tmp_path)
+    assert default["context_bars"] == 60
+    different = find.run_find(spec, home=tmp_path, context_bars=30)
+    assert default["find_id"] != different["find_id"]

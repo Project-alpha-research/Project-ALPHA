@@ -1311,3 +1311,16 @@ real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily b
 needs = []
 state = "Working"
 docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+
+[[capability]]
+id = "setup-study"
+name = "Study outcomes after every separate setup occurrence"
+what = "Measure net forward returns against drift and spaced random dates, with one counted exploratory trial, a figure and citable facts."
+see_it = ["alpha setup study <find_id> --json", "alpha results cite <study_id> setup_mean_net_return"]
+entry_points = ["cli: alpha setup", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_setup_study.py::test_returns_incomplete_facts_repeat_and_blindness", "tests/unit/test_setup_controls.py::test_fixed_seed_null_calibration_and_planted_effect", "tests/unit/test_setup_controls.py::test_halves_compare_with_controls_from_their_own_half", "tests/unit/test_event_study_figure.py::test_dimensions_and_bytes"]
+proof_smoke = ["tests/smoke/test_setup_study_smoke.py::test_setup_study_and_repeat"]
+real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was studied at 5, 10, 20 and 60 bars (primary 20) against drift and 2,000 random-date draws; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]

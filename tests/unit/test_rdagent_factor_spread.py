@@ -102,7 +102,7 @@ def test_spread_failure_is_recorded_and_never_passes(tmp_path: Path) -> None:
     # The planted factor's replays are profitable, yet no clock may pass once its spread failed.
     assert {t["status"] for t in factor["clocks"].values()} == {"SPREAD_FAIL", "DIAGNOSTIC"}
     assert all(
-        t["replay"]["net"]["annualized_return"] > 0 for t in ev.trial_clocks(factor).values()
+        t["replay"]["net"]["annualized_return"] > 0 for t in clocks.trial_clocks(factor).values()
     )
     assert "top-third-does-not-beat-bottom-third" in record["feedback_text"]
     row = json.loads((tmp_path / "ledger.jsonl").read_text().splitlines()[0])
@@ -121,7 +121,7 @@ def test_spread_never_turns_a_failure_into_a_pass(tmp_path: Path) -> None:
     factor = record["factors"][0]
     assert factor["status"] == "CANDIDATE"
     assert factor["replay"]["deflated_sharpe"]["passed"] is True
-    for trial in ev.trial_clocks(factor).values():
+    for trial in clocks.trial_clocks(factor).values():
         assert trial["spread"]["status"] == "PASS"
         assert trial["status"] == ("PASS" if trial["replay"]["net"]["annualized_return"] > 0
                                    else "REPLAY_FAIL")  # fmt: skip

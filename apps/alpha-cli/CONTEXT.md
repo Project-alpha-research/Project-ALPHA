@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 23f2d298dd605507
+verified: fb22ee21fa344098
 ---
 
 # alpha-cli workspace
@@ -62,7 +62,8 @@ option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) 
 do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
-  light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity splits: `_rdagent_membership`, `_rdagent_identity`; policy in the worker README.
+  light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
+  invalid-code messages and replay field compatibility: `_rdagent_stability`; policy in the worker README.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through
@@ -71,7 +72,6 @@ do not add a private copy.
   `_structural_digest.py` itself is guarded: any edit invalidates every approval.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
-
 ## Outputs
 
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.

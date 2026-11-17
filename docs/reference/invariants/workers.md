@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 494f77fb9be559ce
+verified: 120fcae216f26301
 ---
 
 # Worker invariants
@@ -34,7 +34,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `gate.py check` does not run worker tests.
 - Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
   runtime bundle, CPython 3.11 (see below).
-
 ## Qlib worker
 
 - This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or
@@ -73,7 +72,6 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) § Open before v3 is the default).
 - W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
   accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
-
 ## Literature worker
 
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
@@ -166,7 +164,9 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
-  New panels split identities and refuse jumps across any gap of one or more missing days; old receipts keep their policy.
+  New panels rescale redenominations, split reused tickers and refuse unexplained gap jumps; old receipts keep their policy.
+  Frozen counts correct stale scenario text. Identical-input mismatches are `UNSTABLE`; both invalid code statuses count as trials.
+  Closed-family proposals stop before coding with no trial; code failures do not close families. Write-offs reach feedback.
   Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
   recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the
@@ -181,7 +181,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   (stage `replay`, within-family Benjamini-Hochberg q, the same label and false authority flags). Rule rows count in
   the ledger total (`ledger_trials_all_families` in family results and factor evaluations) but never enter RD-Agent's factor
   family, deflation, distinct-factor count or proposal summary. Tests: `tests/unit/test_rdagent_rule_family.py`.
-- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, or `FAILED` for a wrong output
+- Verdict feedback and unknown ledger rows: ALPHA's code-level verdict (`LOOKAHEAD`, `UNSTABLE`, or `FAILED` for a wrong output
   shape; never a check that merely errored) demotes that exact code from RD-Agent's successful coding references and is
   recorded in `coder-verdicts.jsonl`; a demotion failure is recorded and never stops the run (see the memory section of the
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a

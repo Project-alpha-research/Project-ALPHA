@@ -22,6 +22,7 @@ class LedgerSource:
     source: str
     file: str
     state: str = "missing"
+    optional: bool = False
     rows: int = 0
     mapped: int = 0
     unknown: int = 0
@@ -45,7 +46,9 @@ class LedgerSnapshot:
     raw_rows: dict[tuple[str, int], dict[str, Any]] = field(default_factory=dict)
 
 
-def ledger_sources(home: Path, rdagent: Path | None = None) -> list[LedgerSource]:
+def ledger_sources(
+    home: Path, rdagent: Path | None = None, *, rdagent_optional: bool = False
+) -> list[LedgerSource]:
     """Explicit RD-Agent paths take precedence over local source configuration."""
     config = home / "ledger/sources.toml"
     if rdagent is None and config.exists():
@@ -68,7 +71,10 @@ def ledger_sources(home: Path, rdagent: Path | None = None) -> list[LedgerSource
     paths = [("spine", home / "ledger/trials.jsonl")]
     if rdagent is not None:
         paths.append(("rdagent", rdagent))
-    return [LedgerSource(source, str(path.resolve())) for source, path in paths]
+    return [
+        LedgerSource(source, str(path.resolve()), optional=source == "spine" or rdagent_optional)
+        for source, path in paths
+    ]
 
 
 def _read_bytes(path: Path) -> bytes:

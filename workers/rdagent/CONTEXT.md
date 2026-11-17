@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 5a236b344c0fd57a
+verified: 6e964ee89fc6cc8a
 ---
 
 # RD-Agent worker workspace
@@ -53,4 +53,4 @@ no market, inference or evidence authority.
 
 - Root tests under `tests/unit/test_native_*.py` and `tests/unit/test_rdagent_model_gateway.py`.
 - The owning document: `docs/reference/invariants/workers.md` § RD-Agent worker. Identity split counts
-  reach proposer feedback; freeze and naming rules: [README](README.md#identity-breaks-across-a-gap).
+  and write-offs reach proposer feedback; rescaling, reproducibility and family refusal rules: [README](README.md#identity-breaks-across-a-gap).

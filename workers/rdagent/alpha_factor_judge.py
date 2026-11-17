@@ -23,7 +23,7 @@ from rdagent.utils import convert2bool
 from rdagent.utils.agent.tpl import T
 
 from alpha_factor_coder import demote_in_file
-from alpha_factor_data import check_prefix_invariance
+from alpha_factor_data import check_prefix_invariance, current_universe
 
 LEGACY_KEYS = ["IC"] + [
     f"1day.excess_return_{cost}_cost.{metric}"
@@ -46,7 +46,7 @@ SWING_BRIEF = (
     "the daily screen but lost money after costs because they traded 19%-79% of the portfolio "
     "per day; avoid re-proposing them. Slow volatility, illiquidity, max-return and "
     "return-volume ranks then passed the daily rank screen, yet the top third they would hold "
-    "lost 28%-43% a year before costs: on 15 coins a few volatile coins' rallies dominate the "
+    "lost 28%-43% a year before costs: a few volatile coins' rallies can dominate the "
     "mean, so rank order and the top third's return can disagree. ALPHA now rejects such a "
     "factor unless the top third it would hold beat the bottom third "
     "(top-third-does-not-beat-bottom-third). Exploratory, not admitted."
@@ -167,6 +167,14 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
     families: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
+        if row["status"] not in {
+            "SCREEN_FAIL",
+            "SPREAD_FAIL",
+            "REPLAY_FAIL",
+            "FAST_ONLY",
+            "CANDIDATE",
+        }:
+            continue
         for family in idea_family(
             row["name"],
             row.get("description") or "",
@@ -227,13 +235,24 @@ def ledger_summary(row: dict[str, Any]) -> str:
         )
     if row.get("exposure", {}).get("previously_exposed") is True:
         line += "; protected window previously exposed"
+    if "writeoff_count" in row:
+        line += f"; {row['writeoff_count']} write-offs"
     if row.get("failure_reason"):
         line += f"; {row['failure_reason']}: " + str(row.get("failure_detail", "")).split("\n")[0]
     return line
 
 
 def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> None:
+    universe = current_universe()
     context["hypothesis_and_feedback"] += "\n" + SWING_BRIEF
+    correction = f"\nCurrent universe: {universe}; earlier text saying otherwise is out of date"
+    append_ledger_context(context, ledger_name, universe, len(correction))
+    context["hypothesis_and_feedback"] += correction
+
+
+def append_ledger_context(
+    context: dict[str, Any], ledger_name: str | None, universe: str, reserved_chars: int
+) -> None:
     if not ledger_name or not Path(ledger_name).exists():
         return
     raw = Path(ledger_name).read_bytes()
@@ -241,11 +260,7 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
     rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
     if not rows:
         return
-    heading = (
-        "\nALPHA trial ledger (all runs; exploratory, not admitted; "
-        + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
-        + ")\n"
-    )
+    heading = "\nALPHA trial ledger (all runs; exploratory, not admitted; " + universe + ")\n"
     lines: list[str] = []
     seen: set[str] = set()
     unknown: list[str] = []
@@ -259,7 +274,7 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
             ledger_summary(row)  # Validate known rows even outside the 30-row summary.
     # Newest first, whole lines only, within 4000 characters; the count of the rest is stated so
     # the proposer knows the list is partial instead of reading a line cut in half.
-    used, omitted = len(heading), 0
+    used, omitted = len(heading) + reserved_chars, 0
     for row in (r for r in reversed(rows) if r["schema"] in known):
         line = ledger_summary(row)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
@@ -423,10 +438,9 @@ class AlphaFactorScenario(QlibFactorScenario):
 
     @property
     def experiment_setting(self) -> str:
+        universe_text: str = current_universe()
         return (
-            "Binance USDT spot coins, daily bars: "
-            + os.environ.get("ALPHA_FACTOR_UNIVERSE_TEXT", "15 surviving coins only")
-            + ". History only: "
+            "Binance USDT spot coins, daily bars: " + universe_text + ". History only: "
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
             "2023-12-31. 2024-01-01 onward is reserved and never available to this loop. "
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
@@ -461,6 +475,7 @@ class AlphaFactorRunner(Developer):
     def execute_factor(workspace: Any, feedback: Any) -> tuple[Any, str | None, str]:
         """Separate execution, critic and output failures before they reach the ledger."""
         detail = str(getattr(feedback, "execution_feedback", "") or "")
+        reason: str | None
         if not feedback:
             reason = AlphaFactorRunner.text_reason(detail) or "critic_rejected"
             line = AlphaFactorRunner.error_line(detail)
@@ -561,13 +576,15 @@ class AlphaFactorRunner(Developer):
                         120.0,
                     )
                     factor["lookahead"] = check
-                    factor["status"] = "OK" if check["status"] == "PASS" else "LOOKAHEAD"
+                    factor["status"] = {"PASS": "OK", "UNSTABLE": "UNSTABLE"}.get(
+                        check["status"], "LOOKAHEAD"
+                    )
                     if factor["status"] == "OK":
                         frame = values.copy()
                         frame.columns = [task.factor_name]
                         frame.index.names = ["date", "instrument"]
                         frames.append(frame)
-                    elif factor["status"] == "FAILED" or check["status"] == "LOOKAHEAD":
+                    elif check["status"] in {"LOOKAHEAD", "UNSTABLE"}:
                         # Only ALPHA's verdict on the code itself: a check that merely errored
                         # (timeout, subprocess failure) says nothing about the code.
                         rejected.append((task, factor))
@@ -633,10 +650,23 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
 
 class AlphaFactorFeedback(Experiment2Feedback):
     def generate_feedback(self, exp: Any, trace: Any, exception: Exception | None = None) -> Any:
+        refusal = getattr(exp, "alpha_family_refusal", None)
+        if refusal:
+            return HypothesisFeedback(
+                observations=refusal["message"],
+                hypothesis_evaluation="refused_closed_family",
+                new_hypothesis="Choose one of the open families named above.",
+                reason="no_admissible_idea; no data read and no trial created",
+                decision=False,
+            )
         scenario = (
             self.scen.get_scenario_all_desc(action="factor")
             if isinstance(self.scen, QlibQuantScenario)
             else self.scen.get_scenario_all_desc()
+        )
+        scenario += (
+            f"\nCurrent universe: {current_universe()}; "
+            "earlier text saying otherwise is out of date"
         )
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
@@ -666,6 +696,9 @@ class AlphaFactorFeedback(Experiment2Feedback):
         if identity is not None:
             # Keep ALPHA's count in the next proposer's trace even if the model omits it.
             feedback.observations += "\n" + identity["message"]
+        for factor in record.get("factors", []):
+            if factor.get("writeoff_message"):
+                feedback.observations += "\n" + factor["writeoff_message"]
         row = {
             "iteration": record["iteration"],
             "model_decision": response.get("Replace Best Result", "no"),
@@ -685,3 +718,90 @@ class AlphaFactorFeedback(Experiment2Feedback):
                     + "\n"
                 )
         return feedback
+
+
+class FamilyGuard:
+    """Check proposed tasks at the coder boundary; a refusal creates no trial.
+
+    Upstream owns the round scheduler. Its FactorEmptyError ends this round through the
+    native skipped-step path; ALPHA does not rewind the scheduler or replay proposal calls.
+    """
+
+    def __init__(self, coder: Any) -> None:
+        self.coder = coder
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(object.__getattribute__(self, "coder"), name)
+
+    def develop(self, exp: Any) -> Any:
+        path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
+        raw = Path(path).read_bytes() if path and Path(path).exists() else b""
+        rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+        known = {
+            "AlphaRdagentFactorTrialV1",
+            "AlphaRdagentFactorTrialV2",
+            "AlphaRdagentFactorTrialV3",
+        }
+        distinct: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            if row["schema"] in known and row["status"] not in {"REPEAT", "IMPORTED"}:
+                distinct.setdefault(row["code_sha256"], row)
+        families: dict[str, list[str]] = {}
+        for row in distinct.values():
+            if row["status"] not in {
+                "SCREEN_FAIL",
+                "SPREAD_FAIL",
+                "REPLAY_FAIL",
+                "FAST_ONLY",
+                "CANDIDATE",
+            }:
+                continue
+            for family in idea_family(
+                row["name"],
+                row.get("description") or "",
+                row.get("formulation") or "",
+                row.get("variables"),
+            ).split("; "):
+                families.setdefault(family, []).append(row["status"])
+        limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+        closed = {
+            family
+            for family, statuses in families.items()
+            if len(statuses) >= limit and "CANDIDATE" not in statuses
+        }
+        proposed = set()
+        for task in exp.sub_tasks:
+            proposed.update(
+                idea_family(
+                    task.factor_name,
+                    getattr(task, "description", "") or "",
+                    getattr(task, "factor_formulation", "") or "",
+                    getattr(task, "variables", None),
+                ).split("; ")
+            )
+        refused = sorted(proposed & closed)
+        if refused:
+            open_families = sorted(({name for name, _ in FAMILY_KEYWORDS} | proposed) - closed)
+            message = (
+                "Refused closed families: "
+                + "; ".join(refused)
+                + ". open families: "
+                + "; ".join(open_families)
+                + ". No admissible idea; round ended before coding, no trial created."
+            )
+            run = Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+            row = {
+                "schema": "AlphaRdagentRoundV1",
+                "status": "no_admissible_idea",
+                "reason": "refused_closed_family",
+                "trial_created": False,
+                "closed_families": refused,
+                "open_families": open_families,
+                "hypothesis": str(exp.hypothesis),
+                "message": message,
+            }
+            with (run / "rounds.jsonl").open("a") as stream:
+                stream.write(json.dumps(row, sort_keys=True) + "\n")
+            exp.alpha_family_refusal = row
+            raise FactorEmptyError(message)
+        return self.coder.develop(exp)

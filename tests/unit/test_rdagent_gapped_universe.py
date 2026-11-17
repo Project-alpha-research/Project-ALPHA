@@ -182,7 +182,7 @@ def test_replay_future_poison_includes_fills_positions_and_pnl() -> None:
     assert resumed and resumed[0]["date"] == date(2021, 1, 10)
 
 
-def test_worker_frame_has_null_gap_rows_only_inside_span(
+def test_worker_frame_has_null_gaps_and_preserves_full_instrument_grid(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -219,10 +219,11 @@ def test_worker_frame_has_null_gap_rows_only_inside_span(
     bars.write_parquet(source)
     module.prepare(source, tmp_path / "data")
     frame = pd.read_hdf(tmp_path / "data/full/daily_pv.h5", key="data").xs("C0", level="instrument")
-    assert len(frame) == 8
-    assert frame.loc["2020-12-04"].isna().all()
-    assert frame.index.min() == pd.Timestamp("2020-12-02")
-    assert frame.index.max() == pd.Timestamp("2020-12-09")
+    assert len(frame) == 10
+    for day in ("2020-12-01", "2020-12-04", "2020-12-10"):
+        assert frame.loc[day].isna().all()
+    assert frame.index.min() == pd.Timestamp("2020-12-01")
+    assert frame.index.max() == pd.Timestamp("2020-12-10")
 
 
 @pytest.mark.parametrize("clock", ["daily", "weekly", "monthly"])
@@ -502,7 +503,7 @@ def test_gap_free_replay_first_period_is_hand_computed() -> None:
     scores = np.tile(np.array([5.0, 1.0, 2.0, 3.0, 4.0]), (5, 1))  # C0 is the only top name
     series: dict[str, Any] = {}
     metrics, net = judge.replay(bars, scores, days, 1, series=series, gap_policy=True)
-    assert metrics["haircuts_applied"] == 0 and metrics["missing_coin_days"] == 0
+    assert metrics["haircuts_applied"] == 0 and metrics["unrankable_instrument_rebalances"] == 0
     # Decide on the 2021-01-01 close: k = round(5/3) = 2 names, C0 (close 131) and C4 (100), half
     # each, sized at that close. Fill at the 2021-01-02 open (C0 132) with 6 bps slippage and
     # 10 bps fee, buys scaled pro rata to the cash; value at the 2021-01-03 open (C0 133).

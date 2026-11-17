@@ -190,7 +190,7 @@ def test_ridge_composite_inherits_every_input_family() -> None:
     # proposer is told to leave composites that use it too.
     volatility = {"schema": "AlphaRdagentFactorTrialV2", "status": "SCREEN_FAIL", "screen": {}}
     rows = [{**volatility, "name": f"volatility_{n}d"} for n in (20, 40)]
-    rows.append({**REAL_COMPOSITE, "schema": "AlphaRdagentFactorTrialV2", "status": "FAILED"})
+    rows.append({**REAL_COMPOSITE, "schema": "AlphaRdagentFactorTrialV2", "status": "SCREEN_FAIL"})
     rows[-1]["screen"] = {}
     summary = ns["family_summary"](rows, 3)
     closed = summary.split("no candidate: ")[1]

@@ -37,7 +37,7 @@ def test_periods_per_year_calendar_days() -> None:
 
 def test_periods_per_year_hourly_crypto() -> None:
     stamps = [datetime(2020, 1, 1, tzinfo=UTC) + timedelta(hours=i) for i in range(87660)]
-    assert periods_per_year(stamps) == 8766  # 365.25 days, per the specified formula
+    assert periods_per_year(stamps) == 8760  # 24 bars per day x 365 days (weekend bars occur)
 
 
 @pytest.mark.parametrize("count", [0, 1, 29])

@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -250,6 +251,58 @@ def test_performance_hand_computed() -> None:
     assert result["sharpe"] == pytest.approx(0, abs=1e-12)
 
 
+def _flag_sections(base: float | None, delayed: float, variant: float) -> dict[str, Any]:
+    return {
+        "full_sample": {"sharpe": base},
+        "benchmark": {"sharpe": None},
+        "sensitivity": {"variants": [{"kind": "costs", "sharpe": variant}]},
+        "delay": {"base_sharpe": base, "delayed_sharpe": delayed},
+        "concentration": {"top_3": None},
+        "drawdowns": {"episodes": []},
+    }
+
+
+@pytest.mark.parametrize("base", [-1.0, 0.0, float("inf"), float("nan")])
+def test_delay_flag_needs_a_positive_finite_base(base: float) -> None:
+    # A delayed Sharpe of -0.8 is "below half" of a base of -1 arithmetically; that is no finding.
+    names = {item["flag"] for item in flags(_flag_sections(base, -0.8, 0.3))}
+    assert "fragile-to-delay" not in names
+    assert {item["flag"] for item in flags(_flag_sections(1.0, 0.4, 0.6))} == {"fragile-to-delay"}
+
+
+def test_negative_base_does_not_make_a_better_variant_fragile() -> None:
+    assert flags(_flag_sections(-1.0, -1.0, -0.8)) != []  # a losing variant is still flagged
+    assert flags(_flag_sections(-1.0, -1.0, 0.2)) == []
+    assert flags(_flag_sections(2.0, 2.0, 0.9))[0]["flag"] == "fragile-to-costs"
+
+
+def test_flag_text_never_prints_none() -> None:
+    (flag,) = flags(_flag_sections(None, 0.0, -0.2))
+    assert flag["flag"] == "fragile-to-costs"
+    assert "None" not in flag["detail"]
+    assert flag["detail"].endswith("base Sharpe is unavailable.")
+    (rounded,) = flags(_flag_sections(1.23456, 1.0, 0.1))
+    assert rounded["detail"].endswith("base Sharpe is 1.23.")
+
+
+def test_delay_share_is_null_with_a_reason_unless_base_is_positive() -> None:
+    returns = np.array([0.01, 0.03, -0.01, 0.02, 0.01, -0.02])
+    costs = np.zeros(6)
+    winning = delay(returns, np.ones(6), costs, 252)
+    assert winning["base_sharpe"] > 0
+    assert winning["delayed_share_of_base"] == pytest.approx(
+        winning["delayed_sharpe"] / winning["base_sharpe"]
+    )
+    assert "delayed_share_of_base" not in winning["reasons"]
+    losing = delay(-returns, np.ones(6), costs, 252)
+    assert losing["base_sharpe"] < 0
+    assert losing["delayed_share_of_base"] is None
+    assert "not positive" in losing["reasons"]["delayed_share_of_base"]
+    flat = delay(returns, np.zeros(6), costs, 252)
+    assert flat["delayed_share_of_base"] is None
+    assert "unavailable" in flat["reasons"]["delayed_share_of_base"]
+
+
 def test_variants_skip_unchanged_neighbour_and_move_tsmom_lookback() -> None:
     from alpha_cli.spine.diagnose import variant_specs
     from alpha_cli.spine.run import assemble_run_spec
@@ -332,9 +385,12 @@ def test_macro_window_unavailable_reasons(tmp_path: Path, monkeypatch: pytest.Mo
     episode = [{"start": "2020-03-02T00:00:00+00:00", "trough": "2020-03-20T00:00:00+00:00"}]
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", None)
     missing = macro_window(tmp_path, episode)
-    assert missing == {"available": False, "reason": "the context data module is not installed"}
+    assert missing["reason"] == "macro data was not installed when this run was made"
+    assert missing["available"] is False and "detail" in missing
     monkeypatch.setitem(sys.modules, "alpha_data.context.views", SimpleNamespace())
-    assert macro_window(tmp_path, episode)["reason"] == "no stored FRED context series"
+    absent = macro_window(tmp_path, episode)
+    assert absent["reason"] == "macro data was not installed when this run was made"
+    assert "no stored FRED context series" in absent["detail"]
     (tmp_path / "context" / "fred").mkdir(parents=True)
     assert macro_window(tmp_path, [])["reason"] == "no drawdown episode to describe"
 
@@ -407,7 +463,8 @@ def test_macro_window_reads_each_series_as_known_at_the_trough(
     assert rows["DGS10"]["change"] == pytest.approx(-0.4)
     assert rows["VIXCLS"]["trough_value"] == pytest.approx(76.0)
     assert rows["T10Y2Y"] == {"series_id": "T10Y2Y", "reason": "no observation known by then"}
-    assert rows["DFF"] == {"series_id": "DFF", "reason": "DataError"}
+    assert rows["DFF"]["reason"] == "macro data could not be read"
+    assert rows["DFF"]["detail"].startswith("DataError")
     assert rows["UNRATE"]["reason"] == "no observation known by then"
 
 

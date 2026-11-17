@@ -13,8 +13,8 @@ def audit(
     fills: pl.DataFrame | None,
     ranges: dict[datetime, tuple[float, float]],
     *,
-    fee: float,
-    slippage: float,
+    fee: float | None,
+    slippage: float | None,
     trades: int,
     years: float,
     labels: list[str],
@@ -49,22 +49,30 @@ def audit(
         )
     if fills is None or not ranges:
         add("fills-inside-bar-range", None, "Fill trace or source bar ranges are absent.")
+    elif fee is None or slippage is None:
+        add("fills-inside-bar-range", None, "Recorded cost settings are absent.")
     else:
         invalid = sum(
             row["ts"] not in ranges
-            or not ranges[row["ts"]][0] <= row["price"] <= ranges[row["ts"]][1]
+            or not ranges[row["ts"]][0] * (1 - slippage / 10_000)
+            <= row["price"]
+            <= ranges[row["ts"]][1] * (1 + slippage / 10_000)
             for row in fills.iter_rows(named=True)
         )
         add(
             "fills-inside-bar-range",
             invalid == 0,
-            f"{invalid} of {fills.height} fills are outside a matched bar's low–high.",
+            f"{invalid} of {fills.height} fills are outside a matched bar's low–high "
+            f"allowing recorded slippage of {slippage:g} bps.",
         )
-    add(
-        "costs-charged",
-        fee > 0 and slippage > 0,
-        f"Spec fee {fee:g} bps and slippage {slippage:g} bps.",
-    )
+    if fee is None or slippage is None:
+        add("costs-charged", None, "Recorded cost settings are absent.")
+    else:
+        add(
+            "costs-charged",
+            fee > 0 and slippage > 0,
+            f"Spec fee {fee:g} bps and slippage {slippage:g} bps.",
+        )
     add("enough-trades", trades >= 30, f"{trades} closed walk-forward trades; threshold 30.")
     add(
         "benchmark-present",

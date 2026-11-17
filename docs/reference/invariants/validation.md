@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: e697cf3f6bc7a5bc
+verified: bf8ee0f3ccc4c1d6
 ---
 
 # Validation statistics invariants
@@ -21,11 +21,18 @@ covered with the CLI; the gate meanings are here.
 ## Package boundary
 
 - Quant tier: changes here carry the obligations in [engineering § Quant tier](engineering.md#quant-tier).
-- Import only `alpha_core` (numpy/scipy allowed) — import-linter contract `alpha_validation depends only on core`.
+- Import only `alpha_core` (numpy, scipy, statsmodels and ruptures allowed) — import-linter contract
+  `alpha_validation depends only on core`.
   Never import the engine, a strategy, an optimiser or a model; callers pass a `score`/`strategy_fn` callable.
 - pandas and QuantStats-Lumi appear only in `tearsheet.py` — [engineering § Polars by default](engineering.md#polars-by-default).
 - Fail loud on degenerate input with `DataError` — [research integrity § Invalid data fails loud](research-integrity.md#invalid-data-fails-loud).
   The documented exceptions return a typed "undefined" instead (below); never return NaN as a silent answer.
+- The investigation-tool statistics (`attribution.py`, `regimes.py`, `changepoints.py`) wrap statsmodels
+  and ruptures without new maths. They raise plain `ValueError` on bad input, and `volatility_regimes`
+  returns `converged: false` with a reason instead of raising; `alpha tool` turns both into structured
+  errors. Regime labels used to split returns are causal (filtered, one bar later); smoothed labels and
+  change points are hindsight and labelled so. Their `regimes.py` Markov model is unrelated to the
+  `regime_switching` Monte Carlo family below.
 - Primitives take `seed: int | None`; `None` draws fresh entropy and is for interactive use only. Every
   composer passes a semantic, settings-derived seed, except the D0/D1 research protocols, whose seeds are
   frozen in code — [research integrity § Deterministic seeds and identity](research-integrity.md#deterministic-seeds-and-identity).

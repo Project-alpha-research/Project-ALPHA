@@ -37,6 +37,7 @@ METRICS = {
     "wfe_fold_count": (
         "Recorded WFE fold count; a practitioner rule of thumb, not a statistical test."
     ),
+    "resized_entries": "Cash entries reduced to affordable size at the open in the scored run.",
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
@@ -65,6 +66,7 @@ METRIC_UNITS = {
     "inverted_label": "other",
     "wfe": "fraction",
     "wfe_fold_count": "count",
+    "resized_entries": "count",
     "trades": "count",
     "exposure": "fraction",
     "top_1_profit_share": "fraction",
@@ -91,6 +93,7 @@ NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_d
 _CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
 _WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
+    "resized_entries": ("manifest.json", "resized_entries", "scored engine execution"),
     **{
         name: ("diagnostics.json", f"inverted_signal.{name}", _CONTROL_BASIS)
         for name in (

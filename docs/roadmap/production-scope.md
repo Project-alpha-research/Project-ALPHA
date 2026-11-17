@@ -51,13 +51,13 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-214 capabilities: 41 working, 66 built but unproven, 105 missing, 1 to rebuild,
+214 capabilities: 41 working, 67 built but unproven, 104 missing, 1 to rebuild,
 1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material,
 then two diagnostics rows made working by the investigation tools).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 4 | 10 | 0 | 0 |
+| 1. Idea | 2 | 5 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
 | 3. Look before testing | 1 | 7 | 6 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 8 | 0 | 0 |
@@ -69,7 +69,7 @@ then two diagnostics rows made working by the investigation tools).
 | 10. Screens | 1 | 3 | 14 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **41** | **66** | **105** | **1** | **1** |
+| **All** | **41** | **67** | **104** | **1** | **1** |
 
 ## 1. Idea
 
@@ -81,7 +81,7 @@ How a question, a chart observation or a paper becomes something testable.
 | Any idea may proceed: no stop for an unknown idea type, no approval before a research run | Unproven | `research/` route: text only | Path 1 | [thin] |
 | Simple rule language ("close above X and Y"), saved and rerun exactly | Unproven | `alpha-strategies` | Path 1 | [status] |
 | Plain rules tested as written, with no hidden sizing or rebalancing defaults | Working | `alpha test`, all-in sizing | Path 1 | [precise] |
-| Setup spec: event, context, reference, label, eligibility, trigger, exit, sizing, sessions | Missing | new, from rules | Path 2 | private |
+| Setup spec: event, context, reference, label, eligibility, trigger, exit, sizing, sessions | Unproven | `alpha-study` setup: daily event, filters, trigger, references; exits parsed, not run | Path 2 | private |
 | Four clocks on each idea: signal lookback, decision pace, holding period, execution delay | Missing | idea spec | Path 1 | private |
 | Source card and translation card: the original paper beside the adapted rule | Missing | idea folder | Path 1 | private |
 | Find papers, screen their claims, tie a claim to its test, keep the PDF | Unproven | `workers/literature` | Later | [papers] |

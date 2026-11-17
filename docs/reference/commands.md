@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-265 commands in 36 groups. Options marked (required) are
+266 commands in 36 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -409,6 +409,7 @@ Rule scans over stored symbols and their deduplicated alerts.
 Find every match of a chart setup.
 
 - `alpha setup find <SPEC>` — Record every match and draw contact sheets ending at the entry open. Options: `--asset`, `--context-bars`, `--max-sheets`, +1 more
+- `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--json`
 
 ## alpha strategy-candidate
 

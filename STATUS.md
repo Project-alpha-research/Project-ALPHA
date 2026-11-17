@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 24 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
+- **Capabilities:** 25 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 0.
 
@@ -38,6 +38,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Opposite-direction research control** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/inverted-signal-control.md](research/tools/inverted-signal-control.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Walk-forward efficiency with explicit limits** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/walk-forward.md](research/tools/walk-forward.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Find every match of a chart setup** — alpha setup find <spec.toml> --json (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
+- **Study outcomes after every separate setup occurrence** — alpha setup study <find_id> --json (a real run is recorded) More: [research/tools/setup-study.md](research/tools/setup-study.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
 
 ## Partly working
 

@@ -3,13 +3,12 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: f82d1f7096712f47
+verified: 22c23183788f6ede
 ---
 
 # Results and cite
 
 **Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time a number goes into an answer.
-
 **Commands**
 ```text
 uv run alpha results --symbol SPY --name <test name> --limit 50 --json
@@ -33,8 +32,9 @@ uv run alpha results check <file>
   WFE is a practitioner rule of thumb, not a statistical test; `wfe_fold_count` counts the folds in its median.
   [Tool](attribution-regimes-changepoints.md) facts take `--tool-output <id>` when a tool ran twice: `market_beta`, `market_alpha_annual`,
   `market_alpha_p`, `market_r_squared`, `regime_turbulent_share_of_return`, `regime_turbulent_share_of_time`, `changepoint_count`.
+- Setup study ids support cite/check: `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`,
+  `setup_hit_rate`, `setup_excess_over_drift`, `setup_random_date_p` ([limits](setup-study.md)).
 **What it cannot tell you**
-- Anything not stored. `cite` never computes: a missing value is `null` with a `reason`; an unknown metric is `UNKNOWN_METRIC`; a short run id
-  is `UNKNOWN_RUN`. It cannot search by words (filter with `--symbol` or `--name`). `check` does not judge reasoning.
-
+- `cite` never computes: missing values are `null` with reasons; unknown metric/id: `UNKNOWN_METRIC` / `UNKNOWN_RUN`.
+  No word search (use `--symbol` or `--name`); `check` cannot judge reasoning.
 **Next** No row for the question: say "not tested" and offer the [rule test](rule-test.md).

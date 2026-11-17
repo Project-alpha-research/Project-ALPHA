@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import { api, type OwnerActionType } from '../api/client'
@@ -285,7 +286,7 @@ export function StudyStatusSection({
             {points.map((point) => (
               <div key={point.point_id}>
                 <span className="eyebrow">{point.point_id}</span>
-                <span className="mono">{point.available_at} · {point.value}</span>
+                <span className="mono"><Timestamp value={point.available_at} /> · {point.value}</span>
               </div>
             ))}
           </div>
@@ -311,7 +312,7 @@ export function StudyStatusSection({
       <div className="research-lineage" aria-label="Verified semantic owner events">
         {events.map((event) => event && (
           <div key={event.event_id}>
-            <span className="eyebrow">{String(event.payload.event_type)} · {event.recorded_at}</span>
+            <span className="eyebrow">{String(event.payload.event_type)} · <Timestamp value={event.recorded_at} /></span>
             <code>{event.artifact_id}</code>
             {typeof event.payload.definition_label === 'string' ? (
               <strong>{event.payload.definition_label}</strong>

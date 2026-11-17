@@ -9,6 +9,7 @@ from typing import Any
 
 import numpy as np
 
+from alpha_cli.spine.plain_ratio import fall_comparison
 from alpha_core import DataError
 from alpha_validation.metrics import (
     FloatSeq,
@@ -165,7 +166,7 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
                 "flag": "drawdown-with-market",
                 "detail": (
                     f"During the worst drawdown ({abs(episodes[0].get('depth') or 0.0):.0%}), "
-                    f"buy and hold fell {share:.2g} times as much over the same dates "
+                    f"buy and hold {fall_comparison(share)} the rule over the same dates "
                     f"({abs(episodes[0]['benchmark_return']):.0%})."
                 ),
             }
@@ -222,4 +223,8 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
                 ),
             }
         )
+    noise = sections.get("price_noise", {})
+    if "fragile-to-price-noise" in noise.get("labels", []):
+        result.append({"flag": "fragile-to-price-noise", "detail": noise["sentence"]})
+    result.extend(sections.get("plausibility", []))
     return result

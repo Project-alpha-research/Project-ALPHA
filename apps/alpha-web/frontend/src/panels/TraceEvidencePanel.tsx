@@ -1,12 +1,10 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { ChartBundle, ChartTraceEvent } from '../api/types'
 import { CHART_TRACE_PAGE_SIZE, chartTracePage } from './chartTableModel'
 import { evidenceForDecision } from './v3Models'
 
-function utc(ts: number | null): string {
-  return ts === null ? '—' : new Date(ts * 1_000).toISOString().replace('.000Z', 'Z')
-}
 
 function eventPrice(event: ChartTraceEvent): number | null {
   return event.price ?? event.exit_price ?? event.entry_price
@@ -76,7 +74,7 @@ export function TraceEvidencePanel({
             >
               <span className="trace-seq mono">{String(event.sequence_id).padStart(4, '0')}</span>
               <span className={`trace-kind ${event.event_type}`}>{event.event_type}</span>
-              <span className="mono">{utc(event.ts)}</span>
+              <span className="mono"><Timestamp value={event.ts} /></span>
               <span className="mono">
                 {event.side ?? (event.signal === null ? '—' : `signal ${event.signal}`)}
               </span>
@@ -88,7 +86,7 @@ export function TraceEvidencePanel({
         {selected ? (
           <>
             <div><span className="eyebrow">event</span><span className="mono">{selected.event_type} · #{selected.sequence_id}</span></div>
-            <div><span className="eyebrow">exact UTC</span><span className="mono">{utc(selected.ts)}</span></div>
+            <div><span className="eyebrow">UTC (exact time on hover)</span><span className="mono"><Timestamp value={selected.ts} /></span></div>
             <div><span className="eyebrow">price / qty</span><span className="mono">{eventPrice(selected)?.toFixed(4) ?? '—'} / {selected.filled_quantity ?? selected.quantity ?? '—'}</span></div>
             <div><span className="eyebrow">reason / status</span><span>{selected.decision_reason ?? selected.status ?? '—'}</span></div>
             <div><span className="eyebrow">causal indicators</span><span className="mono">{decisionEvidence.indicators.map((row) => `${row.name} ${row.value.toFixed(4)} ${row.unit}`).join(' · ') || '—'}</span></div>

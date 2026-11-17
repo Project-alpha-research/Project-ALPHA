@@ -1,6 +1,7 @@
+import { formatTime } from '../util/formatTime'
 // Status bar (spec 2026-09-01 §4.2 item 8; artboard 1-Terminal): `For Help, press F1` · profile ·
-// provider ticks by display name · Expansion SSD free space · `Paper only · no live routing` ·
-// UTC date-time · hovered OHLCV · bars loaded. Pure: the clock is injected, the SSD segment is
+// provider ticks by display name · storage state · `Paper only · no live routing` ·
+// UTC date-time · hovered OHLCV · bars loaded. Pure: the clock is injected, the storage segment is
 // the Data Manager's honest storage row (never a cached "ready"), a missing hovered bar reads `—`,
 // and a non-finite price throws rather than printing a number.
 
@@ -32,11 +33,11 @@ export interface StatusBarInput {
   barsLoaded: number
 }
 
-/** `2026-09-01 14:02 UTC`. */
+/** `1 Sep 2026, 14:02 UTC`. */
 export function utcClock(now: number): string {
   const date = new Date(now)
   if (Number.isNaN(date.getTime())) throw new Error('status bar clock: invalid time')
-  return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`
+  return formatTime(date.toISOString())
 }
 
 function price(value: number): string {
@@ -55,7 +56,7 @@ export function barsText(loaded: number): string {
 }
 
 export function ssdText(storage: StorageRow): string {
-  return storage.tone === 'ok' && storage.free ? `Expansion SSD ${storage.free} free` : storage.label
+  return storage.label
 }
 
 export function statusSegments(input: StatusBarInput): StatusSegment[] {
@@ -74,7 +75,7 @@ export function statusSegments(input: StatusBarInput): StatusSegment[] {
       title: input.storage.detail,
     },
     { id: 'paper', text: 'Paper only · no live routing', tone: 'none' },
-    { id: 'clock', text: utcClock(input.now), tone: 'none' },
+    { id: 'clock', text: utcClock(input.now), tone: 'none', title: new Date(input.now).toISOString() },
     { id: 'ohlc', text: hoveredText(input.hovered), tone: 'none' },
     { id: 'bars', text: barsText(input.barsLoaded), tone: 'none' },
   ]

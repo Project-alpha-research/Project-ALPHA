@@ -217,10 +217,8 @@ def _counts(candidates: Any) -> dict[str, Any]:
 
 
 def load_spec(path: Path, assets: list[str] | None) -> Any:
-    from alpha_study.setup.spec import SetupSpec
-
     try:
-        spec = SetupSpec.load(path)
+        spec = load_setup_spec(path)
     except (DataError, ValueError, OSError) as exc:
         raise SpineError(
             "SPEC_INVALID", str(exc), "Fix the spec file and run alpha setup find again."
@@ -268,3 +266,74 @@ def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:
     """The context shown in a contact sheet is part of its immutable identity."""
     payload = spec_sha256 + f"|context={context_bars}|" + "|".join(sorted(keys))
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def load_find(home: Path, find_id: str) -> tuple[Path, dict[str, Any], Any]:
+    """The common immutable input for both kinds of counted setup outcomes."""
+    import json
+    import re
+
+    folder = home / "setups" / find_id
+    if not re.fullmatch("[0-9a-f]{16}", find_id) or not (folder / "manifest.json").is_file():
+        raise SpineError("FIND_NOT_FOUND", find_id, "Run alpha setup find with a saved spec first.")
+    manifest = json.loads((folder / "manifest.json").read_text())
+    raw = json.loads((folder / "spec.json").read_text())
+    raw.pop("spec_sha256")
+    spec = load_setup_spec(raw)
+    if spec.spec_sha256 != manifest["spec_sha256"]:
+        raise ValueError("find spec hash mismatch")
+    return folder, manifest, spec
+
+
+def outcome_labels(home: Path, find_id: str, labels: list[str]) -> list[str]:
+    """Derive viewed state from completed sibling manifests; never rewrite the find."""
+    import json
+
+    viewed = any(
+        json.loads(p.read_text()).get("find_id") == find_id
+        for directory in ("setup-studies", "setup-trades")
+        for p in sorted((home / directory).glob("*/manifest.json"))
+    )
+    return [
+        "outcomes-viewed" if viewed and label == "outcomes-not-viewed" else label
+        for label in labels
+    ]
+
+
+def load_setup_spec(source: Path | dict[str, Any]) -> Any:
+    """Resolve bare reference names at the CLI boundary, preserving their hashed spelling.
+
+    The package validates all tables and the substituted numeric expressions first. Only
+    validated reference aliases are restored; unknown names still fail in its parser.
+    """
+    import json
+    import tomllib
+
+    from alpha_study.setup.spec import SetupSpec
+
+    if isinstance(source, Path):
+        if source.suffix.lower() not in {".toml", ".json"}:
+            raise DataError(f"{source}: allowed suffix .toml or .json")
+        with source.open("rb") as stream:
+            raw = tomllib.load(stream) if source.suffix.lower() == ".toml" else json.load(stream)
+    else:
+        raw = source
+    if not isinstance(raw, dict):
+        return SetupSpec.load(raw)
+    exits, references = raw.get("exit"), raw.get("reference", {})
+    aliases = (
+        {
+            k: v
+            for k, v in exits.items()
+            if k in {"stop", "target"} and isinstance(v, str) and v in references
+        }
+        if isinstance(exits, dict) and isinstance(references, dict)
+        else {}
+    )
+    expanded = raw
+    if aliases and isinstance(exits, dict):
+        expanded = {**raw, "exit": {**exits, **{k: references[v] for k, v in aliases.items()}}}
+    spec = SetupSpec.load(expanded)
+    if aliases and spec.exit is not None:
+        spec = spec.model_copy(update={"exit": spec.exit.model_copy(update=aliases)})
+    return spec

@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import re
 from pathlib import Path
 from typing import Any
 
@@ -21,15 +20,15 @@ from alpha_cli.spine.setup_controls import (
     reading,
     study_labels,
 )
-from alpha_cli.spine.setup_find import study_inputs
-from alpha_cli.spine.spec import Costs
+from alpha_cli.spine.setup_costs import asset_costs, round_trip
+from alpha_cli.spine.setup_find import load_find, study_inputs
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
-STUDY_RULE_VERSION = "setup-study-1"
+STUDY_RULE_VERSION = "setup-study-2"
 BASIS = (
     "separate accepted occurrences from candidates.parquet; recorded next-open entry to "
-    "horizon close, price returns less default round-trip costs; no dividends or spec exits; "
+    "horizon close, price returns less per-asset round-trip costs; no dividends or spec exits; "
     "controls use all post-warm-up eligible dates, pooled by complete occurrence counts"
 )
 
@@ -42,7 +41,9 @@ _LEDGER_KEYS = ("study_id", "find_id", "spec_sha256", "name", "idea", "assets") 
 _CURVE = dict(mean="mean", drift="drift_mean", lower="random_date_5", upper="random_date_95")
 
 
-def _outcomes(candidates: Any, bars: dict[str, Any], horizons: list[int], cost: float) -> Any:
+def _outcomes(
+    candidates: Any, bars: dict[str, Any], horizons: list[int], cost: dict[str, float]
+) -> Any:
     import polars as pl
 
     rows = []
@@ -57,7 +58,9 @@ def _outcomes(candidates: Any, bars: dict[str, Any], horizons: list[int], cost: 
             raise ValueError(f"{asset}: recorded entry does not match its bar open")
         # Future closes are measured outcomes only; detection is read from the find folder.
         path = [
-            series[start + h - 1].close / price - 1 - cost if start + h <= len(series) else None
+            series[start + h - 1].close / price - 1 - cost[asset]
+            if start + h <= len(series)
+            else None
             for h in range(1, max(horizons) + 1)
         ]
         for horizon in horizons:
@@ -104,13 +107,15 @@ def _summarise(
     warmup: int,
     study_id: str,
     outcomes: Any,
-    cost: float,
+    costs: dict[str, Any],
 ) -> dict[str, Any]:
     paths = [r for r in outcomes.to_dicts() if r["horizon"] == spec.study.primary]
     reports, curve = {}, dict(mean=[0.0], drift=[0.0], lower=[0.0], upper=[0.0])
     for h in range(1, max(spec.study.horizons) + 1):
         eligible = {
-            a: eligible_returns([b.open for b in s], [b.close for b in s], warmup, h, cost)
+            a: eligible_returns(
+                [b.open for b in s], [b.close for b in s], warmup, h, round_trip(costs[a])
+            )
             for a, s in bars.items()
         }
         rows = [
@@ -172,7 +177,7 @@ def _summarise(
         horizons=reports,
         facts=facts,
         curve=curve,
-        costs={a: Costs().model_dump() for a in bars},
+        costs=costs,
         controls=dict(
             draws=RANDOM_DRAWS,
             pooling="complete occurrence counts per asset",
@@ -230,18 +235,18 @@ def _publish(
     )
 
 
+def _older_rule_study(home: Path, find_id: str) -> bool:
+    return any(
+        (m := json.loads(p.read_text())).get("find_id") == find_id
+        and m.get("study_rule_version") != STUDY_RULE_VERSION
+        for p in sorted((home / "setup-studies").glob("*/manifest.json"))
+    )
+
+
 def _run(find_id: str, home: Path) -> dict[str, Any]:
     import polars as pl
 
-    from alpha_study.setup.spec import SetupSpec
-
-    folder = home / "setups" / find_id
-    if not re.fullmatch("[0-9a-f]{16}", find_id) or not (folder / "manifest.json").is_file():
-        raise SpineError("FIND_NOT_FOUND", find_id, "Run alpha setup find with a saved spec first.")
-    manifest = json.loads((folder / "manifest.json").read_text())
-    raw = json.loads((folder / "spec.json").read_text())
-    raw.pop("spec_sha256")
-    spec = SetupSpec.load(raw)
+    folder, manifest, spec = load_find(home, find_id)
     if spec.study is None:
         raise SpineError(
             "SPEC_HAS_NO_STUDY",
@@ -249,8 +254,6 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
             "Add [study] horizons and primary to the spec, "
             "run alpha setup find again, then study that find.",
         )
-    if spec.spec_sha256 != manifest["spec_sha256"]:
-        raise ValueError("find spec hash mismatch")
     bars, warmup = study_inputs(home, manifest, spec)
     study_id = hashlib.sha256(f"{find_id}|{STUDY_RULE_VERSION}".encode()).hexdigest()[:16]
     destination = home / "setup-studies" / study_id
@@ -260,10 +263,19 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
     else:
         candidates = pl.read_parquet(folder / "candidates.parquet")
-        costs = Costs()
-        cost = 2 * (costs.fee_bps + costs.slippage_bps) / 10000
+        costs, cost_labels = asset_costs(home, list(bars))
+        cost = {a: round_trip(c) for a, c in costs.items()}
         outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
-        summary = _summarise(spec, manifest, candidates, bars, warmup, study_id, outcomes, cost)
+        summary = _summarise(spec, manifest, candidates, bars, warmup, study_id, outcomes, costs)
+        summary["labels"].extend(cost_labels)
+        if _older_rule_study(home, find_id):
+            # Same find, different cost assumption: a new look, so it counts as a trial.
+            summary["labels"].append("remeasured-new-cost-rule")
+            summary["reading"] += (
+                " This re-measures an earlier study of the same find under the new per-asset"
+                " cost rule; it counts as one more look, not a new idea."
+            )
+        summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
         add_study_trial_fact(home, summary)
         _publish(destination, summary, outcomes, spec, manifest)
     primary = summary["horizons"][str(spec.study.primary)]["pooled"]

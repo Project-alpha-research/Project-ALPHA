@@ -1,5 +1,5 @@
 // Status bar (spec 2026-09-01 §4.2 item 8). Every segment is a relay: providers from the
-// registry, the Expansion SSD from the storage projection, the hovered bar from the chart, the
+// registry, storage from the storage projection, the hovered bar from the chart, the
 // clock from the browser's UTC time. Nothing here is derived authority.
 
 import { useEffect, useState } from 'react'

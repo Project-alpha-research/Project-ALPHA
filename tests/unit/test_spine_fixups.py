@@ -61,7 +61,8 @@ def test_drawdown_flag_names_ratio(ratio: float) -> None:
         "delay": {"base_sharpe": None, "delayed_sharpe": None},
     }
     detail = diagnostics.flags(sections)[0]["detail"]
-    assert f"buy and hold fell {ratio:.2g} times as much over the same dates" in detail
+    plain = {0.6: "fell 40% less than", 1.1: "fell 10% more than"}[ratio]
+    assert f"buy and hold {plain} the rule over the same dates" in detail
 
 
 @pytest.mark.parametrize("price,status", [(100.02, "PASS"), (99.98, "PASS"), (100.03, "FLAG")])

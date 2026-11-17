@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 882b3e920c94da59
+verified: 62a6b148973970d7
 ---
 
 # alpha-web workspace
@@ -61,6 +61,7 @@ grants authority.
 
 - RD-Agent's read-only panel is `panels/RdAgentPanel.tsx`, registered in `shell/documents.ts`,
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
+  Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
   Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
   Old failed-deflation candidates have derived status; new declaration, count and diagnostic fields stay recorded facts.
   Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).

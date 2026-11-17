@@ -1,3 +1,4 @@
+import { Timestamp } from '../../util/formatTime'
 // Trades tab: the realized trade log, uncapped — sortable and virtualized past ~200 rows.
 
 import type { ColumnDef } from '@tanstack/react-table'
@@ -41,13 +42,13 @@ export function TradesTab({ trades, runId }: { trades: TradeRow[]; runId?: strin
       {
         header: 'entry',
         accessorKey: 'entry_ts',
-        cell: (c) => String(c.row.original.entry_ts ?? '—').slice(0, 10),
+        cell: (c) => <Timestamp value={c.row.original.entry_ts} />,
         meta: { className: 'mono' },
       },
       {
         header: 'exit',
         accessorKey: 'exit_ts',
-        cell: (c) => String(c.row.original.exit_ts ?? '—').slice(0, 10),
+        cell: (c) => <Timestamp value={c.row.original.exit_ts} />,
         meta: { className: 'mono' },
       },
     )

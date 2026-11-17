@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 /** Archive identity stays separate from the canonical linked strategy symbol. */
 import { useEffect, useState } from 'react'
 import { api, type ArchiveChartDataset } from '../api/client'
@@ -27,7 +28,7 @@ export function ArchiveChartSelect({ onSelect, onClose, initialQuery = '', initi
     {error ? <div role="alert">{error}<button className="btn" onClick={() => setAttempt(value => value + 1)}>Retry archive discovery</button></div> : items === null ? <p role="status">Reading archive metadata…</p> : <>
       <p>{matches.length} matching chart series · {new Set(matches.map(item => item.instrument)).size} instruments. Monthly segments join only when venue, pair, market and native interval match; artifact bytes and raw lineage are verified when opened.</p>
       {matches.length ? <div className="archive-chart-results"><table className="blotter"><thead><tr><th>Instrument</th><th>Venue / market</th><th>Interval</th><th>Coverage</th><th>Source rows</th><th>Dataset</th></tr></thead><tbody>{matches.slice(0, 200).map(item => <tr key={item.manifest_id}>
-        <td><button className="btn" onClick={() => onSelect(item)}>Open {item.instrument}</button></td><td>{item.venue} · {item.market_type}</td><td>{item.frequency}</td><td>{item.start?.slice(0, 16)} → {item.end?.slice(0, 16)}</td><td>{item.row_count}</td><td title={item.manifest_ids.join('\n')}>{item.manifest_count} segments · {item.manifest_id.slice(0, 10)}</td>
+        <td><button className="btn" onClick={() => onSelect(item)}>Open {item.instrument}</button></td><td>{item.venue} · {item.market_type}</td><td>{item.frequency}</td><td><Timestamp value={item.start} /> → <Timestamp value={item.end} /></td><td>{item.row_count}</td><td title={item.manifest_ids.join('\n')}>{item.manifest_count} segments · {item.manifest_id.slice(0, 10)}</td>
       </tr>)}</tbody></table></div> : <p>No compatible datasets found. Check the mounted drive or adjust the search.</p>}
       {matches.length > 200 ? <p>Showing the first 200 matches. Narrow the search to find a specific instrument or interval.</p> : null}
     </>}

@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useRef, useState } from 'react'
 import { inspectRetainedCoverage, type RetainedCoverageResponse } from '../api/retainedCoverage'
 import type { CryptoQuality } from '../api/types'
@@ -78,7 +79,7 @@ export function RetainedBarCoverage({ quality }: { quality: CryptoQuality }) {
     {report?.audit_state === 'unavailable' ? <p role="status">Retained evidence unavailable or unverifiable within the declared limits. No complete grid result is available. Review storage, evidence and bounds before retrying.</p> : null}
     {rows ? <div aria-label="Retained grid result">
       <p role="status">{rows.declared_grid_satisfied ? 'Declared grid satisfied' : 'Declared grid has findings'}</p>
-      <p>Requested: {rows.start} → {rows.end_exclusive} (exclusive); cutoff {rows.as_of}.</p>
+      <p>Requested: <Timestamp value={rows.start} /> → <Timestamp value={rows.end_exclusive} /> (exclusive); cutoff <Timestamp value={rows.as_of} />.</p>
       <p>{rows.covered_slots} covered / {rows.expected_slots} expected slots · {rows.missing_slots} missing slots.</p>
       <p>{rows.row_count} retained rows · {rows.in_window_rows} in window · {rows.outside_window_rows} outside window.</p>
       <p>Duplicate groups: {rows.duplicate_timestamp_groups}; extra rows: {rows.duplicate_extra_rows};

@@ -1,3 +1,4 @@
+import { Timestamp, formatDuration } from '../util/formatTime'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { getJSON } from '../api/client'
 import type { components } from '../api/generated'
@@ -28,8 +29,6 @@ const LABELS: Record<string, string> = {
 }
 const dark: CSSProperties = {
   background: 'var(--canvas-bg)', color: 'var(--canvas-ink)', padding: 12, minHeight: '100%',
-  '--panel': 'var(--canvas-bg)', '--panel-2': 'var(--canvas-bg)', '--ink': 'var(--canvas-ink)',
-  '--ink-dim': 'var(--canvas-ink-dim)', '--muted': 'var(--canvas-ink-dim)', '--line': 'var(--canvas-line)',
 } as CSSProperties
 
 function factText(fact: Fact | undefined): string {
@@ -39,11 +38,19 @@ function factText(fact: Fact | undefined): string {
   return Array.isArray(fact.value) ? fact.value.join(', ') || 'None recorded' : String(fact.value)
 }
 
+function RecordedFact({ name, fact }: { name: string; fact: Fact | undefined }) {
+  if ((name.endsWith('_at') || name === 'as_of') && typeof fact?.value === 'string') {
+    return <Timestamp value={fact.value} />
+  }
+  if (name === 'minutes' && typeof fact?.value === 'number') return <span>{formatDuration(fact.value)}</span>
+  return <>{factText(fact)}</>
+}
+
 function Facts({ facts }: { facts: Record<string, Fact> }) {
   return <dl style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 1fr) 2fr', gap: 6 }}>
     {Object.entries(facts).map(([name, value]) => <div key={name} style={{ display: 'contents' }}>
       <dt>{LABELS[name] ?? name.replaceAll('_', ' ').replaceAll('.', ' / ')}</dt>
-      <dd style={{ margin: 0, overflowWrap: 'anywhere' }}>{factText(value)}</dd>
+      <dd style={{ margin: 0, overflowWrap: 'anywhere' }}><RecordedFact name={name} fact={value} /></dd>
     </div>)}
   </dl>
 }
@@ -54,7 +61,7 @@ function Meter({ label, cap }: { label: string; cap: Schema['RdAgentCap'] | unde
   const known = typeof used === 'number' && typeof limit === 'number' && limit > 0 && used >= 0
   return <div style={{ marginBottom: 12 }}>
     <div>{label}: {factText(cap?.used)} / {factText(cap?.limit)}</div>
-    {known && <div role="meter" aria-label={label} aria-valuenow={used} aria-valuemin={0} aria-valuemax={Math.max(used, limit)} aria-valuetext={`${used} of ${limit}`} style={{ border: '1px solid var(--canvas-line)', height: 10 }}>
+    {known && <div role="meter" aria-label={label} aria-valuenow={used} aria-valuemin={0} aria-valuemax={Math.max(used, limit)} aria-valuetext={`${used} of ${limit}`} style={{ border: '1px solid var(--line-strong)', height: 10 }}>
       <div style={{ width: `${Math.min(100, used / limit * 100)}%`, height: '100%', background: 'var(--canvas-accent)' }} />
     </div>}
   </div>
@@ -83,7 +90,7 @@ function RunDetail({ detail }: { detail: Detail }) {
     <Section title="Factors">
       {detail.factor_reason && <p>{detail.factor_reason}</p>}
       {!detail.factors.length && <p>No factor trials were recorded for this run.</p>}
-      {detail.factors.map((factor, index) => <details key={`${index}-${factText(factor.name)}`} style={{ padding: '8px 0', borderBottom: '1px solid var(--canvas-line)' }}>
+      {detail.factors.map((factor, index) => <details key={`${index}-${factText(factor.name)}`} style={{ padding: '8px 0', borderBottom: '1px solid var(--line-strong)' }}>
         <summary><strong>{factText(factor.name)}</strong> <span className="chip">{factor.status}</span> {factor.sentence}</summary>
         <p>{factText(factor.description)}</p>
         <Facts facts={{ idea_families: factor.idea_families, failure_reason: factor.failure_reason, ...factor.figures }} />
@@ -118,9 +125,9 @@ function RunDetail({ detail }: { detail: Detail }) {
     <Section title="Step timing"><p>Start and end times as recorded; minutes are the end time minus the start time.</p>
       {detail.timing_reason && <p>{detail.timing_reason}</p>}
       {detail.timing.length > 0 && <table style={{ borderCollapse: 'collapse' }}>
-        <thead><tr><th>Round</th><th>Step</th><th>Started</th><th>Ended</th><th>Minutes</th><th>Result</th></tr></thead>
+        <thead><tr><th>Round</th><th>Step</th><th>Started</th><th>Ended</th><th>Duration</th><th>Result</th></tr></thead>
         <tbody>{detail.timing.map((row, i) => <tr key={i}>
-          {['loop', 'step', 'started_at', 'ended_at', 'minutes', 'status'].map(key => <td key={key} style={{ padding: '2px 8px', overflowWrap: 'anywhere' }}>{factText(row[key])}</td>)}
+          {['loop', 'step', 'started_at', 'ended_at', 'minutes', 'status'].map(key => <td key={key} style={{ padding: '2px 8px', overflowWrap: 'anywhere' }}><RecordedFact name={key} fact={row[key]} /></td>)}
         </tr>)}</tbody>
       </table>}
     </Section>
@@ -138,8 +145,8 @@ export function RdAgentView({ list, selected, detail, error, onSelect }: {
     {list && !list.items.length && <Placeholder big="No RD-Agent runs">{list.reason ?? 'No recorded factor runs were found.'}</Placeholder>}
     {list?.ledger_reason && <p>{list.ledger_reason}</p>}
     {list && list.items.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 24%) minmax(0, 1fr)', gap: 16 }}>
-      <nav aria-label="RD-Agent runs" style={{ maxHeight: '75vh', overflowY: 'auto', alignSelf: 'start' }}>{list.items.map(run => <button key={run.run_id} type="button" aria-pressed={selected === run.run_id} onClick={() => onSelect(run.run_id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 8, marginBottom: 8, background: 'var(--canvas-bg)', color: 'var(--canvas-ink)', border: `1px solid var(${selected === run.run_id ? '--canvas-accent' : '--canvas-line'})` }}>
-        <strong>{run.folder}</strong><br />{factText(run.started_at)}<br />{factText(run.outcome)}
+      <nav aria-label="RD-Agent runs" style={{ maxHeight: '75vh', overflowY: 'auto', alignSelf: 'start' }}>{list.items.map(run => <button key={run.run_id} type="button" aria-pressed={selected === run.run_id} onClick={() => onSelect(run.run_id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 8, marginBottom: 8, background: 'var(--canvas-bg)', color: 'var(--canvas-ink)', border: `1px solid var(${selected === run.run_id ? '--canvas-accent' : '--line-strong'})` }}>
+        <strong>{run.folder}</strong><br /><RecordedFact name="started_at" fact={run.started_at} /><br />{factText(run.outcome)}
       </button>)}</nav>
       <main aria-label="Selected RD-Agent run" aria-live="polite">{detail?.run.run_id === selected ? <RunDetail detail={detail} /> : !error && <Placeholder>{selected ? 'Loading recorded run…' : 'Select a run to see what happened.'}</Placeholder>}</main>
     </div>}

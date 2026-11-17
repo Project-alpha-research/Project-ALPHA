@@ -1,3 +1,5 @@
+import { withAlpha } from '../util/tokens'
+import { formatTime } from '../util/formatTime'
 import {
   CandlestickSeries,
   ColorType,
@@ -33,7 +35,7 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       width: host.clientWidth,
       height: host.clientHeight,
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
+        background: { type: ColorType.Solid, color: CHART.bg },
         textColor: CHART.muted,
         fontFamily: 'JetBrains Mono Variable, JetBrains Mono, ui-monospace, monospace',
         fontSize: 11,
@@ -41,7 +43,7 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       grid: { vertLines: { color: CHART.grid }, horzLines: { color: CHART.grid } },
       rightPriceScale: { borderColor: CHART.line },
       timeScale: { borderColor: CHART.line, timeVisible: true },
-      crosshair: { mode: CrosshairMode.Normal },
+      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } },
     })
     const actual = chart.addSeries(CandlestickSeries, {
       upColor: CHART.up,
@@ -61,8 +63,8 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       })),
     )
     const projected = chart.addSeries(CandlestickSeries, {
-      upColor: 'rgba(79, 141, 255, 0.72)',
-      downColor: 'rgba(215, 166, 59, 0.72)',
+      upColor: withAlpha(CHART.accent, 0.72),
+      downColor: withAlpha(CHART.gold, 0.72),
       borderUpColor: CHART.accent,
       borderDownColor: CHART.gold,
       wickUpColor: CHART.accent,
@@ -89,12 +91,12 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       ...history.map((bar) => ({
         time: bar.t as UTCTimestamp,
         value: bar.v,
-        color: bar.c >= bar.o ? 'rgba(46, 160, 74, 0.25)' : 'rgba(239, 83, 80, 0.25)',
+        color: bar.c >= bar.o ? withAlpha(CHART.up, 0.25) : withAlpha(CHART.down, 0.25),
       })),
       ...forecastTs.map((time, index) => ({
         time: time as UTCTimestamp,
         value: sample.volumes[index],
-        color: 'rgba(79, 141, 255, 0.26)',
+        color: withAlpha(CHART.accent, 0.26),
       })),
     ])
 
@@ -121,12 +123,14 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
             : null
       const volumePoint = param.seriesData.get(volume)
       if (!candle || typeof param.time !== 'number') {
+        crosshair.title = ''
         crosshair.textContent = 'CROSSHAIR —'
         return
       }
       const volumeValue = volumePoint && 'value' in volumePoint ? volumePoint.value : null
+      crosshair.title = new Date(param.time * 1_000).toISOString()
       crosshair.textContent =
-        `${new Date(param.time * 1_000).toISOString()}  ` +
+        `${formatTime(crosshair.title)}  ` +
         `O ${Number(candle.open).toFixed(4)}  H ${Number(candle.high).toFixed(4)}  ` +
         `L ${Number(candle.low).toFixed(4)}  C ${Number(candle.close).toFixed(4)}  ` +
         `V ${volumeValue === null ? '—' : Number(volumeValue).toFixed(0)}`

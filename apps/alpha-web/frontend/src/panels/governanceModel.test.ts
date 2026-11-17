@@ -132,12 +132,12 @@ describe('governancePages', () => {
     const rows = page(
       governancePages({
         ...EMPTY,
-        storage: { state: 'blocked', blocker: 'bulk_volume_not_mounted', bulk_root_label: 'Expansion', free_bytes: 0, total_bytes: 0 },
+        storage: { state: 'blocked', blocker: 'bulk_volume_not_mounted', bulk_root_label: 'Bulk', free_bytes: 0, total_bytes: 0 },
       }),
       'storage',
     ).rows
     expect(rows).toEqual([
-      { label: 'Expansion SSD', value: 'Expansion SSD not mounted', tone: 'warn', detail: 'Reconnect the Expansion volume, then refresh.' },
+      { label: 'Storage', value: 'Storage: not configured', tone: 'warn', detail: 'Connect the configured storage volume, then refresh.' },
     ])
   })
 

@@ -10,7 +10,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 41a5212eda0e4317
+verified: 2509de5e547ccc1f
 ---
 
 # Investigation tools invariants
@@ -31,6 +31,10 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
   filtered regime of the bar before it (causal); the smoothed split is a separate `hindsight`
   section. Model parameters use the whole sample: label `parameters-fit-in-sample`. Change points
   are labelled `hindsight`; same-asset comparisons `benchmark-is-same-asset`.
+- Causal regime shares lead the facts and reading; hindsight is explicitly second. Opposite signs add `hindsight-disagrees` and advise using the causal split.
+- Change points within five bars of a portfolio flat/in-market transition are position changes, excluded from `changepoint_count`; both counts are
+  reported. Without a recorded position series each reads "position state unknown" and the count is null. `near_switch_share` is the share of
+  bars within five bars of a switch; above 20% the sentence calls the split rough.
 - Manifests are immutable, so each output is written atomically outside the run directory, at
   `<home>/diagnostics/<run_id>/<tool>-<sha8 of params>.json`, with facts in the shape of
   `spine/facts.py` (metrics in `TOOL_METRICS`). Each run of a tool appends one ledger row with

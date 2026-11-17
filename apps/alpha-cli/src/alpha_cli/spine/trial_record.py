@@ -81,7 +81,7 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         kind, subkind = "tool", raw_kind[5:]
         if not subkind:
             raise ValueError("missing tool name")
-    elif raw_kind not in {"rule_test", "setup_find", "setup_study"}:
+    elif raw_kind not in {"rule_test", "setup_find", "setup_study", "setup_trade"}:
         kind, subkind = "other", raw_kind
     labels = _strings(row["labels"])
     outcome, status = "recorded", row.get("verdict")
@@ -107,7 +107,7 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         family = f"spine-tool:{subkind}"
     elif kind == "setup_find":
         family = f"spine-setup:{row['name']}"
-    elif kind == "setup_study":
+    elif kind in {"setup_study", "setup_trade"}:
         family = "setup:" + " ".join(row["idea"].casefold().split())
         outcome = row["outcome"]
         if outcome not in {
@@ -121,19 +121,23 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         evidence = row.get("tool_output")
     elif kind == "setup_find":
         evidence = f"setups/{row['find_id']}/manifest.json" if row.get("find_id") else None
-    elif kind == "setup_study":
-        evidence = f"setup-studies/{row['study_id']}/manifest.json"
+    elif kind in {"setup_study", "setup_trade"}:
+        evidence = (
+            f"setup-trades/{row['trade_id']}/manifest.json"
+            if kind == "setup_trade"
+            else f"setup-studies/{row['study_id']}/manifest.json"
+        )
     return dict(
         kind=kind,
         subkind=subkind,
         family_id=family,
         family_size_recorded=None,
         counts_for_deflation=kind == "rule_test"
-        or (kind == "setup_study" and "repeat" not in labels),
+        or (kind in {"setup_study", "setup_trade"} and "repeat" not in labels),
         name=row.get("name"),
         spec_hash=row.get("spec_sha256"),
         assets=_strings(row["assets"])
-        if kind == "setup_study"
+        if kind in {"setup_study", "setup_trade"}
         else (row["symbol"],)
         if row.get("symbol")
         else (),
@@ -149,7 +153,7 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
             k: row.get(k)
             for k in (
                 ("occurrences", "mean_net_return", "excess_over_drift", "random_date_p")
-                if kind == "setup_study"
+                if kind in {"setup_study", "setup_trade"}
                 else ("oos_sharpe", "benchmark_sharpe", "dsr")
             )
         },

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: e813f5c6624004ea
+verified: 83b08c1e0f94f6f3
 ---
 
 # Diagnose and audit
@@ -14,7 +14,7 @@ verified: e813f5c6624004ea
 
 **How to read it**
 - `flags`: observations, each with a `detail` sentence: `below-benchmark`, `drawdown-with-market`,
-  `concentrated-profit`, `fragile-to-costs`, `fragile-to-parameters`, `fragile-to-delay`.
+  `concentrated-profit`, `fragile-to-costs`, `fragile-to-parameters`, `fragile-to-delay`, `fragile-to-price-noise`, `implausibly-good`.
 - `audit`: each line has `check`, `status` (`PASS`, `FLAG` or `NOT-CHECKED`) and `detail`.
 
 | Check | A `FLAG` means |
@@ -29,12 +29,12 @@ verified: e813f5c6624004ea
 | `quick-run` | the run carries the `quick` label (`variants-counted` never flags: it counts the re-runs) |
 
 - Other blocks: `full_sample`, `benchmark`, `drawdowns`, `by_year`, `concentration`, `sensitivity`, `delay`,
-  `inverted_signal`, `walk_forward_efficiency`, `trials`, and `macro_window` (stored macro series around
+  `price_noise`, `inverted_signal`, `walk_forward_efficiency`, `trials`, and `macro_window` (stored macro series around
   the worst drawdown, or `available: false` and a `reason`).
-
+- `implausibly-good`: at least 30 OOS trades and net Sharpe above 3, hit rate above 80%, or mean net
+  daily-trade return above 5%. Check data and look-ahead; this observation never improves a grade.
+- `too-few-trades`: fewer than 30 closed OOS trades caps the grade at C (inconclusive), retaining D/F.
 **What it cannot tell you**
-
 - An overall grade: there is none, by design. No flag is not proof of an edge.
 - Volume against trade size, beta, regimes, or cherry-picking beyond the recorded variants. `--no-diagnose` runs return `NO_DIAGNOSTICS`.
-
 **Next** Take the first `FLAG` to [the symptom index](README.md) and pick the cheapest test.

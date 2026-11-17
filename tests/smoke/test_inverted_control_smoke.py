@@ -61,7 +61,7 @@ def test_inverted_control_and_wfe(tmp_path: Path) -> None:
     assert "standard error" in human and "practitioner rule of thumb" in human
     draft = home / "answer.md"
     draft.write_text(
-        f"Quick look; short history. Trial count 1 [{run_id}:total_trials]. "
+        f"Quick look; short history; too few trades. Trial count 1 [{run_id}:total_trials]. "
         f"Inverted trades {inverse['inverted_trades']} [{run_id}:inverted_trades]. "
     )
     assert alpha(home, "results", "check", str(draft), "--json").json()["ok"]

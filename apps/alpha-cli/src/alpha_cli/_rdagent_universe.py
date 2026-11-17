@@ -178,7 +178,16 @@ def disclosure(spec: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
     """
     import re
 
-    count = len(receipt["instruments"])
+    series = len(receipt["instruments"])
+    # A reused ticker's later identity (`NAME~2`) is another price series of the same pair.
+    count = len({name.split("~")[0] for name in receipt["instruments"]})
+    splits = series - count
+    size = (
+        f"{count} instruments ({series} price series after {splits} ticker "
+        f"split{'s' if splits > 1 else ''})"
+        if splits
+        else f"{count} instruments"
+    )
     text = spec["survivorship"].lower()
     match = re.search(r"\b(\d+)\s+(?:later\s+)?delisted\b", text)
     includes = bool(match and int(match[1]) > 0) or bool(
@@ -201,5 +210,5 @@ def disclosure(spec: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
         detail = "0 later delisted declared"
     return {
         "universe_includes_delisted": includes,
-        "universe_text": f"{count} instruments, {detail}; {status}",
+        "universe_text": f"{size}, {detail}; {status}",
     }

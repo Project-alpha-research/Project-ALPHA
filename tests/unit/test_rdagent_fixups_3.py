@@ -266,3 +266,17 @@ def test_missing_evidence_still_refuses_path_traversal(tmp_path: Path) -> None:
     row = factor(run_id="missing-run", evidence={"series_manifest": "../../outside.json"})
     with pytest.raises(SpineError, match="escapes"):
         _evidence(map_row("rdagent", ledger, 1, row), tmp_path)
+
+
+def test_universe_text_counts_pairs_not_split_series() -> None:
+    """A reused ticker adds a price series, not a pair: 141 pairs stay 141 in the text."""
+    from alpha_cli import _rdagent_universe as universes
+
+    spec = {"survivorship": "3 pairs chosen by listing date, 1 later delisted"}
+    split = universes.disclosure(spec, {"instruments": {"A": {}, "A~2": {}, "B": {}, "C": {}}})
+    plain = universes.disclosure(spec, {"instruments": {"A": {}, "B": {}, "C": {}}})
+    assert split["universe_text"].startswith(
+        "3 instruments (4 price series after 1 ticker split), 1 later delisted"
+    )
+    assert plain["universe_text"].startswith("3 instruments, 1 later delisted")
+    assert split["universe_includes_delisted"] is plain["universe_includes_delisted"] is True

@@ -58,19 +58,19 @@ describe('date validation', () => {
 })
 
 describe('storage row', () => {
-  it('shows the unmounted Expansion SSD as an amber blocker', () => {
+  it('shows the unmounted storage as an amber blocker', () => {
     expect(
       storageRow({
         state: 'blocked',
         blocker: 'bulk_volume_not_mounted',
-        bulk_root_label: 'Expansion',
+        bulk_root_label: 'Bulk',
         free_bytes: null,
         total_bytes: null,
       }),
     ).toEqual({
-      label: 'Expansion SSD not mounted',
+      label: 'Storage: not configured',
       tone: 'amber',
-      detail: 'Reconnect the Expansion volume, then refresh.',
+      detail: 'Connect the configured storage volume, then refresh.',
       free: null,
     })
   })
@@ -80,11 +80,11 @@ describe('storage row', () => {
       storageRow({
         state: 'ready',
         blocker: null,
-        bulk_root_label: 'Expansion',
+        bulk_root_label: 'Bulk',
         free_bytes: 1_200_000_000_000,
         total_bytes: 2_000_000_000_000,
       }),
-    ).toEqual({ label: 'Expansion SSD mounted', tone: 'ok', detail: '1200 GB free of 2000 GB', free: '1.20 TB' })
+    ).toEqual({ label: 'Storage ready', tone: 'ok', detail: '1200 GB free of 2000 GB', free: '1.20 TB' })
   })
 
   it('keeps other blockers visible without inventing a cause', () => {
@@ -92,16 +92,16 @@ describe('storage row', () => {
       storageRow({
         state: 'blocked',
         blocker: 'reserve_exceeded',
-        bulk_root_label: 'Expansion',
+        bulk_root_label: 'Bulk',
         free_bytes: null,
         total_bytes: null,
       }),
-    ).toEqual({ label: 'Expansion SSD blocked', tone: 'amber', detail: 'reserve_exceeded', free: null })
+    ).toEqual({ label: 'Storage: low on free space', tone: 'amber', detail: 'reserve_exceeded', free: null })
   })
 
   it('is amber until the storage status has loaded', () => {
     expect(storageRow(null)).toEqual({
-      label: 'Expansion SSD',
+      label: 'Storage: not configured',
       tone: 'amber',
       detail: 'Storage status not loaded',
       free: null,

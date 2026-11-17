@@ -1,5 +1,7 @@
-// The ALPHA technical chart language: StockCharts Classic / Default colours measured from
-// reference pixels (docs/superpowers/plans/archive/2026-10/2026-10-07-technical-chart-language.md). One source for
+import { FALLBACK } from '../../util/tokens'
+
+// The ALPHA technical chart language: dark surfaces shared with the figure canvas.
+// Study identities remain stable across Classic / Default chart styles. One source for
 // the Bokeh canvas and, through cssVars(), for the DOM header and legends drawn over it.
 
 export type ChartStyleName = 'classic' | 'default'
@@ -42,13 +44,13 @@ export interface TechnicalStyle {
 }
 
 const SHARED = {
-  text: '#000000',
-  muted: '#606060',
-  link: '#0645ad',
+  text: FALLBACK.ink,
+  muted: FALLBACK.dim,
+  link: '#5584cf',
   rsiBand: '#707070',
-  evidenceUp: '#1c7c3a',
-  evidenceDown: '#d00030',
-  annotation: '#8b6d00',
+  evidenceUp: FALLBACK.up,
+  evidenceDown: FALLBACK.down,
+  annotation: FALLBACK.gold,
   font: 'Verdana, Tahoma, "DejaVu Sans", sans-serif',
   fontSize: 10,
   body: 0.7,
@@ -58,47 +60,47 @@ const SHARED = {
 export const CLASSIC: TechnicalStyle = {
   ...SHARED,
   name: 'classic',
-  canvas: '#ffffff',
-  plot: '#ffffff',
-  header: '#ffffff',
-  border: '#c0c0c0',
-  grid: '#e8e8e8',
-  gridMonth: '#d0d0d0',
-  up: '#000000',
-  down: '#d00030',
-  volumeUp: { fill: '#c0c0c0', edge: '#a8a8a8' },
-  volumeDown: { fill: '#e8b8c0', edge: '#d8a8b0' },
-  studies: ['#000088', '#d00030', '#006400', '#8b4513', '#800080', '#008b8b'],
-  pinned: { 'sma:50': '#000088', 'sma:200': '#d00030', 'ema:20': '#006400', 'ema:50': '#000088' },
-  rsiOverbought: '#3c6e3c',
-  rsiOversold: '#7a3c3c',
-  macdLine: '#000000',
-  macdSignal: '#f80000',
+  canvas: FALLBACK.bg,
+  plot: FALLBACK.bg,
+  header: FALLBACK.bg,
+  border: '#767676',
+  grid: FALLBACK.grid,
+  gridMonth: FALLBACK.grid,
+  up: FALLBACK.up,
+  down: FALLBACK.down,
+  volumeUp: { fill: '#2e4a38', edge: '#3f6a50' },
+  volumeDown: { fill: '#5a2f33', edge: '#7a3f44' },
+  studies: ['#5584cf', '#e64d52', '#2fc36a', '#e9a35d', '#d68ee6', '#55c5c5'],
+  pinned: { 'sma:50': '#5584cf', 'sma:200': '#e64d52', 'ema:20': '#2fc36a', 'ema:50': '#5584cf' },
+  rsiOverbought: '#2fc36a',
+  rsiOversold: '#e64d52',
+  macdLine: FALLBACK.ink,
+  macdSignal: '#e64d52',
   histFill: '#58a8d0',
-  histEdge: '#206888',
+  histEdge: '#55c5c5',
 }
 
 export const DEFAULT_STYLE: TechnicalStyle = {
   ...SHARED,
   name: 'default',
-  canvas: '#f1f4fa',
-  plot: '#f6f7fb',
-  header: '#cdd3df',
-  border: '#6c6f7d',
-  grid: '#e1e3e9',
-  gridMonth: '#cdced5',
-  up: '#000000',
-  down: '#dd0000',
-  volumeUp: { fill: '#b2c5b5', edge: '#95ae97' },
-  volumeDown: { fill: '#d5a1b5', edge: '#c87b97' },
-  studies: ['#006400', '#00008b', '#dd0000', '#8b4513', '#800080', '#008b8b'],
-  pinned: { 'ema:20': '#006400', 'sma:50': '#00008b', 'sma:200': '#dd0000', 'ema:50': '#00008b' },
-  rsiOverbought: '#4f7f5a',
-  rsiOversold: '#8a4a5e',
-  macdLine: '#000000',
-  macdSignal: '#990033',
+  canvas: FALLBACK.bg,
+  plot: FALLBACK.bg,
+  header: FALLBACK.bg,
+  border: '#767676',
+  grid: FALLBACK.grid,
+  gridMonth: FALLBACK.grid,
+  up: FALLBACK.up,
+  down: FALLBACK.down,
+  volumeUp: { fill: '#2e4a38', edge: '#3f6a50' },
+  volumeDown: { fill: '#5a2f33', edge: '#7a3f44' },
+  studies: ['#2fc36a', '#5584cf', '#e64d52', '#e9a35d', '#d68ee6', '#55c5c5'],
+  pinned: { 'ema:20': '#2fc36a', 'sma:50': '#5584cf', 'sma:200': '#e64d52', 'ema:50': '#5584cf' },
+  rsiOverbought: '#2fc36a',
+  rsiOversold: '#e64d52',
+  macdLine: FALLBACK.ink,
+  macdSignal: '#e64d52',
   histFill: '#93bcb7',
-  histEdge: '#386760',
+  histEdge: '#55c5c5',
 }
 
 export function technicalStyle(name: ChartStyleName): TechnicalStyle {

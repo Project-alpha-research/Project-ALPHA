@@ -134,7 +134,7 @@ describe('research data model', () => {
       cryptoCanonicalAction({ storageState: 'blocked', storageBlocker: 'bulk_volume_not_mounted' }),
     ).toEqual({
       state: 'blocked',
-      label: 'Reconnect the reviewed Expansion volume, then refresh storage.',
+      label: 'Reconnect the bulk-data volume, then refresh storage.',
     })
     expect(cryptoCanonicalAction({ storageState: 'ready', qualifiedCount: 0 })).toEqual({
       state: 'ready',

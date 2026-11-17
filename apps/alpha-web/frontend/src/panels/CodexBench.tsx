@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Codex Bench — a workbench, not a chat. The conversation happens in the owner's Codex
 // CLI/IDE session attached to alpha-mcp; this panel prepares context (packet composer +
 // protocol picker), records nothing itself, and displays byte-identically what Codex was
@@ -193,7 +194,7 @@ export function CodexBench(props: PanelHandleProps) {
                         </span>
                         <span className="backlog-meta mono">
                           {row.protocol_id ?? 'no protocol'} · {row.payload_bytes} bytes ·{' '}
-                          {row.created_at}
+                          <Timestamp value={row.created_at} />
                         </span>
                       </button>
                     </li>

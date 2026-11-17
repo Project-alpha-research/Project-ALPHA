@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Evidence Hub — one workflow surface with eleven sections (spec §6.2) that fill as the
 // research case progresses, each rendering honest NOT_TESTED / empty states before then.
 // Evidence for and evidence against share one component so their prominence is identical.
@@ -446,7 +447,7 @@ function SectionBody({
               <p className="mono">{attempt.attempt_id}</p>
               <p className="mono muted">
                 {attempt.run_id ?? 'no run'} · {attempt.config_fingerprint.slice(0, 16)}… ·{' '}
-                {attempt.recorded_at}
+                <Timestamp value={attempt.recorded_at} />
               </p>
             </div>
           ))}

@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from . import research_memory
+    from . import gateway_usage, research_memory
 
 WORKER = Path(__file__).resolve().parent
 REPO = WORKER.parents[1]
@@ -35,6 +35,7 @@ if str(WORKER) not in sys.path:
 
 if not TYPE_CHECKING:
     research_memory = importlib.import_module("research_memory")
+    gateway_usage = importlib.import_module("gateway_usage")
 SOURCE_SHA256: str = importlib.import_module("source_pin").SOURCE_SHA256
 
 MAX_CALLS = 60
@@ -424,6 +425,8 @@ class Launch:
                 "--api-price-out-per-mtok",
                 str(self.args.api_price_out_per_mtok),
             ]
+            if getattr(self.args, "no_router_session", False):
+                command.append("--no-router-session")
             if self.args.api_openrouter:
                 command.append("--api-openrouter")
         self.receipt["route"] = {
@@ -435,6 +438,8 @@ class Launch:
             "api_price_in_per_mtok": self.args.api_price_in_per_mtok,
             "api_price_out_per_mtok": self.args.api_price_out_per_mtok,
             "api_openrouter": self.args.api_openrouter,
+            "router_session_enabled": self.args.chat_route == "api"
+            and not getattr(self.args, "no_router_session", False),
             "accept_unhonoured": accept,
             "api_timeout_seconds": self.args.api_timeout,
             "provider_retries": self.args.provider_retries,
@@ -566,23 +571,23 @@ class Launch:
         paths = (self.args.gateway_data_dir / "model-gateway/calls.jsonl", self.run / "steps.jsonl")
         try:
             missing = [str(p) for p in paths if not p.exists()]
-            if missing:
+            if not paths[0].exists():
                 output.write_bytes(b"")
                 return {"calls": 0, "reason": "missing files: " + ", ".join(missing)}
             skipped = 0
             parsed: list[list[dict[str, Any]]] = []
             for p in paths:
                 rows = []
-                for line in p.read_text().splitlines():
+                for line in p.read_text().splitlines() if p.exists() else []:
                     try:
                         rows.append(json.loads(line))
                     except ValueError:
                         skipped += 1  # a line cut short by a killed process
                 parsed.append(rows)
             calls = [row for row in parsed[0] if row.get("run_id") == self.args.run_id]
-            labelled = label_calls(calls, parsed[1])
+            labelled = label_calls(calls, parsed[1]) if paths[1].exists() else []
             output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in labelled))
-            self.receipt["call_split"] = call_split(calls)
+            self.receipt["call_split"] = call_split(calls, labelled)
             return {"calls": len(labelled), "skipped_lines": skipped}
         except Exception as error:  # labelling is best effort, with receipt diagnostics
             note = f"{type(error).__name__}: {error}"
@@ -658,7 +663,9 @@ def embedding_model(args: argparse.Namespace) -> str:
     return "fake" if route == "fake" else "nomic-embed-text"
 
 
-def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
+def call_split(
+    calls: list[dict[str, Any]], labelled: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
     """Model calls versus free local embeddings, as the gateway logged them.
 
     Only embedding rows the gateway marked ``local_embedding`` or ``provider_embedding`` are exempt
@@ -729,6 +736,7 @@ def call_split(calls: list[dict[str, Any]]) -> dict[str, Any]:
         embedding_routes=sorted(routes),
         embedding_models=sorted(models),
     )
+    split["chat_usage"] = gateway_usage.receipt_usage(calls, labelled)
     split["counted_toward_call_cap"] = split["counted_calls"]
     return split
 
@@ -819,6 +827,7 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--api-price-in-per-mtok", type=float)
     r.add_argument("--api-price-out-per-mtok", type=float)
     r.add_argument("--api-openrouter", action="store_true")
+    r.add_argument("--no-router-session", action="store_true")
     r.add_argument("--api-timeout", type=float, default=180)
     r.add_argument("--provider-retries", type=int, default=1)
     r.add_argument("--coding-reasoning-tokens", type=int, default=None)

@@ -151,6 +151,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "risk",
             "rules",
             "scan",
+            "setup",
             "strategy-candidate",
             "suite",
             "test",
@@ -179,4 +180,13 @@ def test_partner_selftest_does_not_import_heavy_modules(tmp_path: Path) -> None:
 @pytest.mark.parametrize("command", ["import-bybit", "show-bybit"])
 def test_bybit_commands_keep_unrelated_groups_lazy(tmp_path: Path, command: str) -> None:
     result = _run(_RUN, ["context", command, "--help"], tmp_path)
+    assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
+
+
+def test_setup_help_keeps_drawing_and_evaluator_lazy(tmp_path: Path) -> None:
+    script = _RUN.replace(
+        '"alpha_cli.backtest_cmds",',
+        '"matplotlib", "polars", "alpha_study", "alpha_cli.backtest_cmds",',
+    )
+    result = _run(script, ["setup", "--help"], tmp_path)
     assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}

@@ -32,6 +32,7 @@ const CATALOG_GROUPS = [
   'risk',
   'strategy-candidate',
   'suite',
+  'setup',
   'test',
   'tool',
   'unusual',
@@ -163,5 +164,11 @@ describe('chart windows', () => {
 it('puts the trial ledger in Research', () => {
   expect(assignCommands([command('ledger summary')]).Research).toEqual([
     { kind: 'command', id: 'ledger summary', label: 'ledger summary' },
+  ])
+})
+
+it('puts setup finding in Research', () => {
+  expect(assignCommands([command('setup find')]).Research).toEqual([
+    { kind: 'command', id: 'setup find', label: 'setup find' },
   ])
 })

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 33d5fa4d244b93cc
+verified: a612601272ba6780
 ---
 
 # RD-Agent
@@ -57,8 +57,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
   [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
-  The wide store may be used once every implausible gap jump is declared; freeze enforces this by
-  splitting declared identities and refusing unexplained jumps. This does not establish survivorship-free data.
+  The wide store may be used once every implausible gap jump is declared; freeze splits declared identities and
+  refuses unexplained jumps across gaps of 7+ missing days (shorter pauses are not checked). Not survivorship-free.
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.

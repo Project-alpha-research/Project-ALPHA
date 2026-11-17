@@ -821,7 +821,8 @@ cadence gap is accepted at freeze; any other warning or failure still refuses th
 
 ### Identity breaks across a gap
 
-The wide store may be used once every implausible jump is declared; freeze enforces this.
+The wide store may be used once every implausible jump is declared. Freeze enforces this only
+across gaps of 7 or more missing days (below); a shorter pause is not checked.
 The owner supplies `identity_breaks` in the universe file, a list of entries with `instrument`,
 `new_from` (a `YYYY-MM-DD` date) and `reason` (`ticker_reused` or `redenominated`). The instrument
 must belong to the universe and its dates must be strictly increasing. No real break list is
@@ -838,9 +839,15 @@ remains in the bound universe but is not listed as applied; numbering follows de
 After relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
 least `IDENTITY_JUMP_MIN_GAP_DAYS = 7` missing calendar days (excluding the two observed days).
 If resume close / last close is above `IDENTITY_JUMP_RATIO = 5.0` or below `1 / 5.0`, freeze
-raises `IdentityJumpError`, naming the instrument, both dates, both closes and their ratio.
-There is no override. Even a genuine large move across such a gap must be declared by the owner
-as a break or the instrument must be left out.
+raises `IdentityJumpError`; one refusal names every such jump with its instrument, both dates,
+both closes and their ratio. There is no override. Even a genuine large move across such a gap
+must be declared by the owner as a break or the instrument must be left out.
+
+Known limit: a gap of 1 to 6 missing days and a jump between consecutive days are not checked.
+Exchanges often pause a pair for a few days to swap a redenominated token, so such a jump
+passes freeze and, held across the pause, is booked as a real move unless the owner declares it.
+Check the store for short-gap jumps before relying on it; a consecutive-day check would also
+flag genuine crashes, so neither has been added without an owner decision.
 
 The panel receipt records the applied entries with `new_name`, and `identity_jump_policy`
 (`min_gap_days`, `ratio`). Reports and proposer feedback state the number of distinct tickers

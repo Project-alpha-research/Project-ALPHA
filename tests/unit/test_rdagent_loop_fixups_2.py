@@ -195,14 +195,21 @@ def test_ridge_composite_inherits_every_input_family() -> None:
     summary = ns["family_summary"](rows, 3)
     closed = summary.split("no candidate: ")[1]
     assert "volatility and beta" in closed and "composites using ANY" in summary
-    assert "- drawdown: 1 tries" in summary
+    assert "- drawdown: 1 try" in summary
 
 
 def test_composite_family_cannot_be_dodged_by_renaming() -> None:
     ns = swing_parts()
     renamed = {**REAL_COMPOSITE, "name": "signal_alpha_x"}
     assert _family(ns, renamed) == _family(ns, REAL_COMPOSITE)
-    plain = {"name": "factor_a", "description": "Weighted sum of volatility and skewness ranks"}
+    plain: dict[str, Any] = {
+        "name": "factor_a",
+        "description": "Weighted sum of volatility and skewness ranks",
+    }
+    # Prose may say it is a mix but never supplies families: with no listed input names it
+    # is its own "composite: unknown inputs" family, never silently an open "other: ...".
+    assert _family(ns, plain) == {"composite: unknown inputs"}
+    plain["variables"] = {"volatility": "rank", "skewness": "rank"}
     assert _family(ns, plain) == {"volatility and beta", "skewness and lottery returns"}
     unknown = {"name": "ml_ridge_composite_7d"}  # the real ledger rows carry no description
     assert _family(ns, unknown) == {"composite: unknown inputs"}

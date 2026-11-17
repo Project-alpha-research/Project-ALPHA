@@ -195,11 +195,8 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
     assert row.pop("universe_includes_delisted") is False
     assert row.pop("writeoff_count") == 0
     message = row.pop("writeoff_message")
-    assert message == (
-        "factor: 0 held positions were written off after their coin stopped trading, "
-        "assuming a 30% loss of last value (not a measured recovery), "
-        "across the evaluated holding clocks; none."
-    )
+    # Item 8 (fixups 4): the sentence names only replayed clocks; this failed factor has none.
+    assert message == "factor: no holding clock was replayed, so nothing was written off."
     assert message in record["feedback_text"]
     record["feedback_text"] = record["feedback_text"].replace(" " + message, "")
     current = row["survivorship"]
@@ -235,6 +232,12 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
         container[key] = container[key].replace(
             "Factor failed: reason not recorded. ", "Factor execution failed."
         )
+    # Item 8 changes presentation only; retain the original decision/metric checksum.
+    for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
+        assert "None" not in container[key]
+        for field in ("mean rank IC", "net annual excess", "turnover per day"):
+            assert f"{field} not available" in container[key]
+            container[key] = container[key].replace(f"{field} not available", f"{field} None")
     assert ev.sha(ev.canonical(record)) == (
         "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
     )

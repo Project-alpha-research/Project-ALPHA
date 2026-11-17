@@ -812,14 +812,14 @@ class MemoryEmbeddingError(Exception):
         self.code = code
 
 
-def gateway_embedding(text: str) -> tuple[str, list[float]]:
+def _gateway_embeddings(inputs: str | list[str]) -> dict[str, Any]:
     """Use the run's gateway session, bypassing upstream's model-agnostic vector cache."""
     import urllib.error
     import urllib.request
 
     request = urllib.request.Request(
         os.environ["LM_STUDIO_API_BASE"].rstrip("/") + "/embeddings",
-        data=json.dumps({"model": "alpha-embed", "input": text}).encode(),
+        data=json.dumps({"model": "alpha-embed", "input": inputs}).encode(),
         headers={
             "Content-Type": "application/json",
             "Authorization": "Bearer " + os.environ["LM_STUDIO_API_KEY"],
@@ -835,7 +835,32 @@ def gateway_embedding(text: str) -> tuple[str, list[float]]:
             str(detail.get("code", "gateway_error")),
             str(detail.get("message", "gateway embedding failed")),
         ) from None
+    return dict(body)
+
+
+def gateway_embedding(text: str) -> tuple[str, list[float]]:
+    body = _gateway_embeddings(text)
     return str(body["model"]), list(body["data"][0]["embedding"])
+
+
+def gateway_embedding_batch(
+    texts: list[str],
+) -> tuple[str, list[list[float] | MemoryEmbeddingError]]:
+    body = _gateway_embeddings(texts)
+    results: dict[int, list[float] | MemoryEmbeddingError] = {}
+    for item in body["data"]:
+        index = item["index"]
+        if type(index) is not int or index in results:
+            raise ValueError("invalid batch embedding indices")
+        results[index] = item["embedding"]
+    for error in body.get("input_errors", []):
+        index = error["index"]
+        if type(index) is not int or index in results:
+            raise ValueError("invalid batch embedding error indices")
+        results[index] = MemoryEmbeddingError(error["code"], error["message"])
+    if set(results) != set(range(len(texts))):
+        raise ValueError("batch embedding inputs and outputs differ")
+    return str(body["model"]), [results[i] for i in range(len(texts))]
 
 
 class EmbeddingMemory:
@@ -854,6 +879,11 @@ class EmbeddingMemory:
         embed: Callable[[str], tuple[str, list[float]]],
     ) -> None:
         self.sidecar, self.events, self.model, self.embed = sidecar, events, model, embed
+        self.embed_many = (
+            gateway_embedding_batch
+            if embed is gateway_embedding and os.environ.get("ALPHA_EMBEDDING_ROUTE") == "provider"
+            else None
+        )
         self.dimension: int | None = None
         self.failed: set[str] = set()
         try:
@@ -914,6 +944,7 @@ class EmbeddingMemory:
 
     def prepare(self, graph: Any, skip: Callable[[Any, Exception], None]) -> dict[str, Any]:
         removed = {}
+        pending = []
         for node_id, node in list(graph.nodes.items()):
             if node_id in self.failed:
                 removed[node_id] = graph.nodes.pop(node_id)
@@ -926,8 +957,26 @@ class EmbeddingMemory:
                     raise ValueError("sidecar dimension differs")
                 node.embedding = vector
                 continue
+            pending.append((node_id, node))
+        vectors: list[list[float] | Exception] | None = None
+        if len(pending) > 1 and self.embed_many is not None:
             try:
-                vector = self.vector(node.content)
+                model, batch = self.embed_many([node.content for _, node in pending])
+                if model != self.model:
+                    raise ValueError("gateway returned a different embedding model")
+                if len(batch) != len(pending):
+                    raise ValueError("batch embedding count differs")
+                vectors = list(batch)
+            except Exception as error:
+                # A failed batch fails each of its inputs through the skip policy, so a budget
+                # stop still ends the run there and nothing is re-sent one input at a time.
+                vectors = [error] * len(pending)
+        for index, (node_id, node) in enumerate(pending):
+            try:
+                value = vectors[index] if vectors is not None else self.vector(node.content)
+                if isinstance(value, Exception):
+                    raise value
+                vector = self.checked(value)
             except Exception as error:
                 skip(node, error)  # budget errors must raise SystemExit before marking a skip
                 self.failed.add(node_id)
@@ -945,7 +994,7 @@ class EmbeddingMemory:
                             "node_id": node_id,
                             "model": self.model,
                             "dimension": len(vector),
-                            "text_sha256": text_hash,
+                            "text_sha256": hashlib.sha256(node.content.encode()).hexdigest(),
                         }
                     )
                     + "\n"

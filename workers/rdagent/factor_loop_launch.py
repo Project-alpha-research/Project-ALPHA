@@ -184,6 +184,7 @@ def loop_environment(
     family_switch_after: int = 3,
     universe_text: str = "15 surviving coins only",
     embedding_model: str | None = None,
+    embedding_route: str = "local",
 ) -> dict[str, str]:
     """The loop's whole environment: exactly these keys and nothing inherited."""
     return {
@@ -194,6 +195,7 @@ def loop_environment(
         "PATH": f"{factor_python.parent}:/usr/bin:/bin",
         "CHAT_MODEL": "lm_studio/alpha-chat",
         "EMBEDDING_MODEL": "lm_studio/alpha-embed",
+        **({"ALPHA_EMBEDDING_ROUTE": "provider"} if embedding_route == "provider" else {}),
         **({"ALPHA_EMBEDDING_MODEL": embedding_model} if embedding_model is not None else {}),
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
@@ -493,6 +495,7 @@ class Launch:
             coder_max_loop=self.args.coder_max_loop,
             family_switch_after=self.args.family_switch_after,
             universe_text=self.universe_text,
+            embedding_route=self.args.embedding_route,
             embedding_model=embedding_model(self.args)
             if self.args.embedding_route in ("provider", "fake")
             else None,
@@ -613,6 +616,17 @@ class Launch:
             if evaluations.exists()
             else None,
         )
+        self.receipt.update(round_counts(self.run))
+        split = self.receipt.get("call_split", {})
+        for key in (
+            "reask_calls",
+            "reask_usd",
+            "provider_embedding_requests",
+            "provider_embedding_inputs",
+            "embedding_single_retries",
+            "embedding_model_not_reported",
+        ):
+            self.receipt[key] = split.get(key, 0)
         counters = self.receipt["gateway_status"].get("this_run") or {}
         self.receipt.update(
             counted_calls=counters.get("counted_calls", counters.get("calls")),
@@ -656,6 +670,33 @@ class Launch:
         return exit_status
 
 
+def round_counts(run: Path) -> dict[str, int]:
+    rounds_path, evaluations = run / "rounds.jsonl", run / "evaluations.jsonl"
+    rounds = (
+        [json.loads(line) for line in rounds_path.read_text().splitlines()]
+        if rounds_path.exists()
+        else []
+    )
+    evaluated = (
+        [json.loads(line) for line in evaluations.read_text().splitlines()]
+        if evaluations.exists()
+        else []
+    )
+    refused = [
+        row
+        for row in rounds
+        if row.get("refused_families", row.get("closed_families"))
+        or row.get("reason") == "refused_closed_family"
+    ]
+    return {
+        "rounds_with_trial": len({row["iteration"] for row in evaluated if row.get("factors")}),
+        "rounds_no_admissible_idea": sum(
+            row.get("status") == "no_admissible_idea" for row in rounds
+        ),
+        "proposals_refused": len(refused),
+    }
+
+
 def embedding_model(args: argparse.Namespace) -> str:
     route = getattr(args, "embedding_route", "local")
     if route == "provider":
@@ -678,6 +719,10 @@ def call_split(
         "counted_calls": 0,
         "local_embedding_calls": 0,
         "provider_embedding_calls": 0,
+        "provider_embedding_requests": 0,
+        "provider_embedding_inputs": 0,
+        "embedding_single_retries": 0,
+        "embedding_model_not_reported": 0,
         "provider_embedding_usd": 0.0,
         "provider_embedding_tokens": 0,
         "provider_timeouts": 0,
@@ -719,6 +764,14 @@ def call_split(
         )
         split[bucket] += attempts
         if provider:
+            split["provider_embedding_requests"] += attempts
+            split["provider_embedding_inputs"] += (
+                int(call.get("input_count") or 0) if not call.get("single_retry") else 0
+            )
+            split["embedding_single_retries"] += int(bool(call.get("single_retry"))) * attempts
+            split["embedding_model_not_reported"] += int(
+                call.get("model_check") == "model_not_reported"
+            )
             split["provider_embedding_usd"] += float(call.get("usd") or 0)
             split["provider_embedding_tokens"] += int(call.get("prompt_tokens") or 0)
         split["retried_attempts"] += max(0, attempts - 1)
@@ -736,6 +789,13 @@ def call_split(
         embedding_routes=sorted(routes),
         embedding_models=sorted(models),
     )
+    reasks = [
+        c
+        for c in labelled or []
+        if c.get("step") == "proposal_reask" and c.get("endpoint") == "/v1/chat/completions"
+    ]
+    split["reask_calls"] = sum(int(c.get("attempts") or 0) for c in reasks)
+    split["reask_usd"] = sum(float(c.get("usd") or 0) for c in reasks)
     split["chat_usage"] = gateway_usage.receipt_usage(calls, labelled)
     split["counted_toward_call_cap"] = split["counted_calls"]
     return split

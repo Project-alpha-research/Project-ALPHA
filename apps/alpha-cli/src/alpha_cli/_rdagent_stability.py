@@ -33,16 +33,26 @@ def failure_message(row: dict[str, Any]) -> str:
 
 
 def writeoff_summary(row: dict[str, Any], haircut: float) -> tuple[int, str]:
-    replays = [t.get("replay", {}) for t in row["clocks"].values()]
+    # A clock was replayed when it has replay metrics; an empty replay or a replay error is not.
+    clocks = [
+        clock
+        for clock, trial in row["clocks"].items()
+        if trial.get("replay") and "error" not in trial["replay"]
+    ]
+    replays = [row["clocks"][clock]["replay"] for clock in clocks]
     count = sum(r.get("haircuts_applied", 0) for r in replays)
     names = sorted({name for r in replays for name in r.get("writeoff_instruments", [])})
     coins = ", ".join(names[:5]) or ("coin names not recorded" if count else "none")
     if len(names) > 5:
         coins += f" and {len(names) - 5} more"
+    if not clocks:
+        return count, f"{row['name']}: no holding clock was replayed, so nothing was written off."
+    replayed = " and ".join(filter(None, [", ".join(clocks[:-1]), clocks[-1]]))
+    positions = "held position was" if count == 1 else "held positions were"
     return count, (
-        f"{row['name']}: {count} held positions were written off after their coin stopped "
+        f"{row['name']}: {count} {positions} written off after their coin stopped "
         f"trading, assuming a {haircut:.0%} loss of last value (not a measured recovery), "
-        f"across the evaluated holding clocks; {coins}."
+        f"across the replayed {replayed} holding clock{'s' if len(clocks) > 1 else ''}; {coins}."
     )
 
 

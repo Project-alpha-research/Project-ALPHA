@@ -31,7 +31,7 @@ __all__ = ["model"]
             "gradient_boosted_mix",
             "mix of inputs",
             {"momentum_30d": "x", "volatility_30d": "x", "volume_30d": "x", "high_prox_30d": "x"},
-            "momentum and trend; price near its high / range position; "
+            "past return (momentum or reversal); price near its high / range position; "
             "volatility and beta; volume level and trend",
         ),
         (
@@ -50,7 +50,7 @@ __all__ = ["model"]
             "lightgbm_mix",
             "model using features",
             {"long_term_reversal": "momentum regression", "vwap_distance": "volume weighted"},
-            "VWAP distance; long-term reversal",
+            "VWAP distance; past return (momentum or reversal)",
         ),
         ("volume weighted average price distance", "volume trend", {}, "VWAP distance"),
     ],
@@ -66,7 +66,7 @@ def test_real_proposals_classify_construct_names(
 
 @pytest.mark.parametrize("name", ["long-term reversal", "Long Term Reversal", "long_term_reversal"])
 def test_name_normalisation(name: str) -> None:
-    assert judge_namespace()["idea_family"](name) == "long-term reversal"
+    assert judge_namespace()["idea_family"](name) == "past return (momentum or reversal)"
 
 
 def test_estimator_words_are_not_family_keywords() -> None:
@@ -91,7 +91,7 @@ def test_estimator_words_are_not_family_keywords() -> None:
     assert ns["idea_family"]("market_beta_30d") == "volatility and beta"
     assert ns["input_families"]("volume weighted average price distance", "long-term reversal") == {
         "VWAP distance",
-        "long-term reversal",
+        "past return (momentum or reversal)",
     }
 
 
@@ -357,11 +357,11 @@ def test_paid_memory_reembeds_in_one_batch_and_keeps_good_nodes(
 
 def test_single_construct_has_one_family_and_named_abbreviations() -> None:
     family = judge_namespace()["idea_family"]
-    assert family("vol_adjusted_momentum_28d") == "momentum and trend"
+    assert family("vol_adjusted_momentum_28d") == "past return (momentum or reversal)"
     assert family("vol_scaled_high_prox_252d") == "price near its high / range position"
     assert (
         family("ridge_mix", variables={"vol60": "unread", "mdd120": "unread", "ac60": "unread"})
-        == "drawdown; momentum and trend; volatility and beta"
+        == "drawdown; past return (momentum or reversal); volatility and beta"
     )
 
 
@@ -478,11 +478,11 @@ def test_single_paid_memory_input_refusal_uses_skip_policy(
 WIDE_RUN_CLOSED = {
     "composite: unknown inputs",
     "illiquidity",
-    "momentum and trend",
+    "past return (momentum or reversal)",
     "price near its high / range position",
     "range and compression",
     "return-volume relation",
-    "short-term reversal and gaps",
+    "intraday return and gaps",
     "skewness and lottery returns",
     "volatility and beta",
     "volume level and trend",
@@ -518,7 +518,7 @@ WIDE_RUN_PROPOSALS: list[tuple[str, str, list[str], bool]] = [
         "28-day horizon over long-term reversal ltr and VWAP distance vwap.",
         ["C_{i,s}", "O_{i,s}", "V_{i,s}", "h", "L", "ltr_{i,t}", "vwap_{i,t}", "m(t)"]
         + ["D_{m(t)}", "num_leaves", "learning_rate", "p_{i,t}", "rank_t", "f_{i,t}"],
-        False,
+        True,
     ),
     (
         "max_drawdown_252d",
@@ -565,7 +565,7 @@ def test_regression_is_one_construct_unless_it_lists_two_known_features() -> Non
     family = judge_namespace()["idea_family"]
     inputs = {"m20": "momentum", "vol60": "volatility"}
     assert family("xs_reg", "cross-sectional regression", "", inputs) == (
-        "momentum and trend; volatility and beta"
+        "past return (momentum or reversal); volatility and beta"
     )
     assert family("lag_slope_60d", "OLS regression on lagged BTC", "", {"m20": "x"}) == (
         "other: lag_slope"

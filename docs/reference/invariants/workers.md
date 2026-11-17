@@ -10,14 +10,13 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 2eaf5174d3a5df88
+verified: c432774df36467f5
 ---
 
 # Worker invariants
 
 Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
 The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
-
 ## Shared rules
 
 - Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
@@ -159,8 +158,8 @@ The general rule is [research integrity § Models and isolated workers](research
   restarts one upstream counter per experiment), and they import RD-Agent and pandas, never an ALPHA package: the
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
-  evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
-  daily-only pass is `FAST_ONLY`; failed deflation is `DEFLATION_FAIL`); a clock whose top third did not beat its bottom third before costs is
+  evidence); `decision` is ALPHA's rule. A declared sign and weekly/monthly primary clock must pass screen, spread, replay
+  and deflation. Other choices are diagnostics only. Failed deflation is `DEFLATION_FAIL`; a nonpositive top-minus-bottom spread is
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
@@ -168,11 +167,12 @@ The general rule is [research integrity § Models and isolated workers](research
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
   `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
-  Closed proposals stop before coding, with two re-asks; admitted history names earlier refusals, and code failures never close families.
+  Closed or undeclared proposals stop before coding, with two re-asks; sign mirrors share a family and past-return reversal joins momentum.
+  Rank twins (absolute correlation 0.98) repeat same-panel trials; missing values are disclosed. Code failures never close families.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway
   address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
-  loop names its exit in the receipt, end event and console. Provider failures close rounds through `loop_guard.py`; budgets end the run. Memory resume (no
+  loop names its exit. Provider failures, including proposal, close rounds via `loop_guard.py`; budgets end the run. Memory resume (no
   invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.

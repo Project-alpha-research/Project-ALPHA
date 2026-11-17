@@ -35,7 +35,7 @@ def test_run3_logistic_diffusion_mix_reads_exactly_its_six_named_inputs() -> Non
 
 def test_run3_placeholder_mix_reads_the_inputs_its_values_name() -> None:
     assert families("ml_logit_topthird_weekly_open") == {
-        "long-term reversal",
+        "past return (momentum or reversal)",
         "drawdown",
         "VWAP distance",
         "other: overnight_drift",
@@ -44,14 +44,21 @@ def test_run3_placeholder_mix_reads_the_inputs_its_values_name() -> None:
 
 
 def test_run3_ridge_mix_and_run2_gbdt_mix_keep_only_feature_names() -> None:
-    assert families("cs_ridge_openfam_7d") == {"long-term reversal", "drawdown", "VWAP distance"}
-    assert families("ml_gbdt_topthird_7d") == {"long-term reversal", "VWAP distance"}
+    assert families("cs_ridge_openfam_7d") == {
+        "past return (momentum or reversal)",
+        "drawdown",
+        "VWAP distance",
+    }
+    assert families("ml_gbdt_topthird_7d") == {
+        "past return (momentum or reversal)",
+        "VWAP distance",
+    }
 
 
 def test_run2_gradient_boosted_mix_is_still_refused_without_junk_families() -> None:
     found = families("gbm_spread_7d")
     assert found == {
-        "momentum and trend",
+        "past return (momentum or reversal)",
         "volatility and beta",
         "volume level and trend",
         "price near its high / range position",
@@ -67,7 +74,7 @@ def test_run2_price_delay_regression_stays_one_construct() -> None:
 
 def test_a_closed_feature_added_to_a_real_mix_is_refused() -> None:
     variables = {**PROPOSALS["ml_logit_top3_diffusion_7d"]["variables"], "mom_60d_{i,t}": "x"}
-    assert "momentum and trend" in families("ml_logit_top3_diffusion_7d", variables)
+    assert "past return (momentum or reversal)" in families("ml_logit_top3_diffusion_7d", variables)
 
 
 @pytest.mark.parametrize(
@@ -121,7 +128,11 @@ def test_unknown_inputs_only_when_a_feature_input_is_unnamed() -> None:
 
 def test_a_composite_name_still_contributes_its_families() -> None:
     found = idea_families.idea_family("momentum_vol_ensemble", variables={"hurst": "x"})
-    assert set(found.split("; ")) == {"momentum and trend", "volatility and beta", "other: hurst"}
+    assert set(found.split("; ")) == {
+        "past return (momentum or reversal)",
+        "volatility and beta",
+        "other: hurst",
+    }
 
 
 def test_ledger_ridge_mix_with_comma_indices_keeps_its_closed_features() -> None:
@@ -134,7 +145,7 @@ def test_ledger_ridge_mix_with_comma_indices_keeps_its_closed_features() -> None
     assert set(found.split("; ")) == {
         "drawdown",
         "illiquidity",
-        "momentum and trend",
+        "past return (momentum or reversal)",
         "price near its high / range position",
         "skewness and lottery returns",
         "volatility and beta",
@@ -150,7 +161,7 @@ def test_an_input_matching_two_families_counts_for_both() -> None:
     keys += ["volume_skew_{i,t}", "x_{i,s,j}", "y_{i,s}", "z_{i,s,j}"]
     found = idea_families.idea_family("ml_huber_causal_7d", "ridge", "", keys)
     assert set(found.split("; ")) == {
-        "momentum and trend",
+        "past return (momentum or reversal)",
         "skewness and lottery returns",
         "volume level and trend",
         "other: entropy",

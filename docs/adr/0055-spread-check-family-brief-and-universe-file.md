@@ -151,3 +151,16 @@ monthly totals show counted calls and local embeddings separately; past counts s
 **Amendment — owner decision 2026-11-17 (paid embeddings):** Explicitly configured provider embeddings send whole inputs, reserve and settle token-priced money, and share `EMBEDDING_CALLS_PER_RUN = 2000` with local embeddings; neither route spends chat/monthly call counts. Cap values and chat accounting are unchanged; memory is model/dimension-bound and receipts separate embedding costs and re-embeddings.
 
 **Amendment — 2026-11-17:** CANDIDATE also requires the lead clock’s recorded deflated Sharpe to meet its unchanged threshold; otherwise DEFLATION_FAIL, with trial counting unchanged.
+
+**Amendment — 2026-11-17 (judge honesty):** New trials use (1) `family-looks-x2-floor-1`
+for N = twice all family screen looks and variance max(sample replay-Sharpe variance, 1/(T-1));
+(2) `alpha-investing-simple-1` for cutoff 0.10*(1+earlier new-rule candidates)/m, BH diagnostic only;
+(3) `declared-sign-primary-clock-1` for a required direction, weekly/monthly primary clock and
+economic reason, one-sided testing at half that cutoff, all other choices diagnostic only;
+(4) `same-panel-rank-twin-098-1` for signed rank-twin identity at mean absolute correlation 0.98,
+with sign-independent families and merged past-return momentum/reversal closure;
+(5) `cgm-two-way-newey-west-1` for the maximum of historical, date/instrument clustered and
+Newey-West p-values, Bartlett lag ceil(4*(n/100)^(2/9)), never more permissive than before;
+a nonpositive two-way sandwich uses the larger one-way clustered variance (recorded).
+Each new factor counts one primary look; old per-clock entries and immutable figures remain.
+Thresholds, costs, spread/replay conditions, caps and reserved-window rules are unchanged.

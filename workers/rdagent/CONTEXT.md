@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 7c8a2723ba0a362f
+verified: f29574cd41f9f020
 ---
 
 # RD-Agent worker workspace
@@ -44,7 +44,8 @@ no market, inference or evidence authority.
   Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
   See the worker invariants for accounting and compatibility.
 - Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and
-  `loop_guard.py` closes exhausted-provider rounds without inventing trials.
+  `loop_guard.py` closes exhausted-provider rounds, including proposal, without inventing trials.
+  Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
   use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,

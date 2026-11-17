@@ -100,8 +100,10 @@ def test_spread_failure_is_recorded_and_never_passes(tmp_path: Path) -> None:
     assert factor["status"] == "SPREAD_FAIL"
     assert record["decision"] is False
     # The planted factor's replays are profitable, yet no clock may pass once its spread failed.
-    assert {t["status"] for t in factor["clocks"].values()} == {"SPREAD_FAIL"}
-    assert all(t["replay"]["net"]["annualized_return"] > 0 for t in factor["clocks"].values())
+    assert {t["status"] for t in factor["clocks"].values()} == {"SPREAD_FAIL", "DIAGNOSTIC"}
+    assert all(
+        t["replay"]["net"]["annualized_return"] > 0 for t in clocks.trial_clocks(factor).values()
+    )
     assert "top-third-does-not-beat-bottom-third" in record["feedback_text"]
     row = json.loads((tmp_path / "ledger.jsonl").read_text().splitlines()[0])
     assert row["clocks"]["weekly"]["spread"]["reason"] == ev.SPREAD_REASON
@@ -117,9 +119,9 @@ def test_spread_never_turns_a_failure_into_a_pass(tmp_path: Path) -> None:
     req = fixture(run)
     record = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = record["factors"][0]
-    assert factor["status"] == "DEFLATION_FAIL"
-    assert factor["replay"]["deflated_sharpe"]["passed"] is False
-    for trial in factor["clocks"].values():
+    assert factor["status"] == "CANDIDATE"
+    assert factor["replay"]["deflated_sharpe"]["passed"] is True
+    for trial in clocks.trial_clocks(factor).values():
         assert trial["spread"]["status"] == "PASS"
         assert trial["status"] == ("PASS" if trial["replay"]["net"]["annualized_return"] > 0
                                    else "REPLAY_FAIL")  # fmt: skip
@@ -191,7 +193,7 @@ def test_liquidity_rule_masks_names_and_is_recorded(tmp_path: Path) -> None:
     # Fixture quote volume is 10,000 per day: a 20,000 threshold leaves nobody, so every clock
     # becomes DEGENERATE and says the universe caused it; 5,000 keeps all fifteen. The fixture
     # has no history before 2021, so the look-back is one day.
-    for threshold, expected in ((5000, "DEFLATION_FAIL"), (20000, "DEGENERATE")):
+    for threshold, expected in ((5000, "CANDIDATE"), (20000, "DEGENERATE")):
         target = tmp_path / f"run-{threshold}"
         shutil.copytree(run, target)
         rule = {"lookback_days": 1, "min_median_quote_volume": threshold, "max_names": 15}
@@ -260,9 +262,9 @@ def test_spread_stopped_factors_still_count_as_trials_exactly_as_before(tmp_path
         with patch.object(judge, "spread", side_effect=_forced(status)):
             records[status] = evaluate(run, req, tmp_path / f"ledger-{status}.jsonl")
     before, after = records["PASS"], records["FAIL"]
-    assert after["replayed_trials"] == before["replayed_trials"] == 3
+    assert after["replayed_trials"] == before["replayed_trials"] == 1
     assert after["family_size"] == before["family_size"]
-    for clock in ev.CLOCKS:
+    for clock in ("weekly",):
         old, new = before["factors"][0]["clocks"][clock], after["factors"][0]["clocks"][clock]
         assert new["status"] == "SPREAD_FAIL" and old["status"] in ("PASS", "REPLAY_FAIL")
         for key in ("deflated_sharpe", "deflated_sharpe_family"):
@@ -286,12 +288,12 @@ def test_a_spread_error_still_counts_its_clock_as_a_trial(tmp_path: Path) -> Non
         req = fixture(run)
         with patch.object(judge, "spread", side_effect=side_effect):
             records[name] = evaluate(run, req, tmp_path / f"ledger-{name}.jsonl")
-    assert records["error"]["replayed_trials"] == records["pass"]["replayed_trials"] == 3
+    assert records["error"]["replayed_trials"] == records["pass"]["replayed_trials"] == 1
     weekly = records["error"]["factors"][0]["clocks"]["weekly"]
     assert weekly["status"] == "ERROR" and "counted_only" in weekly["replay"]
     for clock in ("daily", "monthly"):
-        new = records["error"]["factors"][0]["clocks"][clock]["replay"]["deflated_sharpe"]
-        assert new == records["pass"]["factors"][0]["clocks"][clock]["replay"]["deflated_sharpe"]
+        new = records["error"]["factors"][0]["clocks"][clock]["replay"]
+        assert new == records["pass"]["factors"][0]["clocks"][clock]["replay"] == {}
 
 
 def test_a_receipt_bound_universe_file_cannot_be_removed(tmp_path: Path) -> None:

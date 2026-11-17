@@ -136,16 +136,24 @@ from alpha_cli._rdagent_ledger import (
 from alpha_cli._rdagent_ledger import (
     import_historical as import_historical,
 )
+from alpha_cli._rdagent_ledger import new_factor_row
 from alpha_cli._rdagent_stability import (
+    deflation_passes,
     failure_message,
     replay_output,
     status_reason,
     writeoff_summary,
 )
 from alpha_cli._rdagent_stability import plain_name as plain_name
+from alpha_cli._rdagent_stats import (
+    FACTOR_DEFLATION_RULE,
+    chance_fields,
+    factor_deflation,
+    screen_cutoff,
+)
+from alpha_cli._rdagent_twins import find_twin
 from alpha_core import DataError
 from alpha_validation.dsr import (
-    deflated_sharpe,
     expected_max_sharpe,
     probabilistic_sharpe_ratio,
 )
@@ -166,6 +174,18 @@ def _inputs(
         raise DataError("invalid factor request")
     names = []
     for factor in request["factors"]:
+        if (
+            type(factor.get("declared_direction")) is not int
+            or factor["declared_direction"] not in (-1, 1)
+            or factor.get("primary_clock") not in ("weekly", "monthly")
+            or not isinstance(factor.get("direction_reason"), str)
+            or not factor["direction_reason"].strip()
+        ):
+            raise DataError(
+                "Each factor must add declared_direction (+1 or -1), primary_clock"
+                " (weekly or monthly), and direction_reason (one non-empty "
+                "sentence of economic reasoning)."
+            )
         if factor["status"] not in {"OK", "FAILED", "LOOKAHEAD", "UNSTABLE"} or not re.fullmatch(
             "[0-9a-f]{64}", factor["code_sha256"]
         ):
@@ -204,6 +224,9 @@ def _inputs(
         + Path(__file__).with_name("_rdagent_clocks.py").read_bytes()
         + Path(__file__).with_name("_rdagent_universe.py").read_bytes()
         + Path(__file__).with_name("_rdagent_stability.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_ledger.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_stats.py").read_bytes()
+        + Path(__file__).with_name("_rdagent_twins.py").read_bytes()
         + (Path(__file__).resolve().parents[4] / "uv.lock").read_bytes()
     )
     return (
@@ -211,6 +234,7 @@ def _inputs(
         panel,
         values,
         {
+            "factor_values_path": str(value_path.resolve()),
             "panel_sha256": sha(panel_bytes),
             "request_sha256": sha(request_bytes),
             "factors_sha256": sha(value_bytes),
@@ -227,7 +251,7 @@ def _deflate(
     family: dict[tuple[str, str], dict[str, Any]],
     replay_returns: dict[tuple[str, str], np.ndarray],
 ) -> list[float]:
-    """Deflate against every distinct replayed factor x clock in ledger order."""
+    """Count every screen look; estimate variance from distinct replayed trial Sharpes."""
     trials = [
         trial["replay"]["net"]["per_observation_sharpe"]
         for trial in family.values()
@@ -240,7 +264,7 @@ def _deflate(
     for row in rows:
         row["replayed_trials"] = len(trials)
         if row["status"] == "REPEAT":
-            earliest = identities[row["code_sha256"]]
+            earliest = identities[row.get("repeat_code_sha256", row["code_sha256"])]
             row["first_trial"] = {
                 k: earliest[k] for k in ("run_id", "iteration", "name", "status", "screen")
             }
@@ -252,6 +276,7 @@ def _deflate(
                         if k in trial
                     }
                 )
+            row["diagnostics"] = earliest.get("diagnostics", {})
             row["lead_clock"] = earliest.get("lead_clock", "daily")
             row.update(
                 {k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")}
@@ -262,8 +287,13 @@ def _deflate(
             if key not in replay_returns:
                 continue
             returns = replay_returns[key]
-            trial["replay"]["deflated_sharpe"] = asdict(
-                deflated_sharpe(returns, trial_sharpes=trials)
+            trial["replay"]["deflated_sharpe"] = factor_deflation(returns, trials, len(family))
+            trial["replay"].update(
+                {
+                    k: v
+                    for k, v in trial["replay"]["deflated_sharpe"].items()
+                    if k.startswith("deflation_")
+                }
             )
             if len(trials) >= 2:
                 benchmark = expected_max_sharpe(float(np.var(trials, ddof=1)), len(family))
@@ -278,18 +308,28 @@ def _deflate(
                     "psr": None,
                     "reason": "fewer than two replayed trials: no cross-trial variance",
                 }
+        if row["status"] in {"CANDIDATE", "DEFLATION_FAIL"}:
+            row["status"], row["lead_clock"] = overall_status(
+                row["clocks"], row.get("primary_clock")
+            )
     return trials
 
 
 def finalize_rows(rows: list[dict[str, Any]]) -> None:
     for row in rows:
         if row["status"] in {"CANDIDATE", "DEFLATION_FAIL"}:
-            row["status"], row["lead_clock"] = overall_status(row["clocks"])
+            row["status"], row["lead_clock"] = overall_status(
+                row["clocks"], row.get("primary_clock")
+            )
         row.update({k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")})
         row["figures_clock"] = row["lead_clock"]
         row["mean_ic"] = row["screen"].get("mean_ic")
         row["spread"] = row["clocks"][row["lead_clock"]].get("spread", {})
+        row["bh_q_diagnostic"] = row["q"]
+        row.update({k: v for k, v in row["replay"].items() if k.startswith("deflation_")})
         row["reason"] = status_reason(row)
+        if row["status"] in {"CANDIDATE", "DEFLATION_FAIL"}:
+            row["reason"] += " " + row["chance_pass_message"]
 
 
 def shown(trial: dict[str, Any]) -> dict[str, Any]:
@@ -353,7 +393,7 @@ def _report(
     disclosures = {
         "survivorship": survivorship,
         "multiple_testing": "screening only, adaptive family, no error rate claimed",
-        "direction": "chosen in-sample",
+        "direction": "declared before evaluation",
         "replay_engine": "ALPHA canonical synchronized replay, not Nautilus",
         "legacy_result_keys": (
             "RD-Agent's 1day.* result keys carry the lead clock's metrics, whatever its horizon"
@@ -373,10 +413,11 @@ def _report(
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
         f"{LABEL}. {survivorship}. "
-        f"Factor-family trials (each factor x clock, unreadable rows too): {len(family)}; "
+        "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included): "
+        f"{len(family)}; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
-        "error rate claimed. Direction chosen in-sample. Exploration "
+        "error rate claimed. Direction and primary clock declared before evaluation. Exploration "
         f"{EXPLORATION[0]}..{EXPLORATION[1]}; history 2017-08-17..2020-12-31; panel ends "
         f"{PANEL_END}; {RESERVED_START}+ reserved, never evaluated. Decide at close, fill next "
         "open; daily (1-day), weekly (7-day), monthly (28-day) non-overlapping holding clocks "
@@ -635,45 +676,49 @@ def _screen_factors(
         raise DataError("invalid run identity")
     for factor in request["factors"]:
         digest = factor["code_sha256"]
-        row = {
-            **factor,
-            "schema": TRIAL_SCHEMA,
-            "plain_name": plain_name(factor["name"]),
-            "trial_index": len(history) + len(rows) + 1,
-            "run_id": identity["run_id"],
-            "recorded_at": datetime.now(UTC).isoformat(),
-            "iteration": request["iteration"],
-            "panel_sha256": inputs["panel_sha256"],
-            "windows": WINDOWS,
-            "instruments": symbols,
-            "stage": "none",
-            "p": 1.0,
-            "q": 1.0,
-            "screen": {},
-            "replay": {},
-            "lead_clock": "daily",
-            "label": LABEL,
-            "survivorship": survivorship,
-            "authority": AUTHORITY,
-            "clocks": {
-                c: {"status": "ERROR", "p": 1.0, "q": 1.0, "screen": {}, "replay": {}}
-                for c in CLOCKS
-            },
-        }
+        row = new_factor_row(
+            factor,
+            inputs,
+            len(history) + len(rows) + 1,
+            identity["run_id"],
+            request["iteration"],
+            symbols,
+            survivorship,
+            datetime.now(UTC).isoformat(),
+        )
         row["exposure"] = label_for(row, entries)
+        if (
+            digest not in identities
+            and factor["status"] == "OK"
+            and factor["name"] in values.columns
+        ):
+            twin, details = find_twin(
+                matrix(values, factor["name"], days, symbols),
+                [*history, *rows],
+                inputs["panel_sha256"],
+                days,
+                symbols,
+            )
+            row.update(details)
+            if twin is not None:
+                row["repeat_code_sha256"] = twin["code_sha256"]
+                identities[digest] = twin
         if digest in identities:
             earliest = identities[digest]
+            if earliest["code_sha256"] != digest:
+                row["repeat_code_sha256"] = earliest["code_sha256"]
             row["status"] = "REPEAT"
             row["first_trial"] = {
                 k: earliest[k] for k in ("run_id", "iteration", "name", "status", "screen")
             }
             # Copy: repeats must never mutate the original trial or create replay evidence.
-            for c, trial in trial_clocks(earliest).items():
+            for c, trial in earliest.get("clocks", {"daily": earliest}).items():
                 row["clocks"][c] = {
                     k: trial[k]
                     for k in ("status", "p", "q", "screen", "replay", "spread")
                     if k in trial
                 }
+            row["diagnostics"] = earliest.get("diagnostics", {})
             row["lead_clock"] = earliest.get("lead_clock", "daily")
         else:
             if factor["status"] == "OK":
@@ -700,6 +745,7 @@ def _screen_factors(
                             clock,
                             open_days=open_days,
                             series=block,
+                            declared_direction=factor["declared_direction"],
                             **screen_options,
                         )
                     except (DataError, ValueError, ZeroDivisionError, FloatingPointError) as error:
@@ -709,6 +755,14 @@ def _screen_factors(
                             "error": f"{type(error).__name__}: {error}",
                         }
                     row["clocks"][clock].update(status=stats["status"], p=stats["p"], screen=stats)
+                    if clock != factor["primary_clock"]:
+                        row["diagnostics"][clock] = {
+                            "label": "diagnostic only: cannot pass",
+                            "screen": stats,
+                        }
+                        row["clocks"][clock]["status"] = "DIAGNOSTIC"
+                        continue
+                    row["diagnostics"]["opposite_direction"] = stats.get("diagnostics", {})
                     if stats["status"] == "OK":
                         row["clocks"][clock]["spread"] = _spread_or_error(
                             signals[digest],
@@ -767,6 +821,7 @@ def _replay_clocks(
     total_rows: int,
     gap_policy: bool = False,
     identity_segments: frozenset[str] = frozenset(),
+    confirmed: int = 0,
 ) -> tuple[dict[tuple[str, str], np.ndarray], dict[str, dict[str, float]]]:
     q = benjamini_hochberg([trial["p"] for trial in family.values()], alpha=Q_THRESHOLD).qvalues
     qvalues: dict[str, dict[str, float]] = {}
@@ -778,14 +833,21 @@ def _replay_clocks(
     if identity_segments:
         replay_options["identity_segments"] = identity_segments
     for row in rows:
-        digest = row["code_sha256"]
+        digest = row.get("repeat_code_sha256", row["code_sha256"])
+        row.update(
+            screen_cutoff=screen_cutoff(len(family), confirmed),
+            screen_m=len(family),
+            screen_confirmed=confirmed,
+        )
         row.update(family_size=len(family), distinct_factors=len(qvalues), total_trials=total_rows)
         for clock, trial in row["clocks"].items():
-            trial["q"] = qvalues[digest].get(clock, 1.0)
+            trial["q"] = qvalues.get(digest, {}).get(clock, 1.0)
+            trial["bh_q_diagnostic"] = trial["q"]
+            trial.update({k: row[k] for k in ("screen_cutoff", "screen_m", "screen_confirmed")})
             if row["status"] != "OK" or trial["status"] != "OK":
                 continue
             trial["status"] = "SCREEN_FAIL"
-            if trial["q"] < Q_THRESHOLD:
+            if clock == row["primary_clock"] and trial["p"] <= row["screen_cutoff"] / 2:
                 # ADR-0055: a screened clock must first show its top third beating its bottom
                 # third; only then is it replayed. A stricter, cheaper failure, never a pass.
                 checked = trial.get("spread", {"status": "ERROR", "error": "spread not computed"})
@@ -820,7 +882,9 @@ def _replay_clocks(
                 trial.update(replay=metrics, status=status)
                 replay_returns[(digest, clock)] = net
         if row["status"] == "OK":
-            row["status"], row["lead_clock"] = overall_status(row["clocks"])
+            row["status"], row["lead_clock"] = overall_status(
+                row["clocks"], row.get("primary_clock")
+            )
         row.update({k: row["clocks"][row["lead_clock"]][k] for k in ("p", "q", "screen", "replay")})
     return replay_returns, qvalues
 
@@ -877,6 +941,31 @@ def _gap_disclosure(panel: pl.DataFrame, rows: list[dict[str, Any]]) -> tuple[di
     return summary, note
 
 
+def _chance_disclosure(rows: list[dict[str, Any]], history: list[dict[str, Any]]) -> None:
+    evaluable = len(
+        {
+            r["code_sha256"]
+            for r in [*history, *rows]
+            if r["status"] != "REPEAT"
+            and any(t.get("screen", {}).get("status") == "OK" for t in trial_clocks(r).values())
+        }
+    )
+    for row in rows:
+        row.update(chance_fields(evaluable))
+
+
+def _factor_identities(history: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    identities: dict[str, dict[str, Any]] = {}
+    for row in history:
+        if row["status"] != "REPEAT":
+            identities.setdefault(row["code_sha256"], row)
+    for row in history:
+        target = row.get("repeat_code_sha256")
+        if target in identities:
+            identities.setdefault(row["code_sha256"], identities[target])
+    return identities
+
+
 def _evaluate_locked(
     run: Path,
     request: dict[str, Any],
@@ -889,7 +978,7 @@ def _evaluate_locked(
 
     entries, exposure_bytes = snapshot(ledger)
     record_inputs: dict[str, Any] = {
-        **inputs,
+        **{k: v for k, v in inputs.items() if k != "factor_values_path"},
         "exposure_log_sha256": sha(exposure_bytes) if exposure_bytes is not None else None,
     }
     all_history = _read_ledger(ledger)
@@ -899,10 +988,7 @@ def _evaluate_locked(
         for row in all_history
         if row["schema"] in LEDGER_SCHEMAS and row["schema"] != "AlphaRuleTrialV1"
     ]
-    identities: dict[str, dict[str, Any]] = {}
-    for row in history:
-        if row["status"] != "REPEAT":
-            identities.setdefault(row["code_sha256"], row)
+    identities = _factor_identities(history)
     first, last = (date.fromisoformat(d) for d in EXPLORATION)
     days = [first + timedelta(days=n) for n in range((last - first).days + 1)]
     symbols = sorted(panel["instrument"].unique().to_list())
@@ -962,6 +1048,12 @@ def _evaluate_locked(
         len(history) + len(unknown) + len(rows),
         gap_policy,
         frozenset(entry["new_name"] for entry in breaks),
+        confirmed=sum(
+            r["status"] == "CANDIDATE"
+            and r.get("deflation_rule") == FACTOR_DEFLATION_RULE
+            and deflation_passes(r["clocks"][r["lead_clock"]])
+            for r in history
+        ),
     )
     for row in rows:
         row["writeoff_count"], row["writeoff_message"] = writeoff_summary(
@@ -971,6 +1063,7 @@ def _evaluate_locked(
         run, request["iteration"], rows, series, signals, outcome, days, symbols, record_inputs
     )
     trials = _deflate(rows, history, family, replay_returns)
+    _chance_disclosure(rows, history)
     finalize_rows(rows)
     lead, legacy, disclosures, decision, feedback = _report(
         rows, history, family, trials, spec, universe_info["universe_text"]
@@ -1003,7 +1096,7 @@ def _evaluate_locked(
         "inputs": record_inputs,
         "factors": rows,
         "family_size": len(family),
-        "distinct_factors": len(identities),
+        "distinct_factors": len({key[0] for key in family if key[1] != "unknown"}),
         "total_trials": len(history) + len(unknown) + len(rows),
         "replayed_trials": len(trials),
         "qvalues": qvalues,
@@ -1017,13 +1110,17 @@ def _evaluate_locked(
     if unknown:
         schemas = sorted({row["schema"] for row in unknown})
         record["ledger_unknown_rows"] = {"count": len(unknown), "schemas": schemas}
+    _append_rows(ledger, rows)
+    return record
+
+
+def _append_rows(ledger: Path, rows: list[dict[str, Any]]) -> None:
     with ledger.open("ab", buffering=0) as stream:
         for row in rows:
             line = canonical(row)
             if stream.write(line) != len(line):
                 raise DataError("short trial ledger write")
             os.fsync(stream.fileno())
-    return record
 
 
 def evaluate(run: Path, request_path: Path, out: Path, ledger: Path) -> dict[str, Any]:

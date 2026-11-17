@@ -193,6 +193,19 @@ def list_trials(
     _run(rdagent_ledger, json_out, select)
 
 
+def _recorded_run_id(run: Path) -> str | None:
+    """A run folder's recorded id; another run's unreadable identity file only fails to match."""
+    identity = run / "run-identity.json"
+    if not identity.is_file():
+        return None
+    try:
+        recorded = json.loads(identity.read_bytes())
+    except ValueError:
+        return None
+    value = recorded.get("run_id") if isinstance(recorded, dict) else None
+    return value if isinstance(value, str) else None
+
+
 def _evidence(record: TrialRecord, home: Path) -> dict[str, Any]:
     root = home if record.source == "spine" else Path(record.source_file).parent.parent
     candidates: list[Path] = []
@@ -208,14 +221,11 @@ def _evidence(record: TrialRecord, home: Path) -> dict[str, Any]:
                 direct = folder / record.run_id
                 # Validate references even when the run or its evidence does not exist.
                 runs.add(direct)
-                for run in folder.iterdir():
-                    identity = run / "run-identity.json"
-                    if (
-                        run.is_dir()
-                        and identity.is_file()
-                        and json.loads(identity.read_bytes())["run_id"] == record.run_id
-                    ):
-                        runs.add(run)
+                runs.update(
+                    run
+                    for run in folder.iterdir()
+                    if run.is_dir() and _recorded_run_id(run) == record.run_id
+                )
             candidates = [r / record.evidence_path for r in runs]
     # Evidence references never permit traversal out of the declared evidence root.
     if any(not path.resolve().is_relative_to(root.resolve()) for path in candidates):

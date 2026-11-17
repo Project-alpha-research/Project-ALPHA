@@ -143,6 +143,27 @@ def test_evidence_resolves_recorded_run_identity(tmp_path: Path) -> None:
     assert _evidence(map_row("rdagent", ledger, 1, row), tmp_path)["evidence_found"]
 
 
+@pytest.mark.parametrize(
+    "other", ["not json", "[]", json.dumps({"other": 1}), json.dumps({"run_id": 7})]
+)
+def test_evidence_lookup_ignores_unrelated_unreadable_run_identities(
+    tmp_path: Path, other: str
+) -> None:
+    """An odd identity file in some other run folder must not break every evidence lookup."""
+    root = tmp_path / "runs"
+    ledger = root / "ledger/trials.jsonl"
+    ledger.parent.mkdir(parents=True)
+    run = root / "human-folder"
+    run.mkdir()
+    (run / "run-identity.json").write_text(json.dumps({"run_id": "recorded-id"}))
+    (run / "series.json").write_text("evidence")
+    unrelated = root / "an-unrelated-run"
+    unrelated.mkdir()
+    (unrelated / "run-identity.json").write_text(other)
+    row = factor(run_id="recorded-id", evidence={"series_manifest": "series.json"})
+    assert _evidence(map_row("rdagent", ledger, 1, row), tmp_path)["evidence_found"]
+
+
 @pytest.mark.parametrize("includes", [True, False, None])
 def test_structured_universe_label(tmp_path: Path, includes: bool | None) -> None:
     row = factor()

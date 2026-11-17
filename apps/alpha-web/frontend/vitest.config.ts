@@ -7,7 +7,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       // Pure render-state models are the unit-test authority. React panels and workflows
@@ -50,7 +50,7 @@ export default defineConfig({
         'src/panels/v3Models.ts',
         'src/panels/workspaceModel.ts',
       ],
-      exclude: ['src/api/generated.ts', 'src/**/*.test.ts'],
+      exclude: ['src/api/generated.ts', 'src/**/*.test.{ts,tsx}'],
       thresholds: {
         statements: 85,
         branches: 70,

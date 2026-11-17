@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: 1d03b6e743d34697
+verified: 8630a423d32252dc
 ---
 
 # Web API invariants
@@ -96,6 +96,8 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
+- RD-Agent's two GET routes read bounded, allowlisted receipt/ledger facts through `_rdagent_runs`; IDs select listed folders,
+  never request paths. Missing figures remain null; see [record sources](../project/components/rd-agent.md#workstation-recorded-fields).
 - Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
   <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
   shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: d117db8550cf2bdf
+verified: cdbf87055994cb8b
 ---
 
 # alpha-web workspace
@@ -58,6 +58,12 @@ grants authority.
   with the source.
 - CI runs the whole loop as `uv run python scripts/gate.py component frontend`; it fails if the
   generated client differs from what is committed.
+
+- RD-Agent's read-only panel is `panels/RdAgentPanel.tsx`, registered in `shell/documents.ts`,
+  `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
+  Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
+  Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).
+  Vitest discovers `.test.tsx` too, so its Node rendering test runs with the rest.
 
 ## Outputs
 

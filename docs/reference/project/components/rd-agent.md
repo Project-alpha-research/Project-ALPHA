@@ -90,7 +90,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 
 - **Workspaces:** `workers/rdagent`
 - **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`,
-  `rdagent-run-viewer`
+  `rdagent-run-viewer`, `rdagent-workstation-panel`
 - Code: [`workers/rdagent/`](../../../../workers/rdagent/README.md) (the model gateway is
   `workers/rdagent/model_gateway.py`); the job supervisor in
   `apps/alpha-cli/src/alpha_cli/native_supervisor.py`. Setup: `scripts/setup_rdagent.sh`.
@@ -112,6 +112,30 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 - **Plan:** [stage 9](../../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the
   checklist and [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
+
+### Workstation recorded fields
+
+View → RD-Agent and the command palette open the read-only panel in either market profile. Runs are direct
+child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the ledger is
+`rdagent-trial-ledger/rdagent-factor-trials.jsonl` inside it. It cannot launch, approve, call models or read keys.
+
+| Response fields | Recorded source (relative to the run folder unless noted) |
+|---|---|
+| Identity, start/end, outcome | `receipt.json`: `run_id`, `started_at`, `ended_at`, `exit_status`, `loop_reason`; folder name |
+| Rounds, calls, embedding calls | Receipt: `memory.rounds_completed`, `counted_calls`, `local_embedding_calls`, `provider_embedding_calls` |
+| Spend, caps, month snapshots | Receipt: `gateway_status.this_run.usd`, `.caps`, `.months`; month selected by receipt end time |
+| Cache and providers | Receipt: `call_split.chat_usage`; no new rate calculation |
+| Funnel and list stage totals | Receipt `funnel` if present; else counted from ledger rows and `rounds.jsonl` refusals (basis shown) |
+| Factor name, description, status | Shared ledger: `run_id` or folder name, schemas V1–V3; fixed web-owned status sentences |
+| Clock figures, deflation, write-offs | Ledger: `clocks.*.screen`, `.spread`, `.replay`, `.replay.deflated_sharpe`, `.replay.deflated_sharpe_family` |
+| Universe, gaps, ticker corrections | `panel/panel-receipt.json`: instruments, disclosure, gap counts, `identity_breaks`, `identity_rescales` |
+| Refusals and timing | `rounds.jsonl`: refusal status and families; `steps.jsonl`: step start and end times; minutes = end minus start, labelled |
+| ALPHA notes | Receipt cap/cache/memory notes, panel disclosure, `evaluations.jsonl` → `feedback_text` |
+
+Absent facts are null with a reason. Counts come only from counting recorded rows (never from a
+candidate status) and step minutes only from two recorded times. Writers record no idea-family label per
+factor, so that stays unknown; the loop would need to write one on each trial row. The panel was opened
+headless on real runs; owner acceptance remains pending.
 
 ## Decisions and open questions
 

@@ -1018,8 +1018,10 @@ receipt plus upstream's exhausted-chat RuntimeError records `coding_failed_provi
 `coding_failed_provider_error`, step, attempts and waited seconds. Coding/running use upstream's
 FactorEmptyError skip path; feedback returns a negative result. Neither path invents a trial;
 completed evaluator trials survive a feedback failure. Budget refusals still end the run.
-`MAX_RETRY=1` is upstream's total attempt count; its LiteLLM transport already sets max_retries=0.
-The gateway's existing retry is the only provider retry. Receipts add `rounds_failed_provider`
+`MAX_RETRY=2` stays: it is upstream's attempt count for every chat failure, including a reply that
+fails upstream's own schema check, and one attempt would crash a run on such a reply (the recorded
+runs retried nine). A provider timeout is therefore tried twice by upstream, each try with the
+gateway's one retry; the failed round records every attempt and second waited. Receipts add `rounds_failed_provider`
 and `provider_wait_seconds`; launch.jsonl gets an end event and the console names the exit reason.
 
 The gateway caches vectors in memory by route, configured model and SHA-256 of exact text.

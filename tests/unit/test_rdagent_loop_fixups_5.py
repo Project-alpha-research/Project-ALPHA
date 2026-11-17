@@ -554,3 +554,80 @@ def test_logistic_mix_name_identifies_composite() -> None:
     from workers.rdagent.idea_families import idea_family
 
     assert idea_family("logistic_mix", variables={"price_delay": "feature"}) == "other: price_delay"
+
+
+def test_upstream_keeps_its_one_retry_for_unusable_replies(tmp_path: Path) -> None:
+    # MAX_RETRY is upstream's attempt count for every chat failure, including a reply that fails
+    # its own schema check (real runs retried 9 such replies); one attempt would crash the run.
+    from workers.rdagent import factor_loop_launch as launch
+
+    env = launch.loop_environment(
+        base_url="http://127.0.0.1:1",
+        token="t",
+        run=tmp_path,
+        factor_python=tmp_path / "py/bin/python",
+        ledger=tmp_path / "trials.jsonl",
+        home=str(tmp_path),
+    )
+    assert env["MAX_RETRY"] == "2"
+
+
+def _failed_call(attempts: int, seconds: float, code: str = "provider_timeout") -> dict[str, Any]:
+    return {
+        "run_id": "test",
+        "endpoint": "/v1/chat/completions",
+        "error_code": code,
+        "provider_errors": [code] * attempts,
+        "attempts": attempts,
+        "latency_ms": seconds * 1000,
+    }
+
+
+def test_failed_round_counts_every_attempt_of_the_failed_call(tmp_path: Path) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    ok = {"run_id": "test", "endpoint": "/v1/chat/completions", "error_code": None}
+
+    def failed(exp: Any) -> Any:
+        rows = [ok, _failed_call(2, 360), _failed_call(2, 360)]
+        calls.write_text("".join(json.dumps(r) + "\n" for r in rows))
+        raise RuntimeError("Failed to create chat completion after 2 retries.")
+
+    guard = ProviderGuard(
+        SimpleNamespace(develop=failed),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(ValueError, match="4 attempts, 720 seconds waited"):
+        guard.develop(SimpleNamespace())
+    row = json.loads((tmp_path / "rounds.jsonl").read_text())
+    assert (row["attempts"], row["provider_wait_seconds"]) == (4, 720)
+
+
+@pytest.mark.parametrize("stop", [KeyboardInterrupt, SystemExit])
+def test_interrupts_pass_through_and_record_nothing(
+    tmp_path: Path, stop: type[BaseException]
+) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    calls.write_text(json.dumps(_failed_call(2, 360)) + "\n")
+    guard = ProviderGuard(
+        SimpleNamespace(develop=Mock(side_effect=stop())),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(stop):
+        guard.develop(None)
+    assert not (tmp_path / "rounds.jsonl").exists()

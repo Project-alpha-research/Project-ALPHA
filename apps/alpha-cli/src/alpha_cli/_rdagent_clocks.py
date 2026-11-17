@@ -190,7 +190,7 @@ def clock_feedback(row: dict[str, Any]) -> str:
             f"{clock}: {trial['status']}, mean rank IC {figure(screen.get('mean_ic'))}, "
             f"q={figure(trial.get('q'))}, {outcome}."
         )
-        if replay and "error" not in replay:
+        if replay and "error" not in replay and "counted_only" not in replay:
             parts.append(f"{clock}: {deflation_note(replay)}.")
         parts.extend(screen.get("warnings", []))
         if trial["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS") and trial.get(

@@ -6,6 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+# The round outcomes this guard records; the Workstation reader has a sentence for each.
+ROUND_STATUSES = {
+    "provider_timeout": "coding_failed_provider_timeout",
+    "provider_error": "coding_failed_provider_error",
+}
+
 
 class ProviderGuard:
     def __init__(
@@ -67,14 +73,21 @@ class ProviderGuard:
             if code in {"provider_timeout", "codex_timeout"}
             else "provider_error"
         )
+        # Upstream retries a failed call once (MAX_RETRY=2): the call's failed receipts are the
+        # trailing run of failed chat receipts, and every one of their attempts was waited for.
+        failed: list[dict[str, Any]] = []
+        for receipt in reversed(chat):
+            if not receipt.get("error_code"):
+                break
+            failed.append(receipt)
         return {
             "schema": "AlphaRdagentRoundV1",
             "iteration": self.round_index(),
-            "status": f"coding_failed_{kind}",
+            "status": ROUND_STATUSES[kind],
             "reason": f"{self.step}: {code}",
             "step": self.step,
-            "attempts": int(last.get("attempts", 0)),
-            "provider_wait_seconds": float(last.get("latency_ms", 0)) / 1000,
+            "attempts": sum(int(r.get("attempts", 0)) for r in failed),
+            "provider_wait_seconds": sum(float(r.get("latency_ms", 0)) for r in failed) / 1000,
             "trial_created": False,
         }
 

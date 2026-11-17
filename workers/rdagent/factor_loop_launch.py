@@ -200,7 +200,9 @@ def loop_environment(
         "LM_STUDIO_API_BASE": f"{base_url}/v1",
         "LM_STUDIO_API_KEY": token,
         "LITELLM_LOCAL_MODEL_COST_MAP": "True",
-        "MAX_RETRY": "1",
+        # Upstream's attempt count for every chat failure, provider or unusable reply alike:
+        # its one retry is the only retry of a reply that fails upstream's own schema check.
+        "MAX_RETRY": "2",
         "CONDA_DEFAULT_ENV": "alpha-no-conda",
         # RD-Agent runs generated factor code as a shell string `<python_bin> factor.py` that
         # inherits this environment; strip the gateway settings so that code cannot read them.

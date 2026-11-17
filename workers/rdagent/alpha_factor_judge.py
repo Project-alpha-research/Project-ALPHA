@@ -101,14 +101,15 @@ def replay_note(clock: str, replay: Any) -> str:
     """Returns, costs and turnover at four significant digits, including small nonzero costs."""
     if not replay:
         return ""
-    deflated = replay.get("deflated_sharpe", {})
+    deflated = replay.get("deflated_sharpe") or {}
     note = (
-        f"; {clock} deflated Sharpe {_rounded(deflated.get('dsr'))} against "
-        f"{_rounded(deflated.get('threshold'))} over "
-        f"{deflated.get('n_trials', 'not recorded')} trials"
+        f"; {clock} deflated Sharpe {_rounded(deflated['dsr'])} against "
+        f"{_rounded(deflated.get('threshold'))} over {deflated.get('n_trials')} trials"
+        if deflated.get("dsr") is not None
+        else f"; {clock} deflated Sharpe not recorded"
     )
     if "counted_only" in replay:
-        return f"; {clock} replay counted only, not a result" + note
+        return f"; {clock} replay counted only, not a result"
     if "error" in replay:
         return f"; {clock} replay error: {replay['error']}"
     return (

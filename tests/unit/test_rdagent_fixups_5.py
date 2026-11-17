@@ -100,3 +100,11 @@ def test_plain_ledger_names_clock_beside_figures(tmp_path: Path) -> None:
 
     record = map_row("rdagent", tmp_path / "ledger", 1, factor(clocks=clock_rows(0.99)))
     assert "weekly: IC 0.04, q 0.04" in _render({"records": [asdict(record)]})
+
+
+def test_counted_only_replay_shows_no_deflated_figure() -> None:
+    # ADR-0055: a replay made only to count the trial is never shown as a result.
+    trials = clock_rows(0.04)
+    trials["weekly"]["replay"]["counted_only"] = "spread check FAIL; replayed only to count"
+    text = clocks.clock_feedback(factor(clocks=trials, status="SPREAD_FAIL"))
+    assert "deflated Sharpe" not in text and "counted only, not a result" in text

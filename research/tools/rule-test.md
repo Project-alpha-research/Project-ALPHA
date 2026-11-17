@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: e6641d78a92ac626
+verified: 610f74b2ff678c6f
 ---
 
 # Rule test
@@ -24,8 +24,8 @@ runs a small gauntlet and labels the result `quick`.
 
 **How to read it**
 
-- One row per asset: `run_id`, `verdict` (a letter grade), `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`,
-  `error`. `trials_total` is the ledger count after this test; `test_id` names the whole test.
+- Each asset has `run_id`, `verdict` (grade), `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`.
+  `resized_entries` counts reduced scored entries; `trials_total` counts ledger trials; `test_id` names the test.
 - A failed asset keeps its row with `error` set and still counts as a trial. If every asset fails, the output
   is an `error` object: read `known` and `next`, and do what `next` says.
 - Bars per year come from the calendar of the bars (`periods_per_year`), so crypto is not treated as stocks.

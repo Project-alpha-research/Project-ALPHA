@@ -255,10 +255,18 @@ def test_the_prompt_template_is_what_the_parser_reads() -> None:
     families = worker_module("idea_families")
     simulator = ns["AlphaFactorScenario"].simulator.fget(None)
     for text in (simulator, ns["SWING_BRIEF"]):
-        template = r"declared_direction: \+1; primary_clock: weekly; direction_reason: [^.]*"
+        template = (
+            r"declared_direction: <\+1 or -1>; primary_clock: <weekly or monthly>; "
+            r"direction_reason: [^.]*"
+        )
         line = re.search(template, text)
         assert line is not None, text
-        filled = line.group().replace("<one sentence of economic reasoning>", "Losers recover")
+        filled = (
+            line.group()
+            .replace("<+1 or -1>", "+1")
+            .replace("<weekly or monthly>", "weekly")
+            .replace("<one sentence of economic reasoning>", "Losers recover")
+        )
         assert families.declaration("[Momentum Factor] text. " + filled + ".") == {
             "declared_direction": 1,
             "primary_clock": "weekly",

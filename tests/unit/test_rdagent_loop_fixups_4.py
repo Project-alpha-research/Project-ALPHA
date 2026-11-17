@@ -317,6 +317,7 @@ def test_receipt_round_counts_and_old_refusal_key(tmp_path: Path) -> None:
         "rounds_no_admissible_idea": 1,
         "proposals_refused": 2,
         "rounds_failed_provider": 0,
+        "provider_failed_wait_seconds": 0.0,
     }
 
 

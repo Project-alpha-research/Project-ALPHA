@@ -14,6 +14,7 @@ type RunList = Schema['RdAgentRunList']
 const NOTICE = 'Exploratory results. Nothing here is evidence of an edge until a candidate is confirmed on reserved data.'
 const FUNNEL: Record<string, string> = {
   proposed: 'ideas proposed', refused_closed_family: 'refused: idea family already closed',
+  stopped_by_provider: 'stopped by the model provider',
   code_ran: 'code ran', passed_rank_screen: 'passed the ranking test',
   passed_spread_check: 'top third beat the bottom third', passed_deflation: 'survived the multiple-testing check',
 }

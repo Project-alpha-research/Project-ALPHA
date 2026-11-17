@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: 759782b3678929b8
+verified: e5798689e225fca6
 ---
 
 # Setup find
@@ -13,7 +13,6 @@ verified: 759782b3678929b8
 uptrend") and wants to see every past match before any rule is fixed.
 
 **Commands**
-
 ```text
 uv run alpha setup find <spec.toml> --json
 uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
@@ -28,7 +27,8 @@ uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
   occurrence (`accepted_clusters` against `accepted` in `totals`).
 - `sheets` lists contact sheets: accepted matches (the first day of each occurrence), and one greyed sheet
   of rejected samples with the reason in each panel title. Every panel stops at the entry open.
-- The default context is 60 bars. A second run on the same spec, data and context adds `repeat` and redraws nothing.
+- The default context is 60 bars. Repeats redraw nothing; `outcomes-viewed` replaces
+  `outcomes-not-viewed` when a sibling study or trade manifest exists.
 
 **What it cannot tell you**
 

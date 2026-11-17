@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 83bd7e074daeb0b2
+verified: c1958d0bb3aa15cb
 ---
 
 # Research tools, by symptom
@@ -20,6 +20,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | An idea to test | [rule test](rule-test.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |
+| A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |
 | "Did we test this?", "what was the number?" | [results and cite](results-and-cite.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
 | The result looks too good after many tries | [deflated Sharpe and trials](deflated-sharpe-and-trials.md) |

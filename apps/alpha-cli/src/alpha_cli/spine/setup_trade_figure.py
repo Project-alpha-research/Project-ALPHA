@@ -1,0 +1,240 @@
+"""Pure deterministic trade figure and plain-language command presentation."""
+
+from __future__ import annotations
+
+from io import BytesIO
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from alpha_research.figures.theme import Theme
+
+
+def _style(theme: Theme) -> dict[Any, Any]:
+    import matplotlib
+
+    return {
+        **dict(matplotlib.rcParamsDefault.items()),
+        "font.family": theme.font_family,
+        "figure.facecolor": theme.bg,
+        "axes.facecolor": theme.panel,
+        "axes.edgecolor": theme.grid,
+        "text.color": theme.ink,
+        "axes.labelcolor": theme.ink,
+        "xtick.color": theme.ink,
+        "ytick.color": theme.ink,
+    }
+
+
+def draw_trades(
+    *, rows: list[dict[str, Any]], primary: dict[str, Any], title: str, theme: Theme
+) -> bytes:
+    import matplotlib
+
+    matplotlib.use("Agg", force=True)
+    from matplotlib import font_manager, rc_context
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
+    from matplotlib.patches import Patch
+    from matplotlib.ticker import PercentFormatter
+
+    font_manager.findfont(theme.font_family, fallback_to_default=False)
+    # Losses red, gains green: the owner reads the colour before the key.
+    palette = {
+        "stop": theme.down,
+        "target": theme.up,
+        "time": theme.series_colour(0),
+        "opposite": theme.series_colour(3),
+        "open-at-end": theme.faint,
+    }
+    names = {
+        "stop": "Stop exit (incl. gaps through the stop)",
+        "target": "Target exit",
+        "time": "Time exit",
+        "opposite": "Opposite-condition exit",
+        "open-at-end": "Still open at the end (marked only, not in the mean)",
+    }
+    with rc_context(_style(theme)):
+        figure = Figure(figsize=(16, 9), dpi=100)
+        FigureCanvasAgg(figure)
+        top, bottom = figure.subplots(2, 1, height_ratios=[3, 2])
+        done = sorted(
+            (r for r in rows if r["net_return"] is not None),
+            key=lambda r: (r["entry_ts"], r["asset"], r["candidate_id"]),
+        )
+        groups = [
+            {"stop-gap": "stop", "max-hold": "time"}.get(r["reason"], r["reason"]) for r in done
+        ]
+        top.bar(
+            range(len(done)), [r["net_return"] for r in done], color=[palette[g] for g in groups]
+        )
+        if done:
+            top.legend(
+                handles=[
+                    Patch(color=palette[k], label=f"{names[k]}: {groups.count(k)}")
+                    for k in palette
+                    if k in groups
+                ],
+                loc="upper left",
+                facecolor=theme.panel,
+                labelcolor=theme.ink,
+            )
+        ticks = _year_ticks([r["entry_ts"] for r in done])
+        if ticks:
+            top.set_xticks([i for i, _ in ticks], [label for _, label in ticks])
+        top.set_xlim(-1, max(len(done), 1))
+        top.set_xlabel("Each bar is one trade, in entry-date order (year of entry below)")
+        top.set_ylabel("Trade return after costs")
+        _controls_panel(bottom, primary, theme)
+        for axes in (top, bottom):
+            axes.axhline(0, color=theme.faint, linewidth=0.8)
+            axes.yaxis.set_major_formatter(PercentFormatter(1))
+            axes.grid(color=theme.grid, linewidth=0.4)
+            axes.set_axisbelow(True)
+        figure.subplots_adjust(left=0.09, right=0.97, top=0.88, bottom=0.12, hspace=0.35)
+        figure.text(0.05, 0.96, title, fontsize=16, va="top")
+        figure.text(
+            0.05,
+            0.04,
+            "Long trades after costs. Open-at-end trades excluded from the mean. "
+            "One counted exploratory test; not confirmed on reserved data.",
+            fontsize=11,
+        )
+        buffer = BytesIO()
+        figure.savefig(buffer, format="png", dpi=100, metadata={"Software": None})
+        figure.clear()
+        return buffer.getvalue()
+
+
+def _year_ticks(stamps: list[Any]) -> list[tuple[int, str]]:
+    """First trade of each entry year, thinned to at most twelve labels."""
+    firsts: list[tuple[int, str]] = []
+    for i, stamp in enumerate(stamps):
+        year = getattr(stamp, "year", None)
+        if year is None:
+            return []
+        if not firsts or firsts[-1][1] != str(year):
+            firsts.append((i, str(year)))
+    step = -(-len(firsts) // 12) if firsts else 1
+    return firsts[::step]
+
+
+def _controls_panel(axes: Any, primary: dict[str, Any], theme: Theme) -> None:
+    low, high, drift, mean = (
+        primary[k] for k in ("random_date_5", "random_date_95", "drift_mean", "mean")
+    )
+    if low is not None and high is not None:
+        axes.axhspan(
+            low,
+            high,
+            facecolor=theme.substrate,
+            edgecolor=theme.faint,
+            label=f"Random dates, middle 90% of their averages: {low:.2%} to {high:.2%}",
+        )
+    if drift is not None:
+        axes.axhline(
+            drift,
+            color=theme.ink,
+            linestyle="--",
+            label=f"Same exits started on any day: {drift:.2%}",
+        )
+    if mean is None:
+        axes.text(
+            0.5,
+            0.5,
+            "No completed trades; nothing to compare",
+            ha="center",
+            transform=axes.transAxes,
+        )
+    else:
+        axes.plot(
+            [0],
+            [mean],
+            "o",
+            color=theme.gold,
+            markersize=12,
+            label=f"Average completed trade after this setup: {mean:.2%}",
+        )
+        axes.annotate(
+            f"{primary['trades']} trades, {primary['hit_rate']:.1%} of them gained",
+            (0, mean),
+            xytext=(18, 14),
+            textcoords="offset points",
+            color=theme.ink,
+        )
+        axes.legend(loc="upper left", facecolor=theme.panel, labelcolor=theme.ink)
+    values = [v for v in (low, high, drift, mean, 0.0) if v is not None]
+    span = max(values) - min(values) or 0.01
+    axes.set_ylim(min(values) - 0.15 * span, max(values) + 0.6 * span)
+    axes.set_xlim(-1, 1)
+    axes.set_xticks([])
+    axes.set_ylabel("Average net return per trade")
+
+
+def trade_text(output: dict[str, Any]) -> str:
+    row = output["pooled"]
+    lines = [output["reading"], "measure\tvalue"]
+    for title, field, percent in (
+        ("trades", "trades", False),
+        ("mean", "mean", True),
+        ("median", "median", True),
+        ("hit rate", "hit_rate", True),
+        ("bars held", "mean_bars_held", False),
+        ("drift", "drift_mean", True),
+        ("excess", "excess", True),
+        ("random-date p", "random_date_p", True),
+    ):
+        value = row[field]
+        text = (
+            "unavailable"
+            if value is None
+            else f"{value:.2%}"
+            if percent
+            else f"{value:.1f}"
+            if isinstance(value, float)
+            else str(value)
+        )
+        lines.append(f"{title}\t{text}")
+    lines.extend(
+        [
+            "by reason\t" + ", ".join(f"{k}: {v}" for k, v in row["by_reason"].items()),
+            "Labels: " + ", ".join(label.replace("-", " ") for label in output["labels"]),
+            output["folder"],
+            f"Next: alpha results cite {output['trade_id']} setup_trade_mean_net_return",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def study_text(output: dict[str, Any]) -> str:
+    lines = [output["reading"]]
+    primary = str(output["primary_horizon"])
+    for group, keys in (
+        ("Primary horizon", [primary]),
+        ("Also looked at, not tested", [k for k in output["horizons"] if k != primary]),
+    ):
+        if not keys:
+            continue
+        lines.extend([group.lower(), "bars\toccurrences\tmean\tmedian\thit rate\tdrift\texcess"])
+        for key in keys:
+            row = output["horizons"][key]["pooled"]
+            values = [
+                "unavailable" if row[k] is None else f"{row[k]:.2%}"
+                for k in ("mean", "median", "hit_rate", "drift_mean", "excess")
+            ]
+            lines.append(
+                "\t".join(
+                    [
+                        key + (" (primary)" if key == primary else ""),
+                        str(row["occurrences"]),
+                        *values,
+                    ]
+                )
+            )
+    lines.extend(
+        [
+            "Labels: " + ", ".join(label.replace("-", " ") for label in output["labels"]),
+            output["folder"],
+            f"Next: alpha results cite {output['study_id']} setup_mean_net_return",
+        ]
+    )
+    return "\n".join(lines)

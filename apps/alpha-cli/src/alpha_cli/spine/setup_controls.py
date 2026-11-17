@@ -290,3 +290,190 @@ def study_labels(
     if left is not None and right is not None and left * right < 0:
         labels.append("halves-disagree")
     return labels
+
+
+def trade_measures(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Completed trades alone contribute returns; all occurrence dispositions are counted."""
+    from collections import Counter
+
+    import numpy as np
+
+    done = [r for r in rows if r["complete"]]
+    values = [r["net_return"] for r in done]
+    stats = _stats(values)
+    held = [r["bars_held"] for r in done]
+    risks = [r["r_multiple"] for r in done if r["r_multiple"] is not None]
+    losses = -sum(v for v in values if v < 0)
+    stats.update(
+        trades=len(done),
+        skipped=sum(r["reason"] == "skipped-in-trade" for r in rows),
+        invalid=sum(r["reason"] == "invalid-levels" for r in rows),
+        open_at_end=sum(r["reason"] == "open-at-end" for r in rows),
+        mean_bars_held=float(np.mean(held)) if held else None,
+        median_bars_held=float(np.median(held)) if held else None,
+        mean_r=float(np.mean(risks)) if risks else None,
+        profit_factor=sum(v for v in values if v > 0) / losses if losses else None,
+        by_reason=dict(Counter(r["reason"] for r in rows)),
+        both_touched=sum(r["both_touched"] for r in rows),
+    )
+    for key in ("mean_bars_held", "median_bars_held", "mean_r", "profit_factor"):
+        if stats[key] is None:
+            stats["reasons"][key] = (
+                "no losses"
+                if key == "profit_factor"
+                else "no completed trades with a stop"
+                if key == "mean_r"
+                else "no completed trades"
+            )
+    return stats
+
+
+def trade_report(
+    rows: list[dict[str, Any]],
+    cache: dict[str, dict[int, Any]],
+    seed: str,
+    control_reason: str | None = None,
+) -> dict[str, Any]:
+    """Chronological halves use only eligible entries in their own date range."""
+    from alpha_cli.spine.setup_trade import trade_controls
+
+    ordered = sorted(rows, key=lambda r: (r["entry_ts"], r["asset"], r["candidate_id"]))
+    middle = len(ordered) // 2
+    boundary = ordered[middle]["entry_ts"] if middle else None
+    groups = {"all": ordered, "first": ordered[:middle], "second": ordered[middle:]}
+    reports = {}
+    for name, group in groups.items():
+        eligible = {
+            a: {
+                p: r
+                for p, r in values.items()
+                if name == "all"
+                or boundary is None
+                or (r["entry_ts"] < boundary if name == "first" else r["entry_ts"] >= boundary)
+            }
+            for a, values in cache.items()
+        }
+        chosen = {
+            a: [r["net_return"] for r in group if r["asset"] == a and r["complete"]] for a in cache
+        }
+        counts = {a: sum(r["asset"] == a for r in group) for a in cache}
+        report = trade_controls(
+            eligible,
+            chosen,
+            counts,
+            f"{seed}|{name}",
+            tested=name == "all",
+            control_reason=control_reason,
+        )
+        for result, subset in [
+            (report["pooled"], group),
+            *[(report["assets"][a], [r for r in group if r["asset"] == a]) for a in cache],
+        ]:
+            measures = trade_measures(subset)
+            measures["reasons"] = {**result["reasons"], **measures["reasons"]}
+            result.update(measures)
+        reports[name] = report
+    report = reports["all"]
+    report["pooled"]["stability"] = {k: reports[k]["pooled"] for k in ("first", "second")}
+    for asset in cache:
+        report["assets"][asset]["stability"] = {
+            k: reports[k]["assets"][asset] for k in ("first", "second")
+        }
+    return report
+
+
+def trade_reading(primary: dict[str, Any], labels: list[str]) -> tuple[str, str]:
+    n, mean, drift, p = (primary[k] for k in ("trades", "mean", "drift_mean", "random_date_p"))
+    if n == 0:
+        return "Too few trades (0) to judge. For the record: no completed trades.", "inconclusive"
+    start = (
+        f"Traded with these exits the average trade made {mean:.2%} after costs "
+        f"(hit rate {primary['hit_rate']:.1%}, about {primary['mean_bars_held']:.1f} bars held)"
+    )
+    if drift is not None:
+        start += f", against {drift:.2%} for the same exits started on any day"
+    else:
+        start += "; controls unavailable"
+    if p is not None:
+        start += f"; random dates did this well in {p:.2%} of 2,000 draws"
+    start += "."
+    if n < 30:
+        return f"Too few trades ({n}) to judge. For the record: {start}", "inconclusive"
+    if (
+        p is not None
+        and p <= 0.05
+        and primary["excess"] is not None
+        and primary["excess"] > 0
+        and not {"halves-disagree", "no-random-control"}.intersection(labels)
+    ):
+        return (
+            start + " Beating random dates says these dates were unusual, not that the setup "
+            "can be traded. One counted test, not confirmed on reserved data."
+        ), "supported (exploratory, not confirmed)"
+    return start + " No evidence the setup adds anything with these exits.", "not supported"
+
+
+def trade_labels(
+    manifest: dict[str, Any], primary: dict[str, Any], spec: Any, assets: int, occurrences: int
+) -> list[str]:
+    labels = [
+        "exploratory",
+        *sorted(
+            set(manifest["labels"])
+            - {"exploratory", "outcomes-not-viewed", "outcomes-viewed", "repeat"}
+        ),
+    ]
+    if primary["trades"] < 30:
+        labels.append("too-few-occurrences")
+    if assets == 1:
+        labels.append("single-asset")
+    halves = primary["stability"]
+    left, right = halves["first"]["mean"], halves["second"]["mean"]
+    if left is not None and right is not None and left * right < 0:
+        labels.append("halves-disagree")
+    if not spec.exit.time_bars:
+        labels.append("no-time-exit")
+    if primary["random_date_p"] is None:
+        labels.append("no-random-control")
+    if primary["skipped"] > occurrences / 4:
+        labels.append("many-skipped")
+    return labels
+
+
+def null_trade_controls(result: dict[str, Any], reason: str) -> None:
+    for key in (
+        "drift_mean",
+        "drift_median",
+        "excess",
+        "random_date_5",
+        "random_date_50",
+        "random_date_95",
+        "random_date_p",
+    ):
+        result[key] = None
+        result["reasons"][key] = reason
+
+
+def _draw_means(cache: dict[int, Any], count: int, seed: str) -> Any:
+    import numpy as np
+
+    positions = np.asarray(sorted(cache), dtype=int)
+    if not count or count > (len(positions) + CLUSTER_GAP_BARS) // (CLUSTER_GAP_BARS + 1):
+        return None
+    rng = np.random.default_rng(int.from_bytes(hashlib.sha256(seed.encode()).digest()[:8]))
+    dates = sample_dates(positions, count, rng, RANDOM_DRAWS)
+    means = []
+    for draw in dates:
+        occupied, values = -1, []
+        for position in draw:
+            row = cache[int(position)]
+            if row["entry_index"] <= occupied:
+                continue
+            if row["exit_index"] is not None:
+                occupied = row["exit_index"]
+            if row["complete"]:
+                values.append(row["net_return"])
+        if not values:
+            return None  # A draw without a tested mean cannot silently be dropped.
+        means.append(sum(values) / len(values))
+    return np.asarray(means)

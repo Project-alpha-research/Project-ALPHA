@@ -159,6 +159,21 @@ SETUP_METRICS = {
 METRICS.update(SETUP_METRICS)
 METRIC_UNITS.update({k: "count" if k == "setup_occurrences" else "fraction" for k in SETUP_METRICS})
 
+TRADE_METRICS = {
+    "setup_trades": ("Completed setup trades.", "count"),
+    "setup_trade_mean_net_return": ("Mean completed trade return after costs.", "fraction"),
+    "setup_trade_hit_rate": ("Share of completed net trade returns above zero.", "fraction"),
+    "setup_trade_mean_bars_held": ("Mean bars held per completed trade.", "ratio"),
+    "setup_trade_excess_over_drift": ("Mean net trade return less matched exit drift.", "fraction"),
+    "setup_trade_random_date_p": (
+        "Exploratory pooled random-date trade tail probability.",
+        "fraction",
+    ),
+    "setup_trade_mean_r": ("Mean net return divided by initial stop risk fraction.", "ratio"),
+}
+METRICS.update({k: v[0] for k, v in TRADE_METRICS.items()})
+METRIC_UNITS.update({k: v[1] for k, v in TRADE_METRICS.items()})
+
 # Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
 NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
 _CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
@@ -235,7 +250,10 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def build_facts(rdir: Path) -> list[dict[str, Any]]:
-    if read_json(rdir / "manifest.json").get("schema") == "AlphaSetupStudyV1":
+    if read_json(rdir / "manifest.json").get("schema") in {
+        "AlphaSetupStudyV1",
+        "AlphaSetupTradeV1",
+    }:
         facts: list[dict[str, Any]] = read_study(rdir)["facts"]
         return facts
     documents = {name: read_json(rdir / name) for name in ("manifest.json", "diagnostics.json")}
@@ -245,12 +263,12 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
             metric=metric,
             value=None,
             run_id=rdir.name,
-            basis="setup study primary horizon",
+            basis="setup study primary horizon or completed setup trades",
             source="summary.json:facts",
             labels=labels,
-            reason="this run is not a setup study",
+            reason="this run is not a setup study or trade",
         )
-        for metric in SETUP_METRICS
+        for metric in (*SETUP_METRICS, *TRADE_METRICS)
     ]
     for metric, (filename, field, basis) in _FIELDS.items():
         parent: Any = documents[filename]
@@ -338,11 +356,18 @@ def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> di
 def read_study(folder: Path) -> dict[str, Any]:
     """Verify completed sidecars before citing or repeating stored results."""
     manifest = json.loads((folder / "manifest.json").read_text())
-    for name in ("outcomes.parquet", "summary.json", "event-study.png"):
+    for name in (
+        ("trades.parquet", "summary.json", "trades.png")
+        if manifest["schema"] == "AlphaSetupTradeV1"
+        else ("outcomes.parquet", "summary.json", "event-study.png")
+    ):
         data, expected = (folder / name).read_bytes(), manifest["files"][name]
         if hashlib.sha256(data).hexdigest() != expected["sha256"] or len(data) != expected["size"]:
             raise ValueError(f"study artifact changed: {name}")
     result: dict[str, Any] = json.loads((folder / "summary.json").read_text())
+    if manifest.get("study_rule_version") == "setup-study-1":
+        result["labels"] = [*result["labels"], "older-cost-rule"]
+        result["facts"] = [{**f, "labels": result["labels"]} for f in result["facts"]]
     return result
 
 
@@ -355,8 +380,8 @@ def add_study_trial_fact(home: Path, summary: dict[str, Any]) -> None:
         dict(
             metric="total_trials",
             value=summary["total_trials"],
-            run_id=summary["study_id"],
-            basis="ledger rows observed before publication plus this study; not a deflation count",
+            run_id=summary.get("trade_id", summary.get("study_id")),
+            basis="ledger rows observed before publication plus this test; not a deflation count",
             source="summary.json:total_trials",
             labels=summary["labels"],
             reason=None,

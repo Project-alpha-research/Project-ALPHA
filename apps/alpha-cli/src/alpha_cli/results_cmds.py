@@ -40,9 +40,10 @@ results_app = typer.Typer(
 def _run(home: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
     rdir = find_run_dir(home, run_id)
     if rdir is None and valid_run_id(run_id):
-        study = home / "setup-studies" / run_id
-        if (study / "manifest.json").is_file():
-            return study, read_json(study / "manifest.json")
+        for directory in ("setup-studies", "setup-trades"):
+            study = home / directory / run_id
+            if (study / "manifest.json").is_file():
+                return study, read_json(study / "manifest.json")
     if rdir is None:
         raise SpineError(
             "UNKNOWN_RUN",
@@ -142,7 +143,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.figures import available_figures
 
     rdir, manifest = _run(home, run_id)
-    if manifest.get("schema") == "AlphaSetupStudyV1":
+    if manifest.get("schema") in {"AlphaSetupStudyV1", "AlphaSetupTradeV1"}:
         from alpha_cli.spine.facts import read_study
 
         return dict(run_id=run_id, **read_study(rdir))
@@ -191,7 +192,11 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
         home = AlphaSettings().data_dir
         failed: list[dict[str, Any]] = []
         if find_run_dir(home, run_id) is not None or (
-            valid_run_id(run_id) and (home / "setup-studies" / run_id / "manifest.json").is_file()
+            valid_run_id(run_id)
+            and any(
+                (home / directory / run_id / "manifest.json").is_file()
+                for directory in ("setup-studies", "setup-trades")
+            )
         ):
             ids = [run_id]
         else:
@@ -297,7 +302,7 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
 def _run_paths(home: Path) -> dict[str, Path]:
     """Discover completed runs in the same precedence order as run lookup."""
     paths: dict[str, Path] = {}
-    for directory in (*RUN_DIRS, "setup-studies"):
+    for directory in (*RUN_DIRS, "setup-studies", "setup-trades"):
         for manifest in (home / directory).glob("*/manifest.json"):
             if valid_run_id(manifest.parent.name):
                 paths.setdefault(manifest.parent.name, manifest.parent)

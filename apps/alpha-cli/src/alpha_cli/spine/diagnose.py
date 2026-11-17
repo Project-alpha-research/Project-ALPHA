@@ -134,6 +134,18 @@ def trials(
     }
 
 
+def full_sample(
+    bars: list[Bar], dividends: list[CorporateAction], spec: _runner.RunSpec
+) -> tuple[Any, tuple[Any, ...], tuple[float, ...]]:
+    """The one full-sample backtest path: the result, its bar dates and its equity curve.
+
+    The diagnostic pass and the investigation tools (``spine/tools.py``) both read this.
+    """
+    full = _runner.run_full_backtest(bars, spec, dividends=dividends)
+    dates, equity = zip(*full.equity_curve, strict=True)
+    return full, dates, equity
+
+
 def _publish(rdir: Path, document: dict[str, Any], identity: RunIdentity) -> None:
     # Verify the currently published sidecars against their freshly built contract. The shared
     # validation writer subsequently verifies the complete set, including diagnostics, before
@@ -226,8 +238,7 @@ def write_diagnostics(
         trace_result=out.result,
         periods_per_year=spec.periods_per_year,
     )
-    full = _runner.run_full_backtest(bars, spec, dividends=dividends)
-    dates, equity = zip(*full.equity_curve, strict=True)
+    full, dates, equity = full_sample(bars, dividends, spec)
     closes = {bar.ts: float(bar.close) for bar in bars}
     market = [closes[date] for date in dates]
     ppy = spec.periods_per_year

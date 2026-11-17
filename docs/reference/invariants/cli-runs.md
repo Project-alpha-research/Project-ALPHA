@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 5675db8d654b9ecf
+verified: 3fa52e35f0675eae
 ---
 
 # Command line runs invariants
@@ -137,10 +137,10 @@ and how it names and publishes immutable runs. Project-wide rules:
   trimmed); median of defined folds. Rule of thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
 - Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
   use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
-- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit and available figure names;
-  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy.
-  The fixed metric vocabulary and meanings are `spine/facts.py:METRICS`; facts include run id, basis,
-  source file/field, labels and a reason exactly when their value is null.
+- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figure names and
+  [`alpha tool`](cli-investigation-tools.md) outputs; for a test id, assets not completed or unreadable are under `failed` with a reason.
+  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`;
+  facts include run id, basis, source file/field, labels and a reason exactly when their value is null.
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
   imperative `next` command; JSON under `--json`), including when every asset of a test fails.
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts

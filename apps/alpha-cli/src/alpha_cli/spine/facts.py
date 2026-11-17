@@ -52,6 +52,38 @@ METRICS = {
     ),
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
+# Facts written by the investigation tools (alpha tool ...): metric -> (tool, meaning).
+TOOL_METRICS = {
+    "market_beta": (
+        "attribution",
+        "How much the strategy moves when the benchmark moves by one (1 = one for one).",
+    ),
+    "market_alpha_annual": (
+        "attribution",
+        "Yearly return left over after removing the benchmark exposure.",
+    ),
+    "market_alpha_p": (
+        "attribution",
+        "Chance of a leftover return this large if the true leftover were zero (p-value).",
+    ),
+    "market_r_squared": (
+        "attribution",
+        "Share of the strategy's return variation explained by the benchmark.",
+    ),
+    "regime_turbulent_share_of_return": (
+        "regimes",
+        "Share of the strategy's total log return earned in the most turbulent market regime.",
+    ),
+    "regime_turbulent_share_of_time": (
+        "regimes",
+        "Share of bars the market spent in its most turbulent regime.",
+    ),
+    "changepoint_count": (
+        "changepoints",
+        "Number of dates at which the run's behaviour shifted, found with hindsight.",
+    ),
+}
+METRICS.update({metric: meaning for metric, (_, meaning) in TOOL_METRICS.items()})
 # Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
 # 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
 # valid on a fraction.
@@ -77,6 +109,13 @@ METRIC_UNITS = {
     "family_trials": "count",
     "trial_dsr": "fraction",
     "variants_evaluated": "count",
+    "market_beta": "ratio",
+    "market_alpha_annual": "fraction",
+    "market_alpha_p": "fraction",
+    "market_r_squared": "fraction",
+    "regime_turbulent_share_of_return": "fraction",
+    "regime_turbulent_share_of_time": "fraction",
+    "changepoint_count": "count",
     **{
         f"{prefix}_{metric}": kind
         for prefix in ("full_sample", "benchmark")
@@ -161,12 +200,17 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
     labels = documents["manifest.json"].get("spine", {}).get("labels", [])
     facts = []
     for metric, (filename, field, basis) in _FIELDS.items():
-        parent = documents[filename]
+        parent: Any = documents[filename]
         parts = field.split(".")
         for part in parts[:-1]:
-            parent = parent.get(part, {})
+            # A stored null or bare number where an object is expected is an unavailable fact.
+            parent = parent.get(part) if isinstance(parent, dict) else None
+        parent = parent if isinstance(parent, dict) else {}
         value = parent.get(parts[-1])
-        reason = parent.get("reasons", {}).get(parts[-1]) or f"{filename}:{field} is unavailable"
+        reasons = parent.get("reasons")
+        reason = (reasons.get(parts[-1]) if isinstance(reasons, dict) else None) or (
+            f"{filename}:{field} is unavailable"
+        )
         if metric == "family_trials" and value is None:
             reason = "recorded before family counts were used"
         facts.append(
@@ -191,3 +235,47 @@ def require_metric(metric: str) -> None:
             "Run alpha results cite with one of the known metrics.",
             list(METRICS),
         )
+
+
+def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
+    """Stored investigation-tool outputs for a run, oldest first; they live outside the run."""
+    outputs = []
+    for path in sorted((home / "diagnostics" / run_id).glob("*-*.json")):
+        document = read_json(path)
+        if document.get("run_id") != run_id or "tool" not in document:
+            raise ValueError(f"{path} is not a tool output of run {run_id}")
+        outputs.append(
+            {
+                "id": path.stem.rsplit("-", 1)[1],
+                "file": str(path.relative_to(home)),
+                **{key: document.get(key) for key in ("tool", "params", "recorded_at", "labels")},
+                "facts": document.get("facts", []),
+            }
+        )
+    return sorted(outputs, key=lambda item: (str(item["recorded_at"]), item["file"]))
+
+
+def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> dict[str, Any]:
+    """Quote one stored tool fact; several outputs of the tool need an explicit choice."""
+    tool = TOOL_METRICS[metric][0]
+    outputs = [item for item in tool_outputs(home, run_id) if item["tool"] == tool]
+    known = [item["id"] for item in outputs]
+    if output_id is not None:
+        outputs = [item for item in outputs if item["id"] == output_id]
+    if not outputs:
+        raise SpineError(
+            "NO_TOOL_OUTPUT",
+            f"Run {run_id} has no stored {tool} output"
+            + (f" with id {output_id!r}." if output_id is not None else "."),
+            f"Run alpha tool {tool} {run_id} --json first.",
+            known,
+        )
+    if len(outputs) > 1:
+        raise SpineError(
+            "AMBIGUOUS_TOOL_OUTPUT",
+            f"Run {run_id} has {len(outputs)} stored {tool} outputs with different settings.",
+            f"Run alpha results cite {run_id} {metric} --tool-output with one of the known ids.",
+            known,
+        )
+    fact: dict[str, Any] = next(item for item in outputs[0]["facts"] if item["metric"] == metric)
+    return fact

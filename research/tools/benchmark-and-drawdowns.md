@@ -2,7 +2,7 @@
 owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: 9c2e873daba64a03
+verified: 451d5c95101ecce3
 ---
 
 # Benchmark and drawdowns
@@ -33,8 +33,8 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --figure drawdow
 
 - Why the market fell. `macro_window` reports stored macro series for the worst drawdown only when context
   data exists; otherwise `available: false`. Do not name a market event you have not checked against dates.
-- Comparison with a sector, an index or Bitcoin, or a beta: the benchmark is the same asset only. Market
-  states and regime detection are not available yet, so "it only works in some regimes" stays a hypothesis.
+- Comparison with a sector, an index or Bitcoin, or a beta: the benchmark here is the same asset only; use
+  [attribution and regimes](attribution-regimes-changepoints.md), whose regime models are fitted in sample.
 
 **Next** Run the same rule on a second, different asset with the [rule test](rule-test.md): if both fall on
 the same dates, the market explanation gains weight.

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 5dce2829bb8800a3
+verified: 57465d68219a25f5
 ---
 
 # Research playbook: how to work any idea
@@ -106,8 +106,8 @@ benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed
 - Rivals: the loss is the market's; the rule entered late; a data error on those dates.
 - Cheapest separating test: read `drawdowns` and `by_year` in the same diagnose output (free),
   then one re-run of the rule on a second asset (one counted trial).
-- Say what changed, and that market-state and regime tools are not available yet
-  ([planned list](tools/README.md#not-available-yet)), so "it is the regime" stays a hypothesis.
+- Say what changed. `alpha tool regimes` and `alpha tool attribution` describe the market's part with
+  in-sample models ([card](tools/attribution-regimes-changepoints.md)), so "it is the regime" stays a hypothesis.
 
 **A question about the past.** "What was the Sharpe on ETH?" `alpha results --symbol ETH --json`
 returns no rows: answer "That was not tested", and offer the `alpha test` command that would.

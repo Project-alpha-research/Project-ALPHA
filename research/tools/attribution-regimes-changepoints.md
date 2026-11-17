@@ -5,7 +5,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/attribution.py
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
-verified: 24c4e5422c1b2dfb
+verified: 535d59b638efac9a
 ---
 
 # Market attribution, regimes and change points
@@ -29,12 +29,12 @@ uv run alpha tool changepoints <run_id> --on returns --json
   (label `benchmark-is-same-asset`).
 - Regimes: the headline split labels each bar with the market regime known the bar before;
   `regime_turbulent_share_of_return` against `regime_turbulent_share_of_time` says where the return came from.
-- Change points: `changepoint_count` and the dates, labelled `hindsight`.
-
+- The causal split leads; the second is "with hindsight (not knowable at the time)". Opposite signs
+  carry `hindsight-disagrees`: use the causal split. Model parameters still use the full sample.
+- Change points within five bars of a flat/in-market switch read "position change" and are left out of
+  `changepoint_count`; with no recorded positions each reads "position state unknown", count null.
 **What it cannot tell you**
-
 - Regime model parameters are fitted on the whole sample (`parameters-fit-in-sample`); a split is a
   description, never a tradable signal. Change points are found with hindsight.
 - No size or momentum factors: only the market or one chosen asset.
-
 **Next** Test the leading explanation with the [rule test](rule-test.md) on another asset or period.

@@ -129,6 +129,34 @@ def _split(joined: Joined, state: list[int], k: int, basis: str) -> dict[str, An
     return {"basis": basis, **split}
 
 
+def regime_reading(causal: list[dict[str, Any]], hindsight: list[dict[str, Any]]) -> dict[str, Any]:
+    def shares(rows: list[dict[str, Any]]) -> str:
+        return ", ".join(
+            f"{row['name']} "
+            + (
+                "unavailable"
+                if row["share_of_log_return"] is None
+                else f"{row['share_of_log_return']:.0%}"
+            )
+            for row in rows
+        )
+
+    second = {row["regime"]: row["share_of_log_return"] for row in hindsight}
+    disagrees = any(
+        row["share_of_log_return"] is not None
+        and second[row["regime"]] is not None
+        and row["share_of_log_return"] * second[row["regime"]] < 0
+        for row in causal
+    )
+    sentence = (
+        f"Causal split: {shares(causal)} of return; "
+        f"with hindsight (not knowable at the time): {shares(hindsight)}."
+    )
+    if disagrees:
+        sentence += " Hindsight would tell a different story here; use the causal split."
+    return {"sentence": sentence, "labels": ["hindsight-disagrees"] if disagrees else []}
+
+
 def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> dict[str, Any]:
     series = load_run(home, run_id)
     joined = join_market(series, market)
@@ -141,6 +169,7 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
         )
     causal = _split(joined, fit["causal_state"], k, regime_model.SPLIT_BASIS)
     hindsight = _split(joined, fit["hindsight_state"], k, regime_model.HINDSIGHT_BASIS)
+    reading = regime_reading(causal["regimes"], hindsight["regimes"])
     turbulent = causal["regimes"][-1]
     result = {
         "market": joined.name,
@@ -151,8 +180,14 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
             for key in ("k", "n", "means", "variances", "transition", "expected_durations")
         }
         | {"annual_volatility": [math.sqrt(v * joined.ppy) for v in fit["variances"]]},
-        "split": causal,
-        "hindsight": {"labels": ["hindsight"], **hindsight},
+        "causal": causal,
+        "split": causal,  # compatibility for previously published tool consumers
+        "hindsight": {
+            "title": "with hindsight (not knowable at the time)",
+            "labels": ["hindsight"],
+            **hindsight,
+        },
+        "sentence": reading["sentence"],
         "flags": regime_flags(causal["regimes"]),
         "series": {
             "dates": [date.isoformat() for date in joined.dates[1:]],
@@ -162,7 +197,8 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
         },
     }
     basis = (
-        f"{fit['basis']}; market = open-to-open returns of {joined.name}, matching the "
+        f"{reading['sentence']} {fit['basis']}; market = open-to-open returns of "
+        f"{joined.name}, matching the "
         "engine's open-marked equity; "
         f"{'' if joined.same_asset else CLOCKS}{regime_model.SPLIT_BASIS}"
     )
@@ -170,7 +206,11 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
         series,
         "regimes",
         {"market": joined.name, "k": k, "seed": 0},
-        [*fit["labels"], *(["benchmark-is-same-asset"] if joined.same_asset else [])],
+        [
+            *reading["labels"],
+            *fit["labels"],
+            *(["benchmark-is-same-asset"] if joined.same_asset else []),
+        ],
         basis,
         result,
         [
@@ -188,6 +228,77 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
             ),
         ],
     )
+
+
+CHANGE_NEAR_POSITION_BARS = 5
+# Above this share of bars near a switch, "position change" is weak evidence.
+NEAR_SWITCH_ROUGH = 0.2
+
+
+def describe_changes(
+    breaks: list[int], dates: tuple[datetime, ...], positions: tuple[bool, ...], *, shift: int
+) -> dict[str, Any]:
+    if not positions:
+        # No recorded position series: never guess, so no break is called a behaviour shift.
+        return {
+            "breaks": [
+                {
+                    "index": index,
+                    "date": dates[index + shift].isoformat(),
+                    "position_change": None,
+                    "label": "position state unknown",
+                }
+                for index in breaks
+            ],
+            "behaviour_shifts": None,
+            "position_changes": None,
+            "sentence": (
+                f"{len(breaks)} change points; the rule's position state was not recorded, so "
+                "none can be told apart from the rule stepping in or out."
+            ),
+        }
+    if len(positions) != len(dates):
+        raise ValueError("change points require a position state for every bar")
+    transitions = [i for i in range(1, len(positions)) if positions[i] != positions[i - 1]]
+    rows = []
+    for index in breaks:
+        bar = index + shift
+        nearby = any(abs(bar - change) <= CHANGE_NEAR_POSITION_BARS for change in transitions)
+        rows.append(
+            {
+                "index": index,
+                "date": dates[bar].isoformat(),
+                "position_change": nearby,
+                "label": "position change" if nearby else "behaviour shift",
+            }
+        )
+    stepping = sum(row["position_change"] is True for row in rows)
+    shifts = len(rows) - stepping
+    sentence = (
+        "No shift in behaviour found beyond entering and leaving the market "
+        f"({stepping} change points, all the rule stepping in or out)."
+        if rows and shifts == 0
+        else (
+            f"{shifts} shifts while in the market; {stepping} are just the rule stepping in or out."
+        )
+    )
+    # How much of the history is "near a switch": when it is large, the split is rough.
+    near = sum(
+        any(abs(bar - change) <= CHANGE_NEAR_POSITION_BARS for change in transitions)
+        for bar in range(len(positions))
+    ) / len(positions)
+    if near > NEAR_SWITCH_ROUGH:
+        sentence += (
+            f" {near:.0%} of all bars lie within {CHANGE_NEAR_POSITION_BARS} bars of a switch, "
+            "so this split is rough."
+        )
+    return {
+        "breaks": rows,
+        "behaviour_shifts": shifts,
+        "position_changes": stepping,
+        "near_switch_share": near,
+        "sentence": sentence,
+    }
 
 
 def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]:
@@ -217,19 +328,17 @@ def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]
             }
         )
     params = {key: found[key] for key in ("model", "min_size", "max_points")} | {"on": on}
+    changes = describe_changes(found["breaks"], series.dates, series.positions, shift=shift)
     result = {
+        **changes,
         "on": on,
         "periods_per_year": series.ppy,
         "penalty": found["penalty"],
         "penalty_raises": found["penalty_raises"],
-        "breaks": [
-            {"index": index, "date": series.dates[index + shift].isoformat()}
-            for index in found["breaks"]
-        ],
         "segments": segments,
     }
     basis = (
-        f"{found['basis']}; searched on the run's full-sample "
+        f"{changes['sentence']} {found['basis']}; searched on the run's full-sample "
         f"{'per-bar returns' if on == 'returns' else 'log equity curve'}; segment annual return "
         "= mean per-bar return * periods_per_year, volatility = standard deviation * sqrt of it"
     )
@@ -240,5 +349,14 @@ def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]
         found["labels"],
         basis,
         result,
-        [("changepoint_count", "result.breaks", len(found["breaks"]), None)],
+        [
+            (
+                "changepoint_count",
+                "result.behaviour_shifts",
+                changes["behaviour_shifts"],
+                None
+                if changes["behaviour_shifts"] is not None
+                else "the rule's position state was not recorded",
+            )
+        ],
     )

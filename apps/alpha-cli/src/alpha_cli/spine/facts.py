@@ -14,6 +14,7 @@ METRICS = {
     "traded_period": "First and last stored equity point.",
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
+    "psr": "Probabilistic Sharpe of walk-forward out-of-sample returns.",
     "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
     **{
         f"{prefix}_{metric}": f"{label} {meaning}."
@@ -54,6 +55,19 @@ METRICS = {
     ),
     "variants_evaluated": "Number of sensitivity re-runs evaluated.",
 }
+NOISE_METRICS = {
+    "price_noise_median_sharpe": ("median_sharpe", "ratio"),
+    "price_noise_p05_sharpe": ("p05_sharpe", "ratio"),
+    "price_noise_p95_sharpe": ("p95_sharpe", "ratio"),
+    "price_noise_sign_flip_share": ("sign_flip_share", "fraction"),
+    "price_noise_median_trades": ("median_trades", "count"),
+}
+METRICS.update(
+    {
+        name: f"Price-noise control {field.replace('_', ' ')}."
+        for name, (field, _) in NOISE_METRICS.items()
+    }
+)
 # Facts written by the investigation tools (alpha tool ...): metric -> (tool, meaning).
 TOOL_METRICS = {
     "market_beta": (
@@ -95,6 +109,8 @@ METRIC_UNITS = {
     "verdict": "other",
     "oos_sharpe": "ratio",
     "dsr": "fraction",
+    "psr": "fraction",
+    **{name: unit for name, (_, unit) in NOISE_METRICS.items()},
     "inverted_sharpe": "ratio",
     "inverted_sharpe_se": "ratio",
     "inverted_total_return": "fraction",
@@ -154,6 +170,11 @@ _FIELDS = {
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),
+    "psr": ("manifest.json", "dsr.psr", "walk-forward validation gauntlet"),
+    **{
+        name: ("diagnostics.json", f"price_noise.{field}", "price-noise full-sample net controls")
+        for name, (field, _) in NOISE_METRICS.items()
+    },
     **{
         f"{prefix}_{metric}": ("diagnostics.json", f"{prefix}.{metric}", basis)
         for prefix, basis in (
@@ -226,7 +247,8 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
                 "run_id": rdir.name,
                 "basis": basis if metric == "total_trials" else parent.get("basis", basis),
                 "source": f"{filename}:{field}",
-                "labels": labels,
+                "labels": list(dict.fromkeys([*labels, *parent.get("labels", [])])),
+                "unit": METRIC_UNITS[metric],
                 "reason": reason if value is None else None,
             }
         )

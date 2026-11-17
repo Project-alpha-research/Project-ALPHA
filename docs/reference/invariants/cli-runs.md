@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b95d362131073758
+verified: 1e84b13a8195caf6
 ---
 
 # Command line runs invariants
@@ -107,6 +107,7 @@ and how it names and publishes immutable runs. Project-wide rules:
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash, name, idea, rule, store, integrity labels
   and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar dates are
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
+- `idea_id` hashes the spec hash and data fingerprint without code; `alpha results --idea-id` links versions without changing trials or run identity.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
   trial; the manifest retains its original test association.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync; `trial_index` and `total_trials` equal the 1-based line
@@ -119,7 +120,6 @@ and how it names and publishes immutable runs. Project-wide rules:
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all remaining history. These exploratory results and
   trial counts grant no research or owner authority.
-
 ## Stored facts and diagnostics
 - Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
 - Diagnostics and the manifest are staged together and the completed run directory is renamed into place. `diagnostics.json` stores benchmark comparisons,
@@ -129,7 +129,12 @@ and how it names and publishes immutable runs. Project-wide rules:
 - `inverted_signal` shorts where the rule was long (same engine, bars, costs, next-open fills), re-sized to 100% of equity net of short dividends each bar;
   CASH shorts are hypothetical, no borrow or funding cost; no ledger, variant or family count ([card](../../../research/tools/inverted-signal-control.md)).
 - `walk_forward_efficiency`: per fold, OOS CAGR over the full-sample CAGR on its recorded train window (warm-up trimmed); median of defined folds. Rule of
-  thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
+  thumb, not a statistical test; most folds without OOS trades nulls the median. Empty folds are counted: [WFE card](../../../research/tools/walk-forward.md).
+- Below 30 closed OOS trades, `too-few-trades` labels the run, its facts and verdict/DSR headlines (`results check` needs "too few trades"); grade A/B is
+  capped at C in the manifest and ledger row, D/F and numbers kept. The HTML tear sheet does not yet carry the too-few-trades caveat.
+- `price_noise`: 50 run-id-seeded full-sample controls (OHLC x exp(N(0, 0.001)), ranges repaired, volume/dividends kept, one feed for signals and fills); net
+  Sharpe median, 5–95%, sign flips, trades; no ledger trial. `fragile-to-price-noise`: positive original, 5th pct ≤ 0 or an undefined copy (counted).
+- `implausibly-good` flags at least 30 OOS trades with net Sharpe > 3, hit rate > 0.80, or mean net daily-trade return > 0.05; it never improves a verdict.
 - Audit entries are independent PASS / FLAG / NOT-CHECKED, no overall grade; traces use walk-forward artifacts; fill ranges allow recorded slippage
   (NOT-CHECKED without cost settings); the manifest verifies every sidecar. `data_period` / `traded_period` facts: loaded-bar and stored-equity endpoints.
 - `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figures and [`alpha
@@ -139,11 +144,9 @@ and how it names and publishes immutable runs. Project-wide rules:
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an imperative `next` command; JSON under `--json`), including
   when every asset of a test fails. Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts sensitivity re-runs
   separately from the append-only row index.
-
 ## Draft checks, lookalikes and novelty
 
 - `results check|compare`: [checks](cli-results-check.md); `lookalike|unusual`: [patterns](patterns.md#lookalikes-and-novelty).
-
 ## Suites
 
 - `alpha suite` runs only the declared actions in `SUITE_ACTIONS` through durable attempt and job lineage; it polls heartbeat and cancellation every 5 seconds
@@ -151,7 +154,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   builders in `_suite_actions.py`.
 - Suite Qlib, Kronos and Monte Carlo kinds share the heavyweight capacity class; see [command line control plane § Jobs, leases and
   capacity](cli-control-store.md#jobs-leases-and-capacity).
-
 ## Figures
 
 - Figures are a derived cache under `data_dir/figures/<run_id>/`, never run artifacts. Writing into a run directory would break the manifest's exact file set.
@@ -165,7 +167,6 @@ and how it names and publishes immutable runs. Project-wide rules:
 - A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
   `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
   (`tests/unit/test_run_projection_security.py`).
-
 ## Rules, scans and chart overlays
 
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
@@ -185,7 +186,6 @@ and how it names and publishes immutable runs. Project-wide rules:
   window. Each indicator refuses a window shorter than its longest lookback, and each pattern names in `reason` the bar it became drawable. Enforced by
   `tests/unit/test_chart_overlays_bias_guard.py`.
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
-
 ## Setup find
 - `alpha setup find` resolves spec assets in order, honours `@store`, and requires daily bars (252 or 365 periods/year).
 - Events use the setup evaluator. No outcome, exit or control is computed: after the trigger bar only the entry open reaches a file.

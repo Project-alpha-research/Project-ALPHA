@@ -37,7 +37,7 @@ Telling a real edge from luck after many tries.
 | Combined signals never count the same input twice as evidence | Missing | ledger; [practice](backlog/practitioner-research-ideas.md) | Later | private |
 | Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Working | [efficiency](../../research/tools/walk-forward.md) in `alpha diagnose` | Now | private |
 | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Working | [control](../../research/tools/inverted-signal-control.md) in `alpha diagnose`; a check, not proof | Now | private |
-| Robustness to noise added to the price series, re-running the rule on perturbed prices | Missing | `alpha-validation`; [note](backlog/rescued-research-ideas.md) | Later | private |
+| Robustness to noise added to the price series, re-running the rule on perturbed prices | Working | [price noise](../../research/tools/price-noise.md) in `alpha diagnose`; feed sensitivity, not proof | Now | private |
 
 ## 6. Diagnostics
 
@@ -68,7 +68,7 @@ Explaining a result: where the profit and the losses came from.
 | Process, market exposure and chance told apart; capital tied up and for how long | Missing | `alpha diagnose` | Later | private |
 | Named crisis replays (2008, March 2020, the 2022 crypto bear, flash crashes) with settings unchanged | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
 | Synthetic crisis stress: correlations pushed toward one, liquidity that dries up, partial fills | Missing | `alpha-validation`; [note](backlog/risk-shock-placement.md) | Later | private |
-| A "too good to be true" label for results far above what a retail swing book plausibly earns after costs | Missing | `alpha diagnose`; [note](backlog/rescued-research-ideas.md) | Path 1 | private |
+| A "too good to be true" label for results far above what a retail swing book plausibly earns after costs | Working | `alpha diagnose`: `implausibly-good`; a prompt to check data, never a verdict | Path 1 | private |
 | Automatic scan of many candidate context features against each trade's loss, run-up and profit, with the number scanned counted | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Later | private |
 
 ## 7. Records and memory

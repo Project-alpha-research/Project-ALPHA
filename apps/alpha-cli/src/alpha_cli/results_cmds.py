@@ -67,6 +67,7 @@ def list_results(
     limit: int = typer.Option(20, min=1, help="Maximum rows, newest first."),
     symbol: str | None = None,
     name: str | None = None,
+    idea_id: str | None = None,
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """List recorded trials, including failed attempts, and the total count."""
@@ -80,11 +81,17 @@ def list_results(
                 "No rule trials are recorded.",
                 "Run alpha test with a saved spec or rule flags.",
             )
+        # Older ledger rows have no idea id; use their completed manifest if available.
+        for row in rows:
+            if row.get("run_id") and not row.get("idea_id"):
+                rdir = find_run_dir(AlphaSettings().data_dir, row["run_id"])
+                row["idea_id"] = read_manifest(rdir).get("idea_id") if rdir is not None else None
         selected = [
             row
             for row in reversed(rows)
             if (symbol is None or row.get("symbol") == symbol)
             and (name is None or row.get("name") == name)
+            and (idea_id is None or row.get("idea_id") == idea_id)
         ][:limit]
         items = [
             {
@@ -101,6 +108,7 @@ def list_results(
                         "benchmark_sharpe",
                         "labels",
                         "run_id",
+                        "idea_id",
                     )
                 },
                 "flags_count": len(row["flags"]) if isinstance(row.get("flags"), list) else None,
@@ -147,6 +155,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
             "reason": None if at_run is not None else "recorded before family counts were used",
         },
         "run_id": run_id,
+        "idea_id": manifest.get("idea_id"),
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
         "flags": diagnostics.get("flags", []),
@@ -249,7 +258,12 @@ def cite_result(
         else:
             fact = next(item for item in build_facts(rdir) if item["metric"] == metric)
         value = "null" if fact["value"] is None else str(fact["value"])
-        emit(fact, json_out=json_out, fallback=f"{value} [{run_id}:{metric}] ({fact['basis']})")
+        caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
+        emit(
+            fact,
+            json_out=json_out,
+            fallback=f"{value} [{run_id}:{metric}] ({fact['basis']}){caveat}",
+        )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
 

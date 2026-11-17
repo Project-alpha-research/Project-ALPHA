@@ -99,6 +99,9 @@ assert issubclass(j.AlphaFactorScenario,QlibFactorScenario)
 assert issubclass(j.AlphaFactorRunner,Developer)
 assert issubclass(j.AlphaFactorFeedback,Experiment2Feedback)
 os.environ['ALPHA_FACTOR_RUN_DIR']=sys.argv[3]
+panel = Path(sys.argv[3]) / 'panel'
+panel.mkdir()
+(panel / 'panel-receipt.json').write_text(json.dumps({'instruments': {'A': {}}}))
 exp=SimpleNamespace(hypothesis=SimpleNamespace(hypothesis='test'),sub_tasks=[],stdout='ALPHA test',alpha_evaluation={'iteration':0,'decision':False})
 scen=SimpleNamespace(get_scenario_all_desc=lambda:'scenario')
 with patch.object(j,'APIBackend') as backend:
@@ -218,6 +221,7 @@ def judge_parts(*names: str) -> dict[str, Any]:
         "sys": sys,
         "Developer": object,
         "FactorEmptyError": ValueError,
+        "current_universe": lambda: "15 instruments; survivors-only synthetic fixture",
         "LEGACY_KEYS": ["IC"],
         "VIEWER_KEYS": [],
     }
@@ -344,6 +348,7 @@ def swing_parts() -> dict[str, Any]:
         "spread_line",
         "_rank",
         "family_summary",
+        "append_ledger_context",
     }
     nodes: list[ast.stmt] = [
         n
@@ -352,7 +357,8 @@ def swing_parts() -> dict[str, Any]:
         or (
             isinstance(n, ast.Assign)
             and any(
-                isinstance(t, ast.Name) and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE")
+                isinstance(t, ast.Name)
+                and t.id in ("SWING_BRIEF", "FAMILY_KEYWORDS", "COMPOSITE", "FAMILY_REFUSALS")
                 for t in n.targets
             )
         )
@@ -371,6 +377,7 @@ def swing_parts() -> dict[str, Any]:
         "re": re,
         "json": json,
         "QlibFactorHypothesisGen": Base,
+        "current_universe": lambda: "15 instruments; survivors-only synthetic fixture",
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<swing-context>", "exec"), namespace)
     return namespace
@@ -498,7 +505,11 @@ def test_ledger_summary_keeps_whole_lines_and_counts_the_rest(tmp_path: Path) ->
     assert len(summary) <= 4000
     assert all(line.endswith("turnover 10%/day") for line in shown)
     assert shown[0].startswith("factor_39_")  # newest first
-    assert summary.rstrip().endswith(f"({40 - len(shown)} older distinct factors not shown)")
+    assert summary.rstrip().endswith(
+        f"({40 - len(shown)} older distinct factors not shown)\n"
+        "Current universe: 15 instruments; survivors-only synthetic fixture; "
+        "earlier text saying otherwise is out of date"
+    )
 
 
 @RUNTIME

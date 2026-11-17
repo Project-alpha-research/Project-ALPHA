@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: a5d7422fc367d765
+verified: e63ff409076b186c
 ---
 
 # One trial ledger invariants
@@ -24,7 +24,7 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   `[rdagent] factor_ledger = "/absolute/path"` in `<home>/ledger/sources.toml`.
   With neither, the `alpha ledger` commands read the RD-Agent ledger at its default location beside
   the data directory, `<home>/../runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl` (the
-  factor loop's `--trial-ledger`), reported as missing when absent. Invalid TOML or configuration produces
+  factor loop's `--trial-ledger`). Absent optional sources stay quiet in human output. Invalid TOML or configuration produces
   `LEDGER_SOURCE_INVALID`; configured files that do not exist are reported as missing.
 - Read each file's bytes once. Acquire a shared `flock` only when its `.lock` exists, opened
   `rb`; never create directories, files or lock files. No writer or historical row is changed.
@@ -81,7 +81,10 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   `family-trials`, `top-measure` and `repeats`. Bind values with `?`; reject unknown questions
   with `UNKNOWN_QUESTION` and missing/unlisted parameters with `BAD_PARAMETER`.
 - `SPREAD_FAIL` maps to rejected, retains its raw status and says "stopped by the spread check".
-  Failed factors show their recorded failure reason and first error line.
+  Failed factors show their recorded failure reason and first error line. `LOOKAHEAD` and `UNSTABLE` map to invalid,
+  with first-mismatch details in `list`; invalid rows retain their trial counts.
+- New factor rows carry `universe_includes_delisted`: true gives `includes-delisted`, false gives `survivor-universe`.
+  Old rows without the field keep their earlier label; missing bars alone never establish a delisting.
 - Factor dates use UTC `recorded_at` when present; old rows keep the run-id date-prefix fallback.
 - `by-asset` and `asset-history` normalise names for grouping only (`BTCUSDT` = `BTC/USDT`);
   names with `:` (perpetuals) stay separate; `list` and `show` keep the original name.
@@ -91,8 +94,9 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 ## Evidence checks
 
 - Spine evidence resolves under the home directory. Factor evidence resolves under the
-  RD-Agent file's grandparent, then run id and evidence path. Rule evidence requires a unique
-  match one study directory below that root. Paths escaping the root and ambiguous matches fail.
+  RD-Agent file's grandparent, matching either folder name or `run-identity.json` to the recorded run id. Rule evidence requires a unique
+  match one study directory below that root. Paths escaping the root and ambiguous matches fail; another run's
+  unreadable `run-identity.json` only fails to match.
 - `show` reports presence, current SHA-256 and match to the recorded digest; match is null
   when no digest was recorded. Missing evidence with a recorded digest does not match.
 - These checks describe recorded evidence only; no test or research conclusion is recomputed.

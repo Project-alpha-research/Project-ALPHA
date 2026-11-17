@@ -88,6 +88,8 @@ def _render(output: dict[str, Any]) -> str:
         lines.append(output["note"])
     for source in output.get("sources", []):
         if source["state"] == "missing":
+            if source.get("optional", False):
+                continue
             lines.append(f"{source['source']}: ledger file not found ({source['file']})")
         else:
             lines.append(f"{source['source']}: read {source['file']}")
@@ -104,7 +106,13 @@ def _run(
 ) -> None:
     try:
         home = AlphaSettings().data_dir
-        snapshot = read_ledgers(ledger_sources(home, _rdagent_ledger(home, rdagent)))
+        snapshot = read_ledgers(
+            ledger_sources(
+                home,
+                _rdagent_ledger(home, rdagent),
+                rdagent_optional=rdagent is None and not (home / "ledger/sources.toml").exists(),
+            )
+        )
         output = action(snapshot, home)
         output["sources"] = [asdict(s) for s in snapshot.sources]
         output["unknown"] = [asdict(row) for row in snapshot.unknown]
@@ -185,6 +193,19 @@ def list_trials(
     _run(rdagent_ledger, json_out, select)
 
 
+def _recorded_run_id(run: Path) -> str | None:
+    """A run folder's recorded id; another run's unreadable identity file only fails to match."""
+    identity = run / "run-identity.json"
+    if not identity.is_file():
+        return None
+    try:
+        recorded = json.loads(identity.read_bytes())
+    except ValueError:
+        return None
+    value = recorded.get("run_id") if isinstance(recorded, dict) else None
+    return value if isinstance(value, str) else None
+
+
 def _evidence(record: TrialRecord, home: Path) -> dict[str, Any]:
     root = home if record.source == "spine" else Path(record.source_file).parent.parent
     candidates: list[Path] = []
@@ -193,7 +214,19 @@ def _evidence(record: TrialRecord, home: Path) -> dict[str, Any]:
             candidates = [root / record.evidence_path]
         elif record.run_id:
             roots = list(root.iterdir()) if record.kind == "rule_family" else [root]
-            candidates = [r / record.run_id / record.evidence_path for r in roots if r.is_dir()]
+            runs: set[Path] = set()
+            for folder in roots:
+                if not folder.is_dir():
+                    continue
+                direct = folder / record.run_id
+                # Validate references even when the run or its evidence does not exist.
+                runs.add(direct)
+                runs.update(
+                    run
+                    for run in folder.iterdir()
+                    if run.is_dir() and _recorded_run_id(run) == record.run_id
+                )
+            candidates = [r / record.evidence_path for r in runs]
     # Evidence references never permit traversal out of the declared evidence root.
     if any(not path.resolve().is_relative_to(root.resolve()) for path in candidates):
         raise SpineError(
@@ -205,7 +238,7 @@ def _evidence(record: TrialRecord, home: Path) -> dict[str, Any]:
     if len(found) > 1:
         raise SpineError(
             "LEDGER_EVIDENCE_INVALID",
-            "Rule evidence path is not unique.",
+            "Evidence path is not unique.",
             "Inspect the matching run directories.",
         )
     digest = hashlib.sha256(found[0].read_bytes()).hexdigest() if found else None

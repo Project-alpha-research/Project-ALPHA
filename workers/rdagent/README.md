@@ -564,7 +564,7 @@ unchanged. This is working knowledge: ALPHA's trial ledger remains the sole evid
 Nothing is copied between memory and the ledger.
 
 ALPHA's code-level verdict reaches coding memory before evaluation: factors that fail the
-look-ahead check (`LOOKAHEAD`) or run but return the wrong output shape (`FAILED`) lose their
+look-ahead or reproducibility check (`LOOKAHEAD`, `UNSTABLE`) or run but return the wrong output shape (`FAILED`) lose their
 successful coding-reference status. Their graph nodes become `alpha_rejected_implement` and
 their attempt history stays available for inspection. Screen and replay failures keep their
 correct implementations as coding references. The coder reloads shared knowledge before each
@@ -618,6 +618,14 @@ this run's completed rounds and `loops_after` = `loops_before` + `rounds_complet
 run's rounds when the previous session could not be loaded). The model calls already spent on
 an abandoned round stay spent, and its proposal is not re-proposed or evaluated.
 
+The context and feedback system prompt end with a current-universe correction derived from this
+run's frozen receipt and universe, including its instrument count and declared survivorship.
+They refuse missing or unreadable information before any proposal call; the restored pickle stays
+unchanged. Universe prose declaring `N later delisted` (or explicit inclusion of delisted names)
+feeds the new receipt and row's `universe_includes_delisted` flag. Early endings alone do not
+establish delisting. A prose count must describe the selected run, not the store's original size;
+an impossible count refuses the freeze. Explicit inclusion without a count says it is not recorded.
+
 Known limits: a run that crashes before finishing a round keeps the previous session as the one
 to continue. Two runs started at the same time from one memory both continue the same session
 and the later one becomes the pointer; the coding knowledge itself is shared safely through
@@ -639,7 +647,18 @@ family rule (`--family-switch-after`, ADR-0055) classifies a composite (machine 
 regression, a weighted combination) or a factor whose name has no family keyword by the feature
 families its own words name; it inherits every one, so a ridge composite of volatility, drawdown,
 skew and autocorrelation features counts as a try in each, and it is barred when any of them is
-closed. A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
+closed. Only evaluated screen, spread and replay failures (including daily-only passes) count
+toward closing a family; code failures remain trials but do not close families. Before coding,
+`research_memory` wraps the current coder with `FamilyGuard`: a closed-family proposal is refused
+before any code is written or data read, with the closed and open families named, and recorded in
+`rounds.jsonl` as `refused_closed_family` with `trial_created: false`. The guard then asks the
+proposer again inside the same round, repeating upstream's own two proposal calls (propose, then
+experiment) with the refusals added to the proposer's context, at most twice. A third refusal is
+recorded as `no_admissible_idea` and ends the round through upstream's skip exception; upstream
+then records the refusal message as that round's feedback without a feedback-model call. Each
+re-ask spends proposal model calls under the same run cap. Upstream's own step log still shows the
+first, refused proposal for that round; the round record and the trace hold the one coded.
+A composite with no identifiable input is `composite: unknown inputs` (older ledger rows
 carry no description, so the 2026-11-17 `ml_ridge_*` rows sit there), itself subject to the
 limit. The match is approximate and over-inclusive: a stray family word adds a family, never
 removes one.
@@ -860,8 +879,10 @@ No wide-universe instrument list is supplied by the code.
 
 A name can rank only after `REENTRY_BARS = 20` consecutive daily bars, with a finite factor
 value, and passing any configured liquidity rule. A gap resets the streak. Days below the
-existing five-name minimum are skipped and counted. Factor input contains explicit null rows
-inside each first-to-last span; no forward fill and no rows outside that span.
+existing five-name minimum are skipped and counted. Factor input gives every instrument null rows
+from the first data day (no later than the first cut) until it lists, and null rows for missing days
+inside its span; no row follows its last bar and nothing is forward-filled. Every cut therefore keeps
+the full panel's instrument columns.
 
 Held names with missing bars stay at their last close and cannot finance other purchases.
 They exit at the first resuming close, with the usual sell costs, or are written off after
@@ -896,15 +917,20 @@ The owner supplies `identity_breaks` in the universe file, a list of entries wit
 must belong to the universe and its dates must be strictly increasing. No real break list is
 shipped in code; the tiny examples in `test_rdagent_identity_breaks.py` are synthetic.
 
-Before factor inputs, membership, labels or replay read the panel, freeze renames rows on and
-after each boundary to `<INSTRUMENT>~2`, then `~3`, and so on. A daily row belongs to exactly
-one identity; intraday boundaries and generated-name collisions are refused. An old identity
-ends at its last earlier bar and follows the existing waiting and haircut rules. A new identity
-has no inherited history and must earn its own warm-up. Future identities do not change earlier
-membership, ranks, holdings, trades or realised figures. A declaration beyond the frozen panel
-remains in the bound universe but is not listed as applied; numbering follows declaration order.
+A `redenominated` entry additionally requires a finite positive `ratio`: new price units per old
+unit, so 100 when the first new price is 100 times the last old one (DREP 0.026288 then 2.629).
+Freeze divides OHLC on or after `new_from` by this ratio and multiplies base volume by it; quote
+volume is unchanged. The instrument keeps its identity and normal gap handling. Earlier prices
+are untouched. Old declarations without a ratio refuse with an instruction to add it; old frozen
+receipts remain readable. Each applied rescale is listed in `identity_rescales` with name, date and ratio.
 
-After relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
+For `ticker_reused`, freeze renames rows on and after each boundary to `<INSTRUMENT>~2`, then
+`~3`, counting ticker reuse only. Each row belongs to one identity; generated-name collisions
+are refused. Old identities follow the waiting and haircut rules; new identities earn their own
+warm-up. Future declarations change no earlier trading decisions. Declarations beyond the panel
+remain in the universe but are not listed as applied.
+
+After rescaling and relabelling, `_rdagent_identity.check_jumps` checks every remaining interior gap with at
 least `IDENTITY_JUMP_MIN_GAP_DAYS = 1` missing calendar days (excluding the two observed days).
 If resume close / last close is above `IDENTITY_JUMP_RATIO = 5.0` or below `1 / 5.0`, freeze
 raises `IdentityJumpError`; one refusal names every such jump with its instrument, both dates,
@@ -917,9 +943,26 @@ passes freeze and, held across the pause, is booked as a real move unless the ow
 Check the store for short-gap jumps before relying on it; a consecutive-day check would also
 flag genuine crashes, so neither has been added without an owner decision.
 
-The panel receipt records the applied entries with `new_name`, and `identity_jump_policy`
+The panel receipt records applied ticker splits with `new_name`, and `identity_jump_policy`
 (`min_gap_days`, `ratio`). Reports and proposer feedback state the number of distinct tickers
-split. Old universe files and receipts remain readable; no-break panels retain their bytes and
+split. Old frozen receipts remain readable; no-break panels retain their bytes and
 numerical results. New receipts add the identity metadata and new reports add the count; source
 fingerprints still change when code changes. Serializing HDF in the isolated factor runtime
 still needs an outside check.
+
+### Reproducibility and plain feedback (third loop fix-up)
+
+Prefix comparisons retain the first mismatching cut, row date, instrument and absolute difference
+(null for missing keys or non-finite values). A mismatch triggers exactly one fresh execution on
+an identical copy of the truncated input. A second differing answer is `UNSTABLE`; reproducible
+truncated output that differs from the full run stays `LOOKAHEAD`. Both remain invalid trials,
+counted exactly as before, and neither can be the lead factor. Unavailable checks retain their
+existing classification and record the error; they never demote coding memory. Fixed cuts do not prove
+absence of leakage between cuts; numerical instability is diagnosed, not repaired.
+
+Each factor records a write-off count across its evaluated clocks and a sentence naming up to
+five coins (then “and N more”), including the assumed loss. The feedback writer appends it even
+if the model omits it; proposal ledger lines keep the count. Spread figures are shown only for
+clocks that passed the rank screen. Replay output calls its old `missing_coin_days` metric
+`unrankable_instrument_rebalances`: instrument observations without a finite eligible rank on
+scheduled rebalance days, distinct from missing bar days in the receipt. Readers accept the old name.

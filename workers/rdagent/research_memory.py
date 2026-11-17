@@ -350,12 +350,28 @@ def _load_knowledge(path: Path) -> Any:
     return knowledge
 
 
+def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -> Any:
+    if environ.get("ALPHA_FACTOR_RUN_DIR"):
+        # A sibling entry module that imports RD-Agent; loaded only inside the factor runtime.
+        judge = importlib.import_module("alpha_factor_judge")
+
+        # Refuse before any model call, with one plain line at the entry-point boundary.
+        try:
+            judge.current_universe()
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+        loop = loop_cls(settings)
+        loop.coder = judge.FamilyGuard(loop.coder, loop)
+        return loop
+    return loop_cls(settings)
+
+
 def open_factor_loop(
     loop_cls: Any, settings: Any, loop_n: int, environ: Mapping[str, str]
 ) -> tuple[Any, int]:
     """Load signed upstream artifacts, falling back with explicit, secret-free events."""
     if not environ.get("ALPHA_RDAGENT_MEMORY_DIR"):
-        return loop_cls(settings), loop_n
+        return _new_factor_loop(loop_cls, settings, environ), loop_n
     root = Path(environ["ALPHA_RDAGENT_MEMORY_DIR"])
     knowledge = Path(environ["FACTOR_CoSTEER_knowledge_base_path"])
     if knowledge.exists():
@@ -402,7 +418,7 @@ def open_factor_loop(
                 previous = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
                 if getattr(previous, "trace", None) is None:
                     raise ValueError("completed checkpoint has no research trace")
-                loop = loop_cls(settings)
+                loop = _new_factor_loop(loop_cls, settings, environ)
                 loop.trace = previous.trace
             except Exception as error:
                 error_type = type(error).__name__
@@ -424,7 +440,7 @@ def open_factor_loop(
             "session-unloadable",
             f"The previous session could not be loaded ({error_type}); starting a fresh loop.",
         )
-    return loop_cls(settings), loop_n
+    return _new_factor_loop(loop_cls, settings, environ), loop_n
 
 
 def _safe_event(environ: Mapping[str, str], code: str, message: str) -> None:

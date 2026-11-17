@@ -29,11 +29,16 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from . import gateway_embeddings as embeddings_impl
+    from . import gateway_usage as usage_impl
 else:
     if not __package__:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
     embeddings_impl = importlib.import_module(
         f"{__package__}.gateway_embeddings" if __package__ else "gateway_embeddings"
+    )
+
+    usage_impl = importlib.import_module(
+        f"{__package__}.gateway_usage" if __package__ else "gateway_usage"
     )
 
 GatewayError = embeddings_impl.GatewayError
@@ -110,6 +115,7 @@ class Settings:
     api_price_out_per_mtok: float | None = None
     api_reserve_output_tokens: int = 4096
     api_openrouter: bool = False
+    no_router_session: bool = False
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_embed_model: str = "nomic-embed-text"
     run_max_calls: int = 60
@@ -322,6 +328,11 @@ class ChatResult:
     usd: float = 0.0
     response: dict[str, Any] | None = None
     estimated_usd: float | None = None
+    provider: str | None = None
+    id: str | None = None
+    cache_write_tokens: int | None = None
+    cache_discount: float | None = None
+    charged_usd: float | None = None
 
 
 class ChatBackend(Protocol):
@@ -621,9 +632,14 @@ class ApiChat:
         response = post_json(
             self.base + "/chat/completions",
             {
-                **{k: v for k, v in request.items() if k != "stream_options"},
+                **{k: v for k, v in request.items() if k not in ("stream_options", "session_id")},
                 "model": s.api_model,
                 "stream": False,
+                **(
+                    {"session_id": s.run_id}
+                    if s.chat_route == "api" and not s.no_router_session
+                    else {}
+                ),
                 # Require parameter fidelity and the provider's charged cost in usage.
                 **(
                     {"provider": {"require_parameters": True}, "usage": {"include": True}}
@@ -656,6 +672,7 @@ class ApiChat:
                 if type(charged) not in (int, float) or not math.isfinite(charged) or charged < 0:
                     raise ValueError("provider omitted its charged cost")
                 cost = float(charged)
+            facts = usage_impl.response_facts(response)
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise GatewayError(
                 502, "invalid_provider_response", "provider omitted text or usage"
@@ -665,12 +682,11 @@ class ApiChat:
             text,
             s.api_model or "",
             incoming,
-            (usage.get("prompt_tokens_details") or {}).get("cached_tokens"),
-            outgoing,
-            (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"),
+            completion_tokens=outgoing,
             usd=cost,
             response=response,
             estimated_usd=estimate,
+            **facts,
         )
 
 
@@ -729,6 +745,7 @@ class Gateway:
             else "fake"
         )
         return dict(
+            **(usage_impl.record_defaults() if chat else {}),
             ts=now(),
             run_id=s.run_id,
             endpoint=endpoint,
@@ -813,8 +830,9 @@ class Gateway:
         json_required = False
         if api:
             # The provider is called without streaming; the reply is replayed as a stream.
-            row["honoured"] = [k for k in request if k not in ("stream", "stream_options")]
-            row["enforced"] += [k for k in request if k in ("stream", "stream_options")]
+            enforced = ("stream", "stream_options", "session_id")
+            row["honoured"] = [k for k in request if k not in enforced]
+            row["enforced"] += [k for k in request if k in enforced]
             fmt = request.get("response_format", {})
             json_required = isinstance(fmt, dict) and fmt.get("type") == "json_object"
             if json_required:
@@ -970,18 +988,23 @@ class Gateway:
                     row["timeout_retry_attempts"] += int(timeout_retry)
                     timeout_retry = False
                     row["usd"] += reserve
+                    row["router_session_sent"] = (
+                        self.settings.chat_route == "api" and not self.settings.no_router_session
+                    )
                     try:
                         result = self.chat_backend.complete(
                             request, prompt, plan.instructions, plan.effort, plan.schema
                         )
                     except GatewayError as exc:
                         # The reservation stays charged: a provider may bill an abandoned call.
+                        usage_impl.record_attempt(row, error=exc.code)
                         row["provider_errors"].append(exc.code)
                         retried = len(row["provider_errors"]) <= self.settings.provider_retries
                         if exc.code in PROVIDER_RETRYABLE and retried:
                             timeout_retry = exc.code == "provider_timeout"
                             continue
                         raise
+                    usage_impl.record_attempt(row, result)
                     self.budget.settle(ticket, result.usd)
                     row["usd"] += result.usd - reserve
                     if result.estimated_usd is not None:
@@ -1210,6 +1233,7 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--api-price-out-per-mtok", type=float)
         p.add_argument("--api-reserve-output-tokens", type=int, default=4096)
         p.add_argument("--api-openrouter", action="store_true")
+        p.add_argument("--no-router-session", action="store_true")
         p.add_argument("--ollama-url", default="http://127.0.0.1:11434")
         p.add_argument("--ollama-embed-model", default="nomic-embed-text")
         p.add_argument("--max-concurrency", type=int, default=2)

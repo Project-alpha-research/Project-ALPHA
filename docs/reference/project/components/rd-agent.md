@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 5506a39a3e8eef1b
+verified: bff36c2f2d08e24d
 ---
 
 # RD-Agent
@@ -42,9 +42,11 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   ([owner decisions](../owner-decisions.md#2026-11-14-rd-agents-ai-models)).
 - RD-Agent reaches every model through ALPHA's local model gateway
   (`workers/rdagent/model_gateway.py`, [ADR-0044](../../../adr/0044-rdagent-model-gateway.md)):
-  chat through the signed-in Codex program, embeddings through local Ollama, an owner-keyed paid
-  route only if configured. The gateway holds ALPHA's call and dollar budget, refuses or records
-  every setting it cannot honour, and logs each call without its text.
+  chat through the signed-in Codex program; embeddings through local Ollama by default, or a
+  configured paid provider model with explicit pricing. The gateway holds ALPHA's call and dollar budget, refuses or records
+  every setting it cannot honour, and logs each call without its text. Cache and serving-provider
+  facts reach the receipt; API calls use a run-only router session, with a comparison-run opt-out.
+  Recording details: [worker README](../../../../workers/rdagent/README.md#model-gateway-2026-11-14).
 - RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away

@@ -9,7 +9,7 @@ import polars as pl
 
 from alpha_core import DataError
 
-IDENTITY_JUMP_MIN_GAP_DAYS = 7
+IDENTITY_JUMP_MIN_GAP_DAYS = 1
 IDENTITY_JUMP_RATIO = 5.0
 JUMP_POLICY = {"min_gap_days": IDENTITY_JUMP_MIN_GAP_DAYS, "ratio": IDENTITY_JUMP_RATIO}
 
@@ -81,7 +81,9 @@ def relabel(
 
 
 def check_jumps(panel: pl.DataFrame) -> None:
-    """Check missing calendar days inside each already separated instrument's span.
+    """Check price jumps across any gap of one or more missing calendar days inside each instrument.
+
+    Missing days are (later date - earlier date).days - 1; consecutive daily bars are not checked.
 
     Every offending gap is named in one refusal, so the owner can fix the list in one pass.
     """

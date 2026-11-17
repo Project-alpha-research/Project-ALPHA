@@ -357,6 +357,13 @@ def usage_tokens(response: dict[str, Any]) -> int | None:
     return value
 
 
+def same_model(reported: Any, requested: str) -> bool:
+    """OpenRouter reports the upstream spelling (``Qwen/Qwen3-Embedding-8B``, or no vendor)."""
+    if not isinstance(reported, str):
+        return False
+    return reported.lower().rsplit("/", 1)[-1] == requested.lower().rsplit("/", 1)[-1]
+
+
 class ProviderEmbeddings:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -373,9 +380,9 @@ class ProviderEmbeddings:
         )
         tokens = usage_tokens(response)
         try:
-            if (
-                response.get("model", self.settings.provider_embed_model)
-                != self.settings.provider_embed_model
+            if not same_model(
+                response.get("model", self.settings.provider_embed_model),
+                self.settings.provider_embed_model or "",
             ):
                 raise ValueError("provider returned a different model")
             data = response["data"]

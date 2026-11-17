@@ -505,3 +505,24 @@ def test_local_default_budget_file_keeps_main_fields(model: gw.Gateway) -> None:
     expected = {"calls": 0, "usd": 0.0, "local_embedding_calls": 1}
     assert state["runs"] == {"test": expected}
     assert list(state["months"].values()) == [expected]
+
+
+@pytest.mark.parametrize(
+    "requested,reported",
+    [("qwen/qwen3-embedding-8b", "Qwen/Qwen3-Embedding-8B"), ("vendor/code-4", "code-4")],
+)
+def test_provider_spelling_of_the_same_model_is_accepted(
+    model: gw.Gateway, monkeypatch: pytest.MonkeyPatch, requested: str, reported: str
+) -> None:
+    provider(model, monkeypatch)
+    model.settings.provider_embed_model = requested
+
+    def post(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "model": reported,
+            "data": [{"index": 0, "embedding": [1.0]}],
+            "usage": {"total_tokens": 4},
+        }
+
+    monkeypatch.setattr(gw, "post_json", post)
+    assert embed(model)["model"] == requested

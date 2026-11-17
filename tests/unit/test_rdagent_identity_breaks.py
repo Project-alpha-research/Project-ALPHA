@@ -165,7 +165,7 @@ def test_all_store_membership_and_name_collision_are_checked_at_freeze(tmp_path:
 
 def test_multiple_breaks_relabel_once_without_crossing_boundaries(tmp_path: Path) -> None:
     bars = walk_panel()
-    breaks = [
+    breaks: list[dict[str, Any]] = [
         declaration("2021-01-10"),
         {**declaration("2021-02-10"), "reason": "redenominated", "ratio": 1.0},
     ]

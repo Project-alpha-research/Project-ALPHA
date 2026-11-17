@@ -51,7 +51,7 @@ def judge_namespace() -> dict[str, Any]:
         if hasattr(data, name):
             ns[name] = getattr(data, name)
     tree = ast.parse((WORKER / "alpha_factor_judge.py").read_text())
-    nodes = [
+    nodes: list[ast.stmt] = [
         node
         for node in tree.body
         if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Assign, ast.AnnAssign))
@@ -266,8 +266,8 @@ def test_new_loop_installs_family_guard_before_any_coder_call(
     universe_run(tmp_path, monkeypatch)
     ns = judge_namespace()
     boundary = ModuleType("alpha_factor_judge")
-    boundary.FamilyGuard = ns["FamilyGuard"]
-    boundary.current_universe = ns["current_universe"]
+    monkeypatch.setattr(boundary, "FamilyGuard", ns["FamilyGuard"], raising=False)
+    monkeypatch.setattr(boundary, "current_universe", ns["current_universe"], raising=False)
     monkeypatch.setitem(sys.modules, "alpha_factor_judge", boundary)
     original = SimpleNamespace(develop=Mock())
     factory = Mock(return_value=SimpleNamespace(coder=original))

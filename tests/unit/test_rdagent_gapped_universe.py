@@ -182,7 +182,7 @@ def test_replay_future_poison_includes_fills_positions_and_pnl() -> None:
     assert resumed and resumed[0]["date"] == date(2021, 1, 10)
 
 
-def test_worker_frame_has_null_gaps_and_preserves_full_instrument_grid(
+def test_worker_frame_has_null_gaps_and_pre_listing_rows_but_none_after_last_bar(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -219,11 +219,13 @@ def test_worker_frame_has_null_gaps_and_preserves_full_instrument_grid(
     bars.write_parquet(source)
     module.prepare(source, tmp_path / "data")
     frame = pd.read_hdf(tmp_path / "data/full/daily_pv.h5", key="data").xs("C0", level="instrument")
-    assert len(frame) == 10
-    for day in ("2020-12-01", "2020-12-04", "2020-12-10"):
+    # Pre-listing (2020-12-01) and inside-span (2020-12-04) days are null rows; C0's last bar is
+    # 2020-12-09, so no row follows it even though other coins trade on 2020-12-10.
+    assert len(frame) == 9
+    for day in ("2020-12-01", "2020-12-04"):
         assert frame.loc[day].isna().all()
     assert frame.index.min() == pd.Timestamp("2020-12-01")
-    assert frame.index.max() == pd.Timestamp("2020-12-10")
+    assert frame.index.max() == pd.Timestamp("2020-12-09")
 
 
 @pytest.mark.parametrize("clock", ["daily", "weekly", "monthly"])

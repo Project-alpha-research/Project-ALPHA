@@ -157,6 +157,46 @@ def test_cut_copies_keep_not_yet_listed_instruments(
     assert cut.xs("B", level="instrument").isna().all().all()
 
 
+def test_padding_adds_only_pre_listing_rows_never_rows_after_the_last_bar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The span rule of the gapped universe still holds after its last bar: no rows at all."""
+    saved: dict[str, pd.DataFrame] = {}
+
+    def write(frame: pd.DataFrame, path: Path, *, key: str, mode: str) -> None:
+        saved[str(path.relative_to(tmp_path / "out"))] = frame.copy()
+        path.write_bytes(b"hdf boundary")
+
+    monkeypatch.setattr(pd.DataFrame, "to_hdf", write)
+    # A trades 2020-12-29..2021-01-03 with a gap on 2021-01-01 and then stops trading;
+    # B lists on 2021-01-02 and trades to the panel end, 2021-04-05.
+    a_days = ["2020-12-29", "2020-12-30", "2020-12-31", "2021-01-02", "2021-01-03"]
+    b_days = [str(d.date()) for d in pd.date_range("2021-01-02", "2021-04-05")]
+    frame = pd.DataFrame(
+        {
+            "date": pd.to_datetime(a_days + b_days),
+            "instrument": ["A"] * len(a_days) + ["B"] * len(b_days),
+        }
+    )
+    for col in ("open", "high", "low", "close", "volume"):
+        frame[col] = 1.0
+    frame.to_parquet(tmp_path / "panel.parquet")
+    data.prepare(tmp_path / "panel.parquet", tmp_path / "out")
+    full = saved["full/daily_pv.h5"]
+    a = full.xs("A", level="instrument")
+    b = full.xs("B", level="instrument")
+    assert a.index.max() == pd.Timestamp("2021-01-03")
+    assert a.loc["2021-01-01"].isna().all()
+    assert b.index.min() == pd.Timestamp("2020-12-29")
+    assert b.loc[:"2021-01-01"].isna().all().all()
+    assert b.loc["2021-01-02":].notna().all().all()
+    for name, cut in saved.items():
+        if name.startswith("cuts/"):
+            assert set(cut.index.get_level_values("instrument")) == {"A", "B"}, name
+            prefix = full.loc[full.index.get_level_values(0) <= name.split("/")[1]]
+            pd.testing.assert_frame_equal(cut, prefix)
+
+
 @pytest.mark.parametrize("unstable", [True, False])
 def test_same_input_regression_instability_is_distinct_from_real_peek(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unstable: bool

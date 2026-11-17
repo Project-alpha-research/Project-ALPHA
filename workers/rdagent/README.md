@@ -847,8 +847,10 @@ No wide-universe instrument list is supplied by the code.
 
 A name can rank only after `REENTRY_BARS = 20` consecutive daily bars, with a finite factor
 value, and passing any configured liquidity rule. A gap resets the streak. Days below the
-existing five-name minimum are skipped and counted. Factor input retains a full date/instrument grid, including null rows before listing and after
-trading ends; no forward fill. Every cut keeps the same instrument columns as the full panel.
+existing five-name minimum are skipped and counted. Factor input gives every instrument null rows
+from the first data day (no later than the first cut) until it lists, and null rows for missing days
+inside its span; no row follows its last bar and nothing is forward-filled. Every cut therefore keeps
+the full panel's instrument columns.
 
 Held names with missing bars stay at their last close and cannot finance other purchases.
 They exit at the first resuming close, with the usual sell costs, or are written off after

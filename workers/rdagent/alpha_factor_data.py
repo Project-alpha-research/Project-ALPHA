@@ -45,8 +45,8 @@ Read with `pd.read_hdf('daily_pv.h5', key='data')`.
 | $factor | 1.0, no adjustments |
 
 Missing days inside each instrument span are explicit null rows; ALPHA never forward-fills.
-All instruments retain null rows outside their listed spans too, so every cut keeps the
-same instrument columns. All fields are float64.
+Every instrument also has null rows from the first data day until it lists, so every cut keeps
+the same instrument columns; no rows follow an instrument's last bar. All fields are float64.
 Factors are decided after the full day's close and judged
 on the return from the next open to the following open, with costs.
 """
@@ -71,18 +71,21 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
         .astype("float64")
     )
     frame["$factor"] = 1.0
-    index = pd.MultiIndex.from_product(
-        [
-            pd.date_range(
-                min(frame.index.get_level_values("datetime").min(), pd.Timestamp(CUTS[0])),
-                frame.index.get_level_values("datetime").max(),
-                freq="D",
-            ),
-            frame.index.get_level_values("instrument").unique(),
-        ],
-        names=["datetime", "instrument"],
-    )
-    frame = frame.reindex(index).sort_index()
+    # Every instrument starts at one common first day, no later than the first cut, so each cut
+    # keeps the full instrument column set (null rows before listing). Each instrument still ends
+    # at its own last bar: no row ever follows the last bar, as in the gapped-universe span rule.
+    start = min(frame.index.get_level_values("datetime").min(), pd.Timestamp(CUTS[0]))
+    pieces = []
+    for instrument, group in frame.groupby(level="instrument", sort=True):
+        index = pd.MultiIndex.from_product(
+            [
+                pd.date_range(start, group.index.get_level_values("datetime").max(), freq="D"),
+                [instrument],
+            ],
+            names=["datetime", "instrument"],
+        )
+        pieces.append(group.reindex(index))
+    frame = pd.concat(pieces).sort_index()
     out.mkdir(parents=True, exist_ok=False)
     parts = {
         "full": frame,
@@ -91,8 +94,6 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
             & (frame.index.get_level_values(0) <= "2022-12-31")
         ],
     }
-    # The full grid starts no later than the first check, including all-null pre-listing rows.
-    # Thus even a cut before every listing retains the full instrument column set.
     parts.update({f"cuts/{cut}": frame.loc[frame.index.get_level_values(0) <= cut] for cut in CUTS})
     for name, data in parts.items():
         folder = out / name

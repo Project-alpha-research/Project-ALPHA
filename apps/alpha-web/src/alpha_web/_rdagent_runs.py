@@ -86,6 +86,14 @@ STATUS_SENTENCES = {
         "The model provider failed after the allowed attempts, so this round stopped; no trial"
         " was invented and the next round ran."
     ),
+    "critic_unavailable_provider_timeout": (
+        "The code critic timed out; execution and value checks supplied feedback, "
+        "and later code critics in this round were skipped. ALPHA's judging rules stayed the same."
+    ),
+    "critic_unavailable_provider_error": (
+        "The code critic's provider failed; execution and value checks supplied feedback, "
+        "and later code critics in this round were skipped. ALPHA's judging rules stayed the same."
+    ),
 }
 REFUSED_STATUSES = frozenset({"refused_closed_family", "no_admissible_idea"})
 SCREENED = frozenset({"SPREAD_FAIL", "REPLAY_FAIL", "PASS"})
@@ -93,6 +101,7 @@ SPREAD_CHECKED = frozenset({"REPLAY_FAIL", "PASS"})
 FUNNEL = (
     "proposed",
     "refused_closed_family",
+    "stopped_by_provider",
     "code_ran",
     "passed_rank_screen",
     "passed_spread_check",
@@ -408,10 +417,22 @@ def _funnel(
         factor_rows = None  # nothing at all was recorded for this run
     derived: dict[str, RecordedFact] = {}
     refused = None
+    stopped = 0
     if rounds is not None:
         refused = sum(1 for row in rounds if row.get("status") in REFUSED_STATUSES)
         derived["refused_closed_family"] = counted(
             refused, "counted from the proposals refused in rounds.jsonl"
+        )
+        stopped = sum(
+            len(row.get("factor_names", []))
+            for row in rounds
+            if str(row.get("status", "")).startswith(
+                ("coding_failed_provider_", "proposal_failed_provider_")
+            )
+            and not row.get("trial_created")
+        )
+        derived["stopped_by_provider"] = counted(
+            stopped, "factors stopped by the model provider, counted from rounds.jsonl"
         )
     if factor_rows is not None:
         own = [row for row in factor_rows if row.get("status") != "IMPORTED"]
@@ -441,9 +462,9 @@ def _funnel(
         )
         if refused is not None:
             derived["proposed"] = counted(
-                len(own) + refused,
-                "recorded factor trials plus proposals refused before coding;"
-                " one proposal can hold several factors",
+                len(own) + refused + stopped,
+                "recorded factor trials, proposals refused before coding (one proposal can"
+                " hold several factors) and factors stopped by the model provider",
             )
     for key, value in derived.items():
         if result[key].value is None:
@@ -746,6 +767,10 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
                 "abandoned_after_error",
                 "coding_failed_provider_timeout",
                 "coding_failed_provider_error",
+                "proposal_failed_provider_timeout",
+                "proposal_failed_provider_error",
+                "critic_unavailable_provider_timeout",
+                "critic_unavailable_provider_error",
             }
         ],
         refusal_reason=refusal_reason,

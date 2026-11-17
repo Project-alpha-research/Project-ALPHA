@@ -38,10 +38,13 @@ VIEWER_KEYS = ["1day.excess_return_with_cost.information_ratio"]
 # The experiment step writes each factor's "description" and sees the scenario's simulator text,
 # not the hypothesis context, so both carry this line; idea_families.declaration reads it.
 DECLARATION_TEMPLATE = (
-    'End every factor "description" with this line, filled in: declared_direction: +1; '
-    "primary_clock: weekly; direction_reason: <one sentence of economic reasoning>. Write +1 "
+    'End every factor "description" with this line, filled in: declared_direction: <+1 or -1>; '
+    "primary_clock: <weekly or monthly>; direction_reason: <one sentence of economic reasoning>. "
+    "Write +1 "
     "when high factor values are bought or -1 when low values are bought, and weekly (7-day "
-    "hold) or monthly (28-day hold); daily cannot be chosen."
+    "hold) or monthly (28-day hold); daily cannot be chosen. "
+    "The sign and clock must follow from the idea; "
+    "for example, a slow effect belongs on the monthly clock."
 )
 SWING_BRIEF = (
     "Single mechanisms are as welcome as learned mixes. A mix must list each input feature by name "

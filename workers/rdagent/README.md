@@ -1034,7 +1034,8 @@ small nonzero costs and turnover remain visible. Receipt chat usage reports a wh
 
 `loop_guard.ProviderGuard` surrounds proposal, coding, running and feedback. Proposal failures
 record `proposal_failed_provider_timeout` or `proposal_failed_provider_error` and skip the round
-without inventing a trial; budget refusals and programming errors retain their existing behavior. A fresh matching gateway chat
+without inventing a trial. Feedback tolerates a missing proposal; record finishes without adding
+an empty experiment to the research trace. Budget refusals and programming errors retain their existing behavior. A fresh matching gateway chat
 receipt plus upstream's exhausted-chat RuntimeError records `coding_failed_provider_timeout` or
 `coding_failed_provider_error`, step, attempts and waited seconds. Coding/running use upstream's
 FactorEmptyError skip path; feedback returns a negative result. Neither path invents a trial;
@@ -1043,7 +1044,10 @@ completed evaluator trials survive a feedback failure. Budget refusals still end
 fails upstream's own schema check, and one attempt would crash a run on such a reply (the recorded
 runs retried nine). A provider timeout is therefore tried twice by upstream, each try with the
 gateway's one retry; the failed round records every attempt and second waited. Receipts add `rounds_failed_provider`
-and `provider_wait_seconds`; launch.jsonl gets an end event and the console names the exit reason.
+and `provider_failed_wait_seconds` (sum of failed waits in round rows).
+`provider_call_seconds_with_retries` counts the full duration of calls that encountered provider errors,
+including calls that later succeeded. Round rows keep `provider_wait_seconds`; old receipts remain readable.
+launch.jsonl gets an end event and the console names the exit reason.
 
 At start the launcher writes `launch-command.json` in the run folder: its exact arguments, the
 values of four allow-listed path variables (`ALPHA_RDAGENT_SOURCE`, `ALPHA_FACTOR_PYTHON`,
@@ -1062,3 +1066,28 @@ labels the derivation, without rewriting rows. New figures mirror `lead_clock` w
 old daily mirrors remain valid and readers prefer the per-clock block, or explicitly label daily.
 All factor statuses have a plain reason. Write-offs say positions in coins; common name stems expand
 for the owner. Judge-change warnings compare against the previous run's recorded judge version.
+
+### Code critic and bounded proposal history (sixth loop fix-up)
+
+`alpha_factor_coder.tolerant_critic` wraps the pinned `FactorEvaluatorForCoder.code_evaluator.evaluate`
+(`FactorCodeEvaluator.evaluate`, prompt `evaluator_code_feedback_v1`). An attested exhausted provider
+timeout/error replaces only that opinion with “code critic unavailable (provider timeout); judged on
+execution only” (or provider error). The upstream execution result and value checks stay intact; the
+final model opinion is bypassed for that fallback. A failed value check remains failed, and code that
+produced no values is never accepted; accepted code is re-executed and judged by ALPHA as usual. Later critics
+in that coding round are skipped with the same note; the next round starts with a fresh critic.
+`rounds.jsonl` records `critic_unavailable`, `critic_skipped`, their factor-name lists and failed wait
+(no `trial_created`: the row is written before the runner). Real-runtime tests in
+`test_rdagent_loop_fixups_6.py` drive upstream's `FactorRDLoop` and CoSTEER evaluators with stub model calls.
+These are advisory coding outcomes: ALPHA's screen, spread, replay, deflation and trial rules do not change.
+Whole coding failures still use `coding_failed_provider_timeout` / `coding_failed_provider_error`.
+
+Restored proposal context keeps `RESTORED_ROUNDS_FULL = 4` recent rounds with a matching panel hash
+in full. Older rounds and other panels become one line of factor names, families and statuses; other
+panels say “different coin panel”. Judged rounds take the hash from their recorded evaluation inputs;
+a round with no evaluation and no hash says “coin panel not recorded” and is summarised.
+Both hypothesis and experiment prompts use this view; trace records and the ledger remain intact.
+The receipt's `history_rounds_full` and `history_rounds_summarised` come from `history-context.json`.
+Closed/open families, declaration instructions and refusal messages remain present. New experiment
+records retain their panel hash for future restoration. Declaration examples now use neutral sign
+and clock placeholders; the proposer must derive both from the idea and fill every field.

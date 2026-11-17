@@ -33,6 +33,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 from filelock import FileLock
@@ -41,8 +42,10 @@ from rdagent.components.coder.factor_coder import FactorCoSTEER
 from rdagent.core.serialization import dump, load
 
 if TYPE_CHECKING:
+    from .loop_guard import CriticEvaluator, ProviderGuard
     from .research_memory import EmbeddingMemory, gateway_embedding
 else:
+    from loop_guard import CriticEvaluator, ProviderGuard
     from research_memory import EmbeddingMemory, gateway_embedding
 
 
@@ -246,8 +249,38 @@ class AlphaFactorCoSTEER(FactorCoSTEER):
                 os.environ.get("ALPHA_EMBEDDING_MODEL", "nomic-embed-text"),
                 gateway_embedding,
             )
-        with compatible_embeddings(self.rag, self._alpha_embedding_memory, Path(run)):
+        with (
+            compatible_embeddings(self.rag, self._alpha_embedding_memory, Path(run)),
+            tolerant_critic(self.evaluator, Path(run)),
+        ):
             return super().develop(exp)
+
+
+@contextmanager
+def tolerant_critic(evaluator: Any, run: Path) -> Iterator[None]:
+    """Wrap the pinned CoSTEER single evaluator for this round, leaving its code path intact."""
+    calls = os.environ.get("ALPHA_GATEWAY_CALLS")
+    if not calls:
+        yield
+        return
+    original = evaluator.single_evaluator
+    guard = ProviderGuard(
+        None,
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        run,
+        Path(calls),
+        os.environ["ALPHA_GATEWAY_RUN_ID"],
+        RuntimeError,
+        None,
+    )
+    wrapped = CriticEvaluator(original, guard)
+    evaluator.single_evaluator = wrapped
+    try:
+        yield
+    finally:
+        evaluator.single_evaluator = original
+        wrapped.record()
 
 
 @contextmanager

@@ -173,7 +173,7 @@ def test_legacy_prepare_bytes(tmp_path: Path) -> None:
         check=True,
     ).stdout
     baseline: dict[str, Any] = {}
-    exec(compile(source, "baseline_factor_data.py", "exec"), baseline)
+    exec(compile(source, "<baseline-factor-data>", "exec"), baseline)
     panel = tmp_path / "panel.parquet"
     raw_panel().write_parquet(panel)
     old = baseline["prepare"](panel, tmp_path / "old")
@@ -239,7 +239,7 @@ def test_freeze_legacy_bytes_and_optional_receipt(
         check=True,
     ).stdout
     baseline: dict[str, Any] = {"__name__": "alpha_cli.baseline_judge"}
-    exec(compile(source, "baseline_judge.py", "exec"), baseline)
+    exec(compile(source, "<baseline-judge>", "exec"), baseline)
     baseline["configured_crypto_bulk_store"] = lambda _: Store()
     old = baseline["freeze"](tmp_path, tmp_path / "old")
     new = judge.freeze(tmp_path, tmp_path / "new")

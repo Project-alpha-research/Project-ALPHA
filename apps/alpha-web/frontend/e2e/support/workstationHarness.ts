@@ -2721,7 +2721,7 @@ test('both profiles filter market tasks without sending a profile', async ({ pag
   expect(requests.filter(entry => /profile/i.test(entry))).toEqual([])
 })
 
-test('the status bar tells the truth about the SSD and paper routing', async ({ page }) => {
+test('the status bar tells the truth about storage and paper routing', async ({ page }) => {
   await preparePage(page, { storageUnmounted: true })
   const bar = page.getByRole('contentinfo', { name: 'Status bar' })
   const ssd = bar.locator('.status-segment--ssd')
@@ -2730,7 +2730,7 @@ test('the status bar tells the truth about the SSD and paper routing', async ({ 
   await expect(bar.locator('.status-segment--paper')).toHaveText('Paper only · no live routing')
   await expect(bar.locator('.status-segment--help')).toHaveText('For Help, press F1')
   await expect(bar.locator('.status-segment--profile')).toHaveText('Profile: Crypto')
-  await expect(bar.locator('.status-segment--clock')).toHaveText(/\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC/)
+  await expect(bar.locator('.status-segment--clock')).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} UTC/)
   await expect(bar.locator('.status-segment--ohlc')).toHaveText('O: — H: — L: — C: — V: —')
   await expect(bar.locator('.status-segment--bars')).toHaveText(/\d+ \/ \d+ bars/)
 })
@@ -4179,7 +4179,7 @@ test('Scanner saves a scan, runs it through the CLI, and Alerts relays checked s
   await expect.poll(() => posts.filter((entry) => entry.path === '/api/scans/check').length).toBe(1)
   await page.getByRole('button', { name: 'Check all scans' }).click()
   await expect.poll(() => posts.filter((entry) => entry.path === '/api/scans/check').length).toBe(2)
-  await expect(page.locator('.workflow-panel')).toContainText('last check 2026-09-04 10:05 UTC')
+  await expect(page.locator('.workflow-panel')).toContainText('last check 4 Sep 2026, 10:05 UTC')
 })
 
 }

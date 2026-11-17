@@ -42,14 +42,15 @@ unfinished.
 
 The honest scoreboard is [STATUS.md](STATUS.md), generated from
 [`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml). At the time of writing it lists
-57 capabilities: **22 Working, 29 Partial, 5 Shelved, 1 Not started.**
+58 capabilities: **23 Working, 29 Partial, 5 Shelved, 1 Not started.**
 
 - **Working** means the whole workflow was run from start to finish through the installed
   programs, on made-up (synthetic) data. Real market data runs are still to be confirmed.
 - **Partial** means pieces are tested, but not yet end to end, or something is still missing.
 - **Working today (synthetic data):** the Workstation, backtests, the statistical checks
   (walk-forward, randomised nulls, deflated Sharpe, Monte Carlo path risk), the trial ledger,
-  family-wide deflated Sharpe, the opposite-trade control, walk-forward efficiency, the answer
+  family-wide deflated Sharpe, the opposite-trade control, walk-forward efficiency, the investigation tools
+  (market exposure, calm versus turbulent markets, change points; `alpha tool --help`), the answer
   checker, crypto data download and freezing, the Qlib machine-learning lab, and the price
   look-alike and "what is unusual now" tools.
 - **Partial:** the one-command rule test and its automatic diagnostics (the final end-to-end

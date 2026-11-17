@@ -48,7 +48,10 @@ export function ContextBar({ archive = null }: { archive?: ArchiveChartDataset |
       setProjects(projectChoices(strategy.status === 'fulfilled' ? strategy.value : [], research.status === 'fulfilled' ? research.value : [], profile))
       const failures = [strategy.status === 'rejected' ? `Projects: ${String(strategy.reason)}` : null, research.status === 'rejected' ? `Research cases: ${String(research.reason)}` : null].filter(Boolean)
       setProjectError(failures.length ? failures.join('; ') : null)
-      setProjectLoading(false)
+    }).catch((error: unknown) => {
+      if (live) setProjectError(String(error))
+    }).finally(() => {
+      if (live) setProjectLoading(false)
     })
     return () => { live = false }
   }, [profile, revision, retry])

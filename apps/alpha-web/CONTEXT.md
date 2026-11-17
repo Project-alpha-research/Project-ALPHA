@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 62a6b148973970d7
+verified: 90abdfbdc530e75e
 ---
 
 # alpha-web workspace
@@ -46,7 +46,7 @@ grants authority.
   Never edit it by hand.
 - Backend tests: `tests/unit/test_web_*.py`, `tests/integration/test_web_api_*.py`,
   `tests/integration/test_openapi_safe_routes.py`. Frontend unit tests sit next to the code as
-  `frontend/src/**/*.test.ts` (vitest); browser tests in `frontend/e2e/` (Playwright).
+  `frontend/src/**/*.test.{ts,tsx}` (vitest, Node, no jsdom); browser tests in `frontend/e2e/` (Playwright).
 - After a backend route change, from the repository root:
   1. `uv run python scripts/generate_web_openapi.py` (rewrites `frontend/openapi.json`);
   2. `uv run python scripts/check_openapi_operations.py --write` (operation classification and

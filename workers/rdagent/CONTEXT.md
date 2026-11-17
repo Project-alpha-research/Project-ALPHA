@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: bba9a761c17d3d70
+verified: 17c3bdae12aed025
 ---
 
 # RD-Agent worker workspace
@@ -40,7 +40,8 @@ no market, inference or evidence authority.
   stock runtime; `--profile ui` records the viewer runtime).
 - Gateway embedding backends and accounting live in `gateway_embeddings.py`: local by default,
   or an explicitly priced provider model. Both share the 2,000-attempt guard; paid embeddings
-  spend money but no chat calls. Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
+  spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts.
+  Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
   See the worker invariants for accounting and compatibility.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
   use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.

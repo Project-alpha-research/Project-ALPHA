@@ -123,6 +123,19 @@ def chat_usage(calls: list[dict[str, Any]]) -> dict[str, Any]:
             f"{unknown} call(s) have unknown providers"
         )
     )
+    for field in ("cache_discount", "charged_usd"):
+        values = [a[field] for a in attempts if a.get(field) is not None]
+        totals[field] = (
+            sum(values)
+            if values
+            else ("not reported by the provider" if field == "cache_discount" else None)
+        )
+    totals["cost_estimate_basis"] = "upper-bound estimate at configured prices"
+    totals["cost_estimate_usd"] = sum(
+        float(c.get("estimated_usd") or 0)
+        for c in calls
+        if c.get("endpoint") == "/v1/chat/completions"
+    )
     totals.update(
         cache_hit_rate=rate,
         provider_calls=dict(sorted(providers.items())),

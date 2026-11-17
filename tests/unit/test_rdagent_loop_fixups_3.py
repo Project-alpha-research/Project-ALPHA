@@ -281,7 +281,7 @@ def test_closed_composite_is_refused_before_coding_without_trial(
         factor_name="ridge_composite",
         description="volatility and momentum",
         factor_formulation="regression",
-        variables={},
+        variables={"volatility": "input", "momentum": "input"},
     )
     coder = SimpleNamespace(develop=Mock())
     exp = SimpleNamespace(sub_tasks=[task], hypothesis=SimpleNamespace(hypothesis="idea"))

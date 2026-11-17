@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .model_gateway import Budget, Gateway, Settings
 
 EMBEDDING_CALLS_PER_RUN = 2000
+EMBED_BATCH_INPUTS = 32
 
 
 def digest(text: str) -> str:
@@ -75,6 +76,8 @@ class EmbeddingResult:
     vectors: list[list[float]]
     model: str
     tokens: int | None = None
+    response_model: str | None = None
+    model_check: str | None = None
 
 
 class EmbeddingBackend(Protocol):
@@ -182,8 +185,28 @@ def chunked(self: Gateway, inputs: list[str], row: dict[str, Any]) -> tuple[list
     return pieces, owners
 
 
-def embeddings(self: Gateway, request: dict[str, Any]) -> dict[str, Any]:
+def embeddings(
+    self: Gateway, request: dict[str, Any], *, batch: bool = False, single_retry: bool = False
+) -> dict[str, Any]:
+    inputs = request.get("input")
+    if (
+        self.settings.embedding_route == "provider"
+        and not batch
+        and isinstance(inputs, list)
+        and len(inputs) > 1
+        and all(isinstance(text, str) for text in inputs)
+    ):
+        return provider_batches(self, request)
     row = self.record("/v1/embeddings", request)
+    provider = self.settings.embedding_route == "provider"
+    if provider:  # the local route's call rows keep exactly their earlier fields
+        row.update(
+            response_model=None,
+            reserved_usd=0.0,
+            input_count=0,
+            single_retry=single_retry,
+            model_check=None,
+        )
     start = time.monotonic()
     prompt = reply = ""
     try:
@@ -203,6 +226,8 @@ def embeddings(self: Gateway, request: dict[str, Any]) -> dict[str, Any]:
             raise unsupported(
                 "input", "must be a string or list of strings; token arrays are unsupported"
             )
+        if provider:
+            row["input_count"] = len(inputs)
         prompt = json.dumps(inputs, ensure_ascii=False)
         row.update(prompt_sha256=digest(prompt), prompt_chars=sum(map(len, inputs)))
         with self.slot(row):
@@ -265,6 +290,54 @@ def embeddings(self: Gateway, request: dict[str, Any]) -> dict[str, Any]:
     finally:
         row["latency_ms"] = (time.monotonic() - start) * 1000
         self.log(row, prompt, reply)
+
+
+def provider_batches(self: Gateway, request: dict[str, Any]) -> dict[str, Any]:
+    """One log/reservation per provider request; refused inputs stay explicit in the response."""
+    inputs = request["input"]
+    data: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    tokens: int | None = 0
+
+    def collect(reply: dict[str, Any], offset: int) -> None:
+        nonlocal tokens
+        for item in reply["data"]:
+            data.append({**item, "index": offset + item["index"]})
+        used = reply["usage"]["total_tokens"]
+        tokens = tokens + used if tokens is not None and used is not None else None
+
+    for offset in range(0, len(inputs), EMBED_BATCH_INPUTS):
+        chunk = inputs[offset : offset + EMBED_BATCH_INPUTS]
+        try:
+            collect(embeddings(self, {**request, "input": chunk}, batch=True), offset)
+        except GatewayError as error:
+            if error.code != "embedding_input_refused":
+                raise
+            if len(chunk) == 1:
+                errors.append({"index": offset, "code": error.code, "message": str(error)})
+                continue
+            for index, text in enumerate(chunk, offset):
+                try:
+                    collect(
+                        embeddings(
+                            self, {**request, "input": [text]}, batch=True, single_retry=True
+                        ),
+                        index,
+                    )
+                except GatewayError as single_error:
+                    if single_error.code != "embedding_input_refused":
+                        raise
+                    errors.append(
+                        {"index": index, "code": single_error.code, "message": str(single_error)}
+                    )
+    return {
+        "object": "list",
+        "model": self.settings.provider_embed_model,
+        "data": data,
+        "usage": {"prompt_tokens": tokens, "total_tokens": tokens},
+        **({"input_errors": errors} if errors else {}),
+        **({"chunked_inputs": 0} if request.get("report_embedding_stats") else {}),
+    }
 
 
 def validate_settings(settings: Settings) -> None:
@@ -380,9 +453,8 @@ class ProviderEmbeddings:
         )
         tokens = usage_tokens(response)
         try:
-            if not same_model(
-                response.get("model", self.settings.provider_embed_model),
-                self.settings.provider_embed_model or "",
+            if "model" in response and not same_model(
+                response["model"], self.settings.provider_embed_model or ""
             ):
                 raise ValueError("provider returned a different model")
             data = response["data"]
@@ -409,9 +481,22 @@ class ProviderEmbeddings:
                 502,
                 "invalid_provider_response",
                 "provider returned invalid embeddings",
-                payload={"usage": response.get("usage")},
+                payload={
+                    "usage": response.get("usage"),
+                    "response_model": response.get("model"),
+                    "model_check": "model_mismatch"
+                    if "model" in response
+                    and not same_model(response["model"], self.settings.provider_embed_model or "")
+                    else "invalid_response",
+                },
             ) from exc
-        return EmbeddingResult(vectors, self.settings.provider_embed_model or "", tokens)
+        return EmbeddingResult(
+            vectors,
+            self.settings.provider_embed_model or "",
+            tokens,
+            response_model=response.get("model"),
+            model_check="matched" if "model" in response else "model_not_reported",
+        )
 
 
 def embedding_attempt(self: Gateway, inputs: list[str], row: dict[str, Any]) -> EmbeddingResult:
@@ -435,14 +520,20 @@ def embedding_attempt(self: Gateway, inputs: list[str], row: dict[str, Any]) -> 
     assert price is not None
     reserved = sum(map(len, inputs)) / 3 * price / 1e6
     ticket = reserve_embedding(self.budget, reserved, provider=True)
+    row["reserved_usd"] = reserved
     row["attempts"] += 1
     actual, tokens = reserved, None
     try:
         result = backend.embed(inputs)
+        row.update(response_model=result.response_model, model_check=result.model_check)
         tokens = result.tokens
         actual = reserved if tokens is None else tokens * price / 1e6
         return result
     except GatewayError as exc:
+        row.update(
+            response_model=(exc.payload or {}).get("response_model"),
+            model_check=(exc.payload or {}).get("model_check"),
+        )
         tokens = usage_tokens(exc.payload or {})
         # Timeouts/invalid replies may have been billed; explicit errors with no usage were not.
         explicit_error = exc.payload is not None and "error" in exc.payload

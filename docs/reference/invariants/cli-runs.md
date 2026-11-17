@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 3fa52e35f0675eae
+verified: f4846bb9cf91309a
 ---
 
 # Command line runs invariants
@@ -109,8 +109,9 @@ and how it names and publishes immutable runs. Project-wide rules:
 ## General rule trials
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing,
   and publishes ordinary `validate` artifacts under the home data directory, even for another store's bars.
-- `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash,
-  name, idea, rule, store and integrity labels; `source` identifies the resolved provider.
+- `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash, name, idea, rule, store, integrity
+  labels and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar
+  dates are weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts
   without rewriting them and appends a `repeat` trial; the manifest retains its original test association.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1`: lock-file serialization, strict JSON and fsync;
@@ -126,21 +127,20 @@ and how it names and publishes immutable runs. Project-wide rules:
 
 ## Stored facts and diagnostics
 - Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
-- `diagnostics.json` is written before the immutable manifest. It stores benchmark comparisons,
-  drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict (see [counting](cli-trial-ledger.md)), flags and
-  a macro window: stored FRED at the worst drawdown start/trough, as known at the trough (`spine/macro.py`).
-  Flags are observations, never a verdict; unavailable numbers are null with an explicit reason.
-- `inverted_signal` shorts where the rule was long (same engine, bars, costs, next-open fills), re-sized to
-  100% of equity net of short dividends each bar; CASH shorts are hypothetical, no borrow or funding cost.
-  No ledger, variant or family count. Labels, SE, limits: [control card](../../../research/tools/inverted-signal-control.md).
-- `walk_forward_efficiency`: per fold, OOS CAGR over the full-sample CAGR on its recorded train window (warm-up
-  trimmed); median of defined folds. Rule of thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
-- Its audit has independent PASS / FLAG / NOT-CHECKED entries, with no overall grade. Trace checks
-  use the walk-forward artifacts; the final manifest verifies the complete sidecar set on publication.
-- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figure names and
-  [`alpha tool`](cli-investigation-tools.md) outputs; for a test id, assets not completed or unreadable are under `failed` with a reason.
-  `cite` quotes a stored field. `alpha diagnose` reads the saved pass and never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`;
-  facts include run id, basis, source file/field, labels and a reason exactly when their value is null.
+- Diagnostics and the manifest are staged together and the completed run directory is renamed into place. `diagnostics.json` stores benchmark comparisons,
+  drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict ([counting](cli-trial-ledger.md)), flags and a macro window
+  (stored FRED at the worst drawdown start/trough, as known at the trough; `spine/macro.py`). Flags are observations, never a verdict; unavailable numbers
+  are null with a plain reason and separate detail. `share_explained` is a ratio (benchmark fall / strategy fall); a top-three profit above 1 is a multiple.
+- `inverted_signal` shorts where the rule was long (same engine, bars, costs, next-open fills), re-sized to 100% of equity net of short
+  dividends each bar; CASH shorts are hypothetical, no borrow or funding cost; no ledger, variant or family count
+  ([card](../../../research/tools/inverted-signal-control.md)).
+- `walk_forward_efficiency`: per fold, OOS CAGR over the full-sample CAGR on its recorded train window (warm-up trimmed); median of defined folds. Rule of
+  thumb, not a statistical test: [WFE card](../../../research/tools/walk-forward.md).
+- Audit entries are independent PASS / FLAG / NOT-CHECKED, no overall grade; traces use walk-forward artifacts; fill ranges allow recorded slippage
+  (NOT-CHECKED without cost settings); the manifest verifies every sidecar. `data_period` / `traded_period` facts: loaded-bar and stored-equity endpoints.
+- `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figures and [`alpha tool`](cli-investigation-tools.md)
+  outputs (for a test id, failed or unreadable assets under `failed` with a reason); `cite` quotes a stored field; `alpha diagnose` never re-runs a strategy.
+  Metric vocabulary: `spine/facts.py:METRICS`; facts carry run id, basis, source file/field, labels and a reason exactly when the value is null.
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known` and an
   imperative `next` command; JSON under `--json`), including when every asset of a test fails.
   Ledger schema remains `AlphaTrialV1`; `variants_evaluated` is optional on older rows and counts

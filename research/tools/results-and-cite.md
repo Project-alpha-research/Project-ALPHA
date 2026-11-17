@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 54485b2b7968770a
+verified: f82d1f7096712f47
 ---
 
 # Results and cite
@@ -26,10 +26,10 @@ uv run alpha results check <file>
   `run_id`, `basis`, `source`, `labels`, `reason`.
 - `compare` (two to eight runs, first is the base) gives each run's `value`, `diff`, `ratio`. `check` reads a draft tagged `0.75 [<run_id>:<metric>]`;
   fix the draft on `ROUNDED_ACROSS_THRESHOLD`, `FLAG_CONTRADICTED`, `UNIT_MISMATCH`, `PRECISION_TOO_LOW` or `METRIC_NOT_STORED`.
-- Metrics: `verdict`, `oos_sharpe`, `dsr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`, `full_sample_max_drawdown`,
-  `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`, `exposure`, `top_1_profit_share`,
-  `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`, `variants_evaluated`,
-  `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`.
+- Metrics: `data_period`, `traded_period`, `verdict`, `oos_sharpe`, `dsr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
+  `full_sample_max_drawdown`, `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`,
+  `exposure`, `top_1_profit_share`, `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`,
+  `variants_evaluated`, `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`.
   WFE is a practitioner rule of thumb, not a statistical test; `wfe_fold_count` counts the folds in its median.
   [Tool](attribution-regimes-changepoints.md) facts take `--tool-output <id>` when a tool ran twice: `market_beta`, `market_alpha_annual`,
   `market_alpha_p`, `market_r_squared`, `regime_turbulent_share_of_return`, `regime_turbulent_share_of_time`, `changepoint_count`.

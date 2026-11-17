@@ -10,6 +10,8 @@ from alpha_cli.spine.errors import SpineError
 
 # Public vocabulary: one plain-English meaning per metric.
 METRICS = {
+    "data_period": "First and last loaded bar.",
+    "traded_period": "First and last stored equity point.",
     "verdict": "The stored validation verdict.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
     "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
@@ -41,7 +43,7 @@ METRICS = {
     "trades": "Number of closed full-sample trades.",
     "exposure": "Share of full-sample bars with a long position.",
     "top_1_profit_share": "Share of total closed profit from the largest trade.",
-    "top_3_profit_share": "Share of total closed profit from the largest three trades.",
+    "top_3_profit_share": "Top three trades vs total profit; above 1 if the rest lost.",
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
     "total_trials": "Ledger trial count observed for this diagnostic pass.",
@@ -88,6 +90,8 @@ METRICS.update({metric: meaning for metric, (_, meaning) in TOOL_METRICS.items()
 # 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
 # valid on a fraction.
 METRIC_UNITS = {
+    "data_period": "other",
+    "traded_period": "other",
     "verdict": "other",
     "oos_sharpe": "ratio",
     "dsr": "fraction",
@@ -132,6 +136,8 @@ NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_d
 _CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
 _WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
+    "data_period": ("manifest.json", "spine.data_period", "loaded bars"),
+    "traded_period": ("manifest.json", "spine.traded_period", "stored out-of-sample equity curve"),
     "resized_entries": ("manifest.json", "resized_entries", "scored engine execution"),
     **{
         name: ("diagnostics.json", f"inverted_signal.{name}", _CONTROL_BASIS)

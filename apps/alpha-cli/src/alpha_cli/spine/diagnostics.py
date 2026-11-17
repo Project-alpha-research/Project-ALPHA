@@ -165,8 +165,8 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
                 "flag": "drawdown-with-market",
                 "detail": (
                     f"During the worst drawdown ({abs(episodes[0].get('depth') or 0.0):.0%}), "
-                    f"buy and hold fell {abs(episodes[0]['benchmark_return']):.0%} "
-                    "over the same dates."
+                    f"buy and hold fell {share:.2g} times as much over the same dates "
+                    f"({abs(episodes[0]['benchmark_return']):.0%})."
                 ),
             }
         )
@@ -175,7 +175,12 @@ def flags(sections: dict[str, Any]) -> list[dict[str, str]]:
         result.append(
             {
                 "flag": "concentrated-profit",
-                "detail": f"The top three closed trades contributed {top:.0%} of total profit.",
+                "detail": (
+                    f"The top three closed trades made {top:.2g} times the total profit; "
+                    "the rest lost money overall."
+                    if top > 1
+                    else f"The top three closed trades contributed {top:.0%} of total profit."
+                ),
             }
         )
     positive = base is not None and math.isfinite(base) and base > 0

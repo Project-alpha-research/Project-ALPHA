@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 57465d68219a25f5
+verified: 6281cd34475339c0
 ---
 
 # Research playbook: how to work any idea
@@ -101,7 +101,7 @@ SPY ran as trial `<N>`; labels in words; then `<value> [<run id>:oos_sharpe]` be
 benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed.
 
 **A surprise.** `alpha diagnose` shows the flag `drawdown-with-market`: "During the worst drawdown
-(<depth>), buy and hold fell <fall> over the same dates."
+(<depth>), buy and hold fell <ratio> times as much over the same dates (<fall>)."
 
 - Rivals: the loss is the market's; the rule entered late; a data error on those dates.
 - Cheapest separating test: read `drawdowns` and `by_year` in the same diagnose output (free),

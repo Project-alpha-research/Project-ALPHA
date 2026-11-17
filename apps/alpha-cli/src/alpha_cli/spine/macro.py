@@ -18,10 +18,18 @@ def macro_window(home: Path, episodes: list[dict[str, Any]]) -> dict[str, Any]:
     """Each stored series at the start and trough of the worst drawdown, as known at the trough."""
     try:
         views = importlib.import_module("alpha_data.context.views")
-    except ImportError:
-        return {"available": False, "reason": "the context data module is not installed"}
+    except ImportError as exc:
+        return {
+            "available": False,
+            "reason": "macro data was not installed when this run was made",
+            "detail": str(exc),
+        }
     if not (home / "context" / "fred").exists():
-        return {"available": False, "reason": "no stored FRED context series"}
+        return {
+            "available": False,
+            "reason": "macro data was not installed when this run was made",
+            "detail": f"no stored FRED context series at {home / 'context' / 'fred'}",
+        }
     if not episodes:
         return {"available": False, "reason": "no drawdown episode to describe"}
     start, trough = _day(episodes[0]["start"]), _day(episodes[0]["trough"])
@@ -30,7 +38,13 @@ def macro_window(home: Path, episodes: list[dict[str, Any]]) -> dict[str, Any]:
         try:
             known = views.as_known(views.load_series(series_id, data_dir=home), as_of=trough)
         except Exception as exc:  # one unreadable series must not stop the diagnostic pass
-            rows.append({"series_id": series_id, "reason": type(exc).__name__})
+            rows.append(
+                {
+                    "series_id": series_id,
+                    "reason": "macro data could not be read",
+                    "detail": f"{type(exc).__name__}: {exc}",
+                }
+            )
             continue
         known = known.filter(known["value"].is_not_null()).sort("obs_date")
         at_start = known.filter(known["obs_date"] <= start)["value"]

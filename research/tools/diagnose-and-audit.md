@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: 5b5d267ccfc9d693
+verified: 2ed71e79a9177cd1
 ---
 
 # Diagnose and audit
@@ -20,7 +20,7 @@ verified: 5b5d267ccfc9d693
 | Check | A `FLAG` means |
 |---|---|
 | `fills-after-decisions` | a fill is not later than its decision: possible look-ahead; treat as fatal |
-| `fills-inside-bar-range` | a fill price is outside its bar's low to high: unrealistic fill or mismatched data |
+| `fills-inside-bar-range` | a fill is outside its bar's low to high, allowing the recorded slippage: unrealistic fill or mismatched data |
 | `costs-charged` | fee or slippage is zero |
 | `enough-trades` | fewer than 30 closed walk-forward trades |
 | `benchmark-present` | a buy-and-hold figure is missing |

@@ -1024,6 +1024,10 @@ runs retried nine). A provider timeout is therefore tried twice by upstream, eac
 gateway's one retry; the failed round records every attempt and second waited. Receipts add `rounds_failed_provider`
 and `provider_wait_seconds`; launch.jsonl gets an end event and the console names the exit reason.
 
+At start the launcher writes `launch-command.json` in the run folder: its exact arguments, the
+values of four allow-listed path variables (`ALPHA_RDAGENT_SOURCE`, `ALPHA_FACTOR_PYTHON`,
+`ALPHA_DATA_DIR`, `ALPHA_STOCK_PYTHON`) and only the names of the gateway secrets that were set.
+
 The gateway caches vectors in memory by route, configured model and SHA-256 of exact text.
 Mixed batches send only unique uncached inputs, preserving original order and input error indices.
 Hits cost no money or embedding attempts; receipts count `embedding_requests`, `embedding_inputs_sent`

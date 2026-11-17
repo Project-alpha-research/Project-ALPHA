@@ -642,3 +642,48 @@ def test_receipt_counts_chunked_embeddings_and_skipped_memory_entries(
     (job.run / "memory-skips.jsonl").write_text('{"a": 1}\n{"b": 2}\n')
     job.finish(0, "test")
     assert job.receipt["memory_entries_skipped"] == 2
+
+
+def test_launch_command_records_argv_and_only_allow_listed_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Earlier agents had to rebuild launch arguments from receipts; the run folder now keeps
+    # them. Only allow-listed path variables keep a value; a key's value can never be written.
+    class Stopped:
+        def __init__(self, *a: Any) -> None:
+            pass
+
+        def verify(self) -> None:
+            raise launch.LaunchError("stopped for test")
+
+        def log(self, *a: Any, **k: Any) -> None:
+            pass
+
+        def stop(self) -> None:
+            pass
+
+        def finish(self, status: int, reason: str) -> int:
+            return status
+
+    monkeypatch.setattr(launch, "Launch", Stopped)
+    argv = ["run", "--data-dir", str(tmp_path / "data"), "--run-dir", str(tmp_path / "run")]
+    argv += ["--gateway-data-dir", str(tmp_path / "gw"), "--trial-ledger"]
+    argv += [str(tmp_path / "ledger/trials.jsonl"), "--run-id", "r", "--loop-n", "3"]
+    (tmp_path / "ledger").mkdir()
+    secrets = {
+        "ALPHA_GATEWAY_API_KEY": "sk-or-v1-secret-value-1",
+        "ALPHA_GATEWAY_API_BASE": "https://router.example/secret-value-2",
+        "OPENROUTER_API_KEY": "sk-secret-value-3",
+        "ANTHROPIC_AUTH_TOKEN": "secret-value-4",
+        "ALPHA_PASSWORD": "secret-value-5",
+    }
+    env = {**environ(tmp_path), "ALPHA_DATA_DIR": str(tmp_path / "data"), **secrets}
+    assert launch.main(argv, runner=lambda a, _: launch.run(a, env)) == 1
+    raw = (tmp_path / "run/launch-command.json").read_text()
+    assert not any(value in raw for value in secrets.values())
+    record = json.loads(raw)
+    assert record["argv"] == argv
+    assert set(record["environment"]) <= set(launch.LAUNCH_ENVIRONMENT)
+    assert record["environment"]["ALPHA_RDAGENT_SOURCE"] == env["ALPHA_RDAGENT_SOURCE"]
+    assert record["environment"]["ALPHA_DATA_DIR"] == env["ALPHA_DATA_DIR"]
+    assert record["secret_names_set"] == ["ALPHA_GATEWAY_API_BASE", "ALPHA_GATEWAY_API_KEY"]

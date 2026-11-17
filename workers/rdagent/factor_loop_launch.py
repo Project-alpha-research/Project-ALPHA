@@ -46,6 +46,29 @@ SETUP_HINT = "bash scripts/setup_rdagent.sh --with-factor-runtime"
 GATEWAY_SECRETS = ("ALPHA_GATEWAY_API_KEY", "ALPHA_GATEWAY_API_BASE")
 
 
+# The only environment values launch-command.json may hold: paths that locate the runtimes and
+# data. Any other variable, a key above all, is never written; secrets are named, not valued.
+LAUNCH_ENVIRONMENT = (
+    "ALPHA_RDAGENT_SOURCE",
+    "ALPHA_FACTOR_PYTHON",
+    "ALPHA_DATA_DIR",
+    "ALPHA_STOCK_PYTHON",
+)
+
+
+def write_launch_command(run_dir: Path, argv: Sequence[str], environ: dict[str, str]) -> None:
+    """Record how this run was started, so the next run can repeat it exactly."""
+    secrets = [environ[k] for k in GATEWAY_SECRETS if environ.get(k)]
+    record = {
+        "schema": "AlphaRdagentLaunchCommandV1",
+        "program": "workers/rdagent/factor_loop_launch.py",
+        "argv": ["[redacted]" if a in secrets else a for a in argv],
+        "environment": {k: environ[k] for k in LAUNCH_ENVIRONMENT if k in environ},
+        "secret_names_set": sorted(k for k in GATEWAY_SECRETS if environ.get(k)),
+    }
+    (run_dir / "launch-command.json").write_text(json.dumps(record, indent=2) + "\n")
+
+
 def _without_secrets() -> dict[str, str]:
     return {k: v for k, v in os.environ.items() if k not in GATEWAY_SECRETS}
 
@@ -853,6 +876,7 @@ def exit_reason(code: int, gateway_state: Any, args: argparse.Namespace) -> str:
 def run(args: argparse.Namespace, environ: dict[str, str]) -> int:
     paths = validate(args, environ)
     args.run_dir.mkdir()
+    write_launch_command(args.run_dir, getattr(args, "command_line", sys.argv[1:]), environ)
     with (args.run_dir / "run-identity.json").open("x") as stream:
         stream.write(json.dumps({"run_id": args.run_id}) + "\n")
     (args.run_dir / "logs").mkdir()
@@ -931,6 +955,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None, *, runner: Callable[..., int] = run) -> int:
     args = parser().parse_args(argv)
+    args.command_line = list(sys.argv[1:] if argv is None else argv)
     try:
         return runner(args, dict(os.environ))
     except LaunchError as error:

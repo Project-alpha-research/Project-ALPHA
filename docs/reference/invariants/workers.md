@@ -166,7 +166,7 @@ acquisition worker, the RD-Agent native-loop probe and the AFML methods worker. 
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
-  New panels split identities and refuse unexplained jumps across any gap of one or more missing days; reports and feedback count splits. Old receipts keep their policy.
+  New panels split identities and refuse jumps across any gap of one or more missing days; old receipts keep their policy.
   Every record is `exploratory, not admitted, not yet confirmed` with all authority
   flags false and the survivorship disclosure. The runtime is built only by `--with-factor-runtime` from `factor-requirements.lock`,
   recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway address or token, but runs as the

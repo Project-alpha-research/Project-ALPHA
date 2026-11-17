@@ -450,3 +450,22 @@ def test_break_changes_nothing_before_new_from_except_differing_bars(
     assert old["replay"]["events"] != new["replay"]["events"]
     late = [e["basis"] for e in new["replay"]["events"] if e["instrument"] == "C0"]
     assert "writeoff" in late and "resume-close" not in late
+
+
+def test_refusal_names_every_undeclared_jump_at_once(tmp_path: Path) -> None:
+    """The owner fixes the break list in one pass, not one refusal per instrument."""
+    bars = jump_panel(10, 10.0)
+    down = pl.col("instrument") == "C1"
+    late = pl.col("date") > date(2021, 1, 1)
+    bars = bars.with_columns(
+        [
+            pl.when(down & late).then(pl.col(c) * 0.1).otherwise(pl.col(c)).alias(c)
+            for c in judge.PRICE_COLUMNS
+        ]
+    )
+    with pytest.raises(DataError, match="identity_breaks") as caught:
+        freeze_panel(tmp_path, bars)
+    message = str(caught.value)
+    assert "2 undeclared" in message
+    assert "C0" in message and "C1" in message
+    assert message.count("new_from=") == 2

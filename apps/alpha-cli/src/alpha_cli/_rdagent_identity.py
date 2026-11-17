@@ -81,27 +81,29 @@ def relabel(
 
 
 def check_jumps(panel: pl.DataFrame) -> None:
-    """Check missing calendar days inside each already separated instrument's span."""
-    for (name,), group in panel.partition_by("instrument", as_dict=True).items():
-        rows = group.select("date", "close").sort("date").iter_rows()
-        previous = next(rows, None)
-        for current in rows:
-            if previous is not None:
-                before, old = previous
-                after, new = current
-                ratio = new / old
-                if (after - before).days - 1 >= IDENTITY_JUMP_MIN_GAP_DAYS and (
-                    ratio > IDENTITY_JUMP_RATIO or ratio < 1 / IDENTITY_JUMP_RATIO
-                ):
-                    raise IdentityJumpError(
-                        f"identity jump for {name}: {before} close {old} -> {after} close {new}; "
-                        f"ratio {ratio}. Declare an identity_breaks entry with "
-                        f"instrument={name!r}, "
-                        f"new_from={after.isoformat()!r}, reason=ticker_reused or redenominated "
-                        "in the universe file, or leave the instrument out. "
-                        "No override is available."
-                    )
-            previous = current
+    """Check missing calendar days inside each already separated instrument's span.
+
+    Every offending gap is named in one refusal, so the owner can fix the list in one pass.
+    """
+    found = []
+    for (name,), group in sorted(panel.partition_by("instrument", as_dict=True).items()):
+        rows = list(group.select("date", "close").sort("date").iter_rows())
+        for (before, old), (after, new) in zip(rows, rows[1:], strict=False):
+            ratio = new / old
+            if (after - before).days - 1 >= IDENTITY_JUMP_MIN_GAP_DAYS and (
+                ratio > IDENTITY_JUMP_RATIO or ratio < 1 / IDENTITY_JUMP_RATIO
+            ):
+                found.append(
+                    f"identity jump for {name}: {before} close {old} -> {after} close {new}; "
+                    f"ratio {ratio}; declare instrument={name!r}, new_from={after.isoformat()!r}"
+                )
+    if found:
+        raise IdentityJumpError(
+            f"{len(found)} undeclared identity jump(s) across a gap of at least "
+            f"{IDENTITY_JUMP_MIN_GAP_DAYS} missing days. Declare each as an identity_breaks entry "
+            "(reason ticker_reused or redenominated) in the universe file, or leave the "
+            "instrument out. No override is available.\n" + "\n".join(found)
+        )
 
 
 def disclosure(breaks: list[dict[str, str]]) -> str:

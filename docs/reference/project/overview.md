@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - README.md
-verified: a6f9169c56ba84bc
+verified: 616a53750d178d99
 ---
 
 # ALPHA: what it is for and how the parts fit

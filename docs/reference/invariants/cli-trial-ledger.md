@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 45130e1a0a23d197
+verified: 0e84e328b01b4905
 ---
 
 # One trial ledger invariants
@@ -38,6 +38,12 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 
 ## Families and queries
 
+- `setup_study` and `setup_trade` count once; rows labelled `repeat` do not count. `setup_find` stays uncounted.
+  Studies use `setup:<idea>` with Unicode case folding and collapsed whitespace; rule families stay unchanged.
+  Studies have no comparable Sharpe. Outcomes are `inconclusive` below 30 complete primary outcomes,
+  `supported (exploratory, not confirmed)` for a positive excess with random-date p ≤ 0.05 and agreeing halves,
+  otherwise `not supported`. Studies use `setup-studies/<study_id>/manifest.json`; trades use `setup-trades/<trade_id>/manifest.json`.
+  Trade readings count completed trades and apply the same support conditions, with unavailable controls never supporting.
 - Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
 - `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows
@@ -80,6 +86,13 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Questions are `by-family`, `by-outcome`, `by-asset`, `by-month`, `asset-history`,
   `family-trials`, `top-measure` and `repeats`. Bind values with `?`; reject unknown questions
   with `UNKNOWN_QUESTION` and missing/unlisted parameters with `BAD_PARAMETER`.
+- `DEFLATION_FAIL` maps to rejected with recorded deflated Sharpe, threshold and trial count. A failed-deflation old
+  CANDIDATE is labelled as derived; stored rows and trial counting stay unchanged. Every factor status has a plain reason.
+- New factor rows count one declared primary-clock look; old V3 rows retain their per-clock counts.
+  `family-looks-x2-floor-1` uses twice those looks, with a 1/(T-1) variance floor; q is a BH diagnostic.
+  The reader exposes cutoff, m, confirmed, deflation inputs and expected chance passes; old DSR is labelled old rule.
+- Factor figures name one clock: prefer the lead's per-clock block, otherwise explicitly label the daily mirror.
+  New rows mirror all figures from `lead_clock` and record `figures_clock`; old daily mirrors remain readable.
 - `SPREAD_FAIL` maps to rejected, retains its raw status and says "stopped by the spread check".
   Failed factors show their recorded failure reason and first error line. `LOOKAHEAD` and `UNSTABLE` map to invalid,
   with first-mismatch details in `list`; invalid rows retain their trial counts.

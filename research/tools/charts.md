@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/figures_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
-verified: bce2c70db1acb9b9
+verified: 092dd36317c46329
 ---
 
 # Charts
@@ -35,6 +35,6 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --json
 
 - A chart is the same numbers drawn, not extra evidence. Do not describe a chart you have not rendered, and
   do not read a number off a picture: cite it instead ([results and cite](results-and-cite.md)).
-- Charts with regime shading, a match gallery and sensitivity bars are not available yet.
+- [Setup sheets](setup-find.md) , [study figures](setup-study.md) and [trade figures](setup-trade.md) exist; regime shading and sensitivity bars do not.
 
 **Next** Put the chart beside the cited numbers in the report, labels first.

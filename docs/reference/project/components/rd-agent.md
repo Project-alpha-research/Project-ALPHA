@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 4fdd5a8aa70c3a81
+verified: 26e552bc75bdcc40
 ---
 
 # RD-Agent
@@ -30,8 +30,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
 
 ## Intended design
 
-- One fixed, unmodified upstream version (commit `484776c`), checked file by file before use; never
-  copied into ALPHA and never edited.
+- One fixed upstream version (commit `484776c`), checked file by file; never copied into ALPHA or edited.
 - It runs as a separate worker program with its own install, started and supervised by the
   [command line](command-line.md). No ALPHA package imports it.
 - RD-Agent supplies the loop engine, its records (hypothesis, experiment, trace, feedback) and its
@@ -51,8 +50,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
   comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
-  Each factor is judged at daily, weekly and monthly holding, and only a weekly or monthly pass
-  makes a candidate ([ADR-0050](../../../adr/0050-swing-clocks-in-the-factor-judge.md)).
+  Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
+  a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
   A screened factor passes only if the top third it would hold beat its bottom third before
   costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
   the universe is a frozen file; each paid model call has a time limit
@@ -67,7 +66,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
   Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
   and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Refusals and re-ask spend are explicit in receipts; paid memory embeddings batch inputs without changing caps.
+  Missing declarations use the same refusal limit; proposal provider failures close rounds without trials.
+  A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit.
   Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
   Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
@@ -90,7 +90,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 
 - **Workspaces:** `workers/rdagent`
 - **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`,
-  `rdagent-run-viewer`
+  `rdagent-run-viewer`, `rdagent-workstation-panel`
 - Code: [`workers/rdagent/`](../../../../workers/rdagent/README.md) (the model gateway is
   `workers/rdagent/model_gateway.py`); the job supervisor in
   `apps/alpha-cli/src/alpha_cli/native_supervisor.py`. Setup: `scripts/setup_rdagent.sh`.
@@ -112,6 +112,30 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 - Glued under [ADR-0051](../../../adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
 - **Plan:** [stage 9](../../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the
   checklist and [RD-Agent in ALPHA](../../../roadmap/rd-agent-in-alpha.md).
+
+### Workstation recorded fields
+
+View → RD-Agent and the command palette open the read-only panel in either market profile. Runs are direct
+child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the ledger is
+`rdagent-trial-ledger/rdagent-factor-trials.jsonl` inside it. It cannot launch, approve, call models or read keys.
+
+| Response fields | Recorded source (relative to the run folder unless noted) |
+|---|---|
+| Identity, start/end, outcome | `receipt.json`: `run_id`, `started_at`, `ended_at`, `exit_status`, `loop_reason`; folder name |
+| Rounds, calls, embedding calls | Receipt: `memory.rounds_completed`, `counted_calls`, `local_embedding_calls`, `provider_embedding_calls` |
+| Spend, caps, month snapshots | Receipt: `gateway_status.this_run.usd`, `.caps`, `.months`; month selected by receipt end time |
+| Cache and providers | Receipt: `call_split.chat_usage`; no new rate calculation |
+| Funnel and list stage totals | Receipt `funnel` if present; else counted from ledger rows and `rounds.jsonl` refusals (basis shown) |
+| Factor name, description, status | Shared ledger: `run_id` or folder name, schemas V1–V3; fixed web-owned status sentences |
+| Clock figures, deflation, write-offs | Ledger: `clocks.*.screen`, `.spread`, `.replay`, `.replay.deflated_sharpe`, `.replay.deflated_sharpe_family` |
+| Universe, gaps, ticker corrections | `panel/panel-receipt.json`: instruments, disclosure, gap counts, `identity_breaks`, `identity_rescales` |
+| Refusals and timing | `rounds.jsonl`: refusal status and families; `steps.jsonl`: step start and end times; minutes = end minus start, labelled |
+| ALPHA notes | Receipt cap/cache/memory notes, panel disclosure, `evaluations.jsonl` → `feedback_text` |
+
+New rows show declared choices, cutoff/counts, diagnostic BH q, clustered/plain p, deflation rule/variance, twins and expected chance passes.
+Old failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks counted)".
+Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two timestamps.
+Idea-family labels remain unknown unless stored. The panel was opened headless on real runs; owner acceptance remains pending.
 
 ## Decisions and open questions
 

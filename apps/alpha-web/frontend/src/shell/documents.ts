@@ -29,6 +29,7 @@ import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
 import { ProviderSystem } from '../panels/ProviderSystem'
+import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { ResearchBacklog } from '../panels/ResearchBacklog'
 import { ResearchCockpit } from '../panels/ResearchCockpit'
 import { ResearchDataExplorer } from '../panels/ResearchDataExplorer'
@@ -92,6 +93,7 @@ export interface DocumentDefinition {
 }
 
 export const DOCUMENTS: readonly DocumentDefinition[] = [
+  { id: 'rdagent', kind: 'research', title: 'RD-Agent', panes: [{ name: 'RdAgentPanel', title: 'RD-Agent', component: RdAgentPanel }] },
   {
     id: 'chart',
     kind: 'chart',

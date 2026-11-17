@@ -52,6 +52,12 @@ def _echo_json(value: Any) -> None:
     typer.echo(json.dumps(value, sort_keys=True, allow_nan=False))
 
 
+def _caveat(verdict: dict[str, Any]) -> str:
+    """A capped grade keeps its caveat beside it (for example ``too-few-trades``)."""
+    labels = verdict.get("labels")
+    return f" [{', '.join(labels)}: {verdict.get('sentence')}]" if labels else ""
+
+
 def report(
     run_id: str,
     json_out: Annotated[bool, typer.Option("--json")] = False,
@@ -236,7 +242,7 @@ def report(
         typer.echo(
             f"grade: {verdict.get('overall')} "
             f"(edge {verdict.get('edge')}/robustness {verdict.get('robustness')}/"
-            f"risk {verdict.get('risk')}/sample {verdict.get('sample')})"
+            f"risk {verdict.get('risk')}/sample {verdict.get('sample')})" + _caveat(verdict)
         )
     if "oos_metrics" in manifest:
         metrics = ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(manifest["oos_metrics"].items()))

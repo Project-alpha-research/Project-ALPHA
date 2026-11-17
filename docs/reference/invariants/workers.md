@@ -10,14 +10,13 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 2753e84caeaff991
+verified: c432774df36467f5
 ---
 
 # Worker invariants
 
 Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
 The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
-
 ## Shared rules
 
 - Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
@@ -147,9 +146,9 @@ The general rule is [research integrity § Models and isolated workers](research
   provider's charged cost). A request parameter it cannot honour is refused or recorded as waived, never dropped silently. Call and
   dollar budgets fail closed: 60 counted calls and USD 10 per run, USD 50 per month (not raisable).
   Local and provider embeddings share a 2,000-request guard, exempt from chat call counts; provider tokens cost money.
-  Paid inputs batch by 32; refusals retry singly. Receipts separate requests, inputs, retries and unreported models.
+  Paid inputs batch by 32; exact-text cache hits cost no requests or money. Receipts count inputs, requests and hits.
   Receipts split calls, tokens, cache hits and observed providers; labelled calls add step splits. Missing facts stay null;
-  abandoned attempts say usage is unknown. API chat sends the run id as `session_id` unless `--no-router-session` is set;
+  abandoned usage is unknown; booked amounts are reserved estimates. API chat sends `session_id` unless `--no-router-session` is set;
   provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
   Memory binds model; no auto-switch; paid calls 180 s, one counted retry ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - ALPHA-judged factor loop ([ADR-0049](../../adr/0049-alpha-judges-rdagent-factors.md), amended by
@@ -159,20 +158,21 @@ The general rule is [research integrity § Models and isolated workers](research
   restarts one upstream counter per experiment), and they import RD-Agent and pandas, never an ALPHA package: the
   evaluator `alpha_cli.rdagent_factor_eval` runs as a subprocess in ALPHA's environment. The loop is never given data
   on or after 2024-01-01; every factor goes to the append-only cross-run trial ledger (a repeat by code hash is not new
-  evidence); `decision` is ALPHA's rule, never the model's, and only a weekly or monthly pass is a candidate (a
-  daily-only pass is `FAST_ONLY`); a screened clock whose top third did not beat its bottom third before costs is
+  evidence); `decision` is ALPHA's rule. A declared sign and weekly/monthly primary clock must pass screen, spread, replay
+  and deflation. Other choices are diagnostics only. Failed deflation is `DEFLATION_FAIL`; a nonpositive top-minus-bottom spread is
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
   come from a frozen universe file, optionally selecting its own store directory.
   New panels rescale redenominations, split reused tickers, join declared renamed successors and refuse unexplained gap jumps;
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
-  Families use construct names or composite input names only; code failures never close families.
-  Closed proposals stop before coding, with two `proposal_reask`s per round; receipts name refusals, trials and re-ask spend.
+  `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
+  Closed or undeclared proposals stop before coding, with two re-asks; sign mirrors share a family and past-return reversal joins momentum.
+  Rank twins (absolute correlation 0.98) repeat same-panel trials; missing values are disclosed. Code failures never close families.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway
   address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
-  loop names an exhausted model call cap in its receipt; an evaluator refusal prints one plain line and exits 2. Research memory and round-boundary resume (no
+  loop names its exit. Provider failures, including proposal, close rounds via `loop_guard.py`; budgets end the run. Memory resume (no
   invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.

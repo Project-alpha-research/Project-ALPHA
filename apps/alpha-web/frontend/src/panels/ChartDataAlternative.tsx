@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 /**
  * The price chart's accessible alternative.
  *
@@ -100,7 +101,7 @@ export function ChartDataAlternative({
           <tbody>
             {window.rows.map((bar) => (
               <tr key={bar.t}>
-                <td className="mono">{new Date(bar.t * 1_000).toISOString()}</td>
+                <td className="mono"><Timestamp value={bar.t} /></td>
                 <td className="num">{bar.o}</td>
                 <td className="num">{bar.h}</td>
                 <td className="num">{bar.l}</td>

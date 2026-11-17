@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
-verified: cd4e9895040d5944
+verified: 02c3569baa6c852d
 ---
 
 # Research: how any idea is tested
@@ -60,7 +60,8 @@ Its method library, `.agents/skills/alpha-research-protocols/`, stays: the progr
 Nothing a test or a case produces is committed to git. Everything is under the data directory
 (`ALPHA_DATA_DIR`, default `data/`, git-ignored; [layout](../docs/ARCHITECTURE.md#runtime-data-directory-layout)):
 `runs/<run_id>/` (immutable runs; a rule test adds `diagnostics.json`), `ledger/trials.jsonl` (every rule trial,
-failed ones included, append-only), and the staged lane's `control/workstation.sqlite3` and `research/projects/<case>/`.
+failed ones included, append-only), `setups/`, `setup-studies/`, `setup-trades/`,
+the staged lane's `control/workstation.sqlite3` and `research/projects/<case>/`.
 
 ## Authority
 
@@ -76,5 +77,4 @@ An agent never runs an owner command, and never treats a green check or silence 
 - A skill's text lives in `.agents/skills/<name>/SKILL.md`; `.claude/skills/<name>/SKILL.md` is a pointer.
 
 ## Outputs
-
 - Per idea: run folders and ledger rows under the data directory, and a plain-English report to the owner.

@@ -87,6 +87,9 @@ def fixture(run: Path, *, seed: int = 42, noise: bool = False) -> Path:
                 "factors": [
                     {
                         "name": "factor",
+                        "declared_direction": 1,
+                        "primary_clock": "weekly",
+                        "direction_reason": "Persistent demand rewards this ranking.",
                         "code_sha256": hashlib.sha256(str(seed).encode()).hexdigest(),
                         "status": "OK",
                         "lookahead": {"status": "PASS"},
@@ -130,15 +133,15 @@ def test_unknown_ledger_rows_count_conservatively_and_do_not_repeat(
         patch.object(
             judge,
             "screen",
-            side_effect=[{"status": "OK", "p": p, "direction": 1} for p in (0.05, 1.0, 1.0)],
+            side_effect=[{"status": "OK", "p": p, "direction": 1} for p in (1.0, 0.05, 1.0)],
         ),
         patch.object(ev, "replay", side_effect=AssertionError("must not replay")),
     ):
         result = evaluate(run, req, ledger)
     assert result["ledger_unknown_rows"] == {"count": 1, "schemas": ["FutureTrial"]}
     assert "1" in capsys.readouterr().err and result["factors"][0]["status"] == "SCREEN_FAIL"
-    assert result["family_size"] == 7  # old three clocks, one unknown, new three clocks
-    assert result["factors"][0]["q"] == pytest.approx(0.35)
+    assert result["family_size"] == 3  # two primary-clock entries and one unknown
+    assert result["factors"][0]["q"] == pytest.approx(0.15)
     assert result["distinct_factors"] == 2
     assert result["factors"][0]["distinct_factors"] == 2
     assert result["factors"][0]["trial_index"] == 4
@@ -176,19 +179,29 @@ def test_ledger_unknown_rows_kept_and_partial_line_fails_loud(tmp_path: Path) ->
         ev._read_ledger(ledger)
 
 
-def test_known_only_evaluation_bytes_match_pre_change_baseline(
+def test_known_only_evaluation_bytes_match_declared_primary_baseline(
     tmp_path: Path, recorded_time: None
 ) -> None:
     run = tmp_path / "baseline"
     req = fixture(run)
     request, panel, values, _ = ev._inputs(run, req)
     request["factors"][0]["status"] = "FAILED"
-    # Captured before verdict-feedback changes; fixed inputs exclude source fingerprints.
+    # Fixed inputs exclude source fingerprints; the honesty rule changes counts and declarations.
     record = ev._evaluate_locked(
-        run, request, panel, values, {"panel_sha256": "0" * 64}, tmp_path / "ledger"
+        run,
+        request,
+        panel,
+        values,
+        {
+            "panel_sha256": "0" * 64,
+            "factor_values_path": "/recorded/factors.parquet",
+            "factors_sha256": "a" * 64,
+        },
+        tmp_path / "ledger",
     )
-    # Check the changed presentation explicitly, then retain the original byte contract
-    # for every decision, metric and trial count. The historical checksum is not replaced.
+    # Retain the earlier presentation projection, pinning the complete new rule record below.
+    # The baseline changes deliberately: one primary look, declarations, cutoffs and chance fields
+    # (chance rate re-measured 2026-11-17: 0.004 -> 0.001).
     row = record["factors"][0]
     assert record["lead_factor"] is None
     record["lead_factor"] = "factor"  # earlier output incorrectly selected this failed factor
@@ -208,11 +221,10 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
     row["survivorship"] = record["disclosures"]["survivorship"] = ev.SURVIVORSHIP
     record["feedback_text"] = record["feedback_text"].replace(current, ev.SURVIVORSHIP)
     assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
-    # New recording metadata and presentation are checked before projecting onto the old
-    # byte contract; the original metric/decision checksum remains unchanged.
+    # Recording metadata and presentation are checked before the pinned byte projection.
     assert record["factors"][0].pop("recorded_at") == "2026-11-17T00:00:00+00:00"
     assert (
-        "Factor-family trials (each factor x clock, unreadable rows too): 3"
+        "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included): 1"
         in record["feedback_text"]
     )
     assert "Ledger rows, all families (rules, repeats too): 1" in record["feedback_text"]
@@ -220,7 +232,7 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
     record["feedback_text"] = (
         record["feedback_text"]
         .replace(
-            "Factor-family trials (each factor x clock, unreadable rows too)",
+            "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included)",
             "Ledger trials",
         )
         .replace(
@@ -232,14 +244,18 @@ def test_known_only_evaluation_bytes_match_pre_change_baseline(
         container[key] = container[key].replace(
             "Factor failed: reason not recorded. ", "Factor execution failed."
         )
-    # Item 8 changes presentation only; retain the original decision/metric checksum.
+    # Keep explicit unavailable-value assertions before the byte projection.
     for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
         assert "None" not in container[key]
         for field in ("mean rank IC", "net annual excess", "turnover per day"):
             assert f"{field} not available" in container[key]
             container[key] = container[key].replace(f"{field} not available", f"{field} None")
+    # Clock-labelled presentation is tested separately; pin all new counting fields.
+    for row in record["factors"]:
+        for key in ("reason", "figures_clock", "mean_ic", "spread"):
+            row.pop(key, None)
     assert ev.sha(ev.canonical(record)) == (
-        "b35721b89c176e16d227901ed7fab3b527011fe0a8b9c00a95a9aac5e0299df0"
+        "f52128980a352b3eebe36b8f1c917fbf4fdc0ceb9e270dfc4eed56e8fa189590"
     )
 
 
@@ -281,13 +297,19 @@ def test_import_ignores_unknown_identity_and_counts_unknown_trial(
     assert imported["total_trials"] == imported["family_size"] == 2
 
 
-def test_planted_factor_is_candidate_and_deterministic(tmp_path: Path, recorded_time: None) -> None:
+def test_planted_primary_factor_passes_floor_deflation_and_is_deterministic(
+    tmp_path: Path, recorded_time: None
+) -> None:
     run = tmp_path / "run"
     req = fixture(run)
     ledger = tmp_path / "trials.jsonl"
     result = evaluate(run, req, ledger)
     factor = result["factors"][0]
     assert factor["status"] == "CANDIDATE"
+    assert (
+        factor["replay"]["deflated_sharpe"]["dsr"]
+        >= factor["replay"]["deflated_sharpe"]["threshold"]
+    )
     assert factor["q"] < 0.10
     assert factor["replay"]["net"]["annualized_return"] > 0
     assert result["decision"] is True
@@ -339,7 +361,7 @@ def test_repeat_across_runs_and_append_only(tmp_path: Path) -> None:
     before = ledger.read_bytes()
     result = evaluate(second, fixture(second), ledger)
     assert ledger.read_bytes().startswith(before)
-    assert result["family_size"] == 3
+    assert result["family_size"] == 1
     assert result["distinct_factors"] == 1
     assert result["total_trials"] == 2
     repeated = result["factors"][0]
@@ -356,12 +378,12 @@ def test_failures_and_degenerate_count_in_family(tmp_path: Path) -> None:
     frame.to_parquet(run / "factors.parquet", index=False)
     value = json.loads(req.read_bytes())
     value["factors"] += [
-        {"name": s, "code_sha256": h * 64, "status": s, "lookahead": {}}
+        {**value["factors"][0], "name": s, "code_sha256": h * 64, "status": s, "lookahead": {}}
         for s, h in [("FAILED", "c"), ("LOOKAHEAD", "d")]
     ]
     req.write_text(json.dumps(value))
     result = evaluate(run, req, tmp_path / "ledger.jsonl")
-    assert result["family_size"] == 9
+    assert result["family_size"] == 3
     assert result["distinct_factors"] == 3
     assert [f["status"] for f in result["factors"]] == ["DEGENERATE", "FAILED", "LOOKAHEAD"]
     assert all(f["p"] == pytest.approx(1) for f in result["factors"])
@@ -394,10 +416,16 @@ def test_one_failing_factor_is_recorded_as_error_and_the_rest_still_land(tmp_pat
     req = fixture(run)
     value = json.loads(req.read_bytes())
     value["factors"].append(
-        {"name": "broken", "code_sha256": "e" * 64, "status": "OK", "lookahead": {}}
+        {
+            **value["factors"][0],
+            "name": "broken",
+            "code_sha256": "e" * 64,
+            "status": "OK",
+            "lookahead": {},
+        }
     )
     frame = pd.read_parquet(run / "factors.parquet")
-    frame["broken"] = frame["factor"]
+    frame["broken"] = np.random.default_rng(94).normal(size=len(frame))
     frame.to_parquet(run / "factors.parquet", index=False)
     req.write_text(json.dumps(value))
     real = ev.screen
@@ -408,17 +436,18 @@ def test_one_failing_factor_is_recorded_as_error_and_the_rest_still_land(tmp_pat
         digest: str,
         *,
         series: dict[str, Any] | None = None,
+        declared_direction: int | None = None,
     ) -> dict[str, Any]:
         if digest in {"e" * 64, *(ev.sha(("e" * 64 + c).encode()) for c in ("weekly", "monthly"))}:
             raise ZeroDivisionError("planted")
-        return real(signal, outcome, digest, series=series)
+        return real(signal, outcome, digest, series=series, declared_direction=declared_direction)
 
     ledger = tmp_path / "ledger.jsonl"
     with patch.object(judge, "screen", flaky):
         result = evaluate(run, req, ledger)
     statuses = {f["name"]: f["status"] for f in result["factors"]}
     assert statuses == {"factor": "CANDIDATE", "broken": "ERROR"}
-    assert result["family_size"] == 6
+    assert result["family_size"] == 2
     assert result["distinct_factors"] == 2
     assert len(ledger.read_bytes().splitlines()) == 2
 
@@ -432,11 +461,15 @@ def test_a_day_with_too_few_names_is_degenerate_not_a_crash(tmp_path: Path) -> N
     frame.to_parquet(run / "factors.parquet", index=False)
     result = evaluate(run, req, tmp_path / "ledger.jsonl")
     factor = result["factors"][0]
-    assert factor["clocks"]["daily"]["status"] == "DEGENERATE"
-    assert factor["screen"]["thin_days"] == 1
+    assert factor["clocks"]["daily"]["screen"]["status"] == "DEGENERATE"
+    assert factor["clocks"]["daily"]["screen"]["thin_days"] == 1
     assert factor["clocks"]["weekly"]["screen"]["thin_days"] == 0
     assert factor["clocks"]["monthly"]["screen"]["thin_days"] == 0
     assert factor["status"] == "CANDIDATE"
+    assert (
+        factor["replay"]["deflated_sharpe"]["dsr"]
+        >= factor["replay"]["deflated_sharpe"]["threshold"]
+    )
 
 
 # --- freeze: real store API on synthetic provider payloads (no market data) ------------------
@@ -659,7 +692,7 @@ def test_evaluation_exposure_and_mixed_schema_ledger(tmp_path: Path) -> None:
     result = evaluate(run, fixture(run), ledger)
     row = result["factors"][0]
     assert row["schema"] == "AlphaRdagentFactorTrialV3"
-    assert result["family_size"] == row["family_size"] == 4
+    assert result["family_size"] == row["family_size"] == 2
     assert result["distinct_factors"] == row["distinct_factors"] == 2
     assert row["instruments"] == [f"C{i:02}USDT" for i in range(15)]
     assert row["exposure"]["previously_exposed"] is True
@@ -766,17 +799,17 @@ def test_imported_rows_count_in_bh_family(tmp_path: Path, monkeypatch: pytest.Mo
             judge,
             "screen",
             side_effect=[
-                {"status": "OK", "p": 0.05, "direction": 1},
                 {"status": "OK", "p": 1.0, "direction": 1},
+                {"status": "OK", "p": 0.05, "direction": 1},
                 {"status": "OK", "p": 1.0, "direction": 1},
             ],
         ),
         patch.object(ev, "replay", side_effect=AssertionError("BH should prevent replay")),
     ):
         result = evaluate(run, req, ledger)
-    assert result["family_size"] == 5
+    assert result["family_size"] == 3
     assert result["distinct_factors"] == result["total_trials"] == 3
-    assert result["factors"][0]["q"] == pytest.approx(0.25)
+    assert result["factors"][0]["q"] == pytest.approx(0.15)
     assert result["factors"][0]["status"] == "SCREEN_FAIL"
     assert ledger.read_bytes().startswith(before)
 
@@ -801,7 +834,7 @@ def test_import_refuses_a_different_reserved_start(
         ("VOL_ret_21d", "Volatility return over 21 days"),
         (
             "vwap_ic_xs_ma_sma_std_atr_pct_zscore",
-            "Volume-weighted average price information coefficient cross-sectional "
+            "VWAP distance information coefficient cross-sectional "
             "moving average moving average standard deviation average true range percent z-score",
         ),
         ("7d_ret", "7d return"),
@@ -901,7 +934,11 @@ def test_series_reproduce_metrics_hashes_and_are_byte_identical(tmp_path: Path) 
         )
     )
     top = (
-        holdings.filter((pl.col("clock") == "daily") & (pl.col("target_weight") > 0))
+        pl.read_parquet(run / "factors.parquet")
+        .sort(["date", "factor", "instrument"], descending=[False, True, False])
+        .group_by("date", maintain_order=True)
+        .head(5)
+        .filter(pl.col("date").is_in(screen.filter(pl.col("clock") == "daily")["date"].implode()))
         .join(outcomes, on=["date", "instrument"])
         .group_by("date")
         .agg(pl.col("outcome").mean())

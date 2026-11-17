@@ -21,6 +21,11 @@ table. A capability may serve several rows; a row may be served by several capab
 | `funding-download` | Crypto context: funding rates, open interest, listings |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
+| `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |
+| `setup-trade` | Which came first after each match, target or stop, with still-open trades counted |
+| `setup-trade` | The same study against random dates and plain market drift |
+| `setup-study` | What happened after each match (event study) |
+| `setup-study` | The same study against random dates and plain market drift |
 | `price-lookalikes` | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure |
 | `price-novelty` | "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day |
 | `afml-labels-and-weights` | Textbook labels and overlap weights from two pinned libraries that must agree |
@@ -37,6 +42,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `rules-and-scans` | Simple rule language ("close above X and Y"), saved and rerun exactly |
 | `strategy-development` | Strategy development workspace (fixed approved steps) |
 | `inverted-signal-control` | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact |
+| `price-noise` | Robustness to noise added to the price series, re-running the rule on perturbed prices |
+| `implausibly-good` | A "too good to be true" label for results far above what a retail swing book plausibly earns after costs |
 | `walk-forward-efficiency` | Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb |
 | `validation-gauntlet` | Walk-forward testing with gaps between train and test |
 | `validation-gauntlet` | Luck-adjusted scores: deflated Sharpe, overfitting probability, combinatorial splits |
@@ -67,6 +74,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `ai-stock-research` | Call and dollar caps on RD-Agent's model use |
 | `rdagent-run-viewer` | RD-Agent's own report reader and run viewer used instead of rebuilt |
 | `native-job-result` | RD-Agent results readable in the Workstation |
+| `rdagent-workstation-panel` | RD-Agent results readable in the Workstation |
 | `daily-rule-study` | Say an idea in plain English to Claude or ChatGPT and the whole pipeline runs it |
 | `ai-research-team` | Small autonomous research team around RD-Agent |
 | `mac-real-data` | Confirmation on the Mac with a paid, authoritative data source |

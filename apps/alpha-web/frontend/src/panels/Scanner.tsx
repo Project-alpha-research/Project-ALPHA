@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 // Scanner document (spec 2026-09-01 §4.2 Phase 5 S5): save a scan (a saved rule set over every
 // stored symbol or an explicit list), run it on point-in-time bars, read the signal on each
 // symbol's last bar with the operand values the rule compared, and check it so changed signals
@@ -142,7 +143,7 @@ export function Scanner(_props: PanelHandleProps) {
                   <span className="mono">{scan.name}</span>
                   <span className="muted">
                     {scan.error ?? `${scan.rules} · ${universeText(scan)}`}
-                    {scan.checked_at ? ` · checked ${scan.checked_at.slice(0, 16).replace('T', ' ')}` : ' · never checked'}
+                    {scan.checked_at ? <> · checked <Timestamp value={scan.checked_at} /></> : ' · never checked'}
                   </span>
                 </div>
                 <div className="scanner-item-actions">
@@ -172,7 +173,7 @@ export function Scanner(_props: PanelHandleProps) {
             <>
               <p className="muted scanner-meta">
                 <span className="mono">{result.scan}</span> · rules <span className="mono">{result.rules}</span> ({result.rules_sha256.slice(0, 12)}) ·{' '}
-                {result.as_of ? `as of ${result.as_of}` : 'latest stored bars'} · universe listed {result.universe_as_of.slice(0, 16).replace('T', ' ')} ·{' '}
+                {result.as_of ? <>as of <Timestamp value={result.as_of} /></> : 'latest stored bars'} · universe listed <Timestamp value={result.universe_as_of} /> ·{' '}
                 {result.rows.length} evaluated, {result.skipped.length} skipped
               </p>
               <table className="blotter scanner-table" aria-label="Scan results">

@@ -122,6 +122,7 @@ another package is named.
 | `stores.toml` | `spine/stores` | Named data directories for explicit or default asset resolution. |
 | `ledger/sources.toml` | `spine/trial_reader` | Optional absolute RD-Agent ledger path for the unified read-only view. |
 | `ledger/trials.jsonl` | `spine/ledger` | Append-only general rule trials, including errors and repeat attempts. |
+| `setups/` | `setup_cmds`, `spine/setup_find` | Immutable setup candidates, counts and entry-open contact sheets, with the manifest written last. |
 | `store/` | `data_cmds` over `alpha_data` `ParquetStore` | Raw point-in-time Parquet bars, receipts, candidates, quarantine and provenance sidecars. |
 | `context/edgar/` | `context_sources_cmds` over `alpha_data.context` | SEC filings, insider events, hashed provenance and immutable XML cache. |
 | `context/binance/` | `context_sources_cmds` over `alpha_data.context` | USD-M funding/metrics events, hashed provenance and verified ZIP cache. |

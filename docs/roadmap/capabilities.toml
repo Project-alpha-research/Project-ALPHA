@@ -935,6 +935,28 @@ triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
+id = "rdagent-workstation-panel"
+name = "RD-Agent recorded runs in the Workstation"
+codes = ["RD-Agent"]
+what = "Read recorded factor-loop runs, their stage figures, caps, universe and ALPHA's notes without using the terminal."
+see_it = ["Workstation → View → RD-Agent (also in the command palette)"]
+entry_points = [
+  "api: GET /api/rdagent/runs",
+  "api: GET /api/rdagent/runs/{run_id}",
+  "panel: apps/alpha-web/frontend/src/panels/RdAgentPanel.tsx",
+]
+proof_synthetic = [
+  "tests/unit/test_web_rdagent.py::test_list_newest_first_and_recorded_fields",
+  "tests/unit/test_web_rdagent.py::test_funnel_is_counted_from_recorded_rows_and_receipt_wins",
+  "tests/unit/test_web_rdagent.py::test_all_writer_statuses_have_sentences",
+]
+real_data = "2026-11-17: the panel was opened headless on the owner's real runs folder (private screenshots, not committed); the owner has not yet viewed it"
+needs = []
+state = "Partial"
+missing = "owner acceptance; writers record no idea-family label per factor, so that stays unknown; funnel counts are counted from recorded rows"
+docs = ["docs/reference/project/components/rd-agent.md"]
+
+[[capability]]
 id = "rdagent-run-viewer"
 name = "RD-Agent's run viewer"
 codes = ["RD-Agent"]
@@ -1276,3 +1298,68 @@ real_data = "on 2026-11-17 quick rule tests on a copy of the Dell's data folder:
 needs = []
 state = "Working"
 docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "setup-find"
+name = "Find every match of a chart setup"
+what = "Record daily setup matches and separate occurrences, then inspect contact sheets ending at the entry open without viewing outcomes."
+see_it = ["alpha setup find <spec.toml> --json"]
+entry_points = ["cli: alpha setup"]
+proof_synthetic = ["tests/unit/test_setup_find.py::test_worked_counts_ledger_and_cluster_sheets", "tests/unit/test_setup_find.py::test_nothing_after_the_trigger_reaches_any_file_or_sheet", "tests/unit/test_contact_sheet.py::test_outcome_blindness_dimensions_and_determinism"]
+proof_smoke = ["tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat"]
+real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily bars, Yahoo) and BTC/USDT (3,361) found 19 and 26 separate occurrences (21 and 30 matching days), as the evaluator's own check did; a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+
+[[capability]]
+id = "price-noise"
+name = "Price-noise robustness controls"
+what = "Re-run 50 deterministic perturbed price copies and describe net Sharpe sensitivity without adding trials."
+see_it = ["alpha diagnose <run_id>", "alpha results cite <run_id> price_noise_p05_sharpe"]
+entry_points = ["cli: alpha diagnose", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_spine_price_noise.py::test_noise_is_deterministic_valid_independent_and_preserves_volume", "tests/unit/test_spine_price_noise.py::test_price_noise_real_engine_leaves_ledger_byte_identical", "tests/unit/test_spine_price_noise.py::test_fragile_and_robust_noise"]
+proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
+real_data = "on 2026-11-17 full rule tests on the Dell's data (scratch ledger): net Sharpe 5-95% across 50 copies, original in brackets: ma_cross 50/200 SPY 0.74-0.75 (0.75); ma_cross 10/50 SPY 0.54-0.57 (0.56); ma_cross 50/200 BTC/USDT 0.63-0.64 (0.63); tsmom 365 BTC/USDT 0.81-0.84 (0.83); no sign flips, no undefined copy, no fragile label; adds 10-22% to alpha test time (about a minute on SPY 1993-2026)"
+needs = []
+state = "Working"
+docs = ["research/tools/price-noise.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "implausibly-good"
+name = "Implausible-result observation"
+what = "Flag unusually high net Sharpe, hit rate or mean daily-trade return with at least 30 OOS trades."
+see_it = ["alpha diagnose <run_id>"]
+entry_points = ["cli: alpha diagnose"]
+proof_synthetic = ["tests/unit/test_spine_honesty_3.py::test_plausibility_triggers", "tests/unit/test_spine_honesty_3.py::test_plausibility_flag_does_not_change_verdict", "tests/unit/test_spine_honesty_3.py::test_implausibly_good_fires_on_a_rule_over_a_steadily_rising_demo_series"]
+proof_smoke = ["tests/smoke/test_price_noise_smoke.py::test_price_noise_diagnose_and_cite"]
+real_data = "on 2026-11-17 the same four Dell rule tests (SPY ma_cross 50/200 and 10/50, BTC/USDT ma_cross 50/200 and tsmom 365) stored the check and raised nothing, as expected; it fires on a synthetic steady uptrend (Sharpe 6.4, 40 trades)"
+needs = []
+state = "Working"
+docs = ["research/tools/diagnose-and-audit.md", "docs/reference/invariants/cli-runs.md"]
+
+[[capability]]
+id = "setup-study"
+name = "Study outcomes after every separate setup occurrence"
+what = "Measure net forward returns against drift and spaced random dates, with one counted exploratory trial, a figure and citable facts."
+see_it = ["alpha setup study <find_id> --json", "alpha results cite <study_id> setup_mean_net_return"]
+entry_points = ["cli: alpha setup", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_setup_study.py::test_returns_incomplete_facts_repeat_and_blindness", "tests/unit/test_setup_controls.py::test_fixed_seed_null_calibration_and_planted_effect", "tests/unit/test_setup_controls.py::test_halves_compare_with_controls_from_their_own_half", "tests/unit/test_event_study_figure.py::test_dimensions_and_bytes"]
+proof_smoke = ["tests/smoke/test_setup_study_smoke.py::test_setup_study_and_repeat"]
+real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was studied at 5, 10, 20 and 60 bars (primary 20) against drift and 2,000 random-date draws; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+
+[[capability]]
+id = "setup-trade"
+name = "Trade setup occurrences with declared exits"
+what = "Apply frozen stops, targets and time or opposite exits with conservative fills and per-asset costs, compared with identical-rule drift and random dates."
+see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> setup_trade_mean_net_return"]
+entry_points = ["cli: alpha setup", "cli: alpha results"]
+proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions"]
+proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repeat"]
+real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
+needs = []
+state = "Working"
+docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]

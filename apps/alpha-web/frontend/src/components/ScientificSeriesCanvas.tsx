@@ -9,7 +9,8 @@ export function ScientificSeriesCanvas({ points, unit, panelId, registry, area =
   const host = useRef<HTMLDivElement>(null), readout = useRef<HTMLSpanElement>(null), cursorData = useRef<HTMLSpanElement>(null)
   const cursorExpanded = useRef(false)
   const cursorText = useRef('Cursor —')
-  const updateCursorData = () => { if (cursorData.current) cursorData.current.textContent = cursorText.current }
+  const cursorIso = useRef('')
+  const updateCursorData = () => { if (cursorData.current) { cursorData.current.textContent = cursorText.current; cursorData.current.title = cursorIso.current } }
   const controller = useRef<Awaited<ReturnType<typeof mountBokehPlot>> | null>(null)
   const latest = useRef({ points, controls, reset }); latest.current = { points, controls, reset }
   const { chartStyle } = useSettings()
@@ -21,7 +22,7 @@ export function ScientificSeriesCanvas({ points, unit, panelId, registry, area =
     setError(null); setReady(false)
     import('./bokehPlot').then(async ({ mountBokehPlot }) => {
       if (!live) return
-      const plot = await mountBokehPlot(node, unit, panelId, registry, text => { if (cursorText.current === text) return; cursorText.current = text; if (readout.current?.firstChild) readout.current.firstChild.nodeValue = text; if (cursorExpanded.current) updateCursorData() }, area, chartStyle)
+      const plot = await mountBokehPlot(node, unit, panelId, registry, (text, iso = '') => { cursorIso.current = iso; if (readout.current) readout.current.title = iso; if (cursorText.current === text) return; cursorText.current = text; if (readout.current?.firstChild) readout.current.firstChild.nodeValue = text; if (cursorExpanded.current) updateCursorData() }, area, chartStyle)
       if (!live) { plot.destroy(); return }
       plot.activate(); controller.current = plot; plot.data(latest.current.points); if (latest.current.controls) plot.controls(latest.current.controls); setReady(true)
     }).catch(reason => { if (live) setError(String(reason)) })

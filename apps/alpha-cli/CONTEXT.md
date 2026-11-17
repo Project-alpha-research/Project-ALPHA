@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: a72ba10aac705d2e
+verified: 01baadd98a2542bb
 ---
 
 # alpha-cli workspace
@@ -27,7 +27,7 @@ did not give, and never route live capital.
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, owner decisions, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
 | [trial ledger](../../docs/reference/invariants/cli-trial-ledger.md) | — | `alpha ledger`, `spine/trial_*` |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, tools, suites, figures, rules, scans |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, setups, tools, suites, figures, scans |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | Read-only queries | a read-only report or query, such as bar coverage |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | — | `alpha data` or `alpha crypto-data` acquisition, storage or backfill |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
@@ -48,11 +48,11 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
-| Rule tests, tools, lookalikes | `test_cmds`, `results_cmds`, `tool_cmds`, `partner_cmds`, `*lookalike*`, `spine/` | `test_spine_*`, `test_lookalike` |
+| Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `*lookalike*`, `spine/` | `test_{spine,setup}_*`, `test_contact_*`, `test_look*` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context*_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent ledger | `rdagent_*`, `_rdagent_*` (6), `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
+| RD-Agent ledger | `rdagent_*`, `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
 | Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |
@@ -63,7 +63,7 @@ do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
   light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Renamed ticker joins are recorded at freeze. Invalid-code messages and replay field compatibility: `_rdagent_stability`; policy in the worker README.
+  Declared choices gate candidates; `_rdagent_stats`/`_rdagent_twins` own inference/identity. Compatibility: `_rdagent_stability`; worker README owns policy.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through
@@ -73,7 +73,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-
+- Setup study/trade share per-asset costs and counted ledger families.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

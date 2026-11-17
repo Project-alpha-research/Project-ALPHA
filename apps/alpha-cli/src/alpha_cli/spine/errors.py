@@ -80,3 +80,35 @@ def tool_error(exc: Exception, stores: list[str] | None = None) -> SpineError:
         message,
         "Run alpha tool again after correcting the reported input or data error.",
     )
+
+
+def setup_error(exc: Exception, stores: list[str] | None = None) -> SpineError:
+    """Map setup input and asset failures to the command's stable envelope."""
+    if isinstance(exc, SpineError):
+        return exc
+    message = str(exc)
+    if "not found" in message or "unknown store" in message:
+        return SpineError(
+            "UNKNOWN_ASSET",
+            message,
+            "Run alpha setup find with an asset in a known store.",
+            stores,
+        )
+    return SpineError(
+        "FIND_FAILED",
+        message,
+        "Run alpha setup find again after correcting the reported input or data error.",
+    )
+
+
+def study_error(exc: Exception) -> SpineError:
+    """Preserve specific study failures and fail loud on computation/publication errors."""
+    return (
+        exc
+        if isinstance(exc, SpineError)
+        else SpineError(
+            "STUDY_FAILED",
+            str(exc),
+            "Correct the reported data or study error, then run alpha setup study again.",
+        )
+    )

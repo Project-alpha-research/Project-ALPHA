@@ -38,6 +38,7 @@ class RunSeries:
     equity: tuple[float, ...]
     # The engine samples equity at each bar's open, so a fair market return is open-to-open.
     opens: dict[datetime, float]
+    positions: tuple[bool, ...] = ()
 
 
 def load_run(home: Path, run_id: str) -> RunSeries:
@@ -76,12 +77,15 @@ def load_run(home: Path, run_id: str) -> RunSeries:
     idea = IdeaSpec.model_validate({k: v for k, v in stored.items() if k != "spec_sha256"})
     ppy = periods_per_year([bar.ts for bar in bars])
     spec = assemble_run_spec(idea, resolved.symbol, ppy, len(bars))
-    _, dates, equity = full_sample(bars, dividends, spec)
+    full, dates, equity = full_sample(bars, dividends, spec)
     expected = read_json(rdir / "diagnostics.json").get("full_sample", {}).get("total_return")
     if expected is not None and not math.isclose(
         equity[-1] / equity[0] - 1, expected, rel_tol=1e-9, abs_tol=1e-12
     ):
         raise changed
+    states = {row.ts: row.net_exposure != 0 for row in full.portfolio_state_trace}
+    if not set(dates) <= states.keys():
+        raise ValueError("portfolio state trace does not cover the full-sample dates")
     return RunSeries(
         home=home,
         run_id=run_id,
@@ -91,6 +95,7 @@ def load_run(home: Path, run_id: str) -> RunSeries:
         dates=dates,
         equity=tuple(float(value) for value in equity),
         opens={bar.ts: float(bar.open) for bar in bars},
+        positions=tuple(states[ts] for ts in dates),
     )
 
 

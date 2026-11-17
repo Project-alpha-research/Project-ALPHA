@@ -116,7 +116,7 @@ def test_invalid_trials_keep_counts_reason_and_have_no_lead(tmp_path: Path, stat
     ledger = tmp_path / "ledger"
     result = ev.evaluate(run, path, run / "result.json", ledger)
     assert result["lead_factor"] is None
-    assert result["family_size"] == 3 and result["total_trials"] == 1
+    assert result["family_size"] == 1 and result["total_trials"] == 1
     snapshot = read_ledgers([LedgerSource("rdagent", str(ledger))])
     assert not snapshot.unknown
     record = snapshot.records[0]
@@ -125,7 +125,7 @@ def test_invalid_trials_keep_counts_reason_and_have_no_lead(tmp_path: Path, stat
     assert "C0USDT" in result["feedback_text"]
     if status == "UNSTABLE":
         assert "different answers on the same data" in result["feedback_text"]
-    assert trials_for_deflation(snapshot, "rdagent-factors")["all_trials"] == 3
+    assert trials_for_deflation(snapshot, "rdagent-factors")["all_trials"] == 1
     assert ev._read_ledger(ledger)[0]["status"] == status
     output = CliRunner().invoke(ledger_app, ["list", "--rdagent-ledger", str(ledger)])
     assert output.exit_code == 0 and "0.25" in output.output

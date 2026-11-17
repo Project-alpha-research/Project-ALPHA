@@ -32,6 +32,7 @@ const CATALOG_GROUPS = [
   'risk',
   'strategy-candidate',
   'suite',
+  'setup',
   'test',
   'tool',
   'unusual',
@@ -163,5 +164,23 @@ describe('chart windows', () => {
 it('puts the trial ledger in Research', () => {
   expect(assignCommands([command('ledger summary')]).Research).toEqual([
     { kind: 'command', id: 'ledger summary', label: 'ledger summary' },
+  ])
+})
+
+it('opens RD-Agent from View and the shared command-palette document registry', async () => {
+  const { DOCUMENTS } = await import('./documents')
+  const { showsWindow } = await import('./profiles')
+  const { documentRoute } = await import('./workflowModel')
+  const entry = DOCUMENTS.find(item => item.id === 'rdagent')
+  expect(entry?.title).toBe('RD-Agent')
+  expect(menuBar([], [], null, DOCUMENTS).View).toContainEqual({ kind: 'open', window: 'rdagent', label: 'RD-Agent' })
+  expect(showsWindow('crypto', 'rdagent')).toBe(true)
+  expect(showsWindow('equities', 'rdagent')).toBe(true)
+  expect(documentRoute('rdagent')).toEqual({ page: 'research', pane: 'RdAgentPanel' })
+})
+
+it('puts setup finding in Research', () => {
+  expect(assignCommands([command('setup find')]).Research).toEqual([
+    { kind: 'command', id: 'setup find', label: 'setup find' },
   ])
 })

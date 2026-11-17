@@ -1,3 +1,4 @@
+import { formatTime } from '../util/formatTime'
 import { figure } from '@bokeh/bokehjs/build/js/lib/api/figure'
 import { showScientificPlot } from './bokehLifecycle'
 import { scheduleChartResize, cancelChartResize } from './chartResize'
@@ -14,7 +15,7 @@ import { padExtent, chartExtent, visibleExtent, displayNumber } from './technica
 import { technicalStyle, type ChartStyleName } from './technical/technicalTokens'
 import { technicalPng } from './technical/technicalExport'
 /** Local BokehJS recorded time series in the technical chart language; no statistics computed. */
-export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: string, registry: ChartLinkRegistry | undefined, readout: (text: string) => void, area: boolean, styleName: ChartStyleName = 'classic') {
+export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: string, registry: ChartLinkRegistry | undefined, readout: (text: string, iso?: string) => void, area: boolean, styleName: ChartStyleName = 'classic') {
   const style = technicalStyle(styleName)
   const x = new Range1d({ start: 0, end: 1 }), y = new Range1d({ start: 0, end: 1 })
   const source = new ColumnDataSource({ data: { x: [], y: [] } })
@@ -54,7 +55,9 @@ export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: s
     const value = time === null ? null : valueAt.get(time)
     cursorTime = enabled && time !== null && value != null ? time : null
     drawCursor()
-    readout(time !== null && value != null ? `${new Date(time * 1000).toISOString()} · ${value.toPrecision(7)} ${unit}` : 'Cursor —')
+    const iso = time !== null ? new Date(time * 1000).toISOString() : ''
+    if (iso && value != null) readout(`${formatTime(iso)} · ${value.toPrecision(7)} ${unit}`, iso)
+    else readout('Cursor —')
   }
   plot.on_event(MouseMove, event => { const time = enabled ? nearestTimestamp(times, event.x / 1000) : null; setCursor(time); registry?.publish(panelId, 'cursor', ...(time === null ? [] : [time])) })
   plot.on_event(MouseLeave, () => { setCursor(null); registry?.publish(panelId, 'cursor') })
@@ -73,7 +76,7 @@ export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: s
   // One persistent tag: a repaint moves it and updates its text, never rebuilds DOM.
   const tag = node.ownerDocument.createElement('div')
   tag.className = 'technical-tag'
-  Object.assign(tag.style, tagStyle(style, 0, 0, color))
+  Object.assign(tag.style, tagStyle(style, 0, 0, style.text))
   tag.hidden = true
   tags.append(tag)
   drawCursor = () => {

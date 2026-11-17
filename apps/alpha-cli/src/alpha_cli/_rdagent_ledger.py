@@ -33,9 +33,9 @@ from alpha_cli._rdagent_judge import (
     WINDOWS,
     canonical,
     outside_git,
-    plain_name,
     sha,
 )
+from alpha_cli._rdagent_stability import plain_name
 from alpha_core import DataError
 
 
@@ -120,6 +120,8 @@ def _read_ledger(path: Path) -> LedgerRows:
                 _validate_rule_row(row)
             if row["schema"] == TRIAL_SCHEMA:
                 validate_clock_row(row)
+                if "screen_rule" in row:
+                    validate_honesty_row(row)
             if row["status"] == "IMPORTED":
                 _validate_imported(row["imported"])
                 if (
@@ -272,6 +274,7 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                 "iteration": item["iteration"],
                 "windows": item["windows"],
                 "status": "IMPORTED",
+                "reason": "historical result imported without re-evaluation",
                 "stage": "none",
                 "p": 1.0,
                 "q": 1.0,
@@ -306,3 +309,69 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                     raise DataError("short trial ledger write")
                 os.fsync(stream.fileno())
     return rows
+
+
+def new_factor_row(
+    factor: dict[str, Any],
+    inputs: dict[str, str],
+    index: int,
+    run_id: str,
+    iteration: int,
+    symbols: list[str],
+    survivorship: str,
+    recorded_at: str,
+) -> dict[str, Any]:
+    from alpha_cli._rdagent_stats import FACTOR_DEFLATION_RULE, SCREEN_RULE
+
+    return {
+        **factor,
+        "schema": TRIAL_SCHEMA,
+        "plain_name": plain_name(factor["name"]),
+        "trial_index": index,
+        "run_id": run_id,
+        "recorded_at": recorded_at,
+        "iteration": iteration,
+        "panel_sha256": inputs["panel_sha256"],
+        "windows": WINDOWS,
+        "instruments": symbols,
+        "stage": "none",
+        "p": 1.0,
+        "q": 1.0,
+        "screen": {},
+        "replay": {},
+        "lead_clock": factor["primary_clock"],
+        "screen_rule": SCREEN_RULE,
+        "deflation_rule": FACTOR_DEFLATION_RULE,
+        "diagnostics": {},
+        "factor_values": {
+            "path": inputs["factor_values_path"],
+            "sha256": inputs["factors_sha256"],
+        },
+        "label": LABEL,
+        "survivorship": survivorship,
+        "authority": AUTHORITY,
+        "clocks": {
+            c: {"status": "ERROR", "p": 1.0, "q": 1.0, "screen": {}, "replay": {}} for c in CLOCKS
+        },
+    }
+
+
+def validate_honesty_row(row: dict[str, Any]) -> None:
+    from alpha_cli._rdagent_stats import FACTOR_DEFLATION_RULE, SCREEN_RULE, screen_cutoff
+
+    if (
+        row["screen_rule"] != SCREEN_RULE
+        or row["deflation_rule"] != FACTOR_DEFLATION_RULE
+        or type(row["declared_direction"]) is not int
+        or row["declared_direction"] not in (-1, 1)
+        or row["primary_clock"] not in ("weekly", "monthly")
+        or not isinstance(row["direction_reason"], str)
+        or not row["direction_reason"].strip()
+    ):
+        raise ValueError("invalid declared factor rules")
+    if row["screen_cutoff"] != screen_cutoff(row["screen_m"], row["screen_confirmed"]):
+        raise ValueError("screen cutoff differs from recorded counts")
+    if row["status"] != "REPEAT" and any(
+        t["replay"] for c, t in row["clocks"].items() if c != row["primary_clock"]
+    ):
+        raise ValueError("diagnostic clock cannot create replay evidence")

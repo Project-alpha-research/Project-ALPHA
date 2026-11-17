@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useMemo, useState } from 'react'
 
 import { api } from '../api/client'
@@ -23,9 +24,6 @@ import type { PanelHandleProps } from '../context/panelHandle'
 
 const TRAINING_COLORS = [CHART.accent, CHART.gold, CHART.ink, CHART.muted]
 
-function tableTimestamp(value: string): string {
-  return new Date(value).toISOString()
-}
 
 function signedClass(value: number | null): string {
   if (value === null || value === 0) return ''
@@ -96,7 +94,7 @@ function IcTimeline({ sheet }: { sheet: MlTearSheetProjection }) {
       <details className="native-data-table">
         <summary>IC / RankIC table alternative</summary>
         <table className="blotter compact"><thead><tr><th>target UTC</th><th className="r">IC</th><th className="r">RankIC</th><th className="r">n</th></tr></thead><tbody>
-          {rows.map((row) => <tr key={row.target_ts}><td className="mono">{tableTimestamp(row.target_ts)}</td><td className="num">{fmtNum(row.ic, 5)}</td><td className="num">{fmtNum(row.rank_ic, 5)}</td><td className="num">{row.sample_count}</td></tr>)}
+          {rows.map((row) => <tr key={row.target_ts}><td className="mono"><Timestamp value={row.target_ts} /></td><td className="num">{fmtNum(row.ic, 5)}</td><td className="num">{fmtNum(row.rank_ic, 5)}</td><td className="num">{row.sample_count}</td></tr>)}
         </tbody></table>
       </details>
     </div>
@@ -164,7 +162,7 @@ function PortfolioDiagnostics({ sheet }: { sheet: MlTearSheetProjection }) {
         <ArtifactUnavailable label="PORTFOLIO TIMELINE NOT EMITTED" />
       )}
       {rows?.length ? <details className="native-data-table"><summary>portfolio timeline table alternative</summary><table className="blotter compact"><thead><tr><th>target UTC</th><th className="r">gross</th><th className="r">costed</th><th className="r">benchmark</th><th className="r">excess</th><th className="r">turnover</th></tr></thead><tbody>
-        {rows.map((row) => <tr key={row.target_ts}><td className="mono">{tableTimestamp(row.target_ts)}</td><td className="num">{fmtPct(row.gross_return, 3)}</td><td className="num">{fmtPct(row.costed_return, 3)}</td><td className="num">{fmtPct(row.benchmark_return, 3)}</td><td className="num">{fmtPct(row.excess_return, 3)}</td><td className="num">{fmtPct(row.turnover, 2)}</td></tr>)}
+        {rows.map((row) => <tr key={row.target_ts}><td className="mono"><Timestamp value={row.target_ts} /></td><td className="num">{fmtPct(row.gross_return, 3)}</td><td className="num">{fmtPct(row.costed_return, 3)}</td><td className="num">{fmtPct(row.benchmark_return, 3)}</td><td className="num">{fmtPct(row.excess_return, 3)}</td><td className="num">{fmtPct(row.turnover, 2)}</td></tr>)}
       </tbody></table></details> : null}
     </div>
   )

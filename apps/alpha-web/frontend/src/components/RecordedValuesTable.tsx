@@ -1,3 +1,4 @@
+import { Timestamp } from '../util/formatTime'
 import { useEffect, useState } from 'react'
 import { recordedCsv, type ScientificPoint } from './scientificPlotModel'
 export function RecordedValuesTable({ points, label, unit, panelId }: { points: readonly ScientificPoint[]; label: string; unit: string; panelId: string }) {
@@ -15,6 +16,6 @@ export function RecordedValuesTable({ points, label, unit, panelId }: { points: 
       <button className="btn" aria-label="Next recorded values page" disabled={current >= pages - 1} onClick={() => setPage(current + 1)}>Next</button>
       <button className="btn" disabled={!points.length} onClick={download}>Download exact recorded CSV</button></div>
     <p>Full returned series, independent of chart zoom. Unavailable values export as empty cells.</p>
-    <table className="blotter" aria-label={`${label} recorded values`}><thead><tr><th>UTC timestamp</th><th className="r">{label} ({unit})</th></tr></thead><tbody>{points.slice(start, start + 100).map(p => <tr key={p.time}><td className="mono">{new Date(p.time * 1000).toISOString()}</td><td className="num">{p.value ?? 'Unavailable'}</td></tr>)}</tbody></table>
+    <table className="blotter" aria-label={`${label} recorded values`}><thead><tr><th>UTC timestamp</th><th className="r">{label} ({unit})</th></tr></thead><tbody>{points.slice(start, start + 100).map(p => <tr key={p.time}><td className="mono"><Timestamp value={p.time} /></td><td className="num">{p.value ?? 'Unavailable'}</td></tr>)}</tbody></table>
   </details>
 }

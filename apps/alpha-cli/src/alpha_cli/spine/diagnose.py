@@ -19,7 +19,7 @@ from alpha_cli._identity import RunIdentity
 from alpha_cli._strategies import surrogate_for
 from alpha_cli.artifact_contract import artifact_contract, verify_manifest_artifacts
 from alpha_cli.spine import diagnostics as d
-from alpha_cli.spine.audit import audit
+from alpha_cli.spine.audit import ENOUGH_TRADES, audit, cap_sparse_run, plausibility
 from alpha_cli.spine.controls import (
     in_sample_rows,
     inverted_summary,
@@ -36,6 +36,7 @@ from alpha_cli.spine.deflation import (
     spine_test_key,
 )
 from alpha_cli.spine.macro import macro_window
+from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_core import Bar, CorporateAction, DataError
@@ -229,13 +230,47 @@ def _efficiency(out: _gauntlet.GauntletOutput, full: BacktestResult, ppy: int) -
     # timestamps[j + 1] is sampled before that fill, so returns[j] is flat and returns[j + 1] is
     # the first that can carry a position. bisect_right gives j + 1 (bar stamps precede closes).
     first_tradable = bisect_right(timestamps, trace[0].ts) if trace else 0
+    folds = []
+    offset = 0
+    states = {row.ts: row.net_exposure != 0 for row in out.result.portfolio_state_trace}
+    fills = {row.ts for row in out.result.fill_trace}
+    for fold in out.oos.folds:
+        # OOS folds partition returns; include the starting session's post-fill holding.
+        dates = out.oos.oos_timestamps[offset : offset + fold.n_test + 1]
+        if not set(dates) <= states.keys():
+            raise DataError("OOS portfolio state trace does not cover the fold")
+        folds.append(
+            {**asdict(fold), "oos_had_trade": any(states[ts] or ts in fills for ts in dates)}
+        )
+        offset += fold.n_test
     rows = in_sample_rows(
-        [asdict(fold) for fold in out.oos.folds],
+        folds,
         [v for _, v in full.equity_curve],
         ppy,
         first_tradable=first_tradable,
     )
     return walk_forward_efficiency(rows)
+
+
+def _evidence_reading(out: _gauntlet.GauntletOutput, document: dict[str, Any]) -> None:
+    count_trades = len(out.result.trades)
+    if count_trades < ENOUGH_TRADES:
+        document["labels"] = ["too-few-trades"]
+        document["sentence"] = f"Only {count_trades} closed trades: too few to judge."
+        document["trials"]["labels"] = ["too-few-trades"]
+        document["trials"]["sentence"] = document["sentence"]
+    document["closed_oos_trades"] = count_trades
+    # The rule-test lane is daily only. Net realised returns include actual execution costs.
+    returns_per_trade = [
+        trade.realized_pnl / (trade.quantity * trade.entry_price) for trade in out.result.trades
+    ]
+    document["plausibility"] = plausibility(
+        out.report.oos_metrics.get("sharpe"),
+        sum(value > 0 for value in returns_per_trade) / count_trades if count_trades else None,
+        sum(returns_per_trade) / count_trades if count_trades else None,
+        count_trades,
+        daily=True,
+    )
 
 
 def write_diagnostics(
@@ -310,6 +345,9 @@ def write_diagnostics(
     document["variants_evaluated"] = result["variants_evaluated"]
     document["inverted_signal"] = _inverted_control(bars, dividends, spec, full, document)
     document["walk_forward_efficiency"] = _efficiency(out, full, ppy)
+    document["price_noise"] = price_noise(
+        bars, dividends, spec, identity.run_id, document["full_sample"]["sharpe"]
+    )
     returns = to_returns([float(bar.close) for bar in bars])
     weights, costs = surrogate_for(spec).weights_and_costs(returns)
     document["delay"] = d.delay(returns, weights, costs, ppy)
@@ -343,6 +381,8 @@ def write_diagnostics(
             family["repeats_not_counted"],
         ),
     )
+    out = cap_sparse_run(out, result)
+    _evidence_reading(out, document)
     document["macro_window"] = macro_window(home, document["drawdowns"]["episodes"])
     document["flags"] = d.flags(document)
     document["audit"] = audit(

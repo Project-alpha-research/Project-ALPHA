@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 17c3bdae12aed025
+verified: f29574cd41f9f020
 ---
 
 # RD-Agent worker workspace
@@ -43,6 +43,9 @@ no market, inference or evidence authority.
   spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts.
   Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
   See the worker invariants for accounting and compatibility.
+- Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and
+  `loop_guard.py` closes exhausted-provider rounds, including proposal, without inventing trials.
+  Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
   use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,
@@ -53,6 +56,10 @@ no market, inference or evidence authority.
   the repository root.
 - Editing `alpha_core`, `alpha_patterns` or `alpha_strategies` source changes the installed rule
   profiles' measured environment; rebuild them (see the native file).
+
+- The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
+  Its projection, status wording and record limitations belong to the
+  [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
 
 ## Outputs
 

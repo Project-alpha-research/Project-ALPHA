@@ -31,11 +31,11 @@ from alpha_cli._rdagent_clocks import (
     clock_samples,
     clock_targets,
 )
+from alpha_cli._rdagent_stats import autocorrelation_effective_size, screen_statistics
 from alpha_cli.crypto_bulk_store import configured_crypto_bulk_store
 from alpha_core import Bar, DataError
 from alpha_research.panel import cross_sectional_ic
 from alpha_validation.bootstrap import block_bootstrap_ci
-from alpha_validation.proportion import autocorrelation_effective_size
 
 RESERVED_START = "2024-01-01"
 PANEL_END = "2023-12-31"
@@ -128,6 +128,7 @@ STATUSES = frozenset(
         "SPREAD_FAIL",
         "REPLAY_FAIL",
         "CANDIDATE",
+        "DEFLATION_FAIL",
         "FAST_ONLY",
         "REPEAT",
         "IMPORTED",
@@ -401,6 +402,7 @@ def screen(
     n_resamples: int | None = None,
     eligible: np.ndarray | None = None,
     gap_policy: bool = False,
+    declared_direction: int | None = None,
 ) -> dict[str, Any]:
     values = np.asarray(signal, dtype=float)
     outcomes = np.asarray(outcome, dtype=float)
@@ -448,9 +450,10 @@ def screen(
             daily_ic=expanded, names=(np.isfinite(signal) & np.isfinite(outcome)).sum(axis=1)
         )
     daily = np.asarray([v for v in ic.values if v is not None], dtype=float)
-    effective = autocorrelation_effective_size(daily)
-    mean, sd = float(daily.mean()), float(daily.std(ddof=1))
-    z = mean / (sd / math.sqrt(effective))
+    if len(daily) < 2 or float(np.std(daily, ddof=1)) == 0:
+        return {**result, "status": "DEGENERATE", "p": 1.0, "reason": "IC has no usable variation"}
+    inference = screen_statistics(values, outcomes, daily, declared_direction)
+    mean = float(daily.mean())
     interval = block_bootstrap_ci(
         daily,
         lambda x: float(np.mean(x)),
@@ -463,12 +466,14 @@ def screen(
         "mean_ic": mean,
         "n": len(daily),
         "warnings": [f"low_sample: n={len(daily)}"] if len(daily) < 20 else [],
-        "effective_n": effective,
-        "z": z,
-        "p": math.erfc(abs(z) / math.sqrt(2)),
+        **inference,
         "mean_ci_95": asdict(interval),
-        "direction": 1 if mean > 0 else -1 if mean < 0 else 0,
-        "direction_selection": "chosen in-sample",
+        "direction": declared_direction
+        if declared_direction is not None
+        else (1 if mean > 0 else -1 if mean < 0 else 0),
+        "direction_selection": "declared before evaluation"
+        if declared_direction is not None
+        else "diagnostic only: cannot pass",
     }
 
 
@@ -485,6 +490,7 @@ def screen_at_clock(
     eligible: np.ndarray | None = None,
     gap_policy: bool = False,
     closes: np.ndarray | None = None,
+    declared_direction: int | None = None,
 ) -> dict[str, Any]:
     data = clock_samples(
         signal, opens, days, open_days, clock, closes=closes, gap_policy=gap_policy
@@ -498,7 +504,14 @@ def screen_at_clock(
         options["eligible"] = eligible[[index[day] for day in data["days"]]]
     if gap_policy:
         options["gap_policy"] = True
-    result = screen(data["signal"], data["outcome"], seed_digest, series=series, **options)
+    result = screen(
+        data["signal"],
+        data["outcome"],
+        seed_digest,
+        series=series,
+        declared_direction=declared_direction,
+        **options,
+    )
     if gap_policy:
         result.update(data["gap_counts"])
     return result

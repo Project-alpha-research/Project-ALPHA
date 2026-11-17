@@ -41,8 +41,8 @@ unfinished.
 ## What works today
 
 The honest scoreboard is [STATUS.md](STATUS.md), generated from
-[`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml). At the time of writing it lists
-58 capabilities: **23 Working, 29 Partial, 5 Shelved, 1 Not started.**
+[`docs/roadmap/capabilities.toml`](docs/roadmap/capabilities.toml). Its first lines give the
+current count of capabilities that are Working, Partial, Shelved and Not started.
 
 - **Working** means the whole workflow was run from start to finish through the installed
   programs, on made-up (synthetic) data. Real market data runs are still to be confirmed.
@@ -101,6 +101,10 @@ with no edge. Demo data.*
 
 *A research case: the idea is written down, and the open questions are listed before any test
 runs. Demo case.*
+
+![The RD-Agent panel: a run list, how many ideas passed each check, recorded caps and a factor marked as a candidate](docs/assets/workstation/rdagent-panel.png)
+
+*The RD-Agent panel is read-only and shows what a run recorded. Made-up demo data: these are not real runs.*
 
 ## How to run it
 

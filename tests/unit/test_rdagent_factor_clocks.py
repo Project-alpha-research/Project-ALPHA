@@ -116,17 +116,19 @@ def test_low_sample_is_labelled_not_refused() -> None:
     assert result["warnings"] == ["low_sample: n=10"]
 
 
-def test_family_counts_factor_times_clock(tmp_path: Path, recorded_time: None) -> None:
+def test_family_counts_declared_primary_clock(tmp_path: Path, recorded_time: None) -> None:
     run = tmp_path / "run"
     result = evaluate(run, fixture(run), tmp_path / "ledger.jsonl")
     row = result["factors"][0]
-    assert result["family_size"] == row["family_size"] == 3
+    assert result["family_size"] == row["family_size"] == 1
     assert result["distinct_factors"] == row["distinct_factors"] == 1
     assert row["schema"] == "AlphaRdagentFactorTrialV3"
     assert list(row["clocks"]) == ["daily", "weekly", "monthly"]
     for key in ("p", "q", "screen", "replay"):
-        assert row[key] == row["clocks"]["daily"][key]
-    assert result["legacy_result"]["IC"] == row["clocks"][row["lead_clock"]]["screen"]["mean_ic"]
+        assert row[key] == row["clocks"][row["lead_clock"]][key]
+    assert row["status"] == "CANDIDATE"
+    assert result["legacy_result"]["IC"] == row["screen"]["mean_ic"]
+    assert result["decision"] is True
     assert result["disclosures"]["clocks"] == {"daily": 1, "weekly": 7, "monthly": 28}
     assert "distinct factors: 1" in result["feedback_text"]
     folder, manifest = trial_series(run)
@@ -166,6 +168,9 @@ def synthetic_signal(run: Path, mode: str) -> Path:
     panel.write_parquet(run / "panel/panel.parquet")
     import json
 
+    request = json.loads(req.read_bytes())
+    request["factors"][0]["primary_clock"] = "monthly" if mode == "slow" else "weekly"
+    req.write_text(json.dumps(request))
     receipt_path = run / "panel/panel-receipt.json"
     receipt = json.loads(receipt_path.read_bytes())
     receipt["panel_sha256"] = ev.sha((run / "panel/panel.parquet").read_bytes())
@@ -181,10 +186,15 @@ def test_slow_signal_is_monthly_candidate_without_daily_pass(tmp_path: Path) -> 
     run = tmp_path / "slow"
     result = evaluate(run, synthetic_signal(run, "slow"), tmp_path / "ledger.jsonl")
     row = result["factors"][0]
-    assert row["clocks"]["monthly"]["q"] < 0.10
-    assert row["clocks"]["monthly"]["replay"]["net"]["annualized_return"] > 0
-    assert row["clocks"]["monthly"]["status"] == "PASS"
-    assert row["clocks"]["daily"]["status"] == "SCREEN_FAIL"
+    monthly = row["clocks"]["monthly"]
+    # The two-way sandwich is nonpositive for this near-constant IC; CGM's larger one-way
+    # variance applies instead of an ERROR that would kill a computable factor.
+    assert monthly["screen"]["clustered_variance_term"] == "one_way_max_fallback"
+    assert monthly["p"] <= row["screen_cutoff"] / 2
+    assert monthly["replay"]["net"]["annualized_return"] > 0
+    assert monthly["status"] == "PASS"
+    assert row["clocks"]["daily"]["status"] == "DIAGNOSTIC"
+    assert row["clocks"]["daily"]["replay"] == {}
     assert row["status"] == "CANDIDATE" and result["decision"] is True
 
 
@@ -192,8 +202,10 @@ def test_fast_only_signal_cannot_be_candidate(tmp_path: Path) -> None:
     run = tmp_path / "fast"
     result = evaluate(run, synthetic_signal(run, "fast"), tmp_path / "ledger.jsonl")
     row = result["factors"][0]
-    assert row["clocks"]["daily"]["q"] < 0.10
-    assert row["status"] in {"FAST_ONLY", "REPLAY_FAIL"}
+    assert row["clocks"]["daily"]["p"] < 0.05
+    assert row["clocks"]["daily"]["status"] == "DIAGNOSTIC"
+    assert row["clocks"]["daily"]["replay"] == {}
+    assert row["status"] == "SCREEN_FAIL"
     assert result["decision"] is False
 
 
@@ -242,7 +254,8 @@ def test_status_precedence_and_lead(
     from alpha_cli._rdagent_clocks import overall_status
 
     clocks: dict[str, dict[str, Any]] = {
-        c: {"status": s, "q": q} for c, s, q in zip(ev.CLOCKS, statuses, qs, strict=True)
+        c: {"status": s, "q": q, "replay": {"deflated_sharpe": {"dsr": 0.95, "threshold": 0.95}}}
+        for c, s, q in zip(ev.CLOCKS, statuses, qs, strict=True)
     }
     assert overall_status(clocks) == (expected, lead)
 
@@ -288,8 +301,8 @@ def test_same_request_repeat_has_final_clock_statuses_and_no_extra_dsr_trials(
     assert result["replayed_trials"] == replayed
     for trial in first["clocks"].values():
         if "net" in trial["replay"]:
-            assert trial["replay"]["deflated_sharpe"]["n_trials"] == replayed
-            assert trial["replay"]["deflated_sharpe_family"]["n_trials"] == 3
+            assert trial["replay"]["deflated_sharpe"]["n_trials"] == 2 * result["family_size"]
+            assert trial["replay"]["deflated_sharpe_family"]["n_trials"] == 1
 
 
 def test_legacy_result_includes_each_factor_clock_and_warning_text(
@@ -309,6 +322,7 @@ def test_legacy_result_includes_each_factor_clock_and_warning_text(
         open_days: list[date],
         series: dict[str, Any] | None = None,
         n_resamples: int | None = None,
+        declared_direction: int | None = None,
     ) -> dict[str, Any]:
         stats = original(
             signal,
@@ -319,6 +333,7 @@ def test_legacy_result_includes_each_factor_clock_and_warning_text(
             open_days=open_days,
             series=series,
             n_resamples=n_resamples,
+            declared_direction=declared_direction,
         )
         stats["warnings"] = ["low_sample: n=10"]
         return stats
@@ -329,11 +344,19 @@ def test_legacy_result_includes_each_factor_clock_and_warning_text(
     for clock, trial in row["clocks"].items():
         prefix = f"factor.{clock}."
         legacy = result["legacy_result"]
-        assert legacy[prefix + "status"] == trial["status"]
-        assert legacy[prefix + "mean_ic"] == trial["screen"]["mean_ic"]
-        assert legacy[prefix + "q"] == trial["q"]
-        assert legacy[prefix + "net_annual_excess"] == trial["replay"]["net"]["annualized_return"]
-        assert legacy[prefix + "mean_turnover"] == trial["replay"]["mean_turnover"]
+        if clock == row["primary_clock"]:
+            assert legacy[prefix + "status"] == trial["status"]
+            assert legacy[prefix + "mean_ic"] == trial["screen"]["mean_ic"]
+            assert legacy[prefix + "q"] == trial["q"]
+            assert (
+                legacy[prefix + "net_annual_excess"] == trial["replay"]["net"]["annualized_return"]
+            )
+            assert legacy[prefix + "mean_turnover"] == trial["replay"]["mean_turnover"]
+        else:
+            assert prefix + "status" not in legacy
+            assert trial["replay"] == {}
+            assert row["diagnostics"][clock]["screen"] == trial["screen"]
+    assert "diagnostic only: cannot pass" in result["feedback_text"]
     assert "low_sample: n=10" in result["feedback_text"]
     assert "low_sample: n=10" in result["legacy_result"]["factor.feedback"]
 

@@ -44,7 +44,7 @@ def test_rule_answer_check_and_compare(tmp_path: Path) -> None:
     answer = tmp_path / "answer.md"
     value = f"{fact['value']:.6f}"
     answer.write_text(
-        f"Quick, short history. Sharpe {value} [{run_id}:oos_sharpe]. "
+        f"Quick, short history, too few trades. Sharpe {value} [{run_id}:oos_sharpe]. "
         f"{trials['value']} [{run_id}:total_trials] trials."
     )
     assert alpha(home, "results", "check", str(answer), "--json").json()["ok"]

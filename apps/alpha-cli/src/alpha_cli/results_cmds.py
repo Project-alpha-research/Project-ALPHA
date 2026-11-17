@@ -39,6 +39,11 @@ results_app = typer.Typer(
 
 def _run(home: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
     rdir = find_run_dir(home, run_id)
+    if rdir is None and valid_run_id(run_id):
+        for directory in ("setup-studies", "setup-trades"):
+            study = home / directory / run_id
+            if (study / "manifest.json").is_file():
+                return study, read_json(study / "manifest.json")
     if rdir is None:
         raise SpineError(
             "UNKNOWN_RUN",
@@ -67,6 +72,7 @@ def list_results(
     limit: int = typer.Option(20, min=1, help="Maximum rows, newest first."),
     symbol: str | None = None,
     name: str | None = None,
+    idea_id: str | None = None,
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """List recorded trials, including failed attempts, and the total count."""
@@ -80,11 +86,17 @@ def list_results(
                 "No rule trials are recorded.",
                 "Run alpha test with a saved spec or rule flags.",
             )
+        # Older ledger rows have no idea id; use their completed manifest if available.
+        for row in rows:
+            if row.get("run_id") and not row.get("idea_id"):
+                rdir = find_run_dir(AlphaSettings().data_dir, row["run_id"])
+                row["idea_id"] = read_manifest(rdir).get("idea_id") if rdir is not None else None
         selected = [
             row
             for row in reversed(rows)
             if (symbol is None or row.get("symbol") == symbol)
             and (name is None or row.get("name") == name)
+            and (idea_id is None or row.get("idea_id") == idea_id)
         ][:limit]
         items = [
             {
@@ -101,6 +113,7 @@ def list_results(
                         "benchmark_sharpe",
                         "labels",
                         "run_id",
+                        "idea_id",
                     )
                 },
                 "flags_count": len(row["flags"]) if isinstance(row.get("flags"), list) else None,
@@ -130,6 +143,10 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.figures import available_figures
 
     rdir, manifest = _run(home, run_id)
+    if manifest.get("schema") in {"AlphaSetupStudyV1", "AlphaSetupTradeV1"}:
+        from alpha_cli.spine.facts import read_study
+
+        return dict(run_id=run_id, **read_study(rdir))
     diagnostics = read_json(rdir / "diagnostics.json")
     rule = manifest.get("spine", {}).get("rule", {}).get("kind")
     family_id = f"spine:{rule}" if rule else None
@@ -147,6 +164,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
             "reason": None if at_run is not None else "recorded before family counts were used",
         },
         "run_id": run_id,
+        "idea_id": manifest.get("idea_id"),
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
         "flags": diagnostics.get("flags", []),
@@ -173,7 +191,13 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
     try:
         home = AlphaSettings().data_dir
         failed: list[dict[str, Any]] = []
-        if find_run_dir(home, run_id) is not None:
+        if find_run_dir(home, run_id) is not None or (
+            valid_run_id(run_id)
+            and any(
+                (home / directory / run_id / "manifest.json").is_file()
+                for directory in ("setup-studies", "setup-trades")
+            )
+        ):
             ids = [run_id]
         else:
             # A test id: show every asset that completed and report each one that did not.
@@ -247,9 +271,14 @@ def cite_result(
         if metric in TOOL_METRICS:
             fact = tool_fact(home, run_id, metric, tool_output)
         else:
-            fact = next(item for item in build_facts(rdir) if item["metric"] == metric)
+            fact = fact_lookup(home)(run_id, metric)
         value = "null" if fact["value"] is None else str(fact["value"])
-        emit(fact, json_out=json_out, fallback=f"{value} [{run_id}:{metric}] ({fact['basis']})")
+        caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
+        emit(
+            fact,
+            json_out=json_out,
+            fallback=f"{value} [{run_id}:{metric}] ({fact['basis']}){caveat}",
+        )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
 
@@ -273,7 +302,7 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
 def _run_paths(home: Path) -> dict[str, Path]:
     """Discover completed runs in the same precedence order as run lookup."""
     paths: dict[str, Path] = {}
-    for directory in RUN_DIRS:
+    for directory in (*RUN_DIRS, "setup-studies", "setup-trades"):
         for manifest in (home / directory).glob("*/manifest.json"):
             if valid_run_id(manifest.parent.name):
                 paths.setdefault(manifest.parent.name, manifest.parent)

@@ -312,6 +312,7 @@ def in_sample_rows(
             "is_end": end,
             "is_cagr": None,
             "oos_cagr": fold["oos_cagr"],
+            "oos_had_trade": fold.get("oos_had_trade"),
         }
         segment = np.asarray(returns[start:end], dtype=float)
         path = np.concatenate(([1.0], np.cumprod(1.0 + segment)))
@@ -359,6 +360,7 @@ def walk_forward_efficiency(folds: Sequence[Mapping[str, Any]]) -> dict[str, Any
         rows.append(
             {
                 "index": fold.get("index", index),
+                "oos_had_trade": fold.get("oos_had_trade"),
                 **{key: fold[key] for key in ("is_start", "is_end") if key in fold},
                 "is_cagr": fold.get("is_cagr"),
                 "oos_cagr": fold.get("oos_cagr") if reason is None else None,
@@ -378,6 +380,11 @@ def walk_forward_efficiency(folds: Sequence[Mapping[str, Any]]) -> dict[str, Any
         else "no fold had both a positive in-sample return and an out-of-sample return"
     )
     median = float(np.median(defined)) if defined else None
+    never = sum(row["oos_had_trade"] is False for row in rows)
+    unknown = sum(row["oos_had_trade"] is None for row in rows)
+    if never > len(rows) / 2:
+        median = None
+        reason = f"most folds never traded out of sample ({never} of {len(rows)})"
     if median is None:
         sentence = f"Walk-forward efficiency is unavailable: {reason}."
     else:
@@ -394,8 +401,19 @@ def walk_forward_efficiency(folds: Sequence[Mapping[str, Any]]) -> dict[str, Any
         )
         if median < 0:
             sentence += " Negative means it lost money out of sample on a typical fold."
+    sentence += f" {never} of {len(rows)} folds never traded out of sample."
+    if median is not None and any(
+        row["oos_had_trade"] is False and row["wfe"] == median for row in rows
+    ):
+        sentence += (
+            f" The median fold never traded out of sample, so {median:.0%} measures nothing."
+        )
+    if unknown:
+        sentence += f" Trade presence was not recorded for {unknown} folds."
     return {
-        "basis": _WFE_BASIS,
+        "no_trade_folds": never,
+        "unknown_trade_folds": unknown,
+        "basis": f"{_WFE_BASIS}; {never} of {len(rows)} folds never traded out of sample",
         "wfe": median,
         "fold_count": len(defined),
         "folds_total": len(rows),

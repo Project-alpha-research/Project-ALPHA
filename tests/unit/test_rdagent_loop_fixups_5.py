@@ -178,7 +178,10 @@ def test_round_history_uses_admitted_proposal_and_names_refusals(
     closed_volatility_ledger(tmp_path, monkeypatch)
     ns = judge_namespace()
     admitted = proposal("price_delay", "")
-    loop = ProposingLoop(ns, [admitted])
+    class RecordingLoop(ProposingLoop):
+        loop_prev_out: dict[int, dict[str, Any]]
+
+    loop = RecordingLoop(ns, [admitted])
     loop.loop_prev_out = {0: {}}
     ns["FamilyGuard"](SimpleNamespace(develop=lambda exp: exp), loop).develop(
         proposal("vol_60d", "")

@@ -23,22 +23,26 @@ On this page: [Roles](#roles), [Task classes](#task-classes), [What the build sa
 
 ## Roles
 
-- **Orchestrating Claude session** — decides; writes briefs and plans; runs `handoff.py`; reads its
-  summary and the diff stat (never build logs); commits; opens pull requests and lands them as
-  [stage 05](../../workflow/stages/05-land/CONTEXT.md) says. Writes no code a builder could write.
-- **Claude Opus sub-agents** — investigation, design, research-integrity judgement, quant
-  verification (`quant-verifier`), review of risk-tier diffs (`reviewer`).
-- **Claude Sonnet sub-agents** — chores (merges, regeneration, re-stamping, summarising logs),
-  finding things (`navigator`), first-pass review of an ordinary Codex-built diff (`reviewer`
-  called with `model: sonnet`), fallback builder for a small task.
-- **Codex as builder** (`handoff.py build`) — stage 03: code and tests from a written plan or brief,
-  in its own worktree. Never commits, pushes, merges, uses the network or decides.
-- **Codex as reviewer** (`scripts/codex_bridge.py`, via `handoff.py review` or `/codex-review`) —
-  second opinion on Claude-written code, plans and documents. Grants no authority.
+- **Orchestrating Claude session** — decides; writes briefs and plans; runs `handoff.py`; reads its summary and the diff stat (never build logs); commits;
+  opens pull requests and lands them as [stage 05](../../workflow/stages/05-land/CONTEXT.md) says. Writes no code a builder could write.
+- **Claude Opus sub-agents** — investigation, design, research-integrity judgement, quant verification (`quant-verifier`), review of risk-tier diffs
+  (`reviewer`).
+- **Claude Sonnet sub-agents** — chores (merges, regeneration, re-stamping, summarising logs), finding things (`navigator`), first-pass review of an ordinary
+  Codex-built diff (`reviewer` called with `model: sonnet`), fallback builder for a small task.
+- **Codex as builder** (`handoff.py build`) — stage 03: code and tests from a written plan or brief, in its own worktree. Never commits, pushes, merges, uses
+  the network or decides.
+- **Codex as reviewer** (`scripts/codex_bridge.py`, via `handoff.py review` or `/codex-review`) — second opinion on Claude-written code, plans and documents.
+  Grants no authority.
 
-The writer is never the only reviewer: Codex-built work is reviewed by Claude, Claude-built work by
-Codex (or, when Codex is out, by a different Claude agent than the writer). Machine checks and CI
-run for everything and outrank every model.
+The writer is never the only reviewer: Codex-built work is reviewed by Claude, Claude-built work by Codex (or, when Codex is out, by a different Claude agent
+than the writer). Machine checks and CI run for everything and outrank every model.
+
+Codex, by default; [model routing](model-routing.md) gives the model, effort and time cap per task class and what stays with Claude. Run, outside any sandbox,
+`uv run python scripts/handoff.py build --task docs/work/<task>/ --base main` (`python3` works too: the script needs only the standard library; small route:
+`--brief <file>` with the headings Task, Decision already made, Files, Do not touch, Checks, Report). It runs Codex in a worktree, checks the diff against
+policy, runs `gate.py check` and each slice's `verify` itself, drives up to two fix rounds. Read only its summary and `git diff --stat`. Exit 0 means its own
+checks passed; then review (stage 04) and commit, with `03-build.json`. On a `fallback` (exit 10–13), or when the work needs the network or a decision, a
+Claude sub-agent of the named model builds from the `prompt.md` it names; then run `handoff.py verify` on that worktree. Process above binds every builder.
 
 ## Task classes
 
@@ -121,23 +125,18 @@ the sandbox does not stop a write through a hard link.
 
 ## What stays with Claude or the machine
 
-- Anything needing the network: `uv sync`, GitHub, CI, web research for a decision.
-  `handoff.py` runs `uv sync --locked` before Codex starts.
-- Commits, pushes, pull requests, merges. Codex's sandbox cannot write the git directory, and
-  `handoff.py` refuses a build whose HEAD moved.
-- Checks Codex's sandbox cannot run ([below](#what-the-build-sandbox-allows)); `handoff.py` runs every check
-  again outside it: pytest under `run_owned_test.py`, a private `TMPDIR`, the built web app linked or built.
+- Anything needing the network: `uv sync`, GitHub, CI, web research for a decision. `handoff.py` runs `uv sync --locked` before Codex starts.
+- Commits, pushes, pull requests, merges. Codex's sandbox cannot write the git directory, and `handoff.py` refuses a build whose HEAD moved.
+- Checks Codex's sandbox cannot run ([below](#what-the-build-sandbox-allows)); `handoff.py` runs every check again outside it: pytest under
+  `run_owned_test.py`, a private `TMPDIR`, the built web app linked or built.
 - Decisions not written in the plan or brief; owner actions of any kind.
-- Changes to the never paths (`tests/holdout/`, `scripts/codex_bridge.py`, `scripts/claude_hooks.py`,
-  `.claude/settings*.json`, credential-shaped files) — refused whatever the plan says.
-- Changes to guarded paths — hash-bound source bytes (`packages/alpha-research/src`,
-  `packages/alpha-validation/src`, the four research CLI modules, `uv.lock`), the approval digest
-  rules (`_structural_digest.py`), quant-named modules,
-  `tests/oracles/`, `tests/bias_guards/`, `tests/acceptance/`, and the protected harness files
-  (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `.github/`, `.agents/`, `scripts/gate*`,
-  `scripts/harness_*`, `scripts/handoff.py`, the harness and file-system contract tests) — unless
-  the plan lists the path in `files` AND declares the matching tier (`quant`, `bias`, `protected`),
-  and the owner approved the plan. The list lives in `handoff.py` (`NEVER_PATHS`, `GUARDED`).
+- Changes to the never paths (`tests/holdout/`, `scripts/codex_bridge.py`, `scripts/claude_hooks.py`, `.claude/settings*.json`, credential-shaped files) —
+  refused whatever the plan says.
+- Changes to guarded paths — hash-bound source bytes (`packages/alpha-research/src`, `packages/alpha-validation/src`, the four research CLI modules,
+  `uv.lock`), the approval digest rules (`_structural_digest.py`), quant-named modules, `tests/oracles/`, `tests/bias_guards/`, `tests/acceptance/`, and the
+  protected harness files (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `.github/`, `.agents/`, `scripts/gate*`, `scripts/harness_*`,
+  `scripts/handoff.py`, the harness and file-system contract tests) — unless the plan lists the path in `files` AND declares the matching tier (`quant`,
+  `bias`, `protected`), and the owner approved the plan. The list lives in `handoff.py` (`NEVER_PATHS`, `GUARDED`).
 
 ## Review by risk tier
 
@@ -159,36 +158,33 @@ or the pull request. A Codex review that comes back `available: false` is replac
 
 Signals, as `handoff.py build` reads them (exit status in brackets):
 
-- Codex unavailable [10]: `codex` not on PATH, `codex login status` not "Logged in", the class's
-  model missing from the models cache, or an auth error in the event stream.
-- Codex usage limit [11]: an `error` or `turn.failed` event (or stderr) matching "usage limit",
-  `usageLimitExceeded`, "rate limit", "429", "quota" or "purchase more credits". The exact wording
-  was read from the 0.167.0 binary, not seen live: ASSUMED until a real limit is hit.
+- Codex unavailable [10]: `codex` not on PATH, `codex login status` not "Logged in", the class's model missing from the models cache, or an auth error in the
+  event stream.
+- Codex usage limit [11]: an `error` or `turn.failed` event (or stderr) matching "usage limit", `usageLimitExceeded`, "rate limit", "429", "quota" or
+  "purchase more credits". The exact wording was read from the 0.167.0 binary, not seen live: ASSUMED until a real limit is hit.
 - Codex timeout [12]: the class's time cap passed; the process group is stopped.
 - Codex failed [13]: any other non-zero exit or failed turn.
 
-On 10–13 the record's `fallback` names the Claude builder for the class. The orchestrator gives the
-same `prompt.md` (path in the summary) to a general-purpose sub-agent with that model, in the same
-worktree, then runs `handoff.py verify --worktree <wt> --built-by claude:<model> --brief|--task ...`,
-which applies the same policy and checks and writes the record with the Claude builder named. Do
-not wait or ask the owner. A Codex-reviewed change whose reviewer is out goes to `reviewer` (Opus).
+On 10–13 the record's `fallback` names the Claude builder for the class. The orchestrator gives the same `prompt.md` (path in the summary) to a
+general-purpose sub-agent with that model, in the same worktree, then runs `handoff.py verify --worktree <wt> --built-by claude:<model> --brief|--task ...`,
+which applies the same policy and checks and writes the record with the Claude builder named. Do not wait or ask the owner. A Codex-reviewed change whose
+reviewer is out goes to `reviewer` (Opus).
 
-On a Claude limit: queue more work for Codex (several `handoff.py build` runs may go in parallel,
-one per worktree), keep orchestrator turns to reading summaries and committing, and defer Opus
-reviews that are not on the merge path. Every fallback is recorded: the build record's `built_by`
-and `fallback`, and the pull request's "Who built and who reviewed".
+On a Claude limit: queue more work for Codex (several `handoff.py build` runs may go in parallel, one per worktree), keep orchestrator turns to reading
+summaries and committing, and defer Opus reviews that are not on the merge path. Every fallback is recorded: the build record's `built_by` and `fallback`, and
+the pull request's "Who built and who reviewed".
 
 ## Economy rules for the Claude side
 
 - Briefs point at routing files and sections (a Read first table), never paste context; `handoff.py` adds the touched workspaces' rows (≤ 24 KB).
-- The orchestrator reads `handoff.py`'s summary (≤ 40 lines) and `git diff --stat`, not logs or event streams; it opens the diff only to review or
-  when the summary says something failed.
+- The orchestrator reads `handoff.py`'s summary (≤ 40 lines) and `git diff --stat`, not logs or event streams; it opens the diff only to review or when the
+  summary says something failed.
 - Fix rounds are driven by `handoff.py` (`codex exec resume` with the failing command and its output tail), never by a Claude turn. Budget: `--fix-rounds`,
   default 2.
 - Sub-agent models are set in each agent's front matter (`model:`); override per call only as the review table says.
 - One small route task per brief; batch unrelated small fixes into separate parallel builds.
-- A brief says what to change and where; a style remark about a whole file reads as an order to rewrite it (calibration task A re-wrapped a whole
-  reference file that way).
+- A brief says what to change and where; a style remark about a whole file reads as an order to rewrite it (calibration task A re-wrapped a whole reference
+  file that way).
 
 ## Records
 

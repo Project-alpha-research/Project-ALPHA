@@ -24,7 +24,8 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
 
 Every routing and reference document declares who owns it, which files it describes and the
 fingerprint of those files it was verified against (``scripts/fs.py stale`` uses these). The
-"always read" set of a workspace must stay within 32 KB. Failure messages say what to change.
+"always read" set of a workspace (CLAUDE.md, rules, both CONTEXT files, always rows) must stay
+within 16 KB. Failure messages say what to change.
 """
 
 from __future__ import annotations
@@ -58,21 +59,17 @@ STAGE_OUTPUTS = frozenset({"01-brief.md", TASK_PLAN, BUILD_RECORD, "04-verify.md
 # A build from a brief leaves these (scripts/handoff_routing.py): outputs, not living documents.
 BUILD_OUTPUTS = frozenset({"brief.md", "report.md"})
 _TASK_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
-CONTEXT_MAX_LINES = 80
+CONTEXT_MAX_LINES = 40
+CONTEXT_MAX_BYTES = 2_560
+STAGE_CONTEXT_MAX_LINES = 60  # a stage file keeps its Process, which is a contract
+CONTEXT_BODY_MAX_LINES = 14  # non-blank lines of a workspace body, headings and tables left out
+READ_FIRST_MAX_ROWS = 12
+WHEN_MAX_CHARS = 60
 REFERENCE_MAX_LINES = 200
 REFERENCE_LINES_ADVICE = "split by heading into a sibling file; do not shorten text"
 CONTEXT_LINES_ADVICE = "move detail to a reference file and link to its section"
-# Files over CONTEXT_MAX_LINES because the section-level Read first rows add one row per section.
-# The next slimming pass trims them. A ceiling may only go down; remove the entry once the file is
-# within CONTEXT_MAX_LINES.
-CONTEXT_LINE_CEILINGS: dict[str, int] = {
-    "workers/rdagent/CONTEXT.md": 87,
-    "research/CONTEXT.md": 86,
-    "apps/alpha-web/CONTEXT.md": 82,
-    "apps/alpha-cli/CONTEXT.md": 81,
-}
 MAX_LINE_CHARS = 160
-ALWAYS_BUDGET_BYTES = 32_768
+ALWAYS_BUDGET_BYTES = 16_384
 ALWAYS_ROWS_MAX_BYTES = 6_144  # the "always" rows of one workspace, section rows counted in full
 ALWAYS_WHOLE_FILE_MAX_BYTES = 3_072  # an "always" row may name a whole file only up to this size
 LIVING_KEYS = {"owner", "sources", "verified"}
@@ -348,13 +345,91 @@ def _front_matter_problems(rel: str, *, allow_generated: bool) -> list[str]:
     return problems
 
 
+def _context_line_limit(rel: str) -> int:
+    if rel == CONTEXT:
+        return ROOT_MAX_LINES
+    return STAGE_CONTEXT_MAX_LINES if is_stage_file(rel) else CONTEXT_MAX_LINES
+
+
 def test_context_files_are_small_and_declare_owner_sources_verified() -> None:
     problems = []
     for rel in context_files():
         if (ROOT / rel).is_file():
-            limit = CONTEXT_LINE_CEILINGS.get(rel, CONTEXT_MAX_LINES)
-            problems += _shape_problems(rel, limit, CONTEXT_LINES_ADVICE)
+            problems += _shape_problems(rel, _context_line_limit(rel), CONTEXT_LINES_ADVICE)
             problems += _front_matter_problems(rel, allow_generated=False)
+    assert not problems, "\n".join(problems)
+
+
+def test_workspace_context_files_stay_within_the_byte_limit() -> None:
+    problems = [
+        f"{rel}: {size:,} bytes; the limit is {CONTEXT_MAX_BYTES:,}. "
+        f"{CONTEXT_LINES_ADVICE.capitalize()}."
+        for rel in context_files()
+        if rel != CONTEXT
+        and not is_stage_file(rel)
+        and (ROOT / rel).is_file()
+        and (size := (ROOT / rel).stat().st_size) > CONTEXT_MAX_BYTES
+    ]
+    assert not problems, "\n".join(problems)
+
+
+def _outside_tables(rel: str) -> list[str]:
+    """Body lines of a CONTEXT file that are not headings, blank, front matter or table rows."""
+    text = _text(rel)
+    body = text.split("\n---\n", 1)[1] if text.startswith("---\n") else text
+    return [
+        line
+        for _, line in _body_lines(body)
+        if line.strip() and not line.startswith("#") and not line.lstrip().startswith("|")
+    ]
+
+
+def _bullets(lines: list[str]) -> list[str]:
+    """Each bullet joined with its indented continuation lines."""
+    bullets: list[str] = []
+    for line in lines:
+        if line.startswith("- "):
+            bullets.append(line)
+        elif line.startswith("  ") and bullets:
+            bullets[-1] += " " + line.strip()
+    return bullets
+
+
+def test_workspace_context_bodies_route_and_do_not_hold_rules() -> None:
+    problems = []
+    for ws in workspaces():
+        rel = f"{ws}/{CONTEXT}"
+        if not (ROOT / rel).is_file():
+            continue
+        lines = _outside_tables(rel)
+        if len(lines) > CONTEXT_BODY_MAX_LINES:
+            problems.append(
+                f"{rel}: {len(lines)} body lines outside tables; the limit is "
+                f"{CONTEXT_BODY_MAX_LINES}. Move rule text to its invariants page."
+            )
+        problems += [
+            f"{rel}: a bullet must hold a command, a path or a link: {bullet[:70]!r}"
+            for bullet in _bullets(lines)
+            if "`" not in bullet and "](" not in bullet
+        ]
+    assert not problems, "\n".join(problems)
+
+
+def test_read_first_tables_are_short_with_short_when_cells() -> None:
+    problems = []
+    for rel in context_files():
+        if rel == CONTEXT or not (ROOT / rel).is_file():
+            continue
+        rows = read_first_rows(rel)
+        if len(rows) > READ_FIRST_MAX_ROWS:
+            problems.append(
+                f"{rel}: {len(rows)} Read first rows; the limit is {READ_FIRST_MAX_ROWS}"
+            )
+        problems += [
+            f"{rel}: When must be 'always' or at most {WHEN_MAX_CHARS} characters: {row.when!r}"
+            for row in rows
+            if row.when != "always" and len(row.when) > WHEN_MAX_CHARS
+        ]
     assert not problems, "\n".join(problems)
 
 
@@ -415,7 +490,7 @@ def test_read_first_rows_resolve_to_existing_files_and_sections() -> None:
                     f"{rel}: {row.target} has no heading {row.section!r}; use an "
                     f"exact heading from that file or '{NONE_MARK}' for the whole file"
                 )
-            if not row.when or len(row.when) > 120:
+            if not row.when:
                 problems.append(f"{rel}: When must be 'always' or a short condition: {row.when!r}")
         problems += broken_links(rel)
     assert not problems, "\n".join(problems)
@@ -438,25 +513,34 @@ def _always_bytes(rel: str) -> tuple[int, list[str]]:
     return total, problems
 
 
+def _always_set_bytes(ws: str) -> tuple[int, list[str]]:
+    """Bytes read for every task in a workspace: identity, rules, root, workspace, always rows."""
+    parts = [IDENTITY, f"{RULES_DIR}/{UNSCOPED_RULES[0]}", CONTEXT, f"{ws}/{CONTEXT}"]
+    scoped = f"{RULES_DIR}/{Path(ws).name}.md"
+    if (ROOT / scoped).is_file():
+        parts.insert(2, scoped)
+    total = sum((ROOT / part).stat().st_size for part in parts)
+    root_always, root_problems = _always_bytes(CONTEXT)
+    own, own_problems = _always_bytes(f"{ws}/{CONTEXT}")
+    return total + root_always + own, root_problems + own_problems
+
+
 def test_always_read_budget_per_workspace() -> None:
-    root_bytes = (ROOT / CONTEXT).stat().st_size
-    root_always, problems = _always_bytes(CONTEXT)
+    problems: list[str] = []
     report = []
     over = []
     for ws in workspaces():
-        rel = f"{ws}/{CONTEXT}"
-        if not (ROOT / rel).is_file():
+        if not (ROOT / ws / CONTEXT).is_file():
             continue
-        own, own_problems = _always_bytes(rel)
+        total, own_problems = _always_set_bytes(ws)
         problems += own_problems
-        total = root_bytes + root_always + (ROOT / rel).stat().st_size + own
         report.append(f"{ws}: {total:,} bytes")
         if total > ALWAYS_BUDGET_BYTES:
             over.append(ws)
     assert not problems, "\n".join(problems)
     assert not over, (
-        f"The always-read set (root CONTEXT.md + workspace CONTEXT.md + every 'always' row) is "
-        f"over "
+        f"The always-read set (CLAUDE.md + the karpathy rule + the workspace rule + root "
+        f"CONTEXT.md + workspace CONTEXT.md + every 'always' row) is over "
         f"{ALWAYS_BUDGET_BYTES:,} bytes for {', '.join(over)}. Point 'always' rows at smaller "
         "sections or make them conditional.\n" + "\n".join(report)
     )
@@ -980,22 +1064,6 @@ INVARIANT_SECTION_CEILINGS: dict[tuple[str, str], int] = {
     ("cli-trial-ledger.md", "Families and queries"): 6_834,
     ("cli-investigation-tools.md", "Rules"): 4_104,
 }
-
-
-def _stale_context_ceilings() -> list[str]:
-    stale = []
-    for rel, ceiling in CONTEXT_LINE_CEILINGS.items():
-        lines = len(_text(rel).splitlines())
-        if lines <= CONTEXT_MAX_LINES:
-            stale.append(f"{rel}: {lines} lines is within {CONTEXT_MAX_LINES}; remove its ceiling")
-        elif lines < ceiling:
-            stale.append(f"{rel}: {lines} lines; lower its ceiling from {ceiling}")
-    return stale
-
-
-def test_context_line_ceilings_only_go_down() -> None:
-    stale = _stale_context_ceilings()
-    assert not stale, "\n".join(stale)
 
 
 def test_always_rows_per_workspace_stay_small_and_name_only_small_whole_files() -> None:

@@ -54,6 +54,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   sorted, tz-aware row per bar.
 - Store paths reject empty, `..`, backslash and absolute names. A slash symbol (`BTC/USD`) becomes a
   subdirectory, so it never collides with `BTC_USD`.
+- A new or changed read path needs its future-poison guard with a must-fail leaky twin
+  (pattern: `tests/bias_guards/test_future_poison_pattern.py`).
 
 ## Corporate actions
 
@@ -152,3 +154,29 @@ Moved to [data-crypto.md § Crypto identity and features](data-crypto.md#crypto-
 
 ## Offline Bybit context
 Moved to [data-crypto.md § Offline Bybit context](data-crypto.md#offline-bybit-context).
+
+## Code map
+
+Data ingestion and storage: vendor adapters with receipts, the raw Parquet store, the
+point-in-time `as_of` reader, corporate-action clocks, universe membership, immutable hashed
+snapshots, and the crypto data house storage. It imports only `alpha_core` (import-linter
+contract "alpha_data depends only on core"); `alpha_backtest`, `alpha_study` and `alpha_cli`
+import it. It must never let a read see data that was not knowable at the cutoff.
+
+- Code: `packages/alpha-data/src/alpha_data/`; bar timeframes (one minute to one day, the no-HFT boundary,
+  one store per timeframe) in `timeframe.py`; exchange sessions, resampling and as-known alignment in
+  `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
+  house in `crypto/` and `crypto/providers/` (command-local raw-resource discovery is owned by
+  `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
+  Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
+  never bars or backtest inputs; event reads require an aware UTC cutoff).
+- Daily OHLCV health checks and their supplied report cutoff live in `health.py`. See [the tool card](../../../research/tools/data-health.md).
+- Tests: `tests/unit/test_data_health_report.py`, `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
+  `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,
+  `test_bar_timeframe.py`, `test_ingest_pipeline_intraday.py`, `test_sessions.py`, `test_resample.py`, `test_align.py`,
+  `test_crypto_*`, `test_context_*.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
+  `test_survivorship.py`, `test_candles_pit.py`, `test_intraday_future_poison.py`, `test_crypto_*_future_poison.py`; integration
+  `tests/integration/test_data_cli.py` and `tests/integration/test_crypto_*`.
+- Check: `uv run python scripts/gate.py check` (lint, `lint-imports`, mypy, mapped tests and every
+  bias guard). Pass aware UTC cutoffs in tests; `tests/unit/test_pit_tz.py` covers naive and DST cases.
+- Tests: the bias guard for any read change; unit tests for new failure modes (typed `DataError`).

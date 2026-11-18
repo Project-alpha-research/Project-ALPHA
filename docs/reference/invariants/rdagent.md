@@ -42,6 +42,8 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 - Stock RDLoop runtime: built only by `scripts/setup_rdagent.sh --with-stock-runtime` from the hash-pinned
   `stock-requirements.lock` on CPython 3.11 (`--require-hashes --no-deps`); `install_stock_profile.py` proves the installed
   distributions are exactly the locked ones and records an inventory digest. It measures a runtime and grants no authority.
+- Editing `alpha_core`, `alpha_patterns` or `alpha_strategies` source changes the installed rule profiles' measured environment; rebuild them (see the native
+  file).
 
 ## Model gateway
 
@@ -57,6 +59,11 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   abandoned usage is unknown; booked amounts are reserved estimates. API chat sends `session_id` unless `--no-router-session` is set;
   provider preferences, budget arithmetic and old receipts stay unchanged. Logs hold hashes and lengths, not text or new headers.
   Memory binds model; no auto-switch; paid calls 180 s, one counted retry ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+- Gateway embedding backends and accounting live in `gateway_embeddings.py`: local by default, or an explicitly priced provider model. Both share the
+  2,000-attempt guard; paid embeddings spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts. Model-bound memory uses a
+  sidecar; `embedding_eval.py` checks retrieval. See the worker invariants for accounting and compatibility.
+- Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions use the run id unless `--no-router-session` is set.
+  Contracts: `test_rdagent_gateway_usage.py`.
 
 ## Factor loop and judging
 
@@ -81,6 +88,11 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   retain up to four full same-panel rounds within the history budget. For memory resume, families, budgets and call counts see the [worker
   change notes](../../../workers/rdagent/CHANGE-NOTES.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_{restore_and_history,families,budget_and_caps,gateway_usage}.py`.
+- Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and `loop_guard.py` closes exhausted-provider rounds, including
+  proposal, without inventing trials. Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure. The code-critic
+  guard preserves execution/value feedback and skips later critics in the failed round. Internal coding errors preserve completed factors for judging; two
+  consecutive failures stop the run. Proposal history fits a character budget. New factor rows record the family and per-factor critic outcome. Vector rebuild
+  receipts identify omitted nodes and causes. Restored panel provenance includes run receipts.
 
 ## Research memory
 
@@ -100,11 +112,25 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
   counted note, and the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`.
   Malformed complete lines and malformed known-schema rows still fail loud.
+- The [proposal pause and stand-in answers](../../../workers/rdagent/README.md#propose-and-discuss) (`--discuss`; a stand-in answers with `alpha
+  ledger reply --as stand-in`;
+  the owner rule is the [stand-in entry](../project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests))
+  exchange JSON with the CLI in `discussion.py` after the family guard. Each proposer and re-ask reads choices from this run's decisions.
+  Feedback gets drop names and built hypotheses. The worker records revision notes, re-ask costs and times from each reply. Tests: `test_rdagent_discussion*`.
+- The scenario checks the prepare receipt or HDF columns once. Proposal context, family closure and feedback share one parsed ledger per round, refreshed when
+  size or modification time changes. Tests: `test_rdagent_read_once.py`.
+- The evaluator appends shortlist and lineage diagnostics; the worker preserves that record. Policy and regression convention:
+  [README](../../../workers/rdagent/README.md#shortlist-bookkeeping); no judging rule changes.
+- Source input columns: [README](../../../workers/rdagent/README.md#futures-funding). Feedback separates global looks from family failures; session
+  drift suggestions follow the frozen
+  source. Tests: `test_rdagent_funding_columns.py`, `test_rdagent_families.py`.
 
 ## Panels and identity
 
   New panels rescale redenominations, split reused tickers, join declared renamed successors and refuse unexplained gap jumps;
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
+- Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and factor-specific eligibility:
+  [README](../../../workers/rdagent/README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
 
 ## Viewer
 
@@ -115,3 +141,21 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   refuses a busy port, runs with an exact environment and a temporary home that is removed on exit, and replaces only
   symlinks it made. It reads run folders and grants no authority. The judge adds the viewer's information-ratio key as NaN,
   never a computed value. Tests: `tests/unit/test_rdagent_viewer.py`.
+
+## Code map
+
+Flat entry scripts and pinned locks that run Microsoft RD-Agent's native loops (synthetic fixtures, rule and costed probes, the stock RDLoop) in their own
+environments for the CLI's native job supervisor, plus `model_gateway.py`, the local program through which RD-Agent reaches a model, and the ALPHA-judged
+factor loop (`factor_loop_launch.py`, `factor_loop_entry.py`, `alpha_factor_judge.py`, `alpha_factor_coder.py`, `alpha_factor_data.py`; ADR-0049) with its
+cross-run research memory (`research_memory.py`) and its universe files (`universes/*.json`, ADR-0055), and RD-Agent's own run viewer (`rdagent_viewer.py`,
+`rdagent_ui_entry.py`, `ui-requirements.lock`; local only). The judge leaves human-authored rule trials (`AlphaRuleTrialV1`, written by
+`alpha_cli.rdagent_rule_family`) out of RD-Agent's proposal summary. It is a separate uv project (`package = false`) with its own lock; no ALPHA package
+imports it, though its probes import ALPHA packages inside qualified profile environments. It has no market, inference or evidence authority.
+
+- Code: the scripts in `workers/rdagent/` and the lock files beside them (`model_gateway.py` is standard library only and imports neither ALPHA nor RD-Agent;
+  `install_stock_profile.py` and `stock-requirements.lock` build the Python 3.11 stock runtime; `--profile ui` records the viewer runtime).
+- Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,
+  `test_rdagent_embedding_{cap,eval}.py`, `test_setup_rdagent.py`, `test_rdagent_viewer.py`, `test_rdagent_factor_{eval,judge,launch}.py`,
+  `test_rdagent_research_memory.py`, `test_rdagent_{gapped_universe,identity_breaks}.py` (the factor-runtime cases need `ALPHA_FACTOR_PYTHON` as well). Tests
+  that need the RD-Agent source skip unless `ALPHA_RDAGENT_SOURCE` (and, for stock lanes, `ALPHA_STOCK_PYTHON`) is set.
+- Root tests under `tests/unit/test_native_*.py` and `tests/unit/test_rdagent_model_gateway.py`.

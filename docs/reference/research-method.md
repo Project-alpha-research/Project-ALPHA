@@ -12,9 +12,26 @@ verified: afc34c4772a9adcd
 How to work a governed research case in the older staged lane: the words, limits and habits of
 its phases. New ideas do not start here: they go through
 [the research playbook](../../research/PLAYBOOK.md) and `alpha test`. The staged lane's phases
-and commands are listed in [`research/CONTEXT.md`](../../research/CONTEXT.md#the-older-staged-lane);
+and commands are listed in [the older staged lane](#the-older-staged-lane) below;
 the rules that must never break are in [research integrity](invariants/research-integrity.md);
 the per-step method is the protocol library (`.agents/skills/alpha-research-protocols/`).
+
+## The older staged lane
+
+The governed Research Case lane (`alpha research ...`, the control store, its Workstation screens) still
+works and is kept until the playbook route covers what it does. New ideas do not start there. It accepts only
+its registered operators; when it reports `RESEARCH_OPERATOR_UNAVAILABLE`, take the idea through the playbook.
+
+| Phase (`uv run alpha research status <case> --json`) | Main commands | Owner act |
+|---|---|---|
+| `captured`, `triage` | `research capture`, `proposal-options`, `sources add`, `sources freeze` | answers the questions |
+| `triage`, `exploration_review` | `research data register`, `research data audit`, `draft`, `export`, `verify` | approves the contract |
+| `pilot`, `deep_research` | `research run pilot`, `research run deep` | none, or an early decision |
+| `confirmation_review`, `sealed_confirmation` | `research draft-confirmation`, `research run confirm` | approves the one-shot run |
+| `research_decision` | `research report`, `evidence-hub`, `decision-view` | `research decide` |
+
+Its stage-by-stage walk-through was removed on 2026-11-15 (readable at commit `0c8b0535`, `research/stages/`).
+Its method library, `.agents/skills/alpha-research-protocols/`, stays: the program and the tool server load it.
 
 ## Phases and evidence zones
 

@@ -10,11 +10,8 @@ verified: 9953a06a796a62f2
 
 ## Purpose
 
-The facade around the Kronos foundation model: vendored pinned model code, a typed `Forecaster`
-protocol, per-sample OHLCV paths with deterministic seeding, and an offline `FakeForecaster`.
-It imports only `alpha_core` (import-linter contract "alpha_forecast depends only on core") and
-only `alpha_cli` may import it. Importing the package never imports torch; torch and pandas stay
-inside. [ADR-0008](../../docs/adr/0008-vendored-kronos-and-alpha-forecast-layer.md)
+The facade around the Kronos foundation model: pinned vendored code, a typed `Forecaster` protocol and an offline `FakeForecaster`.
+It imports only `alpha_core`; importing it never imports torch.
 
 ## Read first
 
@@ -25,26 +22,18 @@ inside. [ADR-0008](../../docs/adr/0008-vendored-kronos-and-alpha-forecast-layer.
 | [forecast invariants](../../docs/reference/invariants/forecast.md) | Settings and leakage | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Models and isolated workers | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | Vendored model | changing the vendored Kronos model |
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | Forecast values | changing forecast values or their quantiles |
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | Signal rule | changing the quantile signal rule |
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | Fake forecaster | changing the fake forecaster used in tests |
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | Source identity | changing what the facade binds into a run id |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | — | changing the vendored model, values, signal or fake |
 | [command line machine learning](../../docs/reference/invariants/cli-ml.md) | Kronos forecasts | changing how the CLI runs or caches forecasts |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Polars by default | touching the pandas edge in `kronos.py` |
 | [what this part is for](../../docs/reference/project/components/forecasting.md) | — | why it exists; before you keep, shelve or remove it |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `packages/alpha-forecast/src/alpha_forecast/`; the vendored model in `_vendor/kronos/` is
-  pinned upstream code, excluded from mypy and lint. Never edit it to fix style.
-- Tests: `tests/unit/test_forecast_*.py`; bias guards `tests/bias_guards/test_forecast_*.py` and
-  `test_kronos_cache_no_lookahead.py`; integration `tests/integration/test_forecast_cli.py`.
-- Tests use `FakeForecaster`; nothing downloads model weights. Missing offline weights must fail
-  loud before any network access.
-- Check: `uv run python scripts/gate.py check`.
+- Code, tests and checks: [code map](../../docs/reference/invariants/forecast.md#code-map); run `uv run python scripts/gate.py check`.
+- Tests use `FakeForecaster`; nothing downloads weights: [fake forecaster](../../docs/reference/invariants/forecast.md#fake-forecaster).
 
 ## Outputs
 
-- Tests: a future-poison guard for any change to the forecast inputs or cache key.
+- Tests: see the [code map](../../docs/reference/invariants/forecast.md#code-map).
 - The owning document: `docs/reference/invariants/forecast.md`.

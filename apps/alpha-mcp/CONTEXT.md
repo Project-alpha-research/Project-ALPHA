@@ -10,11 +10,8 @@ verified: f2d05fc9277bd166
 
 ## Purpose
 
-A stdio MCP (Model Context Protocol) server that lets an AI client call bounded `alpha` commands.
-It sits on top of the import graph: it imports only `alpha_core` and public `alpha_cli` seams
-(import-linter contracts "alpha_mcp imports only public platform surfaces" and "alpha_mcp sits
-atop the DAG") and runs the CLI as a subprocess. It can never approve or decide research, consume
-D2 confirmation, reveal a holdout or place orders.
+A stdio MCP server that lets an AI client call bounded `alpha` commands, by running the CLI as a subprocess.
+It can never approve or decide research, consume D2 confirmation, reveal a holdout or place orders.
 
 ## Read first
 
@@ -24,26 +21,18 @@ D2 confirmation, reveal a holdout or place orders.
 | [MCP invariants](../../docs/reference/invariants/mcp.md) | Authority | always |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Subprocess boundary | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
-| [MCP invariants](../../docs/reference/invariants/mcp.md) | Calling the CLI | changing how a tool calls the CLI |
-| [MCP invariants](../../docs/reference/invariants/mcp.md) | Allowed alpha_cli imports | changing which alpha_cli modules the server imports |
-| [MCP invariants](../../docs/reference/invariants/mcp.md) | Tool inputs | adding or changing a tool input |
-| [MCP invariants](../../docs/reference/invariants/mcp.md) | Changing the tool set | adding or removing a tool |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | — | changing a tool, its inputs, imports or CLI calls |
 | [command reference](../../docs/reference/commands.md) | — | finding the command a tool wraps |
 | [what this part is for](../../docs/reference/project/components/ai-assistants.md) | — | why it exists; before you keep, shelve or remove it |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `apps/alpha-mcp/src/alpha_mcp/` (`server.py` holds the tools and each tool's option
-  allowlist; `_invoke.py` runs the CLI).
-- Tests: `tests/unit/test_mcp_invoke.py`, `tests/integration/test_mcp_server.py`,
-  `tests/integration/test_research_mcp.py` (pins the exact tool list and count).
-- Adding or removing a tool: update the expected tool set in `tests/integration/test_research_mcp.py`,
-  then run `uv run python scripts/check_openapi_operations.py --write` (the capability matrix records
-  the tool count).
-- Check: `uv run python scripts/gate.py check`.
+- Code, tests and checks: [code map](../../docs/reference/invariants/mcp.md#code-map); run `uv run python scripts/gate.py check`.
+- Adding or removing a tool: [changing the tool set](../../docs/reference/invariants/mcp.md#changing-the-tool-set).
 
 ## Outputs
 
-- Tests: a test that the new tool refuses options outside its allowlist.
+- Tests: see the [code map](../../docs/reference/invariants/mcp.md#code-map).
 - The owning document: `docs/reference/invariants/mcp.md`; regenerated
   `docs/governance/capability-authority-matrix.md`.

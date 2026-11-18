@@ -155,6 +155,12 @@ another package is named.
 Native fixture/rule jobs also use per-job `payload-<job_id>` directories directly under the
 control-store data root (`native_supervisor`, `_native_fixture_store`, `_native_rule_completion`).
 
+Nothing a test or a case produces is committed to git. Everything is under the data directory
+(`ALPHA_DATA_DIR`, default `data/`, git-ignored; [layout](ARCHITECTURE.md#runtime-data-directory-layout)):
+`runs/<run_id>/` (immutable runs; a rule test adds `diagnostics.json`), `ledger/trials.jsonl` (every rule trial,
+failed ones included, append-only), `setups/`, `setup-studies/`, `setup-trades/`,
+the staged lane's `control/workstation.sqlite3` and `research/projects/<case>/`.
+
 ## 4. Data Flow
 
 ### 4.1 Governed research-case flow

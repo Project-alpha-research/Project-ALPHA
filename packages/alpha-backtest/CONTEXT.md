@@ -10,11 +10,8 @@ verified: 588f502d79a4857d
 
 ## Purpose
 
-The NautilusTrader run harness: bar-to-feed encoding that makes orders fill at the next open,
-engine configuration, instruments, the fee model, the result schema and the multi-asset weight
-replay. It imports only `alpha_core` and `alpha_data` (import-linter contract "alpha_backtest
-depends only on core + data"); only `alpha_cli` uses it. It must never let an order fill on the bar
-that triggered it.
+The NautilusTrader run harness: feed encoding, engine setup, fees and the result schema.
+It imports only `alpha_core` and `alpha_data`. It must never let an order fill on the bar that triggered it.
 
 ## Read first
 
@@ -26,29 +23,18 @@ that triggered it.
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Immutable, hash-bound artefacts | always |
 | [backtest invariants](../../docs/reference/invariants/backtest.md) | Fee and slippage model | changing fees, slippage or cost assumptions |
 | [backtest invariants](../../docs/reference/invariants/backtest.md) | Accounts and rejections | changing accounts, order rejections or the Nautilus harness |
-| [backtest invariants](../../docs/reference/invariants/backtest.md) | Dividends | changing dividend credits in the harness |
-| [backtest invariants](../../docs/reference/invariants/backtest.md) | Equity and traces | changing equity curves or traces |
-| [backtest invariants](../../docs/reference/invariants/backtest.md) | Multi-asset replay | changing multi-asset replay |
-| [backtest invariants](../../docs/reference/invariants/backtest.md) | Source identity | changing what the harness binds into a run id |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | — | changing dividends, equity, replay or run-id binding |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Corporate actions: two clocks | changing dividend credits |
 | [command line runs](../../docs/reference/invariants/cli-runs.md) | Artifacts and run directories | changing the result schema |
-| [validation invariants](../../docs/reference/invariants/validation.md) | Gauntlet gates | a change alters what the gauntlet measures |
 | [what this part is for](../../docs/reference/project/components/nautilus.md) | — | why it exists; before you keep, shelve or remove it |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `packages/alpha-backtest/src/alpha_backtest/` (`feed.py`, `engine.py`, `frictions.py`,
-  `instruments.py`, `results.py`, `portfolio_replay.py`).
-- Tests: `tests/unit/test_nautilus_feed.py` (daily and intraday feeds), `tests/unit/test_utc_day_execution_feed.py`,
-  `tests/unit/test_portfolio_replay_engine.py`; integration `tests/integration/test_nautilus_engine.py`,
-  `test_dividend_credit.py`, `test_frictions.py`, `test_order_rejection.py`; cash gap sizing
-  `tests/unit/test_entry_gap_sizing.py`; oracles
-  `tests/oracles/test_metamorphic_engine.py`, `tests/oracles/test_pnl_rederivation.py`,
-  `tests/oracles/test_intraday_fill_oracle.py`; intraday runs `tests/integration/test_intraday_backtest.py`.
-- Check: `uv run python scripts/gate.py check`. Engine source bytes are part of run identity, so an
-  edit changes run ids. Ask for an independent review on the pull request; it is advisory.
+- Code, tests and checks: [code map](../../docs/reference/invariants/backtest.md#code-map); run `uv run python scripts/gate.py check`.
+- Engine source bytes are part of run identity: [source identity](../../docs/reference/invariants/backtest.md#source-identity).
 
 ## Outputs
 
-- Tests: an integration test through the real engine for every fill, fee or rejection rule.
+- Tests: see the [code map](../../docs/reference/invariants/backtest.md#code-map).
 - The owning document: `docs/reference/invariants/backtest.md`.

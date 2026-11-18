@@ -26,6 +26,7 @@ from alpha_cli.spine.facts import METRICS
 ROOT = Path(__file__).parents[2]
 PLAYBOOK = "research/PLAYBOOK.md"
 ROUTING = "research/CONTEXT.md"
+SKILL_TABLE = "research/README.md"  # the owner-words to skill table moved out of the routing file
 TOOLS_DIR = "research/tools"
 TOOLS_INDEX = f"{TOOLS_DIR}/README.md"
 LESSONS_INDEX = "research/lessons/README.md"
@@ -82,7 +83,15 @@ def card_files() -> list[str]:
 
 
 def instruction_files() -> list[str]:
-    return [PLAYBOOK, ROUTING, TOOLS_INDEX, LESSONS_INDEX, *card_files(), *map(skill_file, SKILLS)]
+    return [
+        PLAYBOOK,
+        ROUTING,
+        SKILL_TABLE,
+        TOOLS_INDEX,
+        LESSONS_INDEX,
+        *card_files(),
+        *map(skill_file, SKILLS),
+    ]
 
 
 def _text(rel: str) -> str:
@@ -270,8 +279,10 @@ def test_routing_sends_every_idea_to_the_playbook_and_the_rule_test() -> None:
     assert "](PLAYBOOK.md)" in routing and "alpha test" in routing
     assert f"]({ROUTING})" in _text("CONTEXT.md"), "the root CONTEXT.md must route to research"
     assert PLAYBOOK in _text("CONTEXT.md"), "the root CONTEXT.md must name the playbook"
-    missing = [name for name in SKILLS if f"`{name}`" not in routing]
-    assert not missing, f"{ROUTING} must name every research skill: {missing}"
+    assert "](README.md)" in routing, f"{ROUTING} must link the skill table in {SKILL_TABLE}"
+    skill_table = _text(SKILL_TABLE)
+    missing = [name for name in SKILLS if f"`{name}`" not in skill_table]
+    assert not missing, f"{SKILL_TABLE} must name every research skill: {missing}"
 
 
 # ---------------------------------------------------------------------------------------------

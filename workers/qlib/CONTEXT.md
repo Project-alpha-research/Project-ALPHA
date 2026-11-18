@@ -11,11 +11,8 @@ verified: 7b9d7514e67f585b
 
 ## Purpose
 
-An isolated process that runs the real `pyqlib` package for daily cross-sectional model training
-and returns close-stamped out-of-sample predictions. It is a separate uv project with its own lock;
-no root package imports it, and it imports no ALPHA package. It exchanges only validated JSON and
-Parquet with `alpha_cli`, and its results are advisory: ALPHA's own replay is the authority.
-[ADR-0016](../../docs/adr/0016-isolated-qlib-worker.md)
+An isolated process that runs the real `pyqlib` package for daily cross-sectional model training.
+Its results are advisory: ALPHA's own replay is the authority. No root package imports it.
 
 ## Read first
 
@@ -28,17 +25,11 @@ Parquet with `alpha_cli`, and its results are advisory: ALPHA's own replay is th
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | changing features or fold boundaries |
 | [ADR-0042](../../docs/adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) | Decision | changing a feature recipe or its normalisation |
 | [what this part is for](../../docs/reference/project/components/qlib.md) | — | why it exists; before you keep, shelve or remove it |
+| [worker invariants](../../docs/reference/invariants/workers.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `workers/qlib/src/alpha_qlib_worker/`; tests: `workers/qlib/tests/`. Root tests that cover
-  the boundary: `tests/unit/test_qlib_isolation.py`, `tests/unit/test_ml_*.py`.
-- The worker has its own environment. From `workers/qlib`: `uv lock --check`, `uv sync --locked`,
-  `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`,
-  `uv run pytest -q -m "not network"`.
-- Or run CI's job from the repository root: `uv run python scripts/gate.py component qlib`.
-- A change to the exchange schema also needs the root check (`uv run python scripts/gate.py check`)
-  for the CLI side.
+- Code, tests and checks: [code map](../../docs/reference/invariants/workers.md#code-map); run `uv run python scripts/gate.py component qlib` at the root.
 
 ## Outputs
 

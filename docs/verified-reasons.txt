@@ -25,6 +25,9 @@ docs/reference/model-routing.md
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
+docs/reference/project/components/ai-assistants.md
+  verified 5ab7578017d88c1e on 2026-11-18: The skill's writing-style section was only shortened to fit its 40-line limit; the page's sentence about it still holds
+
 docs/reference/project/components/command-line.md
   verified 542506588d2f3128 on 2026-11-18: Merge of main: main's RD-Agent discussion commands and this branch's toolbox entries are both described; re-read both pages after the merge
 
@@ -65,7 +68,7 @@ docs/reference/project/components/web-workstation.md
   verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/ideas-and-considered.md
-  verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
+  verified 2e68d05271d077ba on 2026-11-18: The new log entry records a decided writing style, not an idea under consideration, so no row here changes
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right

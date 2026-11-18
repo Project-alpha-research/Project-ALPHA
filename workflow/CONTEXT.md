@@ -39,16 +39,13 @@ all `done`: 03. Slices done but no `04-verify.md`: 04. Otherwise: 05.
 
 ## The task folder
 
-- One folder per task: `docs/work/<yyyy-mm-dd>-<slug>/`, named after the day it was shaped and a
-  few lowercase words (`2026-11-14-coverage-source-column`). It lives only on the task's branch
-  while its pull request is open; `main` never holds one.
-- It holds only the stage files `01-brief.md`, `02-plan.md`, `03-build.json` (the build record
-  `scripts/handoff.py` writes), `04-verify.md` and `05-handoff.md`. A folder is committed only once it has a `02-plan.md`
-  (the contract test checks this); an idea that must wait goes to the backlog instead.
-- The owner may edit any stage file between stages; the next stage reads the edited file, not
-  the agent's memory of it.
-- The pull-request description is the hand-off record: stage 05 puts the verification and
-  hand-off into it and removes the folder before merge. History is git log and pull requests.
+- **Today (known gap):** the pull-request description is the handoff record. Build briefs are not yet kept in
+  git: they are written outside the repository, and `docs/work/` no longer exists on `main`. Read a stage file's
+  `docs/work/<task>/` paths below as the optional route, not as something to expect.
+- The optional route: one folder per task, `docs/work/<yyyy-mm-dd>-<slug>/`, only on the task's branch while its
+  pull request is open (`main` never holds one). It holds the stage files `01-brief.md`, `02-plan.md`,
+  `03-build.json`, `04-verify.md` and `05-handoff.md`; one is committed only once it has a `02-plan.md`
+  (the contract test checks this). The owner may edit any stage file between stages.
 - The small route skips the folder: a fix confined to one module and its tests, with an obvious
   test, or a documentation-only change. It runs stages 03–05 on a branch: 03 builds from a
   short brief (stage 03 names its headings) and the code area's `CONTEXT.md` in place of a plan,

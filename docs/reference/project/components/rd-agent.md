@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 2bb07fcd4fedc6d2
+verified: 4e2bf778500e3419
 ---
 
 # RD-Agent
@@ -44,31 +44,17 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   every setting it cannot honour, and logs each call without its text. Cache and serving-provider
   facts reach the receipt; API calls use a run-only router session, with a comparison-run opt-out.
   Recording details: [worker README](../../../../workers/rdagent/README.md#model-gateway-2026-11-14).
-- RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
-  are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
-  comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
-  from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
-  Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
-  a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
-  The held top third must beat the bottom third before costs; failures still count. The proposer sees every family and is told to leave repeated failures.
-  The universe is a frozen file; each paid model call has a time limit
-  ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
-- New frozen panels allow missing days and delisted names with causal membership and explicit losses;
-  [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
-  The wide store may be used once every implausible gap jump is declared; freeze rescales declared redenominations, splits reused tickers and
-  refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
-  Declared renamed tickers join as one instrument under the old name, with each join receipted.
-  The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
-  Optional [futures funding](../../../../workers/rdagent/README.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
-- Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
-  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run. Code failures stay counted trials but do not close
-  idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
-  classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
-  or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
-  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
-  falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
-  proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
-  invariants](../../invariants/workers.md#rd-agent-worker).
+- ALPHA, not RD-Agent's built-in Qlib backtest, judges the factor loop: a cheap rank screen first, then a
+  cost-aware replay only for factors that pass, with 2024 onward locked away from the loop
+  ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md), [ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
+  A factor that passes everything is only a CANDIDATE: a lead for one owner-approved check on reserved data,
+  never evidence. Every try counts, failures included, and the proposer is shown what failed so it stops repeating it.
+- The data is a frozen universe file; missing days and delisted names are allowed with explicit disclosure,
+  the data is not survivorship-free, and renamed or split tickers need an owner-supplied break list.
+- Runs resume from completed rounds; an unfinished round is recorded as abandoned, never invented as a trial.
+  The wrapper refuses proposals from idea families that have already failed repeatedly and asks again.
+  Counts, caps and spend are always explicit. The technical rules of each of these are change notes in the
+  [worker README](../../../../workers/rdagent/README.md#change-notes-moved-from-the-project-page-2026-11-18).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are
@@ -180,6 +166,17 @@ Idea-family labels remain unknown unless stored. The panel was opened headless o
 - Decided: the autonomous research team is a broader ALPHA capability built around and using
   RD-Agent, started small; it reuses RD-Agent's native abilities and never bypasses ALPHA's controls
   ([log](../owner-decisions.md#2026-11-14-the-autonomous-research-team)).
+- Plan, 2026-11-18: RD-Agent becomes a collaborator, not a black box: every automatic refusal is shown with its
+  reason and can be overridden, a "propose and discuss" mode shows ideas and reasoning before anything is spent, and
+  honesty checks appear as labels
+  ([plan](../owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
+  [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)).
+- Decided 2026-11-18: the run view uses the approved journey layout
+  ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while ideas are throwaway tests a
+  labelled stand-in user may answer its pauses, never for approvals
+  ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests)).
+- Later: RD-Agent chooses tests from the [toolbox](toolbox.md) but does not write them (recommended, not confirmed);
+  Kronos, [Monte Carlo](monte-carlo.md), lookalike and pattern tools are its tools to be wired in.
 - Open: no decision record states RD-Agent's role; write one once the owner confirms the summary
   in the [overview](../overview.md#the-research-loop).
 

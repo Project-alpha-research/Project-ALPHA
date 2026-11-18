@@ -5,7 +5,7 @@ sources:
   - scripts/roadmap_index.py
   - scripts/fs_stale.py
   - tests/unit/test_docs_links.py
-verified: e562cd5ead3bb2e4
+verified: 102388349e2b3243
 ---
 
 # docs workspace
@@ -41,6 +41,10 @@ other files link to it.
   `uv run python scripts/fs.py verify <document>` (with `--reason "<why>"` when it needed no fix);
   `fs.py stale` lists the documents to re-check and `fs.py owners <path>` names the ones that
   describe a file. The check fails while one is stale.
+- When the owner says something directional, a decision entry (date, decision, reason, what it changes) lands
+  in [the newest decisions volume](reference/project/owner-decisions-5.md) in the same pull request as the work it
+  changes, or in a documentation pull request the same day; an idea considered but not decided goes in
+  [ideas and things considered](reference/project/ideas-and-considered.md).
 - Generated pages are never edited by hand; their commands are listed in
   [docs/README.md § Generated files](README.md#generated-files).
 - Check: `uv run pytest -q tests/unit/test_docs_links.py tests/unit/test_filesystem_contract.py`,

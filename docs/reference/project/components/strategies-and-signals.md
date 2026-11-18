@@ -39,22 +39,9 @@ one of these rules.
 
 ## What is real today
 
-The daily setup spec in `alpha_study.setup` is the new way to describe an idea and inspect every
-candidate before a backtest: causal expressions, ordered filters, optional triggers and named
-reference levels. It does not simulate exits. `alpha setup find <spec.toml>` runs it on stored
-daily bars and draws contact sheets of every match that stop at the entry open: nothing after entry
-is computed or drawn, and the count leads with separate occurrences (days within ten bars of each
-other are one). The older rule language remains for the screens that use it until it is replaced;
-see [study invariants](../../invariants/study.md).
-
-`alpha setup study FIND_ID` measures forward returns after recorded occurrences, with drift and
-random-date controls, citable facts and one counted exploratory trial. Only its declared primary
-horizon is tested; sizing remains deferred. Its end-to-end smoke check passes; see
-[setup study](../../../../research/tools/setup-study.md).
-
-`alpha setup trade FIND_ID` measures long or short trades in percent and initial-stop risk units. The opposite direction on the same entries
-is an uncounted control. For exit rules, assumed costs and stored facts, see
-[setup trade](../../../../research/tools/setup-trade.md).
+The daily chart-setup lane (`alpha setup find`, `study`, `trade`) is described in [Setup Lab](setup-lab.md).
+The older rule language remains for the screens that use it until it is replaced; see
+[study invariants](../../invariants/study.md).
 
 Plain long/flat all-in sizing is available beside volatility targeting for moving-average crossover,
 Donchian breakout and time-series momentum; it holds entry units until the rule exits.
@@ -75,8 +62,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-strategies`, `packages/alpha-patterns`
-- **Capabilities:** `rules-and-scans`, `strategy-development`, `price-lookalikes`, `price-novelty`,
-  `setup-find`, `setup-study`, `setup-trade`
+- **Capabilities:** `rules-and-scans`, `strategy-development`, `price-lookalikes`, `price-novelty`
 - Code: `packages/alpha-strategies/src/`, `packages/alpha-patterns/src/`; the `alpha rules`,
   `alpha scan`, `alpha suite`, `alpha lookalike`, `alpha unusual` and `alpha setup` commands in
   `apps/alpha-cli/`.
@@ -90,7 +76,10 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Decisions and open questions
 
-- No owner decision about this part is in the [owner decisions log](../owner-decisions.md) yet.
+- Owner decisions: see the [decisions log](../owner-decisions.md). Chart-setup work (find, study, trade) has its own page, [Setup Lab](setup-lab.md).
+- Decided 2026-11-18: lookalike search and the chart-pattern and trend-line code are RD-Agent's tools, to be
+  wired in and never slimmed away ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
+- Decided 2026-11-14: the owner's own chart setups stand equal to RD-Agent's ideas (design brief, linked above).
 
 ## Never
 

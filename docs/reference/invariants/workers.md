@@ -10,65 +10,58 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 457bff16680b35d6
+verified: 0a0ea82ea83dfe1f
 ---
 
 # Worker invariants
 
 Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
 The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
+
+On this page: [Shared rules](#shared-rules), [Qlib worker](#qlib-worker), [Literature worker](#literature-worker), [AFML worker](#afml-worker),
+[RD-Agent worker](#rd-agent-worker).
 ## Shared rules
-- Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
-  (root members are `packages/*` and `apps/*`). Never add a worker dependency to the root `pyproject.toml`
-  or `uv.lock`. For Qlib this is enforced by `tests/unit/test_qlib_isolation.py`.
+- Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace (root members are `packages/*` and `apps/*`).
+  Never add a worker dependency to the root `pyproject.toml` or `uv.lock`. For Qlib this is enforced by `tests/unit/test_qlib_isolation.py`.
   [ADR-0016](../../adr/0016-isolated-qlib-worker.md).
-- No ALPHA package imports worker code. `alpha_cli` launches a worker as a subprocess and exchanges files
-  or JSON with it. [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
-- The qlib, literature and afml gates are `uv run python scripts/gate.py component qlib|literature|afml`
-  (CI jobs `qlib-worker`, `literature-worker`, `afml-worker`). From `workers/<name>/` they run:
-  `uv lock --check`, `uv sync --locked`,
-  `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
-  `gate.py check` does not run worker tests.
-- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock
-  runtime bundle, CPython 3.11 (see below).
+- No ALPHA package imports worker code. `alpha_cli` launches a worker as a subprocess and exchanges files or JSON with it. [engineering § Subprocess
+  boundary](engineering.md#subprocess-boundary).
+- The qlib, literature and afml gates are `uv run python scripts/gate.py component qlib|literature|afml` (CI jobs `qlib-worker`, `literature-worker`,
+  `afml-worker`). From `workers/<name>/` they run: `uv lock --check`, `uv sync --locked`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run
+  mypy`, `uv run pytest -q -m "not network"`. `gate.py check` does not run worker tests.
+- Workers target CPython 3.12 only (`>=3.12,<3.13`); qlib, literature and afml run strict mypy. The one exception is RD-Agent's stock runtime bundle,
+  CPython 3.11 (see below).
 ## Qlib worker
 
-- This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or
-  deserialises a model pickle; no model pickle or executable object crosses the exchange.
-  `tests/unit/test_qlib_isolation.py::test_importing_ml_contract_does_not_import_worker_or_model_stack`.
-- Recorder data and fitted model state stay in an ephemeral worker directory deleted when the process exits.
-  Native model text or JSON is round-tripped only inside the worker; persistent model reuse is unsupported.
-- The exchange is built and validated by `apps/alpha-cli/src/alpha_cli/ml_input.py` and `ml_contract.py`,
-  and validated again independently by `workers/qlib/src/alpha_qlib_worker/contract.py`. Change both sides
-  together.
-- Daily panel rows and predictions are available at the session close, `session_ts + 23h`, never midnight;
-  `contract.py` rejects any other `available_at`.
-- Request `schema_version` is 1 (LightGBM), 2 (`rank_ensemble_v1`) or 3 (model selection). Contract
-  versions are additive: never change what v1 or v2 compute; older readers reject newer versions rather
-  than downgrade them.
-- Preprocessing statistics are fitted on each training fold only. Ensemble weights and ridge alpha are fixed,
-  not tuned.
-- Requests cannot supply device, seed, executable classes, arbitrary model arguments, validation inclusion
-  or more than eight threads; numeric parameters are bounded by `schemas/request-v3.schema.json`.
-- There is no model fallback: a missing, unsupported or failing dependency fails explicitly. `capabilities`
-  reporting `available` means importable only, not data readiness, qualification or promotion eligibility.
-- The newer registry packages (`catboost`, `xgboost`, `xgboost-cpu`, `graphviz`, `plotly`) are
-  wheel-only (`[tool.uv] no-build-package`); a missing wheel fails instead of compiling from source.
-- ALPHA's canonical replay (`alpha ml replay`, through `run_weight_replay`) is authoritative for the metrics
-  it computes; Qlib's own Recorder and backtest reports are advisory. The replay keeps the label
-  `OOS replay validated — model not recomputed under counterfactual`: not a full gauntlet, not promotion-eligible.
-- Feature recipe version 1 is the default. Version 3 (opt-in) computes all 158 Alpha158 columns and the fold
-  normalisation with upstream Qlib (`upstream_alpha158.py`); the parity test against Qlib's own provider and
-  handler must stay exact. Version 2 is a legacy 40-column correction. The recipe is part of `config_hash`,
-  which prediction readers enforce: never reuse a model just because feature names match.
-- Versions 1 and 2 (`features.py`, `native_feature_corrections.py`, the v1 normalisation in `real.py`) exist
-  only to reproduce stored results: never change their formulas. Their golden values are compared by value
-  (1e-9), not by byte digest: recomputation is bit-identical on one machine only.
+- This is the only environment with Qlib, LightGBM, CatBoost or XGBoost. No ALPHA process imports Qlib or deserialises a model pickle; no model pickle or
+  executable object crosses the exchange. `tests/unit/test_qlib_isolation.py::test_importing_ml_contract_does_not_import_worker_or_model_stack`.
+- Recorder data and fitted model state stay in an ephemeral worker directory deleted when the process exits. Native model text or JSON is round-tripped only
+  inside the worker; persistent model reuse is unsupported.
+- The exchange is built and validated by `apps/alpha-cli/src/alpha_cli/ml_input.py` and `ml_contract.py`, and validated again independently by
+  `workers/qlib/src/alpha_qlib_worker/contract.py`. Change both sides together.
+- Daily panel rows and predictions are available at the session close, `session_ts + 23h`, never midnight; `contract.py` rejects any other `available_at`.
+- Request `schema_version` is 1 (LightGBM), 2 (`rank_ensemble_v1`) or 3 (model selection). Contract versions are additive: never change what v1 or v2 compute;
+  older readers reject newer versions rather than downgrade them.
+- Preprocessing statistics are fitted on each training fold only. Ensemble weights and ridge alpha are fixed, not tuned.
+- Requests cannot supply device, seed, executable classes, arbitrary model arguments, validation inclusion or more than eight threads; numeric parameters are
+  bounded by `schemas/request-v3.schema.json`.
+- There is no model fallback: a missing, unsupported or failing dependency fails explicitly. `capabilities` reporting `available` means importable only, not
+  data readiness, qualification or promotion eligibility.
+- The newer registry packages (`catboost`, `xgboost`, `xgboost-cpu`, `graphviz`, `plotly`) are wheel-only (`[tool.uv] no-build-package`); a missing wheel
+  fails instead of compiling from source.
+- ALPHA's canonical replay (`alpha ml replay`, through `run_weight_replay`) is authoritative for the metrics it computes; Qlib's own Recorder and backtest
+  reports are advisory. The replay keeps the label `OOS replay validated — model not recomputed under counterfactual`: not a full gauntlet, not
+  promotion-eligible.
+- Feature recipe version 1 is the default. Version 3 (opt-in) computes all 158 Alpha158 columns and the fold normalisation with upstream Qlib
+  (`upstream_alpha158.py`); the parity test against Qlib's own provider and handler must stay exact. Version 2 is a legacy 40-column correction. The recipe is
+  part of `config_hash`, which prediction readers enforce: never reuse a model just because feature names match.
+- Versions 1 and 2 (`features.py`, `native_feature_corrections.py`, the v1 normalisation in `real.py`) exist only to reproduce stored results: never change
+  their formulas. Their golden values are compared by value (1e-9), not by byte digest: recomputation is bit-identical on one machine only.
 - `VWAP0` is a typical-price proxy in every recipe, never exchange VWAP, and every v3 result names it.
 - Version 3 does not become the default until its per-model processor choice is measured on real data
   ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md) § Open before v3 is the default).
-- W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission,
-  accounting, fit allowance or promotion; readiness stays blocked when the worker is absent.
+- W09/W11 planning contracts, invocation observations, checkpoints and refit plans grant no admission, accounting, fit allowance or promotion; readiness stays
+  blocked when the worker is absent.
 ## Literature worker
 - The one research network surface ([ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)).
   Metadata comes only from OpenAlex, Crossref, Unpaywall and arXiv; Google Scholar stays manual. Documents are
@@ -116,7 +109,8 @@ The general rule is [research integrity § Models and isolated workers](research
   `WORKER_NOT_INSTALLED` and the one setup step.
 
 ## RD-Agent worker
-- Funding inputs, source-based eligibility and fractional thirds: [funding policy](../../../workers/rdagent/README.md#futures-funding).
+- Funding inputs and eligibility: [funding policy](../../../workers/rdagent/README.md#futures-funding); thirds and ties:
+  [rule and do-not-change list](../../../workers/rdagent/README.md#thirds-and-ties).
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.

@@ -12,7 +12,8 @@ verified: 0cfb4307335d7cd5
 
 ## Purpose
 
-Every change to ALPHA walks five stages, in order. Each stage reads the previous stage's file,
+A planned change to ALPHA walks five stages, in order; the small and brief routes below skip the stage
+files. Each stage reads the previous stage's file,
 does one job, leaves one plain file the owner can read and edit, and stops at a checkpoint. Pick
 the stage your task is in from the table below, open its `CONTEXT.md` and follow it; the rules a
 stage needs are in the files its Read first table names.
@@ -27,6 +28,9 @@ stage needs are in the files its Read first table names.
 
 Which stage am I in? No task folder yet: 01. A brief but no plan: 02. A plan whose slices are not
 all `done`: 03. Slices done but no `04-verify.md`: 04. Otherwise: 05.
+
+How do I land a change? Open a pull request. CI is the merge gate and its one required check is `ci-ok`; the
+orchestrating session merges once it is green. The owner keeps branch-protection changes ([stage 05](stages/05-land/CONTEXT.md)).
 
 ## Read first
 

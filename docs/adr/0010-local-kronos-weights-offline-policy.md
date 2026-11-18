@@ -64,3 +64,7 @@ never global env mutation.**
   (ADR-0008); this ADR only governs cache-resolved HF ids.
 - `.env` is CWD-scoped (pydantic-settings): invoking `alpha` outside the repo root
   reverts to code defaults — accepted, identical to the existing relative `data_dir`.
+
+*Amended 2026-11-18:* the code default is `forecast_local_only = False`, so with no setting the model is fetched from the
+hub on first use; offline loading is opt-in (`ALPHA_FORECAST_LOCAL_ONLY=1`). The offline wording above describes a machine
+configured that way, not the default. No machine with the model files is recorded.

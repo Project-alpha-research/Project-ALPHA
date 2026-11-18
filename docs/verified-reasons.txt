@@ -20,13 +20,13 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 5bac5884cd269869 on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
+  verified 31fd64a0afc8f0a2 on 2026-11-18: re-read; it names no RD-Agent module so the wording fix in the CLI workspace file changes nothing here
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing
+  verified 00914c11bd52f4e5 on 2026-11-18: re-read; it states neither who merges nor the stage count, so the workflow wording fixes change nothing here
 
 docs/reference/project/components/forecasting.md
   verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -56,7 +56,7 @@ docs/reference/project/components/validation-and-evidence.md
   verified 385c6d3617445444 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 docs/reference/project/components/web-workstation.md
-  verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
+  verified 6f015118475a7440 on 2026-11-18: re-read; the new frontend README row and wrapped bullet change nothing it says
 
 docs/reference/project/ideas-and-considered.md
   verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
@@ -74,7 +74,7 @@ docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
 docs/reference/project/owner-decisions.md
-  verified f4dc8c442ce71ab2 on 2026-11-18: re-read: model routing gained routed reading, owned checks and task folders; this volume's entries link it and state none of these
+  verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

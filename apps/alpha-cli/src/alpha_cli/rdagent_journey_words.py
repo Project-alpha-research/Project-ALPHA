@@ -241,7 +241,8 @@ def trading_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str])
                 number(
                     replay["net"].get("annualized_return"),
                     "Yearly return above the basket",
-                    "After trading costs, expressed per year.",
+                    "Average per period scaled to a year, after trading costs; "
+                    "not compounded, so it differs from the chart's end values.",
                     percent=True,
                 ),
                 number(

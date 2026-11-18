@@ -7,13 +7,13 @@ import json
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import asdict
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.rdagent_journey_cmds import journey
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.trial_query import ASSET_NOTE, asset_group
 from alpha_cli.spine.trial_reader import (
@@ -27,7 +27,6 @@ from alpha_cli.spine.trial_record import TrialRecord
 from alpha_core.config import AlphaSettings
 
 ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-ledger view.")
-ledger_app.command("journey")(journey)
 RD = Annotated[Path | None, typer.Option("--rdagent-ledger", help="RD-Agent ledger path.")]
 JSON = Annotated[bool, typer.Option("--json")]
 NOTICE = "Read-only view; the ledgers themselves are unchanged."
@@ -336,3 +335,27 @@ def query_trials(
             ),
         },
     )
+
+
+class Theme(StrEnum):
+    light = "light"
+    dark = "dark"
+
+
+@ledger_app.command("journey")
+def journey(
+    run_dir: Annotated[
+        Path, typer.Option(exists=True, file_okay=False, help="Recorded run folder.")
+    ],
+    factor: Annotated[
+        str | None, typer.Option(help="Select all iterations of this factor name.")
+    ] = None,
+    out: Annotated[
+        Path | None, typer.Option(file_okay=False, help="Parent for the journey folder.")
+    ] = None,
+    theme: Annotated[Theme, typer.Option(help="Figure background.")] = Theme.light,
+) -> None:
+    """Write seven-step journeys, annotated pictures and their plotted data."""
+    from alpha_cli.rdagent_journey import build
+
+    typer.echo(build(run_dir, out, factor, theme == Theme.dark))

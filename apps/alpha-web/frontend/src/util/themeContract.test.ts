@@ -8,7 +8,8 @@ import { CLASSIC, DEFAULT_STYLE } from '../components/technical/technicalTokens'
 const root = resolve(import.meta.dirname, '..')
 const css = readFileSync(resolve(root, 'index.css'), 'utf8')
 const generated = readFileSync(resolve(root, 'theme.generated.css'), 'utf8')
-const tokens = Object.fromEntries([...`${css}\n${generated}`.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(m => [m[1], m[2]]))
+const dark = css.match(/\[data-theme="dark"\]\s*\{([^}]+)\}/)![1]
+const tokens = Object.fromEntries([...`${dark}\n${generated}`.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(m => [m[1], m[2]]))
 const surfaces = ['bg', 'panel', 'panel-2', 'elevated', 'title']
 // All seven original chrome text roles remain, with text variants for accent and negative.
 const textRoles = ['ink', 'ink-dim', 'muted', 'accent-text', 'gold', 'up', 'negative-text', ...['a', 'b', 'c', 'd', 'f'].map(grade => `verdict-${grade}`)]
@@ -27,19 +28,28 @@ const named = 'aliceblue antiquewhite aqua aquamarine azure beige bisque black b
 const namedValue = new RegExp(`(?:color|background(?:-color)?|fill|stroke|border(?:-color)?|outline|box-shadow|\\w+Color)['"]?\\s*[:=]\\s*['"\\x60]?[^;{}\\n]*?(?<![\\w.-])(?:${named})\\b(?=[;'"\\x60\\s,}])`, 'i')
 const literal = /#[\da-f]{3,8}\b|\brgba?\(|\bhsla?\(/i
 
-describe('one dark terminal theme', () => {
+describe('preserved dark terminal palette', () => {
   it('has no literal colours outside explicit token definitions', () => {
-    const exempt = new Set(['theme.generated.css', 'util/tokens.ts'])
+    const exempt = new Set(['theme.generated.css', 'theme/themes.ts', 'api/generated.ts'])
     const failures: string[] = []
     for (const file of files(root)) {
       const name = relative(root, file)
-      if (exempt.has(name) || /\.test\.|generated|\.d\.ts$/.test(name) || !/\.(css|tsx?)$/.test(name)) continue
+      if (exempt.has(name) || /\.test\.|\.d\.ts$/.test(name) || !/\.(css|[tj]sx?|svg|html)$/.test(name)) continue
       let source = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
-      if (name === 'components/technical/technicalTokens.ts') source = source.replace(/(?:export )?const (?:SHARED|CLASSIC|DEFAULT_STYLE)[^=]*= \{[\s\S]*?^\}/gm, '')
-      if (name === 'index.css') source = source.replace(/:root\s*\{[\s\S]*?\}/, '')
+      if (name === 'index.css') source = source.replace(/\[data-theme="(?:light|dim|dark)"\]\s*\{[^}]+\}/g, '')
       if (literal.test(source) || namedValue.test(source)) failures.push(name)
     }
     expect(failures).toEqual([])
+  })
+  it('rejects named colour literals in series arrays and intermediate constants', () => {
+    const quotedColour = new RegExp(`(['"\x60])(?:${named})\\1`, 'i')
+    expect(quotedColour.test("const series = ['blue', 'orange']")).toBe(true)
+    const failures = files(root).filter(file => {
+      const name = relative(root, file)
+      if (!/\.[tj]sx?$/.test(name) || /\.test\.|\.d\.ts$/.test(name) || name === 'theme/themes.ts' || name === 'api/generated.ts') return false
+      return quotedColour.test(readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''))
+    })
+    expect(failures.map(file => relative(root, file))).toEqual([])
   })
   it.each(['color: red;', 'border: 1px solid white;', 'fill="blue"', "color: 'rebeccapurple'", "'backgroundColor': 'black'"])('rejects named colour value %s', source => {
     expect(namedValue.test(source)).toBe(true)

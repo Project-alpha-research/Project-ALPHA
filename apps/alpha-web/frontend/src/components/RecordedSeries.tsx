@@ -1,7 +1,7 @@
 import { withAlpha } from '../util/tokens'
 import { formatTime } from '../util/formatTime'
 import { useEffect, useRef } from 'react'
-import { AreaSeries, ColorType, CrosshairMode, LineSeries, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from 'lightweight-charts'
+import { AreaSeries, CrosshairMode, LineSeries, createChart, type IChartApi, type ISeriesApi, type UTCTimestamp } from 'lightweight-charts'
 import { logicalRangeForUTC, type ChartLinkRegistry } from '../shell/chartLinkRegistry'
 import { barSpacingFor, type ChartControls } from '../context/chartControls'
 import { ScientificSeriesCanvas } from './ScientificSeriesCanvas'
@@ -9,10 +9,13 @@ import { cssVars, technicalStyle } from './technical/technicalTokens'
 import { useSettings } from '../state/settings'
 import { RecordedValuesTable } from './RecordedValuesTable'
 import type { PlotRenderer } from '../shell/chartWorkspaceModel'
-import { CHART } from '../util/chartTheme'
+import { ChartSurface } from '../theme/ChartSurface'
+import { useChartPalette } from '../theme/themeState'
+import { marketChartTheme } from './marketChartTheme'
 export interface RecordedPoint { time: number; value: number | null }
 /** Draw backend values unchanged. Whitespace entries preserve unavailable intervals. */
 function MarketRecordedSeries({ points, label, unit, panelId, registry, area = false, controls, reset = 0 }: { points: RecordedPoint[]; label: string; unit: string; panelId: string; registry?: ChartLinkRegistry; area?: boolean; controls?: ChartControls; reset?: number }) {
+  const colors = useChartPalette()
   const host = useRef<HTMLDivElement>(null)
   const readout = useRef<HTMLSpanElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -24,8 +27,8 @@ function MarketRecordedSeries({ points, label, unit, panelId, registry, area = f
   useEffect(() => {
     if (!host.current) return
     const node = host.current
-    const chart = createChart(node, { layout: { background: { type: ColorType.Solid, color: CHART.bg }, textColor: CHART.muted, fontFamily: 'JetBrains Mono Variable, monospace', fontSize: 11 }, grid: { vertLines: { color: CHART.grid }, horzLines: { color: CHART.grid } }, crosshair: { vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } }, timeScale: { borderColor: CHART.line }, rightPriceScale: { borderColor: CHART.line } })
-    const series = area ? chart.addSeries(AreaSeries, { lineColor: CHART.down, topColor: withAlpha(CHART.down, 0.27), bottomColor: withAlpha(CHART.down, 0.03), lineWidth: 1 }) : chart.addSeries(LineSeries, { color: CHART.ink, lineWidth: 1 })
+    const chart = createChart(node)
+    const series = area ? chart.addSeries(AreaSeries) : chart.addSeries(LineSeries)
     chartRef.current = chart; seriesRef.current = series; zoom.current = 0
     const localGesture = () => { remoteRange.current = false }
     node.addEventListener('pointerdown', localGesture, true); node.addEventListener('wheel', localGesture, true); node.addEventListener('keydown', localGesture, true)
@@ -46,6 +49,12 @@ function MarketRecordedSeries({ points, label, unit, panelId, registry, area = f
     return () => { unregister?.(); node.removeEventListener('pointerdown', localGesture, true); node.removeEventListener('wheel', localGesture, true); node.removeEventListener('keydown', localGesture, true); observer.disconnect(); chart.remove(); chartRef.current = null; seriesRef.current = null }
   }, [panelId, registry, area, unit])
   useEffect(() => {
+    chartRef.current?.applyOptions(marketChartTheme(colors))
+    seriesRef.current?.applyOptions(area
+      ? { lineColor: colors.down, topColor: withAlpha(colors.down, 0.16), bottomColor: withAlpha(colors.down, 0.16), lineWidth: 1 }
+      : { color: colors.ink, lineWidth: 1 })
+  }, [colors, area, panelId, registry, unit])
+  useEffect(() => {
     times.current = points.map(p => p.time)
     values.current = new Map(points.map(p => [p.time, p.value]))
     seriesRef.current?.setData(points.map(p => p.value === null ? { time: p.time as UTCTimestamp } : { time: p.time as UTCTimestamp, value: p.value }))
@@ -65,7 +74,12 @@ function MarketRecordedSeries({ points, label, unit, panelId, registry, area = f
 }
 
 export function RecordedSeries(props: { points: RecordedPoint[]; label: string; unit: string; panelId: string; registry?: ChartLinkRegistry; area?: boolean; controls?: ChartControls; reset?: number; renderer?: PlotRenderer }) {
+  return <ChartSurface id={props.panelId} className="series-surface"><RecordedPlot {...props}/></ChartSurface>
+}
+
+function RecordedPlot(props: Parameters<typeof RecordedSeries>[0]) {
   const { chartStyle } = useSettings()
+  const colors = useChartPalette()
   if (props.renderer === 'market') return <MarketRecordedSeries {...props}/>
-  return <div className="recorded-series" style={cssVars(technicalStyle(chartStyle)) as React.CSSProperties}><div className="plot-legend">{props.label} · {props.unit} · UTC</div><ScientificSeriesCanvas {...props}/><RecordedValuesTable {...props}/></div>
+  return <div className="recorded-series" style={cssVars(technicalStyle(chartStyle, colors)) as React.CSSProperties}><div className="plot-legend">{props.label} · {props.unit} · UTC</div><ScientificSeriesCanvas {...props}/><RecordedValuesTable {...props}/></div>
 }

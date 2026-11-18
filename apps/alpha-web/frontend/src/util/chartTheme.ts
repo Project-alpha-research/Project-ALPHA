@@ -1,17 +1,6 @@
-// Chart colors for canvas-land, sourced from the CSS tokens at runtime via util/tokens.ts
-// (single source of truth in index.css; the fallbacks there match these values byte-for-byte,
-// so a pre-CSS read in dev degrades to identical colors).
-
-import { readTokens } from './tokens'
-
-export { withAlpha } from './tokens'
-
-export const CHART = readTokens()
-
-// Shared uPlot axis style (spread into per-axis configs, e.g. `{ ...AXIS, scale: 'y' }`).
-export const AXIS = {
-  stroke: CHART.muted,
-  font: CHART.font,
-  grid: { stroke: CHART.grid, width: 1 },
-  ticks: { stroke: CHART.grid, width: 1 },
+// SVG paints resolve in the nearest chart surface, even in memoized data.
+export const CHART = {
+  bg: 'var(--chart-bg)', ink: 'var(--chart-ink)', dim: 'var(--chart-dim)',
+  muted: 'var(--chart-muted)', grid: 'var(--chart-grid)', line: 'var(--chart-line)',
+  accent: 'var(--chart-accent)', up: 'var(--chart-up)', down: 'var(--chart-down)', gold: 'var(--chart-gold)',
 }

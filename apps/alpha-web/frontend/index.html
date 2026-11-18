@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      const savedTheme = localStorage.getItem('alpha.theme.v1')
+      document.documentElement.dataset.theme = savedTheme === 'dim' || savedTheme === 'dark' ? savedTheme : 'light'
+    </script>
     <link rel="icon" href="/static/app/favicon.svg" type="image/svg+xml" />
     <title>ALPHA Workstation</title>
   </head>

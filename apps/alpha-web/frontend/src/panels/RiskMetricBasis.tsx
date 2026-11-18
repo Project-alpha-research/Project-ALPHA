@@ -17,14 +17,14 @@ export function RiskMetricBasis({ provenance }: { provenance: Provenance }) {
     && basis.pre_anchor_losses === 'not_measured'
   if (!supported) {
     return (
-      <div className="risk-provenance" role="note" aria-label="Scenario metric basis" style={{ fontSize: 12, lineHeight: 1.5 }}>
+      <div className="risk-provenance" role="note" aria-label="Scenario metric basis" style={{ lineHeight: 1.5 }}>
         <span>{basis == null ? 'Legacy response: metric basis unavailable.' : 'Unsupported or invalid metric basis.'}</span>
         <span>Initial-capital baseline and external cash-flow coverage are unknown.</span>
       </div>
     )
   }
   return (
-    <div className="risk-provenance" role="note" aria-label="Scenario metric basis" style={{ fontSize: 12, lineHeight: 1.5 }}>
+    <div className="risk-provenance" role="note" aria-label="Scenario metric basis" style={{ lineHeight: 1.5 }}>
       <span>ALPHA scenario recomputation · compounded simple returns · {provenance.periods_per_year} periods/year.</span>
       <span>Drawdown is a non-positive fraction from each scenario’s own compounded-wealth peaks, including its normalized initial anchor.</span>
       <span>Source anchor (first recorded row): <b className="mono">{String(basis.anchor_value)}</b> recorded equity units at <time>{basis.anchor_ts}</time>.</span>

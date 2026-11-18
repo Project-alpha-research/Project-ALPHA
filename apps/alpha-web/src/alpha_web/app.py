@@ -65,7 +65,9 @@ def create_app() -> FastAPI:
     }
     app = FastAPI(title="Project ALPHA — Workstation", responses=error_responses)
     app.add_middleware(GZipMiddleware, minimum_size=1_000, compresslevel=5)
-    app.mount("/static", StaticFiles(directory=str(_PKG / "static")), name="static")
+    static_dir = _PKG / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     @app.middleware("http")
     async def canonicalize_localhost(

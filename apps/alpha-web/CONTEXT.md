@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 8352197706109d95
+verified: 1a37a5ea801bb675
 ---
 
 # alpha-web workspace
@@ -61,12 +61,11 @@ grants authority.
 - RD-Agent's read-only panel is `panels/RdAgentPanel.tsx`, registered in `shell/documents.ts`,
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
-  Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
-  Its story joins tasks/trials on stored evaluation number, name and code hash; loop counters are never evaluation counters.
-  `explain/rdagentStory.ts` owns story wording; writer-vocabulary and rendering tests guard it, with browser interaction
-  coverage in `e2e/rdagent-story.spec.ts`. Missing links and counts remain unknown; all journey counts use idea cards.
+  The run reader and its journey/PNG routes share the read-only router in `api/rdagent.py`.
+  `panels/RdAgentJourney.tsx` renders the selected idea's seven stored steps. Unit tests sit beside both panels.
+  The browser interaction spec is `e2e/rdagent-journey.spec.ts`.
   Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
-  [story view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
+  [journey view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`.
 - Setup Lab opens at Research → Setup Lab; stored fields and gaps are documented in
   [web API reads](../../docs/reference/invariants/web-api.md#reads-and-writes).

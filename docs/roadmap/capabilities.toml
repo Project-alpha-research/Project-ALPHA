@@ -937,22 +937,26 @@ docs = ["research/tools/rdagent-journey.md", "docs/roadmap/backlog/research-loop
 id = "rdagent-workstation-panel"
 name = "RD-Agent recorded runs in the Workstation"
 codes = ["RD-Agent"]
-what = "Read recorded factor-loop runs, their stage figures, caps, universe and ALPHA's notes without using the terminal."
+what = "Follow one idea through seven stored steps and figures. Browse its run summary, caps, universe and recorded notes."
 see_it = ["Workstation → View → RD-Agent (also in the command palette)"]
 entry_points = [
   "api: GET /api/rdagent/runs",
   "api: GET /api/rdagent/runs/{run_id}",
+  "api: GET /api/rdagent/runs/{run_id}/journeys/{idea_id}",
+  "api: GET /api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}",
   "panel: apps/alpha-web/frontend/src/panels/RdAgentPanel.tsx",
 ]
 proof_synthetic = [
   "tests/unit/test_web_rdagent.py::test_list_newest_first_and_recorded_fields",
   "tests/unit/test_web_rdagent.py::test_funnel_is_counted_from_recorded_rows_and_receipt_wins",
   "tests/unit/test_web_rdagent.py::test_all_writer_statuses_have_sentences",
+  "tests/unit/test_web_rdagent.py::test_journey_picker_matches_the_full_judged_identity",
+  "tests/unit/test_web_rdagent.py::test_journey_routes_read_only_published_bytes",
 ]
 real_data = "2026-11-17: the panel was opened headless on the owner's real runs folder (private screenshots, not committed); the owner has not yet viewed it"
 needs = []
 state = "Partial"
-missing = "owner acceptance; writers record no idea-family label per factor, so that stays unknown; funnel counts are counted from recorded rows"
+missing = "journey view awaits a browser check and owner review; the run records supply verdicts when available"
 docs = ["docs/reference/project/components/rd-agent.md"]
 
 [[capability]]

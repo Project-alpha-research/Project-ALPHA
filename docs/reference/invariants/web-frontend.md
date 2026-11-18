@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: b7226bd97a06f9d0
+verified: d6f06fea13905632
 ---
 
 # Web frontend invariants
@@ -76,7 +76,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 - Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.
 - Colours come from three palettes in `index.css`; type at least 14 px, prose line height 1.45, tabular monospace numbers. Body ink 7:1, other text 4.5:1.
-- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box. Stored figures stay dark.
+- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box.
+  Stored images keep their recorded colours.
 - No literal colours outside the palette declarations: `util/themeContract.test.ts` scans; `theme/theme.test.ts` checks contrast in all three themes.
 
 ## Charts
@@ -137,17 +138,13 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
 
-- `RdAgentPanel` uses generated types and `explain/rdagentStory.ts` for its six-part account, idea journey and cards.
-  Counts link to expandable lists of the ideas counted, without changing the workstation URL; unknown counts stay unknown.
-  Cards group evaluation and loop rounds separately: their counters have no stored cross-link. Task `description` supplies
-  proposer words; trial declarations supply direction, clock and reason; round feedback is explicitly shared by the round.
-  Stored primary-clock figures explain the verdict, including the half-cutoff rule; counted-only replay returns are not story results.
-  Shortlisted always means not a pass; funding eligibility, blend warnings and diagnostic clocks have fixed explanations.
-  A round's shared feedback prints once; later cards point to it. Figures show three significant digits; technical detail keeps all.
-  Missing descriptions, declarations, feedback and code files say not recorded; the glossary explains the screen's terms.
-  Raw rows, legacy receipt counts and code filenames appear only inside technical detail; theme tokens supply colour/type.
-  Async reads remain bound to the selected run. Node tests check writer vocabulary, figures and markup; the browser spec
-  `e2e/rdagent-story.spec.ts` checks navigation, disclosure and URL preservation using synthetic data.
+- The RD-Agent picker shows each idea's name, recorded verdict and publication state. The run summary and technical detail stay available.
+  Selecting an idea reads its journey in place. Responses and disclosures belong to that run and idea.
+  The header repeats the recorded exploratory label from the last fact of step seven. The seven steps keep their stored order, actor and wording.
+  Each headline number uses its stored display string and a visible gloss. A step shows its PNG on a light card, or its recorded reason in muted text.
+  The card sits below the text in a narrow pane. Source files, the agent's own words and code beyond twelve lines use closed disclosures.
+  Missing values read “not recorded”. A missing journey shows the local build command. The browser starts no build.
+  Covered by `RdAgentPanel.test.tsx`, `RdAgentJourney.test.tsx` and `e2e/rdagent-journey.spec.ts`.
 
 - Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures
   have value tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round
@@ -170,7 +167,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   text assets. CI builds it in every job that needs it; the alpha-web wheel ships it (hatch `artifacts`) and
   `scripts/wheel_smoke.py` fails a wheel built without it.
 - Verify UI changes in the integrated app (`uv run alpha-web`). `npm run dev` serves assets only, with no API proxy.
-- If `static/app/index.html` is missing the server answers 503 with a build hint
+- The API starts without a frontend build. The server mounts `/static` when the asset directory exists at startup.
+  If `static/app/index.html` is missing, the SPA entry points answer 503 with a build hint
   (`tests/unit/test_web_port_config.py`); `tests/integration/test_web_spa_assets.py` checks the bundle is built and served.
 
 ## Tests

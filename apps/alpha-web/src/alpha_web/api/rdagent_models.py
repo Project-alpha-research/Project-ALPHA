@@ -94,7 +94,60 @@ class RdAgentStory(StrictModel):
     events: list[str] = Field(default_factory=list)
 
 
+class JourneyIdea(StrictModel):
+    id: str
+    iteration: int | None
+    name: str
+    verdict: str | None
+    built: bool
+
+
+class JourneyMissing(StrictModel):
+    reason: Literal["Journey not built yet"] = "Journey not built yet"
+    command: str
+
+
+class JourneyNumber(StrictModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    value: int | float | None = None
+    display: str | None = None
+    label: str | None = None
+    gloss: str | None = None
+
+
+class JourneyStep(StrictModel):
+    title: str | None = None
+    who: Literal["RD-Agent (AI)", "ALPHA rule"] | None = None
+    text: str | None = None
+    numbers: list[JourneyNumber] = Field(default_factory=list)
+    what_this_means: str | None = None
+    figure: str | None = None
+    figure_reason: str | None = None
+    figures: list[str] = Field(default_factory=list)
+    source: list[str] = Field(default_factory=list)
+    own_words: str | None = None
+    code: str | None = None
+    file: str | None = None
+    facts: list[str] = Field(default_factory=list)
+
+
+class JourneyFigure(StrictModel):
+    file: str | None = None
+    data: str | None = None
+    reason: str | None = None
+    source: list[str] = Field(default_factory=list)
+
+
+class StoredJourney(StrictModel):
+    iteration: int
+    name: str
+    code_sha256: str
+    steps: list[JourneyStep] = Field(min_length=7, max_length=7)
+    figures: dict[str, JourneyFigure] = Field(default_factory=dict)
+
+
 class RdAgentDetail(StrictModel):
+    journeys: list[JourneyIdea] = Field(default_factory=list)
     run: RdAgentRun
     funnel: dict[str, RecordedFact]
     factors: list[RdAgentFactor]

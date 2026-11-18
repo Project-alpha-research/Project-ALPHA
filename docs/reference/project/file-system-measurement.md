@@ -8,7 +8,7 @@ verified: 41f63fd8241be556
 # File-system measurement
 
 The owner's test of the file system is that a reader who starts at `CLAUDE.md` can learn each part's purpose, reasons, plan and place
-([owner, 2026-11-14](owner-decisions.md#2026-11-14-what-the-file-system-is-for)). This page records how that was measured, what the two rounds found and what
+([owner, 2026-11-14](owner-decisions.md#2026-11-14-what-the-file-system-is-for)). This page records how that was measured, what the three rounds found and what
 is still open.
 
 ## What was measured, and why
@@ -25,7 +25,7 @@ is still open.
 |---|---|---|
 | Strict full answers, per reader (of 10) | 0, 0, 0 | 1, 1, 1 (all on the reserved period) |
 | Core full answers, per reader (of 10) | 4, 6, 0 | 9, 8 (7 without one contaminated path), 6 |
-| Core full by majority of three (of 10) | 4 | 8 |
+| Core full by majority of three (of 10) | 4 | 7 (first recorded as 8) |
 | Wrong facts | 2 (two readers each said Kronos runs offline) | 0 |
 | Median reading per question, per reader | 40.6, 35.9, 32.0 KB | 37.3, 32.5, 32.3 KB |
 | Median of the ideal paths | 23.7 KB | 19.5 KB |
@@ -61,22 +61,18 @@ By question, majority of three (strict / core):
 
 ## What was still missing after round 2
 
-| Q | Missing | Cause |
-|---|---|---|
-| 1 | Tie diagnostics, the legacy field, instrument order | Buried below the do-not-change list in a 101 KB page |
-| 2 | The eight ids, null verdict and zero deflation trials | Not on the routed page |
-| 3 | Full frontend loop, "starts nothing", failure path, fixtures | Split across pages; readers took the screen page as complete |
-| 4 | Journey layout reuse, the 11-14 "keep the UI" | The index gave titles only; design deferral absent from the themes section |
-| 5 | The warning pause, the metrics | Reader error; not prominent |
-| 6 | `FakeForecaster`, "Kronos Studio stays" | On a page the route skips; only in volume 5 |
-| 7 | The commands, enforcement in code | No stand-in routing row; the worker row said "proposal pause" |
-| 9 | The status names | Not recorded in any page |
-| 10 | Brief headings, fix rounds, the three-word `--reason` | Split across five pages; one contradiction in `CLAUDE.md` |
+The detail of what readers missed is kept outside the repository, so that it does not teach the test. The pull request that added this page answered
+it with routing rows for the health card and the stand-in rule, a split of the RD-Agent README, a "From an idea to a merged change" section and
+one-line summaries in the topic index. Left for the owner (protected file): `CLAUDE.md` says "One check: gate.py check" without naming `ci-ok`, and
+says the web app calls the CLI as a subprocess with no exception for Setup Lab's stored-file reads.
 
-The pull request that adds this page answers these with routing rows for the health card and the stand-in rule, the missed facts in their one owning
-page, a split of the RD-Agent README, a "From an idea to a merged change" section and one-line summaries in the topic index. It is not yet re-measured.
-Left for the owner (protected file): `CLAUDE.md` says "One check: gate.py check" without naming `ci-ok`, and says the web app calls the CLI as a
-subprocess with no exception for Setup Lab's stored-file reads.
+## Round 3 (after those fixes, commit f0bfa564, 2026-11-19)
+
+- Strict full answers per reader: 2, 3, 4 of 10. Core full: 8, 7, 9 of 10. Wrong facts: none. Median reading per question: 26.3, 19.5, 21.1 KB.
+- Majority of three: strict 2 of 10, core 8 of 10. Round 2's majority core is corrected to 7 of 10.
+- **Verdict:** fails the original bar (9 of 10 fully correct per reader). Fails the proposed bar narrowly: one critical fact was missed by one reader,
+  and the majority core is 8 of 10. Reading cost is inside the original limit.
+- The detail of what readers missed is kept outside the repository.
 
 ## Pass bar
 
@@ -89,7 +85,7 @@ subprocess with no exception for Setup Lab's stored-file reads.
   4. At least 90% of required facts are present on the ideal path, within 1.5 times the ideal bytes. The grader checks the pages, not reader recall.
   Reading cost is measured as bytes actually read; any file over 30 KB on an ideal path is flagged as a defect.
 - **Round 2 on the proposed bar:** part 1 passes. Part 2 almost passes (one reader missed the tie diagnostics, arguably not critical). Part 3 fails
-  by one question (8 of 10 by majority; Q3 and Q4 miss). Part 4 failed on Q3 (the large frontend README) and Q1 (the whole RD-Agent README).
+  by two questions (7 of 10 by majority; Q1, Q3 and Q4 were partial). Part 4 failed on Q3 (the large frontend README) and Q1 (the whole RD-Agent README).
 - Why a new bar: the strict count measures how much detail a reader recites as much as the file system; 26 of 29 non-full answers missed one or two
   sub-details, and reader variance was as large as the effect of the fixes.
 

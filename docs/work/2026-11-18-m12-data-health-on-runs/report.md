@@ -122,3 +122,47 @@ Nothing was retired. Duplicate-date, gap, and invalid-OHLC checks are candidates
 ## Questions
 
 None.
+
+## Review round (2026-11-19)
+
+Every changed file falls in a class the brief allows. No file was reverted.
+The printed wording in the tables above is superseded by the wording below.
+
+Changes in this round:
+1. A blank `--accept-bad-data` reason now stops the command with `BAD_OPTION`. Before, a rule test recorded it as a
+   per-asset error and wrote a trial row; `setup study` and `trade` showed a traceback.
+2. The stop message names the check in words ("check unflagged split") and the period the report covers.
+3. Each verdict sentence says "report of <date> covers all stored bars". The report is made from the same bytes the
+   run reads, so it holds no bars after the run's data end.
+4. The next step after a fail is "run the same command again with --check-data". `alpha data health` alone uses no
+   peers, so a re-check with it could turn a split `fail` into a `warn`.
+5. The unchecked line also offers `--check-data`. "re-run" became "run again" (one name for one thing).
+6. The `data-health-pass` explanation on screen now keeps the limit: "The data checks found no fault. The prices
+   can still be wrong." The data-health card again carries the full "What it cannot tell you" sentence.
+7. New tests: no run folder and no trial row after a stop; blank reasons; a byte proof that a stored `pass` report
+   changes nothing in the run folder except the health record, its label and the ids that hash them.
+8. Docs: the run section of the data-health card was rewritten; the playbook keeps "Always consider"; `cli-runs.md`
+   again says sheet limits do not affect the find id and the manifest is atomic.
+
+Synthetic check (throwaway home, rule `ma_cross` 10/50, `--quick`):
+
+```text
+Data health: pass. GOOD@home: report of 2026-11-18 covers all stored bars.
+Data health: warn. WARN@home: The data stops 15 sessions before the check time. WARN@home: report of 2026-11-18 covers all stored bars.
+Data health: unchecked. NEW@home: No report. Check it with uv run alpha data health NEW@home, or run again with --check-data.
+```
+
+The stop (`--check-data` made the report, with 6 stock peers; no run folder and no trial row were written):
+
+```text
+Data health: fail. BAD@home, check unflagged split: 1 overnight jump looks like a split that is not recorded. Other series were quiet that day. First dates: 2026-01-07. BAD@home: report of 2026-11-18 covers all stored bars. BAD@home: 6 stock peers used. Fix the data, or run again with --accept-bad-data "reason".
+After a repair, run the same command again with --check-data.
+```
+
+With `--accept-bad-data "testing the override"` the run carries `data-health-fail` and `data-health-overridden` and ends with
+"Data health overridden: testing the override." The next run without the option stops again.
+
+Checks after the main merge: the run-health tests (19 passed); the broad unit selection (1,458 passed, 3 skipped); bias guards
+(207 passed, 4 skipped); smoke `rule or setup or health` (9 passed); frontend lint, build with type-check, 703 unit tests;
+browser lanes at the reference viewport (passed, no baseline changed; native lane skipped); semgrep; `fs.py stale` (0 stale);
+`alpha partner selftest` (25 of 25). Screenshots of the warn and overridden Summaries are kept outside git.

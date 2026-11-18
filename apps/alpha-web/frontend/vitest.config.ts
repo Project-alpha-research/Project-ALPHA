@@ -14,6 +14,7 @@ export default defineConfig({
       // are exercised in the built application by Playwright instead of being diluted
       // into a misleading repository-wide percentage.
       include: [
+        'src/explain/rdagentStory.ts',
         'src/context/panelLinkModel.ts',
         'src/panels/chartTableModel.ts',
         'src/panels/codexBenchModel.ts',

@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 42b7da01eb33a39e
+verified: c896c1c1a488fe62
 ---
 
 # Web frontend invariants
@@ -137,19 +137,21 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
 
-- `RdAgentPanel` uses generated response types, recorded-only meters and factor chips with text. Its View/palette entry
-  comes from the document registry. Async reads are bound to the selected run; missing counts never become zero bars.
-  It uses terminal chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
-  The shortlist stage is bookkeeping only; blend warnings display the recorded diagnostic, never a new verdict.
-  Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
+- `RdAgentPanel` uses generated types and `explain/rdagentStory.ts` for its six-part account, idea journey and cards.
+  Counts link to expandable lists of the ideas counted, without changing the workstation URL; unknown counts stay unknown.
+  Cards group evaluation and loop rounds separately: their counters have no stored cross-link. Task `description` supplies
+  proposer words; trial declarations supply direction, clock and reason; round feedback is explicitly shared by the round.
+  Stored primary-clock figures explain the verdict, including the half-cutoff rule; counted-only replay returns are not story results.
+  Shortlisted always means not a pass; funding eligibility, blend warnings and diagnostic clocks have fixed explanations.
+  A round's shared feedback prints once; later cards point to it. Figures show three significant digits; technical detail keeps all.
+  Missing descriptions, declarations, feedback and code files say not recorded; the glossary explains the screen's terms.
+  Raw rows, legacy receipt counts and code filenames appear only inside technical detail; theme tokens supply colour/type.
+  Async reads remain bound to the selected run. Node tests check writer vocabulary, figures and markup; the browser spec
+  `e2e/rdagent-story.spec.ts` checks navigation, disclosure and URL preservation using synthetic data.
 
-- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles). It reads GET setup routes only and binds each
-  response to the selected find. Stored figures have adjacent value tables; rejected candidates retain their reason in grey.
-  Every linked study/trade stays separate, with its labels, costs and trial indices; no curve or total is calculated.
-  Price snapshots, per-trade direction and aggregate returns are not recorded; sampled contact sheets are shown as stored.
-  A timeline plots each stored match by its recorded date (grey if rejected); long decimals are rounded for reading only.
-  Limits quote the setup tool cards; missing records, empty results and failed reads are distinct.
-  `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `workflowModel.test.ts` and `e2e/setup-lab.spec.ts` cover this surface.
+- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures
+  have value tables; rejected matches stay grey with their reason; a timeline plots stored matches; long decimals are rounded for reading
+  only; no curve or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
 
 ## Generated API client
 

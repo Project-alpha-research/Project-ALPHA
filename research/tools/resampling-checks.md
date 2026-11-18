@@ -19,7 +19,8 @@ verified: c37da61556254595
 
 **How to read it**
 
-- All four use the scored after-cost bar returns from the stored walk-forward equity, and the run's own bars per year.
+- RD-Agent’s [journey](rdagent-journey.md) also reports the Sharpe interval and block paths on a judged factor’s after-cost return above the basket.
+- On a rule test, all four use the scored after-cost bar returns from the stored walk-forward equity, and the run's own bars per year.
 - The two intervals are block-bootstrap (BCa) intervals: 2,000 redraws, blocks of five bars on average, 95% confidence.
   At these defaults they give the same numbers as the Sharpe and CAGR intervals the rule test stored (`alpha report <run_id>`).
   An interval that includes zero means this history cannot rule out no edge. They need at least three varying returns.

@@ -400,7 +400,18 @@ def feedback_step(
     )
 
 
-def limits_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str]) -> dict[str, Any]:
+CHECKS_LEAD = (
+    "After the verdict, ALPHA ran fixed checks. They do not change the verdict. They use the "
+    "daily return above the average of all coins, after costs. This is not a profit."
+)
+
+
+def limits_step(
+    row: dict[str, Any],
+    trial: dict[str, Any],
+    sources: list[str],
+    checks: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     counts = row.get("screen_m", row.get("family_size"))
     window = row.get("windows", {})
     span = window.get("exploration")
@@ -429,6 +440,15 @@ def limits_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str]) 
         EXPOSURE[exposure],
         row.get("label", MISSING),
     ]
+    readings = [CHECKS_LEAD] if checks and checks["results"] else []
+    for result in checks["results"] if checks else ():
+        if "error_code" in result:
+            readings.append(
+                f"Check {result['tool']} could not run: {result['message'].removesuffix('.')}."
+            )
+        else:
+            readings.append(result["reading"])
+            sources = [*sources, result["file"]]
     return step(
         "How sure can we be?",
         RULE,
@@ -437,7 +457,8 @@ def limits_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str]) 
             if symbols is not None and span
             else f"The test coverage was only partly recorded: {extent}, {years}."
         )
-        + " Testing more ideas gives luck more chances.",
+        + " Testing more ideas gives luck more chances."
+        + "".join(" " + r for r in readings),
         "These findings are exploratory. Prior use of reserved data limits independent checks.",
         sources,
         number(

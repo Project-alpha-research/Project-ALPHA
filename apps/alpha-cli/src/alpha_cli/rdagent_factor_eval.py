@@ -23,6 +23,7 @@ import polars as pl
 from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
+from alpha_cli._rdagent_checks import post_judge_checks
 from alpha_cli._rdagent_clocks import (
     CLOCKS as CLOCKS,
 )
@@ -1268,6 +1269,8 @@ def evaluate(run: Path, request_path: Path, out: Path, ledger: Path) -> dict[str
     with Path(str(ledger) + ".lock").open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         record = _evaluate_locked(run, request, panel, values, inputs, ledger)
+        record["checks"], suffix = post_judge_checks(run, record)
+        record["feedback_text"] += suffix
         rendered = canonical(record)
         exclusive(out, rendered)
         with (run / "evaluations.jsonl").open("ab", buffering=0) as stream:

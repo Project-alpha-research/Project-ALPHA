@@ -1206,8 +1206,8 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
 id = "investigation-tools"
-name = "Investigation tools for market exposure, downside risk, date sensitivity and trades"
-what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe."
+name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. Agent choice is not built."
 see_it = [
   "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run trades.dependence <run_id>",
   "alpha tool run overfit.deflated_sharpe <run_id>",
@@ -1218,6 +1218,7 @@ see_it = [
   "alpha tool run-set market-context <run_id> --json", "alpha tool list --for <run_id> --json", "alpha tool history <run_id> --json", "alpha results show <run_id> --json"]
 entry_points = ["cli: alpha tool", "code: apps/alpha-cli/src/alpha_cli/toolbox/registry.py", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
 proof_synthetic = [
+  "tests/unit/test_rdagent_post_judge_checks.py::test_parity_attempts_and_cache",
   "tests/unit/test_toolbox_resampling_checks.py::test_public_function_parity",
   "tests/unit/test_toolbox_resampling_checks.py::test_planted_direction",
   "tests/unit/test_toolbox_run_level_checks.py::test_downside_ratios",
@@ -1226,7 +1227,7 @@ proof_synthetic = [
   "tests/unit/test_toolbox_run_level_checks.py::test_concentration",
   "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
 proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test"]
-real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level checks verified on synthetic runs"
+real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs"
 needs = []
 state = "Working"
 docs = ["research/tools/resampling-checks.md", "research/tools/run-level-checks.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]

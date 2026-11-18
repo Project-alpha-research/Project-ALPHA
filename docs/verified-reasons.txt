@@ -8,7 +8,7 @@ docs/CONTEXT.md
   verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/README.md
-  verified b3ea6a9e3cd79715 on 2026-11-19: Only wording of test messages changed; the page's content and router rows still hold
+  verified 92ce4d72825b64d7 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
@@ -32,25 +32,25 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified e81e30271bd48006 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 8fdb20125a487c8d on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified abcf679e247382b0 on 2026-11-19: After merging main: only Read first rows of the routing file changed to name sections; main's own change to this page is kept
 
 docs/reference/project/components/data-layer.md
-  verified 7254692752f142bd on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 2d2b27a72ff43e80 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 96caf59a75017db3 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/components/forecasting.md
-  verified 709c6924590c04f5 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/literature-worker.md
   verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/nautilus.md
-  verified 2509a92b9cf73e89 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -59,13 +59,10 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 2f9dee7b7128dc32 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
-
-docs/reference/project/components/research-cases-and-approval.md
-  verified 818b1cad996e89f7 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 497750d9a16212c4 on 2026-11-19: After merging main: only Read first rows of the routing file changed to name sections; main's own change to this page is kept
 
 docs/reference/project/components/strategies-and-signals.md
-  verified e519110f0852e60f on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
   verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
@@ -74,16 +71,16 @@ docs/reference/project/components/validation-and-evidence.md
   verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/web-workstation.md
-  verified 617aa80db5716600 on 2026-11-19: Only the Read first rows of the workspace routing file changed to name sections; this page's description still holds
+  verified 1ac0a57e42fc186a on 2026-11-19: CONTEXT.md routing row for Setup Lab now points to the component page; nothing here changed
 
 docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified b3ea6a9e3cd79715 on 2026-11-19: Only wording of test messages changed; the page's content and router rows still hold
+  verified 92ce4d72825b64d7 on 2026-11-19: Re-read: only the contract test gained three routing checks; the page and the pipeline steps are unchanged
 
 docs/reference/project/ideas-and-considered.md
-  verified 3e8139517d24bccc on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
+  verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -161,7 +158,7 @@ workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
-  verified d5db60fa476b54ce on 2026-11-19: Only wording of test messages changed; the page's content and router rows still hold
+  verified a42a10a11f190b51 on 2026-11-19: Re-read: only the contract test gained three routing checks; the page and the pipeline steps are unchanged
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

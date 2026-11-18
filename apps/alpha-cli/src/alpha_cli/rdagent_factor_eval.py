@@ -63,12 +63,6 @@ from alpha_cli._rdagent_judge import (
     Q_THRESHOLD as Q_THRESHOLD,
 )
 from alpha_cli._rdagent_judge import (
-    RESERVED_DAY as RESERVED_DAY,
-)
-from alpha_cli._rdagent_judge import (
-    RESERVED_START as RESERVED_START,
-)
-from alpha_cli._rdagent_judge import (
     SPREAD_REASON as SPREAD_REASON,
 )
 from alpha_cli._rdagent_judge import (
@@ -153,6 +147,8 @@ from alpha_cli._rdagent_stats import (
     screen_cutoff,
 )
 from alpha_cli._rdagent_twins import find_twin
+from alpha_cli.toolbox.reserve import RESERVED_DAY as RESERVED_DAY
+from alpha_cli.toolbox.reserve import RESERVED_START as RESERVED_START
 from alpha_core import DataError
 from alpha_validation.dsr import (
     expected_max_sharpe,

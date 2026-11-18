@@ -33,12 +33,12 @@ from alpha_cli._rdagent_clocks import (
 )
 from alpha_cli._rdagent_stats import autocorrelation_effective_size, screen_statistics
 from alpha_cli.crypto_bulk_store import configured_crypto_bulk_store
+from alpha_cli.toolbox.reserve import RESERVED_DAY, RESERVED_START
 from alpha_core import Bar, DataError
 from alpha_data.context.daily_funding import daily_funding_with_sources
 from alpha_research.panel import cross_sectional_ic
 from alpha_validation.bootstrap import block_bootstrap_ci
 
-RESERVED_START = "2024-01-01"
 PANEL_END = "2023-12-31"
 EXPLORATION = ("2021-01-01", "2023-12-24")
 CUTS = (
@@ -192,7 +192,6 @@ def outside_git(path: Path) -> None:
         raise DataError("cannot determine trial ledger git location")
 
 
-RESERVED_DAY = date.fromisoformat(RESERVED_START)
 PRICE_COLUMNS = ("open", "high", "low", "close")
 PANEL_COLUMNS = ("date", "instrument", *PRICE_COLUMNS, "volume", "quote_volume")
 

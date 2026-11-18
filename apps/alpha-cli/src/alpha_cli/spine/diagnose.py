@@ -161,7 +161,7 @@ def full_sample(
 ) -> tuple[Any, tuple[Any, ...], tuple[float, ...]]:
     """The one full-sample backtest path: the result, its bar dates and its equity curve.
 
-    The diagnostic pass and the investigation tools (``spine/tools.py``) both read this.
+    The diagnostic pass and the investigation tools (``toolbox/``) both read this.
     """
     full = _runner.run_full_backtest(bars, spec, dividends=dividends)
     dates, equity = zip(*full.equity_curve, strict=True)

@@ -14,10 +14,11 @@ from typer.testing import CliRunner
 
 from alpha_cli import _runner
 from alpha_cli.results_cmds import results_app
-from alpha_cli.spine import tool_inputs, tools
 from alpha_cli.spine.errors import SpineError, tool_error
 from alpha_cli.spine.ledger import append_trial, read_trials
 from alpha_cli.tool_cmds import tool_app
+from alpha_cli.toolbox import inputs as tool_inputs
+from alpha_cli.toolbox.runner import run
 from alpha_core import DataError
 from alpha_validation import regimes as regime_model
 
@@ -37,10 +38,11 @@ def _series(home: Path, n: int = 700, always_long: bool = False) -> tool_inputs.
     rdir.mkdir(parents=True, exist_ok=True)
     manifest = {
         "command": "validate",
-        "metadata": {"symbol": "SPY"},
+        "metadata": {"symbol": "SPY", "last_ts": dates[-1].isoformat()},
         "spine": {"test_id": "t1", "name": "demo", "store": "home", "labels": ["all-in", "quick"]},
     }
     (rdir / "manifest.json").write_text(json.dumps(manifest))
+    (rdir / "spec.json").write_text('{"fixture":true}')
     return tool_inputs.RunSeries(
         home=home,
         run_id=RUN,
@@ -56,7 +58,7 @@ def _series(home: Path, n: int = 700, always_long: bool = False) -> tool_inputs.
 @pytest.fixture
 def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     series = _series(tmp_path)
-    monkeypatch.setattr(tools, "load_run", lambda home, run_id: series)
+    monkeypatch.setattr(tool_inputs, "load_run", lambda home, run_id: series)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     return tmp_path
 
@@ -84,25 +86,25 @@ def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> dict
 
 def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
     before = sorted(path.name for path in (home / "runs" / RUN).iterdir())
-    output = tools.attribution(home, RUN)
+    output = run(home, "market.attribution", RUN)
     assert sorted(path.name for path in (home / "runs" / RUN).iterdir()) == before
-    assert output["file"].startswith(f"diagnostics/{RUN}/attribution-")
+    assert output["file"].startswith(f"diagnostics/{RUN}/market.attribution@v1-")
     folder = home / "diagnostics" / RUN
     assert [path.name for path in folder.iterdir()] == [Path(output["file"]).name]  # no temp file
     stored = json.loads((home / output["file"]).read_text())
     assert stored == {k: v for k, v in output.items() if k not in ("file", "trials_total")}
-    assert stored["tool"] == "attribution"
+    assert stored["tool"] == "market.attribution"
     assert stored["params"] == {"benchmark": "SPY@home", "risk_free": 0.0}
-    assert stored["labels"] == ["all-in", "quick", "benchmark-is-same-asset"]
+    assert stored["labels"] == ["all-in", "quick", "ad-hoc", "benchmark-is-same-asset"]
     assert datetime.fromisoformat(stored["recorded_at"]).tzinfo is not None
     assert 0.3 < stored["result"]["beta"] < 0.7  # held about half of the time
     assert stored["result"]["join"]["run_bars_dropped"] == 0
     assert stored["result"]["periods_per_year"] == 365
     assert [fact["metric"] for fact in stored["facts"]] == [
-        "market_beta",
-        "market_alpha_annual",
-        "market_alpha_p",
-        "market_r_squared",
+        "market.attribution.beta",
+        "market.attribution.alpha_annual",
+        "market.attribution.alpha_p",
+        "market.attribution.r_squared",
     ]
     for fact in stored["facts"]:
         assert set(fact) == {"metric", "value", "run_id", "basis", "source", "labels", "reason"}
@@ -113,19 +115,19 @@ def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
         assert "Newey-West" in fact["basis"]
         assert fact["value"] == stored["result"][fact["source"].rsplit(".", 1)[1]]
     row = read_trials(home)[-1]
-    assert row["kind"] == "tool:attribution"
+    assert row["kind"] == "tool:market.attribution"
     assert (row["run_id"], row["test_id"], row["verdict"]) == (RUN, "t1", None)
     assert row["tool_output"] == output["file"]
-    assert row["total_trials"] == output["trials_total"] == 1
-    again = tools.attribution(home, RUN)
+    assert row["total_trials"] == output["trials_total"] == 2
+    again = run(home, "market.attribution", RUN)
     assert again["file"] == output["file"]
-    assert again["trials_total"] == 2  # every look counts
-    assert "repeat" in read_trials(home)[-1]["labels"]
+    assert again["trials_total"] == 2  # cached reads add no look
+    assert [r["outcome"] for r in read_trials(home)] == ["attempted", "ok"]
 
 
 def test_cross_asset_join_reports_dropped_bars(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     seen = _other_asset(monkeypatch, home, keep=2)
-    output = tools.attribution(home, RUN, "QQQ")
+    output = run(home, "market.attribution", RUN, ["benchmark=QQQ"])
     assert output["params"]["benchmark"] == "QQQ@home"
     assert "benchmark-is-same-asset" not in output["labels"]
     assert output["result"]["join"] == {
@@ -138,7 +140,7 @@ def test_cross_asset_join_reports_dropped_bars(home: Path, monkeypatch: pytest.M
     assert output["result"]["n"] == 350
     assert output["result"]["periods_per_year"] == 183  # every second day, inferred from dates
     assert seen == {"symbol": "QQQ", "as_of": _series(home).dates[-1]}
-    assert output["file"] != tools.attribution(home, RUN)["file"]
+    assert output["file"] != run(home, "market.attribution", RUN)["file"]
 
 
 def test_market_returns_are_open_to_open_like_the_equity(
@@ -146,30 +148,31 @@ def test_market_returns_are_open_to_open_like_the_equity(
 ) -> None:
     # The engine samples equity at each open; a close-based benchmark would mismatch intervals.
     # QQQ's opens are SPY's doubled (same returns) and its closes are unusable.
-    same = tools.attribution(home, RUN)["result"]
+    same = run(home, "market.attribution", RUN)["result"]
     _other_asset(monkeypatch, home, keep=1)
-    other = tools.attribution(home, RUN, "QQQ")["result"]
+    other = run(home, "market.attribution", RUN, ["benchmark=QQQ"])["result"]
     assert other["beta"] == pytest.approx(same["beta"])
     assert other["r_squared"] == pytest.approx(same["r_squared"])
-    assert "open-to-open" in tools.attribution(home, RUN, "QQQ")["basis"]
+    assert "open-to-open" in run(home, "market.attribution", RUN, ["benchmark=QQQ"])["basis"]
 
 
 def test_too_few_shared_bars(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _other_asset(monkeypatch, home, keep=12)
     with pytest.raises(SpineError) as caught:
-        tools.attribution(home, RUN, "QQQ")
+        run(home, "market.attribution", RUN, ["benchmark=QQQ"])
     assert caught.value.payload["code"] == "TOO_FEW_BARS"
     assert "share 59 bar timestamps; 61 are needed" in caught.value.payload["message"]
     assert not (home / "diagnostics").exists()
-    assert read_trials(home) == []
+    assert [r["outcome"] for r in read_trials(home)] == ["attempted", "error"]
 
 
 def test_regimes_split_is_causal_with_a_hindsight_section(home: Path) -> None:
-    output = tools.regimes(home, RUN)
+    output = run(home, "market.vol_regimes", RUN)
     result = output["result"]
     assert output["labels"] == [
         "all-in",
         "quick",
+        "ad-hoc",
         "parameters-fit-in-sample",
         "benchmark-is-same-asset",
     ]
@@ -188,9 +191,14 @@ def test_regimes_split_is_causal_with_a_hindsight_section(home: Path) -> None:
     assert series["causal_state"][0] == -1
     assert np.mean(np.array(series["hindsight_state"])[:350] == 0) > 0.95
     facts = {fact["metric"]: fact for fact in output["facts"]}
-    assert facts["regime_turbulent_share_of_time"]["value"] == turbulent["share_of_time"]
-    assert facts["regime_turbulent_share_of_return"]["value"] == turbulent["share_of_log_return"]
-    assert read_trials(home)[-1]["kind"] == "tool:regimes"
+    assert (
+        facts["market.vol_regimes.turbulent_share_of_time"]["value"] == turbulent["share_of_time"]
+    )
+    assert (
+        facts["market.vol_regimes.turbulent_share_of_return"]["value"]
+        == turbulent["share_of_log_return"]
+    )
+    assert read_trials(home)[-1]["kind"] == "tool:market.vol_regimes"
 
 
 def test_regime_flags_and_null_fact() -> None:
@@ -219,13 +227,15 @@ def test_regimes_that_do_not_converge(home: Path, monkeypatch: pytest.MonkeyPatc
         "volatility_regimes",
         lambda returns, k, seed: {"converged": False, "reason": "the optimiser did not converge"},
     )
-    result = CliRunner().invoke(tool_app, ["regimes", RUN, "--k", "3", "--json"])
+    result = CliRunner().invoke(
+        tool_app, ["run", "market.vol_regimes", RUN, "--param", "k=3", "--json"]
+    )
     assert result.exit_code == 1
     error = json.loads(result.stdout)["error"]
     assert error["code"] == "MODEL_DID_NOT_CONVERGE"
     assert "3-regime model did not converge on SPY@home" in error["message"]
-    assert "--k 2" in error["next"]
-    assert read_trials(home) == []
+    assert "--param k=2" in error["next"]
+    assert [r["outcome"] for r in read_trials(home)] == ["attempted", "error"]
 
 
 @pytest.mark.parametrize("on", ["returns", "equity"])
@@ -236,10 +246,16 @@ def test_changepoints_map_back_to_dates(
     # Its recorded position is long on every bar, so each change point is a behaviour shift.
     always = _series(home, always_long=True)
     series = replace(always, positions=(True,) * len(always.dates))
-    monkeypatch.setattr(tools, "load_run", lambda home, run_id: series)
-    output = tools.changepoints(home, RUN, on)
+    monkeypatch.setattr(tool_inputs, "load_run", lambda home, run_id: series)
+    output = run(home, "market.changepoints", RUN, [f"on={on}"])
     result = output["result"]
-    assert output["labels"] == ["all-in", "quick", "hindsight"]
+    assert output["labels"] == [
+        "all-in",
+        "quick",
+        "ad-hoc",
+        *(["non-default-params"] if on != "returns" else []),
+        "hindsight",
+    ]
     assert output["params"] == {"model": "rbf", "min_size": 20, "max_points": 8, "on": on}
     assert output["facts"][0]["value"] == len(result["breaks"]) >= 1
     for item in result["breaks"]:
@@ -260,24 +276,26 @@ def test_changepoints_map_back_to_dates(
 
 def test_command_output_and_structured_errors(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
-    printed = runner.invoke(tool_app, ["regimes", RUN, "--json"])
+    printed = runner.invoke(tool_app, ["run", "market.vol_regimes", RUN, "--json"])
     assert printed.exit_code == 0, printed.output
     payload = json.loads(printed.stdout)
     assert "series" not in payload["result"]
     assert "series" in json.loads((home / payload["file"]).read_text())["result"]
-    text = runner.invoke(tool_app, ["attribution", RUN]).stdout
-    assert "market_beta = " in text
+    text = runner.invoke(tool_app, ["run", "market.attribution", RUN]).stdout
+    assert "market.attribution.beta = " in text
     assert "How much the strategy moves" in text
     assert "Saved: diagnostics/" in text
-    bad = runner.invoke(tool_app, ["changepoints", RUN, "--on", "price", "--json"])
+    bad = runner.invoke(
+        tool_app, ["run", "market.changepoints", RUN, "--param", "on=price", "--json"]
+    )
     assert bad.exit_code == 1
     assert json.loads(bad.stdout)["error"]["known"] == ["returns", "equity"]
 
     def missing(home: Path, run_id: str) -> None:
         raise DataError("asset 'NOPE' not found; stores searched: home")
 
-    monkeypatch.setattr(tools, "load_run", missing)
-    unknown = runner.invoke(tool_app, ["attribution", RUN, "--json"])
+    monkeypatch.setattr(tool_inputs, "load_run", missing)
+    unknown = runner.invoke(tool_app, ["run", "market.attribution", RUN, "--seed", "1", "--json"])
     assert unknown.exit_code == 1
     error = json.loads(unknown.stdout)["error"]
     assert (error["code"], error["known"]) == ("UNKNOWN_ASSET", ["home"])
@@ -298,13 +316,13 @@ def test_tool_error_codes() -> None:
 
 def test_unknown_run_and_runs_that_are_not_rule_tests(tmp_path: Path) -> None:
     with pytest.raises(SpineError) as caught:
-        tool_inputs.load_run(tmp_path, RUN)
+        tool_inputs.resolve(tmp_path, RUN)
     assert caught.value.payload["code"] == "UNKNOWN_RUN"
     rdir = tmp_path / "runs" / RUN
     rdir.mkdir(parents=True)
     (rdir / "manifest.json").write_text(json.dumps({"command": "validate"}))
     with pytest.raises(SpineError) as caught:
-        tool_inputs.load_run(tmp_path, RUN)
+        tool_inputs.resolve(tmp_path, RUN)
     assert caught.value.payload["code"] == "NOT_A_RULE_TEST"
     assert "alpha results" in caught.value.payload["next"]
 
@@ -317,16 +335,16 @@ def test_show_lists_outputs_and_cite_needs_a_choice_between_two(
     runner = CliRunner()
     none = runner.invoke(app, ["results", "cite", RUN, "market_beta", "--json"])
     assert json.loads(none.stdout)["error"]["code"] == "NO_TOOL_OUTPUT"
-    assert f"alpha tool attribution {RUN}" in json.loads(none.stdout)["error"]["next"]
-    own = tools.attribution(home, RUN)
+    assert f"alpha tool run market.attribution {RUN}" in json.loads(none.stdout)["error"]["next"]
+    own = run(home, "market.attribution", RUN)
     one = runner.invoke(app, ["results", "cite", RUN, "market_beta", "--json"])
     assert one.exit_code == 0, one.output
-    assert json.loads(one.stdout) == own["facts"][0]
+    assert json.loads(one.stdout) == {**own["facts"][0], "metric": "market_beta"}
     plain = runner.invoke(app, ["results", "cite", RUN, "market_beta"]).stdout
     assert plain.startswith(f"{own['result']['beta']} [{RUN}:market_beta] (")
     _other_asset(monkeypatch, home, keep=2)
-    other = tools.attribution(home, RUN, "QQQ")
-    tools.changepoints(home, RUN)
+    other = run(home, "market.attribution", RUN, ["benchmark=QQQ"])
+    run(home, "market.changepoints", RUN)
     ids = [Path(item["file"]).stem.rsplit("-", 1)[1] for item in (own, other)]
     ambiguous = runner.invoke(app, ["results", "cite", RUN, "market_beta", "--json"])
     assert ambiguous.exit_code == 1
@@ -347,17 +365,17 @@ def test_show_lists_outputs_and_cite_needs_a_choice_between_two(
     assert json.loads(count.stdout)["metric"] == "changepoint_count"
     shown = json.loads(runner.invoke(app, ["results", "show", RUN, "--json"]).stdout)["runs"][0]
     assert [item["tool"] for item in shown["tools"]] == [
-        "attribution",
-        "attribution",
-        "changepoints",
+        "market.attribution",
+        "market.attribution",
+        "market.changepoints",
     ]
     assert set(shown["tools"][0]) == {"tool", "id", "params", "recorded_at", "file", "labels"}
     assert [item["file"] for item in shown["tools"][:2]] == [own["file"], other["file"]]
     listing = json.loads(runner.invoke(app, ["results", "--json"]).stdout)
     assert [item["kind"] for item in listing["items"]] == [
-        "tool:changepoints",
-        "tool:attribution",
-        "tool:attribution",
+        "tool:market.changepoints",
+        "tool:market.changepoints",
+        *(["tool:market.attribution"] * 4),
     ]
     assert "investigation-tool row" in listing["items"][0]["reasons"]["oos_sharpe"]
 
@@ -389,6 +407,8 @@ def test_old_ledger_rows_without_kind_read_as_rule_tests(tmp_path: Path) -> None
 def test_cross_asset_basis_names_the_clock_caveat(
     home: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assert "same instant" not in tools.attribution(home, RUN)["basis"]
+    assert "same instant" not in run(home, "market.attribution", RUN)["basis"]
     _other_asset(monkeypatch, home, keep=1)
-    assert "not the same instant" in tools.attribution(home, RUN, "QQQ")["basis"]
+    assert (
+        "not the same instant" in run(home, "market.attribution", RUN, ["benchmark=QQQ"])["basis"]
+    )

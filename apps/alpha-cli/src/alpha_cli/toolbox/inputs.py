@@ -7,6 +7,7 @@ reproduces it fails loud instead of describing a different history.
 
 from __future__ import annotations
 
+import hashlib
 import math
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,12 +16,11 @@ from typing import Any
 
 from alpha_cli import _runner
 from alpha_cli.run_store import find_run_dir, read_manifest
-from alpha_cli.spine.diagnose import full_sample
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.run import assemble_run_spec
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_validation.attribution import MIN_BARS
 from alpha_validation.metrics import to_returns
 
@@ -40,8 +40,53 @@ class RunSeries:
     opens: dict[datetime, float]
     positions: tuple[bool, ...] = ()
 
+    def reserve_labels(self) -> tuple[str, ...]:
+        last = self.manifest["metadata"].get("last_ts")
+        end = max(self.dates[-1], datetime.fromisoformat(last)) if last else self.dates[-1]
+        return ("reserved-period-seen",) if end.date() >= RESERVED_DAY else ()
 
-def load_run(home: Path, run_id: str) -> RunSeries:
+
+RUN_KINDS = frozenset(("run_returns", "run_positions", "run_bars"))
+
+
+@dataclass(frozen=True)
+class Target:
+    run_id: str
+    directory: Path
+    manifest: dict[str, Any]
+    kinds: frozenset[str] = RUN_KINDS
+
+    @property
+    def labels(self) -> list[str]:
+        return list(self.manifest["spine"].get("labels", []))
+
+    def ledger_fields(self) -> dict[str, Any]:
+        spine = self.manifest["spine"]
+        return {
+            "test_id": spine.get("test_id"),
+            "name": spine.get("name"),
+            "symbol": self.manifest["metadata"]["symbol"],
+            "store": spine.get("store"),
+        }
+
+    def prepare(
+        self, home: Path, needs: tuple[str, ...], settings: dict[str, Any]
+    ) -> tuple[Market | None, dict[str, Any]]:
+        from alpha_cli.ml_contract import sha256_file
+
+        if not self.kinds.issuperset(needs):
+            raise ValueError(f"Target {self.run_id} cannot supply {needs}")
+        market = comparison(home, self, settings.get("benchmark") or settings.get("market"))
+        hashes = {
+            "manifest": sha256_file(self.directory / "manifest.json"),
+            "source": self.manifest.get("source_fingerprint"),
+        }
+        if market:
+            hashes.update(market=market.fingerprint, market_asset=market.name)
+        return market, hashes
+
+
+def resolve(home: Path, run_id: str) -> Target:
     rdir = find_run_dir(home, run_id)
     if rdir is None:
         raise SpineError(
@@ -50,13 +95,21 @@ def load_run(home: Path, run_id: str) -> RunSeries:
             "Run alpha results --json to list recorded runs.",
         )
     manifest = read_manifest(rdir)
-    stored = read_json(rdir / "spec.json")
-    if not isinstance(manifest.get("spine"), dict) or not stored:
+    if not isinstance(manifest.get("spine"), dict) or not (rdir / "spec.json").is_file():
         raise SpineError(
             "NOT_A_RULE_TEST",
-            f"Run {run_id} was not made by alpha test, so the tools cannot rebuild its returns.",
+            f"Run {run_id} was not made by alpha test.",
             "Run alpha results --json to list rule-test runs.",
         )
+    return Target(run_id, rdir, manifest)
+
+
+def load_run(home: Path, target: Target) -> RunSeries:
+    from alpha_cli.spine.diagnose import full_sample
+    from alpha_cli.spine.facts import read_json
+
+    rdir, manifest, run_id = target.directory, target.manifest, target.run_id
+    stored = read_json(rdir / "spec.json")
     meta = manifest["metadata"]
     resolved = resolve_asset(f"{meta['symbol']}@{manifest['spine']['store']}", data_dir=home)
     last = datetime.fromisoformat(meta["last_ts"])
@@ -110,18 +163,43 @@ class Joined:
     counts: dict[str, int]
 
 
-def join_market(series: RunSeries, asset: str | None) -> Joined:
-    """Inner-join the run with another asset's opens on timestamps; returns span shared bars."""
-    name, opens = series.asset, series.opens
-    if asset is not None:
-        resolved = resolve_asset(asset, data_dir=series.home)
-        name = f"{resolved.symbol}@{resolved.store_name}"
-        if name != series.asset:
-            # Point-in-time: nothing after the run's last bar is read.
-            bars, _ = _runner.load_bars(
-                resolved.symbol, data_dir=resolved.data_dir, as_of=series.dates[-1]
-            )
-            opens = {bar.ts: float(bar.open) for bar in bars}
+@dataclass(frozen=True)
+class Market:
+    name: str
+    opens: dict[datetime, float]
+    fingerprint: str
+
+
+def comparison(home: Path, target: Target, asset: str | None) -> Market | None:
+    if asset is None:
+        return None
+    resolved = resolve_asset(asset, data_dir=home)
+    name = f"{resolved.symbol}@{resolved.store_name}"
+    meta = target.manifest["metadata"]
+    if name == f"{meta['symbol']}@{target.manifest['spine']['store']}":
+        return None
+    last = datetime.fromisoformat(meta["last_ts"])
+    bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=last)
+    opens = {bar.ts: float(bar.open) for bar in bars if bar.ts <= last}
+    from alpha_cli.ml_contract import canonical_json_bytes
+
+    fingerprint = hashlib.sha256(
+        canonical_json_bytes({ts.isoformat(): value for ts, value in opens.items()})
+    ).hexdigest()
+    return Market(name, opens, fingerprint)
+
+
+@dataclass(frozen=True)
+class Inputs:
+    run: RunSeries
+    market: Market | None = None
+    seed: int = 0
+
+
+def join_market(inputs: Inputs) -> Joined:
+    """Join immutable run dates to the exact benchmark opens used in the cache key."""
+    series, other = inputs.run, inputs.market
+    name, opens = (other.name, other.opens) if other else (series.asset, series.opens)
     common = [date for date in series.dates if date in opens]
     inside = sum(series.dates[0] <= ts <= series.dates[-1] for ts in opens)
     counts = {

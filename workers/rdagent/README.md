@@ -1192,12 +1192,28 @@ in that coding round are skipped with the same note; the next round starts with 
 These are advisory coding outcomes: ALPHA's screen, spread, replay, deflation and trial rules do not change.
 Whole coding failures still use `coding_failed_provider_timeout` / `coding_failed_provider_error`.
 
-Restored proposal context keeps `RESTORED_ROUNDS_FULL = 4` recent rounds with a matching panel hash
-in full. Older rounds and other panels become one line of factor names, families and statuses; other
-panels say “different coin panel”. Judged rounds take the hash from their recorded evaluation inputs;
-a round with no evaluation and no hash says “coin panel not recorded” and is summarised.
-Both hypothesis and experiment prompts use this view; trace records and the ledger remain intact.
-The receipt's `history_rounds_full` and `history_rounds_summarised` come from `history-context.json`.
-Closed/open families, declaration instructions and refusal messages remain present. New experiment
-records retain their panel hash for future restoration. Declaration examples now use neutral sign
-and clock placeholders; the proposer must derive both from the idea and fill every field.
+The hypothesis and experiment prompts share an 84,000-character budget per prompt for the rendered
+history fields, including any repeated last round. Up to four restored rounds with matching panel
+hashes can appear in full. When the budget binds, the oldest full round becomes one line per factor
+giving its name, family, verdict and the evaluator's stored reason (the stage it stopped at). If one
+line per factor still exceeds the budget, the oldest lines are left out and one line says "N older
+ideas omitted from this summary (kept on disk)"; the proposer never stops for this, and
+`history_ideas_omitted` records N. Other panels and unknown panels always get summaries with their
+provenance. Judged rounds take the hash from the evaluation inputs. Current universe and ledger
+instructions are appended to the history. The stored trace keeps the original feedback. New
+proposals drop carried suggestions for closed families and for session drift families unavailable on
+the frozen venue, with the reason shown in their place.
+
+`history-context.json` records the character count, full and summarised rounds and omitted ideas for
+each rendered history. The receipt copies these and lists the full system-plus-user prompt sizes for
+labelled proposal calls under `call_split.proposal_prompt_chars`. New experiment records retain
+their panel hash for future restoration. Declaration examples use neutral sign and clock
+placeholders.
+
+Each new factor trial and evaluation stores the `family` the judge classified it under for the tally
+(sent in the evaluation request; multiple families are separated by `; `) and `critic_status`. A
+`skipped` or `unavailable` opinion includes a `critic_reason`. Feedback names the failed stage, the
+stored primary-clock spread status and the exact ledger cutoff alongside the one-sided comparison. A
+spread can have a recorded PASS even when the rank screen stopped the factor. Counts above the
+family limit give the failure count, limit and closure status. `knowledge-vectors.json` and the run
+receipt identify left-out nodes and their reasons in `knowledge_vectors_left_out_nodes`.

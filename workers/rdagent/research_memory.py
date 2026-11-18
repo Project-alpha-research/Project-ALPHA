@@ -25,12 +25,35 @@ SCHEMA = "AlphaRdagentResearchMemoryV1"
 KNOWLEDGE = "costeer/factor-knowledge.pkl"
 WORKER = Path(__file__).resolve().parent
 RESTORED_ROUNDS_FULL = 4
+HISTORY_CHAR_BUDGET = 84_000
+
+
+def _families() -> Any:
+    return importlib.import_module(
+        f"{__package__}.idea_families" if __package__ else "idea_families"
+    )
+
+
+def _closed_for_prompt() -> set[str]:
+    if not os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"):
+        return set()
+    return set(importlib.import_module("alpha_factor_judge").closed_families())
 
 
 class ProposalHistory:
     """Project restored history into prompt text, retaining the authoritative trace untouched."""
 
-    def __init__(self, original: Any, restored: int, panel_sha256: str) -> None:
+    def __init__(
+        self,
+        original: Any,
+        restored: int,
+        panel_sha256: str,
+        *,
+        receipt: Path | None = None,
+        component: str = "hypothesis",
+        closed_families: Callable[[], set[str]] = _closed_for_prompt,
+    ) -> None:
+        self.receipt, self.component, self.closed_families = receipt, component, closed_families
         self.original, self.restored, self.panel_sha256 = original, restored, panel_sha256
 
     def _panel(self, exp: Any) -> str | None:
@@ -70,72 +93,117 @@ class ProposalHistory:
         return {"history_rounds_full": full, "history_rounds_summarised": self.restored - full}
 
     def _summary(self, exp: Any, feedback: Any) -> str:
-        families = importlib.import_module(
-            f"{__package__}.idea_families" if __package__ else "idea_families"
+        families = _families()
+        tasks = {task.factor_name: task for task in getattr(exp, "sub_tasks", [])}
+        rows = {
+            f["name"]: f for f in (getattr(exp, "alpha_evaluation", None) or {}).get("factors", [])
+        }
+        refusal = getattr(exp, "alpha_family_refusal", None) or {}
+        reason = str(getattr(feedback, "reason", "")).partition(":")[0]
+        fallback = refusal.get(
+            "status",
+            reason
+            if reason.startswith(("coding_failed_provider_", "proposal_failed_provider_"))
+            else "status not recorded",
         )
-        tasks = getattr(exp, "sub_tasks", [])
-        names = ", ".join(task.factor_name for task in tasks) or "no factors recorded"
-        family = (
-            "; ".join(
-                dict.fromkeys(
-                    families.idea_family(
-                        task.factor_name,
-                        getattr(task, "description", ""),
-                        getattr(task, "factor_formulation", ""),
-                        getattr(task, "variables", None),
-                    )
-                    for task in tasks
-                )
-            )
-            or "family not recorded"
-        )
-        factors = (getattr(exp, "alpha_evaluation", None) or {}).get("factors", [])
-        status = ", ".join(dict.fromkeys(str(factor["status"]) for factor in factors))
-        if not status:
-            reason_status = str(getattr(feedback, "reason", "")).partition(":")[0]
-            provider_statuses = {
-                f"{step}_failed_provider_{cause}"
-                for step in ("proposal", "coding")
-                for cause in ("timeout", "error")
-            }
-            status = str(
-                (getattr(exp, "alpha_family_refusal", None) or {}).get(
-                    "status",
-                    reason_status if reason_status in provider_statuses else "status not recorded",
-                )
-            )
         panel = self._panel(exp)
         suffix = "; different coin panel" if panel and panel != self.panel_sha256 else ""
         if panel is None:
             suffix = "; coin panel not recorded (panel unknown)"
-        return " ".join(f"Restored round: {names}; {family}; {status}{suffix}".split())
+        lines = []
+        for name in dict.fromkeys([*tasks, *rows]) or ["no factors recorded"]:
+            task, row = tasks.get(name), rows.get(name, {})
+            family = row.get("family") or (
+                families.idea_family(
+                    name,
+                    getattr(task, "description", "") or "",
+                    getattr(task, "factor_formulation", "") or "",
+                    getattr(task, "variables", None),
+                )
+                if task or row
+                else "family not recorded"
+            )
+            status = families.recorded_status(row) if row else fallback
+            # The evaluator's stored reason names the stage the factor stopped at.
+            stage = row.get("reason") or row.get("failure_reason") or "stage not recorded"
+            lines.append(
+                " ".join(f"Restored round: {name}; {family}; {status}{suffix}; {stage}".split())
+            )
+        return "\n".join(lines)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         trace = kwargs["trace"] if "trace" in kwargs else args[-1]
-        full = self._full(trace)
-        summaries = [
-            self._summary(exp, feedback)
-            for i, (exp, feedback) in enumerate(trace.hist[: self.restored])
-            if i not in full
-        ]
-        # Keep all non-history context (including closed/open families and refusals) exactly as
-        # its author produced it. Only the two upstream history fields use a smaller trace view.
-        context, flag = self.original(*args, **kwargs)
+        families = _families()
+        source = families.universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+        hidden, closed = families.hidden_families(source), self.closed_families()
         view = copy(trace)
-        view.hist = [pair for i, pair in enumerate(trace.hist) if i in full or i >= self.restored]
-        projected_args = args if "trace" in kwargs else (*args[:-1], view)
-        projected_kwargs = {**kwargs, "trace": view} if "trace" in kwargs else kwargs
-        compact, _ = self.original(*projected_args, **projected_kwargs)
-        context["hypothesis_and_feedback"] = "\n".join(
-            [*summaries, compact["hypothesis_and_feedback"]]
-        )
-        if "last_hypothesis_and_feedback" in context:
-            last = len(trace.hist) - 1
-            context["last_hypothesis_and_feedback"] = (
-                self._summary(*trace.hist[-1])
-                if 0 <= last < self.restored and last not in full
-                else compact["last_hypothesis_and_feedback"]
+        pairs = []
+        for exp, feedback in trace.hist:
+            suggestion = getattr(feedback, "new_hypothesis", None)
+            if suggestion and (note := families.suggestion_reason(suggestion, closed, hidden)):
+                feedback = copy(feedback)
+                feedback.new_hypothesis = note
+                if families.suggestion_reason(str(getattr(feedback, "reason", "")), closed, hidden):
+                    feedback.reason = ""
+            pairs.append((exp, feedback))
+
+        def render(indices: set[int]) -> Any:
+            view.hist = [pair for i, pair in enumerate(pairs) if i in indices]
+            if "trace" in kwargs:
+                return self.original(*args, **{**kwargs, "trace": view})
+            return self.original(*args[:-1], view, **kwargs)
+
+        all_indices = set(range(len(pairs)))
+        context, flag = render(all_indices)
+        full = self._full(trace) | set(range(self.restored, len(pairs)))
+        summaries: dict[int, str] = {}
+        omitted = 0  # oldest one-line ideas left out once every round is already one line each
+        while True:
+            compact = context if full == all_indices else render(full)[0]
+            for i in sorted(all_indices - full - summaries.keys()):
+                summaries[i] = families.filter_history(self._summary(*pairs[i]), hidden, closed)
+            lines = [line for i in sorted(summaries) for line in summaries[i].split("\n")]
+            note = [f"{omitted} older ideas omitted from this summary (kept on disk)"]
+            history = "\n".join(
+                [*(note if omitted else []), *lines[omitted:], compact["hypothesis_and_feedback"]]
             )
+            fields = {"hypothesis_and_feedback": families.filter_history(history, hidden, closed)}
+            if "last_hypothesis_and_feedback" in compact:
+                last = len(pairs) - 1
+                fields["last_hypothesis_and_feedback"] = summaries.get(
+                    last
+                ) or families.filter_history(
+                    compact["last_hypothesis_and_feedback"], hidden, closed
+                )
+            chars = sum(len(value) for value in fields.values())
+            if chars <= HISTORY_CHAR_BUDGET or (not full and omitted >= len(lines)):
+                break
+            if full:
+                full.remove(min(full))
+                continue
+            # Never raise: leave out the oldest whole lines (plus room for the note line).
+            # Each pass removes at least one line, so the loop ends by len(lines) at the latest.
+            excess = max(1, chars - HISTORY_CHAR_BUDGET + len(note[0]) + 8)
+            while excess > 0 and omitted < len(lines):
+                excess -= len(lines[omitted]) + 1
+                omitted += 1
+
+        context.update(fields)
+        if self.receipt is not None:
+            counts = {
+                "history_rounds_full": len(full),
+                "history_rounds_summarised": len(summaries),
+                "history_ideas_omitted": omitted,
+            }
+            record = json.loads(self.receipt.read_bytes())
+            record.setdefault("history_prompts", []).append(
+                {"component": self.component, "history_chars": chars, **counts}
+            )
+            if self.component == "hypothesis":
+                record.update(counts)
+            temporary = self.receipt.with_suffix(".tmp")
+            temporary.write_text(_json(record) + "\n")
+            temporary.replace(self.receipt)
         return context, flag
 
 
@@ -145,10 +213,22 @@ def limit_restored_history(loop: Any, environ: Mapping[str, str]) -> None:
     run = Path(environ["ALPHA_FACTOR_RUN_DIR"])
     panel = json.loads((run / "panel/panel-receipt.json").read_text())["panel_sha256"]
     restored = len(loop.trace.hist)
-    for component in (loop.hypothesis_gen, loop.hypothesis2experiment):
-        component.prepare_context = ProposalHistory(component.prepare_context, restored, panel)
-    counts = loop.hypothesis_gen.prepare_context.counts(loop.trace)
-    (run / "history-context.json").write_text(_json(counts) + "\n")
+    path = run / "history-context.json"
+    for name, component in (
+        ("hypothesis", loop.hypothesis_gen),
+        ("experiment", loop.hypothesis2experiment),
+    ):
+        upstream = getattr(component, "upstream_history", None)
+        wrapper = ProposalHistory(
+            upstream or component.prepare_context, restored, panel, receipt=path, component=name
+        )
+        if upstream is None:
+            component.prepare_context = wrapper
+        else:
+            # Append the current universe, refusal and ledger instructions after budgeting.
+            component.bounded_history = wrapper
+        if name == "hypothesis":
+            path.write_text(_json(wrapper.counts(loop.trace)) + "\n")
 
 
 def restored_run_provenance(previous: Any, session: Path) -> None:
@@ -1087,7 +1167,7 @@ class EmbeddingMemory:
             else None
         )
         self.dimension: int | None = None
-        self.failed: set[str] = set()
+        self.failed: dict[str, str] = {}
         self.reembedded: set[str] = set()
         try:
             data = json.loads(sidecar.read_text())
@@ -1172,12 +1252,24 @@ class EmbeddingMemory:
             graph.vector_base.vector_df = pd.DataFrame(
                 rows, columns=["id", "label", "content", "trunk", "embedding"]
             )
+        # A restored graph can contain new vectorless nodes as well as refused inputs
+        # currently hidden from search. Reporting them must not change retry eligibility.
+        left_out = dict(self.failed)
+        for node_id, node in graph.nodes.items():
+            if node.embedding is None:
+                left_out.setdefault(
+                    node_id, "empty text" if not node.content.strip() else "no current vector"
+                )
         (self.events.parent / "knowledge-vectors.json").write_text(
             _json(
                 {
                     "knowledge_vectors": len(rows),
                     "knowledge_vectors_reembedded": len(self.reembedded),
-                    "knowledge_vectors_left_out": len(self.failed),
+                    "knowledge_vectors_left_out": len(left_out),
+                    "knowledge_vectors_left_out_nodes": [
+                        {"id": node_id, "reason": reason}
+                        for node_id, reason in sorted(left_out.items())
+                    ],
                     "knowledge_vector_dimension": self.dimension,
                 }
             )
@@ -1196,8 +1288,25 @@ class EmbeddingMemory:
                 node.embedding = self.checked(cached["vector"])
             else:
                 node.embedding = None
-                self.failed.add(node_id)
+                self.failed.setdefault(
+                    node_id,
+                    "empty text" if not node.content.strip() else "no matching cached vector",
+                )
         self.rebuild(graph)
+
+    @staticmethod
+    def left_out_reason(text: str, error: Exception) -> str:
+        message = str(error).lower()
+        if not text.strip():
+            return "empty text"
+        if any(
+            term in message
+            for term in ("too long", "too_long", "context_length", "exceeds context")
+        ):
+            return "over length"
+        if getattr(error, "code", None) == "embedding_input_refused" or "refused" in message:
+            return "embedding refused"
+        return f"{type(error).__name__}: {error}"
 
     def prepare(self, graph: Any, skip: Callable[[Any, Exception], None]) -> dict[str, Any]:
         removed = {}
@@ -1236,7 +1345,7 @@ class EmbeddingMemory:
                 vector = self.checked(value)
             except Exception as error:
                 skip(node, error)  # budget errors must raise SystemExit before marking a skip
-                self.failed.add(node_id)
+                self.failed[node_id] = self.left_out_reason(node.content, error)
                 removed[node_id] = graph.nodes.pop(node_id)
                 # No stale vector can be reached by a retained neighbour reference either.
                 node.embedding = None

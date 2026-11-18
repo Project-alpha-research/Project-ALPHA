@@ -700,11 +700,13 @@ sys.path[:0] = [sys.argv[1], sys.argv[2]]
 work = Path(sys.argv[3])
 calls, run = work / "calls.jsonl", work / "run"
 run.mkdir()
-os.environ.update(ALPHA_GATEWAY_CALLS=str(calls), ALPHA_GATEWAY_RUN_ID="r")
+os.environ.update(ALPHA_GATEWAY_CALLS=str(calls), ALPHA_GATEWAY_RUN_ID="r",
+                  ARTIFACT_SIGNING_KEY_PATH=str(work / "signing.key"),
+                  LOG_TRACE_PATH=str(work / "log"))
 from rdagent.components.coder.CoSTEER.evaluators import CoSTEERMultiEvaluator
 from rdagent.components.coder.factor_coder.evaluators import FactorEvaluatorForCoder
 import alpha_factor_coder
-critics, finals = [], []
+critics, finals, statuses = [], [], []
 def receipt(code):
     row = {"run_id": "r", "endpoint": "/v1/chat/completions", "error_code": code,
            "provider_errors": [code] if code else [], "attempts": 2, "latency_ms": 360000}
@@ -748,6 +750,8 @@ def coder_round(index, names, fail_on, broken=()):
         except StopIteration as stop:
             merged = stop.value
     assert multi.single_evaluator is single
+    from alpha_factor_judge import AlphaFactorRunner
+    statuses.extend(AlphaFactorRunner.critic_fields(fb) for fb in merged)
     return [[n, bool(fb), fb.execution_feedback, fb.code_feedback]
             for n, fb in zip(names, merged)]
 out = {"rounds": [
@@ -755,7 +759,7 @@ out = {"rounds": [
     coder_round(1, ["b1", "b2", "b3"], "b1"),
     coder_round(2, ["c1", "c2"], "c1", broken=("c2",)),
 ]}
-out["critics"], out["finals"] = critics, finals
+out["critics"], out["finals"], out["statuses"] = critics, finals, statuses
 out["rows"] = [json.loads(line) for line in (run / "rounds.jsonl").read_text().splitlines()]
 print(json.dumps(out))
 """
@@ -774,6 +778,18 @@ def test_real_coder_evaluator_replays_run_four_critic_timeouts(tmp_path: Path) -
     # Execution-only feedback never accepts code that did not produce values.
     assert round2[1] == ["c2", False, "c2 crashed", note]
     assert out["critics"] == ["a1", "a2", "b1", "c1"] and out["finals"] == ["a1"]
+    assert [f["critic_status"] for f in out["statuses"]] == [
+        "reviewed",
+        "unavailable",
+        "skipped",
+        "skipped",
+        "unavailable",
+        "skipped",
+        "skipped",
+        "unavailable",
+        "skipped",
+    ]
+    assert all(f["critic_reason"] == note for f in out["statuses"][1:])
     statuses = [(r["iteration"], r["critic_unavailable_factor_names"]) for r in out["rows"]]
     assert statuses == [(0, ["a2"]), (1, ["b1"]), (2, ["c1"])]
     assert [r["critic_skipped_factor_names"] for r in out["rows"]] == [

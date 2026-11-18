@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 2bb07fcd4fedc6d2
+verified: 965ed998e5bee6a8
 ---
 
 # RD-Agent
@@ -50,7 +50,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
   a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
-  The held top third must beat the bottom third before costs; failures still count. The proposer sees every family and is told to leave repeated failures.
+  The held top third must beat the bottom third before costs; failures still count. The proposer sees the venue’s available families and their failure counts.
   The universe is a frozen file; each paid model call has a time limit
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
@@ -65,7 +65,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
   classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
   or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
-  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
+  factors; two successive failures stop the run. Prompt history is character bounded. Vector receipts explain omissions. Restored panel identity
   falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
   proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
   invariants](../../invariants/workers.md#rd-agent-worker).
@@ -138,7 +138,7 @@ Lineage R², regressor count and convention are recorded diagnostics; suspects s
 The [shortlist policy](../../../../workers/rdagent/README.md#shortlist-bookkeeping) leaves every gate and count unchanged.
 Old failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks counted)".
 Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two timestamps.
-Idea-family labels remain unknown unless stored. The panel was opened headless on real runs; owner acceptance remains pending.
+New factor rows store family and critic status. Older rows can lack both. The panel was opened headless on real runs; owner acceptance remains pending.
 
 ## Decisions and open questions
 

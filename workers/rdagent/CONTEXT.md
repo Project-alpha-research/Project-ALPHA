@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 92aed6d8f4f27d72
+verified: 275e5a844280ff10
 ---
 
 # RD-Agent worker workspace
@@ -48,8 +48,8 @@ no market, inference or evidence authority.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
   The code-critic guard preserves execution/value feedback and skips later critics in the failed round.
   Internal coding errors preserve completed factors for judging; two consecutive failures stop the run.
-  Restored prompts retain four full same-panel rounds; the other rounds stay as summaries.
-  Memory search tables use one vector dimension; restored panel provenance includes run receipts.
+  Proposal history fits a character budget. New factor rows record the family and per-factor critic outcome.
+  Vector rebuild receipts identify omitted nodes and causes. Restored panel provenance includes run receipts.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and
   factor-specific eligibility: [README](README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
 - The scenario checks the prepare receipt or HDF columns once. Proposal context, family closure and feedback

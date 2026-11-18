@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 9ee6c122ed2dbb3f
+verified: c6a4daa9f8c1cabf
 ---
 
 # Worker invariants
@@ -173,7 +173,7 @@ The general rule is [research integrity § Models and isolated workers](research
   address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
   loop names its exit. Proposal failures close rounds without empty trace entries; critic failures retain execution/value feedback and skip later critics in
   that round; budgets still end the run. Internal coding errors retain completed factors for judging; two consecutive failures stop the run. Restored prompts
-  keep four full same-panel rounds. Memory resume (no invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
+  retain up to four full same-panel rounds within the history budget. For memory resume, families, budgets and call counts see the [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_{restore_and_history,families,budget_and_caps,gateway_usage}.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,

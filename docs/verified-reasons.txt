@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified 3cc9c22191e6ab00 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
+  verified b03a455bf99f9fd5 on 2026-11-19: The launcher now removes a stopped gateway's own session files; neither page describes gateway session files or how the launcher stops the gateway
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -149,7 +149,7 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified 476fc9d11f2f987e on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
+  verified 6147c6be03863cf9 on 2026-11-19: The launcher now removes a stopped gateway's own session files; neither page describes gateway session files or how the launcher stops the gateway
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

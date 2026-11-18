@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any, cast
 
-from alpha_cli._rdagent_clocks import tied_days_feedback
 from alpha_cli._rdagent_judge import STATUSES
 from alpha_cli._rdagent_stability import recorded_status
 from alpha_cli.rdagent_discussion import summary_fields
@@ -83,11 +82,37 @@ def direction_of(row: dict[str, Any]) -> int | None:
 def outcome(row: dict[str, Any]) -> str:
     if row["status"] not in STATUSES:
         raise ValueError(f"Unknown factor status {row['status']!r}")
-    verdict = VERDICTS[recorded_status(row)]
     if row["status"] == "DEGENERATE":
-        screen = trial_of(row).get("screen", row.get("screen", {}))
-        verdict += " " + tied_days_feedback(screen)
-    return verdict
+        return degenerate_outcome(trial_of(row).get("screen", row.get("screen", {})))
+    return VERDICTS[recorded_status(row)]
+
+
+def degenerate_outcome(screen: dict[str, Any]) -> str:
+    reason = screen.get("reason")
+    if reason == "IC has no usable variation":
+        return "There was too little variation in how the ranks matched later returns."
+    if reason == "membership or liquidity rule left fewer than 5 names on every day":
+        return "The membership or liquidity rule left fewer than five coins to rank on every day."
+
+    facts = []
+    # Only the figures that can fail the screen in _rdagent_judge.py: coverage under 0.8,
+    # more than 5% all-tied days, or any thin day. Tie share never decides it, so it is not shown.
+    if (coverage := screen.get("coverage")) is not None and coverage < 0.8:
+        if coverage == 0:
+            facts.append("no coin-days had a value")
+        else:
+            share = f"only {coverage:.0%}" if coverage >= 0.005 else "less than 1%"
+            facts.append(f"{share} of coin-days had a value")
+    if (tied_days := screen.get("all_tied_day_share") or 0) > 0.05:
+        facts.append(f"all coins were tied on {tied_days:.0%} of days")
+    if thin_days := screen.get("thin_days"):
+        days = "day" if thin_days == 1 else "days"
+        why = "the liquidity rule left" if screen.get("universe_thin_days") else "there were"
+        facts.append(f"{why} fewer than five coins with values on {thin_days} {days}")
+    if not facts:
+        return VERDICTS["DEGENERATE"]
+    text = " and ".join(facts) if len(facts) < 3 else ", ".join(facts[:-1]) + f" and {facts[-1]}"
+    return text[0].upper() + text[1:] + ", so the coins could not be ranked."
 
 
 def discussion_outcome(row: dict[str, Any]) -> str:
@@ -364,6 +389,8 @@ def quick_verdicts(row: dict[str, Any]) -> list[str]:
             joined = " and ".join(filter(None, (", ".join(names[:-1]), names[-1])))
             test = "test" if len(names) == 1 else "tests"
             sentences.append(f"It {verb} the {joined} quick {test}.")
+    if row["status"] == "DEGENERATE":
+        sentences.append(outcome(row))
     return sentences
 
 

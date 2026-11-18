@@ -14,6 +14,8 @@ from typing import Any
 
 from alpha_core.atomic import write_text
 
+NOTE_HELP = "A note guides the agent's next proposal. The agent does not answer questions."
+
 
 def summary_fields(raw: Any) -> dict[str, Any]:
     result = {"plain_summary": raw, "plain_summary_status": "ok"}
@@ -89,6 +91,8 @@ def validate_decision(record: Any) -> None:
         for item in items:
             if key != "dropped" and not isinstance(item.get("name"), str):
                 raise ValueError("Expected an idea name in the decision.")
+            if not isinstance(item.get("uses_gate", False), bool):
+                raise ValueError("uses_gate must be a boolean.")
             given = {k: item[k] for k in ("honoured", "not_honoured", "agent_choices") if k in item}
             if revision_statements(given) != given:
                 raise ValueError(
@@ -216,6 +220,24 @@ def sentence(text: str) -> str:
     return text if text.endswith((".", "?", "!")) else text + "."
 
 
+def last_try_lines(item: dict[str, Any]) -> list[str]:
+    warnings = item.get("last_tries", [])
+    lines = []
+    for warning in warnings:
+        family = plain_family(warning["family"], closed=True)
+        who = (
+            f"Your idea is of type {family}, which has"
+            if "user_idea" in item
+            else "This idea type has"
+        )
+        label = f"Idea type: {family}. " if len(warnings) > 1 and "user_idea" not in item else ""
+        lines.append(
+            f"{label}{who} failed {warning['failed']} of {warning['limit']} tries. "
+            "If this idea fails, the type is closed for later rounds."
+        )
+    return lines
+
+
 def idea_lines(item: dict[str, Any], number: int) -> list[str]:
     from alpha_cli._rdagent_clocks import CLOCKS
     from alpha_cli.rdagent_journey_words import DIRECTION
@@ -247,6 +269,7 @@ def idea_lines(item: dict[str, Any], number: int) -> list[str]:
         f"Idea type: {plain_family(item.get('family') or '')}.",
         sentence(f"The agent's reason: {plain_reason(item.get('reason'))}"),
         f"Data it plans to read: {columns or 'not recorded'}.",
+        *last_try_lines(item),
     ]
     return ["", f"{number}. {item['name']}", *["   " + fact for fact in facts]]
 
@@ -296,11 +319,16 @@ def decision_text(folder: Path | None) -> str:
             lines.extend(explanation_lines(item))
         else:
             lines.append(sentence(f"Built your idea as {item['name']}: {item['user_idea']}"))
-            choices = item.get("agent_choices")
-            answer = (
-                "; ".join(choices) or "none" if choices is not None else "the agent did not say"
+        if "agent_choices" in item or not source:
+            lines.extend(
+                statement_lines("Choices the agent made for you", item.get("agent_choices"), "none")
             )
-            lines.append("   " + sentence("Choices the agent made for you: " + answer))
+        if item.get("uses_gate"):
+            lines.append(
+                "   This idea still uses an on/off condition. "
+                "It may have a value on too few days to rank coins."
+            )
+        lines.extend("   " + line for line in last_try_lines(item))
     return "\n".join([*lines, *result_lines(folder, record)])
 
 
@@ -381,14 +409,21 @@ def explanation_lines(item: dict[str, Any]) -> list[str]:
     if "honoured" not in item and "not_honoured" not in item:
         return ["   The agent did not say what it changed."]
     return [
-        "   " + sentence(f"{label}: {'; '.join(item[key]) if item[key] else 'nothing'}")
-        if key in item
-        else f"   {label}: the agent did not say."
+        line
         for key, label in (
             ("honoured", "What the agent changed"),
             ("not_honoured", "What the agent did not do, and why"),
         )
+        for line in statement_lines(label, item.get(key), "nothing")
     ]
+
+
+def statement_lines(label: str, values: list[str] | None, empty: str) -> list[str]:
+    if values is None:
+        return [f"   {label}: the agent did not say."]
+    if not values:
+        return [f"   {label}: {empty}."]
+    return [f"   {label}:", *[f"   - {value.rstrip('.; ')}." for value in values]]
 
 
 def usage_text(counts: dict[str, Any]) -> str:
@@ -398,12 +433,34 @@ def usage_text(counts: dict[str, Any]) -> str:
     )
 
 
+def coding_usage_text(run: Path) -> str:
+    path = run / "calls-labelled.jsonl"
+    if not path.exists():
+        return ""
+    counts = {"/v1/chat/completions": 0, "/v1/embeddings": 0}
+    with path.open(encoding="utf-8") as stream:
+        for line in stream:
+            row = json.loads(line)
+            endpoint = row.get("endpoint")
+            if row.get("step") == "coding" and endpoint in counts:
+                counts[endpoint] += 1
+    chat, embedding = counts.values()
+    if not (chat or embedding):
+        return ""
+    chat_requests = "request" if chat == 1 else "requests"
+    embedding_requests = "request" if embedding == 1 else "requests"
+    return (
+        f" During coding: {chat} chat {chat_requests} "
+        f"and {embedding} embedding {embedding_requests}."
+    )
+
+
 def state_text(run: Path, status: dict[str, Any], folders: list[Path]) -> str:
     receipt_path = run / "receipt.json"
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_bytes())
         if usage := receipt.get("discussion_usage"):
-            return "This run has ended. " + usage_text(usage)
+            return "This run has ended. " + usage_text(usage) + coding_usage_text(run)
         return "This run has ended."
     if status.get("state") == "ended":
         return "This run has ended."
@@ -433,8 +490,8 @@ def time_estimate(status: dict[str, Any]) -> str:
     if total is None:
         return ""
     final = status["round"] + 1 == total
-    times = status.get("build_seconds" if final else "reply_to_proposal_seconds", [])
-    wait = "several minutes"
+    times = status.get("reply_to_results_seconds" if final else "reply_to_proposal_seconds", [])
+    wait = "several minutes" if final else "a few minutes"
     if times:
         minutes = max(1, round(median(times) / 60))
         wait = f"about {minutes} minute{'s' if minutes != 1 else ''}"
@@ -521,7 +578,8 @@ def proposal_text(run: Path, *, details: bool = False, last_decision: bool = Fal
         "  --drop 1                      do not build idea 1 (add =reason to say why)",
         '  --revise "1=what to change"   ask the agent to change idea 1',
         '  --idea "your idea"            add your own idea (two at most)',
-        '  --note "text"                 tell the agent something for this run',
+        '  --note "text"                 guide the next proposal',
+        NOTE_HELP,
         "Ideas you do not name are built as proposed.",
         "A stand-in user answers with --as stand-in instead of --as owner.",
     ]
@@ -538,7 +596,8 @@ def submit(
     note: str | None,
 ) -> str:
     folder = newest(run)
-    names = [item["name"] for item in json.loads((folder / "proposal.json").read_bytes())["ideas"]]
+    proposal = json.loads((folder / "proposal.json").read_bytes())
+    names = [item["name"] for item in proposal["ideas"]]
     choices: dict[str, dict[str, str]] = {}
     for action, args in (("accept", accept), ("drop", drop), ("revise", revise)):
         for arg in args:
@@ -592,5 +651,12 @@ def submit(
     lines += [sentence(f"Your own idea: {text}") for text in ideas]
     if note is not None:
         lines.append(sentence("Note to the agent: " + note))
+        lines.append(NOTE_HELP)
+        total = proposal.get("rounds_total")
+        status_path = folder.parent / "status.json"
+        if total is None and status_path.exists():
+            total = json.loads(status_path.read_bytes()).get("rounds_total")
+        if proposal["round"] + 1 == total:
+            lines.append("This is the last round, so the note will not be used.")
     lines.append(f"Saved in {(folder / 'reply.json').relative_to(run)}.")
     return "\n".join(lines)

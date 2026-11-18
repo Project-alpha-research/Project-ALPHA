@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f9e49df15e422661 on 2026-11-19: Re-read after merging main: the body is main's; this branch only changes source_fingerprint ordering and toolbox inputs, which add no command, route or package boundary
+  verified cccd38a6760e26c6 on 2026-11-19: CLI routing and ownership still apply to all changed discussion commands and journey wording
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -14,10 +14,10 @@ docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/invariants/cli-trial-ledger.md
-  verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
+  verified 18fa04151f7762ec on 2026-11-19: Reply help does not change the ledger exchange, counting, or owner authority
 
 docs/reference/invariants/workers.md
-  verified 681c75226d86a35d on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
+  verified 43abdbac77d77cc7 on 2026-11-19: Discussion uses the same worker boundaries, evaluation rules, and model caps
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -92,7 +92,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified fd13c86ac248fae3 on 2026-11-19: Re-read after merging main: the body is main's; this branch's toolbox inputs change loads benchmark dividends as of the run's last bar and leaves the reserved date and its labels as described
+  verified e34d363b4c5ea368 on 2026-11-19: Judge changes only affect discussion prompts and display of existing family counts
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

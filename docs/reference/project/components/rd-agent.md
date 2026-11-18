@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
-verified: 3a3061f3266cd9a4
+verified: 381e7b1f7e82843f
 ---
 
 # RD-Agent
@@ -163,8 +163,8 @@ New factor rows store family and critic status. Older rows can lack both. The pa
   ([plan](../owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
   [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)). Built: the optional [proposal
   pause](../../../../workers/rdagent/README.md#propose-and-discuss) on the command line. The trader answers by number or name before coding. Each
-  proposer and feedback step receives the trader's choices for the run. Re-asks disclose their cost. The decision explains changes, choices the
-  agent made for the trader, and the recorded result for each built idea.
+  proposer receives the trader's choices for the run. Feedback gets the built hypotheses and the names the trader dropped.
+  Re-asks disclose their cost. The decision explains changes, choices the agent made for the trader, and the recorded result for each built idea.
   Not built: the pause on the Workstation screen, overriding an automatic refusal, honesty checks as labels.
 - Decided 2026-11-18: the run view uses the approved journey layout ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while
   ideas are throwaway tests a labelled stand-in user may answer its pauses, never for approvals

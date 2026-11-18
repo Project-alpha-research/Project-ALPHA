@@ -9869,6 +9869,313 @@
         "title": "JobSummary",
         "type": "object"
       },
+      "JourneyFigure": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "source": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source",
+            "type": "array"
+          }
+        },
+        "title": "JourneyFigure",
+        "type": "object"
+      },
+      "JourneyIdea": {
+        "additionalProperties": false,
+        "properties": {
+          "built": {
+            "title": "Built",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "iteration": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iteration"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          }
+        },
+        "required": [
+          "id",
+          "iteration",
+          "name",
+          "verdict",
+          "built"
+        ],
+        "title": "JourneyIdea",
+        "type": "object"
+      },
+      "JourneyMissing": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "reason": {
+            "const": "Journey not built yet",
+            "default": "Journey not built yet",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "title": "JourneyMissing",
+        "type": "object"
+      },
+      "JourneyNumber": {
+        "additionalProperties": false,
+        "properties": {
+          "display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display"
+          },
+          "gloss": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gloss"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "title": "JourneyNumber",
+        "type": "object"
+      },
+      "JourneyStep": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "facts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "figure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figure"
+          },
+          "figure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figure Reason"
+          },
+          "figures": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Figures",
+            "type": "array"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
+          "numbers": {
+            "items": {
+              "$ref": "#/components/schemas/JourneyNumber"
+            },
+            "title": "Numbers",
+            "type": "array"
+          },
+          "own_words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Own Words"
+          },
+          "source": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source",
+            "type": "array"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "what_this_means": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What This Means"
+          },
+          "who": {
+            "anyOf": [
+              {
+                "enum": [
+                  "RD-Agent (AI)",
+                  "ALPHA rule"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Who"
+          }
+        },
+        "title": "JourneyStep",
+        "type": "object"
+      },
       "JsonObject": {
         "additionalProperties": {
           "$ref": "#/components/schemas/JsonValue"
@@ -16772,6 +17079,13 @@
               "type": "object"
             },
             "title": "Identity Splits",
+            "type": "array"
+          },
+          "journeys": {
+            "items": {
+              "$ref": "#/components/schemas/JourneyIdea"
+            },
+            "title": "Journeys",
             "type": "array"
           },
           "months": {
@@ -25556,6 +25870,47 @@
         "title": "StandaloneRunContextV1",
         "type": "object"
       },
+      "StoredJourney": {
+        "additionalProperties": false,
+        "properties": {
+          "code_sha256": {
+            "title": "Code Sha256",
+            "type": "string"
+          },
+          "figures": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JourneyFigure"
+            },
+            "title": "Figures",
+            "type": "object"
+          },
+          "iteration": {
+            "title": "Iteration",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/JourneyStep"
+            },
+            "maxItems": 7,
+            "minItems": 7,
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "iteration",
+          "name",
+          "code_sha256",
+          "steps"
+        ],
+        "title": "StoredJourney",
+        "type": "object"
+      },
       "StrategyDefinition": {
         "additionalProperties": false,
         "properties": {
@@ -32605,6 +32960,128 @@
           }
         },
         "summary": "Run Detail",
+        "tags": [
+          "rdagent"
+        ]
+      }
+    },
+    "/api/rdagent/runs/{run_id}/journeys/{idea_id}": {
+      "get": {
+        "description": "Read the published steps, or the local command to build a missing journey.",
+        "operationId": "idea_journey_api_rdagent_runs__run_id__journeys__idea_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/StoredJourney"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JourneyMissing"
+                    }
+                  ],
+                  "title": "Response Idea Journey Api Rdagent Runs  Run Id  Journeys  Idea Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Idea Journey",
+        "tags": [
+          "rdagent"
+        ]
+      }
+    },
+    "/api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}": {
+      "get": {
+        "description": "Read one published PNG belonging to this idea.",
+        "operationId": "journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Journey Figure",
         "tags": [
           "rdagent"
         ]

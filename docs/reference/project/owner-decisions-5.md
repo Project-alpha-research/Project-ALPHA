@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
-verified: e3b0c44298fc1c14
+verified: 9def06fde73f407c
 ---
 
 # Owner decisions log, volume 5

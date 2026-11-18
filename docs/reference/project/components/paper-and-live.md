@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/invariants/cli-paper.md
-verified: e3b0c44298fc1c14
+verified: d9b582fb5efee922
 ---
 
 # Paper and live trading

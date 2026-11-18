@@ -856,3 +856,88 @@ def test_story_provider_stopped_coding_means_zero_coded_and_ran(store: Path) -> 
         0,
         0,
     ]
+
+
+def test_journey_picker_matches_the_full_judged_identity(store: Path) -> None:
+    run = store / "new"
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    trial = {**json.loads(ledger.read_text()), "iteration": 1, "code_sha256": "a" * 64}
+    other = {**trial, "iteration": 2, "code_sha256": "b" * 64}
+    write_lines(ledger, [trial, other])
+    first = {k: trial[k] for k in ("iteration", "name", "code_sha256")}
+    folder = "1-slow_rank-aaaaaaaa"
+    write_json(
+        run / "journey/index.json",
+        {
+            "ideas": [
+                {**first, "folder": folder},
+                {
+                    "iteration": 2,
+                    "name": "slow_rank",
+                    "code_sha256": "b" * 64,
+                    "folder": "2-slow_rank-bbbbbbbb",
+                },
+            ]
+        },
+    )
+    write_json(run / "journey" / folder / "journey.json", {**first, "steps": [{}] * 7})
+    ideas = rdagent.run_detail("new").journeys
+    assert [(idea.name, idea.verdict, idea.built) for idea in ideas] == [
+        ("slow_rank", "CANDIDATE", True),
+        ("slow_rank", "CANDIDATE", False),
+    ]
+    assert ideas[0].id != ideas[1].id
+
+
+def test_journey_routes_read_only_published_bytes(store: Path) -> None:
+    from io import BytesIO
+
+    from PIL import Image
+
+    from alpha_web.api.rdagent_models import JourneyMissing, StoredJourney
+
+    folder = store / "new"
+    key = {"iteration": 5, "name": "example", "code_sha256": "e" * 64}
+    idea_id = f"5-{'e' * 64}-example"
+    name = "5-example-eeeeeeee"
+    dest = folder / "journey" / name
+    write_json(folder / "journey/index.json", {"ideas": [{**key, "folder": name}]})
+    missing = rdagent.idea_journey("new", idea_id)
+    assert isinstance(missing, JourneyMissing)
+    assert missing.reason == "Journey not built yet"
+    assert missing.command == f"uv run alpha ledger journey --run-dir {folder} --factor example"
+    story = {**key, "steps": [{}] * 7, "figures": {"signal": {"file": "signal.png"}}}
+    write_json(dest / "journey.json", story)
+    actual = rdagent.idea_journey("new", idea_id)
+    assert isinstance(actual, StoredJourney)
+    assert actual.model_dump(exclude_unset=True) == story
+    png = BytesIO()
+    Image.new("L", (1, 1)).save(png, format="PNG")
+    image = dest / "signal.png"
+    image.write_bytes(png.getvalue())
+    response = rdagent.journey_figure("new", idea_id, "signal.png")
+    assert response.body == png.getvalue()
+    assert response.media_type == "image/png"
+    for bad in ("unlisted.png", "../signal.png", "/signal.png", "journey.json"):
+        with pytest.raises(HTTPException) as refused:
+            rdagent.journey_figure("new", idea_id, bad)
+        assert refused.value.status_code == 404
+    image.unlink()
+    image.symlink_to(folder / "receipt.json")
+    with pytest.raises(HTTPException) as linked:
+        rdagent.journey_figure("new", idea_id, "signal.png")
+    assert linked.value.status_code == 422
+    write_json(dest / "journey.json", {**story, "code_sha256": "e" * 8 + "f" * 56})
+    with pytest.raises(HTTPException) as mismatch:
+        rdagent.idea_journey("new", idea_id)
+    assert mismatch.value.status_code == 422
+
+
+def test_published_journey_and_matching_round_task_are_one_idea(store: Path) -> None:
+    run = store / "old"
+    trial = {"iteration": 2, "name": "sample", "code_sha256": "a" * 64}
+    write_lines(run / "rounds.jsonl", [{"iteration": 2, "tasks": [trial]}])
+    # Only the journey and round survived. Neither contains a verdict.
+    write_json(run / "journey/2-sample-aaaaaaaa/journey.json", {**trial, "steps": [{}] * 7})
+    ideas = rdagent.run_detail("old").journeys
+    assert [(idea.name, idea.verdict, idea.built) for idea in ideas] == [("sample", None, True)]

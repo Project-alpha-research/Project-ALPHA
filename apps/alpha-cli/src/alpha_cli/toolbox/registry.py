@@ -3,8 +3,18 @@
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REGIMES
+from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
+from alpha_cli.toolbox.families.robustness import START_END_DATES
 
-SPECS = (ATTRIBUTION, VOL_REGIMES, CHANGEPOINTS)
+SPECS = (
+    ATTRIBUTION,
+    VOL_REGIMES,
+    CHANGEPOINTS,
+    DOWNSIDE_RATIOS,
+    START_END_DATES,
+    SIDE_CONTRIBUTION,
+    CONCENTRATION,
+)
 ALIASES = {
     "attribution": ATTRIBUTION.id,
     "regimes": VOL_REGIMES.id,

@@ -1,0 +1,38 @@
+.rdagent-run-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 24%) minmax(0, 1fr);
+  gap: var(--pad);
+}
+.rdagent-run-layout select { max-width: 100%; }
+.rdagent-journey { line-height: 1.5; overflow-wrap: anywhere; }
+.journey-step {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  align-items: start;
+  gap: var(--pad);
+  border-top: 1px solid var(--line-strong);
+  padding: var(--pad) 0;
+}
+.journey-step h3 { margin-top: 0; }
+.journey-step pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: var(--pad-sm);
+  background: var(--panel-2);
+  font-family: var(--font-mono);
+}
+.journey-image { background: var(--panel); color: var(--ink); margin: 0; }
+.journey-numbers { display: flex; flex-wrap: wrap; gap: var(--pad); }
+.journey-numbers > div { flex: 1 1 8rem; }
+.journey-numbers dt { font-weight: 600; }
+.journey-numbers dd { margin: 0; }
+.journey-numbers strong { display: block; font-size: 1.6em; line-height: 1.2; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent-text); }
+.journey-gloss { display: block; color: var(--muted); }
+.journey-who { display: inline-block; font-weight: 700; }
+.journey-who-ai { color: var(--accent-text); }
+.journey-who-rule { color: var(--ink); }
+.journey-disclaimer { font-style: italic; color: var(--muted); }
+.journey-reason { margin: 0; }
+@media (max-width: 720px) {
+  .rdagent-run-layout { grid-template-columns: minmax(0, 1fr); }
+}

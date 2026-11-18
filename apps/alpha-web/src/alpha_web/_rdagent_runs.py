@@ -8,13 +8,19 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
+import shlex
+import stat
+from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from alpha_web.api.errors import safe_message
 from alpha_web.api.rdagent_models import (
+    JourneyIdea,
+    JourneyMissing,
     RdAgentCap,
     RdAgentClock,
     RdAgentDetail,
@@ -24,7 +30,10 @@ from alpha_web.api.rdagent_models import (
     RdAgentRunList,
     RdAgentStory,
     RecordedFact,
+    StoredJourney,
 )
+
+type IdeaKey = tuple[int, str, str]
 
 MISSING = "not recorded by this run"
 RECEIPT_SCHEMA = "AlphaRdagentFactorRunReceiptV1"
@@ -287,19 +296,37 @@ def _object(value: Any) -> dict[str, Any]:
     return value
 
 
-def _read(root: Path, relative: str) -> bytes | None:
-    """Only constant relative names reach here; refuse links at every path component."""
+def _record_path(root: Path, relative: str) -> Path:
+    """Only names selected from local records reach here; refuse links at every component."""
     path = root
     for part in Path(relative).parts:
         path = path / part
         if path.is_symlink():
             raise ValueError("RD-Agent recorded files must not be symbolic links.")
-    if not path.exists():
+    return path
+
+
+def _read(root: Path, relative: str) -> bytes | None:
+    parts = Path(relative).parts
+    if not parts or Path(relative).is_absolute() or ".." in parts:
+        raise ValueError("Invalid relative record name.")
+    # Pin the directory descriptors during the read, including across a concurrent replacement.
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    try:
+        with ExitStack() as directories:
+            directory = os.open(root, directory_flags)
+            directories.callback(os.close, directory)
+            for part in parts[:-1]:
+                directory = os.open(part, directory_flags, dir_fd=directory)
+                directories.callback(os.close, directory)
+            fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+            with os.fdopen(fd, "rb") as stream:
+                info = os.fstat(fd)
+                if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_FILE_BYTES:
+                    raise ValueError("RD-Agent recorded file is not a bounded regular file.")
+                content = stream.read(MAX_FILE_BYTES + 1)
+    except FileNotFoundError:
         return None
-    if not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
-        raise ValueError("RD-Agent recorded file is not a bounded regular file.")
-    with path.open("rb") as stream:
-        content = stream.read(MAX_FILE_BYTES + 1)
     if len(content) > MAX_FILE_BYTES:
         raise ValueError("RD-Agent recorded file exceeds the read limit.")
     return content
@@ -771,7 +798,7 @@ STORY_FIELDS = (
 )
 
 
-def _story_key(row: dict[str, Any]) -> tuple[int, str, str] | None:
+def _story_key(row: dict[str, Any]) -> IdeaKey | None:
     iteration, name, digest = (row.get(key) for key in ("iteration", "name", "code_sha256"))
     if iteration is None or name is None or digest is None:
         return None
@@ -952,8 +979,9 @@ def _story(
     ledger_rows: list[dict[str, Any]],
     rounds: list[dict[str, Any]],
     evaluations: list[dict[str, Any]],
-) -> RdAgentStory:
+) -> tuple[RdAgentStory, dict[str, IdeaKey]]:
     tasks = _story_tasks(rounds)
+    identities: dict[str, IdeaKey] = {}
     ideas = []
     missing = []
     events = []
@@ -966,14 +994,15 @@ def _story(
         missing.append(
             "An evaluation has no stored identity linking it to the ledger; counts are unknown."
         )
-    for index, trial in enumerate(
-        _story_trials(ledger_rows, evaluations, {receipt["run_id"], folder.name})
-    ):
+    trials = _story_trials(ledger_rows, evaluations, {receipt["run_id"], folder.name})
+    for index, trial in enumerate(trials):
         if trial.get("status") == "IMPORTED":
             continue
         key = _story_key(trial)
         task, record = tasks.pop(key, ({}, {})) if key else ({}, {})
         idea = _idea(f"trial-{index}", task, trial, record)
+        if key:
+            identities[idea.id] = key
         digest = trial.get("code_sha256")
         if key and _read(folder, f"code/{digest}.py") is not None:
             idea.code_file = fact(f"{digest}.py")
@@ -984,7 +1013,9 @@ def _story(
             missing.append("The trial's link to recorded proposer feedback is not recorded.")
         ideas.append(idea)
     for key, (task, record) in tasks.items():
-        ideas.append(_idea(f"task-{len(ideas)}", {**task, "iteration": key[0]}, round_row=record))
+        idea = _idea(f"task-{len(ideas)}", {**task, "iteration": key[0]}, round_row=record)
+        ideas.append(idea)
+        identities[idea.id] = key
         uncertain = True
         missing.append("A task's link to its trial is not recorded.")
     for index, record in enumerate(rounds):
@@ -1056,7 +1087,7 @@ def _story(
     )
     if isinstance(minutes.value, (int, float)) and minutes.value < 0:
         raise ValueError("Recorded run ends before it starts.")
-    return RdAgentStory(
+    story = RdAgentStory(
         events=list(dict.fromkeys(events)),
         ideas=ideas,
         journey=journey,
@@ -1065,13 +1096,18 @@ def _story(
         ending_reason=fact(receipt.get("loop_reason")),
         minutes=minutes,
     )
+    return story, identities
 
 
-def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
+def _selected_run(root: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
     selected = next((item for item in _runs(root) if item[1]["run_id"] == run_id), None)
     if selected is None:
         raise FileNotFoundError("The requested RD-Agent run is not in the recorded run list.")
-    folder, receipt = selected
+    return selected
+
+
+def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
+    folder, receipt = _selected_run(root, run_id)
     panel = _json(folder, "panel/panel-receipt.json")
     ledger_rows, ledger_reason = _ledger(ledger)
     factor_rows = _ledger_factor_rows(ledger_rows, run_id, folder)
@@ -1092,7 +1128,8 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
     )
     steps, timing_reason = _lines(folder, "steps.jsonl")
     evaluations, evaluation_reason = _lines(folder, "evaluations.jsonl")
-    story = _story(folder, receipt, factor_rows, rounds, evaluations)
+    evaluations = _archived_evaluations(folder, evaluations)
+    story, identities = _story(folder, receipt, factor_rows, rounds, evaluations)
     for issue in (refusal_reason, evaluation_reason):
         if issue and issue != MISSING:
             story.missing_links.append(issue)
@@ -1116,6 +1153,7 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
         notes.append(evaluation_reason)
     return RdAgentDetail(
         story=story,
+        journeys=_journey_ideas(folder, story, identities),
         run=_summary(folder, receipt, panel, funnel),
         funnel=funnel,
         factors=factors,
@@ -1166,3 +1204,144 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
         identity_rescales=_identity(panel, "identity_rescales"),
         notes=[_text(note) for note in notes],
     )
+
+
+def _archived_evaluations(folder: Path, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The writer accepts either evaluations.jsonl or per-iteration results."""
+    by_iteration = {row.get("iteration"): row for row in rows}
+    archive = _record_path(folder, "evaluations")
+    for path in sorted(archive.glob("iter-*/result.json")):
+        row = _json(folder, str(path.relative_to(folder)))
+        iteration = row.get("iteration")
+        if type(iteration) is not int or path.parent.name != f"iter-{iteration}":
+            raise ValueError("Invalid archived evaluation identity.")
+        if iteration in by_iteration and row != by_iteration[iteration]:
+            raise ValueError("Archived evaluation and evaluation log disagree.")
+        if iteration not in by_iteration:
+            rows.append(row)
+            by_iteration[iteration] = row
+    return rows
+
+
+def _journey_folder(key: IdeaKey) -> str:
+    iteration, name, digest = key
+    if iteration < 0 or not name.strip() or name in {".", ".."} or Path(name).name != name:
+        raise ValueError("Invalid recorded journey name.")
+    return f"{iteration}-{name}-{digest[:8]}"
+
+
+def _journey_ideas(
+    folder: Path, story: RdAgentStory, identities: dict[str, IdeaKey]
+) -> list[JourneyIdea]:
+    # A filtered CLI build still indexes every judged idea. Presence requires its actual file.
+    indexed: dict[IdeaKey, str | None] = {}
+    for item in _json(folder, "journey/index.json").get("ideas", []):
+        key = _story_key(_object(item))
+        if key is None or key in indexed or item.get("folder") != _journey_folder(key):
+            raise ValueError("Invalid recorded journey index.")
+        indexed[key] = None
+    for idea in story.ideas:
+        key = identities.get(idea.id)
+        if key and idea.trial is not None:
+            indexed[key] = idea.trial.status
+    directories = {_journey_folder(key) for key in indexed}
+    if len(directories) != len(indexed):
+        raise ValueError("Conflicting recorded journey folder identities.")
+    # Copied journeys can outlive their index or evaluation files.
+    parent = _record_path(folder, "journey")
+    for child in sorted(parent.iterdir()) if parent.exists() else []:
+        if child.name in directories or not re.fullmatch(
+            r"[0-9]+-.+-[0-9a-f]{8}", child.name, re.DOTALL
+        ):
+            continue
+        content = _read(folder, f"journey/{child.name}/journey.json")
+        if content is None:
+            continue
+        key = _story_key(_object(json.loads(content)))
+        if key is None or child.name != _journey_folder(key):
+            raise ValueError("Journey file and folder identities disagree.")
+        indexed[key] = None
+    result = []
+    for key, verdict in indexed.items():
+        iteration, name, digest = key
+        directory = _journey_folder(key)
+        path = _record_path(folder, f"journey/{directory}/journey.json")
+        if path.exists() and not path.is_file():
+            raise ValueError("Invalid recorded journey file.")
+        result.append(
+            JourneyIdea(
+                id=f"{iteration}-{digest}-{name}",
+                iteration=iteration,
+                name=name,
+                verdict=verdict,
+                built=path.is_file(),
+            )
+        )
+    for idea in story.ideas:
+        if identities.get(idea.id) not in indexed:
+            result.append(
+                JourneyIdea(
+                    id=idea.id,
+                    iteration=None,
+                    name=str(idea.name.value or "not recorded"),
+                    verdict=idea.trial.status if idea.trial else None,
+                    built=False,
+                )
+            )
+    return result
+
+
+def _published_journey(folder: Path, idea_id: str) -> tuple[str, StoredJourney] | None:
+    # A folder carries eight hash digits. Bind both reads to the document's full identity.
+    identity = re.fullmatch(r"(0|[1-9][0-9]*)-([0-9a-f]{64})-([^/]+)", idea_id, re.DOTALL)
+    if identity is None:
+        return None
+    iteration, digest, name = identity.groups()
+    key = int(iteration), name, digest
+    expected = _journey_folder(key)
+    parent = _record_path(folder, "journey")
+    if not parent.is_dir():
+        return None
+    directory = next((child.name for child in parent.iterdir() if child.name == expected), None)
+    if directory is None:
+        return None
+    data = _read(folder, f"journey/{directory}/journey.json")
+    if data is None:
+        return None
+    journey = StoredJourney.model_validate_json(data, strict=True)
+    if (journey.iteration, journey.name, journey.code_sha256) != key:
+        raise ValueError("Published journey belongs to a different idea.")
+    return directory, journey
+
+
+def read_journey(
+    root: Path, ledger: Path, run_id: str, idea_id: str
+) -> StoredJourney | JourneyMissing:
+    folder, _ = _selected_run(root, run_id)
+    published = _published_journey(folder, idea_id)
+    if published:
+        return published[1]
+    idea = next((i for i in read_run(root, ledger, run_id).journeys if i.id == idea_id), None)
+    if idea is None:
+        raise FileNotFoundError("Unknown recorded idea.")
+    args = ["uv", "run", "alpha", "ledger", "journey", "--run-dir", str(folder.absolute())]
+    if idea.iteration is not None:
+        args.extend(["--factor", idea.name])
+    return JourneyMissing(reason="Journey not built yet", command=shlex.join(args))
+
+
+def read_journey_figure(root: Path, run_id: str, idea_id: str, filename: str) -> bytes:
+    folder, _ = _selected_run(root, run_id)
+    published = _published_journey(folder, idea_id)
+    if not published or Path(filename).name != filename or not filename.endswith(".png"):
+        raise FileNotFoundError("Unknown journey figure.")
+    directory, journey = published
+    files = {figure.file for figure in journey.figures.values()}
+    if filename not in files and filename not in {step.figure for step in journey.steps}:
+        raise FileNotFoundError("Unlisted journey figure.")
+    data = _read(folder, f"journey/{directory}/{filename}")
+    if data is None:
+        raise FileNotFoundError("Missing journey figure.")
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("Invalid recorded PNG.")
+    return data

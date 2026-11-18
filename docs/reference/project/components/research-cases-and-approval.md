@@ -5,14 +5,15 @@ sources:
   - packages/alpha-study/CONTEXT.md
   - research/CONTEXT.md
   - docs/reference/invariants/cli-research.md
-verified: e3b0c44298fc1c14
+verified: 46c77e1af09dbb85
 ---
 
 # Research cases and owner approval
 
 A research case is the record of one market question from idea to decision: what will be tested,
-on which data, with what budget, what happened, and what the owner decided. Owner approval is the
-only way anything in ALPHA becomes evidence or moves forward.
+on which data, with what budget, what happened, and what the owner decided. Testing an idea needs
+no approval; the owner's approval is needed before anything goes to paper or live trading, and in
+the older staged lane for each case's contracts and decision ([research routing](../../../../research/CONTEXT.md)).
 
 ## Why it exists
 
@@ -64,7 +65,10 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ## Decisions and open questions
 
-- No owner decision recorded in the log for this part yet.
+- [Thin ALPHA](../owner-decisions-2.md#2026-11-14-thin-alpha-dramatically-rd-agent-and-qlib-are-the-proven-core):
+  research is free; the owner approves only before a candidate goes to paper or live trading.
+- [Approvals follow code structure](../owner-decisions-2.md#2026-11-14-approvals-follow-code-structure-not-exact-bytes)
+  and [close the daily-rule binding gap](../owner-decisions-2.md#2026-11-14-close-the-daily-rule-binding-gap).
 
 ## Never
 

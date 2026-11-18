@@ -9,7 +9,7 @@ sources:
   - scripts/commands_reference.py
   - scripts/roadmap_index.py
   - scripts/setup.sh
-verified: ba62e3c3224900db
+verified: 0bd54da7d6b96c97
 ---
 
 # scripts workspace
@@ -41,7 +41,8 @@ read owner data, credentials or hidden tests.
 - Protected files (change only in a reviewed pull request that lists them): `scripts/gate*.py`,
   `scripts/git_guard.py`, `scripts/harness_*.py`, `scripts/handoff*.py`, `scripts/codex_bridge.py`.
 - Where things are: `gate.py` + `gate_components.py` (CI job steps) + `gate_select.py` (tests mapped
-  from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`, `fs_stale.py`; generators
+  from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`, `fs_stale.py` (`verify` needs a text edit or a
+  `--reason`, kept in `docs/verified-reasons.txt`); generators
   `roadmap_index.py`, `status.py` (STATUS.md), `commands_reference.py`, `generate_web_openapi.py`, `check_openapi_operations.py`;
   machine setup: `setup.sh` (wraps `setup_rdagent.sh`) and the machine section of `gate.py doctor`
   ([development loop](../docs/operations/development-loop.md#set-up-a-fresh-machine));

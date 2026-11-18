@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: f3ab557072fe55de
+verified: 8fa68b866ed086ff
 ---
 
 # Web API invariants
@@ -93,7 +93,9 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
 - RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
   Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
-  Idea cards supply counts, receipts supply cost/time/ending, rounds supply feedback; hashes name code archives; old candidates retain derived status.
+  The run detail lists journey availability by evaluation number, name and full code hash. Indexed ideas can be unbuilt after a filtered CLI build.
+  GET `/api/rdagent/runs/{run_id}/journeys/{idea_id}` returns the stored document or the quoted CLI command for a missing journey.
+  Its `/figures/{filename}` GET serves listed PNGs only. Both check identity and refuse symlinks. Source paths are display text. The server never builds.
 - Setup Lab's GET `/api/setup/runs` and `/{find_id}` use `_setup_runs` only: bounded, allowlisted reads, no CLI run. `setups/<id>/` files
   (`manifest.json`, `spec.json`, `summary.json`, `candidates.parquet`, `sheets/*.png`) and the linked `setup-studies/`, `setup-trades/`
   manifests, summaries, rows and PNGs, plus `ledger/trials.jsonl`, are shown as stored. Missing files stay null; corrupt, linked or

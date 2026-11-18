@@ -191,7 +191,7 @@ def test_happy_path_builds_verifies_and_records(
     assert out.splitlines()[0].endswith("PASSED")
     rec = _record(env)
     assert rec["verdict"] == "passed" and rec["fallback"] is None
-    assert rec["built_by"] == {"tool": "codex", "model": "gpt-6.1-sol", "effort": "medium"}
+    assert rec["built_by"] == {"tool": "codex", "model": "gpt-6.2-sol", "effort": "medium"}
     assert rec["tokens"]["input_tokens"] == 1000 and rec["fix_rounds"] == 0
     assert [c["name"] for c in rec["checks"]] == ["uv sync", "gate check", "check 1", "check 2"]
     assert all(c["passed"] for c in rec["checks"])
@@ -264,7 +264,7 @@ def test_usage_limit_returns_the_limit_status(env: dict[str, Path]) -> None:
 def test_timeout_stops_codex_and_returns_the_timeout_status(
     env: dict[str, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    fast = handoff.Profile("gpt-6.1-sol", "medium", 0.5, 0.5, "sonnet")
+    fast = handoff.Profile("gpt-6.2-sol", "medium", 0.5, 0.5, "sonnet")
     monkeypatch.setitem(handoff.PROFILES, "small", fast)
     _scenario(env, {"sleep": 20, **GOOD})
     assert _build(env) == handoff.EXIT["codex_timeout"]

@@ -251,13 +251,13 @@ class AlphaFactorCoSTEER(FactorCoSTEER):
             )
         with (
             compatible_embeddings(self.rag, self._alpha_embedding_memory, Path(run)),
-            tolerant_critic(self.evaluator, Path(run)),
+            tolerant_critic(self.evaluator, Path(run), exp),
         ):
             return super().develop(exp)
 
 
 @contextmanager
-def tolerant_critic(evaluator: Any, run: Path) -> Iterator[None]:
+def tolerant_critic(evaluator: Any, run: Path, exp: Any = None) -> Iterator[None]:
     """Wrap the pinned CoSTEER single evaluator for this round, leaving its code path intact."""
     calls = os.environ.get("ALPHA_GATEWAY_CALLS")
     if not calls:
@@ -274,7 +274,9 @@ def tolerant_critic(evaluator: Any, run: Path) -> Iterator[None]:
         RuntimeError,
         None,
     )
-    wrapped = CriticEvaluator(original, guard)
+    if exp is not None:
+        exp.alpha_completed_coding = {}
+    wrapped = CriticEvaluator(original, guard, exp)
     evaluator.single_evaluator = wrapped
     try:
         yield
@@ -315,11 +317,12 @@ def compatible_embeddings(rag: Any, memory: EmbeddingMemory, run: Path) -> Itera
                 memory.remember(node_id, node)
         memory.save()
         graph.nodes.update(removed)
-        if removed and rag.dump_knowledge_base_path is not None:
-            restore_skipped_nodes(Path(rag.dump_knowledge_base_path), removed)
+        memory.rebuild(graph)
+        if rag.dump_knowledge_base_path is not None:
+            restore_skipped_nodes(Path(rag.dump_knowledge_base_path), removed, memory)
 
 
-def restore_skipped_nodes(path: Path, removed: dict[str, Any]) -> None:
+def restore_skipped_nodes(path: Path, removed: dict[str, Any], memory: EmbeddingMemory) -> None:
     """Upstream dumps while failed nodes are hidden. Retain their text for the next run."""
     with FileLock(str(path.with_suffix(".lock"))):
         if not path.exists():
@@ -328,6 +331,7 @@ def restore_skipped_nodes(path: Path, removed: dict[str, Any]) -> None:
             knowledge = load(stream)
         for node_id, node in removed.items():
             knowledge.graph.nodes.setdefault(node_id, node)
+        memory.restore_vectors(knowledge.graph)
         descriptor, temporary = tempfile.mkstemp(prefix=".coder-embeddings-", dir=path.parent)
         try:
             with os.fdopen(descriptor, "wb") as stream:

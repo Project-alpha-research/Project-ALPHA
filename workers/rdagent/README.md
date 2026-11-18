@@ -739,6 +739,27 @@ from its first run (the data folders and the coder come from the current run). R
 logs from a memory run are signed with the memory key, so its log viewer needs
 `ARTIFACT_SIGNING_KEY_PATH` pointed there.
 
+The coder rebuilds `graph.vector_base.vector_df` from prepared nodes before similarity search.
+Each searchable vector belongs to the current embedding model and has the same checked dimension;
+refused entries keep their text with no searchable vector. Repair uses the existing gateway,
+embedding limit and money caps. `knowledge-vectors.json` feeds the run receipt's `knowledge_vectors`,
+`knowledge_vectors_reembedded`, `knowledge_vectors_left_out` and `knowledge_vector_dimension`.
+Saved knowledge retains the repaired table; loading an old table rebuilds it from the nodes again.
+
+An internal coding exception ends that round. Completed factor evaluations retain their workspaces
+and feedback and go through the existing ALPHA runner; unfinished factors are `not_coded`, without
+invented trials. `coding_failed_internal_error` records the exception type, one-line message and
+per-factor `trial_created` after judging. A second consecutive internal coding failure stops the
+run after recording the round, with its reason copied to the receipt. Provider failures and budget
+refusals keep their existing handling, as do upstream's own round endings (`CoderError` when every
+task failed, `FactorEmptyError`). Exceptions outside coding propagate, and so does an exception whose
+deepest ALPHA-or-RD-Agent frame is ALPHA worker code (library frames are skipped when deciding).
+
+Restored history reads the evaluation's panel hash first, then the originating run's receipt or
+freeze receipt. Old checkpoints identify their own experiments through `loop_prev_out`; inherited
+rounds use their original Qlib workspace paths, never the latest run's panel. New records retain their run directory. Without panel
+provenance a round stays a one-line `panel unknown` summary; it is not called a different panel.
+
 ### Failure reasons, idea families and the call split (2026-11-17)
 
 A factor that produced no usable values is a `FAILED` trial with a `failure_reason`, carried into

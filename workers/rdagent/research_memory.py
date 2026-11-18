@@ -34,11 +34,28 @@ class ProposalHistory:
         self.original, self.restored, self.panel_sha256 = original, restored, panel_sha256
 
     def _panel(self, exp: Any) -> str | None:
-        # New rounds carry the hash on the experiment; judged rounds record it in their inputs.
         evaluation = getattr(exp, "alpha_evaluation", None) or {}
-        return getattr(exp, "alpha_panel_sha256", None) or (evaluation.get("inputs") or {}).get(
-            "panel_sha256"
-        )
+        panel = (evaluation.get("inputs") or {}).get("panel_sha256")
+        if panel:
+            return str(panel)
+        run = getattr(exp, "alpha_run_dir", None)
+        workspace = getattr(getattr(exp, "experiment_workspace", None), "workspace_path", None)
+        if not run and workspace:
+            path = Path(workspace)
+            # Pinned QlibFactorExperiment allocates this workspace before any coding or judge.
+            # Its absolute path survives inherited checkpoints and identifies the original run.
+            if path.is_absolute() and path.parts[-4:-1] == (
+                "work",
+                "git_ignore_folder",
+                "RD-Agent_workspace",
+            ):
+                run = str(path.parents[3])
+        if run:
+            for name in ("receipt.json", "panel/panel-receipt.json"):
+                path = Path(run) / name
+                if path.exists() and (panel := json.loads(path.read_text()).get("panel_sha256")):
+                    return str(panel)
+        return getattr(exp, "alpha_panel_sha256", None)
 
     def _full(self, trace: Any) -> set[int]:
         same = [
@@ -90,7 +107,7 @@ class ProposalHistory:
         panel = self._panel(exp)
         suffix = "; different coin panel" if panel and panel != self.panel_sha256 else ""
         if panel is None:
-            suffix = "; coin panel not recorded"
+            suffix = "; coin panel not recorded (panel unknown)"
         return " ".join(f"Restored round: {names}; {family}; {status}{suffix}".split())
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
@@ -132,6 +149,25 @@ def limit_restored_history(loop: Any, environ: Mapping[str, str]) -> None:
         component.prepare_context = ProposalHistory(component.prepare_context, restored, panel)
     counts = loop.hypothesis_gen.prepare_context.counts(loop.trace)
     (run / "history-context.json").write_text(_json(counts) + "\n")
+
+
+def restored_run_provenance(previous: Any, session: Path) -> None:
+    """Old checkpoints retain this run's experiments in loop_prev_out, even without judging.
+
+    Match by object identity in the deserialised trace: inherited rounds must not acquire
+    the latest run's panel. Future checkpoints retain alpha_run_dir on each recorded round.
+    """
+    current = []
+    for output in getattr(previous, "loop_prev_out", {}).values():
+        proposal = output.get("direct_exp_gen") or {}
+        exp = output.get("running") or output.get("coding") or proposal.get("exp_gen")
+        if exp is not None:
+            current.append(exp)
+    if not current:
+        return
+    for exp, _ in previous.trace.hist:
+        if not getattr(exp, "alpha_run_dir", None) and any(exp is item for item in current):
+            exp.alpha_run_dir = str(session.parents[2])
 
 
 def _now() -> str:
@@ -494,7 +530,6 @@ def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -
         except ValueError as error:
             raise SystemExit(str(error)) from error
         loop = loop_cls(settings)
-        loop.coder = judge.FamilyGuard(loop.coder, loop)
         guards = importlib.import_module("loop_guard")
         if environ.get("ALPHA_GATEWAY_CALLS"):
             loop.feedback = guards.RoundFeedback(loop.feedback)
@@ -517,6 +552,7 @@ def _new_factor_loop(loop_cls: Any, settings: Any, environ: Mapping[str, str]) -
                         judge.HypothesisFeedback,
                     ),
                 )
+        loop.coder = judge.FamilyGuard(loop.coder, loop)
         return loop
     return loop_cls(settings)
 
@@ -573,6 +609,7 @@ def open_factor_loop(
                 previous = loop_cls.load(dump, checkout=Path(environ["LOG_TRACE_PATH"]))
                 if getattr(previous, "trace", None) is None:
                     raise ValueError("completed checkpoint has no research trace")
+                restored_run_provenance(previous, Path(session))
                 loop = _new_factor_loop(loop_cls, settings, environ)
                 loop.trace = previous.trace
             except Exception as error:
@@ -1051,6 +1088,7 @@ class EmbeddingMemory:
         )
         self.dimension: int | None = None
         self.failed: set[str] = set()
+        self.reembedded: set[str] = set()
         try:
             data = json.loads(sidecar.read_text())
         except FileNotFoundError:
@@ -1107,6 +1145,60 @@ class EmbeddingMemory:
             "text_sha256": hashlib.sha256(node.content.encode()).hexdigest(),
         }
 
+    def rebuild(self, graph: Any) -> None:
+        """PDVectorBase.search reads this table, not the embeddings on graph.nodes.
+
+        Recreate its full-node rows (including trunk=content); never copy stale chunk rows
+        from an old table. Nodes without a current vector retain their text only.
+        """
+        rows = (
+            [
+                {
+                    "id": node_id,
+                    "label": node.label,
+                    "content": node.content,
+                    "trunk": node.content,
+                    "embedding": self.checked(node.embedding),
+                }
+                for node_id, node in graph.nodes.items()
+                if node.embedding is not None
+            ]
+            if getattr(graph, "vector_base", None) is not None
+            else []
+        )
+        if getattr(graph, "vector_base", None) is not None:
+            import pandas as pd
+
+            graph.vector_base.vector_df = pd.DataFrame(
+                rows, columns=["id", "label", "content", "trunk", "embedding"]
+            )
+        (self.events.parent / "knowledge-vectors.json").write_text(
+            _json(
+                {
+                    "knowledge_vectors": len(rows),
+                    "knowledge_vectors_reembedded": len(self.reembedded),
+                    "knowledge_vectors_left_out": len(self.failed),
+                    "knowledge_vector_dimension": self.dimension,
+                }
+            )
+            + "\n"
+        )
+
+    def restore_vectors(self, graph: Any) -> None:
+        """Repair the saved graph without extra calls, even if coding failed before its dump."""
+        for node_id, node in graph.nodes.items():
+            cached = self.entries.get(node_id, {})
+            if (
+                node_id not in self.failed
+                and cached.get("model") == self.model
+                and cached.get("text_sha256") == hashlib.sha256(node.content.encode()).hexdigest()
+            ):
+                node.embedding = self.checked(cached["vector"])
+            else:
+                node.embedding = None
+                self.failed.add(node_id)
+        self.rebuild(graph)
+
     def prepare(self, graph: Any, skip: Callable[[Any, Exception], None]) -> dict[str, Any]:
         removed = {}
         pending = []
@@ -1151,6 +1243,7 @@ class EmbeddingMemory:
                 continue
             node.embedding = vector
             self.remember(node_id, node)
+            self.reembedded.add(node_id)
             self.save()
             with self.events.open("a") as stream:
                 stream.write(
@@ -1164,6 +1257,7 @@ class EmbeddingMemory:
                     )
                     + "\n"
                 )
+        self.rebuild(graph)
         return removed
 
 

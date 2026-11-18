@@ -2,6 +2,7 @@
 owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
+  - docs/reference/project/owner-decisions-5.md
 verified: e3b0c44298fc1c14
 ---
 
@@ -24,3 +25,21 @@ something is considered, rejected or left open.
 | 2026-11-18 | Full bypass of the Codex build sandbox | Rejected | Risk of exposing keys; a limited widening was approved |
 | 2026-11-18 | One backtest engine per kind of test | Open | Needs a side-by-side check before duplicates retire |
 | 2026-11-18 | Qlib used in a real research path | Open | Installed in its worker; no real path uses it yet |
+| 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Queued | Owner request; not built |
+| 2026-11-18 | RD-Agent writes its own statistical tests | Not recommended | Marks its own homework; [entry][own-tests] |
+
+## Open questions
+
+Not yet decided; each needs the owner or a measurement before it is built.
+
+- **Reserve policy for rule tests and setups.** Today `alpha test` and `alpha setup` hold nothing back
+  and only RD-Agent's judge locks 2024 onward. Options: one held-back period for everything, a held-back
+  tail chosen per idea, or the status quo with labels. See the [toolbox](components/toolbox.md).
+- **Near-duplicate ideas.** Should two near-identical ideas count once toward a family's failed tries?
+- **Break-even cost.** The test that finds the cost at which an edge vanishes needs gross returns and
+  costs stored separately; today only the net result is kept.
+- **Minimum track record.** The validation package has no function for the shortest history that
+  supports a given Sharpe ratio.
+
+[own-tests]:
+  owner-decisions-5.md#2026-11-18-rd-agent-may-choose-tests-but-not-write-them-recommendation-not-yet-confirmed

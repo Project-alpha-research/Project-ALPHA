@@ -20,7 +20,6 @@ from alpha_cli.spine.compare import (
 )
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import (
-    TOOL_METRICS,
     build_facts,
     read_json,
     require_metric,
@@ -29,6 +28,7 @@ from alpha_cli.spine.facts import (
 )
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
+from alpha_cli.toolbox.registry import METRIC_OUTPUTS
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -147,6 +147,8 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         from alpha_cli.spine.facts import read_study
 
         return dict(run_id=run_id, **read_study(rdir))
+    from alpha_cli.toolbox.store import history
+
     diagnostics = read_json(rdir / "diagnostics.json")
     rule = manifest.get("spine", {}).get("rule", {}).get("kind")
     family_id = f"spine:{rule}" if rule else None
@@ -173,6 +175,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         if diagnostics
         else "diagnostics.json is unavailable; re-run alpha test for this spec",
         # Investigation-tool outputs live outside the immutable run directory.
+        "tool_history": history(home, run_id),
         "tools": [
             {key: item[key] for key in ("tool", "id", "params", "recorded_at", "file", "labels")}
             for item in tool_outputs(home, run_id)
@@ -268,16 +271,20 @@ def cite_result(
         require_metric(metric)
         home = AlphaSettings().data_dir
         rdir, _ = _run(home, run_id)
-        if metric in TOOL_METRICS:
+        if metric in METRIC_OUTPUTS:
             fact = tool_fact(home, run_id, metric, tool_output)
         else:
             fact = fact_lookup(home)(run_id, metric)
         value = "null" if fact["value"] is None else str(fact["value"])
         caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
+        tag = f"{metric}@{tool_output}" if tool_output else metric
+        settings = (
+            f" (1 of {fact['settings_count']} settings tried)" if "settings_count" in fact else ""
+        )
         emit(
             fact,
             json_out=json_out,
-            fallback=f"{value} [{run_id}:{metric}] ({fact['basis']}){caveat}",
+            fallback=f"{value} [{run_id}:{tag}]{settings} ({fact['basis']}){caveat}",
         )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
@@ -328,8 +335,15 @@ def fact_lookup(home: Path) -> Lookup:
     cache: dict[str, dict[str, dict[str, Any]]] = {}
 
     def lookup(prefix: str, metric: str) -> dict[str, Any]:
+        metric, _, output_id = metric.partition("@")
         require_metric(metric)
         run_id = resolve_run(prefix, paths)
+        if metric in METRIC_OUTPUTS:
+            return tool_fact(home, run_id, metric, output_id or None)
+        if output_id:
+            raise SpineError(
+                "INVALID_CITATION", "Only tool facts take an output id.", "Run alpha results cite."
+            )
         if run_id not in cache:
             cache[run_id] = {fact["metric"]: fact for fact in build_facts(paths[run_id])}
         if metric not in cache[run_id]:

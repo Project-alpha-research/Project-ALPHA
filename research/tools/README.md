@@ -6,14 +6,13 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: fdea46906418cd41
+verified: 202b70e8311abd31
 ---
 
 # Research tools, by symptom
 
-One card per tool that exists and runs today. Start from what you see, not from the tool you
-already know. Every card says when to reach for it, the exact command, how to read the output,
-what it cannot tell you and what to try next. The method is in [the playbook](../PLAYBOOK.md).
+Start from the symptom. Each card gives the command for an available tool, how to read its output,
+its limits and what to try next. The method is in [the playbook](../PLAYBOOK.md).
 
 | What you see or need | Open |
 |---|---|
@@ -27,7 +26,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | Big drawdown in a short period | [benchmark and drawdowns](benchmark-and-drawdowns.md), then the macro row below |
 | Works in some years only | [benchmark and drawdowns](benchmark-and-drawdowns.md) (`by_year`), [walk-forward](walk-forward.md) |
 | Few trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [rule test](rule-test.md) on more assets |
-| Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [charts](charts.md) (`trade_pnl`) |
+| Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [run-level checks](run-level-checks.md) |
 | Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md) |
 | Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md) |
 | "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
@@ -35,7 +34,8 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
 | "How bad could it get?" | [path risk](path-risk.md) |
-| A picture for the owner | [charts](charts.md) |
+| Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
+| A picture for the owner | [charts](charts.md) (`trade_pnl` for profit by trade) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
 | Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |
 

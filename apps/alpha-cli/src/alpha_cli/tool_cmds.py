@@ -1,100 +1,185 @@
-"""Investigation tools on a recorded rule test: market attribution, regimes and change points."""
+"""Discover and run registered investigation tools on recorded targets."""
 
 from __future__ import annotations
 
+import json
+import re
 import sys
-from collections.abc import Callable
 from contextlib import redirect_stdout
-from pathlib import Path
-from typing import Any
+from dataclasses import asdict
+from typing import Annotated, Any
 
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.spine.errors import fail, tool_error
-from alpha_cli.spine.facts import METRICS
-from alpha_cli.spine.stores import _stores
+from alpha_cli.spine.errors import SpineError, fail, tool_error
+from alpha_cli.toolbox.contract import ToolSpec
+from alpha_cli.toolbox.registry import SPECS, get
+from alpha_cli.toolbox.sets import SETS
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
-tool_app = typer.Typer(
-    help="Investigate a recorded rule test: market exposure, market regimes and change points.",
-    no_args_is_help=True,
-)
-_JSON = typer.Option(False, "--json", help="Emit one JSON result object.")
+tool_app = typer.Typer(help="Discover and run investigation tools.", no_args_is_help=True)
+_JSON = typer.Option(False, "--json", help="Emit JSON.")
+
+
+def _card(spec: ToolSpec) -> dict[str, Any]:
+    return {
+        "id": spec.id,
+        "version": spec.version,
+        "family": spec.family,
+        "kind": spec.kind,
+        "question": spec.question,
+        "needs": spec.needs,
+        "outputs": [asdict(o) for o in spec.outputs],
+        "params": [
+            {
+                **asdict(p),
+                "type": p.type.__name__,
+                "allowed": list(p.allowed) if p.allowed is not None else None,
+            }
+            for p in spec.params
+        ],
+        "cost": spec.cost,
+        "seeded": spec.seeded,
+        "reading": spec.reading,
+        "caveats": spec.caveats,
+        "look": spec.look,
+        "time_safety": spec.time_safety,
+        "reference": spec.reference,
+        "poison_test": spec.poison_test,
+        "runnable": spec.compute is not None,
+    }
+
+
+@tool_app.command("list")
+def list_tools(
+    target: str | None = typer.Option(None, "--for"),
+    search: str = "",
+    family: str | None = None,
+    kind: str | None = None,
+    json_out: bool = _JSON,
+) -> None:
+    """Find tools by target, question, family or kind."""
+    from alpha_cli.toolbox.inputs import resolve
+
+    try:
+        kinds = resolve(AlphaSettings().data_dir, target).kinds if target else None
+    except (ValueError, DataError, OSError) as exc:
+        fail(tool_error(exc), json_out)
+    matches = []
+    words = set(re.findall(r"[a-z0-9]+", search.casefold()))
+    for spec in SPECS:
+        if (
+            (kinds is not None and not set(spec.needs) <= kinds)
+            or (family and family != spec.family)
+            or (kind and kind != spec.kind)
+        ):
+            continue
+        corpus = " ".join([spec.question, spec.family, spec.id, *(o.gloss for o in spec.outputs)])
+        score = len(words.intersection(re.findall(r"[a-z0-9]+", corpus.lower())))
+        if score or not words:
+            matches.append((-score, spec.id, _card(spec)))
+    cards = [card for _, _, card in sorted(matches)]
+    emit(cards, json_out=json_out, fallback="\n".join(f"{c['id']}  {c['question']}" for c in cards))
+
+
+@tool_app.command("describe")
+def describe(tool_id: str, json_out: bool = _JSON) -> None:
+    """Read a tool's question, inputs, parameters, outputs and caveats."""
+    try:
+        spec = get(tool_id)
+    except SpineError as exc:
+        fail(exc, json_out)
+    lines = [
+        f"{spec.id} (v{spec.version})",
+        spec.question,
+        f"{spec.kind} · {spec.look} · {spec.cost} · {spec.time_safety}",
+        f"Inputs  {', '.join(spec.needs)}",
+    ]
+    for param in spec.params:
+        allowed = f"  Choices {', '.join(map(str, param.allowed))}." if param.allowed else ""
+        lines.append(
+            f"{param.name} ({param.type.__name__}, default {param.default})  {param.gloss}{allowed}"
+        )
+    lines.extend(f"{o.label} ({spec.id}.{o.key}, {o.unit})  {o.gloss}" for o in spec.outputs)
+    lines.extend([*spec.caveats, f"Reference  {spec.reference}"])
+    card = "\n".join(lines)
+    emit({**_card(spec), "card": card}, json_out=json_out, fallback=card)
+
+
+def _printed(output: dict[str, Any]) -> dict[str, Any]:
+    return {**output, "result": {k: v for k, v in output["result"].items() if k != "series"}}
 
 
 def _text(output: dict[str, Any]) -> str:
-    """Plain-English summary: each stored fact with its meaning, then where it was saved."""
-    lines = [f"{output['tool']} of run {output['run_id']} [{', '.join(output['labels'])}]"]
-    for fact in output["facts"]:
-        value = "unavailable" if fact["value"] is None else f"{fact['value']:.4g}"
-        lines.append(f"  {fact['metric']} = {value}: {METRICS[fact['metric']]}")
-        if fact["reason"]:
-            lines.append(f"    reason: {fact['reason']}")
-    result = output["result"]
-    join = result.get("join")
+    spec = get(output["tool"])
+    lines = [f"{spec.id} [{', '.join(output['labels'])}]", output["reading"]]
+    for fact, field in zip(output["facts"], spec.outputs, strict=True):
+        value = fact["value"] if fact["reason"] is None else f"unavailable ({fact['reason']})"
+        lines.append(f"  {fact['metric']} = {value}  {field.gloss}")
+    lines.extend(f["detail"] for f in output["result"].get("flags", []))
+    lines.extend(f"Change on {b['date'][:10]}" for b in output["result"].get("breaks", []))
+    join = output["result"].get("join")
     if join and (join["run_bars_dropped"] or join["other_bars_dropped"]):
         lines.append(
-            f"  Matching dates dropped {join['run_bars_dropped']} of {join['run_bars']} run bars "
-            f"and {join['other_bars_dropped']} bars of the other asset."
+            f"Matching dates dropped {join['run_bars_dropped']} run bars and "
+            f"{join['other_bars_dropped']} bars of the other asset."
         )
-    lines.extend(f"  Note: {flag['detail']}" for flag in result.get("flags", []))
-    lines.extend(f"  Change on {item['date'][:10]}" for item in result.get("breaks", []))
-    lines.append(f"  Basis: {output['basis']}")
-    lines.append(f"  Saved: {output['file']} (ledger rows: {output['trials_total']})")
-    return "\n".join(lines)
+    return "\n".join([*lines, output["basis"], *spec.caveats, f"Saved: {output['file']}"])
 
 
-def _run(call: Callable[[Path], dict[str, Any]], json_out: bool) -> None:
-    """Run one tool; progress goes to stderr, one result or error envelope to stdout."""
-    home = AlphaSettings().data_dir
+@tool_app.command("run")
+def run_tool(
+    tool_id: str,
+    target: str,
+    param: Annotated[list[str] | None, typer.Option("--param")] = None,
+    seed: int = 0,
+    json_out: bool = _JSON,
+) -> None:
+    """Run one tool with repeatable key=value parameters."""
+    from alpha_cli.toolbox.runner import run
+
     try:
-        with redirect_stdout(sys.stderr if json_out else sys.stdout):
-            output = call(home)
-    except (ValueError, OSError, DataError) as exc:
-        fail(tool_error(exc, list(_stores(home))), json_out)
-    # Per-bar series stay in the saved file; the printed result is the summary.
-    printed = {**output, "result": {k: v for k, v in output["result"].items() if k != "series"}}
-    emit(printed, json_out=json_out, fallback=_text(output))
+        with redirect_stdout(sys.stderr):
+            output = run(AlphaSettings().data_dir, tool_id, target, param, seed)
+    except SpineError as exc:
+        fail(exc, json_out)
+    emit(_printed(output), json_out=json_out, fallback=_text(output))
 
 
-@tool_app.command("attribution")
-def attribution_command(
-    run_id: str,
-    benchmark: str | None = typer.Option(
-        None, help="Benchmark SYMBOL or SYMBOL@store (default: the run's own asset)."
-    ),
-    json_out: bool = _JSON,
-) -> None:
-    """How much of the run's return is benchmark exposure (beta) and what is left (alpha)."""
-    from alpha_cli.spine import tools
+@tool_app.command("run-set")
+def run_set(name: str, target: str, json_out: bool = _JSON) -> None:
+    """Run each member of a predeclared set and report every outcome."""
+    from alpha_cli.toolbox.runner import run
 
-    _run(lambda home: tools.attribution(home, run_id, benchmark), json_out)
+    if name not in SETS:
+        fail(
+            SpineError("UNKNOWN_SET", f"Unknown set {name!r}.", "Choose a known set.", list(SETS)),
+            json_out,
+        )
+    results = []
+    lines = []
+    failed = False
+    with redirect_stdout(sys.stderr):
+        for tool_id in SETS[name]:
+            try:
+                output = run(AlphaSettings().data_dir, tool_id, target, set_name=name)
+                results.append(_printed(output))
+                lines.append(_text(output))
+            except SpineError as exc:
+                results.append({"tool": tool_id, "error": exc.payload})
+                lines.append(f"{tool_id}: {exc}")
+                failed = True
+    emit(results, json_out=json_out, fallback="\n".join(lines))
+    if failed:
+        raise typer.Exit(1)
 
 
-@tool_app.command("regimes")
-def regimes_command(
-    run_id: str,
-    market: str | None = typer.Option(
-        None, help="Market SYMBOL or SYMBOL@store (default: the run's own asset)."
-    ),
-    k: int = typer.Option(2, min=2, max=4, help="Number of market regimes."),
-    json_out: bool = _JSON,
-) -> None:
-    """Whether the run earns its return in calm or in turbulent markets."""
-    from alpha_cli.spine import tools
+@tool_app.command("history")
+def tool_history(target: str, json_out: bool = _JSON) -> None:
+    """List successful, failed and unfinished attempts in ledger order."""
+    from alpha_cli.toolbox.store import history
 
-    _run(lambda home: tools.regimes(home, run_id, market, k), json_out)
-
-
-@tool_app.command("changepoints")
-def changepoints_command(
-    run_id: str,
-    on: str = typer.Option("returns", help="Series to search: returns | equity."),
-    json_out: bool = _JSON,
-) -> None:
-    """Dates at which the run's behaviour shifted; a hindsight description, never a signal."""
-    from alpha_cli.spine import tools
-
-    _run(lambda home: tools.changepoints(home, run_id, on), json_out)
+    rows = history(AlphaSettings().data_dir, target)
+    emit(rows, json_out=json_out, fallback=json.dumps(rows, indent=2))

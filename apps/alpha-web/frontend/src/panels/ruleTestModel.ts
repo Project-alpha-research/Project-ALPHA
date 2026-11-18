@@ -1,10 +1,8 @@
-// Rule-test report model — what an `alpha test` run recorded, as rows for the report's first
-// section. Pure functions of the server's `rule_test` block (manifest `spine` + diagnostics.json):
-// every value is the stored one; a null is shown as `not recorded` with its stored reason. The one
-// piece of arithmetic is the display difference between two stored Sharpe values in the
-// "slightly different" table (the same kind of display change Market Watch shows).
+// Formats the run's stored facts. Only the variants table subtracts two recorded scores.
 
-import type { RuleTest } from '../api/types'
+import type { FigureCatalogueItem, RuleTest } from '../api/types'
+import { GLOSSARY } from '../explain/glossary'
+import { sparseTradeStory, type RecordedManifest } from '../explain/verdictStory'
 import { isFiniteNum } from '../util/format'
 
 export const NOT_RECORDED = 'not recorded'
@@ -22,11 +20,13 @@ export interface LabelChip {
 }
 
 const LABEL_MEANING: Record<string, string> = {
+  exploratory: 'Exploratory test. These results describe this run only.',
+  'too-few-trades': 'Too few closed trades in the walk-forward test to judge the result.',
   'all-in': 'All capital goes into each position; no volatility sizing.',
-  quick: 'Quick mode: fewer random-data comparisons and resamples. Treat the statistics as rough.',
+  quick: 'Quick mode used fewer random comparisons to check the result.',
   'dev-machine-data': 'Run on the data stored on this development machine.',
   'source-defaulted': 'The asset is in more than one data store; the first match was used.',
-  'short-history': 'Less than three years of bars.',
+  'short-history': 'The test covers less than three years of price history.',
   repeat: 'An identical test was already recorded; it still counts as another trial.',
   'no-diagnostics': 'The diagnostic pass was skipped for this run.',
   error: 'The test ended with an error; unavailable numbers stay empty.',
@@ -38,7 +38,7 @@ export const RULE_TEST_TITLE =
 
 /** The run's labels as small chips, in stored order; an unknown label keeps its own text. */
 export function labelChips(labels: readonly string[] | null | undefined): LabelChip[] {
-  return (labels ?? []).map((text) => ({ text, title: LABEL_MEANING[text] ?? text }))
+  return (labels ?? []).map((text) => ({ text, title: LABEL_MEANING[text] ?? `No explanation was saved for the label “${text}”.` }))
 }
 
 const missing = (reason: string | null | undefined): Cell => ({
@@ -83,7 +83,7 @@ export function testedRows(test: RuleTest): TestedRow[] {
       + (isFiniteNum(variants) ? ` · ${variants} variants also tried` : '')
     : NOT_RECORDED
   return [
-    { label: 'Idea', value: test.idea ?? NOT_RECORDED, mono: false },
+    { label: 'Idea', value: test.idea?.trim() || 'no idea text was saved with this run', mono: false },
     {
       label: 'Rule',
       value: test.rule_sentence ?? ([test.rule_kind, params].filter(Boolean).join(': ') || NOT_RECORDED),
@@ -104,6 +104,7 @@ export function testedRows(test: RuleTest): TestedRow[] {
 }
 
 export interface AuditRow {
+  id: string
   check: string
   status: string
   /** Existing chip tone: pass, warn (FLAG), or neutral for anything else. */
@@ -111,40 +112,89 @@ export interface AuditRow {
   detail: string
 }
 
+const CHECK_LABELS: Record<string, string> = {
+  'fills-after-decisions': 'Did each trade follow its decision?',
+  'fills-inside-bar-range': 'Were trade prices within the market range?',
+  'costs-charged': 'Did the test include trading costs?',
+  'enough-trades': 'Were there enough closed trades?',
+  'benchmark-present': 'Was there a buy-and-hold comparison?',
+  'history-length': 'Did the test cover at least three years?',
+  'artifacts-intact': 'Did the saved files pass verification?',
+  'quick-run': 'Did the test use the full set of checks?',
+  'variants-counted': 'Did the trial count include the other settings tested?',
+}
+
 export function auditRows(test: RuleTest): AuditRow[] {
   return (test.diagnostics?.audit ?? []).map((item) => ({
-    check: item.check.replaceAll('-', ' '),
+    id: item.check,
+    check: CHECK_LABELS[item.check] ?? item.check.replaceAll('-', ' '),
     status: item.status,
     chip: item.status === 'PASS' ? 'pass' : item.status === 'FLAG' ? 'warn' : 'kind',
     detail: item.detail,
   }))
 }
 
-export interface CompareRow {
-  label: string
-  strategy: Cell
-  benchmark: Cell
-  difference: Cell
+function comparisonWording(difference: number | null | undefined): string {
+  if (!isFiniteNum(difference)) return 'compared with'
+  if (difference > 0) return 'ahead of'
+  if (difference < 0) return 'behind'
+  return 'level with'
 }
 
-const METRICS = [
-  ['total_return', 'Total return', pct],
-  ['cagr', 'Growth per year (CAGR)', pct],
-  ['sharpe', 'Sharpe', ratio],
-  ['max_drawdown', 'Max drawdown', pct],
-] as const
+export function summaryHeadline(test: RuleTest): string {
+  const words = test.idea?.trim() || test.rule_sentence?.trim()
+  const rule = words ? `“${words}”` : 'This rule'
+  const market = test.symbol ? ` on ${test.symbol}` : ''
+  const first = day(test.first_ts)
+  const last = day(test.last_ts)
+  const period = [first && ` from ${first}`, last && ` through ${last}`].filter(Boolean).join('')
+  const result = test.diagnostics?.full_sample?.total_return
+  const hold = test.diagnostics?.benchmark?.total_return
+  const subject = `${rule}${market}${period}`
+  if (isFiniteNum(result)) {
+    const wording = comparisonWording(test.diagnostics?.benchmark?.strategy_minus_benchmark?.total_return)
+    const comparison = isFiniteNum(hold)
+      ? `${wording} ${pct(hold).text} for simply holding the market`
+      : 'but the buy-and-hold return is unavailable'
+    return `${subject} returned ${pct(result).text} after costs, ${comparison}.`
+  }
+  if (isFiniteNum(hold)) return `${subject} has no saved rule return, while holding the market returned ${pct(hold).text}.`
+  return `${subject} has no return comparison saved for this run.`
+}
 
-/** Strategy against buy and hold; the difference column is the stored one. */
-export function benchmarkRows(test: RuleTest): CompareRow[] {
+export function summaryFigures(items: FigureCatalogueItem[]) {
+  return ['equity_vs_passive', 'equity_underwater'].flatMap(id =>
+    items.filter(item => item.figure_id === id && item.available))
+}
+
+export function summaryNumbers(test: RuleTest, manifest: RecordedManifest, watermark?: string | null) {
   const full = test.diagnostics?.full_sample
-  const benchmark = test.diagnostics?.benchmark
-  const difference = benchmark?.strategy_minus_benchmark
-  return METRICS.map(([key, label, format]) => ({
-    label,
-    strategy: format(full?.[key], full?.reasons[key]),
-    benchmark: format(benchmark?.[key], benchmark?.reasons[key]),
-    difference: format(difference?.[key], difference?.reasons[key], true),
-  }))
+  const hold = test.diagnostics?.benchmark
+  const labels = test.labels
+  const flagged = (id: string) => test.diagnostics?.audit.some(check => check.check === id && check.status === 'FLAG')
+  const short = labels.includes('short-history') || flagged('history-length') ? LABEL_MEANING['short-history'] : null
+  const data = labels.includes('dev-machine-data') ? LABEL_MEANING['dev-machine-data'] : null
+  const cap = sparseTradeStory({ ...manifest, labels: [...(manifest.labels ?? []), ...labels] })
+  const tradeCaveat = cap ? `The grade counts trades in the walk-forward test periods held back for scoring. ${cap}`
+    : flagged('enough-trades') ? LABEL_MEANING['too-few-trades'] : null
+  return [
+    { label: 'Total return after costs', gloss: GLOSSARY.total_return.short,
+      value: pct(full?.total_return, full?.reasons.total_return),
+      caveats: [watermark || (labels.includes('exploratory') ? LABEL_MEANING.exploratory : null), data] },
+    { label: 'Return per year', gloss: GLOSSARY.cagr.short, value: pct(full?.cagr, full?.reasons.cagr), caveats: [short] },
+    { label: 'Worst drop', gloss: GLOSSARY.max_drawdown.short,
+      value: pct(full?.max_drawdown, full?.reasons.max_drawdown), caveats: [short] },
+    { label: 'Closed trades', gloss: 'Positions opened and closed over the full history.',
+      value: isFiniteNum(full?.trades) ? { text: String(full.trades), reason: null } : missing(full?.reasons.trades),
+      caveats: [tradeCaveat] },
+    { label: 'Buy-and-hold return', gloss: 'Return from holding the market over the same bars, before trading costs.',
+      value: pct(hold?.total_return, hold?.reasons.total_return), caveats: [data] },
+  ]
+}
+
+export function quickCaveat(test: RuleTest): string | null {
+  return test.labels.includes('quick') || test.diagnostics?.audit.some(row => row.check === 'quick-run' && row.status === 'FLAG')
+    ? LABEL_MEANING.quick : null
 }
 
 export interface VariantRow {
@@ -196,72 +246,4 @@ export function variantRows(test: RuleTest): VariantRow[] {
     })
   }
   return rows
-}
-
-export interface YearRow {
-  year: number
-  strategy: Cell
-  benchmark: Cell
-  /** Bar lengths as a share of the largest absolute yearly return shown (drawing scale only). */
-  strategyBar: number
-  benchmarkBar: number
-}
-
-export function yearRows(test: RuleTest): YearRow[] {
-  const years = test.diagnostics?.by_year?.years ?? []
-  const scale = Math.max(
-    0,
-    ...years.flatMap((row) => [row.strategy_return, row.benchmark_return])
-      .filter(isFiniteNum)
-      .map(Math.abs),
-  )
-  const bar = (value: unknown): number => (isFiniteNum(value) && scale > 0 ? Math.abs(value) / scale : 0)
-  return years.map((row) => ({
-    year: row.year,
-    strategy: pct(row.strategy_return, null, true),
-    benchmark: pct(row.benchmark_return, null, true),
-    strategyBar: bar(row.strategy_return),
-    benchmarkBar: bar(row.benchmark_return),
-  }))
-}
-
-export interface MacroRow {
-  series: string
-  start: Cell
-  trough: Cell
-  change: Cell
-}
-
-const plain = (value: unknown, reason: string | null, signed = false): Cell =>
-  isFiniteNum(value)
-    ? {
-        text: `${signed && value > 0 ? '+' : ''}${value.toFixed(2)}`,
-        reason: null,
-        tone: null,
-      }
-    : missing(reason)
-
-export function macroRows(test: RuleTest): MacroRow[] {
-  return (test.diagnostics?.macro_window?.series ?? []).map((row) => ({
-    series: row.series_id,
-    start: plain(row.start_value, row.reason),
-    trough: plain(row.trough_value, row.reason),
-    change: plain(row.change, row.reason, true),
-  }))
-}
-
-/** One line for the macro section when no window is stored, with the stored reason. */
-export function macroUnavailable(test: RuleTest): string | null {
-  const macro = test.diagnostics?.macro_window
-  if (macro?.available) return null
-  return `Not available: ${macro?.reason ?? test.diagnostics_reason ?? 'no macro window recorded'}.`
-}
-
-/** `start → trough` of the worst stored drawdown with its depth, or null. */
-export function worstDrawdownLine(test: RuleTest): string | null {
-  const worst = test.diagnostics?.worst_drawdown
-  const start = day(worst?.start)
-  const trough = day(worst?.trough)
-  if (!worst || !start || !trough) return null
-  return `${start} → ${trough} · strategy ${pct(worst.depth).text} · buy and hold ${pct(worst.benchmark_return).text}`
 }

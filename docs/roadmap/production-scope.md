@@ -2,7 +2,7 @@
 owner: status page and roadmap
 sources:
   - docs/reference/project/owner-decisions-3.md
-verified: e3b0c44298fc1c14
+verified: b3f783176e95487d
 ---
 
 # Production-ready scope: the one checklist
@@ -51,12 +51,12 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-224 capabilities: 51 working, 66 built but unproven, 105 missing, 1 to rebuild,
+225 capabilities: 51 working, 67 built but unproven, 105 missing, 1 to rebuild,
 1 dropped by decision. Setup short selling and rule-test short selling have separate rows.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 5 | 9 | 0 | 0 |
+| 1. Idea | 2 | 6 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
 | 3. Look before testing | 5 | 5 | 6 | 0 | 0 |
 | 4. Backtest | 4 | 3 | 10 | 0 | 0 |
@@ -68,7 +68,7 @@ gate, before paper or live trading ([decision][thin]).
 | 10. Screens | 1 | 3 | 15 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **51** | **66** | **105** | **1** | **1** |
+| **All** | **51** | **67** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -85,6 +85,7 @@ How a question, a chart observation or a paper becomes something testable.
 | Source card and translation card: the original paper beside the adapted rule | Missing | idea folder | Path 1 | private |
 | Find papers, screen their claims, tie a claim to its test, keep the PDF | Unproven | `workers/literature` | Later | [papers] |
 | Papers feed RD-Agent's proposal step through a thin feeder (its own reader tried first) | Missing | `workers/rdagent` | Path 3 | [papers] |
+| One judged factor idea in seven steps with its stored evidence pictures | Unproven | `alpha ledger journey`, [screen design](backlog/research-loop-screen.md) | Path 3 | private |
 | Quick recorded first look at many ideas | Working | `alpha scan hypotheses` | Now | [status] |
 | Dated log of expectations and catalysts: rumour, fact, interpretation, action kept apart | Missing | new | Later | private |
 | The owner's market views logged as dated hypotheses with rival explanations | Missing | idea trail | Path 1 | private |

@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - apps/alpha-web/CONTEXT.md
   - docs/adr/0021-research-workstation-read-plane-and-command-center.md
-verified: e06b011ff7021751
+verified: 4f68f3b5b493b152
 ---
 
 # Web workstation
@@ -58,8 +58,19 @@ The rule-test capability itself belongs to the [command line](command-line.md); 
 
 ## Decisions and open questions
 
-- No owner decision about this part is in the [owner decisions log](../owner-decisions.md) yet.
-- Open: no next step is recorded for the Workstation itself; new screens arrive with the parts they show.
+- Decided 2026-11-14 ([decisions log](../owner-decisions.md), later volumes): keep the user interface; it is how the owner understands the project, and every
+  kept capability should be visible there in plain English
+  ([log](../owner-decisions-2.md#2026-11-14-keep-the-user-interface)). Charts come with text, in a quant
+  style ([log](../owner-decisions-2.md#2026-11-14-the-interface-shows-charts-with-text-in-a-quant-style-and-is-finished-later)).
+- Decided 2026-11-18: the screen chrome must not be all black. Light is the default (a Light, Dim or Dark
+  switch exists in `apps/alpha-web/frontend/src/theme/`); single charts may be dark. UI design is then
+  deferred again, "get the project working first"; only the RD-Agent view is reshaped
+  ([log](../owner-decisions-5.md#2026-11-18-the-workstation-must-not-be-all-black-ui-design-waits)).
+- Decided 2026-11-18: the idea-journey layout is approved and is the style to reuse for other result views
+  ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)).
+- Open: when to resume Workstation design, and what design the owner wants; ask for reference screenshots.
+- Screens that exist for the new golden paths: [Setup Lab](setup-lab.md) (stored results only) and
+  Kronos Studio ([forecasting](forecasting.md)). Neither may be removed when slimming.
 
 ## Never
 

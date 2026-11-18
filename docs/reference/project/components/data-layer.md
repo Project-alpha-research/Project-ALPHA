@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - packages/alpha-data/CONTEXT.md
-verified: e3b0c44298fc1c14
+verified: 369e81e1d78f93b3
 ---
 
 # Data layer
@@ -112,7 +112,6 @@ download shows `quality_status: passed`, which means only that the mechanical ch
   prices match almost everywhere; the differences (March 2020 closes, a few stray highs and
   lows in Alpaca, volume, missing ETF dividends in Alpaca) are in the verification record.
   Owner steps: [Alpaca runbook](../../../operations/alpaca-stock-data.md).
-
 - **Intraday bars, 2026-11-14** (owner decision 2026-11-15: no daily-only rule; never
   high-frequency trading, so time bars of one minute or longer only), all in their own folder
   `/home/hunta/alpha-clean-base/data-intraday`, so the daily data is never rewritten:
@@ -180,12 +179,13 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 
 ## Decisions and open questions
 
-- The owner no longer uses QuantPad ([log](../owner-decisions.md#2026-11-14-quantpad-no-longer-used)).
-Decided: the unused QuantPad code is removed and old records stay readable
-  ([log](../owner-decisions.md#2026-11-14-agents-merge-and-decide-routine-matters)).
-- Triage, 2026-11-14 under the owner's delegation
-  ([triage sheet](../../../roadmap/triage-2026-11.md)): cards 1, 3 and 4 KEEP; cards 2 (download bookkeeping) and B
-  (funding modules) SHELVE, kept for a future download-budget policy and funding research.
+- The owner no longer uses QuantPad; the unused QuantPad code is removed and old records stay readable
+  ([log](../owner-decisions.md#2026-11-14-quantpad-no-longer-used)).
+- Triage 2026-11-14 ([sheet](../../../roadmap/triage-2026-11.md)): cards 1, 3, 4 KEEP; card 2 (download
+  bookkeeping) SHELVE, kept for a future download-budget policy. Card B (Bybit funding download modules)
+  was shelved, then deleted 2026-11-18 (PR #261); funding context comes from the Binance importer and Bybit import.
+- Queued 2026-11-18, not built: one data health report (adjustments, timestamps, gaps, survivorship)
+  ([log](../owner-decisions-5.md#2026-11-18-request-one-data-health-report)).
 
 ## Never
 

@@ -93,7 +93,7 @@ def test_edit_add_and_delete_of_a_source_each_make_the_document_stale(
         assert report.stale
         assert report.changed_files == (list(files) if "src/a.py" in files or committed else [])
         assert "STALE   docs/a.md" in fs_stale.render_text([report])
-        fs_stale.verify(repo, ["docs/a.md"])
+        fs_stale.verify(repo, ["docs/a.md"], reason="re-read; nothing it states changed")
         _commit(repo, {}, "stamp")
         assert not fs_stale.stale(repo)[0].stale
     (repo / "src/b.py").unlink()
@@ -144,6 +144,79 @@ def test_owners_names_the_documents_that_describe_a_path(repo: Path) -> None:
     }
 
 
+def test_a_document_named_as_a_source_counts_by_its_text_not_its_stamp(repo: Path) -> None:
+    _commit(repo, {"src/a.py": "a = 1\n"}, "code")
+    _commit(
+        repo,
+        {"docs/log.md": _doc("unset", "src/**"), "docs/a.md": _doc("unset", "docs/log.md")},
+        "docs",
+    )
+    fs_stale.verify(repo, ["docs/log.md", "docs/a.md"])
+    _commit(repo, {}, "stamp")
+    [doc, _log] = fs_stale.stale(repo)
+    assert not doc.stale and doc.fingerprint != fs_stale.EMPTY_FINGERPRINT and not doc.unchecked
+    # The named document's stamp changing (a source of its own moved) does not cascade.
+    _commit(repo, {"src/a.py": "a = 2\n"}, "code change")
+    fs_stale.verify(repo, ["docs/log.md"], reason="src/a.py renamed nothing the log states")
+    assert not fs_stale.stale(repo)[0].stale
+    # Its text changing does.
+    text = (repo / "docs/log.md").read_text(encoding="utf-8")
+    _commit(repo, {"docs/log.md": text + "A new decision.\n"}, "decision")
+    report = fs_stale.stale(repo)[0]
+    assert report.stale and report.changed_files == ["docs/log.md"]
+
+
+def test_a_document_with_nothing_to_check_is_reported_and_verify_refuses_it(repo: Path) -> None:
+    _commit(repo, {"src/a.py": "a = 1\n", "docs/a.md": _doc("unset", "docs/a.md")}, "docs")
+    [report] = fs_stale.stale(repo)
+    assert report.unchecked and not report.stale and report.problems == []
+    text = fs_stale.render_text([report])
+    assert "cannot be checked" in text and "docs/a.md" in text
+    assert fs.main(["--root", str(repo), "stale", "--strict"]) == 0
+    with pytest.raises(ValueError, match="cannot be checked"):
+        fs_stale.verify(repo, ["docs/a.md"], reason="nothing it could be checked against")
+
+
+def test_verify_needs_an_edit_or_a_reason_and_records_the_reason(repo: Path) -> None:
+    _fresh(repo)
+    _commit(repo, {"src/a.py": "a = 2\nb = 3\n"}, "change")
+    with pytest.raises(ValueError, match=r"(?s)--reason.*src/a\.py \(\+2 -1\)"):
+        fs_stale.verify(repo, ["docs/a.md"])
+    with pytest.raises(ValueError, match="say why"):
+        fs_stale.verify(repo, ["docs/a.md"], reason="ok")
+    assert fs_stale.stale(repo)[0].stale
+    [report] = fs_stale.verify(repo, ["docs/a.md"], reason="the doc names no values in src/a.py")
+    assert report.source_changes == [("src/a.py", 2, 1)]
+    log = (repo / fs_stale.REASONS_LOG).read_text(encoding="utf-8")
+    assert f"docs/a.md\n  verified {report.fingerprint}" in log
+    assert "the doc names no values in src/a.py" in log
+    # The log is not a source: recording a reason makes nothing stale.
+    assert not fs_stale.stale(repo)[0].stale
+    _commit(repo, {}, "stamp")
+    # An edit to the document's own text is evidence of a re-read: no reason needed.
+    _commit(repo, {"src/b.py": "b = 2\n"}, "change b")
+    text = (repo / "docs/a.md").read_text(encoding="utf-8")
+    _write(repo, {"docs/a.md": text + "Corrected.\n"})
+    [report] = fs_stale.verify(repo, ["docs/a.md"])
+    assert not fs_stale.stale(repo)[0].stale
+    assert log == (repo / fs_stale.REASONS_LOG).read_text(encoding="utf-8")
+
+
+def test_reasons_log_keeps_one_entry_per_document_in_path_order(repo: Path) -> None:
+    _commit(repo, {"src/a.py": "a = 1\n"}, "code")
+    _commit(repo, {"docs/b.md": _doc("unset", "src/**"), "docs/a.md": _doc("unset", "src/**")}, "d")
+    fs_stale.verify(repo, ["docs/b.md", "docs/a.md"])
+    _commit(repo, {}, "stamp")
+    for reason in ("first reason for both", "second reason for both"):
+        _commit(repo, {"src/a.py": f"a = '{reason}'\n"}, "change")
+        fs_stale.verify(repo, ["docs/b.md", "docs/a.md"], reason=reason)
+        _commit(repo, {}, "stamp")
+    log = (repo / fs_stale.REASONS_LOG).read_text(encoding="utf-8")
+    assert "first reason" not in log and log.count("second reason for both") == 2
+    assert log.index("docs/a.md") < log.index("docs/b.md")
+    assert "\n\ndocs/b.md\n" in log
+
+
 def test_source_globs_match_exactly_what_git_matches() -> None:
     tracked = [p for p in fs_stale.git(ROOT, "ls-files", "-z").split("\0") if p]
     patterns = {
@@ -160,7 +233,7 @@ def test_two_branches_that_change_one_documents_sources_conflict_on_merge(repo: 
     for branch, files in (("one", {"src/a.py": "a = 2\n"}), ("two", {"src/b.py": "b = 2\n"})):
         _git(repo, "checkout", "-q", "-b", branch, "main")
         _write(repo, files)
-        fs_stale.verify(repo, ["docs/a.md"])
+        fs_stale.verify(repo, ["docs/a.md"], reason=f"re-read on branch {branch}")
         _commit(repo, {}, branch)
     _git(repo, "checkout", "-q", "main")
     _git(repo, "merge", "-q", "--no-ff", "-m", "one", "one")
@@ -172,6 +245,12 @@ def test_two_branches_that_change_one_documents_sources_conflict_on_merge(repo: 
     # Keeping either side's stamp does not hide it: neither names the merged sources.
     _git(repo, "checkout", "--theirs", "docs/a.md")
     assert fs_stale.stale(repo)[0].stale
+    # The stamp written while resolving the merge is the one later changes are measured from.
+    fs_stale.verify(repo, ["docs/a.md"], reason="re-read against both merged sources")
+    _commit(repo, {}, "merge two")
+    _commit(repo, {"src/c.py": "c = 1\n"}, "new source")
+    with pytest.raises(ValueError, match=r"sources changed: src/c\.py \(\+1 -0\)$"):
+        fs_stale.verify(repo, ["docs/a.md"])
 
 
 def test_cli_exit_codes_json_owners_and_verify(
@@ -192,8 +271,13 @@ def test_cli_exit_codes_json_owners_and_verify(
         "src/a.py": ["docs/a.md"],
         "src/b.py": ["docs/a.md"],
     }
-    assert fs.main([*root, "verify", "docs/a.md"]) == 0
-    assert "verified docs/a.md" in capsys.readouterr().out
+    assert fs.main([*root, "verify", "docs/a.md"]) == 2
+    err = capsys.readouterr().err
+    assert "src/a.py (+1 -1)" in err and "--reason" in err
+    reason = ["--reason", "re-read; it states nothing about a"]
+    assert fs.main([*root, "verify", "docs/a.md", *reason]) == 0
+    out = capsys.readouterr().out
+    assert "verified docs/a.md" in out and "  - source changed: src/a.py (+1 -1)" in out
     assert fs.main([*root, "verify", "docs/a.md"]) == 0
     assert "already current docs/a.md" in capsys.readouterr().out
     assert fs.main([*root, "stale", "--strict"]) == 0

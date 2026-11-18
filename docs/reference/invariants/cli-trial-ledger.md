@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 0e84e328b01b4905
+verified: e4ae18283257e340
 ---
 
 # One trial ledger invariants
@@ -46,6 +46,8 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
   Trade readings count completed trades and apply the same support conditions, with unavailable controls never supporting.
 - Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
+- Tool rows (`tool:<id>`) come in pairs, `attempted` then `ok` or `error`, and never count for deflation. Rows of the old
+  `tool:attribution|regimes|changepoints` kinds map to the `market.*` ids; both keep the family `spine-tool:<old name>`.
 - `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows
   contribute conservatively even if there are no mapped factors; an unmapped row of a factor
   schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` is the sum of family

@@ -22,7 +22,7 @@ LABEL_PHRASES = {
     "too-few-trades": "too few trades",
 }
 _TAG = re.compile(
-    r"\[([0-9a-fA-F]{8,16})(?:~([0-9a-fA-F]{8,16}))?:([A-Za-z_]\w*)(?::(diff|ratio))?\]"
+    r"\[([0-9a-fA-F]{8,16})(?:~([0-9a-fA-F]{8,16}))?:([A-Za-z_][\w.]*(?:@[a-f0-9]{8})?)(?::(diff|ratio))?\]"
 )
 _NUMBER = re.compile(r"(?<![\w.])[+-]?\d+(?:,\d{3})*(?:\.\d+)?(?:%|x|×)?(?!\w)")
 _IGNORED = re.compile(
@@ -96,7 +96,10 @@ def check_text(
     cited: dict[str, tuple[Fact, int]] = {}
     checked = 0
     trial_count = False
+    settings_spans: list[tuple[int, int]] = []
     for number in _NUMBER.finditer(scanned):
+        if any(start <= number.start() < end for start, end in settings_spans):
+            continue
         written = number.group()
         suffix = visible[number.end() :]
         tag = _TAG.match(suffix, len(suffix) - len(suffix.lstrip(" \t")))
@@ -119,6 +122,21 @@ def check_text(
             base = lookup(first, metric)
             cited.setdefault(base["run_id"], (base, number.start()))
             fact = base
+            metric = metric.partition("@")[0]
+            if "settings_count" in fact:
+                end = number.end() + tag.end()
+                disclosure = f" (1 of {fact['settings_count']} settings tried)"
+                if visible.startswith(disclosure, end):
+                    settings_spans.append((end, end + len(disclosure)))
+                else:
+                    problems.append(
+                        _problem(
+                            text,
+                            number.start(),
+                            "SETTINGS_OMITTED",
+                            f"Follow this citation with {disclosure.strip()}.",
+                        )
+                    )
             if second and operation:
                 other = lookup(second, metric)
                 cited.setdefault(other["run_id"], (other, number.start()))

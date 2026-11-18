@@ -2,7 +2,7 @@
 owner: status page and roadmap
 sources:
   - docs/reference/project/owner-decisions-3.md
-verified: e3b0c44298fc1c14
+verified: b3f783176e95487d
 ---
 
 # Production-ready scope, part 2: overfit tests to engines
@@ -50,14 +50,14 @@ Explaining a result: where the profit and the losses came from.
 | Drawdown against market and sector: beta, share of loss on down-market days | Unproven | `alpha diagnose`: same-asset benchmark only | Path 1 | [partner] |
 | Macro picture for the dates of a loss: rates, releases, volatility | Missing | needs macro data | Later | [partner] |
 | Results by market state (volatility, trend, correlation) known on the day | Unproven | `alpha-research` | Path 1 | [partner] |
-| Regime detection and change points on a run: causal regime labels, in-sample model labelled, change points labelled hindsight | Working | `alpha tool regimes`, `alpha tool changepoints` | Path 1 | [partner] |
+| Regime detection and change points on a run: causal regime labels, in-sample model labelled, change points labelled hindsight | Working | `alpha tool run market.vol_regimes`, `alpha tool run market.changepoints` | Path 1 | [partner] |
 | Regime models refitted only on the past (no in-sample parameters) | Missing | `alpha-validation` | Later | [partner] |
 | "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day | Working | `alpha unusual` (STUMPY); no screen yet | Now | private |
 | "Was it knowable that day?" check for macro and regime labels | Missing | `alpha-research` | Later | private |
 | Results by calendar: year, month, weekday, session | Unproven | `alpha-cli` figures | Path 1 | [partner] |
 | Profit concentration: how much comes from a few trades, days or assets | Unproven | `alpha diagnose`: trades only | Path 1 | [partner] |
 | Cheap stress re-runs: double costs, enter one bar late | Working | `alpha diagnose` | Path 1 | [partner] |
-| Exposure to the market or one chosen asset, such as SPY or Bitcoin: beta, leftover return, up and down beta | Working | `alpha tool attribution` | Path 1 | [partner] |
+| Exposure to the market or one chosen asset, such as SPY or Bitcoin: beta, leftover return, up and down beta | Working | `alpha tool run market.attribution` | Path 1 | [partner] |
 | Exposure to size and momentum factors | Missing | statsmodels | Later | [partner] |
 | Signal, sizing, exposure and cost effects told apart | Missing | `alpha-validation` | Later | private |
 | Trade streaks, clustering, lead-lag and stability splits | Unproven | `alpha-research` | Path 2 | [partner] |

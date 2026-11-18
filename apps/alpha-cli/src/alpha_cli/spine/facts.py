@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
+from alpha_cli.toolbox.registry import ALIASES, METRIC_OUTPUTS
 
 # Public vocabulary: one plain-English meaning per metric.
 METRICS = {
@@ -69,38 +70,7 @@ METRICS.update(
         for name, (field, _) in NOISE_METRICS.items()
     }
 )
-# Facts written by the investigation tools (alpha tool ...): metric -> (tool, meaning).
-TOOL_METRICS = {
-    "market_beta": (
-        "attribution",
-        "How much the strategy moves when the benchmark moves by one (1 = one for one).",
-    ),
-    "market_alpha_annual": (
-        "attribution",
-        "Yearly return left over after removing the benchmark exposure.",
-    ),
-    "market_alpha_p": (
-        "attribution",
-        "Chance of a leftover return this large if the true leftover were zero (p-value).",
-    ),
-    "market_r_squared": (
-        "attribution",
-        "Share of the strategy's return variation explained by the benchmark.",
-    ),
-    "regime_turbulent_share_of_return": (
-        "regimes",
-        "Share of the strategy's total log return earned in the most turbulent market regime.",
-    ),
-    "regime_turbulent_share_of_time": (
-        "regimes",
-        "Share of bars the market spent in its most turbulent regime.",
-    ),
-    "changepoint_count": (
-        "changepoints",
-        "Number of dates at which the run's behaviour shifted, found with hindsight.",
-    ),
-}
-METRICS.update({metric: meaning for metric, (_, meaning) in TOOL_METRICS.items()})
+METRICS.update({name: output.gloss for name, (_, output) in METRIC_OUTPUTS.items()})
 # Unit kind of each metric: "ratio" (Sharpe-like, written 0.81 or 0.81x), "fraction" (written
 # 0.344 or 34.4%), "count" (a whole number) or "other" (not numeric). A percent sign is only
 # valid on a fraction.
@@ -130,13 +100,10 @@ METRIC_UNITS = {
     "family_trials": "count",
     "trial_dsr": "fraction",
     "variants_evaluated": "count",
-    "market_beta": "ratio",
-    "market_alpha_annual": "fraction",
-    "market_alpha_p": "fraction",
-    "market_r_squared": "fraction",
-    "regime_turbulent_share_of_return": "fraction",
-    "regime_turbulent_share_of_time": "fraction",
-    "changepoint_count": "count",
+    **{
+        name: "fraction" if output.unit == "p_value" else output.unit
+        for name, (_, output) in METRIC_OUTPUTS.items()
+    },
     **{
         f"{prefix}_{metric}": kind
         for prefix in ("full_sample", "benchmark")
@@ -311,15 +278,25 @@ def require_metric(metric: str) -> None:
 
 def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
     """Stored investigation-tool outputs for a run, oldest first; they live outside the run."""
+    from alpha_cli.spine.ledger import read_trials
+
+    committed = {
+        row.get("tool_output")
+        for row in read_trials(home)
+        if row.get("run_id") == run_id and row.get("outcome") == "ok"
+    }
     outputs = []
     for path in sorted((home / "diagnostics" / run_id).glob("*-*.json")):
         document = read_json(path)
         if document.get("run_id") != run_id or "tool" not in document:
             raise ValueError(f"{path} is not a tool output of run {run_id}")
+        relative = str(path.relative_to(home))
+        if "cache_key" in document and relative not in committed:
+            continue  # Publication was interrupted before its durable outcome.
         outputs.append(
             {
                 "id": path.stem.rsplit("-", 1)[1],
-                "file": str(path.relative_to(home)),
+                "file": relative,
                 **{key: document.get(key) for key in ("tool", "params", "recorded_at", "labels")},
                 "facts": document.get("facts", []),
             }
@@ -329,8 +306,13 @@ def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
 
 def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> dict[str, Any]:
     """Quote one stored tool fact; several outputs of the tool need an explicit choice."""
-    tool = TOOL_METRICS[metric][0]
-    outputs = [item for item in tool_outputs(home, run_id) if item["tool"] == tool]
+    spec, output = METRIC_OUTPUTS[metric]
+    tool = spec.id
+    outputs = [
+        item
+        for item in tool_outputs(home, run_id)
+        if ALIASES.get(item["tool"], item["tool"]) == tool
+    ]
     known = [item["id"] for item in outputs]
     if output_id is not None:
         outputs = [item for item in outputs if item["id"] == output_id]
@@ -339,7 +321,7 @@ def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> di
             "NO_TOOL_OUTPUT",
             f"Run {run_id} has no stored {tool} output"
             + (f" with id {output_id!r}." if output_id is not None else "."),
-            f"Run alpha tool {tool} {run_id} --json first.",
+            f"Run alpha tool run {tool} {run_id} --json first.",
             known,
         )
     if len(outputs) > 1:
@@ -349,8 +331,24 @@ def tool_fact(home: Path, run_id: str, metric: str, output_id: str | None) -> di
             f"Run alpha results cite {run_id} {metric} --tool-output with one of the known ids.",
             known,
         )
-    fact: dict[str, Any] = next(item for item in outputs[0]["facts"] if item["metric"] == metric)
-    return fact
+    selected = outputs[0]
+    if output_id is None and "non-default-params" in selected["labels"]:
+        raise SpineError(
+            "TOOL_OUTPUT_REQUIRED",
+            "A non-default setting needs an explicit output id.",
+            f"Use --tool-output {selected['id']}.",
+            known,
+        )
+    names = {output.legacy_metric, f"{tool}.{output.key}"}
+    for fact in selected["facts"]:
+        if fact["metric"] in names:
+            result = {**fact, "metric": metric}
+            if "non-default-params" in selected["labels"]:
+                from alpha_cli.toolbox.store import history, settings_tried
+
+                result["settings_count"] = len(settings_tried(history(home, run_id), tool))
+            return result
+    raise ValueError(f"Stored output {selected['file']} lacks {metric}")
 
 
 def read_study(folder: Path) -> dict[str, Any]:

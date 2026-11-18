@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 2e27d98f4ce5c7f4
+verified: 00f86710cd4416e3
 ---
 
 # alpha-web workspace
@@ -36,6 +36,7 @@ grants authority.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | showing research case state |
 | [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
+| [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | the Setup Lab panel or `/api/setup/runs` |
 
 ## How to change it
 
@@ -43,8 +44,7 @@ grants authority.
   `api/native_results.py` with its adapter `_native_results.py`; response models are one module per area in `api/models/`,
   not one big file). Frontend: `frontend/src/`
   (`panels/`, `shell/`, `components/`, `api/`). The built bundle `src/alpha_web/static/app` is
-  build output, not committed; `npm ci && npm run build` writes it, and must run before serving or building the wheel.
-  Never edit it by hand.
+  build output, not committed; `npm ci && npm run build` writes it, and must run before serving or building the wheel. Never edit it by hand.
 - Backend tests: `tests/unit/test_web_*.py`, `tests/integration/test_web_api_*.py`,
   `tests/integration/test_openapi_safe_routes.py`. Frontend unit tests sit next to the code as
   `frontend/src/**/*.test.{ts,tsx}` (vitest, Node, no jsdom); browser tests in `frontend/e2e/` (Playwright).
@@ -62,14 +62,13 @@ grants authority.
 - RD-Agent's read-only panel is `panels/RdAgentPanel.tsx`, registered in `shell/documents.ts`,
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
-  Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
-  Its story joins tasks/trials on stored evaluation number, name and code hash; loop counters are never evaluation counters.
-  `explain/rdagentStory.ts` owns story wording; writer-vocabulary and rendering tests guard it, with browser interaction
-  coverage in `e2e/rdagent-story.spec.ts`. Missing links and counts remain unknown; all journey counts use idea cards.
+  The run reader and its journey/PNG routes share the read-only router in `api/rdagent.py`.
+  `panels/RdAgentJourney.tsx` renders the selected idea's seven stored steps. Unit tests sit beside both panels.
+  The browser interaction spec is `e2e/rdagent-journey.spec.ts`.
   Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
-  [story view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
-- Setup Lab opens at Research → Setup Lab; stored fields and gaps are documented in
-  [web API reads](../../docs/reference/invariants/web-api.md#reads-and-writes).
+  [journey view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
+- The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`.
+- Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api.md#reads-and-writes).
 
 ## Outputs
 

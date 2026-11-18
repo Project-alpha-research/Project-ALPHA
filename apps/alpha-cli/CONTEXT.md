@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 3f64322285937df1
+verified: b54e5ff10a4bf386
 ---
 
 # alpha-cli workspace
@@ -12,8 +12,7 @@ verified: 3f64322285937df1
 
 The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns
 the SQLite control store (projects, jobs, evidence, owner receipts). It may import every package below it; nothing but the surfaces' public seams may import
-it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner
-did not give, and never route live capital.
+it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner did not give, and never route live capital.
 
 ## Read first
 
@@ -39,6 +38,7 @@ did not give, and never route live capital.
 | [Codex investigations runbook](../../docs/operations/codex-investigations.md) | — | running or changing a recorded-run investigation |
 | [local operations runbook](../../docs/operations/README.md) | — | daily Tiingo data, IBKR Paper setup or the acceptance steps |
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
+| [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`, `toolbox/`: adding a test, its honesty rules, what is not built yet |
 
 ## How to change it
 
@@ -48,7 +48,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 |---|---|---|
 | Research cases | `research_*` (22), `_research_cmd_parts`, `_research_artifact_io`, `_structural_digest`, `study_semantic` | `test_research_*` |
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
-| Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `*lookalike*`, `spine/` | `test_{spine,setup}_*`, `test_contact_*`, `test_look*` |
+| Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`, `test_look*` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context*_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
@@ -61,9 +61,8 @@ Many integration tests in `tests/integration/` use the same prefixes. Shared hel
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);
 do not add a private copy.
 
-- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
-  light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Shared thirds: `_rdagent_membership`; inference/twins: `_rdagent_stats`/`_rdagent_twins`; compatibility: `_rdagent_stability`. Policy: worker README.
+- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli` light (`tests/unit/test_public_seams.py`).
+  RD-Agent: gaps, rescaling, thirds `_rdagent_membership`/`_rdagent_identity`; inference `_rdagent_stats`/`_rdagent_twins`; compatibility `_rdagent_stability`.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through
@@ -73,7 +72,8 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- Setup trades report long or short returns in percent and initial-stop risk units. Setup studies and trades share costs and counted ledger families.
+- [Registered tools](../../docs/reference/project/components/toolbox.md) describe market exposure, date sensitivity, downside risk and closed trades.
+- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) read stored evaluations.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

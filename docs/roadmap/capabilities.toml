@@ -917,25 +917,46 @@ triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
+id = "rdagent-idea-journey"
+name = "Follow one judged idea through seven steps"
+codes = ["RD-Agent"]
+what = "Read a proposal, its judge's verdict and annotated pictures from the stored observations."
+see_it = ["alpha ledger journey --run-dir <run-dir>"]
+entry_points = ["cli: alpha ledger journey"]
+proof_synthetic = [
+  "tests/unit/test_rdagent_journey.py::test_journeys_from_stored_evidence",
+  "tests/unit/test_rdagent_journey_figures.py::test_plotted_numbers_and_reserved_boundary",
+]
+real_data = "not yet confirmed on a recorded market-data run"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+docs = ["research/tools/rdagent-journey.md", "docs/roadmap/backlog/research-loop-screen.md"]
+
+[[capability]]
 id = "rdagent-workstation-panel"
 name = "RD-Agent recorded runs in the Workstation"
 codes = ["RD-Agent"]
-what = "Read recorded factor-loop runs, their stage figures, caps, universe and ALPHA's notes without using the terminal."
+what = "Follow one idea through seven stored steps and figures. Browse its run summary, caps, universe and recorded notes."
 see_it = ["Workstation → View → RD-Agent (also in the command palette)"]
 entry_points = [
   "api: GET /api/rdagent/runs",
   "api: GET /api/rdagent/runs/{run_id}",
+  "api: GET /api/rdagent/runs/{run_id}/journeys/{idea_id}",
+  "api: GET /api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}",
   "panel: apps/alpha-web/frontend/src/panels/RdAgentPanel.tsx",
 ]
 proof_synthetic = [
   "tests/unit/test_web_rdagent.py::test_list_newest_first_and_recorded_fields",
   "tests/unit/test_web_rdagent.py::test_funnel_is_counted_from_recorded_rows_and_receipt_wins",
   "tests/unit/test_web_rdagent.py::test_all_writer_statuses_have_sentences",
+  "tests/unit/test_web_rdagent.py::test_journey_picker_matches_the_full_judged_identity",
+  "tests/unit/test_web_rdagent.py::test_journey_routes_read_only_published_bytes",
 ]
 real_data = "2026-11-17: the panel was opened headless on the owner's real runs folder (private screenshots, not committed); the owner has not yet viewed it"
 needs = []
 state = "Partial"
-missing = "owner acceptance; writers record no idea-family label per factor, so that stays unknown; funnel counts are counted from recorded rows"
+missing = "journey view awaits a browser check and owner review; the run records supply verdicts when available"
 docs = ["docs/reference/project/components/rd-agent.md"]
 
 [[capability]]
@@ -1183,16 +1204,26 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 
 [[capability]]
 id = "investigation-tools"
-name = "Investigation tools: market attribution, regimes, change points"
-what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted."
-see_it = ["alpha tool attribution <run_id> --json", "alpha tool regimes <run_id> --json", "alpha tool changepoints <run_id> --json", "alpha results show <run_id> --json"]
-entry_points = ["cli: alpha tool", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
-proof_synthetic = ["tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
+name = "Investigation tools for market exposure, downside risk, date sensitivity and trades"
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration."
+see_it = [
+  "alpha tool run performance.downside_ratios <run_id>",
+  "alpha tool run robustness.start_end_dates <run_id>",
+  "alpha tool run trades.side_contribution <run_id>",
+  "alpha tool run trades.concentration <run_id>",
+  "alpha tool run-set market-context <run_id> --json", "alpha tool list --for <run_id> --json", "alpha tool history <run_id> --json", "alpha results show <run_id> --json"]
+entry_points = ["cli: alpha tool", "code: apps/alpha-cli/src/alpha_cli/toolbox/registry.py", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
+proof_synthetic = [
+  "tests/unit/test_toolbox_run_level_checks.py::test_downside_ratios",
+  "tests/unit/test_toolbox_run_level_checks.py::test_date_windows",
+  "tests/unit/test_toolbox_run_level_checks.py::test_side_contribution",
+  "tests/unit/test_toolbox_run_level_checks.py::test_concentration",
+  "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
 proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test"]
-real_data = "yes, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data)"
+real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level checks verified on synthetic runs"
 needs = []
 state = "Working"
-docs = ["docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
+docs = ["research/tools/run-level-checks.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
 
 [[capability]]
 id = "price-lookalikes"

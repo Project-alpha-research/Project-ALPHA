@@ -45,7 +45,7 @@ def test_empty_generic_command_is_unknown() -> None:
         (["chart", "overlays"], "safe"),
         (["rules", "save"], "safe"),
         (["scan", "check"], "safe"),
-        (["tool", "attribution"], "empirical"),
+        (["tool", "run"], "empirical"),
         (["setup", "find"], "empirical"),
         (["setup", "study"], "empirical"),
         (["setup", "trade"], "empirical"),

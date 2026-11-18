@@ -3,38 +3,38 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: e03a5344e812d0f9
+verified: b12c812ba8d0448e
 ---
 # Results and cite
 **Reach for it when** the owner asks about past work, before proposing a test (was it tried?), and every time a number goes into an answer.
-**Commands**
-```text
-uv run alpha results --symbol SPY --name <test name> --limit 50 --json
-uv run alpha results show <run_id> --json
-uv run alpha results cite <run_id> <metric>
-uv run alpha results compare <run_id> <run_id>
-uv run alpha results check <file>
-```
-**How to read it**
+**Commands** `uv run alpha results --symbol SPY --name <test name> --limit 50 --json`, `uv run alpha results show <run_id> --json`,
+`uv run alpha results cite <run_id> <metric>`, `uv run alpha results compare <run_id> <run_id>`, `uv run alpha results check <file>`. **How to read it**
 - `alpha results` lists ledger rows (newest first, failures too) and `total_trials`; `show <id>`: `facts`, `labels`, `flags`, `audit`, `charts`,
   `idea_id` (filter with `--idea-id`), `tools`, `family` (recorded and live family counts); for a test id, failed assets under `failed` with a reason.
 - `cite` prints one stored value with its tag and basis: `<value> [<run_id>:<metric>] (<basis>)`. Paste the tag. `--json` gives `metric`, `value`,
-  `run_id`, `basis`, `source`, `labels`, `reason`.
+  `run_id`, `basis`, `source`, `labels`, `reason`. A tool fact run twice takes `--tool-output <id>`; quote a non-default one with "(1 of N settings tried)".
 - `compare` (two to eight runs, first is the base) gives each run's `value`, `diff`, `ratio`. `check` reads a draft tagged `0.75 [<run_id>:<metric>]`;
   fix the draft on `ROUNDED_ACROSS_THRESHOLD`, `FLAG_CONTRADICTED`, `UNIT_MISMATCH`, `PRECISION_TOO_LOW` or `METRIC_NOT_STORED`.
 - Metrics: `data_period`, `traded_period`, `verdict`, `oos_sharpe`, `dsr`, `psr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
-  `full_sample_max_drawdown`, `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`,
-  `exposure`, `top_1_profit_share`, `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`,
-  `variants_evaluated`, `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`.
-  `price_noise_median_sharpe`, `price_noise_p05_sharpe`, `price_noise_p95_sharpe`, `price_noise_sign_flip_share`, `price_noise_median_trades`;
-  WFE is a rule of thumb, not a test, and `wfe_fold_count` counts its folds.
-  [Tool](attribution-regimes-changepoints.md) facts take `--tool-output <id>` when a tool ran twice: `market_beta`, `market_alpha_annual`,
-  `market_alpha_p`, `market_r_squared`, `regime_turbulent_share_of_return`, `regime_turbulent_share_of_time`, `changepoint_count`.
-- Setup study ids support cite/check: `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`,
-  `setup_hit_rate`, `setup_excess_over_drift`, `setup_random_date_p` ([limits](setup-study.md)).
-- Trade facts: `setup_trades`, `setup_trade_mean_net_return`, `setup_trade_hit_rate`, `setup_trade_mean_bars_held`,
-  `setup_trade_excess_over_drift`, `setup_trade_random_date_p`, `setup_trade_mean_r` ([limits](setup-trade.md)).
-**What it cannot tell you**
-- `cite` never computes: missing values are `null` with reasons; unknown metric/id: `UNKNOWN_METRIC` / `UNKNOWN_RUN`.
-  No word search (use `--symbol` or `--name`); `check` cannot judge reasoning.
+  `full_sample_max_drawdown`, `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`, `exposure`,
+  `top_1_profit_share`, `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`, `variants_evaluated`,
+  `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`. `price_noise_median_sharpe`,
+  `price_noise_p05_sharpe`, `price_noise_p95_sharpe`, `price_noise_sign_flip_share`, `price_noise_median_trades`; WFE is a rule of thumb, not a test, and
+  `wfe_fold_count` counts its folds. [Tool](attribution-regimes-changepoints.md) facts (old names in brackets): `market.attribution.beta` (`market_beta`),
+  `market.attribution.alpha_annual` (`market_alpha_annual`), `market.attribution.alpha_p` (`market_alpha_p`), `market.attribution.r_squared`
+  (`market_r_squared`), `market.vol_regimes.turbulent_share_of_time` (`regime_turbulent_share_of_time`), `market.vol_regimes.turbulent_share_of_return`
+  (`regime_turbulent_share_of_return`), `market.changepoints.count` (`changepoint_count`). [Run-level](run-level-checks.md) facts:
+  `performance.downside_ratios.sortino`, `performance.downside_ratios.calmar`, `performance.downside_ratios.omega`, `performance.downside_ratios.tail_ratio`,
+  `performance.downside_ratios.sharpe`, `robustness.start_end_dates.total_return_min`, `robustness.start_end_dates.total_return_max`,
+  `robustness.start_end_dates.cagr_min`, `robustness.start_end_dates.cagr_max`, `robustness.start_end_dates.sharpe_min`,
+  `robustness.start_end_dates.sharpe_max`, `robustness.start_end_dates.max_drawdown_min`, `robustness.start_end_dates.max_drawdown_max`,
+  `robustness.start_end_dates.positive_share`, `robustness.start_end_dates.beat_hold_share`, `trades.side_contribution.sides`,
+  `trades.side_contribution.long_count`, `trades.side_contribution.long_profit_share`, `trades.side_contribution.long_win_rate`,
+  `trades.side_contribution.long_average_pnl`, `trades.side_contribution.short_count`, `trades.side_contribution.short_profit_share`,
+  `trades.side_contribution.short_win_rate`, `trades.side_contribution.short_average_pnl`, `trades.concentration.without_best_1`,
+  `trades.concentration.without_best_3`, `trades.concentration.without_best_5`, `trades.concentration.top_decile_share`.
+- Setup study ids support cite/check: `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`, `setup_hit_rate`, `setup_excess_over_drift`,
+  `setup_random_date_p` ([limits](setup-study.md)). Trade facts: `setup_trades`, `setup_trade_mean_net_return`, `setup_trade_hit_rate`,
+  `setup_trade_mean_bars_held`, `setup_trade_excess_over_drift`, `setup_trade_random_date_p`, `setup_trade_mean_r` ([limits](setup-trade.md)).
+**What it cannot tell you** `cite` never computes (gaps: `null` + reasons; else `UNKNOWN_METRIC` / `UNKNOWN_RUN`); no word search; `check` can't judge logic.
 **Next** No row for the question: say "not tested" and offer the [rule test](rule-test.md).

@@ -2092,6 +2092,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rdagent/runs/{run_id}/journeys/{idea_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Idea Journey
+         * @description Read the published steps, or the local command to build a missing journey.
+         */
+        get: operations["idea_journey_api_rdagent_runs__run_id__journeys__idea_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Journey Figure
+         * @description Read one published PNG belonging to this idea.
+         */
+        get: operations["journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/research-gate-overrides": {
         parameters: {
             query?: never;
@@ -7679,6 +7719,81 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** JourneyFigure */
+        JourneyFigure: {
+            /** Data */
+            data?: string | null;
+            /** File */
+            file?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Source */
+            source?: string[];
+        };
+        /** JourneyIdea */
+        JourneyIdea: {
+            /** Built */
+            built: boolean;
+            /** Id */
+            id: string;
+            /** Iteration */
+            iteration: number | null;
+            /** Name */
+            name: string;
+            /** Verdict */
+            verdict: string | null;
+        };
+        /** JourneyMissing */
+        JourneyMissing: {
+            /** Command */
+            command: string;
+            /**
+             * Reason
+             * @default Journey not built yet
+             * @constant
+             */
+            reason: "Journey not built yet";
+        };
+        /** JourneyNumber */
+        JourneyNumber: {
+            /** Display */
+            display?: string | null;
+            /** Gloss */
+            gloss?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Value */
+            value?: number | null;
+        };
+        /** JourneyStep */
+        JourneyStep: {
+            /** Code */
+            code?: string | null;
+            /** Facts */
+            facts?: string[];
+            /** Figure */
+            figure?: string | null;
+            /** Figure Reason */
+            figure_reason?: string | null;
+            /** Figures */
+            figures?: string[];
+            /** File */
+            file?: string | null;
+            /** Numbers */
+            numbers?: components["schemas"]["JourneyNumber"][];
+            /** Own Words */
+            own_words?: string | null;
+            /** Source */
+            source?: string[];
+            /** Text */
+            text?: string | null;
+            /** Title */
+            title?: string | null;
+            /** What This Means */
+            what_this_means?: string | null;
+            /** Who */
+            who?: ("RD-Agent (AI)" | "ALPHA rule") | null;
+        };
         JsonObject: {
             [key: string]: components["schemas"]["JsonValue"];
         };
@@ -10092,6 +10207,8 @@ export interface components {
             identity_splits: {
                 [key: string]: components["schemas"]["RecordedFact"];
             }[];
+            /** Journeys */
+            journeys?: components["schemas"]["JourneyIdea"][];
             /** Months */
             months: {
                 [key: string]: {
@@ -12790,6 +12907,21 @@ export interface components {
              * @constant
              */
             schema_version: 1;
+        };
+        /** StoredJourney */
+        StoredJourney: {
+            /** Code Sha256 */
+            code_sha256: string;
+            /** Figures */
+            figures?: {
+                [key: string]: components["schemas"]["JourneyFigure"];
+            };
+            /** Iteration */
+            iteration: number;
+            /** Name */
+            name: string;
+            /** Steps */
+            steps: components["schemas"]["JourneyStep"][];
         };
         /** StrategyDefinition */
         StrategyDefinition: {
@@ -17085,6 +17217,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RdAgentDetail"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    idea_journey_api_rdagent_runs__run_id__journeys__idea_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredJourney"] | components["schemas"]["JourneyMissing"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                idea_id: string;
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
                 };
             };
             /** @description Stable, redacted Workstation error */

@@ -5,8 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
+from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 
+from alpha_web import app as web_app
 from alpha_web.app import create_app
 
 
@@ -38,3 +42,32 @@ def test_profile_is_never_an_api_parameter_or_field() -> None:
                 assert parameter["name"] != "profile", path
     for name, schema in document["components"]["schemas"].items():
         assert "profile" not in schema.get("properties", {}), name
+
+
+@pytest.mark.parametrize("built", [False, True])
+def test_api_starts_with_or_without_built_assets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, built: bool
+) -> None:
+    index = tmp_path / "static/app/index.html"
+    monkeypatch.setattr(web_app, "_PKG", tmp_path)
+    monkeypatch.setattr(web_app, "_APP_INDEX", index)
+    if built:
+        index.parent.mkdir(parents=True)
+        index.write_text("<html></html>", encoding="utf-8")
+
+    app = create_app()
+    assert "/api/rdagent/runs/{run_id}/journeys/{idea_id}" in app.openapi()["paths"]
+    spa = next(
+        route for route in app.routes if isinstance(route, APIRoute) and route.path == "/app"
+    )
+    if built:
+        assert app.url_path_for("static", path="app/index.html") == "/static/app/index.html"
+        response = spa.endpoint()
+        assert isinstance(response, FileResponse)
+        assert response.path == index
+    else:
+        with pytest.raises(HTTPException) as exc:
+            spa.endpoint()
+        assert exc.value.status_code == 503
+        assert "npm run build" in exc.value.detail
+        assert not index.parent.parent.exists()

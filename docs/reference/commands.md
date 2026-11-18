@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-267 commands in 36 groups. Options marked (required) are
+270 commands in 36 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -171,6 +171,7 @@ Triple-barrier labels and overlap weights (López de Prado), from the AFML worke
 Read all recorded trials through one unchanged-ledger view.
 
 - `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger journey` — Write seven-step journeys, annotated pictures and their plotted data. Options: `--run-dir (required)`, `--factor`, `--out`, `--theme`
 - `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
 - `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
@@ -435,11 +436,13 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha tool
 
-Investigate a recorded rule test: market exposure, market regimes and change points.
+Discover and run investigation tools.
 
-- `alpha tool attribution <RUN_ID>` — How much of the run's return is benchmark exposure (beta) and what is left (alpha… Options: `--benchmark`, `--json`
-- `alpha tool changepoints <RUN_ID>` — Dates at which the run's behaviour shifted; a hindsight description, never a sig… Options: `--on`, `--json`
-- `alpha tool regimes <RUN_ID>` — Whether the run earns its return in calm or in turbulent markets. Options: `--market`, `--k`, `--json`
+- `alpha tool describe <TOOL_ID>` — Read a tool's question, inputs, parameters, outputs and caveats. Options: `--json`
+- `alpha tool history <TARGET>` — List successful, failed and unfinished attempts in ledger order. Options: `--json`
+- `alpha tool list` — Find tools by target, question, family or kind. Options: `--for`, `--search`, `--family`, `--kind`, `--json`
+- `alpha tool run <TOOL_ID> <TARGET>` — Run one tool with repeatable key=value parameters. Options: `--param`, `--seed`, `--json`
+- `alpha tool run-set <NAME> <TARGET>` — Run each member of a predeclared set and report every outcome. Options: `--json`
 
 ## alpha unusual
 

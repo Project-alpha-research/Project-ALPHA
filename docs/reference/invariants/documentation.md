@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: 887103520b45aef9
+verified: 97d04aa2a2027213
 ---
 
 # Documentation invariants
@@ -41,6 +41,9 @@ delivery states, the generated roadmap index, append-only records, and relative 
   `sources` and `verified` (a fingerprint of the content of those sources when the document was last checked
   against them); `tests/unit/test_filesystem_contract.py` enforces the shape.
 - A document is stale when any source was edited, added or removed since: its fingerprint no longer matches.
+  Another document counts as a source only when `sources` names its exact path, and then by its text below
+  the front matter (its own re-stamp does not cascade); one a glob merely covers never counts. A document left
+  with nothing to fingerprint is listed by `fs.py stale` as "cannot be checked": give it a real source.
   `uv run python scripts/fs.py stale` lists stale documents, and `gate.py check` and the CI `static` job fail
   while one exists, so no pull request merges with a stale document and none can stay stale on `main`.
 - `uv run python scripts/fs.py owners <path>...` names the documents that describe a file. Claude Code is told
@@ -53,9 +56,11 @@ delivery states, the generated roadmap index, append-only records, and relative 
 - Never copy a value from a data file (a count, a cap, a list of names) into a document; name the field
   and link the file or the generated page that shows it.
 - After re-reading a stale document against its changed sources, fix it, then run
-  `uv run python scripts/fs.py verify <document>...`, even when nothing needed fixing. Never type a
-  fingerprint by hand, and never verify a document you have not re-read: the stamp is your statement that it
-  is true of the sources as they are now.
+  `uv run python scripts/fs.py verify <document>...`; it prints which sources changed by how many lines. When
+  nothing needed fixing, add `--reason "<why it is still correct>"`: `verify` refuses a document whose text
+  is unchanged since its last stamp without one, and keeps the latest reason per document in
+  `docs/verified-reasons.txt`. Never type a fingerprint by hand, and never verify a document you have not
+  re-read: the stamp is your statement that it is true of the sources as they are now.
 - Two branches that change sources of one document both rewrite its `verified` line, so the second to merge
   gets a git conflict there: take either side, re-read the document against the merged sources, verify again.
 

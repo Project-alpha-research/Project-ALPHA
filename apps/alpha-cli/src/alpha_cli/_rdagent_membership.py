@@ -14,12 +14,12 @@ import numpy as np
 import polars as pl
 
 from alpha_backtest.portfolio_replay import ReplayPeriod, WeightTarget
+from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_core import DataError
 
 REENTRY_BARS = 20
 WRITE_OFF_AFTER_DAYS = 30
 DELISTING_HAIRCUT = 0.30
-RESERVED_DAY = date(2024, 1, 1)
 POLICY = {
     "schema": "AlphaRdagentGapPolicyV1",
     "reentry_bars": REENTRY_BARS,

@@ -14,7 +14,6 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine.audit import cap_sparse_run
 from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
@@ -181,13 +180,16 @@ def _execute(
         resized_entries=manifest.get("resized_entries", 0),
         verdict=verdict.get("overall") if isinstance(verdict, dict) else None,
         oos_sharpe=manifest.get("oos_metrics", {}).get("sharpe"),
-        benchmark_sharpe=manifest.get("oos_metrics", {}).get("benchmark_sharpe"),
         dsr=dsr.get("dsr") if isinstance(dsr, dict) else None,
     )
     diagnostics = read_json(rdir / "diagnostics.json")
     result.update(
         flags=diagnostics.get("flags", []),
-        benchmark_sharpe=diagnostics.get("benchmark", {}).get("sharpe"),
+        benchmark_sharpe=manifest.get("spine", {})
+        .get("periods", {})
+        .get("full_history", {})
+        .get("benchmark", diagnostics.get("benchmark", {}))
+        .get("sharpe"),
         variants_evaluated=diagnostics.get("variants_evaluated", 0),
         facts=build_facts(rdir),
     )
@@ -211,6 +213,8 @@ def _write_run(
     result: dict[str, Any],
 ) -> dict[str, Any]:
     rdir = Path(result["run_dir"])
+    if not prepared.dividends:
+        result["labels"].append("benchmark-price-only")
     # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
     snapshot = spine_snapshot(home)
     bars, ppy = prepared.bars, prepared.spec.periods_per_year
@@ -242,20 +246,17 @@ def _write_run(
             encoding="utf-8",
         ),
     )
-    if "no-diagnostics" not in result["labels"]:
-        out = write_diagnostics(
-            idea,
-            prepared.bars,
-            prepared.dividends,
-            prepared.spec,
-            out,
-            prepared.identity,
-            home,
-            result,
-            snapshot=snapshot,
-        )
-    else:
-        out = cap_sparse_run(out, result)
+    out = write_diagnostics(
+        idea,
+        prepared.bars,
+        prepared.dividends,
+        prepared.spec,
+        out,
+        prepared.identity,
+        home,
+        result,
+        snapshot=snapshot,
+    )
     _, manifest = write_validation_run(
         staged_home,
         prepared.bars,
@@ -268,6 +269,7 @@ def _write_run(
             "source": result["source"],
             "resized_entries": out.result.resized_entries,
             "spine": {
+                "periods": result.pop("periods", {}),
                 "sentence": result.get("sentence"),
                 "test_id": test_id,
                 "spec_sha256": idea.spec_sha256,
@@ -292,6 +294,10 @@ def _write_run(
             },
         },
     )
+    if manifest["spine"]["periods"]:
+        from alpha_cli.figures_cmds import store_rule_figures
+
+        store_rule_figures(rdir, manifest, home)
     return manifest
 
 

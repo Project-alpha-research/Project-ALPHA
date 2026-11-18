@@ -22,6 +22,7 @@ export interface LabelChip {
 const LABEL_MEANING: Record<string, string> = {
   exploratory: 'Exploratory test. These results describe this run only.',
   'too-few-trades': 'Too few closed trades in the walk-forward test to judge the result.',
+  'benchmark-price-only': 'Both lines use prices only. No dividend cash was recorded.',
   'all-in': 'All capital goes into each position; no volatility sizing.',
   quick: 'Quick mode used fewer random comparisons to check the result.',
   'dev-machine-data': 'Run on the data stored on this development machine.',
@@ -141,35 +142,55 @@ function comparisonWording(difference: number | null | undefined): string {
   return 'level with'
 }
 
-export function summaryHeadline(test: RuleTest): string {
+type Metrics = Partial<NonNullable<NonNullable<RuleTest['diagnostics']>['full_sample']>>
+export type SummaryPeriod = 'tradable' | 'scored'
+
+export interface PeriodResult {
+  first_ts?: string
+  last_ts?: string
+  price_basis?: string
+  strategy?: Metrics | null
+  benchmark?: Metrics | null
+  relative_return?: number | null
+}
+
+export type RuleManifest = RecordedManifest & {
+  spine?: { periods?: Partial<Record<SummaryPeriod, PeriodResult>> }
+}
+
+export function dateRange(first?: string | null, last?: string | null): string {
+  return day(first) && day(last) ? `${day(first)} to ${day(last)}` : NOT_RECORDED
+}
+
+export function summaryHeadline(test: RuleTest, row?: PeriodResult): string {
   const words = test.idea?.trim() || test.rule_sentence?.trim()
   const rule = words ? `“${words}”` : 'This rule'
   const market = test.symbol ? ` on ${test.symbol}` : ''
-  const first = day(test.first_ts)
-  const last = day(test.last_ts)
-  const period = [first && ` from ${first}`, last && ` through ${last}`].filter(Boolean).join('')
-  const result = test.diagnostics?.full_sample?.total_return
-  const hold = test.diagnostics?.benchmark?.total_return
-  const subject = `${rule}${market}${period}`
+  const result = row?.strategy?.total_return
+  const hold = row?.benchmark?.total_return
+  const subject = `${rule}${market} could trade from ${dateRange(row?.first_ts, row?.last_ts)}`
   if (isFiniteNum(result)) {
-    const wording = comparisonWording(test.diagnostics?.benchmark?.strategy_minus_benchmark?.total_return)
+    const wording = comparisonWording(row?.relative_return)
     const comparison = isFiniteNum(hold)
       ? `${wording} ${pct(hold).text} for simply holding the market`
       : 'but the buy-and-hold return is unavailable'
-    return `${subject} returned ${pct(result).text} after costs, ${comparison}.`
+    return `${subject}. It returned ${pct(result).text} after costs, ${comparison}.`
   }
-  if (isFiniteNum(hold)) return `${subject} has no saved rule return, while holding the market returned ${pct(hold).text}.`
-  return `${subject} has no return comparison saved for this run.`
+  if (isFiniteNum(hold)) return `${subject}. It has no saved rule return, while holding the market returned ${pct(hold).text}.`
+  return `${subject}. Return comparison: ${NOT_RECORDED}.`
 }
 
-export function summaryFigures(items: FigureCatalogueItem[]) {
-  return ['equity_vs_passive', 'equity_underwater'].flatMap(id =>
-    items.filter(item => item.figure_id === id && item.available))
+export function summaryFigures(items: FigureCatalogueItem[], period?: SummaryPeriod) {
+  const ids = ['equity_vs_passive', 'equity_underwater']
+  const tradable = ids.map(id => 'tradable_' + id)
+  const wanted = period === 'tradable' ? tradable : period === 'scored' ? ids : [...tradable, ...ids]
+  return wanted.flatMap(id => items.filter(item => item.figure_id === id && item.available))
 }
 
-export function summaryNumbers(test: RuleTest, manifest: RecordedManifest, watermark?: string | null) {
-  const full = test.diagnostics?.full_sample
-  const hold = test.diagnostics?.benchmark
+export function summaryNumbers(test: RuleTest, manifest: RuleManifest, watermark?: string | null, period: SummaryPeriod = 'tradable') {
+  const row = manifest.spine?.periods?.[period]
+  const full = row?.strategy
+  const hold = row?.benchmark
   const labels = test.labels
   const flagged = (id: string) => test.diagnostics?.audit.some(check => check.check === id && check.status === 'FLAG')
   const short = labels.includes('short-history') || flagged('history-length') ? LABEL_MEANING['short-history'] : null
@@ -179,16 +200,16 @@ export function summaryNumbers(test: RuleTest, manifest: RecordedManifest, water
     : flagged('enough-trades') ? LABEL_MEANING['too-few-trades'] : null
   return [
     { label: 'Total return after costs', gloss: GLOSSARY.total_return.short,
-      value: pct(full?.total_return, full?.reasons.total_return),
-      caveats: [watermark || (labels.includes('exploratory') ? LABEL_MEANING.exploratory : null), data] },
-    { label: 'Return per year', gloss: GLOSSARY.cagr.short, value: pct(full?.cagr, full?.reasons.cagr), caveats: [short] },
+      value: pct(full?.total_return, full?.reasons?.total_return),
+      caveats: [row?.price_basis ?? NOT_RECORDED, watermark || (labels.includes('exploratory') ? LABEL_MEANING.exploratory : null), data] },
+    { label: 'Return per year', gloss: GLOSSARY.cagr.short, value: pct(full?.cagr, full?.reasons?.cagr), caveats: [short] },
     { label: 'Worst drop', gloss: GLOSSARY.max_drawdown.short,
-      value: pct(full?.max_drawdown, full?.reasons.max_drawdown), caveats: [short] },
-    { label: 'Closed trades', gloss: 'Positions opened and closed over the full history.',
-      value: isFiniteNum(full?.trades) ? { text: String(full.trades), reason: null } : missing(full?.reasons.trades),
+      value: pct(full?.max_drawdown, full?.reasons?.max_drawdown), caveats: [short] },
+    { label: 'Closed trades', gloss: 'Positions opened and closed during this period.',
+      value: isFiniteNum(full?.trades) ? { text: String(full.trades), reason: null } : missing(full?.reasons?.trades),
       caveats: [tradeCaveat] },
     { label: 'Buy-and-hold return', gloss: 'Return from holding the market over the same bars, before trading costs.',
-      value: pct(hold?.total_return, hold?.reasons.total_return), caveats: [data] },
+      value: pct(hold?.total_return, hold?.reasons?.total_return), caveats: [row?.price_basis ?? NOT_RECORDED, data] },
   ]
 }
 
@@ -219,8 +240,8 @@ export function variantRows(test: RuleTest): VariantRow[] {
   const rows: VariantRow[] = [
     {
       label: 'As tested',
-      sharpe: ratio(full?.sharpe, full?.reasons.sharpe),
-      totalReturn: pct(full?.total_return, full?.reasons.total_return),
+      sharpe: ratio(full?.sharpe, full?.reasons?.sharpe),
+      totalReturn: pct(full?.total_return, full?.reasons?.total_return),
       change: { text: '', reason: null, tone: null },
       note: null,
     },

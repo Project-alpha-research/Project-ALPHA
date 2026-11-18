@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 4c418e7604df809a
+verified: b97f532919240f38
 ---
 
 # Web frontend invariants
@@ -128,11 +128,11 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - `reportModel.summaryRows` shows recorded manifest values only (`not recorded` otherwise) — no client arithmetic.
 - `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot
   do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
-- A rule test opens with the saved idea (or plain rule), market, loaded dates and a comparison of the two full-history returns.
-  The five tiles show total return after costs, annual growth, worst drop, closed trades and buy-and-hold return from the stored diagnostics.
-  The Sharpe line uses the same full-history basis. Labels and flagged checks qualify their numbers. A missing value keeps its stored reason.
-  The trade tile explains a sparse grade with the manifest's walk-forward count and verdict. The two samples can have different trade counts.
-  The figure catalogue supplies separate comparison and drawdown cards for the scored period. Loading, failure and an empty list each have their own text.
+- The rule-test Summary takes its headline dates from the first executable open through the final tradable open. Loaded dates appear below.
+  Each dated row reads its own stored returns, annual growth, worst drop, closed trades, Sharpe and price basis from the manifest.
+  Row one is “Whole period the rule could trade”; “Scored test periods only” uses the walk-forward portfolio and its trade count.
+  Each row has matching comparison and drawdown figures, stored light for new runs. Old runs keep saved figures and a full-history disclosure.
+  Missing period values read “not recorded”. A catalogue request distinguishes loading, failure and missing figures.
   Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail. Only variants subtract Sharpe scores.
   Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence

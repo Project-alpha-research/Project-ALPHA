@@ -30,7 +30,8 @@ def attribution(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
     result = market_attribution(joined.strategy, joined.market, periods_per_year=joined.ppy)
     basis = (
         f"full-sample strategy returns against buy-and-hold open-to-open returns of "
-        f"{joined.name} on shared timestamps (the engine marks equity at each bar's open); "
+        f"{joined.name}, price only with no dividends (the strategy keeps any recorded dividend "
+        f"cash), on shared timestamps (the engine marks equity at each bar's open); "
         f"{'' if joined.same_asset else CLOCKS}{result.pop('basis')}"
     )
     result.update(benchmark=joined.name, periods_per_year=joined.ppy, join=joined.counts)

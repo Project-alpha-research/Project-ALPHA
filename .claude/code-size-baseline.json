@@ -2,7 +2,7 @@
   "files": {
     "apps/alpha-cli/src/alpha_cli/control_store.py": 14025,
     "apps/alpha-cli/src/alpha_cli/crypto_data_cmds.py": 4704,
-    "apps/alpha-cli/src/alpha_cli/figures/_builders.py": 2657,
+    "apps/alpha-cli/src/alpha_cli/figures/_builders.py": 2530,
     "apps/alpha-cli/src/alpha_cli/research_cmds.py": 3539,
     "apps/alpha-cli/src/alpha_cli/research_gate_packet.py": 1568,
     "apps/alpha-web/src/alpha_web/_ml.py": 1763,

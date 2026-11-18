@@ -44,7 +44,7 @@ docs/reference/project/components/validation-and-evidence.md
   verified e1c214a6d07651bb on 2026-11-18: re-read: its routing file only gained the Monte Carlo row; this page already links the Monte Carlo component
 
 docs/reference/project/components/web-workstation.md
-  verified caa742436f6d7639 on 2026-11-18: re-read after PR 271: the routing file's RD-Agent panel, rule-test Summary, Setup Lab and theme rows are each described or linked here
+  verified 4f68f3b5b493b152 on 2026-11-18: re-read: the routing file swapped the story-view module notes for the journey view; this page names no modules and already records the approved idea-journey layout
 
 docs/reference/project/ideas-and-considered.md
   verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271

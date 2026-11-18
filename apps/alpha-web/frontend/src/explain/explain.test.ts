@@ -24,7 +24,7 @@ import { portfolioStories } from './portfolio'
 import { propfirmStories } from './propfirm'
 import { suggestions } from './suggestions'
 import type { OptimManifest, PortfolioManifest, PropfirmManifest, ValidateManifest } from './types'
-import { verdictStories } from './verdictStory'
+import { sparseTradeStory, verdictStories } from './verdictStory'
 import optimFixture from './__fixtures__/optim.json'
 import portfolioFixture from './__fixtures__/portfolio.json'
 import propfirmFixture from './__fixtures__/propfirm.json'
@@ -152,6 +152,11 @@ describe('gate stories', () => {
 })
 
 describe('verdict stories', () => {
+  it('explains a labelled sparse run even when its verdict was never saved', () => {
+    expect(sparseTradeStory({ spine: { labels: ['too-few-trades'] } })).toContain('fewer than 30 closed trades')
+    expect(sparseTradeStory({ n_trades: 4 })).toBeNull()
+  })
+
   it.each([
     ['A', 'C', 'A', 4], ['B', 'C', 'B', 3], ['C', 'C', 'C', 2],
     ['D', 'D', 'D', 1], ['F', 'F', 'F', 0],

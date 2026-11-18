@@ -6,17 +6,14 @@ import type { RuleTest } from '../api/types'
 import { RuleTestReport } from './rundetail/RuleTestReport'
 import {
   auditRows,
-  benchmarkRows,
+  summaryHeadline,
+  summaryNumbers,
   labelChips,
-  macroRows,
-  macroUnavailable,
   NOT_RECORDED,
   pct,
   ratio,
   testedRows,
   variantRows,
-  worstDrawdownLine,
-  yearRows,
 } from './ruleTestModel'
 
 const performance = (sharpe: number | null, totalReturn: number | null) => ({
@@ -108,25 +105,6 @@ const test: RuleTest = {
   },
 }
 
-const withMacro: RuleTest = {
-  ...test,
-  diagnostics: {
-    ...test.diagnostics!,
-    macro_window: {
-      available: true,
-      reason: null,
-      basis: 'stored FRED series as known on the trough date; worst full-sample drawdown',
-      start: '2020-02-19',
-      trough: '2020-03-23',
-      as_of: '2020-03-23',
-      series: [
-        { series_id: 'VIXCLS', start_value: 14.38, trough_value: 61.59, change: 47.21, reason: null },
-        { series_id: 'UNRATE', start_value: null, trough_value: null, change: null, reason: 'no observation known by then' },
-      ],
-    },
-  },
-}
-
 describe('rule-test report model', () => {
   it('formats stored values and keeps the stored reason for a missing one', () => {
     expect(pct(1.5789)).toEqual({ text: '157.9%', reason: null, tone: null })
@@ -153,48 +131,60 @@ describe('rule-test report model', () => {
       fee_bps: null, total_trials: null, diagnostics: null, diagnostics_reason: 'this run recorded no diagnostics.json',
     }
     const rows = Object.fromEntries(testedRows(bare).map((row) => [row.label, row.value]))
-    expect(rows.Idea).toBe(NOT_RECORDED)
+    expect(rows.Idea).toBe('no idea text was saved with this run')
     expect(rows.Rule).toBe('ma_cross: fast 50, slow 200')
     expect(rows.Data).toBe(NOT_RECORDED)
     expect(rows.Period).toBe(NOT_RECORDED)
     expect(rows.Costs).toBe(`fee ${NOT_RECORDED} · slippage 2 bps`)
     expect(rows.Trials).toBe(NOT_RECORDED)
     expect(auditRows(bare)).toEqual([])
-    expect(yearRows(bare)).toEqual([])
-    expect(macroRows(bare)).toEqual([])
-    expect(worstDrawdownLine(bare)).toBeNull()
-    expect(macroUnavailable(bare)).toBe('Not available: this run recorded no diagnostics.json.')
     expect(variantRows(bare)[0].sharpe.text).toBe(NOT_RECORDED)
-    expect(benchmarkRows(bare).every((row) => row.difference.text === NOT_RECORDED)).toBe(true)
+    expect(summaryNumbers(bare, {}).every(row => row.value.text === NOT_RECORDED)).toBe(true)
   })
 
   it('explains each label and keeps an unknown one as stored', () => {
     const chips = labelChips(test.labels)
     expect(chips.map((chip) => chip.text)).toEqual(test.labels)
     expect(chips[2].title).toContain('Quick mode')
-    expect(chips[3].title).toBe('made-up')
+    expect(chips[3].title).toContain('No explanation was saved')
     expect(labelChips(null)).toEqual([])
   })
 
   it('maps audit statuses onto the existing chip tones without a grade', () => {
-    expect(auditRows(test).map((row) => [row.check, row.status, row.chip])).toEqual([
-      ['fills after decisions', 'PASS', 'pass'],
-      ['enough trades', 'FLAG', 'warn'],
-      ['artifacts intact', 'NOT-CHECKED', 'kind'],
+    expect(auditRows(test).map((row) => [row.id, row.check, row.status, row.chip])).toEqual([
+      ['fills-after-decisions', 'Did each trade follow its decision?', 'PASS', 'pass'],
+      ['enough-trades', 'Were there enough closed trades?', 'FLAG', 'warn'],
+      ['artifacts-intact', 'Did the saved files pass verification?', 'NOT-CHECKED', 'kind'],
     ])
   })
 
-  it('relays the stored difference against buy and hold', () => {
-    const rows = benchmarkRows(test)
-    expect(rows[0]).toMatchObject({
-      label: 'Total return',
-      strategy: { text: '157.9%' },
-      benchmark: { text: '275.3%' },
-      difference: { text: '-117.4%', tone: 'neg' },
-    })
-    expect(rows[3].difference).toEqual({
-      text: NOT_RECORDED, reason: 'strategy or benchmark metric is unavailable', tone: null,
-    })
+  it.each([
+    [0.5, 0.3, 'ahead of'], [0.1, -0.1, 'behind'], [0.2, 0, 'level with'], [0.5, null, 'compared with'],
+  ] as const)('describes the recorded comparison for return %s and difference %s', (ruleReturn, difference, wording) => {
+    const diagnostics = test.diagnostics!
+    const benchmark = diagnostics.benchmark!
+    const run = { ...test, diagnostics: { ...diagnostics,
+      full_sample: { ...diagnostics.full_sample!, total_return: ruleReturn },
+      benchmark: { ...benchmark, total_return: 0.2,
+        strategy_minus_benchmark: { ...benchmark.strategy_minus_benchmark!, total_return: difference } },
+    } }
+    expect(summaryHeadline(run)).toContain(`${wording} 20.0% for simply holding the market`)
+  })
+
+  it('uses only the available side of a comparison, including a zero', () => {
+    const diagnostics = test.diagnostics!
+    const ruleOnly = { ...test, diagnostics: { ...diagnostics, benchmark: null,
+      full_sample: { ...diagnostics.full_sample!, total_return: 0 } } }
+    expect(summaryHeadline(ruleOnly)).toContain('returned 0.0% after costs')
+    expect(summaryHeadline(ruleOnly)).toContain('buy-and-hold return is unavailable')
+    const holdOnly = { ...test, diagnostics: { ...diagnostics, full_sample: null } }
+    expect(summaryHeadline(holdOnly)).toContain('holding the market returned 275.3%')
+    expect(summaryHeadline(holdOnly)).not.toContain('157.9%')
+  })
+
+  it('keeps a recorded exploratory watermark with the rule return', () => {
+    const watermark = 'EXPLORATORY / RESEARCH GATE NOT COMPLETED'
+    expect(summaryNumbers(test, {}, watermark)[0].caveats).toContain(watermark)
   })
 
   it('lists the variants and the one-bar delay against their own bases', () => {
@@ -207,58 +197,32 @@ describe('rule-test report model', () => {
     expect(rows[3].note).toContain('0.626')
   })
 
-  it('scales the yearly bars to the largest year and keeps a missing year missing', () => {
-    const rows = yearRows(test)
-    expect(rows[0]).toMatchObject({ year: 2019, strategy: { text: '+10.0%', tone: 'pos' }, strategyBar: 0.5, benchmarkBar: 1 })
-    expect(rows[1]).toMatchObject({ strategy: { text: '-5.0%', tone: 'neg' }, benchmark: { text: NOT_RECORDED }, benchmarkBar: 0 })
-  })
-
-  it('gives the stored reason when the macro window is unavailable, the series when it is', () => {
-    expect(macroUnavailable(test)).toBe('Not available: no stored FRED context series.')
-    expect(worstDrawdownLine(test)).toBe('2020-02-19 → 2020-03-23 · strategy -31.1% · buy and hold -34.2%')
-    expect(macroUnavailable(withMacro)).toBeNull()
-    expect(macroRows(withMacro)).toEqual([
-      { series: 'VIXCLS', start: { text: '14.38', reason: null, tone: null }, trough: { text: '61.59', reason: null, tone: null }, change: { text: '+47.21', reason: null, tone: null } },
-      {
-        series: 'UNRATE',
-        start: { text: NOT_RECORDED, reason: 'no observation known by then', tone: null },
-        trough: { text: NOT_RECORDED, reason: 'no observation known by then', tone: null },
-        change: { text: NOT_RECORDED, reason: 'no observation known by then', tone: null },
-      },
-    ])
+  it('keeps a missing number and its stored reason together', () => {
+    const diagnostics = test.diagnostics!
+    const sparse = { ...test, diagnostics: { ...diagnostics, full_sample: {
+      ...diagnostics.full_sample!, cagr: null, reasons: { cagr: 'too short to annualize' },
+    } } }
+    expect(summaryNumbers(sparse, {})[1].value).toEqual({
+      text: NOT_RECORDED, reason: 'too short to annualize', tone: null,
+    })
   })
 })
 
 describe('rule-test report section', () => {
-  it('renders every heading, the stored sentences and the audit statuses', () => {
-    const html = renderToStaticMarkup(createElement(RuleTestReport, { test }))
-    for (const heading of [
-      'What was tested', 'Worth a look', 'Audit', 'Against buy and hold',
-      'If things were slightly different', 'By year', 'Macro during the worst drawdown',
-    ]) expect(html).toContain(`<caption>${heading}</caption>`)
+  it('keeps the test setup, flag detail, audit statuses and variant basis', () => {
+    const html = renderToStaticMarkup(createElement(RuleTestReport, { test, runId: 'fixture', manifest: {}, figures: [] }))
     expect(html).toContain('Long while the 50-day average is above the 200-day average')
     expect(html).toContain('Strategy Sharpe 0.73 is below buy-and-hold Sharpe 0.784.')
     expect(html).toContain('<span class="chip warn">FLAG</span>')
     expect(html).toContain('<span class="chip kind">NOT-CHECKED</span>')
-    expect(html).toContain('Not available: no stored FRED context series.')
-    expect(html).toContain('title="strategy or benchmark metric is unavailable"')
     expect(html).not.toContain('LEGACY_CONTEXT_UNKNOWN')
-    // stored basis notes read as sentences; their words are relayed unchanged
     expect(html).toContain('Full-sample engine re-runs on the same loaded bars.')
-    expect(html).toContain('Full-sample returns grouped by ending calendar year; partial years included')
   })
 
-  it('renders the macro table when the window is stored', () => {
-    const html = renderToStaticMarkup(createElement(RuleTestReport, { test: withMacro }))
-    expect(html).toContain('VIXCLS')
-    expect(html).toContain('+47.21')
-    expect(html).toContain('no observation known by then')
-  })
-
-  it('renders a run without diagnostics as one plain line, not an error', () => {
-    const bare: RuleTest = { ...test, diagnostics: null, diagnostics_reason: 'this run recorded no diagnostics.json' }
-    const html = renderToStaticMarkup(createElement(RuleTestReport, { test: bare }))
-    expect(html).toContain('Diagnostics not recorded: this run recorded no diagnostics.json.')
+  it('renders the stored reason when the run has no diagnostics', () => {
+    const bare = { ...test, diagnostics: null, diagnostics_reason: 'this run recorded no diagnostics.json' }
+    const html = renderToStaticMarkup(createElement(RuleTestReport, { test: bare, runId: 'fixture', manifest: {}, figures: [] }))
+    expect(html).toContain('this run recorded no diagnostics.json')
     expect(html).not.toContain('<caption>Audit</caption>')
   })
 })

@@ -13,12 +13,12 @@ export interface GlossaryEntry {
 export const GLOSSARY: Record<string, GlossaryEntry> = {
   sharpe: {
     name: 'Sharpe ratio',
-    short: 'Annualized mean excess return per unit of return volatility.',
-    long: 'Mean daily return divided by daily return standard deviation, scaled by √periods-per-year. The workstation always quotes OOS (out-of-sample) Sharpe from concatenated walk-forward test windows — in-sample Sharpe is never shown. Rule of thumb on daily data: > 1 is strong, > 1.5 exceptional; anything measured on < 500 observations has wide error bars (see PSR).',
+    short: 'Sharpe measures return relative to how much returns varied. A higher score means more return per unit of risk.',
+    long: 'Mean daily return divided by daily return standard deviation, scaled by √periods-per-year. The validation grade uses out-of-sample returns. The rule-test Summary compares the rule and buy-and-hold over the full history. Rule of thumb on daily data: > 1 is strong, > 1.5 exceptional; anything measured on < 500 observations has wide error bars (see PSR).',
   },
   cagr: {
     name: 'CAGR',
-    short: 'Compound annual growth rate of the equity curve.',
+    short: 'The steady yearly rate that would give the same total return.',
     long: 'The constant annual rate that compounds the starting equity into the final equity over the elapsed time. Sensitive to the sample window; always read it against max drawdown and volatility, never alone.',
   },
   annualized_vol: {
@@ -28,13 +28,13 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   max_drawdown: {
     name: 'Max drawdown',
-    short: 'Deepest peak-to-trough equity loss over the sample.',
+    short: 'The largest fall from a previous high during the test.',
     long: 'The worst percentage decline from a running equity peak. The verdict risk grade bands it at 10/20/35/50%: beyond 50% is an F — recovering from a 50% loss requires a +100% gain, and most allocators (and prop firms) are gone long before that.',
   },
   total_return: {
     name: 'Total return',
-    short: 'Cumulative OOS return over the whole test span.',
-    long: 'Product of (1 + r) over every out-of-sample day, minus one. Historical sessions only prime causal indicators; a fresh portfolio begins at the first scored boundary and then runs continuously across the contiguous walk-forward test sessions.',
+    short: 'The percentage gained or lost over the stated period.',
+    long: 'Total return compounds the returns over the stated period. The rule-test Summary uses the full history. In walk-forward validation, only scored days count. Historical sessions only prime causal indicators; a fresh portfolio begins at the first scored boundary and then runs continuously across the contiguous walk-forward test sessions.',
   },
   value_at_risk: {
     name: 'VaR (95%)',

@@ -352,8 +352,23 @@ def test_run_id_hashing_inputs_are_unchanged(
         max_workers=1,
     )
     result: dict[str, Any] = {"labels": ["all-in", "dev-machine-data", "quick"]}
+    from alpha_cli._identity import RunIdentity
+
+    original = _runner.run_identity_for
+    captured: dict[str, Any] = {}
+
+    def record_payload(payload: dict[str, Any], *, source_fingerprint: str) -> RunIdentity:
+        captured.update(payload)
+        return original(payload, source_fingerprint=source_fingerprint)
+
+    monkeypatch.setattr(_runner, "run_identity_for", record_payload)
     prepared = spine_run._prepare(idea, "SPY", tmp_path, knobs, result)
-    assert prepared.identity.run_id == "3d7c42078dd76b34"
+    assert captured.pop("data_health")["verdict"] == "unchecked"
+    assert "data-health-unchecked" in captured["labels"]
+    captured["labels"] = [label for label in captured["labels"] if label != "data-health-unchecked"]
+    legacy = original(captured, source_fingerprint=prepared.identity.source_fingerprint)
+    assert legacy.run_id == "3d7c42078dd76b34"
+    assert prepared.identity.run_id != legacy.run_id
     assert result["idea_id"] == spine_run.idea_id(
         idea.spec_sha256, prepared.identity.source_fingerprint
     )

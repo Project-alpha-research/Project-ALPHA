@@ -5,7 +5,7 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: 1b9fecd6dc488d11
+verified: 0c17927b73c27ea2
 ---
 
 # AI assistants

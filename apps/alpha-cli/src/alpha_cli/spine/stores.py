@@ -13,7 +13,7 @@ from statistics import median
 
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
-from alpha_data.timeframe import BarTimeframe, parse_timeframe, store_dir
+from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
 
 def annualisation(
@@ -71,6 +71,9 @@ class ResolvedAsset:
     data_dir: Path
     source: str
     defaulted: bool
+
+    def daily_store(self) -> ParquetStore:
+        return ParquetStore(store_dir(self.data_dir, DAILY))
 
 
 def _stores(data_dir: Path) -> dict[str, Path]:

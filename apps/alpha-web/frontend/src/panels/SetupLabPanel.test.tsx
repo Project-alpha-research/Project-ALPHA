@@ -116,3 +116,21 @@ describe('Setup Lab stored results', () => {
     expect(update).not.toHaveBeenCalled()
   })
 })
+
+it('shows the health recorded by each setup run beside its own headline', () => {
+  const find = { verdict: 'warn', sentence: 'Data health: warn. The data stops early.' }
+  const trade = { verdict: 'fail', sentence: 'Data health: fail. One bar has zero volume.' }
+  const value: SetupDetail = {
+    ...detail,
+    summary: { ...detail.summary, data_health: find },
+    studies: detail.studies.map(row => ({ ...row, summary: {
+      ...row.summary, data_health: { verdict: 'pass', sentence: 'Data health: pass.' },
+    } })),
+    trades: detail.trades.map(row => ({ ...row, summary: { ...row.summary, data_health: trade } })),
+  }
+  const html = render(value)
+  expect(html).toContain(`</h2><p>${find.sentence}</p>`)
+  expect(html).toContain(`</h3><p>${trade.sentence}</p>`)
+  expect(html).not.toContain('<p>Data health: pass.</p>')
+  expect(render(detail).match(/<p>Data health: not recorded\.<\/p>/g)).toHaveLength(3)
+})

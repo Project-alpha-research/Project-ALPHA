@@ -5,9 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError, study_error
 from alpha_cli.spine.event_study_figure import draw_event_study
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
@@ -21,7 +23,7 @@ from alpha_cli.spine.setup_controls import (
     study_labels,
 )
 from alpha_cli.spine.setup_costs import asset_costs, round_trip
-from alpha_cli.spine.setup_find import load_find, study_inputs
+from alpha_cli.spine.setup_find import checked_study_inputs, load_find, outcome_ids
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
@@ -106,6 +108,7 @@ def _summarise(
     bars: dict[str, Any],
     warmup: int,
     study_id: str,
+    control_seed: str,
     outcomes: Any,
     costs: dict[str, Any],
 ) -> dict[str, Any]:
@@ -125,7 +128,7 @@ def _summarise(
         if h in spec.study.horizons:
             times = {a: [s[p + 1].ts for p in eligible[a][0]] for a, s in bars.items()}
             report = horizon_summary(
-                rows, eligible, times, f"{study_id}|{h}", tested=h == spec.study.primary
+                rows, eligible, times, f"{control_seed}|{h}", tested=h == spec.study.primary
             )
             reports[str(h)] = report
         else:  # Figure-only bars: the same pooled controls, no halves and no test.
@@ -133,7 +136,7 @@ def _summarise(
                 a: [r["net_return"] for r in rows if r["asset"] == a and r["complete"]]
                 for a in eligible
             }
-            report = control_summary(eligible, chosen, f"{study_id}|{h}|all", tested=False)
+            report = control_summary(eligible, chosen, f"{control_seed}|{h}|all", tested=False)
         pooled = report["pooled"]
         for key, field in _CURVE.items():
             curve[key].append(pooled[field])
@@ -228,6 +231,7 @@ def _publish(
                 assets=find_manifest["assets"],
                 costs=summary["costs"],
                 labels=summary["labels"],
+                data_health=summary["data_health"],
                 files=files,
             ),
             allow_nan=False,
@@ -243,7 +247,13 @@ def _older_rule_study(home: Path, find_id: str) -> bool:
     )
 
 
-def _run(find_id: str, home: Path) -> dict[str, Any]:
+def _run(
+    find_id: str,
+    home: Path,
+    check_data: bool,
+    accept_bad_data: str | None,
+    report_time: datetime | None,
+) -> dict[str, Any]:
     import polars as pl
 
     folder, manifest, spec = load_find(home, find_id)
@@ -254,8 +264,15 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
             "Add [study] horizons and primary to the spec, "
             "run alpha setup find again, then study that find.",
         )
-    bars, warmup = study_inputs(home, manifest, spec)
-    study_id = hashlib.sha256(f"{find_id}|{STUDY_RULE_VERSION}".encode()).hexdigest()[:16]
+    bars, warmup, record = checked_study_inputs(
+        home,
+        manifest,
+        spec,
+        check_data=check_data,
+        accept_bad_data=accept_bad_data,
+        report_time=report_time,
+    )
+    study_id, control_seed = outcome_ids(manifest, STUDY_RULE_VERSION, record)
     destination = home / "setup-studies" / study_id
     if (destination / "manifest.json").exists():
         summary = read_study(destination)
@@ -266,7 +283,9 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         costs, cost_labels = asset_costs(home, list(bars))
         cost = {a: round_trip(c) for a, c in costs.items()}
         outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
-        summary = _summarise(spec, manifest, candidates, bars, warmup, study_id, outcomes, costs)
+        summary = _summarise(
+            spec, manifest, candidates, bars, warmup, study_id, control_seed, outcomes, costs
+        )
         summary["labels"].extend(cost_labels)
         if _older_rule_study(home, find_id):
             # Same find, different cost assumption: a new look, so it counts as a trial.
@@ -275,7 +294,11 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
                 " This re-measures an earlier study of the same find under the new per-asset"
                 " cost rule; it counts as one more look, not a new idea."
             )
-        summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
+        summary["data_health"] = record
+        summary["labels"] = [
+            label for label in summary["labels"] if not label.startswith("data-health-")
+        ] + health_labels(record)
+        summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
         add_study_trial_fact(home, summary)
         _publish(destination, summary, outcomes, spec, manifest)
     primary = summary["horizons"][str(spec.study.primary)]["pooled"]
@@ -284,6 +307,7 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         dict(
             kind="setup_study",
             run_id=study_id,
+            data_health=record,
             **{k: summary[k] for k in _LEDGER_KEYS},
             occurrences=primary["occurrences"],
             mean_net_return=primary["mean"],
@@ -295,10 +319,17 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
     return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
 
 
-def run_study(find_id: str, *, home: Path) -> dict[str, Any]:
+def run_study(
+    find_id: str,
+    *,
+    home: Path,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
+) -> dict[str, Any]:
     from polars.exceptions import PolarsError
 
     try:
-        return _run(find_id, home)
+        return _run(find_id, home, check_data, accept_bad_data, report_time)
     except (ValueError, OSError, DataError, KeyError, TypeError, PolarsError) as exc:
         raise study_error(exc) from exc

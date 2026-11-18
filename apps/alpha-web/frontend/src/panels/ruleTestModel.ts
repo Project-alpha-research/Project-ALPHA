@@ -25,6 +25,11 @@ const LABEL_MEANING: Record<string, string> = {
   'benchmark-price-only': 'Both lines use prices only. No dividend cash was recorded.',
   'all-in': 'All capital goes into each position; no volatility sizing.',
   quick: 'Quick mode used fewer random comparisons to check the result.',
+  'data-health-pass': 'The data checks found no fault. The prices can still be wrong.',
+  'data-health-warn': 'A data check found a warning. Read the finding before using this result.',
+  'data-health-fail': 'A data check found a fault in the prices or their supporting records.',
+  'data-health-unchecked': 'At least one series has no current data health report.',
+  'data-health-overridden': 'The run records why it proceeded after a failed data check.',
   'dev-machine-data': 'Run on the data stored on this development machine.',
   'source-defaulted': 'The asset is in more than one data store; the first match was used.',
   'short-history': 'The test covers less than three years of price history.',
@@ -154,7 +159,13 @@ export interface PeriodResult {
   relative_return?: number | null
 }
 
+export function healthLine(health?: { verdict?: unknown; sentence?: unknown } | null): string | null {
+  if (health?.verdict === 'pass') return null
+  return typeof health?.sentence === 'string' ? health.sentence : 'Data health: not recorded.'
+}
+
 export type RuleManifest = RecordedManifest & {
+  data_health?: { verdict: string; sentence: string }
   spine?: { periods?: Partial<Record<SummaryPeriod, PeriodResult>> }
 }
 

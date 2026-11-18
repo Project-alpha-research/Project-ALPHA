@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 383a1502ea8f14be
+verified: d64bc6458852558a
 ---
 
 # Research playbook: how to work any idea
@@ -23,10 +23,8 @@ something is imperfect, label it and carry on. Nothing here promises a profit, a
 3. **Run the test.** `uv run alpha test <spec.toml> --json` ([card](tools/rule-test.md)). Any asset the stores
    hold; it reads daily bars today, so label an intraday idea as such. Unclear definition: ask once, then run.
 4. **Read the labels, flags and audit** before saying anything: `uv run alpha diagnose <run_id> --json`.
-5. **Name what is surprising**: a flag, a number far from the benchmark, a result that
-   contradicts the owner's hunch or yours.
-6. **List rival explanations**, two to four, each naming something that can be measured. Always
-   consider: it is the market, it is a data or settings error, it is chance.
+5. **Name what is surprising**: a flag, a number far from the benchmark, a result that contradicts the owner's hunch or yours.
+6. **List two to four rival explanations**. Name a measurement for each. Always consider the market, a data or settings error, and chance.
 7. **Pick the cheapest test that separates the leading two.** Find it by symptom in
    [the tool cards](tools/README.md), including the [inverted control](tools/inverted-signal-control.md)
    and [WFE](tools/walk-forward.md), a practitioner rule of thumb, not a statistical test. Say what it costs.
@@ -55,7 +53,6 @@ does not exist yet, confusing output, an audit line that is `NOT-CHECKED`. Then 
 - Everything else is marked "My reading:" or "Hypothesis:". The owner's own figures go in quotes.
 
 ## Labels, flags and trial counts
-
 Labels go before numbers. Label reserved-period-seen: data on or after the 2024-01-01 reserve date; `non-default-params`: say how many settings were tried.
 
 | Label | Say |
@@ -63,6 +60,9 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 | `quick` | quick look: far fewer random comparisons than a full test |
 | `short-history` | short history: under three years of bars |
 | `dev-machine-data` | free data on the development machine, not yet confirmed |
+| `data-health-pass` / `data-health-warn` | no disclosure needed for a pass; for a warn, give the finding |
+| `data-health-unchecked` | say “data health unchecked” and explain whether the report was missing or out of date |
+| `data-health-fail` / `data-health-overridden` | say “data health fail” and “data health overridden”, give the fault and the recorded reason |
 | `all-in` | fully invested or flat; no position sizing |
 | `source-defaulted` | the asset is in more than one store; the first was used |
 | `repeat` | a repeat of an earlier, identical test |

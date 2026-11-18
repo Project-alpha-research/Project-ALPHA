@@ -3,12 +3,12 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: c7bbffda47912f7d
+verified: 9939370d47c39596
 ---
 # Results and cite
 **Reach for it when** quoting a stored run or checking what was tried. **Commands** `alpha results --symbol SPY --limit 50 --json`,
 `alpha results show <run_id> --json`, `alpha results cite <run_id> <metric>`, `alpha results compare <run_id> <run_id>`, `alpha results check <file>`.
-**How to read it** Cite copies value, source and basis. Pick a tool output with `--tool-output <id>`; say when its settings were not the default.
+**How to read it** Show leads with [data health](data-health.md). Cite copies value, source, basis; `--tool-output <id>` picks one; name non-default settings.
 - `tradable_total_return`, `tradable_cagr`, `tradable_sharpe`, `tradable_max_drawdown`, `tradable_trades`, `tradable_benchmark_total_return`,
   `tradable_benchmark_cagr`, `tradable_benchmark_sharpe`, `tradable_benchmark_max_drawdown`, `scored_total_return`, `scored_cagr`, `scored_sharpe`,
   `scored_max_drawdown`, `scored_trades`, `scored_benchmark_total_return`, `scored_benchmark_cagr`, `scored_benchmark_sharpe`, `scored_benchmark_max_drawdown`.

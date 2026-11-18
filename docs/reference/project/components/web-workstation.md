@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - apps/alpha-web/CONTEXT.md
   - docs/adr/0021-research-workstation-read-plane-and-command-center.md
-verified: 6f015118475a7440
+verified: 1ac0a57e42fc186a
 ---
 
 # Web workstation

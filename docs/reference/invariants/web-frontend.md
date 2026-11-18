@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: b97f532919240f38
+verified: 180fbf332d083604
 ---
 
 # Web frontend invariants
@@ -135,6 +135,7 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   for new runs. Old runs keep saved figures and a full-history disclosure. Missing period values read “not recorded”. A catalogue request distinguishes
   loading, failure and missing figures. Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail.
   Only variants subtract Sharpe scores. Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
+- Rule tests and Setup Lab show a non-pass data health line under the headline; old runs read “Data health: not recorded.”
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence it renders as unavailable. Enforced
   by `e2e/backtest-result-card.spec.ts`.
 

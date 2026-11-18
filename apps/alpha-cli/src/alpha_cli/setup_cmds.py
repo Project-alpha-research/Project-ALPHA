@@ -14,6 +14,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.contact_sheet import draw_sheet
+from alpha_cli.spine.data_health import health_labels, health_sentence
 from alpha_cli.spine.errors import SpineError, fail, setup_error
 from alpha_cli.spine.ledger import append_trial
 from alpha_core import DataError
@@ -48,6 +49,7 @@ def _text(output: dict[str, Any]) -> str:
     return "\n".join(
         [
             *lines,
+            health_sentence(output.get("data_health")),
             output["folder"],
             (
                 "Outcomes have been viewed. "
@@ -66,6 +68,14 @@ def find_command(
     asset: Annotated[list[str] | None, typer.Option("--asset", help="Keep a spec asset.")] = None,
     context_bars: int = typer.Option(60, min=5, max=250, help="Bars before the event."),
     max_sheets: int = typer.Option(10, min=1, max=50, help="Maximum accepted sheets."),
+    check_data: bool = typer.Option(
+        False, "--check-data", help="Compute missing or out-of-date daily health reports."
+    ),
+    accept_bad_data: str | None = typer.Option(
+        None,
+        "--accept-bad-data",
+        help="Proceed after a failed health check for this run. Give a reason.",
+    ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Record every match and draw contact sheets ending at the entry open."""
@@ -75,7 +85,13 @@ def find_command(
     try:
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_find(
-                spec, home=home, assets=asset, context_bars=context_bars, max_sheets=max_sheets
+                spec,
+                home=home,
+                assets=asset,
+                context_bars=context_bars,
+                max_sheets=max_sheets,
+                check_data=check_data,
+                accept_bad_data=accept_bad_data,
             )
     except (DataError, ValueError, OSError) as exc:
         fail(setup_error(exc, list(_stores(home))), json_out)
@@ -124,13 +140,16 @@ def run_find(
     assets: list[str] | None = None,
     context_bars: int = 60,
     max_sheets: int = 10,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
 ) -> dict[str, Any]:
     """A find counts one exploratory look; completed folders are never rewritten."""
     import polars as pl
 
     from alpha_cli.spine.setup_find import (
         _counts,
-        find_identity,
+        health_find_id,
         load_spec,
         outcome_labels,
         prepare_assets,
@@ -139,7 +158,14 @@ def run_find(
     if not 5 <= context_bars <= 250 or not 1 <= max_sheets <= 50:
         raise ValueError("context-bars must be 5–250 and max-sheets 1–50")
     spec = load_spec(path, assets)
-    results, candidates, frames = prepare_assets(spec, home, assets)
+    results, candidates, frames, record = prepare_assets(
+        spec,
+        home,
+        assets,
+        check_data=check_data,
+        accept_bad_data=accept_bad_data,
+        report_time=report_time,
+    )
     for result, rows in zip((r for r in results if r["error"] is None), candidates, strict=True):
         result.update(_counts(rows))
     if not candidates:
@@ -148,11 +174,11 @@ def run_find(
             json.dumps(results),
             "Correct the asset errors and run alpha setup find again.",
         )
-    keys = sorted(f"{r['asset']}={r['source_fingerprint']}" for r in results if r["error"] is None)
-    find_id = find_identity(spec.spec_sha256, keys, context_bars)
+    find_id = health_find_id(home, spec.spec_sha256, results, context_bars, record)
     identity = dict(find_id=find_id, spec_sha256=spec.spec_sha256, name=spec.setup.name)
     folder = home / "setups" / find_id
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]
+    labels.extend(health_labels(record))
     labels += sorted({label for r in results for label in r["labels"]})
     if (folder / "manifest.json").exists():
         summary = json.loads((folder / "summary.json").read_text())
@@ -190,6 +216,7 @@ def run_find(
         ]
         summary = dict(
             **identity,
+            data_health=record,
             labels=labels,
             basis=BASIS,
             totals=totals,
@@ -207,6 +234,7 @@ def run_find(
         manifest = dict(
             schema="AlphaSetupFindV1",
             **identity,
+            data_health=record,
             idea=spec.setup.idea,
             recorded_at=datetime.now(UTC).isoformat(),
             context_bars=context_bars,
@@ -222,6 +250,7 @@ def run_find(
             kind="setup_find",
             run_id=None,
             **identity,
+            data_health=record,
             idea=spec.setup.idea,
             assets=[r["asset"] for r in results],
             labels=labels,
@@ -235,6 +264,7 @@ def run_find(
     return dict(
         find_id=find_id,
         folder=str(folder),
+        data_health=record,
         labels=labels,
         context_bars=context_bars,
         trials_total=ledger["total_trials"],
@@ -246,28 +276,68 @@ def run_find(
 
 
 @setup_app.command("study")
-def study_command(find_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
+def study_command(
+    find_id: str,
+    check_data: bool = typer.Option(
+        False, "--check-data", help="Compute missing or out-of-date daily health reports."
+    ),
+    accept_bad_data: str | None = typer.Option(
+        None,
+        "--accept-bad-data",
+        help="Proceed after a failed health check for this run. Give a reason.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
     """Measure forward returns and honest controls; record one exploratory trial."""
     from alpha_cli.spine.setup_study import run_study
     from alpha_cli.spine.setup_trade_figure import study_text
 
     try:
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
-            output = run_study(find_id, home=AlphaSettings().data_dir)
+            output = run_study(
+                find_id,
+                home=AlphaSettings().data_dir,
+                check_data=check_data,
+                accept_bad_data=accept_bad_data,
+            )
     except SpineError as exc:
         fail(exc, json_out)
-    emit(output, json_out=json_out, fallback=study_text(output))
+    emit(
+        output,
+        json_out=json_out,
+        fallback=study_text(output) + "\n" + health_sentence(output.get("data_health")),
+    )
 
 
 @setup_app.command("trade")
-def trade_command(find_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
+def trade_command(
+    find_id: str,
+    check_data: bool = typer.Option(
+        False, "--check-data", help="Compute missing or out-of-date daily health reports."
+    ),
+    accept_bad_data: str | None = typer.Option(
+        None,
+        "--accept-bad-data",
+        help="Proceed after a failed health check for this run. Give a reason.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
     """Trade recorded occurrences with their exits and matched controls; one counted test."""
     from alpha_cli.spine.setup_trade import run_trade
     from alpha_cli.spine.setup_trade_figure import trade_text
 
     try:
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
-            output = run_trade(find_id, home=AlphaSettings().data_dir)
+            output = run_trade(
+                find_id,
+                home=AlphaSettings().data_dir,
+                check_data=check_data,
+                accept_bad_data=accept_bad_data,
+            )
     except SpineError as exc:
         fail(exc, json_out)
-    emit(output, json_out=json_out, fallback=trade_text(output))
+    emit(
+        output,
+        json_out=json_out,
+        fallback=trade_text(output) + "\n" + health_sentence(output.get("data_health")),
+    )

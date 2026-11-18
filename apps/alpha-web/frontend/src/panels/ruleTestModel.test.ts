@@ -247,3 +247,14 @@ it('keeps the original recorded full-history comparison accessible on an older r
   expect(legacy).toContain('157.9%')
   expect(legacy).toContain('275.3%')
 })
+
+it('explains each stored data health label and shows the saved finding by the headline', () => {
+  for (const status of ['pass', 'warn', 'fail', 'unchecked', 'overridden']) {
+    expect(labelChips([`data-health-${status}`])[0].title).not.toContain('No explanation')
+  }
+  const sentence = 'Data health: warn. The data stops early.'
+  const html = renderToStaticMarkup(createElement(RuleTestReport, {
+    test, manifest: { data_health: { verdict: 'warn', sentence } }, runId: 'a', figures: null,
+  }))
+  expect(html).toContain(sentence)
+})

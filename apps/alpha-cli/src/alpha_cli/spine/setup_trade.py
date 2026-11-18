@@ -5,9 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
 from alpha_cli.spine.ledger import append_trial
@@ -25,7 +27,7 @@ from alpha_cli.spine.setup_exits import (
     trade_candidates,
     trades_frame,
 )
-from alpha_cli.spine.setup_find import load_find, study_inputs
+from alpha_cli.spine.setup_find import checked_study_inputs, load_find, outcome_ids
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
@@ -142,13 +144,14 @@ def _summary(
     rows: list[dict[str, Any]],
     cache: dict[str, dict[int, Any]],
     trade_id: str,
+    control_seed: str,
     costs: dict[str, Any],
     cost_labels: list[str],
     control_reason: str | None,
 ) -> dict[str, Any]:
     from alpha_cli.spine.setup_controls import trade_labels, trade_reading, trade_report
 
-    report = trade_report(rows, cache, trade_id, control_reason)
+    report = trade_report(rows, cache, control_seed, control_reason)
     primary = report["pooled"]
     labels = trade_labels(manifest, primary, spec, len(cache), len(rows)) + cost_labels
     sentence, outcome = trade_reading(primary, labels)
@@ -246,6 +249,7 @@ def _publish(
                 direction=summary["direction"],
                 costs=summary["costs"],
                 labels=summary["labels"],
+                data_health=summary["data_health"],
                 files=files,
             ),
             allow_nan=False,
@@ -253,7 +257,13 @@ def _publish(
     )
 
 
-def _run(find_id: str, home: Path) -> dict[str, Any]:
+def _run(
+    find_id: str,
+    home: Path,
+    check_data: bool,
+    accept_bad_data: str | None,
+    report_time: datetime | None,
+) -> dict[str, Any]:
     import polars as pl
 
     folder, manifest, spec = load_find(home, find_id)
@@ -263,8 +273,15 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
             "The find's spec has no exit fields.",
             "Add [exit] to the spec, run alpha setup find again, then trade that find.",
         )
-    bars, warmup = study_inputs(home, manifest, spec)
-    trade_id = hashlib.sha256(f"{find_id}|{TRADE_RULE_VERSION}".encode()).hexdigest()[:16]
+    bars, warmup, record = checked_study_inputs(
+        home,
+        manifest,
+        spec,
+        check_data=check_data,
+        accept_bad_data=accept_bad_data,
+        report_time=report_time,
+    )
+    trade_id, control_seed = outcome_ids(manifest, TRADE_RULE_VERSION, record)
     destination = home / "setup-trades" / trade_id
     if (destination / "manifest.json").exists():
         summary = read_study(destination)
@@ -289,11 +306,18 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
             for a, s in prepared.items()
         }
         reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
-        summary = _summary(spec, manifest, rows, cache, trade_id, costs, cost_labels, reason)
+        summary = _summary(
+            spec, manifest, rows, cache, trade_id, control_seed, costs, cost_labels, reason
+        )
         control_costs, control_labels = asset_costs(home, list(bars), direction=other)
         summary["controls"]["opposite_direction"] = _opposite_control(
             rows, prepared, control_costs, other, control_labels
         )
+        summary["data_health"] = record
+        summary["labels"] = [
+            label for label in summary["labels"] if not label.startswith("data-health-")
+        ] + health_labels(record)
+        summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
         add_study_trial_fact(home, summary)
         _publish(destination, summary, rows, manifest)
     primary = summary["pooled"]
@@ -302,6 +326,7 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         dict(
             kind="setup_trade",
             run_id=trade_id,
+            data_health=record,
             **{
                 k: summary[k]
                 for k in (
@@ -325,11 +350,18 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
     return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
 
 
-def run_trade(find_id: str, *, home: Path) -> dict[str, Any]:
+def run_trade(
+    find_id: str,
+    *,
+    home: Path,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
+) -> dict[str, Any]:
     from polars.exceptions import PolarsError
 
     try:
-        return _run(find_id, home)
+        return _run(find_id, home, check_data, accept_bad_data, report_time)
     except (ValueError, OSError, DataError, KeyError, TypeError, PolarsError) as exc:
         if isinstance(exc, SpineError):
             raise

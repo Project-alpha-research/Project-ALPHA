@@ -18,6 +18,7 @@ from alpha_cli.spine.compare import (
     render_compare,
     resolve_run,
 )
+from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import (
     build_facts,
@@ -142,7 +143,24 @@ def list_results(
 def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.figures import available_figures
 
-    rdir, manifest = _run(home, run_id)
+    try:
+        rdir, manifest = _run(home, run_id)
+    except SpineError as exc:
+        # Finds have a summary to show, but no citable outcome metrics.
+        folder = home / "setups" / run_id
+        if (
+            exc.payload["code"] != "UNKNOWN_RUN"
+            or not valid_run_id(run_id)
+            or not (folder / "manifest.json").is_file()
+        ):
+            raise
+        manifest = read_json(folder / "manifest.json")
+        if manifest.get("schema") != "AlphaSetupFindV1":
+            raise ValueError("invalid setup find manifest") from exc
+        summary = read_json(folder / "summary.json")
+        if summary.get("find_id") != run_id or manifest.get("find_id") != run_id:
+            raise ValueError("setup find summary or manifest identity mismatch") from exc
+        return dict(run_id=run_id, **summary)
     if manifest.get("schema") in {"AlphaSetupStudyV1", "AlphaSetupTradeV1"}:
         from alpha_cli.spine.facts import read_study
 
@@ -167,6 +185,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         },
         "run_id": run_id,
         "idea_id": manifest.get("idea_id"),
+        "data_health": manifest.get("data_health"),
         "facts": build_facts(rdir),
         "labels": manifest.get("spine", {}).get("labels", []),
         "flags": diagnostics.get("flags", []),
@@ -198,7 +217,7 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             valid_run_id(run_id)
             and any(
                 (home / directory / run_id / "manifest.json").is_file()
-                for directory in ("setup-studies", "setup-trades")
+                for directory in ("setup-studies", "setup-trades", "setups")
             )
         ):
             ids = [run_id]
@@ -251,8 +270,19 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
                             "reason": f"stored run could not be read: {exc}",
                         }
                     )
+        for run in runs:
+            run["data_health_sentence"] = health_sentence(run.get("data_health"))
         output = {"runs": runs, "failed": failed}
-        emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
+        lines = [
+            (f"{row['run_id']} — " if len(runs) > 1 else "") + row["data_health_sentence"]
+            for row in runs
+        ]
+        details = [
+            {k: v for k, v in row.items() if k not in {"data_health", "data_health_sentence"}}
+            for row in runs
+        ]
+        lines.append(json.dumps({"runs": details, "failed": failed}, indent=2, allow_nan=False))
+        emit(output, json_out=json_out, fallback="\n".join(lines))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
 
@@ -271,10 +301,8 @@ def cite_result(
         require_metric(metric)
         home = AlphaSettings().data_dir
         rdir, _ = _run(home, run_id)
-        if metric in METRIC_OUTPUTS:
-            fact = tool_fact(home, run_id, metric, tool_output)
-        else:
-            fact = fact_lookup(home)(run_id, metric)
+        citation = f"{metric}@{tool_output}" if metric in METRIC_OUTPUTS and tool_output else metric
+        fact = fact_lookup(home)(run_id, citation)
         value = "null" if fact["value"] is None else str(fact["value"])
         caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
         tag = f"{metric}@{tool_output}" if tool_output else metric
@@ -339,7 +367,11 @@ def fact_lookup(home: Path) -> Lookup:
         require_metric(metric)
         run_id = resolve_run(prefix, paths)
         if metric in METRIC_OUTPUTS:
-            return tool_fact(home, run_id, metric, output_id or None)
+            fact = tool_fact(home, run_id, metric, output_id or None)
+            manifest = read_json(paths[run_id] / "manifest.json")
+            labels = manifest.get("spine", {}).get("labels", [])
+            health = [label for label in labels if label.startswith("data-health-")]
+            return {**fact, "labels": list(dict.fromkeys([*fact.get("labels", []), *health]))}
         if output_id:
             raise SpineError(
                 "INVALID_CITATION", "Only tool facts take an output id.", "Run alpha results cite."

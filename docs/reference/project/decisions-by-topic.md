@@ -6,7 +6,7 @@ sources:
   - docs/reference/project/owner-decisions-3.md
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: f29db2a4da888c65
+verified: 9733a6315203022f
 ---
 
 # Owner decisions by topic
@@ -77,7 +77,7 @@ Five volumes hold the log: [volume 1](owner-decisions.md),
 |---|---|---|
 | Free real data on the Dell | Download free real data on the Dell now (Yahoo, Stooq, crypto); paid providers wait for the Mac | [vol. 2][e36] |
 | Free stock prices until the Mac | Free stock prices from Alpaca's free plan until the Mac | [vol. 2][e37] |
-| One data health report | Queued, not built when asked; step 1 (`alpha data health`) is now built; attaching to runs is not | [vol. 5][e38] |
+| One data health report | Queued, not built when asked; step 1 (`alpha data health`) is built; rule tests and setups now carry the verdict | [vol. 5][e38] |
 | A weekly automatic health check | Weekly check: refresh status, list stale documents, open small clean-ups; never merges | [vol. 2][e39] |
 
 ## How work is done

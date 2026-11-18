@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 21b1f1ebb4e8417d
+verified: a3480c23a04bafd2
 ---
 
 # alpha-web workspace
@@ -36,8 +36,8 @@ grants authority.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | showing research case state |
 | [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
-| [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | the Setup Lab panel or `/api/setup/runs` |
-| [frontend README](frontend/README.md) | — | taking or checking screenshots (2% tolerance, Linux container, test backend port 8802) |
+| [Setup Lab](../../docs/reference/project/components/setup-lab.md) | To change this screen | any Setup Lab screen work: files, loop, tests, screenshots |
+| [frontend README](frontend/README.md) | — | taking or checking screenshots of any other screen (2% tolerance, Linux container, test backend port 8802) |
 
 ## How to change it
 

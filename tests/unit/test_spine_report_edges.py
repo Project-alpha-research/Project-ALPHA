@@ -51,7 +51,8 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
         "run_dir": str(final),
         "source": "test",
         "store": "home",
-        "labels": [],
+        "labels": ["data-health-unchecked"],
+        "data_health": {"verdict": "unchecked", "sentence": "Data health: unchecked."},
         "variants_evaluated": 0,
         "periods_per_year_basis": "elapsed years; daily snap",
     }

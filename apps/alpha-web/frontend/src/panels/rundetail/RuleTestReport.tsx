@@ -2,7 +2,7 @@ import type { FigureCatalogueItem, RuleTest } from '../../api/types'
 import { FigureCard } from '../../components/FigureCard'
 import { GLOSSARY } from '../../explain/glossary'
 import {
-  auditRows, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
+  auditRows, healthLine, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
   testedRows, variantRows, type Cell, type RuleManifest,
 } from '../ruleTestModel'
 
@@ -47,10 +47,12 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
   const flags = diagnostics?.flags ?? []
   const audit = auditRows(test)
   const variants = variantRows(test)
+  const health = healthLine(manifest.data_health)
   const quick = quickCaveat(test)
   return (
     <section className="rule-test" aria-label="Rule test">
       <h2>{summaryHeadline(test, manifest.spine?.periods?.tradable)}</h2>
+      {health && <p>{health}</p>}
       <small>data from {dateRange(test.first_ts, test.last_ts)}</small>
       {(['tradable', 'scored'] as const).map(period => {
         const row = manifest.spine?.periods?.[period]

@@ -11,8 +11,7 @@ verified: 202b70e8311abd31
 
 # Research tools, by symptom
 
-Start from the symptom. Each card gives the command for an available tool, how to read its output,
-its limits and what to try next. The method is in [the playbook](../PLAYBOOK.md).
+Start from the symptom. Each card gives a tool's command, how to read it, its limits and what to try next ([playbook](../PLAYBOOK.md)).
 
 | What you see or need | Open |
 |---|---|

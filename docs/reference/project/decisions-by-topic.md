@@ -6,7 +6,7 @@ sources:
   - docs/reference/project/owner-decisions-3.md
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 9733a6315203022f
+verified: bf61c85d13dd20c0
 ---
 
 # Owner decisions by topic
@@ -46,7 +46,7 @@ Five volumes hold the log: [volume 1](owner-decisions.md),
 | Stand-in user while ideas are throwaway tests | A stand-in may answer RD-Agent's proposals, labelled, and never for a real approval | [vol. 5][e19] |
 | One-shot confirmation on reserved data | One confirmation each on reserved data; ten slots, each needs the owner's yes; not built | [vol. 5][e20] |
 | Confirmation, build sandbox, subject matter | One-shot confirmation (not built); a limited Codex sandbox widening; named Codex models | [vol. 4][e21] |
-| RD-Agent chooses tests but does not write them | Recommended, not confirmed: RD-Agent picks tests, never writes them | [vol. 5][e22] |
+| RD-Agent chooses tests but does not write them | Fixed checks run after the verdict. Agent choice is still a recommendation | [vol. 5][e22] |
 | The orchestrator's plan: discussable RD-Agent | Paths are ways of working; later RD-Agent shows each refusal's reason and discusses ideas | [vol. 4][e23] |
 
 ## Tools, Kronos, Monte Carlo

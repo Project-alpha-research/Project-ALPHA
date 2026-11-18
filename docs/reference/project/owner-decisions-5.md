@@ -122,6 +122,7 @@ part that owns it can link to one clear entry.
   does not write its own statistical tests; ALPHA runs trusted versions of them. The reason is to
   avoid marking its own homework and to keep results comparable between ideas.
 - **Left to the owner:** confirm, change or reject.
+- 2026-11-19 status: ALPHA runs a fixed set after the verdict. Choosing tests in the proposal is still open.
 - **Governs:** [toolbox](components/toolbox.md); [RD-Agent](components/rd-agent.md).
 
 ### 2026-11-18 The agent is a collaborator, never a black box

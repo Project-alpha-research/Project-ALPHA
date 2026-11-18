@@ -4,7 +4,8 @@ sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
-verified: 3a3061f3266cd9a4
+  - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
+verified: 8e8dd775217dcff2
 ---
 
 # RD-Agent
@@ -170,8 +171,8 @@ New factor rows store family and critic status. Older rows can lack both. The pa
   ideas are throwaway tests a labelled stand-in user may answer its pauses, never for approvals
   ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests); [owner
   authority](../../invariants/research-integrity.md#owner-authority)).
-- Later: RD-Agent chooses tests from the [toolbox](toolbox.md) but does not write them (recommended, not confirmed); Kronos, [Monte Carlo](monte-carlo.md),
-  lookalike and pattern tools are its tools to be wired in.
+- Shown trading replays get the fixed [toolbox checks](toolbox.md) after the verdict, under its five honesty rules. Feedback and journey step 7 carry the readings.
+  Agent choice remains a recommendation. Kronos, [Monte Carlo](monte-carlo.md), lookalike and pattern tools await wiring.
 - Open: no decision record states RD-Agent's role; write one once the owner confirms the summary in the [overview](../overview.md#the-research-loop).
 
 ## Never

@@ -36,6 +36,7 @@ grants authority.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | showing research case state |
 | [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
+| [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | the Setup Lab panel or `/api/setup/runs` |
 
 ## How to change it
 
@@ -68,8 +69,7 @@ grants authority.
   Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
   [story view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`.
-- Setup Lab opens at Research → Setup Lab; stored fields and gaps are documented in
-  [web API reads](../../docs/reference/invariants/web-api.md#reads-and-writes).
+- Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api.md#reads-and-writes).
 
 ## Outputs
 

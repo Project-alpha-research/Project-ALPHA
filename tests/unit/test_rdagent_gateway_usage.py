@@ -5,12 +5,15 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from tests.unit.test_rdagent_embedding_cap import chat, model, rows
 from tests.unit.test_rdagent_factor_launch import launch
+from workers.rdagent import gateway_usage
 from workers.rdagent import model_gateway as gw
 
 __all__ = ["model"]
@@ -404,3 +407,118 @@ def test_failed_call_without_usage_is_counted_not_guessed() -> None:
     assert usage["usage_unknown_attempts"] == 1
     assert usage["prompt_tokens"] == 500
     assert usage["cache_hit_rate"] == 0.2
+
+
+def test_call_split_counts_only_reserved_timeout_retries() -> None:
+    calls = [
+        {
+            "endpoint": "/v1/chat/completions",
+            "attempts": 2,
+            "status": 429,
+            "provider_errors": ["provider_timeout", "provider_timeout"],
+            "error_code": "budget_exhausted",
+        },
+        {"endpoint": "/v1/embeddings", "route": "ollama", "attempts": 2, "status": 200},
+    ]
+    split = launch.call_split(calls)
+    assert split["timeout_retry_attempts"] == 1
+    assert split["local_embedding"]["attempts"] == 2
+    assert split["counted_toward_call_cap"] == 4
+
+
+def test_receipt_reports_unknown_discount_and_estimate_basis() -> None:
+    result = gateway_usage.receipt_usage(
+        [
+            {
+                "endpoint": "/v1/chat/completions",
+                "usd": 0.1,
+                "cache_discount": None,
+                "charged_usd": 0.04,
+            }
+        ]
+    )
+    assert result["cache_discount"] == "not reported by the provider"
+    assert result["cost_estimate_basis"] == "upper-bound estimate at configured prices"
+    assert result["charged_usd"] == 0.04
+
+
+def test_receipt_cost_estimate_is_separate_from_provider_charge() -> None:
+    usage = gateway_usage.receipt_usage(
+        [
+            {
+                "endpoint": "/v1/chat/completions",
+                "usd": 0.04,
+                "estimated_usd": 0.1,
+                "charged_usd": 0.04,
+            }
+        ]
+    )
+    assert usage["cost_estimate_usd"] == 0.1 and usage["charged_usd"] == 0.04
+
+
+def test_timeout_reservation_is_not_reported_as_confirmed_usage() -> None:
+    row = gateway_usage.record_defaults()
+    gateway_usage.record_attempt(row, error="provider_timeout")
+    assert row["usage_known"] is False
+    assert (
+        row["attempt_usage"][0]["cost_basis"] == "reserved estimate, not confirmed by the provider"
+    )
+
+
+def test_timeout_attempt_booked_amount_is_labelled(model: gw.Gateway) -> None:
+    def fail(*args: Any) -> Any:
+        raise gw.GatewayError(504, "provider_timeout", "timed out")
+
+    model.chat_backend = SimpleNamespace(complete=fail)
+    with pytest.raises(gw.GatewayError):
+        model.chat(chat())
+    logged = rows(model)[-1]
+    assert logged["usage_known"] is False
+    assert logged["cost_basis"] == "reserved estimate, not confirmed by the provider"
+    assert logged["attempt_usage"][0]["booked_usd"] == 0
+
+
+def test_receipt_separates_failed_wait_from_retried_calls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.unit.test_rdagent_factor_launch import args
+
+    job = launch.Launch(
+        args(tmp_path),
+        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+    )
+    job.run.mkdir()
+    (job.run / "history-context.json").write_text(
+        json.dumps({"history_rounds_full": 4, "history_rounds_summarised": 17})
+    )
+    (job.run / "rounds.jsonl").write_text(
+        json.dumps(
+            {
+                "iteration": 0,
+                "status": "coding_failed_provider_timeout",
+                "provider_wait_seconds": 360.5,
+            }
+        )
+        + "\n"
+    )
+    job.receipt["call_split"] = launch.call_split(
+        [
+            {
+                "endpoint": "/v1/chat/completions",
+                "provider_errors": ["provider_timeout"],
+                "error_code": error,
+                "latency_ms": milliseconds,
+                "attempts": 2,
+            }
+            for error, milliseconds in [("provider_timeout", 360500), (None, 181000)]
+        ]
+    )
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    monkeypatch.setattr(job, "write_call_labels", lambda: {})
+    job.finish(0, "completed")
+    receipt = json.loads((job.run / "receipt.json").read_text())
+    assert receipt["provider_failed_wait_seconds"] == 360.5
+    assert receipt["provider_call_seconds_with_retries"] == 541.5
+    assert "provider_wait_seconds" not in receipt
+    assert receipt["history_rounds_full"] == 4
+    assert receipt["history_rounds_summarised"] == 17

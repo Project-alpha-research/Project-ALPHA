@@ -1,8 +1,7 @@
-"""Round recovery and recorded provider outcomes, without model calls or sockets."""
+"""Provider failure recovery across proposal, coding and feedback."""
 
 from __future__ import annotations
 
-import ast
 import asyncio
 import json
 import os
@@ -17,28 +16,221 @@ from unittest.mock import Mock
 
 import pytest
 
-from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
-from workers.rdagent import factor_loop_launch as launch
-from workers.rdagent import research_memory as memory
-from workers.rdagent.idea_families import declaration
+from tests.unit._rdagent_support import failed_call, pinned_loop, upstream_class
+from tests.unit.test_rdagent_factor_judge import RUNTIME, WORKER
 
 
-def upstream_class(path: str, name: str, methods: set[str], namespace: dict[str, Any]) -> Any:
-    source = os.environ.get("ALPHA_RDAGENT_SOURCE")
-    if not source:
-        pytest.skip("read-only pinned RD-Agent source is not configured")
-    tree = ast.parse((Path(source) / "rdagent" / path).read_text())
-    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == name)
-    cls.bases, cls.keywords, cls.decorator_list = [], [], []
-    cls.body = [
-        n
-        for n in cls.body
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name in methods
-    ]
-    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
-    tree = ast.fix_missing_locations(ast.Module(body=[future, cls], type_ignores=[]))
-    exec(compile(tree, path, "exec"), namespace)
-    return namespace[name]
+def test_provider_guard_records_failure_then_next_round_runs(tmp_path: Path) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    loop = SimpleNamespace(loop_idx=0, loop_prev_out={0: {}}, EXCEPTION_KEY="exception")
+
+    def failed(exp: Any) -> Any:
+        calls.write_text(
+            json.dumps(
+                {
+                    "run_id": "test",
+                    "endpoint": "/v1/chat/completions",
+                    "error_code": "provider_timeout",
+                    "attempts": 2,
+                    "latency_ms": 360000,
+                }
+            )
+            + "\n"
+        )
+        raise RuntimeError("Failed to create chat completion after 1 retries.")
+
+    component = SimpleNamespace(develop=Mock(side_effect=failed))
+    guard = ProviderGuard(
+        component, loop, "coding", tmp_path, calls, "test", ValueError, SimpleNamespace
+    )
+    with pytest.raises(ValueError, match="coding_failed_provider_timeout"):
+        guard.develop(SimpleNamespace())
+    row = json.loads((tmp_path / "rounds.jsonl").read_text())
+    assert row["attempts"] == 2 and row["provider_wait_seconds"] == 360
+    assert row["trial_created"] is False
+    component.develop.side_effect = None
+    component.develop.return_value = "next"
+    loop.loop_idx = 1
+    assert guard.develop(SimpleNamespace()) == "next"
+
+
+def test_provider_feedback_failure_retains_existing_trial_and_ends_round(tmp_path: Path) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+
+    def failed(exp: Any, trace: Any, exception: Any) -> Any:
+        calls.write_text(
+            json.dumps(
+                {
+                    "run_id": "test",
+                    "endpoint": "/v1/chat/completions",
+                    "error_code": "provider_error",
+                    "attempts": 2,
+                    "latency_ms": 1000,
+                }
+            )
+            + "\n"
+        )
+        raise RuntimeError("Failed to create chat completion after 1 retries.")
+
+    guard = ProviderGuard(
+        SimpleNamespace(generate_feedback=failed),
+        SimpleNamespace(loop_idx=0),
+        "feedback",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    result = guard.generate_feedback(
+        SimpleNamespace(alpha_evaluation={"factors": [{"name": "existing"}]}), None
+    )
+    assert result.decision is False
+    row = json.loads((tmp_path / "rounds.jsonl").read_text())
+    assert row["step"] == "feedback" and row["trial_created"] is True
+    assert row["status"] == "coding_failed_provider_error"
+
+
+def test_unrelated_error_cannot_be_hidden_by_stale_provider_receipt(tmp_path: Path) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    calls.write_text(
+        json.dumps(
+            {"run_id": "test", "endpoint": "/v1/chat/completions", "error_code": "provider_timeout"}
+        )
+        + "\n"
+    )
+    guard = ProviderGuard(
+        SimpleNamespace(develop=Mock(side_effect=RuntimeError("code bug"))),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(RuntimeError, match="code bug"):
+        guard.develop(None)
+    assert not (tmp_path / "rounds.jsonl").exists()
+
+
+@pytest.mark.parametrize("code", ["provider_unavailable", "rate_limit_exceeded"])
+def test_other_attested_provider_failures_close_round(tmp_path: Path, code: str) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+
+    def failed(exp: Any) -> Any:
+        calls.write_text(
+            json.dumps(
+                {
+                    "run_id": "test",
+                    "endpoint": "/v1/chat/completions",
+                    "error_code": code,
+                    "provider_errors": [code],
+                    "attempts": 1,
+                    "latency_ms": 100,
+                }
+            )
+            + "\n"
+        )
+        raise RuntimeError("Failed to create chat completion after 1 retries.")
+
+    guard = ProviderGuard(
+        SimpleNamespace(develop=failed),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(ValueError, match="coding_failed_provider_error"):
+        guard.develop(None)
+
+
+def test_upstream_keeps_its_one_retry_for_unusable_replies(tmp_path: Path) -> None:
+    # MAX_RETRY is upstream's attempt count for every chat failure, including a reply that fails
+    # its own schema check (real runs retried 9 such replies); one attempt would crash the run.
+    from workers.rdagent import factor_loop_launch as launch
+
+    env = launch.loop_environment(
+        base_url="http://127.0.0.1:1",
+        token="t",
+        run=tmp_path,
+        factor_python=tmp_path / "py/bin/python",
+        ledger=tmp_path / "trials.jsonl",
+        home=str(tmp_path),
+    )
+    assert env["MAX_RETRY"] == "2"
+
+
+def _failed_call(attempts: int, seconds: float, code: str = "provider_timeout") -> dict[str, Any]:
+    return {
+        "run_id": "test",
+        "endpoint": "/v1/chat/completions",
+        "error_code": code,
+        "provider_errors": [code] * attempts,
+        "attempts": attempts,
+        "latency_ms": seconds * 1000,
+    }
+
+
+def test_failed_round_counts_every_attempt_of_the_failed_call(tmp_path: Path) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    ok = {"run_id": "test", "endpoint": "/v1/chat/completions", "error_code": None}
+
+    def failed(exp: Any) -> Any:
+        rows = [ok, _failed_call(2, 360), _failed_call(2, 360)]
+        calls.write_text("".join(json.dumps(r) + "\n" for r in rows))
+        raise RuntimeError("Failed to create chat completion after 2 retries.")
+
+    guard = ProviderGuard(
+        SimpleNamespace(develop=failed),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(ValueError, match="4 attempts, 720 seconds waited"):
+        guard.develop(SimpleNamespace())
+    row = json.loads((tmp_path / "rounds.jsonl").read_text())
+    assert (row["attempts"], row["provider_wait_seconds"]) == (4, 720)
+
+
+@pytest.mark.parametrize("stop", [KeyboardInterrupt, SystemExit])
+def test_interrupts_pass_through_and_record_nothing(
+    tmp_path: Path, stop: type[BaseException]
+) -> None:
+    from workers.rdagent.loop_guard import ProviderGuard
+
+    calls = tmp_path / "calls.jsonl"
+    calls.write_text(json.dumps(_failed_call(2, 360)) + "\n")
+    guard = ProviderGuard(
+        SimpleNamespace(develop=Mock(side_effect=stop())),
+        SimpleNamespace(loop_idx=0),
+        "coding",
+        tmp_path,
+        calls,
+        "test",
+        ValueError,
+        SimpleNamespace,
+    )
+    with pytest.raises(stop):
+        guard.develop(None)
+    assert not (tmp_path / "rounds.jsonl").exists()
 
 
 def test_pinned_step_runner_recovers_proposal_timeout(tmp_path: Path) -> None:
@@ -59,34 +251,7 @@ def test_pinned_step_runner_recovers_proposal_timeout(tmp_path: Path) -> None:
         "HypothesisFeedback": SimpleNamespace,
         "RD_AGENT_SETTINGS": SimpleNamespace(get_max_parallel=lambda: 1),
     }
-    cls = upstream_class(
-        "components/workflow/rd_loop.py",
-        "RDLoop",
-        {"direct_exp_gen", "coding", "running", "feedback", "record"},
-        ns,
-    )
-    base = upstream_class("utils/workflow/loop.py", "LoopBase", {"_run_step"}, ns)
-    loop = cls()
-    loop._run_step = base._run_step.__get__(loop)
-    loop.steps = ["direct_exp_gen", "coding", "running", "feedback", "record"]
-    loop.step_idx, loop.loop_prev_out, loop.loop_trace = (
-        {0: 0, 1: 0},
-        {0: {}, 1: {}},
-        {0: [], 1: []},
-    )
-    loop.EXCEPTION_KEY, loop.LOOP_IDX_KEY = "exception", "loop"
-    loop.skip_loop_error, loop.skip_loop_error_stepname = ValueError, "feedback"
-    loop.withdraw_loop_error = ()
-    loop.get_semaphore = lambda _: asyncio.Semaphore(1)
-    loop.tracker, loop.pbar = (
-        SimpleNamespace(log_workflow_state=Mock()),
-        SimpleNamespace(set_postfix=Mock()),
-    )
-    loop.dump, loop._check_exit_conditions_on_step = Mock(), Mock()
-    loop.session_folder = tmp_path
-    loop.get_unfinished_loop_cnt = lambda _: 0
-    loop.plan = {"features": [], "feature_codes": {}}
-    loop.trace = SimpleNamespace(sync_dag_parent_and_hist=Mock())
+    loop = pinned_loop(tmp_path, ns, ValueError)
     calls = tmp_path / "calls.jsonl"
     proposed: list[int] = []
 
@@ -165,23 +330,6 @@ def test_pinned_evaluator_preserves_execution_and_value_verdict(
     workspace.execute.assert_called_once()
     evaluator.value_evaluator.evaluate.assert_called_once()
     evaluator.final_decision_evaluator.evaluate.assert_not_called()
-
-
-def failed_call(calls: Path, code: str = "provider_timeout") -> None:
-    with calls.open("a") as stream:
-        stream.write(
-            json.dumps(
-                {
-                    "run_id": "test",
-                    "endpoint": "/v1/chat/completions",
-                    "error_code": code,
-                    "attempts": 2,
-                    "latency_ms": 360000,
-                }
-            )
-            + "\n"
-        )
-    raise RuntimeError("Failed to create chat completion after 2 retries.")
 
 
 @pytest.mark.parametrize("code", ["provider_timeout", "provider_error"])
@@ -358,144 +506,6 @@ def test_critic_does_not_swallow_unattested_errors_or_interrupts(
     assert not (tmp_path / "rounds.jsonl").exists()
 
 
-def test_critic_budget_refusal_still_ends_run(tmp_path: Path) -> None:
-    from workers.rdagent.loop_guard import CriticEvaluator, ProviderGuard
-
-    calls = tmp_path / "calls.jsonl"
-    evaluator = SimpleNamespace(
-        code_evaluator=SimpleNamespace(evaluate=lambda: failed_call(calls, "budget_exhausted")),
-        value_evaluator=SimpleNamespace(evaluate=Mock()),
-        final_decision_evaluator=SimpleNamespace(evaluate=Mock()),
-    )
-    evaluator.evaluate = lambda *args: evaluator.code_evaluator.evaluate()
-    guard = ProviderGuard(
-        None, SimpleNamespace(loop_idx=0), "coding", tmp_path, calls, "test", ValueError, None
-    )
-    wrapped = CriticEvaluator(evaluator, guard)
-    with pytest.raises(SystemExit, match="budget exhausted"):
-        wrapped.evaluate(SimpleNamespace(factor_name="factor"), None)
-    wrapped.record()
-    assert not (tmp_path / "rounds.jsonl").exists()
-
-
-def test_new_round_outcomes_have_plain_sentences() -> None:
-    from alpha_web._rdagent_runs import STATUS_SENTENCES
-
-    for step in ("proposal_failed", "critic_unavailable"):
-        for failure in ("provider_timeout", "provider_error"):
-            assert STATUS_SENTENCES[f"{step}_{failure}"]
-
-
-def test_restored_proposal_text_keeps_four_same_panel_rounds(tmp_path: Path) -> None:
-    history = []
-    for i in range(21):
-        exp = SimpleNamespace(
-            alpha_panel_sha256="other" if i in (18, 20) else "current",
-            sub_tasks=[
-                SimpleNamespace(factor_name=f"price_delay_{i}", description="", variables={})
-            ],
-            alpha_evaluation={"factors": [{"name": f"price_delay_{i}", "status": "SCREEN_FAIL"}]},
-        )
-        history.append((exp, SimpleNamespace(observations=f"FULL ROUND {i}")))
-    trace = SimpleNamespace(hist=history)
-    closed = "Closed families: volatility and beta; past return (momentum or reversal)"
-
-    def prepare(current: Any) -> tuple[dict[str, Any], bool]:
-        return {
-            "hypothesis_and_feedback": "\n".join(f.observations for _, f in current.hist)
-            + "\n"
-            + closed,
-            "last_hypothesis_and_feedback": current.hist[-1][1].observations
-            if current.hist
-            else "",
-            "RAG": len(current.hist),
-        }, True
-
-    wrapper = memory.ProposalHistory(prepare, 21, "current")
-    context, flag = wrapper(trace)
-    text = context["hypothesis_and_feedback"]
-    assert flag and text.count("FULL ROUND") == 4
-    assert text.count("Restored round:") == 17
-    assert text.count("different coin panel") == 2
-    assert all(f"FULL ROUND {i}" in text for i in (15, 16, 17, 19))
-    assert "FULL ROUND 20" not in context["last_hypothesis_and_feedback"]
-    assert context["RAG"] == 21
-    assert text.count(closed) == 1
-    assert len(trace.hist) == 21 and trace.hist is history
-    assert wrapper.counts(trace) == {"history_rounds_full": 4, "history_rounds_summarised": 17}
-
-
-def test_restore_installs_history_view_on_both_proposal_prompts(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    session = tmp_path / "old/work/log/__session__/0"
-    session.mkdir(parents=True)
-    (session / "4_record").touch()
-    run = tmp_path / "new"
-    (run / "panel").mkdir(parents=True)
-    (run / "panel/panel-receipt.json").write_text(json.dumps({"panel_sha256": "same"}))
-    trace = SimpleNamespace(hist=[(SimpleNamespace(alpha_panel_sha256="same"), None)] * 21)
-    cls = Mock()
-    cls.load.return_value = SimpleNamespace(trace=trace)
-    loop = SimpleNamespace(
-        hypothesis_gen=SimpleNamespace(prepare_context=Mock()),
-        hypothesis2experiment=SimpleNamespace(prepare_context=Mock()),
-    )
-    monkeypatch.setattr(memory, "_new_factor_loop", lambda *args: loop)
-    restored, rounds = memory.open_factor_loop(
-        cls,
-        None,
-        2,
-        {
-            "ALPHA_RDAGENT_MEMORY_DIR": str(tmp_path),
-            "FACTOR_CoSTEER_knowledge_base_path": str(tmp_path / "absent"),
-            "ALPHA_RDAGENT_CONTINUE_SESSION": str(session.parent),
-            "ALPHA_RDAGENT_MEMORY_EVENTS": str(run / "memory-events.jsonl"),
-            "ALPHA_FACTOR_RUN_DIR": str(run),
-            "LOG_TRACE_PATH": str(run / "log"),
-        },
-    )
-    assert restored is loop and rounds == 2 and loop.trace is trace
-    assert isinstance(loop.hypothesis_gen.prepare_context, memory.ProposalHistory)
-    assert isinstance(loop.hypothesis2experiment.prepare_context, memory.ProposalHistory)
-    assert json.loads((run / "history-context.json").read_text()) == {
-        "history_rounds_full": 4,
-        "history_rounds_summarised": 17,
-    }
-
-
-def test_history_summary_retains_provider_failure_status() -> None:
-    exp = SimpleNamespace(sub_tasks=[SimpleNamespace(factor_name="price_delay")])
-    trace = SimpleNamespace(
-        hist=[
-            (
-                exp,
-                SimpleNamespace(
-                    reason="coding_failed_provider_timeout: coding; 4 attempts, 720 seconds waited"
-                ),
-            )
-        ]
-    )
-    wrapper = memory.ProposalHistory(
-        lambda trace: ({"hypothesis_and_feedback": ""}, True), 1, "panel"
-    )
-    context, _ = wrapper(trace)
-    assert (
-        "price_delay; other: price_delay; coding_failed_provider_timeout"
-        in context["hypothesis_and_feedback"]
-    )
-
-
-def test_empty_restored_trace_after_proposal_failure_remains_usable() -> None:
-    original = {
-        "hypothesis_and_feedback": "no previous rounds",
-        "last_hypothesis_and_feedback": "no previous rounds",
-    }
-    wrapper = memory.ProposalHistory(lambda trace: (dict(original), True), 0, "panel")
-    context, flag = wrapper(SimpleNamespace(hist=[]))
-    assert flag and context == original
-
-
 def test_provider_losses_are_proposed_factors(tmp_path: Path) -> None:
     from alpha_web import _rdagent_runs as reader
 
@@ -527,111 +537,6 @@ def test_provider_losses_are_proposed_factors(tmp_path: Path) -> None:
     assert "stopped by the model provider" in str(detail.funnel["stopped_by_provider"].basis)
     assert detail.funnel["code_ran"].value == 0
     assert detail.factors == []
-
-
-def test_declaration_prompt_has_no_filled_choice() -> None:
-    template = judge_namespace()["DECLARATION_TEMPLATE"]
-    assert "declared_direction: <+1 or -1>" in template
-    assert "primary_clock: <weekly or monthly>" in template
-    assert "direction_reason: <one sentence of economic reasoning>" in template
-    assert "follow from the idea" in template
-    with pytest.raises(ValueError):
-        declaration(template)
-
-
-@pytest.mark.parametrize("direction,clock", [("+1 or -1", "weekly"), ("+1", "weekly or monthly")])
-def test_ambiguous_declarations_still_refused(direction: str, clock: str) -> None:
-    with pytest.raises(ValueError):
-        declaration(
-            f"declared_direction: {direction}; primary_clock: {clock}; "
-            "direction_reason: Demand persists."
-        )
-
-
-def test_receipt_separates_failed_wait_from_retried_calls(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from tests.unit.test_rdagent_factor_launch import args
-
-    job = launch.Launch(
-        args(tmp_path),
-        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
-    )
-    job.run.mkdir()
-    (job.run / "history-context.json").write_text(
-        json.dumps({"history_rounds_full": 4, "history_rounds_summarised": 17})
-    )
-    (job.run / "rounds.jsonl").write_text(
-        json.dumps(
-            {
-                "iteration": 0,
-                "status": "coding_failed_provider_timeout",
-                "provider_wait_seconds": 360.5,
-            }
-        )
-        + "\n"
-    )
-    job.receipt["call_split"] = launch.call_split(
-        [
-            {
-                "endpoint": "/v1/chat/completions",
-                "provider_errors": ["provider_timeout"],
-                "error_code": error,
-                "latency_ms": milliseconds,
-                "attempts": 2,
-            }
-            for error, milliseconds in [("provider_timeout", 360500), (None, 181000)]
-        ]
-    )
-    monkeypatch.setattr(job, "gateway_status", lambda: {})
-    monkeypatch.setattr(job, "write_call_labels", lambda: {})
-    job.finish(0, "completed")
-    receipt = json.loads((job.run / "receipt.json").read_text())
-    assert receipt["provider_failed_wait_seconds"] == 360.5
-    assert receipt["provider_call_seconds_with_retries"] == 541.5
-    assert "provider_wait_seconds" not in receipt
-    assert receipt["history_rounds_full"] == 4
-    assert receipt["history_rounds_summarised"] == 17
-
-
-# --- Review additions: recorded shapes from real runs and the real upstream loop classes. ---
-
-WORKER = Path(__file__).resolve().parents[2] / "workers/rdagent"
-RUNTIME = pytest.mark.skipif(
-    not (os.environ.get("ALPHA_FACTOR_PYTHON") and os.environ.get("ALPHA_RDAGENT_SOURCE")),
-    reason="requires ALPHA_FACTOR_PYTHON and ALPHA_RDAGENT_SOURCE",
-)
-
-
-def test_restored_panel_comes_from_the_recorded_evaluation_inputs() -> None:
-    # Real evaluation records carry the panel hash under "inputs" and on each factor row.
-    def evaluated(name: str, panel: str) -> tuple[Any, Any]:
-        exp = SimpleNamespace(
-            sub_tasks=[SimpleNamespace(factor_name=name, description="", variables={})],
-            alpha_evaluation={
-                "inputs": {"panel_sha256": panel},
-                "factors": [{"name": name, "status": "SCREEN_FAIL", "panel_sha256": panel}],
-            },
-        )
-        return exp, SimpleNamespace(observations=f"FULL {name}")
-
-    unevaluated = (
-        SimpleNamespace(sub_tasks=[SimpleNamespace(factor_name="lost")], alpha_evaluation=None),
-        SimpleNamespace(reason="coding_failed_provider_timeout: coding", observations="FULL lost"),
-    )
-    trace = SimpleNamespace(
-        hist=[evaluated("old", "other"), unevaluated, evaluated("same", "current")]
-    )
-
-    def prepare(current: Any) -> tuple[dict[str, Any], bool]:
-        return {"hypothesis_and_feedback": "\n".join(f.observations for _, f in current.hist)}, True
-
-    wrapper = memory.ProposalHistory(prepare, 3, "current")
-    text = wrapper(trace)[0]["hypothesis_and_feedback"]
-    assert "FULL same" in text and "FULL old" not in text
-    assert "Restored round: old; other: old; SCREEN_FAIL; different coin panel" in text
-    assert "lost; other: lost; coding_failed_provider_timeout; coin panel not recorded" in text
-    assert wrapper.counts(trace) == {"history_rounds_full": 1, "history_rounds_summarised": 2}
 
 
 def test_old_refusal_counts_are_unchanged_and_provider_losses_are_added() -> None:

@@ -1,4 +1,4 @@
-"""Mixed-vector repair, partial coding recovery and restored panel provenance."""
+"""Coder recovery, embedding memory and the recorded outcomes of partial rounds."""
 
 from __future__ import annotations
 
@@ -12,8 +12,122 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from tests.unit._rdagent_support import _Backend, _upstream_graph, coder_parts, pinned_loop
+from workers.rdagent import model_gateway as gateway
 from workers.rdagent import research_memory as memory
 from workers.rdagent.loop_guard import ProviderGuard, RoundRecord
+
+
+def test_input_refusal_behind_upstream_retries_is_skipped_with_its_cause(tmp_path: Path) -> None:
+    ns = coder_parts()
+    _Backend.failures = [
+        gateway.GatewayError(400, "embedding_input_refused", "local embedding input refused")
+    ]
+    graph = _upstream_graph()
+    record = tmp_path / "memory-skips.jsonl"
+    with ns["tolerant_embeddings"](graph, record, _Backend):
+        graph.add_node(SimpleNamespace(embedding=None))
+    assert "local embedding input refused" in json.loads(record.read_text())["error"]
+    _Backend.failures = [RuntimeError("connection reset")]
+    with (
+        pytest.raises(RuntimeError, match="after 3 retries"),
+        ns["tolerant_embeddings"](graph, record, _Backend),
+    ):
+        graph.add_node(SimpleNamespace(embedding=None))
+
+
+def test_only_input_refusals_skip_and_log_the_real_cause(tmp_path: Path) -> None:
+    ns = coder_parts()
+    refusal = gateway.GatewayError(
+        400, "embedding_input_refused", "embedding input exceeds context"
+    )
+    outer = RuntimeError("Failed to get chat completion")
+    outer.__cause__ = refusal
+    graph = SimpleNamespace(add_node=Mock(side_effect=outer))
+    record = tmp_path / "memory-skips.jsonl"
+    with ns["tolerant_embeddings"](graph, record):
+        graph.add_node(SimpleNamespace(embedding=None))
+    assert "embedding input exceeds context" in json.loads(record.read_text())["error"]
+    graph.add_node = Mock(side_effect=RuntimeError("unrelated failure"))
+    with (
+        pytest.raises(RuntimeError, match="unrelated"),
+        ns["tolerant_embeddings"](graph, record),
+    ):
+        graph.add_node(SimpleNamespace(embedding=None))
+
+
+def test_paid_memory_reembeds_in_one_batch_and_keeps_good_nodes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_EMBEDDING_ROUTE", "provider")
+    graph = SimpleNamespace(
+        nodes={str(i): SimpleNamespace(content=str(i), embedding=[9.0]) for i in range(3)}
+    )
+    calls: list[list[str]] = []
+
+    def embed_many(texts: list[str]) -> tuple[str, list[Any]]:
+        calls.append(texts)
+        return "model-a", [
+            [1.0],
+            memory.MemoryEmbeddingError("embedding_input_refused", "bad input"),
+            [3.0],
+        ]
+
+    monkeypatch.setattr(memory, "gateway_embedding_batch", embed_many, raising=False)
+    monkeypatch.setattr(
+        memory, "gateway_embedding", Mock(side_effect=AssertionError("singleton transport used"))
+    )
+    cache = memory.EmbeddingMemory(
+        tmp_path / "sidecar", tmp_path / "events", "model-a", memory.gateway_embedding
+    )
+    skipped: list[str] = []
+    removed = cache.prepare(graph, lambda node, error: skipped.append(node.content))
+    assert calls == [["0", "1", "2"]]
+    assert skipped == ["1"] and set(removed) == {"1"}
+    assert graph.nodes["0"].embedding == [1.0] and graph.nodes["2"].embedding == [3.0]
+    cache.prepare(graph, lambda node, error: pytest.fail(str(error)))
+    assert len(calls) == 1
+
+
+def test_single_paid_memory_input_refusal_uses_skip_policy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_EMBEDDING_ROUTE", "provider")
+    error = memory.MemoryEmbeddingError("embedding_input_refused", "bad input")
+    single = Mock(side_effect=error)
+    batch = Mock(side_effect=AssertionError("one input needs the existing skip policy"))
+    monkeypatch.setattr(memory, "gateway_embedding", single)
+    monkeypatch.setattr(memory, "gateway_embedding_batch", batch)
+    graph = SimpleNamespace(nodes={"bad": SimpleNamespace(content="bad", embedding=[9.0])})
+    cache = memory.EmbeddingMemory(tmp_path / "sidecar", tmp_path / "events", "model-a", single)
+    skipped: list[str] = []
+    removed = cache.prepare(graph, lambda node, exc: skipped.append(str(exc)))
+    assert skipped == ["bad input"] and set(removed) == {"bad"} and not graph.nodes
+    batch.assert_not_called()
+
+
+def test_failed_paid_memory_batch_goes_through_skip_policy_without_resending(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_EMBEDDING_ROUTE", "provider")
+    stop = memory.MemoryEmbeddingError("budget_exhausted", "budget exhausted: run_max_usd")
+    batch = Mock(side_effect=stop)
+    single = Mock(side_effect=AssertionError("a failed batch is not re-sent per input"))
+    monkeypatch.setattr(memory, "gateway_embedding_batch", batch)
+    monkeypatch.setattr(memory, "gateway_embedding", single)
+    graph = SimpleNamespace(
+        nodes={str(i): SimpleNamespace(content=str(i), embedding=None) for i in range(3)}
+    )
+    cache = memory.EmbeddingMemory(tmp_path / "sidecar", tmp_path / "events", "model-a", single)
+    seen: list[BaseException] = []
+
+    def skip(node: Any, error: Exception) -> None:
+        seen.append(error)  # the coder's skip raises BudgetExhausted for this code
+        raise SystemExit(str(error))
+
+    with pytest.raises(SystemExit, match="budget exhausted"):
+        cache.prepare(graph, skip)
+    assert seen == [stop] and batch.call_count == 1
 
 
 def mixed_graph() -> Any:
@@ -124,42 +238,6 @@ def test_coding_failure_judges_completed_factors_then_stops_after_second_round(
         assert row["factors"][2]["status"] == "not_coded"
 
 
-def test_restored_history_uses_evaluation_then_run_receipt_then_freeze(tmp_path: Path) -> None:
-    paths = [tmp_path / str(i) for i in range(4)]
-    for path in paths:
-        (path / "panel").mkdir(parents=True)
-    (paths[0] / "receipt.json").write_text(json.dumps({"panel_sha256": "other"}))
-    (paths[1] / "receipt.json").write_text(json.dumps({"panel_sha256": "same"}))
-    (paths[2] / "panel/panel-receipt.json").write_text(json.dumps({"panel_sha256": "same"}))
-    history = [
-        (SimpleNamespace(alpha_run_dir=str(path)), SimpleNamespace(reason="failed"))
-        for path in paths
-    ]
-    history[0][0].alpha_evaluation = {"inputs": {"panel_sha256": "same"}}
-    trace = SimpleNamespace(hist=history)
-    wrapper = memory.ProposalHistory(Mock(), 4, "same")
-    assert wrapper.counts(trace) == {"history_rounds_full": 3, "history_rounds_summarised": 1}
-    summary = wrapper._summary(*history[3])
-    assert "panel unknown" in summary and "different coin panel" not in summary
-    assert "\n" not in summary
-
-
-def test_legacy_checkpoint_only_assigns_its_own_rounds_to_run(tmp_path: Path) -> None:
-    session = tmp_path / "old/work/log/__session__"
-    session.mkdir(parents=True)
-    (tmp_path / "old/receipt.json").write_text(json.dumps({"panel_sha256": "same"}))
-    inherited, failed = SimpleNamespace(), SimpleNamespace()
-    previous = SimpleNamespace(
-        trace=SimpleNamespace(hist=[(inherited, None), (failed, None)]),
-        loop_prev_out={0: {"direct_exp_gen": {"exp_gen": failed}, "coding": None}},
-    )
-    memory.restored_run_provenance(previous, session)
-    wrapper = memory.ProposalHistory(Mock(), 2, "same")
-    assert wrapper._panel(failed) == "same"
-    assert wrapper._panel(inherited) is None
-    assert wrapper.counts(previous.trace)["history_rounds_full"] == 1
-
-
 @pytest.mark.parametrize("step", ["running", "feedback"])
 def test_errors_outside_coding_propagate(tmp_path: Path, step: str) -> None:
     bug = ValueError("outside coding")
@@ -266,7 +344,7 @@ print(json.dumps({"vectors": len(saved.graph.vector_base.vector_df)}))
 def test_pinned_search_reads_rebuilt_table(tmp_path: Path) -> None:
     from scipy.spatial.distance import cosine
 
-    from tests.unit.test_rdagent_loop_fixups_6 import upstream_class
+    from tests.unit._rdagent_support import upstream_class
 
     class Document:
         def __init__(self, content: str = "") -> None:
@@ -306,7 +384,7 @@ def test_pinned_loop_recovers_partial_evaluator_then_stops(tmp_path: Path) -> No
     from datetime import datetime, timezone
     from typing import cast
 
-    from tests.unit.test_rdagent_loop_fixups_6 import upstream_class
+    from tests.unit._rdagent_support import upstream_class
     from workers.rdagent.loop_guard import CriticEvaluator, RoundFeedback
 
     ns: dict[str, Any] = {
@@ -325,32 +403,10 @@ def test_pinned_loop_recovers_partial_evaluator_then_stops(tmp_path: Path) -> No
         "HypothesisFeedback": SimpleNamespace,
         "RD_AGENT_SETTINGS": SimpleNamespace(get_max_parallel=lambda: 1),
     }
-    cls = upstream_class(
-        "components/workflow/rd_loop.py",
-        "RDLoop",
-        {"direct_exp_gen", "coding", "running", "feedback", "record"},
-        ns,
-    )
-    base = upstream_class("utils/workflow/loop.py", "LoopBase", {"_run_step"}, ns)
+    loop = pinned_loop(tmp_path, ns, RuntimeError)
     single = upstream_class(
         "components/coder/factor_coder/evaluators.py", "FactorEvaluatorForCoder", {"evaluate"}, ns
     )()
-    loop = cls()
-    loop._run_step = base._run_step.__get__(loop)
-    loop.steps = ["direct_exp_gen", "coding", "running", "feedback", "record"]
-    loop.step_idx = {0: 0, 1: 0}
-    loop.loop_prev_out, loop.loop_trace = {0: {}, 1: {}}, {0: [], 1: []}
-    loop.EXCEPTION_KEY, loop.LOOP_IDX_KEY = "exception", "loop"
-    loop.skip_loop_error, loop.skip_loop_error_stepname = RuntimeError, "feedback"
-    loop.withdraw_loop_error = ()
-    loop.get_semaphore = lambda _: asyncio.Semaphore(1)
-    loop.tracker = SimpleNamespace(log_workflow_state=Mock())
-    loop.pbar = SimpleNamespace(set_postfix=Mock())
-    loop.dump, loop._check_exit_conditions_on_step = Mock(), Mock()
-    loop.session_folder = tmp_path
-    loop.get_unfinished_loop_cnt = lambda _: 0
-    loop.plan = {"features": [], "feature_codes": {}}
-    loop.trace = SimpleNamespace(sync_dag_parent_and_hist=Mock())
     proposed: list[int] = []
     judged: list[list[str]] = []
 
@@ -423,7 +479,7 @@ def test_pinned_loop_recovers_partial_evaluator_then_stops(tmp_path: Path) -> No
 def test_executed_values_survive_error_before_critic_feedback(tmp_path: Path) -> None:
     import re
 
-    from tests.unit.test_rdagent_loop_fixups_6 import upstream_class
+    from tests.unit._rdagent_support import upstream_class
     from workers.rdagent.loop_guard import CriticEvaluator
 
     cls = upstream_class(
@@ -528,49 +584,6 @@ def test_workstation_projects_internal_coding_failure(tmp_path: Path) -> None:
     detail = reader.read_run(tmp_path, tmp_path / "absent-ledger", "run")
     assert len(detail.refusals) == 1
     assert "internal coding error" in str(detail.refusals[0]["sentence"].value).lower()
-
-
-def test_receipt_contains_vector_counts_and_internal_stop(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from tests.unit.test_rdagent_factor_launch import args
-    from workers.rdagent import factor_loop_launch as launch
-
-    job = launch.Launch(
-        args(tmp_path),
-        {
-            "ALPHA_RDAGENT_SOURCE": tmp_path,
-            "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python",
-        },
-    )
-    job.run.mkdir()
-    stats = {
-        "knowledge_vectors": 106,
-        "knowledge_vectors_reembedded": 106,
-        "knowledge_vectors_left_out": 1,
-        "knowledge_vector_dimension": 4096,
-    }
-    (job.run / "knowledge-vectors.json").write_text(json.dumps(stats))
-    reason = "Two consecutive rounds ended with an internal coding error; run stopped"
-    (job.run / "loop-stop.json").write_text(json.dumps({"loop_reason": reason}))
-    monkeypatch.setattr(job, "gateway_status", lambda: {})
-    job.finish(1, "loop exited")
-    receipt = json.loads((job.run / "receipt.json").read_text())
-    assert {key: receipt[key] for key in stats} == stats
-    assert receipt["loop_reason"] == reason
-
-
-def test_inherited_legacy_round_uses_its_workspace_run_receipt(tmp_path: Path) -> None:
-    old = tmp_path / "old"
-    (old / "panel").mkdir(parents=True)
-    (old / "panel/panel-receipt.json").write_text(json.dumps({"panel_sha256": "same"}))
-    exp = SimpleNamespace(
-        experiment_workspace=SimpleNamespace(
-            workspace_path=old / "work/git_ignore_folder/RD-Agent_workspace/frozen-uuid",
-        )
-    )
-    wrapper = memory.ProposalHistory(Mock(), 1, "same")
-    assert wrapper.counts(SimpleNamespace(hist=[(exp, None)]))["history_rounds_full"] == 1
 
 
 class StandInCoderError(Exception):

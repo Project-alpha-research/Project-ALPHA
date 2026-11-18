@@ -8,10 +8,14 @@ import numpy as np
 import polars as pl
 import pytest
 
+from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import rdagent_factor_eval as ev
+from alpha_cli.spine.trial_record import map_row
 from alpha_core import DataError
+from tests.unit._rdagent_support import clock_rows
 from tests.unit.test_rdagent_factor_eval import evaluate, fixture, trial_series
 from tests.unit.test_rdagent_factor_eval import recorded_time as recorded_time
+from tests.unit.test_trial_record import factor
 
 
 def arrays() -> tuple[np.ndarray, np.ndarray, list[date], list[date]]:
@@ -380,3 +384,22 @@ def test_any_errored_replay_after_a_screen_pass_is_an_error() -> None:
         "monthly": {"status": "REPLAY_FAIL", "q": 0.05},
     }
     assert overall_status(clocks)[0] == "ERROR"
+
+
+def test_reader_figures_come_from_one_named_clock(tmp_path: Path) -> None:
+    record = map_row("rdagent", tmp_path / "ledger", 1, factor(clocks=clock_rows(0.99)))
+    assert record.measures["q"] == record.measures["mean_ic"] == 0.04
+    assert record.measure_clock == "weekly"
+
+
+def test_feedback_contains_deflation_for_every_replay() -> None:
+    row = factor(clocks=clock_rows(0.04), status="DEFLATION_FAIL")
+    assert all(s in clocks.clock_feedback(row) for s in ("0.04", "0.95", "42 trials"))
+
+
+def test_counted_only_replay_shows_no_deflated_figure() -> None:
+    # ADR-0055: a replay made only to count the trial is never shown as a result.
+    trials = clock_rows(0.04)
+    trials["weekly"]["replay"]["counted_only"] = "spread check FAIL; replayed only to count"
+    text = clocks.clock_feedback(factor(clocks=trials, status="SPREAD_FAIL"))
+    assert "deflated Sharpe" not in text and "counted only, not a result" in text

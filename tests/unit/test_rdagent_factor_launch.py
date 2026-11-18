@@ -14,6 +14,8 @@ from typing import Any
 
 import pytest
 
+from workers.rdagent import model_gateway as gateway
+
 WORKER = Path(__file__).resolve().parents[2] / "workers/rdagent"
 spec = importlib.util.spec_from_file_location(
     "factor_loop_launch", WORKER / "factor_loop_launch.py"
@@ -687,3 +689,95 @@ def test_launch_command_records_argv_and_only_allow_listed_environment(
     assert record["environment"]["ALPHA_RDAGENT_SOURCE"] == env["ALPHA_RDAGENT_SOURCE"]
     assert record["environment"]["ALPHA_DATA_DIR"] == env["ALPHA_DATA_DIR"]
     assert record["secret_names_set"] == ["ALPHA_GATEWAY_API_BASE", "ALPHA_GATEWAY_API_KEY"]
+
+
+def test_reasoning_limit_unconfirmed_default_is_unset() -> None:
+    args = launch.parser().parse_args(
+        [
+            "run",
+            "--data-dir",
+            "/data",
+            "--run-dir",
+            "/run",
+            "--gateway-data-dir",
+            "/gateway",
+            "--trial-ledger",
+            "/ledger",
+            "--run-id",
+            "id",
+        ]
+    )
+    assert args.coding_reasoning_tokens is None
+    assert gateway.Settings(data_dir=Path("/data"), run_id="id").coding_reasoning_tokens is None
+
+
+def test_receipt_round_counts_and_old_refusal_key(tmp_path: Path) -> None:
+    records = [
+        {"iteration": 0, "status": "refused_closed_family", "closed_families": ["volatility"]},
+        {"iteration": 0, "alpha_decision": False, "tasks": [{"name": "price_delay"}]},
+        {
+            "iteration": 1,
+            "status": "no_admissible_idea",
+            "reason": "refused_closed_family",
+            "refused_families": ["volatility"],
+        },
+    ]
+    (tmp_path / "rounds.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    (tmp_path / "evaluations.jsonl").write_text(
+        json.dumps({"iteration": 0, "factors": [{"name": "price_delay"}]}) + "\n"
+    )
+    result = launch.round_counts(tmp_path)
+    assert result == {
+        "rounds_with_trial": 1,
+        "rounds_no_admissible_idea": 1,
+        "proposals_refused": 2,
+        "rounds_failed_provider": 0,
+        "provider_failed_wait_seconds": 0.0,
+    }
+
+
+def test_receipt_end_event_and_plain_console_line(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from workers.rdagent import factor_loop_launch as launch
+
+    parsed = args(tmp_path)
+    job = launch.Launch(
+        parsed, {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"}
+    )
+    job.run.mkdir()
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    monkeypatch.setattr(job, "write_call_labels", lambda: {})
+    assert job.finish(1, "budget exhausted") == 1
+    assert capsys.readouterr().out == "RD-Agent loop ended: budget exhausted.\n"
+    end = json.loads((job.run / "launch.jsonl").read_text().splitlines()[-1])
+    assert end["event"] == "end" and end["exit_reason"] == "budget exhausted"
+
+
+def test_receipt_contains_vector_counts_and_internal_stop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from workers.rdagent import factor_loop_launch as launch
+
+    job = launch.Launch(
+        args(tmp_path),
+        {
+            "ALPHA_RDAGENT_SOURCE": tmp_path,
+            "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python",
+        },
+    )
+    job.run.mkdir()
+    stats = {
+        "knowledge_vectors": 106,
+        "knowledge_vectors_reembedded": 106,
+        "knowledge_vectors_left_out": 1,
+        "knowledge_vector_dimension": 4096,
+    }
+    (job.run / "knowledge-vectors.json").write_text(json.dumps(stats))
+    reason = "Two consecutive rounds ended with an internal coding error; run stopped"
+    (job.run / "loop-stop.json").write_text(json.dumps({"loop_reason": reason}))
+    monkeypatch.setattr(job, "gateway_status", lambda: {})
+    job.finish(1, "loop exited")
+    receipt = json.loads((job.run / "receipt.json").read_text())
+    assert {key: receipt[key] for key in stats} == stats
+    assert receipt["loop_reason"] == reason

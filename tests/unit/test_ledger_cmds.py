@@ -8,7 +8,10 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from alpha_cli.ledger_cmds import ledger_app
+from alpha_cli.ledger_cmds import _evidence, ledger_app
+from alpha_cli.spine.trial_reader import LedgerSource, read_ledgers, trials_for_deflation
+from alpha_cli.spine.trial_record import map_row
+from tests.unit._rdagent_support import clock_rows
 from tests.unit.test_trial_reader import example, write_rows
 from tests.unit.test_trial_record import factor, rule
 
@@ -124,3 +127,106 @@ def test_totals_wording_and_grouping_note(tmp_path: Path, monkeypatch: pytest.Mo
     assert "9 trials, including 2 rows ALPHA could not interpret (counted anyway)" in out
     out = CliRunner().invoke(ledger_app, ["query", "by-asset", "--rdagent-ledger", str(rd)]).output
     assert "Grouping normalises names" in out
+
+
+def test_spread_failure_listed_and_counted_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = tmp_path / "trials.jsonl"
+    ledger.write_text(json.dumps(factor(version=2, status="SPREAD_FAIL")) + "\n")
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    args = ["list", "--rdagent-ledger", str(ledger)]
+    result = CliRunner().invoke(ledger_app, [*args, "--json"])
+    assert result.exit_code == 0, result.output
+    rows = json.loads(result.output)["records"]
+    assert len(rows) == 1 and rows[0]["outcome"] == "rejected"
+    assert rows[0]["raw_status"] == "SPREAD_FAIL"
+    assert "stopped by the spread check" in CliRunner().invoke(ledger_app, args).output
+    snapshot = read_ledgers([LedgerSource("rdagent", str(ledger))])
+    assert trials_for_deflation(snapshot, "rdagent-factors")["all_trials"] == 1
+
+
+def test_ledger_reads_the_default_rdagent_ledger_and_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "data"
+    home.mkdir()
+    default = tmp_path / "runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    default.parent.mkdir(parents=True)
+    default.write_text(json.dumps(factor(version=2, status="SPREAD_FAIL")) + "\n")
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    output = CliRunner().invoke(ledger_app, ["summary"]).output
+    assert f"rdagent: read {default.resolve()}" in output
+    assert "not understood" not in output
+    # A configured source still wins; the default is only the fallback.
+    configured = tmp_path / "elsewhere.jsonl"
+    (home / "ledger").mkdir()
+    (home / "ledger/sources.toml").write_text(f'[rdagent]\nfactor_ledger = "{configured}"\n')
+    output = CliRunner().invoke(ledger_app, ["summary"]).output
+    assert f"rdagent: ledger file not found ({configured})" in output
+
+
+@pytest.fixture
+def recorded_evidence_ledger(tmp_path: Path) -> Path:
+    root = tmp_path / "runs"
+    ledger = root / "ledger/trials.jsonl"
+    ledger.parent.mkdir(parents=True)
+    run = root / "human-folder"
+    run.mkdir()
+    (run / "run-identity.json").write_text(json.dumps({"run_id": "recorded-id"}))
+    (run / "series.json").write_text("evidence")
+    return ledger
+
+
+def test_evidence_resolves_recorded_run_identity(
+    tmp_path: Path, recorded_evidence_ledger: Path
+) -> None:
+    ledger = recorded_evidence_ledger
+    row = factor(run_id="recorded-id", evidence={"series_manifest": "series.json"})
+    assert _evidence(map_row("rdagent", ledger, 1, row), tmp_path)["evidence_found"]
+
+
+@pytest.mark.parametrize(
+    "other", ["not json", "[]", json.dumps({"other": 1}), json.dumps({"run_id": 7})]
+)
+def test_evidence_lookup_ignores_unrelated_unreadable_run_identities(
+    tmp_path: Path, recorded_evidence_ledger: Path, other: str
+) -> None:
+    """An odd identity file in some other run folder must not break every evidence lookup."""
+    ledger = recorded_evidence_ledger
+    root = tmp_path / "runs"
+    unrelated = root / "an-unrelated-run"
+    unrelated.mkdir()
+    (unrelated / "run-identity.json").write_text(other)
+    row = factor(run_id="recorded-id", evidence={"series_manifest": "series.json"})
+    assert _evidence(map_row("rdagent", ledger, 1, row), tmp_path)["evidence_found"]
+
+
+def test_absent_optional_source_is_quiet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path / "data"))
+    ledger = tmp_path / "ledger"
+    ledger.write_text(json.dumps(factor()) + "\n")
+    output = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(ledger)])
+    assert output.exit_code == 0
+    assert "ledger file not found" not in output.output
+    assert f"rdagent: read {ledger}" in output.output
+
+
+def test_missing_evidence_still_refuses_path_traversal(tmp_path: Path) -> None:
+    from alpha_cli.spine.errors import SpineError
+
+    root = tmp_path / "runs"
+    ledger = root / "ledger/trials.jsonl"
+    ledger.parent.mkdir(parents=True)
+    row = factor(run_id="missing-run", evidence={"series_manifest": "../../outside.json"})
+    with pytest.raises(SpineError, match="escapes"):
+        _evidence(map_row("rdagent", ledger, 1, row), tmp_path)
+
+
+def test_plain_ledger_names_clock_beside_figures(tmp_path: Path) -> None:
+    from dataclasses import asdict
+
+    from alpha_cli.ledger_cmds import _render
+
+    record = map_row("rdagent", tmp_path / "ledger", 1, factor(clocks=clock_rows(0.99)))
+    assert "weekly: IC 0.04, q 0.04" in _render({"records": [asdict(record)]})

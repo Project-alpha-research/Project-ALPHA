@@ -1188,7 +1188,7 @@ produced no values is never accepted; accepted code is re-executed and judged by
 in that coding round are skipped with the same note; the next round starts with a fresh critic.
 `rounds.jsonl` records `critic_unavailable`, `critic_skipped`, their factor-name lists and failed wait
 (no `trial_created`: the row is written before the runner). Real-runtime tests in
-`test_rdagent_loop_fixups_6.py` drive upstream's `FactorRDLoop` and CoSTEER evaluators with stub model calls.
+`test_rdagent_provider_failures.py` drive upstream's `FactorRDLoop` and CoSTEER evaluators with stub model calls.
 These are advisory coding outcomes: ALPHA's screen, spread, replay, deflation and trial rules do not change.
 Whole coding failures still use `coding_failed_provider_timeout` / `coding_failed_provider_error`.
 

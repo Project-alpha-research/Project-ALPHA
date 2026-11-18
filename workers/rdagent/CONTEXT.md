@@ -71,7 +71,7 @@ no market, inference or evidence authority.
   Policy and regression convention: [README](README.md#shortlist-bookkeeping); no judging rule changes.
 - Fractional thirds, tie diagnostics and source input columns: [README](README.md#futures-funding).
   Feedback separates global looks from family failures; session drift suggestions follow the frozen source.
-  Regression tests: `tests/unit/test_rdagent_judge_fixups_8.py`.
+  Tests under `tests/unit/` cover these in `test_rdagent_ties_and_thirds.py`, `test_rdagent_funding_columns.py` and `test_rdagent_families.py`.
 
 ## Outputs
 

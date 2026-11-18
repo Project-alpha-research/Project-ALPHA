@@ -218,7 +218,7 @@ def test_batch_counts_whole_request_and_grants_no_batch_credit(tmp_path: Path) -
 
 
 def status_rows() -> list[dict[str, Any]]:
-    from tests.unit.test_rdagent_fixups_5 import clock_rows
+    from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
     rows = []
@@ -248,8 +248,8 @@ def test_status_derivation_agrees_in_ledger_web_and_worker() -> None:
 
 
 def test_the_prompt_template_is_what_the_parser_reads() -> None:
+    from tests.unit._rdagent_support import judge_namespace
     from tests.unit.test_rdagent_judge_honesty import worker_module
-    from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
 
     ns = judge_namespace()
     families = worker_module("idea_families")

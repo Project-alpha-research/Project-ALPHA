@@ -8,12 +8,15 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import polars as pl
 import pytest
 
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_universe as universes
 from alpha_core import DataError
+from tests.unit._rdagent_support import judge_namespace, universe_run
+from tests.unit.test_rdagent_factor_judge import data
 
 
 def panel(n: int = 80) -> pl.DataFrame:
@@ -579,3 +582,90 @@ def test_label_fallback_counts_only_names_that_were_ranked() -> None:
     signal[4:, 4] = np.nan
     data = clock_samples(signal, opens, days, open_days, "daily", closes=opens, gap_policy=True)
     assert data["gap_counts"]["unfilled_entries"] == 1
+
+
+def test_replay_output_names_missing_rank_observations() -> None:
+    days = [date(2021, 1, 1) + timedelta(days=i) for i in range(50)]
+    scores = np.tile(np.arange(9.0), (50, 1))
+    scores[:, 0] = np.nan
+    metrics, _ = judge.replay(walk_panel(), scores, days, 1, clock="weekly", gap_policy=True)
+    assert "missing_coin_days" not in metrics
+    assert metrics["unrankable_instrument_rebalances"] == metrics["rebalances"]
+
+
+def test_missing_universe_information_refuses_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ALPHA_FACTOR_RUN_DIR", raising=False)
+    monkeypatch.delenv("ALPHA_FACTOR_UNIVERSE_TEXT", raising=False)
+    with pytest.raises(ValueError, match="universe"):
+        judge_namespace()["append_swing_context"]({"hypothesis_and_feedback": ""}, None)
+
+
+@pytest.fixture(name="saved")
+def record_hdf_frames(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, pd.DataFrame]:
+    saved: dict[str, pd.DataFrame] = {}
+
+    def write(frame: pd.DataFrame, path: Path, *, key: str, mode: str) -> None:
+        saved[str(path.relative_to(tmp_path / "out"))] = frame.copy()
+        path.write_bytes(b"hdf boundary")
+
+    monkeypatch.setattr(pd.DataFrame, "to_hdf", write)
+    return saved
+
+
+@pytest.mark.parametrize("first", ["2020-12-30", "2021-01-01"])
+def test_cut_copies_keep_not_yet_listed_instruments(
+    tmp_path: Path, saved: dict[str, pd.DataFrame], first: str
+) -> None:
+    frame = pd.DataFrame({"date": pd.to_datetime([first, "2021-01-02"]), "instrument": ["A", "B"]})
+    for col in ("open", "high", "low", "close", "volume"):
+        frame[col] = [1.0, 2.0]
+    frame.to_parquet(tmp_path / "panel.parquet")
+    data.prepare(tmp_path / "panel.parquet", tmp_path / "out")
+    cut = saved["cuts/2020-12-31/daily_pv.h5"]
+    assert set(cut.index.get_level_values("instrument")) == {"A", "B"}
+    assert cut.xs("B", level="instrument").isna().all().all()
+
+
+def test_padding_adds_only_pre_listing_rows_never_rows_after_the_last_bar(
+    tmp_path: Path, saved: dict[str, pd.DataFrame]
+) -> None:
+    """The span rule of the gapped universe still holds after its last bar: no rows at all."""
+    # A trades 2020-12-29..2021-01-03 with a gap on 2021-01-01 and then stops trading;
+    # B lists on 2021-01-02 and trades to the panel end, 2021-04-05.
+    a_days = ["2020-12-29", "2020-12-30", "2020-12-31", "2021-01-02", "2021-01-03"]
+    b_days = [str(d.date()) for d in pd.date_range("2021-01-02", "2021-04-05")]
+    frame = pd.DataFrame(
+        {
+            "date": pd.to_datetime(a_days + b_days),
+            "instrument": ["A"] * len(a_days) + ["B"] * len(b_days),
+        }
+    )
+    for col in ("open", "high", "low", "close", "volume"):
+        frame[col] = 1.0
+    frame.to_parquet(tmp_path / "panel.parquet")
+    data.prepare(tmp_path / "panel.parquet", tmp_path / "out")
+    full = saved["full/daily_pv.h5"]
+    a = full.xs("A", level="instrument")
+    b = full.xs("B", level="instrument")
+    assert a.index.max() == pd.Timestamp("2021-01-03")
+    assert a.loc["2021-01-01"].isna().all()
+    assert b.index.min() == pd.Timestamp("2020-12-29")
+    assert b.loc[:"2021-01-01"].isna().all().all()
+    assert b.loc["2021-01-02":].notna().all().all()
+    for name, cut in saved.items():
+        if name.startswith("cuts/"):
+            assert set(cut.index.get_level_values("instrument")) == {"A", "B"}, name
+            prefix = full.loc[full.index.get_level_values(0) <= name.split("/")[1]]
+            pd.testing.assert_frame_equal(cut, prefix)
+
+
+def test_universe_receipt_binding_is_checked_before_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    universe_run(tmp_path, monkeypatch)
+    path = tmp_path / "panel/panel-receipt.json"
+    receipt = json.loads(path.read_text())
+    receipt["universe_sha256"] = "0" * 64
+    path.write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match="universe.*differs"):
+        data.current_universe()

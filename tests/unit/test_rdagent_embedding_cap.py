@@ -15,8 +15,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from tests.unit._rdagent_support import coder_parts
 from tests.unit.test_rdagent_factor_launch import launch
-from tests.unit.test_rdagent_loop_fixups_2 import coder_parts
 from workers.rdagent import model_gateway as gw
 
 
@@ -347,3 +347,58 @@ def test_a_chat_row_is_never_split_as_local() -> None:
     split = launch.call_split(forged)
     assert split["counted_calls"] == split["counted_toward_call_cap"] == 2
     assert split["local_embedding_calls"] == 0
+
+
+@pytest.fixture
+def almost_capped_model(model: gw.Gateway, monkeypatch: pytest.MonkeyPatch) -> gw.Gateway:
+    from tests.unit.test_rdagent_provider_embeddings import provider
+
+    provider(model, monkeypatch)
+    model.budget.write(
+        {
+            "schema_version": 1,
+            "runs": {"test": {"calls": 0, "usd": 0, "local_embedding_calls": 1999}},
+            "months": {},
+        }
+    )
+    return model
+
+
+def test_provider_batch_requests_stop_at_embedding_cap(
+    almost_capped_model: gw.Gateway, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = almost_capped_model
+    sent = Mock(
+        side_effect=lambda url, body, *a, **kw: {
+            "model": "model-a",
+            "data": [{"index": i, "embedding": [1.0]} for i in range(len(body["input"]))],
+        }
+    )
+    monkeypatch.setattr(gw, "post_json", sent)
+    with pytest.raises(gw.GatewayError, match="EMBEDDING_CALLS_PER_RUN"):
+        model.embeddings({"model": "alpha-embed", "input": [str(i) for i in range(33)]})
+    assert sent.call_count == 1
+
+
+def test_local_route_call_rows_and_requests_are_unchanged(model: Any) -> None:
+    result = model.embeddings({"model": "alpha-embed", "input": ["a"]})
+    assert len(result["data"]) == 1 and len(rows(model)) == 1
+    added = {"response_model", "reserved_usd", "input_count", "single_retry", "model_check"}
+    assert not added & set(rows(model)[0])
+
+
+def test_successful_batch_is_cached_even_when_later_batch_hits_cap(
+    almost_capped_model: gw.Gateway, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = almost_capped_model
+
+    def post(url: str, body: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "model": "model-a",
+            "data": [{"index": i, "embedding": [float(t)]} for i, t in enumerate(body["input"])],
+        }
+
+    monkeypatch.setattr(gw, "post_json", post)
+    with pytest.raises(gw.GatewayError, match="EMBEDDING_CALLS_PER_RUN"):
+        model.embeddings({"model": "alpha-embed", "input": [str(i) for i in range(33)]})
+    assert model.embeddings({"model": "alpha-embed", "input": "0"})["data"][0]["embedding"] == [0.0]

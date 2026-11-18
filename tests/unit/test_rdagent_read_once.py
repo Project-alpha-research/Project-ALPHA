@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, Mock
 import pandas as pd
 import pytest
 
-from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
+from tests.unit._rdagent_support import judge_namespace
 
 UNIVERSE = "1 instruments, 0 later delisted declared; survivors-only selection"
 SETTING = (

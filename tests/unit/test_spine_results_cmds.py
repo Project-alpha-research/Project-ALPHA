@@ -7,6 +7,7 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
+from alpha_cli import data_cmds
 from alpha_cli.results_cmds import diagnose_run, results_app
 from alpha_cli.spine.ledger import append_trial
 
@@ -343,3 +344,32 @@ def test_diagnose_unknown_and_corrupt_runs(tmp_path: Path, monkeypatch: pytest.M
     error = json.loads(corrupt.stdout)["error"]
     assert error["code"] == "INVALID_ARTIFACT"
     assert "diagnostics.json must contain an object" in error["message"]
+
+
+@pytest.mark.parametrize("existing_store", [False, True])
+def test_missing_candles_say_not_found_with_path_and_next(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, existing_store: bool
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("COLUMNS", "240")
+    if existing_store:
+        (tmp_path / "store").mkdir()
+    result = CliRunner().invoke(data_cmds.data_app, ["candles", "SPY", "--json"])
+    assert result.exit_code != 0
+    assert "not found" in result.output
+    assert str(tmp_path / "store" / "bars" / "SPY.parquet") in result.output
+    assert "next:" in result.output and "alpha data pull" in result.output
+    assert "corrupt" not in result.output
+
+
+def test_unreadable_candles_are_corrupt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("COLUMNS", "240")
+    bars = tmp_path / "store" / "bars" / "SPY.parquet"
+    bars.parent.mkdir(parents=True)
+    bars.write_bytes(b"broken parquet")
+    result = CliRunner().invoke(data_cmds.data_app, ["candles", "SPY", "--json"])
+    assert result.exit_code != 0
+    assert "corrupt" in result.output
+    assert str(bars) in result.output
+    assert "not found" not in result.output

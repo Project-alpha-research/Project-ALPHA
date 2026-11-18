@@ -55,7 +55,9 @@ from typing import Any, TextIO
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import codex_bridge  # sibling module: sanitize, probe, review, project_mcp_servers
 import gate  # sibling module: codex_probe, matches_quant
+import handoff_routing  # sibling module: routed reading, the task folder, how checks run
 import handoff_sandbox  # sibling module: the build sandbox's cache and links
+from handoff_routing import Routing
 from handoff_sandbox import Prepared, codex_env, sandbox_command
 from harness_awareness import plan_front_block
 
@@ -262,7 +264,7 @@ class WorkOrder:
     do_not_touch: list[str]
     tiers: list[str]
     checks: list[str]
-    read_first: list[str]
+    read_first: list[handoff_routing.ReadRow]
     declared_class: str | None
     task_dir: str | None = None
     notes: list[str] = field(default_factory=list)
@@ -292,26 +294,6 @@ def _backticked_bullets(body: str) -> list[str]:
 
 
 _CLASS_LINE = re.compile(r"^\*\*Build class:\*\*\s*(small|standard|hard)\b", re.M)
-
-
-def _read_first_targets(text: str, doc_dir: Path, root: Path) -> list[str]:
-    body = _sections(text).get("Read first", "")
-    rows = []
-    for line in body.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 3 or cells[0] in ("Read", "") or set(cells[0]) <= {"-"}:
-            continue
-        link = re.search(r"\]\(([^)\s]+)\)", cells[0])
-        target = link.group(1) if link else cells[0].strip("`")
-        path, _, anchor = target.partition("#")
-        resolved = (doc_dir / path).resolve()
-        try:
-            rel = resolved.relative_to(root.resolve()).as_posix()
-        except ValueError:
-            rel = path
-        section = cells[1] if cells[1] not in ("—", "-", "") else "whole file"
-        rows.append(f"`{rel}` — {section}" + (f" (#{anchor})" if anchor else "") + f"; {cells[2]}")
-    return rows
 
 
 def plan_check(plan: Path) -> tuple[bool, str]:
@@ -362,7 +344,7 @@ def load_task(root: Path, task: str) -> WorkOrder:
         do_not_touch=[],
         tiers=[str(t) for t in block.get("tier_impact", []) if t != "none"],
         checks=checks,
-        read_first=_read_first_targets(text, plan.parent, root),
+        read_first=handoff_routing.table_rows(text, plan.parent, root, "plan")[0],
         declared_class=declared.group(1) if declared else None,
         task_dir=rel,
     )
@@ -393,7 +375,7 @@ def load_brief(root: Path, brief: Path) -> WorkOrder:
         do_not_touch=_backticked_bullets(sections["Do not touch"]),
         tiers=[],
         checks=checks,
-        read_first=_read_first_targets(text, root, root),
+        read_first=handoff_routing.table_rows(text, root, root, "brief")[0],
         declared_class=declared.group(1) if declared else None,
     )
 
@@ -427,22 +409,6 @@ def effective_class(order: WorkOrder, requested: str | None) -> tuple[str, str]:
     return (chosen, why)
 
 
-def workspace_contexts(root: Path, files: Sequence[str]) -> list[str]:
-    found: list[str] = []
-    for item in files:
-        plain = re.split(r"[*?\[]", item, maxsplit=1)[0].rstrip("/")
-        path = Path(plain)
-        for parent in [path, *path.parents]:
-            if parent == Path("."):
-                break
-            candidate = parent / "CONTEXT.md"
-            if (root / candidate).is_file():
-                if candidate.as_posix() not in found:
-                    found.append(candidate.as_posix())
-                break
-    return found
-
-
 # ---------------------------------------------------------------------------------------------
 # The prompt
 
@@ -460,9 +426,13 @@ def _forbidden_lines(order: WorkOrder) -> list[str]:
     return lines
 
 
-def compose_prompt(root: Path, order: WorkOrder, *, uv_ok: bool = False) -> str:
-    contexts = workspace_contexts(root, order.files)
-    read = [*order.read_first, *(f"`{c}` — whole file; workspace rules" for c in contexts)]
+def compose_prompt(
+    root: Path, order: WorkOrder, *, uv_ok: bool = False, routed: Routing | None = None
+) -> str:
+    contexts = handoff_routing.workspace_contexts(root, order.files)
+    read = [f"- `{r.target}` — {r.section or 'whole file'}; {r.when}" for r in order.read_first]
+    read += [f"- `{c}` — whole file; workspace rules" for c in contexts]
+    read += (routed or handoff_routing.route(root, contexts, order.read_first)).prompt_lines()
     checks = [f"- `{c if uv_ok else sandbox_command(c)}`" for c in order.checks]
     tool = "uv run " if uv_ok else ".venv/bin/"
     kind = "approved plan" if order.kind == "task" else "brief"
@@ -486,7 +456,7 @@ def compose_prompt(root: Path, order: WorkOrder, *, uv_ok: bool = False) -> str:
         "",
         "## Read first (only these, plus what the files you change import)",
         "",
-        *(f"- {row}" for row in read),
+        *read,
         "",
         "## Files in scope",
         "",
@@ -731,12 +701,20 @@ class CheckResult:
         return self.exit_code == 0
 
 
-def run_check(name: str, command: str, cwd: Path, timeout: float, round_no: int) -> CheckResult:
-    """``bash -c command`` in ``cwd``; on timeout the whole process group is stopped (exit 124)."""
+def run_check(
+    name: str,
+    command: str,
+    cwd: Path,
+    timeout: float,
+    round_no: int,
+    env: dict[str, str] | None = None,
+) -> CheckResult:
+    """``bash -c`` the command (pytest ones owned) in ``cwd``; on timeout the group is stopped."""
     start = time.monotonic()
     proc = subprocess.Popen(
-        ["bash", "-c", command],
+        ["bash", "-c", handoff_routing.owned(command, timeout)],
         cwd=cwd,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -905,6 +883,7 @@ class Build:
     start_head: str = ""
     ignored_at_start: set[str] = field(default_factory=set)
     previous: list[dict[str, Any]] = field(default_factory=list)
+    routed: Routing = field(default_factory=lambda: Routing(handoff_routing.ROUTED_CAP_BYTES))
 
     def record_path_in_tree(self) -> Path | None:
         if self.order.task_dir is None:
@@ -969,6 +948,7 @@ class Build:
             "notes": self.notes,
             "logs": str(self.log_dir),
             "previous_attempts": self.previous,
+            "routed_reads": self.routed.record(),
         }
 
 
@@ -1042,6 +1022,9 @@ def summary(build: Build, record_path: Path) -> str:
         lines.append(f"  ... {len(stat) - 10} more")
     if build.extras:
         lines.append(f"Outside declared scope (within tolerance): {', '.join(build.extras[:5])}")
+    routed = build.routed
+    left = f"; {len(routed.left_out)} left out over the cap" if routed.left_out else ""
+    lines.append(f"Routed reading: {len(routed.entries)} entries, {routed.total:,} bytes{left}")
     lines.append("Checks (run outside the sandbox by this tool):")
     if not build.checks:
         lines.append("  none run")
@@ -1147,16 +1130,23 @@ def _verify_round(build: Build, args: argparse.Namespace, round_no: int, ignore:
         return False
     commands = [("gate check", f"uv run python scripts/gate.py check --base {build.base}")]
     commands += [(f"check {i + 1}", c) for i, c in enumerate([*build.order.checks, *args.check])]
-    ok = True
-    for name, command in commands:
-        timeout = GATE_TIMEOUT if name == "gate check" else CHECK_TIMEOUT
-        result = run_check(name, command, wt, timeout, round_no)
-        (build.log_dir / f"check-r{round_no}-{_slug(name)}.log").write_text(result.tail)
-        build.checks.append(result)
-        if not result.passed:
-            ok = False
-            break  # the first failure is what the fix round gets
-    return ok
+    changed = [p for _, p in build.files]
+    web = handoff_routing.web_bundle(wt, _main(wt), changed, [c for _, c in commands])
+    build.notes += web.notes
+    build.ignored_at_start |= web.ignored
+    try:
+        with handoff_routing.check_env() as env:
+            for name, command in commands:
+                timeout = GATE_TIMEOUT if name == "gate check" else CHECK_TIMEOUT
+                result = run_check(name, command, wt, timeout, round_no, env)
+                (build.log_dir / f"check-r{round_no}-{_slug(name)}.log").write_text(result.tail)
+                build.checks.append(result)
+                if not result.passed:
+                    return False  # the first failure is what the fix round gets
+    finally:
+        if web.prep is not None:
+            build.policy += handoff_sandbox.unlink_built_files(web.prep)
+    return True
 
 
 def cmd_build(args: argparse.Namespace, root: Path, *, codex: bool) -> int:
@@ -1206,6 +1196,13 @@ def cmd_build(args: argparse.Namespace, root: Path, *, codex: bool) -> int:
             try:
                 _run(build, args, root, codex=codex)
             finally:
+                brief = build.order.text if build.order.kind == "brief" else None
+                last = build.runs[-1].last_message if build.runs else ""
+                report = "\n".join(sanitize_lines(last))
+                where = (build.order.name, build.order.task_dir)
+                build.notes += handoff_routing.leave_task_files(
+                    wt, _main(root), *where, brief, report
+                )
                 record_path = write_record(build, home)
                 update_state(
                     home,
@@ -1227,10 +1224,13 @@ def cmd_build(args: argparse.Namespace, root: Path, *, codex: bool) -> int:
 
 def _run(build: Build, args: argparse.Namespace, root: Path, *, codex: bool) -> None:
     wt = build.worktree
-    prompt = compose_prompt(wt, build.order)
+    contexts = handoff_routing.workspace_contexts(wt, build.order.files)
+    build.routed = handoff_routing.route(wt, contexts, build.order.read_first)
+    prompt = compose_prompt(wt, build.order, routed=build.routed)
     (build.log_dir / "prompt.md").write_text(prompt)
     in_tree = build.record_path_in_tree()
     ignore = [in_tree.relative_to(wt).as_posix()] if in_tree else []
+    ignore += handoff_routing.task_file_paths(wt, build.order.name, build.order.task_dir)
     build.start_head = _git(wt, "rev-parse", "HEAD").strip()
     build.ignored_at_start = ignored_paths(wt)
     if not codex:
@@ -1256,7 +1256,7 @@ def _run(build: Build, args: argparse.Namespace, root: Path, *, codex: bool) -> 
     prep = handoff_sandbox.provision_cache(handoff_home(root), build.run_id, wt, _main(root))
     build.notes += prep.notes
     if prep.cache is not None:
-        prompt = compose_prompt(wt, build.order, uv_ok=True)
+        prompt = compose_prompt(wt, build.order, uv_ok=True, routed=build.routed)
         (build.log_dir / "prompt.md").write_text(prompt)
     try:
         _codex_rounds(build, args, prompt, ignore, prep)

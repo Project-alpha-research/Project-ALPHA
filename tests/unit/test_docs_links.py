@@ -33,6 +33,9 @@ ALLOWLIST: dict[tuple[str, str], str] = {
 # The owner's research notes keep their bytes exactly (docs/archive/research-notes/README.md), so
 # links inside them are not checked; links *to* them are.
 RESEARCH_NOTES = "docs/archive/research-notes/"
+# A build's brief and report (docs/work/CONTEXT.md) are copies of text written elsewhere: outputs,
+# so their links are not checked.
+_TASK_OUTPUT = re.compile(r"^docs/work/[^/]+/(?:brief|report)\.md$")
 
 _FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 _INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
@@ -120,7 +123,7 @@ def links(text: str) -> list[tuple[int, str]]:
 
 
 def broken_links(rel: str) -> list[str]:
-    if rel.startswith(RESEARCH_NOTES):
+    if rel.startswith(RESEARCH_NOTES) or _TASK_OUTPUT.match(rel):
         return []
     source = ROOT / rel
     problems: list[str] = []

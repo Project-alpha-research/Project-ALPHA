@@ -39,7 +39,7 @@ it points to, never here.
 | [scripts/CONTEXT.md](scripts/CONTEXT.md) | — | the gate, CI steps, file-system tools, generators |
 | [tests/CONTEXT.md](tests/CONTEXT.md) | — | test layout, markers, bias guards, oracles |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | — | documentation, ADRs, plans, this file system |
-| [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change: shape, plan, build, verify, land (today the pull request is the handoff) |
+| [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change: shape, plan, build, verify, land (briefs and build reports: `docs/work/`) |
 | [research/CONTEXT.md](research/CONTEXT.md) | — | testing any trading idea: it sends you to the playbook (`research/PLAYBOOK.md`) and `alpha test` |
 
 A task spanning areas: start at the area whose code you change first; its Read first table links the

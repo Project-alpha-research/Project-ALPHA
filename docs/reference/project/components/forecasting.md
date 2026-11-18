@@ -41,6 +41,10 @@ See the capability below on [STATUS.md](../../../../STATUS.md). The command is `
 Workstation screen is Kronos Studio (View → Forecast, `apps/alpha-web/frontend/src/panels/KronosStudio.tsx`),
 which reads stored forecast runs. Its paths also feed the Kronos family of [Monte Carlo](monte-carlo.md).
 
+Leakage is labelled, not blocked. Each forecast run records which input bars fall on or before the assumed pretraining cutoff (default 2025-08-02, a
+stand-in for the undisclosed real date) in a `pretrain` block with the overlap dates. `alpha forecast run` prints a warning on overlap, and `alpha
+forecast eval` splits its skill scores before and after the cutoff. The Kronos Monte Carlo command records the same block and raises its warning flag.
+
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-forecast`

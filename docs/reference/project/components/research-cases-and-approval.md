@@ -35,7 +35,8 @@ never sees).
   jobs, evidence and the owner's signed receipts.
 - Each owner act needs an explicit local confirmation tied to that exact act
   ([ADR-0038](../../../adr/0038-local-confirmation-and-terminal-archive-charts.md)); no screen,
-  agent or model can stand in for the owner.
+  agent or model can stand in for the owner. A stand-in user may discuss RD-Agent's ideas, never approve
+  ([rule](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests)).
 - The phase split and gate packets are pure, fixed code whose bytes feed approval hashes.
 
 ## What is real today

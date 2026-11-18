@@ -12,8 +12,8 @@ verified: e9b6b6af599a87f8
 
 # The reserved period
 
-The reserved period is all data on or after 2024-01-01. It is kept back so that an idea is never tuned on it. Today only
-RD-Agent's factor loop truly locks it. Other commands label it or ignore it.
+The reserved period is all data on or after 2024-01-01. It is kept back so that an idea is never tuned on it. Today only RD-Agent's factor loop, its rule
+families and its journey figures lock it. Other commands label it or ignore it.
 
 ## Where the code defines the date
 

@@ -272,6 +272,8 @@ class Launch:
         self.bundle = self.factor_python.parents[2]
         self.repo_python = REPO / ".venv" / "bin" / "python"
         self.children: list[subprocess.Popen[bytes]] = []
+        # The gateway process, its session files and its token, removed again by stop().
+        self.gateway_session: tuple[subprocess.Popen[bytes], tuple[Path, Path], str] | None = None
         self.universe_text = "15 surviving coins only"
         self.receipt: dict[str, Any] = {
             "schema": "AlphaRdagentFactorRunReceiptV1",
@@ -493,6 +495,8 @@ class Launch:
             except (OSError, ValueError):
                 session = {}
             if session.get("pid") == child.pid:
+                files = (state / f"session-{child.pid}.json", state / "session.json")
+                self.gateway_session = (child, files, str(session["token"]))
                 self.log("gateway", status="ok", base_url=session["base_url"])
                 return str(session["base_url"]), str(session["token"])
             time.sleep(0.2)
@@ -589,7 +593,20 @@ class Launch:
                 else:
                     continue
                 break
+            if self.gateway_session and self.gateway_session[0] is child:
+                self._remove_gateway_session(*self.gateway_session[1:])
         self.children.clear()
+
+    def _remove_gateway_session(self, files: tuple[Path, Path], token: str) -> None:
+        """A gateway signalled before it installs its handler, or killed after the wait, cannot
+        remove its own session files. Remove each one that still carries this run's token."""
+        self.gateway_session = None
+        for path in files:
+            try:
+                if json.loads(path.read_text()).get("token") == token:
+                    path.unlink(missing_ok=True)
+            except (OSError, ValueError):
+                pass
 
     def gateway_status(self) -> Any:
         result = subprocess.run(

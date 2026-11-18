@@ -965,7 +965,10 @@ def test_structural_prefix_mismatch_has_row_and_instrument() -> None:
 def test_real_whole_panel_peek_is_reproducible_lookahead(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Run actual factor subprocesses, replacing only the unavailable HDF serializer."""
+    """Run actual pandas factor subprocesses, replacing only the unavailable HDF serializer.
+
+    Pickle stands in for HDF: Parquet starts pyarrow threads that sometimes abort the child at
+    exit under load (exit -6, "terminate called without an active exception")."""
     cut = "2021-01-02"
     index = pd.MultiIndex.from_product(
         [pd.date_range("2021-01-01", periods=4), ["A", "B"]],
@@ -974,22 +977,24 @@ def test_real_whole_panel_peek_is_reproducible_lookahead(
     prices = pd.DataFrame({"close": np.arange(1.0, 9.0)}, index=index)
     source = tmp_path / cut / "daily_pv.h5"
     source.parent.mkdir()
-    prices.iloc[:4].to_parquet(source)
+    prices.iloc[:4].to_pickle(source)
     full = prices / prices.mean()
     monkeypatch.setattr(data, "CUTS", (cut,))
 
     def read(path: Path, *, key: str) -> pd.DataFrame:
         assert key == "data"
-        return pd.read_parquet(path)
+        frame = pd.read_pickle(path)
+        assert isinstance(frame, pd.DataFrame)
+        return frame
 
     monkeypatch.setattr(data.pd, "read_hdf", read)
     code = (
         b"import pandas as pd\n"
-        b"f = pd.read_parquet('daily_pv.h5')\n"
-        b"(f / f.mean()).to_parquet('result.h5')\n"
+        b"f = pd.read_pickle('daily_pv.h5')\n"
+        b"(f / f.mean()).to_pickle('result.h5')\n"
     )
     result = data.check_prefix_invariance(code, full, tmp_path, sys.executable, 30)
-    assert result["status"] == "LOOKAHEAD"
+    assert result["status"] == "LOOKAHEAD", result
     assert result["repeat_mismatch"] is None
     assert result["first_mismatch"]["absolute_difference"] > 0
 

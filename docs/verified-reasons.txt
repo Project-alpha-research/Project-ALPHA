@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified b5bd7da78c76ee30 on 2026-11-19: Re-read after merging main: the RD-Agent section now says feedback treats a drop as a choice; the other worker rules are unchanged
+  verified 681c75226d86a35d on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -149,7 +149,7 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified 5372425c4d830b47 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
+  verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

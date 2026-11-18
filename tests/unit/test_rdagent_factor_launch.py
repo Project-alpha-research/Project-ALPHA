@@ -6,10 +6,13 @@ import argparse
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import time
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 from typing import Any
 
 import pytest
@@ -508,13 +511,20 @@ def test_relative_trial_ledger_is_named_not_memory_dir(tmp_path: Path) -> None:
         launch.validate(parsed, environ(tmp_path))
 
 
-def test_runs_sharing_one_gateway_state_each_get_their_own_gateway(tmp_path: Path) -> None:
+@pytest.mark.parametrize("force_race", [False, True], ids=["real-server", "forced-race"])
+def test_runs_sharing_one_gateway_state_each_get_their_own_gateway(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, force_race: bool
+) -> None:
     """Concurrent runs must share the gateway state (one monthly cap), so each finds its own
     gateway: on 2026-11-16 two of three runs started together failed with 'did not write its
-    session within 30 s' because every gateway wrote the same session.json."""
-    import threading
+    session within 30 s' because every gateway wrote the same session.json. The forced race stops
+    gateway a after it publishes its session and before it installs its SIGTERM handler; the
+    launcher must then remove that gateway's session files itself."""
+    from tests.unit._rdagent_support import spawn_socket_free_gateway
 
-    jobs, results = [], {}
+    published = Barrier(3, timeout=60)
+    jobs = []
+    state = tmp_path / "gateway" / "model-gateway"
     for name in ("a", "b", "c"):
         run = tmp_path / f"run-{name}"
         (run / "logs").mkdir(parents=True)
@@ -528,29 +538,51 @@ def test_runs_sharing_one_gateway_state_each_get_their_own_gateway(tmp_path: Pat
         job.repo_python = Path(sys.executable)
         jobs.append(job)
 
-    def start(job: Any) -> None:
-        try:
-            results[job.args.run_id] = job.gateway()
-        except launch.LaunchError as error:
-            results[job.args.run_id] = error
+    def start(job: Any, port: int, *, stop_before_handler: bool) -> str:
+        original_spawn = job.spawn
 
-    threads = [threading.Thread(target=start, args=(job,)) for job in jobs]
+        def spawn(command: Sequence[str], log: str, **kwargs: object) -> subprocess.Popen[bytes]:
+            child = spawn_socket_free_gateway(
+                original_spawn,
+                command,
+                log,
+                port=port,
+                stop_before_handler=stop_before_handler,
+                **kwargs,
+            )
+            # Let all three children publish before any launcher looks for its session.
+            published.wait()
+            return child
+
+        if force_race:
+            monkeypatch.setattr(job, "spawn", spawn)
+        connection: tuple[str, str] = job.gateway()
+        base_url, token = connection
+        if force_race:
+            assert base_url == f"http://127.0.0.1:{port}"
+        pid = job.children[0].pid
+        session = json.loads((state / f"session-{pid}.json").read_text())
+        assert session["pid"] == pid
+        assert token == session["token"]
+        return base_url
+
     try:
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join(timeout=60)
-        assert all(isinstance(value, tuple) for value in results.values()), results
-        assert len({base_url for base_url, _ in results.values()}) == 3
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            starts = [
+                pool.submit(start, job, port, stop_before_handler=(offset == 0))
+                for offset, (job, port) in enumerate(zip(jobs, (41001, 41002, 41003), strict=True))
+            ]
+            assert len({future.result() for future in starts}) == 3
+        pid = jobs[0].children[0].pid
         jobs[0].stop()
-        state = tmp_path / "gateway" / "model-gateway"
+        assert not (state / f"session-{pid}.json").exists()
         for job in jobs[1:]:
             pid = job.children[0].pid
             assert json.loads((state / f"session-{pid}.json").read_text())["pid"] == pid
     finally:
         for job in jobs:
             job.stop()
-    assert not list((tmp_path / "gateway" / "model-gateway").glob("session*.json"))
+    assert not list(state.glob("session*.json"))
 
 
 def test_receipt_splits_paid_model_calls_from_free_local_embeddings() -> None:

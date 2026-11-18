@@ -9,7 +9,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 07d082a5ad4d4e01
+verified: 74a2ad8245659793
 ---
 
 # Investigation tools invariants
@@ -31,6 +31,8 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
 - The engine samples equity at each bar's open, so market and benchmark returns are open-to-open
   on shared timestamps; the output reports the bars each side lost to the join. A comparison of
   two assets with different session clocks says that a shared date is not a shared instant.
+  Attribution uses the rule test’s full-history buy-and-hold calculation from the first shared open.
+  A comparison asset’s recorded dividends enter its cache key.
 - Regimes are fitted on the market's returns. The headline split labels each bar with the
   filtered regime of the bar before it (causal); the smoothed split is a separate `hindsight`
   section. Model parameters use the whole sample: label `parameters-fit-in-sample`. Change points

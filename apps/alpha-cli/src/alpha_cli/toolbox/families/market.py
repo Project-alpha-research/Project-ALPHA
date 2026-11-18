@@ -26,12 +26,12 @@ def attribution(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
     from alpha_cli.toolbox.inputs import join_market
     from alpha_validation.attribution import market_attribution
 
-    joined = join_market(inputs)
+    joined = join_market(inputs, attribution=True)
     result = market_attribution(joined.strategy, joined.market, periods_per_year=joined.ppy)
     basis = (
         f"full-sample strategy returns against buy-and-hold open-to-open returns of "
-        f"{joined.name}, price only with no dividends (the strategy keeps any recorded dividend "
-        f"cash), on shared timestamps (the engine marks equity at each bar's open); "
+        f"{joined.name} on shared timestamps. Buy and hold starts at the first shared open and "
+        "keeps entitled recorded dividends as cash from payment; "
         f"{'' if joined.same_asset else CLOCKS}{result.pop('basis')}"
     )
     result.update(benchmark=joined.name, periods_per_year=joined.ppy, join=joined.counts)
@@ -279,6 +279,7 @@ def changepoints(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
 
 ATTRIBUTION = ToolSpec(
     id="market.attribution",
+    version=2,
     question="How much of the return comes from exposure to the benchmark?",
     needs=("run_returns", "run_bars"),
     params=(

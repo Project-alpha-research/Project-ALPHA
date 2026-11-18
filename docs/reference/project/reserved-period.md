@@ -7,7 +7,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: 383d46efc5e63521
+verified: b1ae559f13cdd92b
 ---
 
 # The reserved period

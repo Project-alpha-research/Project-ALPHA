@@ -52,6 +52,7 @@ def _series(home: Path, n: int = 700, always_long: bool = False) -> tool_inputs.
         dates=dates,
         equity=tuple(float(v) for v in equity),
         opens=dict(zip(dates, (float(v) for v in opens), strict=True)),
+        benchmark_equity=dict(zip(dates, (float(v) for v in opens), strict=True)),
     )
 
 
@@ -73,12 +74,16 @@ def _other_asset(monkeypatch: pytest.MonkeyPatch, home: Path, keep: int) -> dict
     )
     seen: dict[str, Any] = {}
 
+    bars = [
+        SimpleNamespace(
+            symbol="QQQ", ts=date, open=round(series.opens[date], 2) * 2, close=float("nan")
+        )
+        for date in series.dates[::keep]
+    ]
+
     def load_bars(symbol: str, *, data_dir: Path, as_of: datetime) -> tuple[list[Any], None]:
         seen.update(symbol=symbol, as_of=as_of)
-        return [
-            SimpleNamespace(ts=date, open=series.opens[date] * 2, close=float("nan"))
-            for date in series.dates[::keep]
-        ], None
+        return bars, None
 
     monkeypatch.setattr(_runner, "load_bars", load_bars)
     return seen
@@ -88,7 +93,7 @@ def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
     before = sorted(path.name for path in (home / "runs" / RUN).iterdir())
     output = run(home, "market.attribution", RUN)
     assert sorted(path.name for path in (home / "runs" / RUN).iterdir()) == before
-    assert output["file"].startswith(f"diagnostics/{RUN}/market.attribution@v1-")
+    assert output["file"].startswith(f"diagnostics/{RUN}/market.attribution@v2-")
     folder = home / "diagnostics" / RUN
     assert [path.name for path in folder.iterdir()] == [Path(output["file"]).name]  # no temp file
     stored = json.loads((home / output["file"]).read_text())
@@ -148,6 +153,9 @@ def test_market_returns_are_open_to_open_like_the_equity(
 ) -> None:
     # The engine samples equity at each open; a close-based benchmark would mismatch intervals.
     # QQQ's opens are SPY's doubled (same returns) and its closes are unusable.
+    series = _series(home)
+    series = replace(series, benchmark_equity={ts: round(p, 2) for ts, p in series.opens.items()})
+    monkeypatch.setattr(tool_inputs, "load_run", lambda home, run_id: series)
     same = run(home, "market.attribution", RUN)["result"]
     _other_asset(monkeypatch, home, keep=1)
     other = run(home, "market.attribution", RUN, ["benchmark=QQQ"])["result"]

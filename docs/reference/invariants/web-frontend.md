@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: cd5831c1aa5f5c28
+verified: b7226bd97a06f9d0
 ---
 
 # Web frontend invariants
@@ -127,12 +127,13 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - `reportModel.summaryRows` shows recorded manifest values only (`not recorded` otherwise) — no client arithmetic.
 - `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot
   do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
-- A rule test (`detail.rule_test` set) opens the Summary view with `rundetail/RuleTestReport.tsx`, fed by
-  `panels/ruleTestModel.ts`: stored values only, `not recorded` plus the stored reason for a null, audit statuses on the
-  existing chip tones and no overall grade. The one display difference is between two stored Sharpe values in the
-  variants table; the yearly bars are a drawing scale only, and stored basis notes are shown as sentences with their
-  words unchanged. The toolbar shows `rule test` and the run's labels instead of the launch-context watermark; other runs
-  keep the watermark chip. Enforced by `src/panels/ruleTestModel.test.ts`.
+- A rule test opens with the saved idea (or plain rule), market, loaded dates and a comparison of the two full-history returns.
+  The five tiles show total return after costs, annual growth, worst drop, closed trades and buy-and-hold return from the stored diagnostics.
+  The Sharpe line uses the same full-history basis. Labels and flagged checks qualify their numbers. A missing value keeps its stored reason.
+  The trade tile explains a sparse grade with the manifest's walk-forward count and verdict. The two samples can have different trade counts.
+  The figure catalogue supplies separate comparison and drawdown cards for the scored period. Loading, failure and an empty list each have their own text.
+  Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail. Only variants subtract Sharpe scores.
+  Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
 

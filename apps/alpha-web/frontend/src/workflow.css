@@ -107,23 +107,19 @@
 .scientific-plot svg text { fill: var(--chart-ink); font: var(--font-size) var(--font-mono); }
 .report-summary-composition { display: grid; grid-template-columns: minmax(250px, 0.9fr) minmax(350px, 1.8fr); gap: 4px; align-items: start; }
 .report-summary-composition .recorded-panel { min-height: 320px; }
-.rule-test { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; align-items: start; margin: 0 0 var(--pad); padding-bottom: var(--pad); border-bottom: 1px solid var(--line-strong); }
+.rule-test { display: flex; flex-direction: column; gap: var(--pad); margin: 0 0 var(--pad); padding-bottom: var(--pad); border-bottom: 1px solid var(--line-strong); }
+.rule-test .metric-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 .rule-test .summary-table { max-width: none; width: calc(100% - 2 * var(--pad)); }
 .rule-test .summary-table td { white-space: normal; vertical-align: top; }
 .rule-test .summary-table td.k { width: 28%; }
 .rule-test .summary-table td.num { text-align: right; white-space: nowrap; }
 .rule-test .summary-table tfoot td { font-size: var(--font-size); border-bottom: 0; }
-.rule-test-col { min-width: 0; display: flex; flex-direction: column; gap: var(--pad); }
 .rule-test .summary-table td.num.pos { color: var(--up); }
 .rule-test .summary-table td.num.neg { color: var(--negative-text); }
 .rule-test-tested td:not(.k) { overflow-wrap: anywhere; }
 .rule-test-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .rule-test-status { width: 1%; white-space: nowrap; }
 .rule-test-reason { display: block; font-family: var(--font-sans); font-size: var(--font-size); color: var(--muted); white-space: normal; }
-.rule-test-bar { width: 22%; padding-left: 0; }
-.rule-test-bar span { display: block; height: 8px; margin-top: 4px; background: var(--line-strong); }
-.rule-test-bar span.pos { background: var(--chart-up); }
-.rule-test-bar span.neg { background: var(--chart-down); }
 .report-summary-figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; grid-column: 1 / -1; }
 .workflow-shell .figure-scroll { padding: 4px; }
 .workflow-shell .figure-card { border: 1px solid var(--line-strong); border-radius: 0; margin: 0; padding: 0; }
@@ -132,8 +128,8 @@
 .figure-surface-title { padding: 2px 5px; font-size: var(--font-size); display: flex; align-items: center; gap: 6px; }
 .figure-surface-title > span { margin-right: auto; }
 @media (max-width: 1000px) { .workflow-topbar { gap: 2px; } #analytical-toolbar { flex-wrap: wrap; } .market-desk-left { min-width: 300px; } .market-desk-right { max-width: 40%; width: 260px; } .workflow-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 800px) { .market-desk-windows { flex-wrap: wrap; overflow: auto; } .market-desk-left { display: none; } .market-desk-right { max-width: 100%; width: 100%; max-height: 300px; } .analytical-workspace { display: flex; flex-direction: column; overflow: auto; min-height: 0; } .analytical-panel:not(.panel-maximized) { position: relative; inset: auto !important; visibility: visible !important; min-height: 330px; flex-shrink: 0; pointer-events: auto !important; } .workspace-splitter { display: none; } .scientific-grid, .report-summary-composition, .report-summary-figures, .rule-test { grid-template-columns: 1fr; } .workflow-cards { grid-template-columns: 1fr; } }
-@media (max-width: 900px) { .report-document .figure-report { display: block; overflow-y: auto; } .report-document .figure-scroll { overflow: visible; padding-bottom: var(--pad); } .report-toolbar { flex-wrap: wrap; row-gap: 4px; } .rule-test .summary-table { margin-left: 0; margin-right: 0; width: 100%; } .rule-test .summary-table td, .rule-test .summary-table th { padding-left: 4px; padding-right: 4px; } .rule-test-bar { width: 14%; } }
+@media (max-width: 800px) { .market-desk-windows { flex-wrap: wrap; overflow: auto; } .market-desk-left { display: none; } .market-desk-right { max-width: 100%; width: 100%; max-height: 300px; } .analytical-workspace { display: flex; flex-direction: column; overflow: auto; min-height: 0; } .analytical-panel:not(.panel-maximized) { position: relative; inset: auto !important; visibility: visible !important; min-height: 330px; flex-shrink: 0; pointer-events: auto !important; } .workspace-splitter { display: none; } .scientific-grid, .report-summary-composition, .report-summary-figures { grid-template-columns: 1fr; } .workflow-cards { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .report-document .figure-report { display: block; overflow-y: auto; } .report-document .figure-scroll { overflow: visible; padding-bottom: var(--pad); } .report-toolbar { flex-wrap: wrap; row-gap: 4px; } .rule-test .summary-table { margin-left: 0; margin-right: 0; width: 100%; } .rule-test .summary-table td, .rule-test .summary-table th { padding-left: 4px; padding-right: 4px; } }
 @media (prefers-reduced-motion: reduce) { .workflow-shell button { transition: none; } }
 .asset-select { position: relative; min-width: 0; }
 .asset-select-control { display: flex; }

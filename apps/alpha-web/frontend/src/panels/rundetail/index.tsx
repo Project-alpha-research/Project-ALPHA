@@ -19,7 +19,7 @@ import { RecordedPanel } from '../RecordedPanel'
 import { FigureCard } from '../../components/FigureCard'
 import { FigureSection } from '../FigureReport'
 import { reportTree, summaryRows, tradesCsv, watermarkChip } from '../reportModel'
-import { labelChips, RULE_TEST_TITLE } from '../ruleTestModel'
+import { labelChips, RULE_TEST_TITLE, summaryFigures } from '../ruleTestModel'
 import { RuleTestReport } from './RuleTestReport'
 import { Icon } from '../../shell/icons'
 import { setSettings, useSettings } from '../../state/settings'
@@ -60,7 +60,7 @@ export function RunDetail(props: PanelHandleProps) {
   const [detailState, setDetailState] = useState<RunOwned<RunDetailData> | null>(null)
   const [tradeState, setTradeState] = useState<TradesState>({ runId, status: 'loading' })
   const [errorState, setErrorState] = useState<RunOwned<string> | null>(null)
-  const [catalogueState, setCatalogueState] = useState<RunOwned<FigureCatalogue | null> | null>(null)
+  const [catalogueState, setCatalogueState] = useState<RunOwned<FigureCatalogue | string> | null>(null)
   const [view, setView] = useState('summary')
   const [investigating, setInvestigating] = useState(false)
 
@@ -82,7 +82,7 @@ export function RunDetail(props: PanelHandleProps) {
     api
       .figures(runId)
       .then((value) => ownsRequest() && setCatalogueState({ runId, requestId, value }))
-      .catch(() => ownsRequest() && setCatalogueState({ runId, requestId, value: null }))
+      .catch((cause: unknown) => ownsRequest() && setCatalogueState({ runId, requestId, value: String(cause) }))
     api
       .run(runId)
       .then((value) => {
@@ -112,9 +112,11 @@ export function RunDetail(props: PanelHandleProps) {
   const error = errorState?.runId === runId && errorState.requestId === detailRequestId.current
     ? errorState.value
     : null
-  const catalogue = catalogueState?.runId === runId && catalogueState.requestId === detailRequestId.current
+  const figureResult = catalogueState?.runId === runId && catalogueState.requestId === detailRequestId.current
     ? catalogueState.value
     : null
+
+  const catalogue = typeof figureResult === 'string' ? null : figureResult
 
   const onLaunch = useMemo(
     () => (command: string, args: string) => openStrategyLab({ command, args }),
@@ -168,7 +170,8 @@ export function RunDetail(props: PanelHandleProps) {
   const metadata = (manifest.metadata ?? {}) as Record<string, unknown>
   const symbol = asStr(manifest.symbol) ?? asStr(metadata.symbol) ?? ''
   // Save PNG hands over the first drawable figure of the current view; nothing is drawn here.
-  const firstFigure = (catalogue?.items ?? []).find((item) => leaf.figureIds.includes(item.figure_id) && item.available) ?? null
+  const firstFigure = ruleTest && leaf.id === 'summary' ? summaryFigures(catalogue?.items ?? [])[0]
+    : (catalogue?.items ?? []).find((item) => leaf.figureIds.includes(item.figure_id) && item.available) ?? null
   const notes = explain === 'narrative'
 
   const body = (() => {
@@ -176,8 +179,11 @@ export function RunDetail(props: PanelHandleProps) {
       case 'daily-study':
         return <DailyRuleReport key={runId} runId={runId} panelApi={props.api}/>
       case 'summary':
+        if (ruleTest) return <RuleTestReport key={runId} test={ruleTest} manifest={manifest} runId={runId}
+          runName={detail.display_name} figures={catalogue?.items ?? null} watermark={gateWatermark}
+          figureError={typeof figureResult === 'string' ? figureResult : undefined} />
         return (
-          <>{ruleTest ? <RuleTestReport key={runId} test={ruleTest}/> : null}<div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">
+          <div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">
             <caption>Summary — what this run recorded</caption>
             <tbody>
               {summaryRows(manifest as Record<string, unknown>).map((row) => (
@@ -187,7 +193,7 @@ export function RunDetail(props: PanelHandleProps) {
                 </tr>
               ))}
             </tbody>
-          </table>}<div><RecordedPanel runId={runId} kind="equity" panelId="report-equity"/><RecordedPanel runId={runId} kind="drawdown" panelId="report-drawdown"/></div><div className="report-summary-figures">{(catalogue?.items ?? []).filter(item => item.available && !item.figure_id.includes('equity') && !item.figure_id.includes('price')).slice(0, 2).map(item => <FigureCard key={`${runId}:${item.figure_id}`} runId={runId} runName={detail.display_name} item={item}/>)}</div></div></>
+          </table>}<div><RecordedPanel runId={runId} kind="equity" panelId="report-equity"/><RecordedPanel runId={runId} kind="drawdown" panelId="report-drawdown"/></div><div className="report-summary-figures">{(catalogue?.items ?? []).filter(item => item.available && !item.figure_id.includes('equity') && !item.figure_id.includes('price')).slice(0, 2).map(item => <FigureCard key={`${runId}:${item.figure_id}`} runId={runId} runName={detail.display_name} item={item}/>)}</div></div>
         )
       case 'gates':
         return <Gates manifest={manifest as ValidateManifest} />

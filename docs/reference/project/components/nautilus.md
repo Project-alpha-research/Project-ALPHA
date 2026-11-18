@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - packages/alpha-backtest/CONTEXT.md
   - docs/adr/0003-t+1-fill-encoding.md
-verified: 3a396387428ab2de
+verified: 1c97096a41ae97d5
 ---
 
 # Nautilus

@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 28 working, 30 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 28 working, 31 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -78,6 +78,7 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Purged cross-validation for labels that last several days** — tested in-process only (a real run is recorded).
 - **Fractional differencing with d chosen on training data only** — tested in-process only (a real run is recorded).
 - **Second opinions on luck-adjusted scores, minimum track record and strategy risk** — tested in-process only (a real run is recorded).
+- **Follow one judged idea through seven steps (RD-Agent)** — tested in-process only. More: [research/tools/rdagent-journey.md](research/tools/rdagent-journey.md). More: [docs/roadmap/backlog/research-loop-screen.md](docs/roadmap/backlog/research-loop-screen.md).
 
 ## Known defects
 
@@ -156,6 +157,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 - RD-Agent factor loop under the command line's job supervisor — medium (M)
 - RD-Agent loop: a usable fake route, resume, and exact call accounting — medium (M)
 - Re-check the vendored Kronos copy against the glue rules — small (S)
+- Research loop screen — large (L)
 - Research-method ideas recovered from earlier material — medium (M)
 - Research-partner and screen ideas recovered from earlier material — medium (M)
 - Research-practice ideas from the owner's private research — medium (M)
@@ -172,7 +174,7 @@ Ideas not yet planned (no order recorded, so alphabetical):
 
 ## Housekeeping
 
-- Backlog items: 53
+- Backlog items: 54
 - Staged refactors: 5
 
 ## Where things are

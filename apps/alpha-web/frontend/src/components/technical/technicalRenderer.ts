@@ -33,7 +33,7 @@ import {
   type DateTick,
 } from './technicalModel'
 import { studyColors, type TechnicalStyle } from './technicalTokens'
-import { styleTechnicalAxes, tagStyle } from './technicalChrome'
+import { styleHover, styleTechnicalAxes, tagStyle } from './technicalChrome'
 
 export interface TechnicalComposition {
   bars: readonly Candle[]
@@ -64,6 +64,7 @@ interface Panel {
   layers?: { legend: HTMLDivElement; marks: HTMLDivElement; cursor: HTMLDivElement }
 }
 
+const studyDashes = ['solid', 'dashed', 'dotted'] as const
 const LEFT = 46, RIGHT = 64, DATE_STRIP = 18, BAR_PX = 5, TICK_PX = 16
 
 function el(parent: HTMLElement, style: Partial<CSSStyleDeclaration>, text?: string, tag = 'div'): HTMLElement {
@@ -193,7 +194,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
         const fill = p.kind === 'macd' ? style.histFill : line.color, edge = p.kind === 'macd' ? style.histEdge : line.color
         p.fig.vbar({ field: 'x' }, 0.8, { field: 'y' }, 0, { source: new ColumnDataSource({ data: { x: index, y: values } }), fill_color: fill, line_color: edge, line_width: 1 })
       } else {
-        p.fig.line({ field: 'x' }, { field: 'y' }, { source: new ColumnDataSource({ data: { x: index, y: values } }), line_color: line.color, line_width: 1 })
+        p.fig.line({ field: 'x' }, { field: 'y' }, { source: new ColumnDataSource({ data: { x: index, y: values } }), line_color: line.color, line_width: 1, line_dash: studyDashes[p.lines.indexOf(line) % studyDashes.length] })
       }
     }
   }
@@ -230,7 +231,8 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
   }
   const events = new ColumnDataSource({ data: { x: [], y: [], label: [], sequence: [], color: [], size: [] } })
   const markers = price.fig.scatter({ field: 'x' }, { field: 'y' }, { source: events, size: { field: 'size' }, fill_color: { field: 'color' }, line_color: style.text, marker: 'diamond' })
-  price.fig.add_tools(new HoverTool({ renderers: [markers], tooltips: [['Evidence', '@label'], ['Sequence', '@sequence']] }))
+  const evidenceTooltip = new HoverTool({ renderers: [markers], tooltips: [['Evidence', '@label'], ['Sequence', '@sequence']] })
+  price.fig.add_tools(evidenceTooltip)
   price.fig.add_tools('tap')
   let onSelect: ((sequence: number) => void) | undefined
   events.selected.change.connect(() => { const k = events.selected.indices[0]; if (k !== undefined) onSelect?.((events.get_column('sequence') as number[])[k]) })
@@ -324,6 +326,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
   let observer: ResizeObserver | undefined, unregister: (() => void) | undefined
   let removePointerListeners = () => {}
   try {
+  styleHover(evidenceTooltip, style)
   const views = mounted.view.child_views as unknown as PlotView[]
   const font = `${style.fontSize}px ${style.font}`
 
@@ -334,16 +337,16 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
     const base = { position: 'absolute', inset: '0', pointerEvents: 'none', font, color: style.text } as Partial<CSSStyleDeclaration>
     p.layers = { legend: el(root, base) as HTMLDivElement, marks: el(root, base) as HTMLDivElement, cursor: el(root, base) as HTMLDivElement }
     const bbox = view.frame.bbox
-    const legend = el(p.layers.legend, { position: 'absolute', left: `${bbox.left + 3}px`, top: `${bbox.top + 2}px`, lineHeight: '11px', whiteSpace: 'nowrap', background: 'var(--transparent)' })
+    const legend = el(p.layers.legend, { position: 'absolute', left: `${bbox.left + 3}px`, top: `${bbox.top + 2}px`, lineHeight: '1.2', whiteSpace: 'nowrap', background: style.plot })
     legend.className = 'technical-legend'
     const rows: { text: HTMLElement[]; values: (i: number) => string[] }[] = []
-    const addRow = (label: string, swatchColor: string, colorsFor: string[], values: (i: number) => string[], bar = false) => {
+    const addRow = (label: string, swatchColor: string, colorsFor: string[], values: (i: number) => string[], bar = false, dash: typeof studyDashes[number] = 'solid') => {
       const row = el(legend, { display: 'flex', alignItems: 'center', gap: '3px', color: style.text })
       if (bar) {
         // Simple native rectangles preserve the same three bars in DOM and PNG compositing.
         const swatch = el(row, { width: '7px', height: '7px', display: 'flex', gap: '1px' })
         for (const width of [2, 2, 1]) el(swatch, { width: `${width}px`, height: '7px', backgroundColor: style.volumeUp.fill })
-      } else el(row, { width: '9px', height: '0', borderTop: `1px solid ${swatchColor}` })
+      } else el(row, { width: '14px', height: '0', borderTop: `1px ${dash} ${swatchColor}` })
       el(row, {}, label, 'span')
       const text = colorsFor.map(() => el(row, { color: style.text }, '', 'span'))
       text.forEach((t, i) => { if (i < text.length - 1) t.dataset.sep = ',' })
@@ -354,7 +357,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
     for (const line of p.lines) bySpec.set(line.spec, [...(bySpec.get(line.spec) ?? []), line])
     for (const [spec, lines] of bySpec) {
       const decimals = p.kind === 'price' ? pd : p.decimals
-      addRow(studyLabel(spec), lines[0].histogram ? style.histEdge : lines[0].color, lines.map(l => l.histogram ? style.histEdge : l.color), i => lines.map(l => displayStudyNumber(p, l.values[i], i, decimals)))
+      addRow(studyLabel(spec), lines[0].histogram ? style.histEdge : lines[0].color, lines.map(l => l.histogram ? style.histEdge : l.color), i => lines.map(l => displayStudyNumber(p, l.values[i], i, decimals)), false, studyDashes[p.lines.indexOf(lines[0]) % studyDashes.length])
     }
     if (p.kind === 'price') addRow('Volume', style.muted, [style.muted], i => [volumes[i] === undefined ? '—' : groupedInteger(volumes[i])], true)
     legendEntries.push({ panel: p, rows })
@@ -418,7 +421,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
       for (const gap of gaps) {
         const gx = xs.compute(gap.index - 0.5)
         if (gx < bbox.left || gx > bbox.right) continue
-        const mark = marks.take('technical-gap', { position: 'absolute', left: `${gx - 3}px`, top: `${bbox.bottom - 4}px`, width: '0', height: '0', borderLeft: '3px solid transparent', borderRight: '3px solid transparent', borderBottom: `4px solid ${style.down}`, pointerEvents: 'auto' })
+        const mark = marks.take('technical-gap', { position: 'absolute', left: `${gx - 3}px`, top: `${bbox.bottom - 4}px`, width: '0', height: '0', borderLeft: '3px solid var(--transparent)', borderRight: '3px solid var(--transparent)', borderBottom: `4px solid ${style.down}`, pointerEvents: 'auto' })
         mark.textContent = ''
         // Exchange holidays are not known here, so the mark states the fact rather than "expected".
         const unit = calendar === 'weekday' ? 'weekday' : 'interval'
@@ -430,7 +433,7 @@ export async function mountTechnicalChart(node: HTMLElement, c: TechnicalComposi
 
   // ---- crosshair: one vertical across every panel, horizontal + value tag on the hovered panel.
   // Persistent elements moved by transform: pointer movement never rebuilds DOM or canvas.
-  const cursorTag = { position: 'absolute', left: '0', top: '0', height: '11px', lineHeight: '11px', padding: '0 2px', background: style.text, color: style.plot, whiteSpace: 'nowrap', willChange: 'transform' } as Partial<CSSStyleDeclaration>
+  const cursorTag = { position: 'absolute', left: '0', top: '0', height: 'auto', lineHeight: '1.2', padding: '0 2px', background: style.text, color: style.plot, whiteSpace: 'nowrap', willChange: 'transform' } as Partial<CSSStyleDeclaration>
   const cursors = panels.map(p => {
     const layer = p.layers!.cursor
     const vertical = el(layer, { position: 'absolute', left: '0', width: '0', borderLeft: `1px solid ${style.muted}`, opacity: '0.6', willChange: 'transform' })

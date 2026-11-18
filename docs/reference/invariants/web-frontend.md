@@ -1,6 +1,7 @@
 ---
 owner: web frontend
 sources:
+  - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/e2e/**
   - apps/alpha-web/frontend/package.json
@@ -11,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 4c6cb65abe123e36
+verified: d3943ae5680313f4
 ---
 
 # Web frontend invariants
@@ -71,14 +72,12 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The Data Manager and status bar relay storage readiness without device names; blocked details remain visible.
   `controlPlane.buildDataPullArgs` throws the date problem the CLI would reject.
 
-## Dark terminal theme
+## Workstation themes and readability
 
-- One dark theme, no light toggle; square corners and 11 px terminal type. `index.css` owns chrome tokens;
-  generated canvas tokens and the Python figure theme stay mirrored. Technical chart styles share dark surfaces.
-- No literal colours in styles or components outside explicit token definitions (`index.css`, `theme.generated.css`,
-  `util/tokens.ts`, `technicalTokens.ts`); the frontend theme contract scans CSS, TS and TSX, excluding tests/generated code.
-- Text pairs clear WCAG AA 4.5:1; control boundaries and focus indicators clear 3:1. Accent/negative text use AA variants.
-  Status retains words; disabled controls have a dashed boundary/struck text. Root `color-scheme: dark` covers native controls.
+- Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.
+- Colours come from three palettes in `index.css`; type at least 14 px, prose line height 1.45, tabular monospace numbers. Body ink 7:1, other text 4.5:1.
+- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box. Stored figures stay dark.
+- No literal colours outside the palette declarations: `util/themeContract.test.ts` scans; `theme/theme.test.ts` checks contrast in all three themes.
 
 ## Charts
 

@@ -1,3 +1,4 @@
+import type { ChartPalette } from '../theme/themes'
 import { formatTime } from '../util/formatTime'
 import { figure } from '@bokeh/bokehjs/build/js/lib/api/figure'
 import { showScientificPlot } from './bokehLifecycle'
@@ -10,13 +11,13 @@ import { MouseMove, MouseLeave, RangesUpdate, LODStart, LODEnd } from '@bokeh/bo
 import { nearestTimestamp, plotBounds, scientificValues, type ScientificPoint } from './scientificPlotModel'
 import type { ChartControls } from '../context/chartControls'
 import type { ChartLinkRegistry } from '../shell/chartLinkRegistry'
-import { styleTechnicalAxes, tagStyle, technicalFigureAttrs } from './technical/technicalChrome'
+import { recolorPlot, styleTechnicalAxes, tagStyle, technicalFigureAttrs } from './technical/technicalChrome'
 import { padExtent, chartExtent, visibleExtent, displayNumber } from './technical/technicalModel'
 import { technicalStyle, type ChartStyleName } from './technical/technicalTokens'
 import { technicalPng } from './technical/technicalExport'
 /** Local BokehJS recorded time series in the technical chart language; no statistics computed. */
-export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: string, registry: ChartLinkRegistry | undefined, readout: (text: string, iso?: string) => void, area: boolean, styleName: ChartStyleName = 'classic') {
-  const style = technicalStyle(styleName)
+export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: string, registry: ChartLinkRegistry | undefined, readout: (text: string, iso?: string) => void, area: boolean, styleName: ChartStyleName = 'classic', colors?: ChartPalette) {
+  let style = technicalStyle(styleName, colors)
   const x = new Range1d({ start: 0, end: 1 }), y = new Range1d({ start: 0, end: 1 })
   const source = new ColumnDataSource({ data: { x: [], y: [] } })
   // Keep Bokeh's native Save/Copy/Open menu and filename prompt; only its exported image changes.
@@ -34,8 +35,8 @@ export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: s
   styleTechnicalAxes(plot, style)
   for (const axis of plot.xaxis) axis.formatter = new DatetimeTickFormatter({ days: '%d', months: '%b', years: '%Y' })
   const color = area ? style.down : style.studies[0]
-  plot.line({ field: 'x' }, { field: 'y' }, { source, line_color: color, line_width: 1 })
-  if (area) plot.varea({ field: 'x' }, 0, { field: 'y' }, { source, fill_color: color, fill_alpha: .14 })
+  const line = plot.line({ field: 'x' }, { field: 'y' }, { source, line_color: color, line_width: 1 })
+  const fill = area ? plot.varea({ field: 'x' }, 0, { field: 'y' }, { source, fill_color: color, fill_alpha: .14 }) : null
   let cursorTime: number | null = null
   let drawCursor = () => {}
   let points: readonly ScientificPoint[] = [], times: number[] = [], values: (number | null)[] = [], zoom = 0, enabled = true
@@ -130,6 +131,14 @@ export async function mountBokehPlot(node: HTMLElement, unit: string, panelId: s
   }); observer.observe(node)
   return {
     activate,
+    recolor(palette: ChartPalette) {
+      style = technicalStyle(styleName, palette)
+      recolorPlot(plot, style)
+      line.glyph.line_color = area ? style.down : style.studies[0]
+      if (fill) fill.glyph.fill_color = style.down
+      cursor.style.borderLeftColor = style.muted
+      Object.assign(tag.style, { background: style.plot, color: style.text, borderColor: style.text })
+    },
     data(next: readonly ScientificPoint[]) { points = next; times = next.map(p => p.time); values = next.map(p => p.value); decimals = decimalsFor(); valueAt.clear(); for (const p of next) valueAt.set(p.time, p.value); source.data = scientificValues(next); fit() },
     controls(c: ChartControls) { plot.grid.visible = c.grid; enabled = c.crosshair; if (!enabled) setCursor(null); const delta = c.zoom - zoom; if (delta) { const mid = (x.start + x.end) / 2, half = (x.end - x.start) / 2 / Math.pow(1.35, delta); x.setv({ start: mid - half, end: mid + half }); registry?.publish(panelId, 'range', x.start / 1000, x.end / 1000) }; zoom = c.zoom },
     range(from: number, to: number) { if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) return; x.setv({ start: from * 1000, end: to * 1000 }); registry?.publish(panelId, 'range', from, to) },

@@ -2,7 +2,7 @@
 .edge-dock > nav, .edge-results > nav { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 2px; background: var(--panel-2); padding: 2px; }
 .edge-dock .btn[aria-selected=true], .edge-results .btn[aria-selected=true] { background: var(--selection); color: var(--selection-ink); }
 .edge-dock-body { overflow: auto; min-height: 0; flex: 1; padding: 8px; background: var(--panel); }
-.edge-dock-body h2 { font-size: 13px; margin: 0 0 7px; }
+.edge-dock-body h2 { font-size: var(--font-size); margin: 0 0 7px; }
 .edge-dock-body label { display: grid; gap: 4px; margin: 8px 0; }
 .edge-dock-body textarea { width: 100%; min-height: 70px; resize: vertical; }
 .edge-dock-body .field { max-width: 100%; }

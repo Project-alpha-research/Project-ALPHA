@@ -148,6 +148,7 @@ export function FigureOverlay({ runId, runName, meta, onClose }: Props) {
           <span className="muted figure-overlay-context">Esc restores · run {runId.slice(0, 8)} · UTC</span>
         </div>
         {copy === 'failed' && copyError ? <p className="figure-copy-error">{copyError}</p> : null}
+        <small>stored figure (dark)</small>
         <div className="figure-overlay-scroll">
           <img
             className="figure-overlay-image"

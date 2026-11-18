@@ -1,3 +1,4 @@
+import { ChartSurface } from '../../theme/ChartSurface'
 // Rule-test report — the first section of the report for a run made by `alpha test`: what was
 // tested, what is worth a look, the audit, the comparison with buy and hold, nearby variants, the
 // years and the macro picture of the worst drawdown. Rows come from `ruleTestModel`; nothing here
@@ -183,6 +184,7 @@ export function RuleTestReport({ test }: { test: RuleTest }) {
             </tfoot>
           </table>
 
+          <ChartSurface id="rule-test.years">
           <table className="blotter summary-table rule-test-years">
             <caption>By year</caption>
             <thead>
@@ -205,6 +207,7 @@ export function RuleTestReport({ test }: { test: RuleTest }) {
               </td></tr>
             </tfoot>
           </table>
+          </ChartSurface>
         </div>
       ) : null}
     </section>

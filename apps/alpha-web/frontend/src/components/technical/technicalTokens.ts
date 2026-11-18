@@ -1,4 +1,4 @@
-import { FALLBACK } from '../../util/tokens'
+import { darkChart, type ChartPalette } from '../../theme/themes'
 
 // The ALPHA technical chart language: dark surfaces shared with the figure canvas.
 // Study identities remain stable across Classic / Default chart styles. One source for
@@ -43,69 +43,24 @@ export interface TechnicalStyle {
   tick: number
 }
 
-const SHARED = {
-  text: FALLBACK.ink,
-  muted: FALLBACK.dim,
-  link: '#5584cf',
-  rsiBand: '#707070',
-  evidenceUp: FALLBACK.up,
-  evidenceDown: FALLBACK.down,
-  annotation: FALLBACK.gold,
-  font: 'Verdana, Tahoma, "DejaVu Sans", sans-serif',
-  fontSize: 10,
-  body: 0.7,
-  tick: 0.35,
+export function technicalStyle(name: ChartStyleName, colors: ChartPalette = darkChart): TechnicalStyle {
+  const { bg, ink, dim, grid, up, down, link, negative, orange, purple, teal } = colors
+  return {
+    name, canvas: bg, plot: bg, header: bg, border: colors.border, grid, gridMonth: grid,
+    text: ink, muted: dim, link, up, down,
+    volumeUp: { fill: colors.volumeUp, edge: colors.volumeUpEdge },
+    volumeDown: { fill: colors.volumeDown, edge: colors.volumeDownEdge },
+    studies: name === 'classic' ? [link, negative, up, orange, purple, teal] : [up, link, negative, orange, purple, teal],
+    pinned: { 'sma:50': link, 'sma:200': negative, 'ema:20': up, 'ema:50': link },
+    rsiBand: colors.threshold, rsiOverbought: up, rsiOversold: negative,
+    macdLine: ink, macdSignal: negative, histFill: name === 'classic' ? colors.classicHist : colors.defaultHist,
+    histEdge: teal, evidenceUp: up, evidenceDown: down, annotation: colors.gold,
+    font: 'JetBrains Mono Variable, ui-monospace, monospace', fontSize: 14, body: 0.7, tick: 0.35,
+  }
 }
 
-export const CLASSIC: TechnicalStyle = {
-  ...SHARED,
-  name: 'classic',
-  canvas: FALLBACK.bg,
-  plot: FALLBACK.bg,
-  header: FALLBACK.bg,
-  border: '#767676',
-  grid: FALLBACK.grid,
-  gridMonth: FALLBACK.grid,
-  up: FALLBACK.up,
-  down: FALLBACK.down,
-  volumeUp: { fill: '#2e4a38', edge: '#3f6a50' },
-  volumeDown: { fill: '#5a2f33', edge: '#7a3f44' },
-  studies: ['#5584cf', '#e64d52', '#2fc36a', '#e9a35d', '#d68ee6', '#55c5c5'],
-  pinned: { 'sma:50': '#5584cf', 'sma:200': '#e64d52', 'ema:20': '#2fc36a', 'ema:50': '#5584cf' },
-  rsiOverbought: '#2fc36a',
-  rsiOversold: '#e64d52',
-  macdLine: FALLBACK.ink,
-  macdSignal: '#e64d52',
-  histFill: '#58a8d0',
-  histEdge: '#55c5c5',
-}
-
-export const DEFAULT_STYLE: TechnicalStyle = {
-  ...SHARED,
-  name: 'default',
-  canvas: FALLBACK.bg,
-  plot: FALLBACK.bg,
-  header: FALLBACK.bg,
-  border: '#767676',
-  grid: FALLBACK.grid,
-  gridMonth: FALLBACK.grid,
-  up: FALLBACK.up,
-  down: FALLBACK.down,
-  volumeUp: { fill: '#2e4a38', edge: '#3f6a50' },
-  volumeDown: { fill: '#5a2f33', edge: '#7a3f44' },
-  studies: ['#2fc36a', '#5584cf', '#e64d52', '#e9a35d', '#d68ee6', '#55c5c5'],
-  pinned: { 'ema:20': '#2fc36a', 'sma:50': '#5584cf', 'sma:200': '#e64d52', 'ema:50': '#5584cf' },
-  rsiOverbought: '#2fc36a',
-  rsiOversold: '#e64d52',
-  macdLine: FALLBACK.ink,
-  macdSignal: '#e64d52',
-  histFill: '#93bcb7',
-  histEdge: '#55c5c5',
-}
-
-export function technicalStyle(name: ChartStyleName): TechnicalStyle {
-  return name === 'default' ? DEFAULT_STYLE : CLASSIC
-}
+export const CLASSIC = technicalStyle('classic')
+export const DEFAULT_STYLE = technicalStyle('default')
 
 /** Colour per study spec id: pinned ids keep their StockCharts colour, the rest cycle in order. */
 export function studyColors(style: TechnicalStyle, ids: readonly string[]): Map<string, string> {

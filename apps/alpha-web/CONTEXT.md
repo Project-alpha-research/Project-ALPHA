@@ -3,9 +3,10 @@ owner: web workstation
 sources:
   - apps/alpha-web/src/alpha_web/*.py
   - apps/alpha-web/src/alpha_web/api/**
+  - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: df5a13cbc22dbc83
+verified: e1b3e339c9dc5874
 ---
 
 # alpha-web workspace
@@ -55,10 +56,9 @@ grants authority.
 - Frontend loop, in `apps/alpha-web/frontend`: `npm ci`; `npm run generate:api`;
   `npm run lint -- --deny-warnings`; `npm run build` (also rebuilds the served bundle);
   `npm run test:coverage`; browser lanes `npm run test:e2e:built`. Commit `src/api/generated.ts`
-  with the source.
+  with the source. For appearance changes, follow the [theme contract](../../docs/reference/invariants/web-frontend.md#workstation-themes-and-readability).
 - CI runs the whole loop as `uv run python scripts/gate.py component frontend`; it fails if the
   generated client differs from what is committed.
-
 - RD-Agent's read-only panel is `panels/RdAgentPanel.tsx`, registered in `shell/documents.ts`,
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).

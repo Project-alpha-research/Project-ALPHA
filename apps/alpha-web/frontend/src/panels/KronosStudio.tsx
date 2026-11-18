@@ -1,3 +1,4 @@
+import { ChartSurface } from '../theme/ChartSurface'
 import { Timestamp } from '../util/formatTime'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -84,7 +85,7 @@ function TerminalDistribution({ paths, originClose }: { paths: ForecastPaths; or
   const bars = useMemo(() => terminalBars(values), [values])
   const maxCount = Math.max(1, ...bars.map((bar) => bar.count))
   return (
-    <div className="terminal-dist">
+    <ChartSurface className="terminal-dist" id="kronos.distribution">
       <div className="terminal-bars" aria-label="Terminal return distribution for visible model samples">
         {bars.map((bar) => (
           <div className="terminal-bin" key={bar.left}>
@@ -102,7 +103,7 @@ function TerminalDistribution({ paths, originClose }: { paths: ForecastPaths; or
           </tbody>
         </table>
       </details>
-    </div>
+    </ChartSurface>
   )
 }
 

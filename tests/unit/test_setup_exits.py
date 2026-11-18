@@ -161,7 +161,7 @@ def test_short_fills_and_reflection(
 def test_short_atr_and_opposite_next_open() -> None:
     values = [(100, 102, 98, 100)] * 4 + [(100, 101, 98, 99), (97, 150, 96, 98)]
     exits = spec(direction="short", stop="2 atr(2)", target="2 atr(2)", opposite="close < 100")
-    row = simulate(prepare_exits(exits, bars(values)), 4, 0.003)
+    row = simulate(prepare_exits(exits, bars(values), carry_per_day=0.0003), 4, 0.003)
     assert (row["stop"], row["target"], row["reason"], row["exit_price"]) == (
         108,
         92,
@@ -169,5 +169,18 @@ def test_short_atr_and_opposite_next_open() -> None:
         97,
     )
     assert row["worst_adverse_move"] == pytest.approx(-0.01)
-    no_stop = run(values, direction="short", time_bars=1)
+    no_stop = simulate(
+        prepare_exits(spec(direction="short", time_bars=1), bars(values), carry_per_day=0.0003),
+        1,
+        0.0006,
+    )
     assert no_stop["risk_fraction"] is None and no_stop["r_multiple"] is None
+
+
+def test_a_short_needs_its_carry_named_and_a_long_never_pays_one() -> None:
+    # A silent default would charge a stock short the crypto funding stand-in.
+    values = [(100, 101, 99, 100), (100, 102, 97, 98)]
+    with pytest.raises(ValueError, match="carry"):
+        prepare_exits(spec(direction="short", stop="5 %", time_bars=1), bars(values))
+    long = simulate(prepare_exits(spec(stop="5 %", time_bars=1), bars(values)), 1, 0.0)
+    assert long["net_return"] == pytest.approx(98 / 100 - 1)

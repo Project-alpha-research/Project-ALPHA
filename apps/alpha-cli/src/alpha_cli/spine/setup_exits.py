@@ -7,8 +7,6 @@ import operator
 from dataclasses import dataclass
 from typing import Any
 
-from alpha_cli.spine.setup_costs import SHORT_CARRY_BPS_PER_DAY
-
 MAX_HOLD_BARS = 250
 PATTERN_LEVEL_REASON = "this exit depends on the pattern's own levels; random dates have none"
 
@@ -28,14 +26,22 @@ class PreparedExits:
 
 
 def prepare_exits(
-    spec: Any, bars: list[Any], *, carry_per_day: float = SHORT_CARRY_BPS_PER_DAY / 10000
+    spec: Any, bars: list[Any], *, carry_per_day: float | None = None
 ) -> PreparedExits:
-    """Compile the evaluator's own causal expressions once, for all possible starts."""
+    """Compile the evaluator's own causal expressions once, for all possible starts.
+
+    A short must be given its asset's daily carry: a default would charge a stock the
+    crypto funding stand-in. A long pays none.
+    """
     import polars as pl
 
     from alpha_study.setup.expr import compile_expr
     from alpha_study.setup.spec import parse_exit
 
+    if carry_per_day is None:
+        if spec.exit.direction == "short":
+            raise ValueError("a short needs its asset's carry per day")
+        carry_per_day = 0.0
     if not math.isfinite(carry_per_day) or carry_per_day < 0:
         raise ValueError("carry must be finite and nonnegative")
     if not bars:

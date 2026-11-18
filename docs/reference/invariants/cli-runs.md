@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 6f449343a6305262
+verified: 2d1cb41a135727c6
 ---
 
 # Command line runs invariants
@@ -190,7 +190,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - One position per asset, including the exit bar. Count skipped/invalid/open-at-end separately; only completed trades enter tested means.
 - Mark open-at-end to final close. Adverse move sees only an open or stop fill on that exit, otherwise the adverse extreme (low for long, high for short).
 - Costs use the dataset asset class, then slash pairs or a crypto provider (any `:` part), then a stock provider (yfinance, alpaca, tiingo, stooq);
-  unknown markets use crypto costs with `costs-assumed-high`. Short borrow/funding assumptions are stored per asset.
+  unknown markets use crypto costs with `costs-assumed-high`. Short borrow/funding assumptions are stored per asset; a short without its carry fails.
 - Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, weight assets by completed trades.
 - Use 2,000 spaced draws. Missing comparisons carry reasons. An uncounted control replays the same entries in the opposite direction with its own costs.
 - Halves use their own entry-date ranges. Support requires 30 completed trades, positive excess, p ≤ 0.05, agreeing halves and available controls; exploratory

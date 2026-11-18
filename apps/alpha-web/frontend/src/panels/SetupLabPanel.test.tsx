@@ -77,6 +77,17 @@ describe('Setup Lab stored results', () => {
       '>-5.06%</span>', '<td>-1.01 R</td>', '<td>not recorded</td>']) expect(html).toContain(text)
   })
 
+  it('names the stored risk and short-cost fields in plain words', () => {
+    const trade = detail.trades[0]
+    const summary = { pooled: { median_r: -1, share_above_zero_r: 0.3, expectancy_r: -0.3 },
+      costs: { SYN: { fee_bps: 1, slippage_bps: 2, short_borrow_bps_per_year: 50 } },
+      controls: { opposite_direction: { label: 'Opposite direction on the same entries (control only, not counted)' } } }
+    const html = render({ ...detail, trades: [{ ...trade, summary }] })
+    for (const text of ['Middle return divided by initial stop risk', 'Share of trades above 0 R',
+      'Expectancy per trade in R', 'assumed stock borrow, bps per year', 'Opposite direction on the same entries (a control)'])
+      expect(html).toContain(text)
+  })
+
   it('keeps repeat labels with their recorded trial index', () => {
     const html = render({ ...detail, trial_labels: { '4': ['repeat'] }, label_explanations: { repeat: 'A repeat, not independent evidence.' } })
     expect(html).toContain('Recorded trial 4')

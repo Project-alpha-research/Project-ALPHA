@@ -7,7 +7,7 @@ sources:
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 338f1264d8f8a41b
+verified: 1f73b2fc3159811f
 ---
 
 # Model routing: who builds, who reviews, what happens at a limit
@@ -54,7 +54,7 @@ Why, one line each:
   demanding work (`~/.codex/models_cache.json`); both are used at the owner's request.
 - 2026-11-18: the switch to the 6.2 models was made at the owner's request. They are not yet
   calibrated on this project; every figure below was measured on `gpt-6.1-sol` or `gpt-6-astra`.
-- `medium` for small tasks: both calibration tasks (below) came out correct and clean first time
+- `medium` for small tasks: calibration tasks A and B (below) came out correct and clean first time
   at `medium`; the earlier hand-run trial at `high` took 8 minutes for a task of similar size.
 - `high` for standard and astra for hard: first measured 2026-11-14 (tasks F and G below),
   one build each, so still provisional.

@@ -385,6 +385,9 @@ from .scans_strategies import StrategyDefinition as StrategyDefinition
 from .semantic_reads import BlindSemanticProjectionV1 as BlindSemanticProjectionV1
 from .semantic_reads import SemanticPointV1 as SemanticPointV1
 from .semantic_reads import VerifiedBlindSemanticReadV1 as VerifiedBlindSemanticReadV1
+from .setup_runs import SetupRun as SetupRun
+from .setup_runs import SetupRunDetail as SetupRunDetail
+from .setup_runs import SetupRunList as SetupRunList
 from .system import CommandArgument as CommandArgument
 from .system import CommandDefinition as CommandDefinition
 from .system import CommandOption as CommandOption

@@ -1,0 +1,50 @@
+---
+owner: web backend
+sources:
+  - apps/alpha-web/src/alpha_web/*.py
+  - apps/alpha-web/src/alpha_web/api/**
+  - tests/unit/test_web_*.py
+  - tests/integration/test_web_api_*.py
+verified: 14856e29d25f4070
+---
+
+# Web API reads and writes invariants
+
+What the Workstation backend reads, writes and relays. The other backend rules are in [web-api.md](web-api.md).
+
+## Reads and writes
+
+- Never open the CLI's SQLite control store (`control/workstation.sqlite3`) from web code. Read control-plane state
+  through `alpha ... --json`. `_activity.py` only stats the file and its `-wal`/`-shm` sidecars to detect change.
+  The one in-process writer is the owner-auth seam, which records challenges and receipts in the control store.
+- Read runs only through bounded seams (`alpha_cli.run_store`, `artifact_contract.verify_manifest_artifacts`,
+  `run_projection`). Operational state needs its own governed public seam — do not scan `RUN_DIRS` for it.
+- Read paper state only through `alpha_cli.paper_store` / `paper_readiness`. Starting or stopping a paper node is a CLI
+  job, never an in-process call. [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
+- The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
+  `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
+- Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
+- RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
+  Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
+  The run detail lists journey availability by evaluation number, name and full code hash. Indexed ideas can be unbuilt after a filtered CLI build.
+  GET `/api/rdagent/runs/{run_id}/journeys/{idea_id}` returns the stored document or the quoted CLI command for a missing journey.
+  Its `/figures/{filename}` GET serves listed PNGs only. Both check identity and refuse symlinks. Source paths are display text. The server never builds.
+- Setup Lab's GET `/api/setup/runs` and `/{find_id}` use `_setup_runs` only: bounded, allowlisted reads, no CLI run. `setups/<id>/` files
+  (`manifest.json`, `spec.json`, `summary.json`, `candidates.parquet`, `sheets/*.png`) and the linked `setup-studies/`, `setup-trades/`
+  manifests, summaries, rows and PNGs, plus `ledger/trials.jsonl`, are shown as stored. Missing files stay null; corrupt, linked or
+  oversized files fail with 422. Trade rows pass through direction, initial risk fraction and R when recorded. Older rows keep missing values.
+  Price snapshots and portfolio totals remain unrecorded.
+- Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
+  <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
+  shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides
+  crypto/equities or `unknown`; the equity sources include `alpaca`.
+  Identity fields (symbol, symbols, label, snapshot id) are read from the manifest top level first, then its `metadata`.
+- A rule test is a run whose manifest has a `spine` key (`alpha test`). `_rule_test.py` projects it as `RunDetail.rule_test`
+  (and `RunListItem.rule_test_labels`) from the run's own `manifest.json` and `diagnostics.json` only: values pass
+  through, nothing is recomputed, a missing part is null and a missing or unreadable file is null with a reason. The
+  rule's one-sentence wording is built server-side from the stored rule and is null for an unknown rule kind. Its
+  display name puts `rule test <spec name>` in the strategy slot. Every other run has `rule_test: null` and is unchanged;
+  `run_context_*` keeps its meaning for all runs. Enforced by `tests/integration/test_web_api_rule_test.py`.
+- The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
+  `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.
+  [ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md)

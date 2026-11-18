@@ -1379,7 +1379,7 @@ proof_smoke = ["tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat
 real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily bars, Yahoo) and BTC/USDT (3,361) found 19 and 26 separate occurrences (21 and 30 matching days), as the evaluator's own check did; a system test, not evidence of an edge"
 needs = []
 state = "Working"
-docs = ["docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+docs = ["docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
 
 [[capability]]
 id = "price-noise"
@@ -1418,7 +1418,7 @@ proof_smoke = ["tests/smoke/test_setup_study_smoke.py::test_setup_study_and_repe
 real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was studied at 5, 10, 20 and 60 bars (primary 20) against drift and 2,000 random-date draws; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
 needs = []
 state = "Working"
-docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
 
 [[capability]]
 id = "setup-trade"
@@ -1431,7 +1431,7 @@ proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repe
 real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
 needs = []
 state = "Working"
-docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-setups.md", "docs/reference/project/components/strategies-and-signals.md"]
 
 [[capability]]
 id = "data-health"

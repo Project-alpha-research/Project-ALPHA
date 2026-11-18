@@ -24,9 +24,19 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 | Read | Section | When |
 |---|---|---|
 | [worker invariants](../../docs/reference/invariants/workers.md) | Shared rules | always |
-| [worker invariants](../../docs/reference/invariants/workers.md) | RD-Agent worker | always |
-| [command line native](../../docs/reference/invariants/cli-native.md) | — | always |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Boundary and authority | always |
+| [command line native](../../docs/reference/invariants/cli-native.md) | Synthetic only | native fixtures and rule jobs: what a native result may claim |
+| [command line native](../../docs/reference/invariants/cli-native.md) | Launch identity | launching a native job or changing its identity |
+| [command line native](../../docs/reference/invariants/cli-native.md) | Approval fingerprints | approving a native job or changing its fingerprint |
+| [command line native](../../docs/reference/invariants/cli-native.md) | Process ownership | starting, stopping or cleaning up native processes |
+| [command line native](../../docs/reference/invariants/cli-native.md) | Results and inspection | reading or showing a native result |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | changing what a native result may claim |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Install and runtimes | building a runtime profile, the source pin or its measure |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Model gateway | changing the model route, budgets, receipts or embeddings |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Factor loop and judging | changing the factor loop, judge, coder or evaluator |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Research memory | changing families, discussion, memory, verdicts or rule families |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Panels and identity | changing panel building, renames, splits or identity joins |
+| [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Viewer | changing the run viewer |
 | [what this part is for](../../docs/reference/project/components/rd-agent.md) | — | why it exists; before you keep, shelve or remove it |
 | [worker README](README.md) | — | launching a loop, propose and discuss (stand-in answers), thirds and ties with their do-not-change list, futures funding |
 | [change notes](CHANGE-NOTES.md) | — | the history of a rule, the pinned probe, the model gateway, research memory; every dated fix-up |
@@ -73,5 +83,5 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 ## Outputs
 
 - Root tests under `tests/unit/test_native_*.py` and `tests/unit/test_rdagent_model_gateway.py`.
-- The owning document: `docs/reference/invariants/workers.md` § RD-Agent worker. Identity split counts
+- The owning document: `docs/reference/invariants/rdagent.md`. Identity split counts
   and write-offs reach proposer feedback; rescaling, reproducibility and family refusal rules: [change notes](CHANGE-NOTES.md#identity-breaks-across-a-gap).

@@ -27,7 +27,9 @@ grants authority.
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Subprocess boundary | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
 | [web API invariants](../../docs/reference/invariants/web-api.md) | Calling the CLI | always |
+| [web API reads and writes](../../docs/reference/invariants/web-api-reads.md) | Reads and writes | changing what the backend reads or writes |
 | [web frontend invariants](../../docs/reference/invariants/web-frontend.md) | No authority in the browser | changing the browser app |
+| [web run detail](../../docs/reference/invariants/web-run-detail.md) | Run detail binding | changing the run detail, journey or Setup Lab panels |
 | [web API invariants](../../docs/reference/invariants/web-api.md) | Adding a route | adding or changing a route |
 | [web API invariants](../../docs/reference/invariants/web-api.md) | API contract | changing a response model or the OpenAPI contract |
 | [web frontend invariants](../../docs/reference/invariants/web-frontend.md) | — | changing a panel, chart or the browser app |
@@ -66,10 +68,10 @@ grants authority.
   `panels/RdAgentJourney.tsx` renders the selected idea's seven stored steps and wraps code excerpts.
   The run summary shows recorded values. Unit tests sit beside both panels.
   The browser interaction spec is `e2e/rdagent-journey.spec.ts`.
-  Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
-  [journey view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
+  Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
+  [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`.
-- Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api.md#reads-and-writes).
+- Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 
 ## Outputs
 

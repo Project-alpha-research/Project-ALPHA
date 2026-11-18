@@ -5,7 +5,7 @@ sources:
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: 8e8dd775217dcff2
+verified: 497750d9a16212c4
 ---
 
 # RD-Agent
@@ -184,7 +184,7 @@ New factor rows store family and critic status. Older rows can lack both. The pa
 - Never let its output count as evidence or approval.
 - Never connect it to a model except through the gateway, and never let the gateway switch to the
   paid route by itself.
-- The worker rules: [RD-Agent worker](../../invariants/workers.md#rd-agent-worker) and
+- The worker rules: [RD-Agent worker](../../invariants/rdagent.md) and
   [command line native](../../invariants/cli-native.md).
 
 [gateway-verify]:

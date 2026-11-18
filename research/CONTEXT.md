@@ -29,7 +29,13 @@ approval gate is before paper or live trading. Changing the research code is a d
 
 | Read | Section | When |
 |---|---|---|
-| [research playbook](PLAYBOOK.md) | — | always |
+| [research playbook](PLAYBOOK.md) | The method | always |
+| [research playbook](PLAYBOOK.md) | The numbers rule | always |
+| [research playbook](PLAYBOOK.md) | What needs the owner | always |
+| [research playbook](PLAYBOOK.md) | Every run is also a system test | judging a run by what it shows about the system |
+| [research playbook](PLAYBOOK.md) | Labels, flags and trial counts | writing or reading a label, a flag or a trial count |
+| [research playbook](PLAYBOOK.md) | Worked examples (shapes of real output; placeholders, not numbers) | seeing the shape of a real result |
+| [research playbook](PLAYBOOK.md) | Where things are | finding a tool, record or command |
 | [tool cards](tools/README.md) | — | choosing the next test, by symptom |
 | [lessons](lessons/README.md) | — | before proposing a test |
 | [research integrity](../docs/reference/invariants/research-integrity.md) | Owner authority | before paper or live trading, or any owner act |

@@ -14,7 +14,7 @@ verified: 00e25096e37bb6b4
 
 What must hold in the provider modules of the crypto data house (`packages/alpha-data/src/alpha_data/crypto/providers/`)
 and the coverage profiles built from their catalogs. Storage, identity and feature rules are in
-[data § Crypto storage](data.md#crypto-storage) and [data § Crypto identity and features](data.md#crypto-identity-and-features);
+[data-crypto § Crypto storage](data-crypto.md#crypto-storage) and [data-crypto § Crypto identity and features](data-crypto.md#crypto-identity-and-features);
 the commands that drive these modules are in [command line crypto data](cli-crypto-data.md).
 
 ## Shared fetch boundary

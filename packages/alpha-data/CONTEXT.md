@@ -20,9 +20,18 @@ import it. It must never let a read see data that was not knowable at the cutoff
 
 | Read | Section | When |
 |---|---|---|
-| [data invariants](../../docs/reference/invariants/data.md) | — | always |
+| [data invariants](../../docs/reference/invariants/data.md) | Package boundary | always |
+| [data invariants](../../docs/reference/invariants/data.md) | Point-in-time store | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Invalid data fails loud | always |
+| [data invariants](../../docs/reference/invariants/data.md) | Corporate actions | changing corporate-action storage or readers |
+| [data invariants](../../docs/reference/invariants/data.md) | Universe membership | changing universe membership or survivorship handling |
+| [data invariants](../../docs/reference/invariants/data.md) | Vendor receipts and promotion | changing vendor receipts, ingest or promotion |
+| [data invariants](../../docs/reference/invariants/data.md) | Snapshots | changing snapshots or their verification |
+| [data invariants](../../docs/reference/invariants/data.md) | Adapters and authority | adding or changing an adapter or its authority |
+| [data crypto invariants](../../docs/reference/invariants/data-crypto.md) | Crypto storage | changing crypto storage, archives or retirement |
+| [data crypto invariants](../../docs/reference/invariants/data-crypto.md) | Crypto identity and features | changing crypto identity or features |
+| [data crypto invariants](../../docs/reference/invariants/data-crypto.md) | Offline Bybit context | changing offline Bybit funding or open interest |
 | [architecture](../../docs/ARCHITECTURE.md) | Runtime data-directory layout | changing where data is stored |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Corporate actions: two clocks | changing splits, dividends or symbol changes |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Immutable, hash-bound artefacts | changing snapshots or receipts |

@@ -57,7 +57,8 @@ capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find]
 - Files: the panel `apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx` and its model `setupLabModel.ts` (registered in `shell/documents.ts`); the
   backend `apps/alpha-web/src/alpha_web/api/setup_runs.py` with `_setup_runs.py`.
 - The routes (`GET /api/setup/runs` and `/{find_id}`) read stored files directly through `_setup_runs` (bounded, allowlisted, no `alpha` subprocess, unlike most
-  routes). The screen starts nothing, and missing parts read "not recorded". Rules: [web API reads and writes](../../invariants/web-api.md#reads-and-writes).
+  routes). The screen starts nothing, and missing parts read "not recorded". Rules:
+  [web API reads and writes](../../invariants/web-api-reads.md#reads-and-writes).
 - After a backend route change, from the repository root: `uv run python scripts/generate_web_openapi.py`, then `uv run python
   scripts/check_openapi_operations.py --write`, then `uv run python scripts/gate.py check`.
 - Frontend loop, in `apps/alpha-web/frontend`: `npm ci`; `npm run generate:api`; `npm run lint -- --deny-warnings`; `npm run build`; `npm run test:coverage`;

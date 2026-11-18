@@ -21,9 +21,15 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 
 | Read | Section | When |
 |---|---|---|
-| [study invariants](../../docs/reference/invariants/study.md) | — | always |
+| [study invariants](../../docs/reference/invariants/study.md) | Package boundary | always |
+| [study invariants](../../docs/reference/invariants/study.md) | Projection only | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
+| [study invariants](../../docs/reference/invariants/study.md) | Clocks and canonical form | changing study clocks or canonical form |
+| [study invariants](../../docs/reference/invariants/study.md) | Setup causality | changing setup causality rules |
+| [study invariants](../../docs/reference/invariants/study.md) | Operator registry | adding or changing a setup operator |
+| [study invariants](../../docs/reference/invariants/study.md) | Blind semantic read | changing the blind semantic read |
+| [study invariants](../../docs/reference/invariants/study.md) | External capabilities | changing external capabilities a study names |
 | [research invariants](../../docs/reference/invariants/research.md) | Phase allocation | the change touches D0 or D1 references |
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | the change surfaces through `alpha research` |
 | [what this part is for](../../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |

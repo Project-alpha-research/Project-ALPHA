@@ -5,7 +5,7 @@ sources:
   - packages/alpha-study/CONTEXT.md
   - research/CONTEXT.md
   - docs/reference/invariants/cli-research.md
-verified: 46c77e1af09dbb85
+verified: 818b1cad996e89f7
 ---
 
 # Research cases and owner approval

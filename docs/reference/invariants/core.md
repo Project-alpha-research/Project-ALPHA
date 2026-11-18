@@ -98,5 +98,5 @@ errors, settings and structural protocols that every other package imports. Proj
 ## Source identity
 
 - `alpha_core` source bytes feed the v3 run `execution_fingerprint` (`apps/alpha-cli/src/alpha_cli/_identity.py`)
-  and the RD-Agent rule profiles ([workers § RD-Agent worker](workers.md#rd-agent-worker)): any byte change,
+  and the RD-Agent rule profiles ([rdagent § Install and runtimes](rdagent.md#install-and-runtimes)): any byte change,
   comments included, changes those identities. [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).

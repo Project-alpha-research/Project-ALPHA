@@ -26,7 +26,8 @@ It must never grant authority the owner did not give, and never route live capit
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, owner decisions, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
 | [trial ledger](../../docs/reference/invariants/cli-trial-ledger.md) | — | `alpha ledger`, `spine/trial_*` |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, setups, tools, suites, figures, scans |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, tools, suites, figures, scans |
+| [command line setups](../../docs/reference/invariants/cli-setups.md) | — | `alpha setup find`, `alpha setup study` or `alpha setup trade` |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | Read-only queries | a read-only report or query, such as bar coverage |
 | [command line crypto data](../../docs/reference/invariants/cli-crypto-data.md) | — | `alpha data` or `alpha crypto-data` acquisition, storage or backfill |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |

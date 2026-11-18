@@ -34,6 +34,7 @@ def shift_months(ts: datetime, months: int) -> datetime:
 
 def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     from alpha_cli.spine.diagnostics import performance
+    from alpha_cli.toolbox.inputs import HOLD_KINDS
     from alpha_validation.metrics import to_returns
 
     step = params["step_months"]
@@ -49,10 +50,7 @@ def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
         "benchmark_kind",
     )
     dates = run.dates(frame, "stored_benchmark")
-    if not all(frame["available"]) or any(
-        k not in {"passive_open_to_open_price_only", "passive_open_to_open_with_dividends"}
-        for k in frame["benchmark_kind"]
-    ):
+    if not all(frame["available"]) or any(k not in HOLD_KINDS for k in frame["benchmark_kind"]):
         raise ValueError(
             "benchmark_comparison.parquet requires a stored buy-and-hold value at every date"
         )

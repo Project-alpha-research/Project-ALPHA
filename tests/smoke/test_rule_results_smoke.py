@@ -80,7 +80,10 @@ def test_rule_results_and_diagnostics(tmp_path: Path) -> None:
     assert "no-diagnostics" in skipped["labels"]
     assert skipped["run_id"] != run_id
     assert skipped["variants_evaluated"] == 0
-    assert skipped["benchmark_sharpe"] is None
+    # Dated period facts are recorded even without diagnostics: buy and hold is cited from them.
+    facts = {fact["metric"]: fact for fact in skipped["facts"]}
+    assert skipped["benchmark_sharpe"] == facts["benchmark_sharpe"]["value"]
+    assert facts["benchmark_sharpe"]["period"] == "full_history"
     absent = alpha(home, "diagnose", skipped["run_id"], "--json", expect=1).json()
     assert absent["error"]["code"] == "NO_DIAGNOSTICS"
     assert "alpha test" in absent["error"]["next"]

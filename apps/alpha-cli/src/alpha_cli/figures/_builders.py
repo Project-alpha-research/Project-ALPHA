@@ -166,144 +166,17 @@ def _truncation(original: int, returned: int, noun: str) -> str | None:
 
 # --------------------------------------------------------------------------- performance
 def equity_underwater(ctx: BuildContext) -> FigureSpec:
-    frame = src.require(ctx.rdir, "equity_curve.parquet", "ts")
-    picked = src.sample(frame.height)
-    view = frame[picked]
-    ts = src.epochs(view["ts"])
-    equity = src.rebase(src.floats(view["equity"], name="equity"))
-    under = src.drawdown(equity)
-    peaks: list[float] = []
-    running = -math.inf
-    for value in equity:
-        running = max(running, value)
-        peaks.append(running)
-    worst = min(under)
-    trough = ts[under.index(worst)]
-    return ctx.spec(
-        "equity_underwater",
-        x_label="Date (UTC)",
-        artifacts=("equity_curve.parquet",),
-        truncation=_truncation(frame.height, len(picked), "sessions"),
-        answer=(
-            f"Capital ended at {mult(equity[-1])} of its start; the worst drawdown was "
-            f"{pct(worst)} and troughed on {_day(trough)}."
-        ),
-        panels=(
-            Panel(
-                panel_id="equity",
-                y_label="Growth of 1 (x initial)",
-                y_unit="multiple",
-                height_ratio=2.6,
-                marks=(
-                    LineMark(x=ts, y=tuple(peaks), role="substrate", label="Running peak"),
-                    LineMark(
-                        x=ts,
-                        y=equity,
-                        role="subject",
-                        label="Equity",
-                        end_label=ValueLabel(text=mult(equity[-1])),
-                    ),
-                ),
-            ),
-            Panel(
-                panel_id="underwater",
-                y_label="Drawdown (%)",
-                y_unit="percent",
-                y_percent=True,
-                legend=False,
-                marks=(
-                    LineMark(x=ts, y=under, role="down", fill_to=0.0),
-                    RuleMark(
-                        orientation="horizontal",
-                        position=worst,
-                        role="feature",
-                        width=1.0,
-                        annotate=ValueLabel(text=f"worst {pct(worst)}", ha="right", dx_pt=-6.0),
-                    ),
-                ),
-            ),
-        ),
-    )
+    """One builder for every run: labels from the full series (``rule_periods``)."""
+    from alpha_cli.figures import rule_periods
+
+    return rule_periods.build(ctx, "equity_underwater", None)
 
 
 def equity_vs_passive(ctx: BuildContext) -> FigureSpec:
-    frame = src.require(ctx.rdir, "benchmark_comparison.parquet", "ts")
-    available = frame["available"].to_list()
-    if not any(bool(flag) for flag in available):
-        reason = frame["unavailable_reason"].to_list()[0] or "benchmark_unavailable"
-        raise DataError(f"no passive benchmark for this run ({reason})")
-    picked = src.sample(frame.height)
-    view = frame[picked]
-    ts = src.epochs(view["ts"])
-    strategy = src.rebase(src.floats(view["strategy_equity"], name="strategy_equity"))
-    passive_raw = src.optional_floats(view["benchmark_equity"])
-    if any(value is None for value in passive_raw):
-        raise DataError("passive benchmark has gaps; refusing to interpolate a comparison")
-    passive = src.rebase(tuple(float(value) for value in passive_raw if value is not None))
-    excess: list[float] = []
-    running = 1.0
-    for index in range(len(strategy)):
-        if index:
-            s_ret = strategy[index] / strategy[index - 1] - 1.0
-            b_ret = passive[index] / passive[index - 1] - 1.0
-            running *= 1.0 + (s_ret - b_ret)
-        excess.append(running - 1.0)
-    if passive[-1] <= 0.0:
-        # A passive index that ends at or below zero has no meaningful relative lead, and
-        # dividing by it would abort the whole figure pack with a ZeroDivisionError.
-        raise DataError("passive benchmark ends at or below zero; relative lead is undefined")
-    lead = strategy[-1] - passive[-1]
-    verdict = "ahead of" if lead > 0 else "behind"
-    return ctx.spec(
-        "equity_vs_passive",
-        x_label="Date (UTC)",
-        artifacts=("benchmark_comparison.parquet",),
-        truncation=_truncation(frame.height, len(picked), "sessions"),
-        answer=(
-            f"Strategy finished at {mult(strategy[-1])} against {mult(passive[-1])} for the "
-            f"passive price index -- {verdict} it by {pct(abs(lead) / passive[-1])}."
-        ),
-        panels=(
-            Panel(
-                panel_id="growth",
-                y_label="Growth of 1 (x initial)",
-                y_unit="multiple",
-                height_ratio=2.2,
-                marks=(
-                    LineMark(
-                        x=ts,
-                        y=passive,
-                        role="substrate",
-                        label="Passive price index (no dividends)",
-                    ),
-                    LineMark(
-                        x=ts,
-                        y=strategy,
-                        role="subject",
-                        label="Strategy",
-                        end_label=ValueLabel(text=mult(strategy[-1])),
-                    ),
-                ),
-            ),
-            Panel(
-                panel_id="excess",
-                y_label="Excess (%)",
-                y_unit="percent",
-                y_percent=True,
-                y_zero_rule=True,
-                legend=False,
-                marks=(
-                    LineMark(
-                        x=ts,
-                        y=tuple(excess),
-                        role="feature" if excess[-1] > 0 else "down",
-                        fill_to=0.0,
-                        end_label=ValueLabel(text=pct(excess[-1])),
-                    ),
-                ),
-            ),
-        ),
-    )
+    """Growth ratio to buy and hold in the caption, end label and lower panel alike."""
+    from alpha_cli.figures import rule_periods
+
+    return rule_periods.build(ctx, "equity_vs_passive", None)
 
 
 def rolling_risk(ctx: BuildContext) -> FigureSpec:

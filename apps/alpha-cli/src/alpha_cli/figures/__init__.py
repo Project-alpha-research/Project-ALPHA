@@ -106,10 +106,10 @@ def build_figure_spec(
     figure_id: str, *, run_id: str, rdir: Path, manifest: dict[str, Any], data_dir: Path
 ) -> FigureSpec:
     context = BuildContext(run_id=run_id, rdir=rdir, manifest=manifest, data_dir=data_dir)
-    periods = manifest.get("spine", {}).get("periods")
-    if periods and figure_id in (*rule_periods.CHARTS, *rule_periods.TRADABLE):
+    periods = manifest.get("spine", {}).get("periods") or {}
+    if figure_id in (*rule_periods.CHARTS, *rule_periods.TRADABLE):
         period = "tradable" if figure_id in rule_periods.TRADABLE else "scored"
-        return rule_periods.build(context, figure_id, periods[period])
+        return rule_periods.build(context, figure_id, periods.get(period))
     builder = BUILDERS.get(figure_id)
     if builder is None:
         raise DataError(f"no builder implemented for figure {figure_id!r}")

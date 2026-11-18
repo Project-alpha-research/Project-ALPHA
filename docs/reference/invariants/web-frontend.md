@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 4c418e7604df809a
+verified: b97f532919240f38
 ---
 
 # Web frontend invariants
@@ -130,8 +130,8 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
 - The rule-test Summary takes its headline dates from the first executable open through the final tradable open. Loaded dates appear below.
   Each dated row reads its own stored returns, annual growth, worst drop, closed trades, Sharpe and price basis from the manifest.
-  “Scored test periods only” uses the walk-forward portfolio. The sparse-grade explanation uses that portfolio's trade count.
-  Each row has matching comparison and drawdown figures. New runs open in light. Older runs retain their saved figures and full-history comparison.
+  Row one is “Whole period the rule could trade”; “Scored test periods only” uses the walk-forward portfolio and its trade count.
+  Each row has matching comparison and drawdown figures, stored light for new runs. Old runs keep saved figures and a full-history disclosure.
   Missing period values read “not recorded”. A catalogue request distinguishes loading, failure and missing figures.
   Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail. Only variants subtract Sharpe scores.
   Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.

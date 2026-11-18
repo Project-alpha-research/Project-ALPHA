@@ -24,6 +24,12 @@ from alpha_research.figures.spec import Role
 CHARTS = ("equity_underwater", "equity_vs_passive")
 TRADABLE = tuple("tradable_" + name for name in CHARTS)
 TRADABLE_FILE = "tradable_comparison.parquet"
+# Plain names for the subtitle; the stored period ids stay machine-readable.
+PERIOD_WORDS = {
+    "full_history": "full history",
+    "tradable": "could trade",
+    "scored": "scored test periods only",
+}
 
 
 def definition(figure_id: str) -> FigureDefinition:
@@ -37,7 +43,31 @@ def definition(figure_id: str) -> FigureDefinition:
     )
 
 
-def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
+def _passive(frame: Any) -> tuple[float, ...]:
+    if "available" in frame.columns and not all(frame["available"].to_list()):
+        reasons = frame["unavailable_reason"].to_list() if "unavailable_reason" in frame else []
+        reason = next((r for r in reasons if r), "benchmark_unavailable")
+        raise DataError(f"no passive benchmark for this run ({reason})")
+    raw = src.optional_floats(frame["benchmark_equity"])
+    if any(value is None for value in raw):
+        raise DataError("passive benchmark has gaps; refusing to interpolate a comparison")
+    passive = src.rebase(tuple(float(value) for value in raw if value is not None))
+    if min(passive) <= 0:
+        raise DataError("passive benchmark falls at or below zero; the growth ratio is undefined")
+    return passive
+
+
+def _legacy_basis(frame: Any) -> str:
+    """Runs without period records state only what their stored buy-and-hold kind says."""
+    kinds = set(frame["benchmark_kind"].to_list()) if "benchmark_kind" in frame.columns else set()
+    return "with dividends" if kinds == {"passive_open_to_open_with_dividends"} else "price only"
+
+
+def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> FigureSpec:
+    """Both charts for one dated row; ``row`` is None for runs that predate period records.
+
+    Every label is computed on the full series; only the plotted points are sampled.
+    """
     name = figure_id.removeprefix("tradable_")
     comparison = name == "equity_vs_passive"
     filename = definition(figure_id).required_artifacts[0]
@@ -45,14 +75,14 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
     column = "equity" if filename == "equity_curve.parquet" else "strategy_equity"
     strategy = src.rebase(src.floats(frame[column], name=column))
     points = src.sample(len(strategy))
-    basis = row["price_basis"]
+    basis = row["price_basis"] if row else None
+    subject_label = f"Strategy ({basis})" if basis else "Strategy"
     if comparison:
-        passive = src.rebase(src.floats(frame["benchmark_equity"], name="benchmark_equity"))
-        if min(passive) <= 0:
-            raise DataError("buy-and-hold growth must be positive")
+        passive = _passive(frame)
+        basis = basis or _legacy_basis(frame)
         lower = tuple(s / b - 1 for s, b in zip(strategy, passive, strict=True))
         reference, reference_label = passive, f"Buy and hold ({basis})"
-        axis = "Ahead of / behind buy and hold (%)"
+        axis = "Ahead/behind (%)"
         lead = lower[-1]
         relation = "ahead of" if lead >= 0 else "behind"
         answer = (
@@ -62,9 +92,15 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
             if lead
             else f"Strategy and buy and hold both finished at {mult(strategy[-1])}, level at 0.0%."
         )
+        same = (
+            f"Both lines use the same opening prices and dividend rule ({basis}). "
+            if row
+            else f"Buy and hold is the stored {basis} line; this run did not record the "
+            "strategy's dividend basis. "
+        )
         caveat = (
-            f"Both lines use the same opens ({basis}). The lower panel divides "
-            "strategy growth by buy-and-hold growth and subtracts one."
+            same + "The strategy pays recorded fees and slippage; buy and hold pays none. "
+            "The lower panel divides strategy growth by buy-and-hold growth and subtracts one."
         )
     else:
         reference = tuple(accumulate(strategy, max))
@@ -83,7 +119,7 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
     ts = src.epochs(frame[points]["ts"])
     series: tuple[tuple[tuple[float, ...], str, Role], ...] = (
         (reference, reference_label, "substrate"),
-        (strategy, f"Strategy ({basis})", "subject"),
+        (strategy, subject_label, "subject"),
     )
     marks = []
     for values, label, role in series:
@@ -93,7 +129,8 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
                 y=tuple(values[i] for i in points),
                 role=role,
                 label=label,
-                end_label=ValueLabel(text=mult(values[-1])),
+                # Only the strategy is labelled: two close end values would overprint.
+                end_label=ValueLabel(text=mult(values[-1])) if role == "subject" else None,
             )
         )
     lower_marks: list[Mark] = [
@@ -125,11 +162,11 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
         else None,
         panels=(
             Panel(
-                panel_id="growth",
-                y_label="Growth of 1",
+                panel_id="growth" if comparison else "equity",
+                y_label="Growth of 1 (x initial)",
                 y_unit="multiple",
                 marks=tuple(marks),
-                height_ratio=2.2,
+                height_ratio=2.2 if comparison else 2.6,
             ),
             Panel(
                 panel_id="excess" if comparison else "underwater",
@@ -142,10 +179,13 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any]) -> FigureSpec:
             ),
         ),
     )
+    if row is None:
+        return replace(spec, caveat=caveat)
+    period = PERIOD_WORDS.get(row["period"], row["period"])
     dates = f"{row['first_ts'][:10]} to {row['last_ts'][:10]}"
     return replace(
         spec,
         figure_id=figure_id,
         caveat=caveat,
-        subtitle=f"{ctx.symbol} · {ctx.strategy} · {row['period']} · {dates}",
+        subtitle="  ·  ".join((ctx.symbol, ctx.strategy, period, dates)),
     )

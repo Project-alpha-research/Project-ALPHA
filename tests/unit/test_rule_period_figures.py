@@ -273,3 +273,75 @@ def test_rule_drawdown_preserves_full_resolution_extreme(tmp_path: Path) -> None
     assert worst.annotate and worst.annotate.text == "worst -75.0%"
     assert "-75.0%" in chart.plain_language_answer
     assert dates[hidden].date().isoformat() in chart.plain_language_answer
+
+
+def test_tradable_numbers_match_a_hand_calculation(
+    stored_run: tuple[Path, dict[str, Any]],
+) -> None:
+    """Recompute each tradable fact from the store's opens and the engine equity, by hand."""
+    rdir, manifest = stored_run
+    row = manifest["spine"]["periods"]["tradable"]
+    ppy = manifest["spine"]["annualisation"]["periods_per_year"]
+    bars = ParquetStore(rdir.parent.parent / "store").read_bars("SPY")
+    first, last = (datetime.fromisoformat(row[key]) for key in ("first_ts", "last_ts"))
+    window = bars.filter((pl.col("ts") >= first) & (pl.col("ts") <= last))
+    opens = [round(value, 2) for value in window["open"].to_list()]
+    equity = pl.read_parquet(rdir / "equity_curve.parquet")  # scored only; tradable is separate
+    assert equity.height < window.height
+    tradable = pl.read_parquet(rdir / "tradable_comparison.parquet")
+    assert tradable["ts"].to_list() == window["ts"].to_list()
+    values = tradable["strategy_equity"].to_list()
+    peak, worst = values[0], 0.0
+    for value in values:
+        peak = max(peak, value)
+        worst = min(worst, value / peak - 1)
+    growth = values[-1] / values[0]
+    hold = opens[-1] / opens[0]  # no dividends recorded for this fixture
+    assert row["strategy"]["total_return"] == pytest.approx(growth - 1, abs=1e-12)
+    assert row["strategy"]["cagr"] == pytest.approx(growth ** (ppy / (len(values) - 1)) - 1)
+    assert row["strategy"]["max_drawdown"] == pytest.approx(worst, abs=1e-12)
+    assert row["benchmark"]["total_return"] == pytest.approx(hold - 1, abs=1e-12)
+    assert row["relative_return"] == pytest.approx(growth / hold - 1, abs=1e-12)
+
+
+def test_runs_without_period_records_use_the_same_ratio(tmp_path: Path) -> None:
+    """Old runs and plain validation runs: one excess definition, labels from all 8,284 bars."""
+    from alpha_cli.figures import _sources
+
+    n = 8284
+    dates = [datetime(1993, 1, 29, tzinfo=UTC) + timedelta(days=i) for i in range(n)]
+    strategy = [1.0 + 0.002 * i for i in range(n)]
+    passive = [1.0 + 0.003 * i for i in range(n)]
+    hidden = next(i for i in range(1, n - 1) if i not in set(_sources.sample(n)))
+    strategy[hidden] = 0.5  # one unplotted session holds the worst drop
+    pl.DataFrame(
+        {
+            "ts": dates,
+            "strategy_equity": strategy,
+            "benchmark_equity": passive,
+            "available": [True] * n,
+            "unavailable_reason": [None] * n,
+            "benchmark_kind": ["passive_open_to_open_price_only"] * n,
+        }
+    ).write_parquet(tmp_path / "benchmark_comparison.parquet")
+    pl.DataFrame({"ts": dates, "equity": strategy}).write_parquet(tmp_path / "equity_curve.parquet")
+    figures = {
+        name: build_figure_spec(
+            name, run_id="fixture", rdir=tmp_path, manifest={}, data_dir=tmp_path
+        )
+        for name in ("equity_vs_passive", "equity_underwater")
+    }
+    excess = figures["equity_vs_passive"].panels[1].marks[0]
+    assert isinstance(excess, LineMark) and excess.end_label is not None
+    expected = strategy[-1] / passive[-1] - 1
+    assert excess.y[-1] == pytest.approx(expected, abs=1e-12)
+    assert excess.end_label.text == f"{expected:.1%}"
+    assert f"{abs(expected):.1%} behind" in figures["equity_vs_passive"].plain_language_answer
+    passive_line = figures["equity_vs_passive"].panels[0].marks[0]
+    assert isinstance(passive_line, LineMark)
+    assert passive_line.label == "Buy and hold (price only)"
+    under = figures["equity_underwater"]
+    worst = strategy[hidden] / max(strategy[:hidden]) - 1
+    assert f"{worst:.1%}" in under.plain_language_answer
+    rule = next(m for m in under.panels[1].marks if isinstance(m, RuleMark))
+    assert rule.position == pytest.approx(worst)

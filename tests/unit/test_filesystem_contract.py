@@ -221,7 +221,40 @@ def read_first_rows(rel: str) -> list[ReadRow]:
 
 
 # ---------------------------------------------------------------------------------------------
-# Every workspace has a routing file
+# Workspace layout
+
+
+def _test_filename_violations() -> list[str]:
+    # Two numbered modules predate the naming rule. New fixes belong with their behaviour.
+    legacy_names = {
+        "tests/unit/test_rdagent_real_proposals_5.py",
+        "tests/unit/test_spine_honesty_3.py",
+    }
+    test_paths = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "--",
+            ":(glob)**/test_*.py",
+            ":(glob)**/*_test.py",
+            ":(exclude)tests/holdout/**",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    return [
+        path
+        for path in test_paths
+        if path not in legacy_names
+        and (ROOT / path).is_file()
+        and ("fixups" in Path(path).name or re.search(r"_\d+\.py$", Path(path).name))
+    ]
 
 
 def test_every_workspace_has_a_context_file() -> None:
@@ -230,6 +263,9 @@ def test_every_workspace_has_a_context_file() -> None:
         "These code areas have no CONTEXT.md routing file; copy the shape of an existing one "
         "(for example packages/alpha-core/CONTEXT.md):\n" + "\n".join(missing)
     )
+
+    violations = _test_filename_violations()
+    assert not violations, f"fixes go into the behaviour's file: {violations}"
 
 
 # ---------------------------------------------------------------------------------------------

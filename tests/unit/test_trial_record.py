@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from alpha_cli.spine.trial_record import OUTCOMES, map_row
+from tests.unit._rdagent_support import clock_rows
 
 
 def spine(**updates: Any) -> dict[str, Any]:
@@ -228,3 +229,58 @@ def test_rdagent_fields_and_legacy() -> None:
 def test_unmappable(row: Any) -> None:
     with pytest.raises((ValueError, KeyError, TypeError)):
         mapped(row)
+
+
+def test_recorded_at_takes_precedence_and_old_dates_still_work() -> None:
+    row = factor(recorded_at="2026-11-17T03:04:05+00:00")
+    record = map_row("rdagent", Path("/ledger"), 1, row)
+    assert record.created_at == row["recorded_at"] and record.created_at_basis == "recorded"
+    del row["recorded_at"]
+    assert map_row("rdagent", Path("/ledger"), 1, row).created_at == "2026-11-15"
+
+
+@pytest.mark.parametrize("includes", [True, False, None])
+def test_structured_universe_label(tmp_path: Path, includes: bool | None) -> None:
+    row = factor()
+    if includes is not None:
+        row["universe_includes_delisted"] = includes
+    record = map_row("rdagent", tmp_path / "ledger", 1, row)
+    assert ("includes-delisted" in record.labels) == (includes is True)
+    assert ("survivor-universe" in record.labels) == (includes is not True)
+
+
+@pytest.mark.parametrize(
+    "text,label",
+    [
+        ("141 instruments, 66 later delisted", "includes-delisted"),
+        ("141 instruments, 66 instruments later delisted", "includes-delisted"),
+        ("15 coins chosen from today's survivors; delisted coins absent", "survivor-universe"),
+        ("survivors only", "survivor-universe"),
+        # the real rule-trial rows' wording (a text list in AlphaRuleTrialV1)
+        ("survivorship: BTC and ETH are survivors chosen today", "survivor-universe"),
+        ("0 later delisted", "universe-not-recorded"),
+        ("unknown selection", "universe-not-recorded"),
+    ],
+)
+def test_old_row_universe_derived_without_mutation(tmp_path: Path, text: str, label: str) -> None:
+    row = factor(survivorship=text)
+    before = row.copy()
+    record = map_row("rdagent", tmp_path / "ledger", 1, row)
+    assert set(record.labels) & {
+        "includes-delisted",
+        "survivor-universe",
+        "universe-not-recorded",
+    } == {label}
+    assert row == before
+
+
+def test_every_factor_status_has_reason(tmp_path: Path) -> None:
+    from alpha_cli.spine.trial_record import FACTOR_OUTCOMES
+
+    for status in FACTOR_OUTCOMES:
+        record = map_row(
+            "rdagent", tmp_path / "ledger", 1, factor(status=status, clocks=clock_rows(0.04))
+        )
+        assert record.reason, status
+    record = map_row("rdagent", tmp_path / "ledger", 1, factor(status="FAST_ONLY"))
+    assert record.reason == "passed the fast screen only; the slower clocks failed"

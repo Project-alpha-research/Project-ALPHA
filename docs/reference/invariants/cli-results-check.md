@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: cb8c32142e0855ce
+verified: 4d8da76998a5f818
 ---
 
 # Command line draft checks and run comparisons invariants

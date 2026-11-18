@@ -6,11 +6,14 @@ import json
 import secrets
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
 from tests.unit.test_rdagent_embedding_cap import chat, embed, model, rows
 from tests.unit.test_rdagent_factor_launch import launch
+from workers.rdagent import gateway_embeddings
+from workers.rdagent import model_gateway as gateway
 from workers.rdagent import model_gateway as gw
 
 __all__ = ["model"]
@@ -215,7 +218,7 @@ def test_memory_reembeds_models_and_skips_failures(tmp_path: Path) -> None:
 def test_memory_budget_failure_stops_without_skip(tmp_path: Path) -> None:
     from types import SimpleNamespace
 
-    from tests.unit.test_rdagent_loop_fixups_2 import coder_parts
+    from tests.unit._rdagent_support import coder_parts
     from workers.rdagent.research_memory import EmbeddingMemory
 
     ns = coder_parts()
@@ -418,7 +421,7 @@ def test_coder_uses_current_vectors_for_queries_and_new_nodes(
     from contextlib import contextmanager
     from types import ModuleType, SimpleNamespace
 
-    from tests.unit.test_rdagent_loop_fixups_2 import coder_parts
+    from tests.unit._rdagent_support import coder_parts
     from workers.rdagent.research_memory import EmbeddingMemory
 
     class Backend:
@@ -527,3 +530,159 @@ def test_provider_spelling_of_the_same_model_is_accepted(
 
     monkeypatch.setattr(gw, "post_json", post)
     assert embed(model)["model"] == requested
+
+
+def test_invalid_embedding_model_is_not_an_input_refusal() -> None:
+    # Only validation/error translation is exercised: no budget, storage, socket or backend.
+    model = Mock()
+    model.record.return_value = {"refused": []}
+    model.check_model.side_effect = gateway.GatewayError(
+        400, "model_not_served", "wrong model", "model"
+    )
+    with pytest.raises(gateway.GatewayError) as caught:
+        gateway.Gateway.embeddings(model, {"model": "wrong"})
+    assert caught.value.code == "model_not_served"
+    model.budget.reserve.assert_not_called()
+
+
+def test_embedding_missing_model_is_logged_and_counted(
+    model: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider(model, monkeypatch)
+    monkeypatch.setattr(
+        gw, "post_json", lambda *a, **kw: {"data": [{"index": 0, "embedding": [1.0]}]}
+    )
+    model.embeddings({"model": "alpha-embed", "input": "abc"})
+    row = rows(model)[-1]
+    assert row["response_model"] is None
+    assert row["model_check"] == "model_not_reported"
+    assert row["reserved_usd"] == pytest.approx(3e-6)
+    assert launch.call_split(rows(model))["embedding_model_not_reported"] == 1
+
+
+def test_provider_batches_order_and_single_settlement(
+    model: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider(model, monkeypatch)
+    sent: list[list[str]] = []
+    settlements = Mock(wraps=gateway_embeddings.settle_embedding)
+    monkeypatch.setattr(gateway_embeddings, "settle_embedding", settlements)
+
+    def post(url: str, body: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        inputs = body["input"]
+        sent.append(inputs)
+        assert len(inputs) <= 32
+        return {
+            "model": "model-a",
+            "data": [
+                {"index": i, "embedding": [float(t)]} for i, t in reversed(list(enumerate(inputs)))
+            ],
+            "usage": {"total_tokens": len(inputs)},
+        }
+
+    monkeypatch.setattr(gw, "post_json", post)
+    result = model.embeddings({"model": "alpha-embed", "input": [str(i) for i in range(65)]})
+    assert [len(batch) for batch in sent] == [32, 32, 1]
+    assert [item["embedding"][0] for item in result["data"]] == list(range(65))
+    assert settlements.call_count == 3
+    state = model.budget.status()["runs"]["test"]
+    assert state["provider_embedding_calls"] == 3 and state["calls"] == 0
+    assert state["usd"] == pytest.approx(65 * 3e-6)
+    split = launch.call_split(rows(model))
+    assert split["provider_embedding_requests"] == 3
+    assert split["provider_embedding_inputs"] == 65
+
+
+def test_refused_batch_retries_singly_and_keeps_good_inputs(
+    model: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider(model, monkeypatch)
+    sent: list[list[str]] = []
+
+    def post(url: str, body: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        inputs = body["input"]
+        sent.append(inputs)
+        if len(inputs) > 1 or inputs == ["bad"]:
+            raise gw.GatewayError(
+                400, "invalid_input", "bad input", payload={"error": {"code": "invalid_input"}}
+            )
+        return {
+            "model": "model-a",
+            "data": [{"index": 0, "embedding": [float(inputs[0])]}],
+            "usage": {"total_tokens": 1},
+        }
+
+    monkeypatch.setattr(gw, "post_json", post)
+    result = model.embeddings({"model": "alpha-embed", "input": ["1", "bad", "3"]})
+    assert sent == [["1", "bad", "3"], ["1"], ["bad"], ["3"]]
+    assert [(item["index"], item["embedding"]) for item in result["data"]] == [
+        (0, [1.0]),
+        (2, [3.0]),
+    ]
+    assert result["input_errors"][0]["index"] == 1
+    assert result["input_errors"][0]["code"] == "embedding_input_refused"
+    split = launch.call_split(rows(model))
+    assert split["embedding_single_retries"] == 3
+    assert split["provider_embedding_requests"] == 4
+    assert model.budget.status()["runs"]["test"]["usd"] == pytest.approx(6e-6)
+
+
+def test_bad_last_input_in_partial_batch_keeps_earlier_vectors(
+    model: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider(model, monkeypatch)
+
+    def post(url: str, body: dict[str, Any], *args: Any, **kwargs: Any) -> dict[str, Any]:
+        if body["input"] == ["bad"]:
+            raise gw.GatewayError(400, "invalid_input", "bad input")
+        return {
+            "model": "model-a",
+            "data": [{"index": i, "embedding": [1.0]} for i in range(len(body["input"]))],
+        }
+
+    monkeypatch.setattr(gw, "post_json", post)
+    result = model.embeddings(
+        {"model": "alpha-embed", "input": [f"good{i}" for i in range(32)] + ["bad"]}
+    )
+    assert len(result["data"]) == 32 and result["input_errors"][0]["index"] == 32
+
+
+def test_mismatched_embedding_model_is_logged_even_when_refused(
+    model: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    provider(model, monkeypatch)
+    monkeypatch.setattr(
+        gw,
+        "post_json",
+        lambda *a, **kw: {
+            "model": "wrong",
+            "data": [{"index": 0, "embedding": [1.0]}],
+            "usage": {"total_tokens": 2},
+        },
+    )
+    with pytest.raises(gw.GatewayError, match="invalid embeddings"):
+        model.embeddings({"model": "alpha-embed", "input": "abc"})
+    row = rows(model)[-1]
+    assert row["response_model"] == "wrong" and row["model_check"] == "model_mismatch"
+    assert row["reserved_usd"] == pytest.approx(3e-6) and row["usd"] == pytest.approx(6e-6)
+
+
+def test_cache_mixed_order_cost_and_fresh_process(model: gw.Gateway) -> None:
+    backend = Mock(spec=["embed"])
+    backend.embed.side_effect = lambda texts: gw.EmbeddingResult(
+        [[float(ord(t))] for t in texts], "fake", tokens=len(texts)
+    )
+    model.embedding_backend = backend
+    first = model.embeddings({"model": "alpha-embed", "input": ["a", "b", "a"]})
+    before = model.budget.status()
+    second = model.embeddings({"model": "alpha-embed", "input": ["b", "a"]})
+    assert model.budget.status() == before
+    third = model.embeddings({"model": "alpha-embed", "input": ["b", "c", "a"]})
+    assert [d["embedding"] for d in third["data"]] == [[98.0], [99.0], [97.0]]
+    assert backend.embed.call_args_list[0].args[0] == ["a", "b"]
+    assert backend.embed.call_count == 2
+    assert first["data"][0]["embedding"] == second["data"][1]["embedding"]
+    assert sum(row.get("embedding_cache_hits", 0) for row in rows(model)) == 5
+    fresh = gw.Gateway(model.settings, embedding_backend=backend)
+    fresh.embeddings({"model": "alpha-embed", "input": ["a"]})
+    assert backend.embed.call_count == 3

@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.stores import annualisation, periods_per_year, resolve_asset
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
+from alpha_data.timeframe import DAILY, parse_timeframe
 
 
 def _days() -> list[datetime]:
@@ -142,3 +143,44 @@ def test_resolve_asset_invalid_registry(tmp_path: Path, registry: str) -> None:
     (tmp_path / "stores.toml").write_text(registry)
     with pytest.raises(DataError, match="store"):
         resolve_asset("SPY", data_dir=tmp_path)
+
+
+START = datetime(2024, 1, 1, tzinfo=UTC)
+
+
+@pytest.mark.parametrize("weekends,days", [(False, 252), (True, 365)])
+def test_intraday_annualisation_uses_observed_days(weekends: bool, days: int) -> None:
+    dates = [
+        START + timedelta(days=day, hours=hour)
+        for day in range(14)
+        if weekends or (START + timedelta(days=day)).weekday() < 5
+        for hour in range(6)
+    ]
+    assert periods_per_year(dates) == 6 * days
+    assert periods_per_year(dates, bar_size=parse_timeframe("1h")) == 6 * days
+
+
+def test_daily_annualisation_keeps_elapsed_years() -> None:
+    dates = [START + timedelta(days=day) for day in range(365)]
+    assert periods_per_year(dates, bar_size=DAILY) == 365
+
+
+def test_one_weekend_bar_does_not_make_a_stock_trade_weekends() -> None:
+    stamps = [
+        START + timedelta(days=day, hours=hour)
+        for day in range(56)
+        if (START + timedelta(days=day)).weekday() < 5
+        for hour in range(8)
+    ]
+    stamps.append(stamps[-1] + timedelta(days=1))  # one stray Saturday bar
+    stamps = sorted(set(stamps))
+    ppy, basis = annualisation(stamps, bar_size=parse_timeframe("1h"))
+    assert ppy == 8 * 252
+    assert "weekdays" not in basis and "2% of bar dates fall on weekends" in basis
+
+
+def test_hourly_crypto_stays_365_and_records_weekend_share() -> None:
+    stamps = [START + timedelta(hours=i) for i in range(24 * 60)]
+    ppy, basis = annualisation(stamps, bar_size=parse_timeframe("1h"))
+    assert ppy == 24 * 365
+    assert "27% of bar dates fall on weekends" in basis

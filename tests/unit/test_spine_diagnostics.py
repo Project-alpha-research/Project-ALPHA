@@ -1,16 +1,19 @@
 """Hand-computed diagnostic contracts; no engine or network."""
 
+import importlib
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, NoReturn
 
 import numpy as np
 import polars as pl
 import pytest
 
+from alpha_cli.spine import diagnostics, macro
+from alpha_cli.spine.audit import audit
 from alpha_cli.spine.diagnostics import (
     concentration,
     delay,
@@ -20,6 +23,7 @@ from alpha_cli.spine.diagnostics import (
     score,
     yearly,
 )
+from tests.unit.test_spine_stores import START
 
 
 def test_drawdown_market_share_and_unrecovered() -> None:
@@ -575,3 +579,95 @@ def test_rule_test_publishes_controls_without_counting_them(
     assert "No borrowing or funding cost is charged" in shown.output
     assert "practitioner rule of thumb, not a statistical test" in shown.output
     assert ledger.read_bytes() == before
+
+
+@pytest.mark.parametrize("ratio", [1.1, 0.6])
+def test_drawdown_flag_names_ratio(ratio: float) -> None:
+    drawdowns = diagnostics.drawdowns(
+        [100, 80, 100],
+        [100, 100 * (1 - 0.2 * ratio), 100],
+        [START + timedelta(days=i) for i in range(3)],
+    )
+    assert drawdowns["episodes"][0]["share_explained"] == pytest.approx(ratio)
+    sections = {
+        "full_sample": {"sharpe": 1},
+        "benchmark": {"sharpe": 1},
+        "drawdowns": drawdowns,
+        "concentration": {"top_3": None},
+        "sensitivity": {"variants": []},
+        "delay": {"base_sharpe": None, "delayed_sharpe": None},
+    }
+    detail = diagnostics.flags(sections)[0]["detail"]
+    plain = {0.6: "fell 40% less than", 1.1: "fell 10% more than"}[ratio]
+    assert f"buy and hold {plain} the rule over the same dates" in detail
+
+
+@pytest.mark.parametrize("price,status", [(100.02, "PASS"), (99.98, "PASS"), (100.03, "FLAG")])
+def test_fill_range_allows_recorded_slippage(price: float, status: str) -> None:
+    items = audit(
+        None,
+        None,
+        pl.DataFrame({"ts": [START], "price": [price]}),
+        {START: (100, 100)},
+        fee=1,
+        slippage=2,
+        trades=30,
+        years=3,
+        labels=[],
+        benchmark=True,
+        variants=0,
+    )
+    assert next(i for i in items if i["check"] == "fills-inside-bar-range")["status"] == status
+
+
+def test_fill_range_missing_costs_is_not_checked() -> None:
+    items = audit(
+        None,
+        None,
+        pl.DataFrame({"ts": [START], "price": [100.0]}),
+        {START: (100, 100)},
+        fee=None,
+        slippage=None,
+        trades=30,
+        years=3,
+        labels=[],
+        benchmark=True,
+        variants=0,
+    )
+    check = next(i for i in items if i["check"] == "fills-inside-bar-range")
+    assert check["status"] == "NOT-CHECKED"
+    assert "cost settings" in check["detail"]
+
+
+def test_macro_missing_module_has_plain_reason_and_detail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def absent(name: str) -> NoReturn:
+        raise ImportError("No module named alpha_data.context.views")
+
+    monkeypatch.setattr(importlib, "import_module", absent)
+    result = macro.macro_window(tmp_path, [])
+    assert result["reason"] == "macro data was not installed when this run was made"
+    assert "alpha_data.context.views" in result["detail"]
+
+
+@pytest.mark.parametrize(
+    "profits,wording",
+    [
+        ([9.0, 8.0, 7.0, -8.0], "made 1.5 times the total profit; the rest lost money overall"),
+        ([5.0, 4.0, 3.0, 1.0], "contributed 92% of total profit"),
+    ],
+)
+def test_top_trades_flag_never_calls_a_multiple_a_share(profits: list[float], wording: str) -> None:
+    concentration = diagnostics.concentration(profits)
+    sections = {
+        "full_sample": {"sharpe": 1},
+        "benchmark": {"sharpe": 1},
+        "drawdowns": {"episodes": []},
+        "concentration": concentration,
+        "sensitivity": {"variants": []},
+        "delay": {"base_sharpe": None, "delayed_sharpe": None},
+    }
+    detail = diagnostics.flags(sections)[0]["detail"]
+    assert wording in detail
+    assert concentration["top_3"] == pytest.approx(sum(sorted(profits)[-3:]) / sum(profits))

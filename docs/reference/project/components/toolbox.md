@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
-verified: 392648233f13dee1
+verified: adb185e2fe4320df
 ---
 
 # Toolbox
@@ -71,8 +71,8 @@ family correction on the ledger count and prior comparable Sharpes frozen in the
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a reason. Commands: `alpha tool list` (filter by
 `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`, `run-set` and `history`. The only
-target is a run id. The reserved date is defined in `toolbox/reserve.py` and in two other places, a known defect
-([reserved period](../reserved-period.md)). Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
+target is a run id. The toolbox uses the [shared reserved date](../reserved-period.md).
+Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
 [STATUS.md](../../../../STATUS.md).
 
 **Not built from this batch:**

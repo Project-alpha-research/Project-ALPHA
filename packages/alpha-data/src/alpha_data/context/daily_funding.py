@@ -10,6 +10,7 @@ from pathlib import Path
 import polars as pl
 
 from alpha_core import DataError
+from alpha_core.reserve import RESERVED_DAY
 from alpha_data.context.binance_bulk import table_path
 from alpha_data.context.events import FUNDING_SCHEMA, load_events
 
@@ -20,7 +21,6 @@ SCHEMA = {
     "funding_last": pl.Float64,
     "funding_count": pl.UInt32,
 }
-RESERVED_DAY = date(2024, 1, 1)
 
 
 def daily_funding_with_sources(

@@ -58,6 +58,7 @@ def coder_parts() -> dict[str, Any]:
         "UTC": UTC,
         "json": json,
         "hashlib": importlib.import_module("hashlib"),
+        "RESERVED_START": "2024-01-01",
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "coder-contract", "exec"), namespace)
     return namespace

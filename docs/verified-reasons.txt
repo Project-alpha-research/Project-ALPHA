@@ -2,13 +2,13 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f37db52ddc451a3e on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified d1abd06b142f352b on 2026-11-19: The CLI re-exports the same reserve names and the toolbox keeps the same label and input behavior.
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 07d082a5ad4d4e01 on 2026-11-19: The CLI re-exports the same reserve names and the toolbox keeps the same label and input behavior.
 
 docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -16,8 +16,14 @@ docs/reference/invariants/cli-runs.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
+docs/reference/invariants/core.md
+  verified 0aa46f3715578a6f on 2026-11-19: The shared reserve module uses only the standard library and follows the documented source identity rules.
+
+docs/reference/invariants/data.md
+  verified d88ae808b699f286 on 2026-11-19: The funding cutoff and reads keep their existing behavior and the reserve import follows the core-only package boundary.
+
 docs/reference/invariants/workers.md
-  verified 485c52a41070dfd5 on 2026-11-18: re-read after the merge; main's own update for the proposal pause is kept and the contents list and thirds link are accurate
+  verified 36672548245ab33c on 2026-11-19: The same isolated worker data module now renders the panel dates for the proposer, with the same text and cutoff.
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -103,6 +109,12 @@ docs/roadmap/production-scope.md
 docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
+packages/alpha-core/CONTEXT.md
+  verified f09c218332089ad6 on 2026-11-19: The shared reserve module uses only the standard library and follows the documented source identity rules.
+
+packages/alpha-data/CONTEXT.md
+  verified 638f802b62b82c2c on 2026-11-19: The funding cutoff and reads keep their existing behavior and the reserve import follows the core-only package boundary.
+
 research/CONTEXT.md
   verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
@@ -146,7 +158,7 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified fd5ee42a2617426a on 2026-11-18: Re-read after the review fixes: the pause still lives in discussion.py after the family guard, the summary is kept by alpha_factor_hypothesis.py, and the named tests are right
+  verified 5a5143fbb114833c on 2026-11-19: The same isolated worker data module now renders the panel dates for the proposer, with the same text and cutoff.
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

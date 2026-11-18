@@ -1,6 +1,2 @@
-"""First day of the reserved period shared with the RD-Agent judge."""
-
-from datetime import date
-
-RESERVED_DAY = date(2024, 1, 1)
-RESERVED_START = RESERVED_DAY.isoformat()
+from alpha_core.reserve import RESERVED_DAY as RESERVED_DAY
+from alpha_core.reserve import RESERVED_START as RESERVED_START

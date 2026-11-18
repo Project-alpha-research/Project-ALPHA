@@ -3,13 +3,11 @@ owner: crypto provider adapters
 sources:
   - packages/alpha-data/src/alpha_data/crypto/providers/**
   - packages/alpha-data/src/alpha_data/crypto/profiles.py
-  - packages/alpha-data/src/alpha_data/crypto/funding_ingestion.py
   - tests/unit/test_bybit_funding_*.py
-  - tests/unit/test_funding_*.py
   - tests/unit/test_crypto_defillama*.py
   - tests/bias_guards/test_defillama_availability.py
   - tests/bias_guards/test_crypto_profiles_future_poison.py
-verified: b7926b5f5ee862d4
+verified: 00e25096e37bb6b4
 ---
 
 # Crypto provider invariants
@@ -51,10 +49,6 @@ the commands that drive these modules are in [command line crypto data](cli-cryp
 - Funding pages bind the exact instrument and bounds, keep native signed rates, and never annualize or assume an
   interval. Empty, duplicate, conflicting, foreign or future-settlement pages fail closed; a short page never
   proves coverage ([platform contracts](../../operations/research-platform-contracts.md)).
-- Funding collection is offline. `bybit_funding.collect_funding_pages` drives a caller-supplied page callback
-  within call and byte limits and always reports `coverage_complete=False`; `funding_ingestion` retains each raw
-  body and re-verifies it before any decoder reads it. Neither adds transport, a CLI route or acquisition
-  authority; production full bounded-page acquisition stays refused.
 
 ## CoinGecko and GeckoTerminal
 

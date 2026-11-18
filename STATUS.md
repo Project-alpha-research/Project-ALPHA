@@ -107,11 +107,11 @@ The full triage sheet, with what each item does and why: [docs/roadmap/triage-20
 
 **Recommended: Your call**
 
-- Card N1: Confirm shortlisted RD-Agent factors once on the reserved data (ten slots, each use permanent)
 - Card N2: RD-Agent idea-family failure limit (three near-copies in one round close a family)
 - Card N3: Move RD-Agent research toward stocks and the owner's own setups
 - Card N4: Make the Qlib v3 feature recipe the default
 - Card N5: When to resume Workstation screen work
+- Card N6: Add the purpose and the three golden paths to CLAUDE.md
 
 ## Next up
 

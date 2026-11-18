@@ -50,6 +50,11 @@ audited result through the playbook and `alpha test`, and a first report screen 
 remains is the benchmark on that screen's chart and the honesty traps, the check that an AI
 following the playbook stays honest.
 
+The three paths are general ways of working, not strategies: ALPHA is a general tool, not built around one
+strategy, market or data source, and the ideas tested today are throwaway material to prove it works
+([owner, 2026-11-18](owner-decisions-4.md#2026-11-18-what-the-owner-said-about-the-purpose-of-alpha);
+the plan is the orchestrator's and reversible).
+
 | Golden path | The prompt it must serve | State |
 |---|---|---|
 | 1. Rule test | "Test this trend rule on these assets" | command line working ([route](../../../research/CONTEXT.md)); report screen partly built |

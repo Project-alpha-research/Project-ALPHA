@@ -51,9 +51,9 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-220 capabilities: 50 working, 66 built but unproven, 102 missing, 1 to rebuild,
+223 capabilities: 50 working, 66 built but unproven, 105 missing, 1 to rebuild,
 1 dropped by decision (recounted from the rows themselves on 2026-11-18: the 2026-11-17 header said 45 working and the
-table said 44, while the rows held 49; six rows were then added and two were corrected, below).
+table said 44, while the rows held 49; nine rows were then added and two were corrected, below).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
@@ -65,11 +65,11 @@ table said 44, while the rows held 49; six rows were then added and two were cor
 | 6. Diagnostics | 8 | 6 | 11 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 9 | 0 | 1 |
 | 8. AI partner | 3 | 8 | 5 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 5 | 6 | 13 | 0 | 0 |
+| 9. RD-Agent and Qlib engines | 5 | 6 | 16 | 0 | 0 |
 | 10. Screens | 1 | 3 | 15 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **50** | **66** | **102** | **1** | **1** |
+| **All** | **50** | **66** | **105** | **1** | **1** |
 
 ## 1. Idea
 

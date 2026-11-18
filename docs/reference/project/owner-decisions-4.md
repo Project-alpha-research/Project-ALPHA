@@ -81,18 +81,57 @@ at the end of this file.
 ### 2026-11-18 Open owner decisions, listed in one place
 
 - **Said:** exact words not recorded: the orchestrating AI agent listed these open questions; none is decided.
-- **Context:** these are waiting for the owner. The first five are on the status page's
+- **Context:** these are waiting for the owner. They are on the status page's
   "Waiting for your decision" list (the [capability map](../../roadmap/capabilities.toml), cards
-  N1 to N5); the audit questions are not copied here.
-- **Left to the owner:** (N1) confirming shortlisted factors once on the reserved data, which has
-  ten slots and each use is permanent (not built); (N2) the RD-Agent idea-family failure limit:
+  N2 to N6; N1 was decided the same day, below); the audit questions are not copied here.
+- **Left to the owner:** (N2) the RD-Agent idea-family failure limit:
   three near-copies in one round closed a family ([ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md));
   (N3) whether RD-Agent research should move toward stocks and the owner's own setups; (N4) making
   the Qlib v3 feature recipe the default ([ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md));
-  (N5) when to resume Workstation screen work. The open audit questions are in
+  (N5) when to resume Workstation screen work; (N6) adding the purpose and the three golden paths
+  to CLAUDE.md. The open audit questions are in
   [production-scope part 3](../../roadmap/production-scope-3.md#questions-from-the-file-system-audit).
 - **Known defect:** RD-Agent's run 5 stopped mid-run with a crash; pull request 254 fixed it, and it
   is not yet proven in a real run. The status page's defect list only holds failing smoke checks,
   so it is recorded here instead.
 - **Governs:** [RD-Agent](components/rd-agent.md); [Qlib](components/qlib.md);
   [Workstation](components/web-workstation.md).
+
+### 2026-11-18 What the owner said about the purpose of ALPHA
+
+- **Said:** exact words not recorded; paraphrased by the orchestrating AI agent, not verbatim: (1) the ideas being tested now
+  are throwaway material to prove the system works; ALPHA is a general tool and must not be built
+  around one strategy, one market or one data source: there may be hundreds of strategies and many
+  kinds of data; (2) it must not become a black box and has no fixed strategy rules; (3) the AI is
+  an assistant: when it proposes ideas, it works through them together with the owner; (4) until
+  the system works properly the owner will not use it for real strategy development or research;
+  (5) the file system must carry all plans, documents, purpose, reasons, things considered and
+  ideas, and be kept updated; agents re-read it when unsure.
+- **Context:** said while the orchestrator's working order above was being set.
+- **Governs:** [overview](overview.md#what-alpha-is-for);
+  [ideas and things considered](ideas-and-considered.md); the whole project.
+
+### 2026-11-18 Owner decisions on confirmation, the build sandbox and RD-Agent subject matter
+
+- **Said:** exact words not recorded; paraphrased by the orchestrating AI agent, not verbatim.
+- **Decided:** (1) yes to one-shot confirmation of shortlisted factors on the reserved data: ten
+  slots for the life of the reserved window, each slot needing the owner's own yes; not built yet,
+  and queued behind the screens; (2) yes to a limited widening of the Codex build sandbox: one extra
+  writable package-cache folder and pre-linked built files; the network stays off; (3) Codex builds
+  use the models the owner named, at the owner's request, and Codex is to be used more to save
+  Claude usage; (4) the subject matter of RD-Agent's test runs does not matter for now.
+- **Left to the owner:** still undecided: adding the purpose and three paths to CLAUDE.md (N6);
+  the idea-family closing rule (N2).
+- **Governs:** [RD-Agent](components/rd-agent.md); [model routing](../model-routing.md);
+  [checklist](../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines).
+
+### 2026-11-18 Orchestrator's plan: the paths are ways of working, and RD-Agent becomes discussable
+
+- **Said:** exact words not recorded: the orchestrator's plan following the owner's statements above;
+  it is the orchestrator's default, and the owner can reverse it.
+- **Decided:** (1) the three golden paths are general ways of working, not strategies; (2) after the
+  Setup Lab and rule-test screens, RD-Agent changes so that every automatic refusal is shown with its
+  reason and the owner can override it; a "propose and discuss" mode shows ideas and reasoning before
+  anything is spent; honesty checks appear as labels on results.
+- **Governs:** [overview](overview.md#the-target-shape); [RD-Agent](components/rd-agent.md);
+  [checklist](../../roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines).

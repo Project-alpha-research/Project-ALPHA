@@ -146,7 +146,10 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Purged splits by label end time, with embargo, backtest paths and a leak checker | Unproven | `workers/afml` | Path 3 | [status] |
 | Fractional differencing with d chosen on training data only | Unproven | `workers/afml` | Path 3 | [status] |
 | Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
-| One-shot confirmation of shortlisted factors on the reserved data (awaiting an owner decision, N1 on the status page) | Missing | `workers/rdagent`, `alpha-cli` judge | Path 3 | private |
+| One-shot confirmation of shortlisted factors on the reserved data (approved by the owner 2026-11-18, not started; queued behind the screens) | Missing | `workers/rdagent`, `alpha-cli` judge | Path 3 | private |
+| Every automatic refusal shown with its reason and open to the owner's override (orchestrator's plan, 2026-11-18) | Missing | `workers/rdagent`, `alpha-cli` judge, `alpha-web` | Path 3 | private |
+| A "propose and discuss" mode: the agent shows its ideas and reasoning before any spending (orchestrator's plan) | Missing | `workers/rdagent`, `alpha-cli` | Path 3 | private |
+| RD-Agent's reasoning shown on screen, with honesty checks as labels on results (orchestrator's plan) | Missing | `alpha-web` | Path 3 | private |
 | A map of everything Qlib and RD-Agent offer, each item with a state | Missing | [coverage maps](backlog/engine-coverage-maps.md) | Path 3 | [rd-all] |
 | Feature attribution (SHAP-style) for tree models, tracked over time as an early drift warning | Missing | `workers/qlib`; [note](backlog/engine-coverage-maps.md) | Later | private |
 | Automated loops scored on out-of-sample result, complexity and trade count, not return alone | Missing | `workers/rdagent`; [note](backlog/rescued-research-ideas.md) | Path 3 | private |

@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b8b3c640b580c44d on 2026-11-18: Re-read after a type-only fix in rdagent_discussion.py: the routing row is unchanged and still correct
+  verified b0effe47937fef41 on 2026-11-18: Re-read after merging the propose-and-discuss change: body text equals main's, which already describes the new discussion command; this branch's rule-test and tools lines are unchanged
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -29,7 +29,7 @@ docs/reference/project/components/ai-assistants.md
   verified 02c397709d5bf8cd on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
 
 docs/reference/project/components/command-line.md
-  verified 8f3ac5c4f97865cd on 2026-11-18: Re-read after the second main merge: main's market-data row and this branch's rule-test outputs line sit side by side and both still describe their code
+  verified 6d2ae04ff23571c1 on 2026-11-18: Re-read after merging the propose-and-discuss change: body text equals main's, which already describes the new discussion command; this branch's rule-test and tools lines are unchanged
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -122,7 +122,7 @@ research/tools/price-noise.md
   verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/rdagent-journey.md
-  verified 1794786e802a6d0a on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified dc85c46fe5c0a8d6 on 2026-11-18: Re-read: this branch only renamed the journey theme helper to figure_theme and named its light variant; light stays default and --theme dark still selects dark, as the card says
 
 research/tools/rule-test.md
   verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one

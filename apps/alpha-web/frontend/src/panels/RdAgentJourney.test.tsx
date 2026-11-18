@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MissingJourney, RdAgentJourney, type Journey } from './RdAgentJourney'
+
+const styles = readFileSync(new URL('./RdAgentJourney.css', import.meta.url), 'utf8')
 
 const steps = ['Idea', 'Calculation', 'Leak check', 'Quick test', 'Trading test', 'Feedback', 'Limits']
 const document: Journey = {
@@ -45,8 +48,22 @@ describe('the stored idea journey', () => {
     const html = renderToStaticMarkup(<RdAgentJourney journey={document} base="/synthetic" />)
     expect(html).toMatch(/<details><summary>Show the agent(?:&#x27;|’)s own words<\/summary>[\s\S]*?Recorded wording\./)
     expect(html).toMatch(/<details><summary>Where this comes from<\/summary>[\s\S]*?evaluations\/iter-0\/result.json/)
-    expect(html).toMatch(/line 12<\/code><\/pre><details><summary>[^<]+<\/summary><pre><code>line 13\nline 14/)
+    expect(html).toMatch(/line 12<\/span><\/code><\/pre><details><summary>Show remaining code<\/summary><pre><code><span[^>]*>line 13<\/span>\n<span[^>]*>line 14/)
     expect(html).not.toContain('<details open')
     expect(html).toContain('not recorded')
+  })
+
+  it('preserves original indentation and wraps long code lines with a hanging indent', () => {
+    const line = '\t  score = ' + 'x'.repeat(250)
+    const code = [line, '', ...Array.from({ length: 10 }, () => 'other'), line].join('\n')
+    const journey = { ...document, steps: document.steps.map((step, i) => i === 1 ? { ...step, code } : step) }
+    const html = renderToStaticMarkup(<RdAgentJourney journey={journey} base="/synthetic" />)
+    expect(html.split(`<span class="journey-code-line" style="--journey-code-indent:6ch">${line}</span>`)).toHaveLength(3)
+    expect(html).toContain('<span class="journey-code-line" style="--journey-code-indent:0ch"></span>')
+    expect(styles).toMatch(/\.journey-code-line\s*\{[^}]*white-space:\s*break-spaces/)
+    expect(styles).toMatch(/\.journey-code-line\s*\{[^}]*overflow-wrap:\s*anywhere/)
+    expect(styles).toContain('--journey-wrap-indent: min(calc(var(--journey-code-indent) + 2ch), 45%)')
+    expect(styles).toContain('padding-inline-start: var(--journey-wrap-indent)')
+    expect(styles).toContain('text-indent: calc(-1 * var(--journey-wrap-indent))')
   })
 })

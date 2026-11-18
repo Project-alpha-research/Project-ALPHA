@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState, type CSSProperties } from 'react'
 import { getJSON } from '../api/client'
 import type { components } from '../api/generated'
 import './RdAgentJourney.css'
@@ -8,13 +8,40 @@ export type Journey = Schema['StoredJourney']
 type Idea = Schema['JourneyIdea']
 type JourneyRead = Journey | Schema['JourneyMissing']
 const missing = 'not recorded'
+const verdictWords = new Map([
+  ['FAILED', 'The code for this idea failed to build or run.'],
+  ['LOOKAHEAD', 'It failed the future-data check.'],
+  ['UNSTABLE', 'It gave different numbers on identical inputs.'],
+  ['DEGENERATE', 'Too few usable numbers or too little variation for the quick test.'],
+  ['ERROR', 'The evaluation encountered an error.'],
+  ['SCREEN_FAIL', 'Failed the quick test.'],
+  ['SPREAD_FAIL', 'Failed the spread check.'],
+  ['REPLAY_FAIL', 'Failed the trading test with costs.'],
+  ['CANDIDATE', 'It passed the quick test, spread check, trading test with costs and multiple-testing test.'],
+  ['DEFLATION_FAIL', 'Failed the multiple-testing test.'],
+  ['FAST_ONLY', 'Only the daily quick test, spread check and trading test with costs passed as a group.'],
+  ['REPEAT', 'This idea repeated an earlier test.'],
+  ['IMPORTED', 'This result came from an earlier evaluation.'],
+])
+
+function CodeLines({ lines }: { lines: string[] }) {
+  return <pre><code>{lines.map((line, index) => {
+    const leading = line.match(/^[ \t]*/)?.[0] ?? ''
+    let columns = 0
+    for (const character of leading) columns += character === '\t' ? 4 - columns % 4 : 1
+    const style = { '--journey-code-indent': `${columns}ch` } as CSSProperties
+    return <Fragment key={index}>
+      {index > 0 && '\n'}<span className="journey-code-line" style={style}>{line}</span>
+    </Fragment>
+  })}</code></pre>
+}
 
 function CodeExcerpt({ code }: { code: string }) {
   const lines = code.split('\n')
   return <>
-    <pre><code>{lines.slice(0, 12).join('\n')}</code></pre>
+    <CodeLines lines={lines.slice(0, 12)} />
     {lines.length > 12 && <details><summary>Show remaining code</summary>
-      <pre><code>{lines.slice(12).join('\n')}</code></pre>
+      <CodeLines lines={lines.slice(12)} />
     </details>}
   </>
 }
@@ -88,7 +115,7 @@ export function JourneyPicker({ runId, ideas }: { runId: string; ideas: Idea[] }
   return <>
     <label>Idea <select value={selected} onChange={event => setSelected(event.target.value)}>
       {ideas.map(idea => <option key={idea.id} value={idea.id}>
-        {idea.name}{idea.iteration != null && ` · iteration ${idea.iteration}`} · {idea.verdict ?? missing} · {idea.built ? 'journey available' : 'journey not built yet'}
+        {idea.name}{idea.iteration != null && ` · iteration ${idea.iteration}`} · {idea.verdict == null ? missing : verdictWords.get(idea.verdict) ?? 'A verdict was recorded.'} · {idea.built ? 'journey available' : 'journey not built yet'}
       </option>)}
     </select></label>
     {current && <SelectedJourney key={current.id} idea={current}

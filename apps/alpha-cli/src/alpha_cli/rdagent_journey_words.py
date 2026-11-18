@@ -6,7 +6,7 @@ import re
 from typing import Any, cast
 
 from alpha_cli._rdagent_judge import STATUSES
-from alpha_cli._rdagent_stability import recorded_status, status_reason
+from alpha_cli._rdagent_stability import recorded_status
 from alpha_cli.spine.trial_record import universe_label
 
 MISSING = "not recorded"
@@ -15,11 +15,30 @@ RULE = "ALPHA rule"
 CLOCK = {"weekly": "7 days", "monthly": "28 days", "daily": "day"}
 DIRECTION = {-1: "lower", 1: "higher"}
 PEEK = {
-    "PASS": "The earlier answers held at the recorded cuts.",
-    "LOOKAHEAD": "The earlier answers changed when later data was hidden.",
-    "UNSTABLE": "The code gave different answers on identical inputs.",
-    "ERROR": "The check encountered an error.",
-    "NOT_RUN": "The check did not run.",
+    "PASS": "The earlier numbers did not change.",
+    "LOOKAHEAD": "The earlier numbers changed when later data was hidden.",
+    "UNSTABLE": "The code gave different numbers on identical inputs.",
+    "ERROR": "The future-data check encountered an error.",
+    "NOT_RUN": "The future-data check did not run.",
+}
+VERDICTS = {
+    "FAILED": "The code for this idea failed to build or run.",
+    "LOOKAHEAD": "It failed the future-data check.",
+    "UNSTABLE": "It gave different numbers on identical inputs.",
+    "DEGENERATE": "Too few usable numbers or too little variation for the quick test.",
+    "ERROR": "The evaluation encountered an error.",
+    "SCREEN_FAIL": "Failed the quick test.",
+    "SPREAD_FAIL": "Failed the spread check.",
+    "REPLAY_FAIL": "Failed the trading test with costs.",
+    "CANDIDATE": (
+        "It passed the quick test, spread check, trading test with costs and multiple-testing test."
+    ),
+    "DEFLATION_FAIL": "Failed the multiple-testing test.",
+    "FAST_ONLY": (
+        "Only the daily quick test, spread check and trading test with costs passed as a group."
+    ),
+    "REPEAT": "This idea repeated an earlier test.",
+    "IMPORTED": "This result came from an earlier evaluation.",
 }
 EXPOSURE = {
     "known": "An earlier look at the reserved period is recorded.",
@@ -62,13 +81,24 @@ def direction_of(row: dict[str, Any]) -> int | None:
 def outcome(row: dict[str, Any]) -> str:
     if row["status"] not in STATUSES:
         raise ValueError(f"Unknown factor status {row['status']!r}")
-    return status_reason(row)
+    return VERDICTS[recorded_status(row)]
 
 
-def excerpt(value: str) -> str:
-    value = value.strip()
-    boundaries = list(re.finditer(r"(?<=[.!?])\s+", value))
-    return value[: boundaries[1].start()] if len(boundaries) > 1 else value
+def lead_sentence(value: str) -> str:
+    """The first sentence, cut at 200 characters on a word boundary."""
+    first = re.split(r"\.(?:\s|$)", value.strip(), maxsplit=1)[0].strip()
+    if len(first) <= 200:
+        return first + "." if first else ""
+    return first[:200].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+
+
+def idea_type(description: str) -> tuple[str, str]:
+    """Split a leading bracketed tag, such as [Long-Term Reversal Factor], from the rest."""
+    found = re.match(r"\s*\[([^\]]+)\]\s*", description)
+    if not found:
+        return "", description
+    name = re.sub(r"\s*\bfactor\s*$", "", found.group(1).strip(), flags=re.I).lower()
+    return name, description[found.end() :]
 
 
 def display(value: float | None, percent: bool = False) -> str:
@@ -117,7 +147,8 @@ def idea_step(row: dict[str, Any], task: dict[str, Any], sources: list[str]) -> 
     cleaned = re.sub(
         r"(?im)\b(?:declared_direction|primary_clock|direction_reason)\s*[:=].*$", "", desc
     )
-    words = excerpt(cleaned) or MISSING
+    kind, rest = idea_type(cleaned)
+    summary = lead_sentence(rest)
     direction = DIRECTION.get(direction_of(row) or 0)
     clock = CLOCK.get(clock_of(row) or "")
     claim = (
@@ -127,15 +158,15 @@ def idea_step(row: dict[str, Any], task: dict[str, Any], sources: list[str]) -> 
     )
     if row.get("declared_direction") is None and direction:
         claim += " That direction was chosen after seeing these years, so it is not a prediction."
-    reason = row.get("direction_reason")
-    why = f" Its stated reason: {reason.rstrip('.')}." if reason else ""
+    sentences = [f"Idea type: {kind}." if kind else "", summary, claim]
     return step(
         "The idea",
         AI,
-        f"{words.rstrip('.')}. {claim}{why}" if words != MISSING else f"{claim}{why}",
-        "This is the relationship the AI expected before the test, in its own words.",
+        " ".join(filter(None, sentences)),
+        "This is the relationship the AI expected before the test. Its full description is in "
+        "its own words.",
         sources,
-        own_words=words,
+        own_words=desc or MISSING,
     )
 
 
@@ -160,13 +191,29 @@ def peek_step(row: dict[str, Any], sources: list[str]) -> dict[str, Any]:
     check = row.get("lookahead", {})
     status = check.get("status")
     cuts = check.get("cuts")
-    count = MISSING if cuts is None else str(sum(c["status"] == "PASS" for c in cuts))
-    verdict = PEEK[status] if status else "The check result was not recorded."
+    verdict = PEEK[status] if status else "The future-data check result was not recorded."
+    if cuts:
+        count = len(cuts)
+        failed = sum(c["status"] != "PASS" for c in cuts)
+        dates = "date" if count == 1 else "dates"
+        if status == "PASS" and not failed:
+            verdict = "The earlier numbers did not change, so the code did not use future data."
+        elif status == "LOOKAHEAD" and failed:
+            failed_dates = "date" if failed == 1 else "dates"
+            verdict = (
+                f"The earlier numbers changed at {failed} {failed_dates}, "
+                "so the code used future data."
+            )
+        elif failed:
+            verdict += f" The future-data check did not pass at {failed} of those dates."
+        text = f"ALPHA re-ran the idea's code with later data hidden, at {count} {dates}. {verdict}"
+    else:
+        text = f"{verdict} The dates checked were not recorded."
     return step(
         "Check: does it peek at the future?",
         RULE,
-        f"{verdict} Cut dates passed: {count}.",
-        "ALPHA hides later data and compares earlier answers. A leak between cuts can go unseen.",
+        text,
+        "This check only covers the dates tested.",
         sources,
     )
 
@@ -178,8 +225,8 @@ def quick_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str]) -
     return step(
         "Quick test",
         RULE,
-        f"Each period the coins were ranked by the idea's number, then the returns over the next "
-        f"{clock} were checked. "
+        "Each period the coins were ranked by the idea's number, then the returns over the next "
+        + (f"{clock} were checked. " if clock != MISSING else "period were checked. ")
         + (
             f"To pass, the chance score had to be at or below {display(pass_line(row), True)}."
             if pass_line(row) is not None
@@ -256,20 +303,58 @@ def trading_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str])
     return step("Real trading test, with costs", RULE, text, outcome(row), sources, *values)
 
 
-def feedback_step(feedback: dict[str, Any], sources: list[str]) -> dict[str, Any]:
+def quick_verdicts(row: dict[str, Any]) -> list[str]:
+    clocks = row.get("clocks") or {clock_of(row) or "daily": row}
+    if row["status"] == "REPEAT":
+        return [outcome(row)]
+    passed = []
+    failed = []
+    for clock in CLOCK:
+        trial = clocks.get(clock, {})
+        status = trial.get("status")
+        if status in {"PASS", "SPREAD_FAIL", "REPLAY_FAIL", "CANDIDATE", "DEFLATION_FAIL"} or (
+            status == "ERROR" and trial.get("replay", {}).get("error")
+        ):
+            passed.append(clock)
+        elif status == "SCREEN_FAIL":
+            failed.append(clock)
+    sentences = []
+    for verb, names in (("passed", passed), ("failed", failed)):
+        if names:
+            joined = " and ".join(filter(None, (", ".join(names[:-1]), names[-1])))
+            test = "test" if len(names) == 1 else "tests"
+            sentences.append(f"It {verb} the {joined} quick {test}.")
+    return sentences
+
+
+def feedback_step(
+    row: dict[str, Any], feedback: dict[str, Any], sources: list[str]
+) -> dict[str, Any]:
     words = " ".join(
         feedback[k]
         for k in ("observations", "hypothesis_evaluation", "new_hypothesis", "reason")
         if feedback.get(k)
     )
-    text = excerpt(words) if words else "Round feedback was not recorded. The next idea is unknown."
-    if words and text == words and len(re.split(r"(?<=[.!?])\s+", text)) == 1:
-        text = "RD-Agent recorded this response for the round. " + text
+    sentences = quick_verdicts(row)
+    if not sentences:
+        sentences.append("A quick test verdict was not recorded.")
+    if next_idea := feedback.get("new_hypothesis"):
+        first = re.split(r"(?<=[.!?])\s+", next_idea.strip(), maxsplit=1)[0]
+        if len(first) > 200:
+            first = first[:200].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+        codes = set(re.findall(r"\b[A-Z][A-Z_]+\b", first))
+        if codes.intersection(STATUSES | PEEK.keys()) or re.search(
+            r"\b(?:[A-Z]+(?:_[A-Z]+)+\b|q\s*=|rank[ -]IC\b)", first, re.I
+        ):
+            sentences.append("RD-Agent recorded a follow-up idea.")
+        elif first:
+            punctuation = "" if first.endswith((".", "?", "!", "…")) else "."
+            sentences.append(f"RD-Agent proposed “{first}{punctuation}”")
     return step(
         "What happened next",
         AI,
-        text,
-        "RD-Agent gave feedback for the round. ALPHA judged each idea separately.",
+        " ".join(sentences),
+        "ALPHA judged each idea separately. RD-Agent's feedback covers the whole round.",
         sources,
         own_words=words or MISSING,
     )
@@ -307,14 +392,24 @@ def limits_step(row: dict[str, Any], trial: dict[str, Any], sources: list[str]) 
     return step(
         "How sure can we be?",
         RULE,
-        f"The test covered {extent} ({years}). More looks give luck more chances.",
+        (
+            f"The test covered {extent} ({years})."
+            if symbols is not None and span
+            else f"The test coverage was only partly recorded: {extent}, {years}."
+        )
+        + " Testing more ideas gives luck more chances.",
         "These findings are exploratory. Prior use of reserved data limits independent checks.",
         sources,
-        number(counts, "Looks so far", "Tests counted across ideas when this screen was judged."),
+        number(
+            counts,
+            "Ideas tested so far",
+            "Every idea tested makes a lucky result more likely, "
+            "so the pass line rises with this count.",
+        ),
         number(
             trial.get("screen", {}).get("coverage"),
-            "Usable values",
-            "Share of eligible observations with a usable score.",
+            "Coins with a usable number",
+            "This is the share of eligible coin observations with a usable number.",
             percent=True,
         ),
         facts=facts,

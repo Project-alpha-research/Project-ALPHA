@@ -33,9 +33,34 @@ describe('RD-Agent recorded panel', () => {
       { id: 'second', name: 'Synthetic', iteration: 3, verdict: null, built: false },
     ]
     const html = renderToStaticMarkup(<RdAgentView list={{ items: [run] }} selected="first" detail={{ ...detail, journeys }} error={null} onSelect={() => undefined} />)
-    expect(html).toContain('Synthetic · iteration 1 · SCREEN_FAIL · journey available')
+    expect(html).toContain('Synthetic · iteration 1 · Failed the quick test. · journey available')
     expect(html).toContain('Synthetic · iteration 3 · not recorded · journey not built yet')
     expect(html).toContain('Loading journey…')
+  })
+
+  it('omits unrecorded summary lines and keeps recorded zero counts', () => {
+    const story: NonNullable<Detail['story']> = {
+      ending: '', ending_reason: fact(), ideas: [], minutes: fact(), missing_links: [],
+      journey: { proposed: fact(0), shortlisted: fact() },
+    }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run] }} selected="first" detail={{ ...detail, story }} error={null} onSelect={() => undefined} />)
+    const summary = html.slice(html.indexOf('<main'), html.indexOf('Technical detail for this run'))
+    expect(summary).toContain('<dt>outcome</dt>')
+    expect(summary).toContain('proposed: 0')
+    expect(summary).not.toMatch(/ended at|shortlisted \(not a pass\)|not recorded by this run|This run stored no summary/)
+  })
+
+  it('shows one muted empty summary and puts the recorded ledger absence in technical detail', () => {
+    const absent = 'The factor trial ledger is absent.'
+    const emptyRun = { ...run, outcome: fact(), started_at: fact(), rounds_completed: fact() }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [emptyRun], ledger_reason: absent }} selected="first" detail={{ ...detail, run: emptyRun, factor_reason: absent }} error={null} onSelect={() => undefined} />)
+    expect(html.match(/This run stored no summary\./g)).toHaveLength(1)
+    expect(html).toContain('<p class="muted">This run stored no summary.</p>')
+    expect(html.match(/The factor trial ledger is absent\./g)).toHaveLength(1)
+    expect(html.indexOf(absent)).toBeGreaterThan(html.indexOf('<details><summary>Technical detail for this run</summary>'))
+
+    const present = renderToStaticMarkup(<RdAgentView list={{ items: [run] }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
+    expect(present).not.toContain(absent)
   })
 
   it('uses terminal panel surfaces and ink instead of figure-canvas colours', () => {

@@ -213,3 +213,25 @@ None. The changes are uncommitted.
 ## Questions
 
 None.
+
+## Review round (Claude)
+
+The build was reviewed against the brief and corrected before landing.
+
+**Fixed in review**
+
+1. A missing or malformed `honoured` / `not_honoured` list made the whole revision answer unusable, so every revised and added idea was dropped. Now a bad list is left out, the idea is still built, and the decision prints "The agent did not say what it changed." (or "Not done: the agent did not say."). Each list keeps at most five statements of at most 200 characters. Tests: `test_bad_statement_list_is_left_out_not_assumed`, `test_statement_lists_are_capped`, `test_recorded_lists_must_be_valid_but_may_be_missing`.
+2. "Revision returned a dropped idea" also fired when the idea being revised was already in the dropped idea's family (drop one funding idea, revise another). Open reading chosen: a family the revised idea already had is not "brought back". Same name still always matches. Test: `test_requested_dropped_family_requires_positive_request`.
+3. There was no way to get a dropped idea back. Now the proposal says "To build it, add it as your own idea with --idea." Once the user's own idea is built under that name, the drop is lifted. Test: `test_user_lifts_a_drop_by_adding_the_idea_back`.
+4. `discussion/status.json` is now read and written under the discussion folder's lock (still one atomic replace).
+5. The hostile-note test now also checks the next-round block: the fixed sentences come first, the data is one JSON line, at most 4,000 characters, and the hostile and benign blocks differ only by the note text. The revision fixture asserts one model call. U+0085 is escaped like U+2028/2029, so the data stays on one line.
+6. Printed text: the answer instructions became a short option list; the reply confirmation prints one line per choice; the decision says "You dropped …", "Not built: … Why: …" (plain reasons for the call cap, an unreadable answer and a returned drop) and "Nobody answered in time, so the run …"; refused ideas print "Not offered again"; an empty proposal says "RD-Agent has no new ideas … You can add your own."; column names in the agent's reason read as words; closed idea types are de-duplicated. Tests: `test_printed_proposal_has_no_internal_keys` (scans for `proposal_metadata`, braces, `other:` and snake_case), `test_names_and_numbers_mix_and_no_ideas_reads_plainly`, `test_timed_out_decision_says_what_the_run_did`.
+7. Reverted the gateway-fixture changes from fix round 2 (`tests/unit/_rdagent_support.py`, `test_rdagent_model_gateway.py`, `test_rdagent_budget_and_caps.py`). They worked around a stray `/tmp/.git` that has since been removed and are outside this change.
+
+**Confirmed unchanged:** `loop_guard.py`, `model_gateway.py`, bias guards, oracles, scripts and the other protected paths. The byte proof only gained one removed additive fragment (`"plain_summary_status": "ok"`), each fragment still asserted to occur exactly once.
+
+**Real clock:** `wait_for_reply` with a real 3-second wait returned `None` after 3.0 s and wrote `decision.json`. Against a live waiting worker process, `alpha ledger proposal` printed the proposal and `alpha ledger reply` was picked up about one second later.
+
+**UNVERIFIED:** no real RD-Agent loop or model call ran; the next supervised run is the first real test.
+
+**Checks (review round):** discussion tests 90 passed; bias guards 207 passed, 4 skipped; semgrep ok; `fs.py stale` 0 stale; gate stages ruff, format, living documents, import contracts and mypy pass. The broad unit selection had 1,406 passed and 72 failures or errors, all in `test_rdagent_model_gateway.py` and one in `test_rdagent_budget_and_caps.py` (both identical to main). Cause: an empty `/tmp/.git` folder reappeared on this machine at 01:01, so the gateway refuses its test state there ("never in git"). CI on the pull request runs them on a clean machine.

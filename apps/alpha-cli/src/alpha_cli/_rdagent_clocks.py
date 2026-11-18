@@ -97,10 +97,12 @@ def clock_targets(
             available = [j for j, value in enumerate(row) if math.isfinite(value)]
             missing += len(symbols) - len(available)
             k = max(1, round(top_fraction * len(available)))
-            ranked = sorted(available, key=lambda j: (-direction * row[j], symbols[j]))
-            selected = set(ranked[:k]) if len(available) >= min_names else set()
-            cash_days += not selected
-            base_weights = np.array([1 / k if j in selected else 0.0 for j in range(len(symbols))])
+            cash_days += len(available) < min_names
+            base_weights = (
+                membership.third_weights(row, direction, top_fraction) / k
+                if len(available) >= min_names
+                else np.zeros(len(symbols))
+            )
             base_closes = closes[i]
             scores = np.array(
                 [direction * row[j] if j in available else 0.0 for j in range(len(symbols))]
@@ -244,7 +246,8 @@ def clock_feedback(row: dict[str, Any]) -> str:
     if row.get("screen_rule"):
         parts.append(
             f"One-sided screen cutoff {figure(row.get('screen_cutoff', 0) / 2)} "
-            f"({row.get('screen_m')} looks, {row.get('screen_confirmed')} confirmed)."
+            f"({row.get('screen_confirmed')} confirmed); "
+            f"looks so far across all ideas: {row.get('screen_m')} (sets the screen cutoff)."
         )
     if row.get("diagnostics"):
         parts.append(diagnostic_feedback(row))

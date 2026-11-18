@@ -6,7 +6,7 @@ sources:
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 808278a8ca018e14
+verified: 338f1264d8f8a41b
 ---
 
 # Model routing: who builds, who reviews, what happens at a limit
@@ -43,17 +43,19 @@ goes back to stage 02.
 
 | Class | Objective criteria | Codex model, effort | Time cap (fix round) | Claude fallback |
 |---|---|---|---|---|
-| `small` | ≤ 3 files in scope, no tier other than `none` | `gpt-6.1-sol`, `medium` | 15 min (10) | Sonnet |
-| `standard` | 4–8 files, or tier `dag`, `bias` or `determinism` | `gpt-6.1-sol`, `high` | 30 min (15) | Opus |
-| `hard` | > 8 files, or tier `quant`, `risk` or `protected`, or a guarded path in scope | `gpt-6-astra`, `high` | 60 min (20) | Opus |
+| `small` | ≤ 3 files in scope, no tier other than `none` | `gpt-6.2-sol`, `medium` | 15 min (10) | Sonnet |
+| `standard` | 4–8 files, or tier `dag`, `bias` or `determinism` | `gpt-6.2-sol`, `high` | 30 min (15) | Opus |
+| `hard` | > 8 files, or tier `quant`, `risk` or `protected`, or a guarded path in scope | `gpt-6.2-astra`, `high` | 60 min (20) | Opus |
 
 Why, one line each:
 
-- `gpt-6.1-sol` is the newest workhorse coding model on this login; `gpt-6-astra` is listed as the
-  frontier model "for the most demanding work" (`~/.codex/models_cache.json`, 2026-11-14).
+- `gpt-6.2-sol` is the workhorse coding model and `gpt-6.2-astra` the frontier model for the most
+  demanding work (`~/.codex/models_cache.json`); both are used at the owner's request.
+- 2026-11-18: the switch to the 6.2 models was made at the owner's request. They are not yet
+  calibrated on this project; every figure below was measured on `gpt-6.1-sol` or `gpt-6-astra`.
 - `medium` for small tasks: both calibration tasks (below) came out correct and clean first time
   at `medium`; the earlier hand-run trial at `high` took 8 minutes for a task of similar size.
-- `high` for standard and `gpt-6-astra` for hard: first measured 2026-11-14 (tasks F and G below),
+- `high` for standard and astra for hard: first measured 2026-11-14 (tasks F and G below),
   one build each, so still provisional.
 - Lighter models (`gpt-6-luna`, "fast and affordable") are not used for building: a quiet quality
   loss costs more than the allowance saved. No evidence yet says otherwise.

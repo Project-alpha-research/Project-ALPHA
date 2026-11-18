@@ -83,9 +83,9 @@ class Profile:
 
 # The mapping is set from calibration evidence (docs/reference/model-routing.md, "Task classes").
 PROFILES: dict[str, Profile] = {
-    "small": Profile("gpt-6.1-sol", "medium", 900.0, 600.0, "sonnet"),
-    "standard": Profile("gpt-6.1-sol", "high", 1800.0, 900.0, "opus"),
-    "hard": Profile("gpt-6-astra", "high", 3600.0, 1200.0, "opus"),
+    "small": Profile("gpt-6.2-sol", "medium", 900.0, 600.0, "sonnet"),
+    "standard": Profile("gpt-6.2-sol", "high", 1800.0, 900.0, "opus"),
+    "hard": Profile("gpt-6.2-astra", "high", 3600.0, 1200.0, "opus"),
 }
 
 EXIT = {

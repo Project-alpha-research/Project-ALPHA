@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: a3983dfff3dd9ffe
+verified: 1fdb36a846fd7fd3
 ---
 
 # Command line
@@ -43,7 +43,9 @@ assets and named data stores. Each result appears in the Workstation Run Browser
 trial ledger retains every attempt and labels repeats and development-machine data.
 `alpha lookalike` and `alpha unusual` answer two chart questions for one asset and write a
 labelled figure ([strategies and signals](strategies-and-signals.md)); a lookalike run is recorded
-in the same ledger as an exploratory trial.
+in the same ledger as an exploratory trial. `alpha tool` lists, describes and runs the registered
+toolbox checks on a target (code in `apps/alpha-cli/src/alpha_cli/toolbox/`), and `alpha tool
+history` lists every attempt, failed and unfinished ones included.
 
 ## Where it lives
 

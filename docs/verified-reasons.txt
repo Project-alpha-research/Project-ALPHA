@@ -1,0 +1,38 @@
+# Why each document was re-stamped without an edit: written by `scripts/fs.py verify
+# --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
+
+docs/reference/model-routing.md
+  verified f70b490227789b91 on 2026-11-18: AGENTS.md, the one document it names, has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/afml-worker.md
+  verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/delivery-and-agent-tooling.md
+  verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing
+
+docs/reference/project/components/literature-worker.md
+  verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/nautilus.md
+  verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
+
+docs/reference/project/components/paper-and-live.md
+  verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/qlib.md
+  verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/owner-decisions-2.md
+  verified a88e4398868123b6 on 2026-11-18: re-read: volume 1 now sends new entries to volume 4; this volume's own pointer to volume 3 and the rules link are still right
+
+docs/reference/project/owner-decisions-3.md
+  verified a88e4398868123b6 on 2026-11-18: re-read: volume 1 now sends new entries to volume 4; this volume already says it is full and points to volume 4
+
+docs/roadmap/production-scope-2.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+docs/roadmap/production-scope-3.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+docs/roadmap/production-scope.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

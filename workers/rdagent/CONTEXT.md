@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: d671bec724c2d3d6
+verified: 25122fab313b912f
 ---
 
 # RD-Agent worker workspace
@@ -64,6 +64,8 @@ no market, inference or evidence authority.
 - The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
   Its projection, status wording and record limitations belong to the
   [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
+- The evaluator appends shortlist and lineage diagnostics; the worker preserves that record.
+  Policy and regression convention: [README](README.md#shortlist-bookkeeping); no judging rule changes.
 
 ## Outputs
 

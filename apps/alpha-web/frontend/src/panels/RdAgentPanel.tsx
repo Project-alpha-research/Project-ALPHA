@@ -16,12 +16,17 @@ const FUNNEL: Record<string, string> = {
   proposed: 'ideas proposed', refused_closed_family: 'refused: idea family already closed',
   stopped_by_provider: 'stopped by the model provider',
   code_ran: 'code ran', passed_rank_screen: 'passed the ranking test',
-  passed_spread_check: 'top third beat the bottom third', passed_deflation: 'survived the multiple-testing check',
+  passed_spread_check: 'top third beat the bottom third',
+  shortlisted: 'shortlisted (passed all but the many-tries correction)',
+  passed_deflation: 'survived the multiple-testing check',
 }
 const LABELS: Record<string, string> = {
   q: 'Ranking test, adjusted probability', p: 'Ranking test, probability', mean_ic: 'Average rank correlation',
   dsr: 'Deflated Sharpe probability', psr: 'Probability of a positive Sharpe', n_trials: 'Trials used',
   passed: 'Recorded pass', counted_only: 'Counted toward testing only; not a result',
+  shortlist: 'Shortlisted (bookkeeping only, not a pass)', lineage_r2: 'Blend of earlier tries: adjusted R²',
+  lineage_regressors: 'Earlier factors used', lineage_convention: 'Lineage convention',
+  lineage_reason: 'Lineage calculation note', composite_suspect: 'Looks like a blend of earlier tries',
   net_annual_excess: 'Annual excess return after costs', gross_annual_excess: 'Annual excess return before costs',
   haircuts_applied: 'Write-offs applied', writeoff_instruments: 'Coins written off',
   universe_includes_delisted: 'Includes later-delisted instruments', universe_text: 'Recorded universe description',
@@ -74,6 +79,7 @@ function RunDetail({ detail }: { detail: Detail }) {
     <h2>{detail.run.folder}</h2>
     <Facts facts={{ outcome: detail.run.outcome, started_at: detail.run.started_at, ended_at: detail.run.ended_at, rounds_completed: detail.run.rounds_completed }} />
     <Section title="Ideas through the checks">
+      <p>Shortlisted means the declared primary screen, spread check and replay passed. Shortlisted is not a pass, not a candidate, and not evidence of profit.</p>
       {Object.entries(FUNNEL).map(([key, label]) => {
         const value = detail.funnel[key]
         return <div key={key} style={{ marginBottom: 8 }}>

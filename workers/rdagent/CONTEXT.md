@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 095bf593cbaa33bc
+verified: 92aed6d8f4f27d72
 ---
 
 # RD-Agent worker workspace
@@ -52,6 +52,8 @@ no market, inference or evidence authority.
   Memory search tables use one vector dimension; restored panel provenance includes run receipts.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and
   factor-specific eligibility: [README](README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
+- The scenario checks the prepare receipt or HDF columns once. Proposal context, family closure and feedback
+  share one parsed ledger per round, refreshed when size or modification time changes. Tests: `test_rdagent_read_once.py`.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions
   use the run id unless `--no-router-session` is set. Contracts: `test_rdagent_gateway_usage.py`.
 - Tests live in the root suite: `tests/unit/test_native_*.py`, `test_rdagent_model_gateway.py`, `test_rdagent_provider_embeddings.py`,
@@ -62,7 +64,6 @@ no market, inference or evidence authority.
   the repository root.
 - Editing `alpha_core`, `alpha_patterns` or `alpha_strategies` source changes the installed rule
   profiles' measured environment; rebuild them (see the native file).
-
 - The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
   Its projection, status wording and record limitations belong to the
   [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.

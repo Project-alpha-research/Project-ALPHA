@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from types import ModuleType
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -332,11 +332,13 @@ def test_scenario_columns_follow_prepared_data(
     full = tmp_path / "factor_data/full"
     full.mkdir(parents=True)
     (full / "daily_pv.h5").write_bytes(b"fixture")
-    monkeypatch.setattr(pd, "read_hdf", lambda *args, **kwargs: pd.DataFrame(columns=["$close"]))
-    assert setting() == ""
-    monkeypatch.setattr(
-        pd, "read_hdf", lambda *args, **kwargs: pd.DataFrame(columns=data.FUNDING_COLUMNS)
-    )
+    store = MagicMock()
+    monkeypatch.setattr(pd, "HDFStore", store)
+    columns = store.return_value.__enter__.return_value.get_storer.return_value.read_index
+    for names in (["$close"], data.FUNDING_COLUMNS[:-1]):
+        columns.return_value = pd.Index(names)
+        assert setting() == ""
+    columns.return_value = pd.Index(data.FUNDING_COLUMNS)
     assert all(name in setting() for name in data.FUNDING_COLUMNS)
 
 

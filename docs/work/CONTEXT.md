@@ -2,7 +2,7 @@
 owner: delivery pipeline
 sources:
   - scripts/handoff_routing.py
-verified: cd7bfb5cbd9a050b
+verified: 67c86f235104b502
 ---
 
 # Task folders: what each build was asked and what it did

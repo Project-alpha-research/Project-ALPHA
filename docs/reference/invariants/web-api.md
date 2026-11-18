@@ -23,8 +23,8 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 
 ## What the backend is
 
-- Keep it a thin relay that composes nothing — all composition stays behind the `alpha` CLI. [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
-  The general rule is in [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
+- Keep it a thin relay that composes nothing; the `alpha` CLI composes. [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
+  General rule: [engineering](engineering.md#subprocess-boundary).
 - Bind loopback only (`127.0.0.1`). The port comes from `ALPHA_WEB_PORT`, then `PORT`, default 8801; an invalid value fails
   loud. Requests to `127.0.0.1` redirect (307) to `localhost`, the one origin owner confirmation accepts. Enforced by `tests/unit/test_web_port_config.py`.
 - Resolve the store through `AlphaSettings().data_dir` (`api/_common.data_dir`) so web, its child processes, the CLI and MCP share one store.

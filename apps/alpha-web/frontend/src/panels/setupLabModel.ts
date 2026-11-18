@@ -34,3 +34,24 @@ export const FIELD_LABELS: Record<string, string> = {
   fee_bps: 'fee bps (fee per side)', slippage_bps: 'slippage bps (assumed execution cost per side)',
   stability: 'Chronological halves', draws: 'Random-date samples', controls: 'Comparison rules',
 }
+
+/** Rounds long stored decimals for reading only; the stored value is unchanged. */
+export function shown(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value) && !Number.isInteger(value)) {
+    const digits = Math.abs(value) >= 1 ? 2 : 4
+    return String(Number(value.toFixed(digits)))
+  }
+  return stored(value)
+}
+
+export interface Mark { symbol: string; at: number; rejected: boolean }
+
+/** One mark per stored candidate that has a recorded date; no date is guessed. */
+export function timelineMarks(candidates: readonly Record<string, unknown>[]): Mark[] {
+  const marks: Mark[] = []
+  for (const row of candidates) {
+    const at = typeof row.event_ts === 'string' ? Date.parse(row.event_ts) : Number.NaN
+    if (Number.isFinite(at)) marks.push({ symbol: String(row.symbol ?? 'not recorded'), at, rejected: row.status === 'rejected' })
+  }
+  return marks
+}

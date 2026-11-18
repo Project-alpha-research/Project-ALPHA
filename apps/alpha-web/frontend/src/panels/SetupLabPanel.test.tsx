@@ -59,6 +59,14 @@ describe('Setup Lab stored results', () => {
     expect(html).toContain('Sheets: not recorded')
   })
 
+  it('draws a timeline of stored matches and rounds long decimals for reading', () => {
+    const html = render({ ...detail, trades: [{ ...detail.trades[0], rows: [{ asset: 'SYN', candidate_id: 1, complete: true, net_return: -0.0204081632653 }] }] })
+    expect(html).toContain('Timeline of stored matches by instrument')
+    expect(html).toContain('ringed: a completed trade was recorded')
+    expect(html).toContain('-0.0204')
+    expect(html).not.toContain('-0.0204081632653')
+  })
+
   it('keeps repeat labels with their recorded trial index', () => {
     const html = render({ ...detail, trial_labels: { '4': ['repeat'] }, label_explanations: { repeat: 'A repeat, not independent evidence.' } })
     expect(html).toContain('Recorded trial 4')

@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 6fea7f6becd3c64a
+verified: 42b7da01eb33a39e
 ---
 
 # Web frontend invariants
@@ -147,6 +147,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   response to the selected find. Stored figures have adjacent value tables; rejected candidates retain their reason in grey.
   Every linked study/trade stays separate, with its labels, costs and trial indices; no curve or total is calculated.
   Price snapshots, per-trade direction and aggregate returns are not recorded; sampled contact sheets are shown as stored.
+  A timeline plots each stored match by its recorded date (grey if rejected); long decimals are rounded for reading only.
   Limits quote the setup tool cards; missing records, empty results and failed reads are distinct.
   `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `workflowModel.test.ts` and `e2e/setup-lab.spec.ts` cover this surface.
 

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
-verified: 9f3b7ae1c51b37e7
+verified: cdc58b6f6294e4cf
 ---
 
 # The toolbox

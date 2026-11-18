@@ -19,14 +19,12 @@ TRADE_BASIS = "After-cost realized profit on closed walk-forward trades, in acco
 
 def downside_ratios(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     import numpy as np
-    import pandas as pd
-    from quantstats_lumi import stats
 
     from alpha_validation.metrics import cagr, max_drawdown, profit_factor, to_returns
 
     run = inputs.stored
     frame = run.table("stored_equity", "ts", "equity")
-    dates = run.dates(frame, "stored_equity")
+    run.dates(frame, "stored_equity")
     equity = frame["equity"].to_numpy()
     returns = to_returns(equity)
     if "sharpe" not in run.manifest.get("oos_metrics", {}):
@@ -40,8 +38,9 @@ def downside_ratios(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
         reasons.update(dict.fromkeys(ratios, "Fewer than two stored returns."))
         return Result(values, reasons, basis=BASIS)
     if np.any(returns < 0):
-        sample = pd.Series(returns, index=pd.DatetimeIndex(dates[1:]))
-        values["sortino"] = float(stats.sortino(sample, periods=run.ppy))
+        # quantstats' convention; its sortino needs pandas, which this layer may not import.
+        downside = math.sqrt(math.fsum(returns[returns < 0] ** 2) / len(returns))
+        values["sortino"] = float(np.mean(returns)) / downside * math.sqrt(run.ppy)
         values["calmar"] = cagr(equity, periods_per_year=run.ppy) / abs(max_drawdown(equity))
         values["omega"] = profit_factor(returns)
     else:

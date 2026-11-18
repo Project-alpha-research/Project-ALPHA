@@ -113,6 +113,14 @@ def test_date_windows(tmp_path: Path) -> None:
     assert "non-default-params" in run(tmp_path, DATES, RUN, ["step_months=1"])["labels"]
 
 
+def test_month_shifts_clip_to_the_last_day() -> None:
+    from alpha_cli.toolbox.families.robustness import shift_months
+
+    assert shift_months(datetime(2024, 8, 31, tzinfo=UTC), -6) == datetime(2024, 2, 29, tzinfo=UTC)
+    assert shift_months(datetime(2023, 11, 30, tzinfo=UTC), 3) == datetime(2024, 2, 29, tzinfo=UTC)
+    assert shift_months(datetime(2023, 1, 15, tzinfo=UTC), -12) == datetime(2022, 1, 15, tzinfo=UTC)
+
+
 def test_side_contribution(tmp_path: Path) -> None:
     stored_run(tmp_path, SIDE)
     values = run(tmp_path, SIDE, RUN)["values"]

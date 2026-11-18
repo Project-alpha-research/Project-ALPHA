@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import calendar
 from bisect import bisect_left, bisect_right
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from alpha_cli.toolbox.contract import Output, Param, Result, ToolSpec, Value
@@ -23,9 +25,14 @@ BASIS = (
 )
 
 
-def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
-    import pandas as pd
+def shift_months(ts: datetime, months: int) -> datetime:
+    """Move by calendar months, keeping the day or clipping it to the month's last day."""
+    index = ts.month - 1 + months
+    year, month = ts.year + index // 12, index % 12 + 1
+    return ts.replace(year=year, month=month, day=min(ts.day, calendar.monthrange(year, month)[1]))
 
+
+def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     from alpha_cli.spine.diagnostics import performance
     from alpha_validation.metrics import to_returns
 
@@ -55,9 +62,9 @@ def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
     rows = []
     shifts = range(0, 5 * step, step)
     for start in shifts:
-        left = bisect_left(dates, pd.Timestamp(dates[0]) + pd.DateOffset(months=start))
+        left = bisect_left(dates, shift_months(dates[0], start))
         for end in shifts:
-            right = bisect_right(dates, pd.Timestamp(dates[-1]) - pd.DateOffset(months=end))
+            right = bisect_right(dates, shift_months(dates[-1], -end))
             if right - left < 2:
                 raise ValueError(
                     f"Too little stored history for all 25 windows at step_months={step}"

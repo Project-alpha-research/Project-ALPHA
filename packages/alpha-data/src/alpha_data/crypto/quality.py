@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, cast
@@ -445,6 +446,15 @@ DAILY_BAR_AUDIT_NUMERIC_COLUMNS: Final = tuple(
 )
 
 
+def missing_slot_ranges(slots: set[int], expected: int) -> Iterator[range]:
+    """Absent stretches of a declared daily grid, without expanding every missing slot."""
+    cursor = 0
+    for position in [*sorted(slots), expected]:
+        if position > cursor:
+            yield range(cursor, position)
+        cursor = position + 1
+
+
 def audit_daily_bar_grid(
     dataset: CryptoDatasetIdentityV1,
     frame: pl.DataFrame,
@@ -592,20 +602,20 @@ def audit_daily_bar_grid(
     conflicts = sum(len(set(values)) > 1 for values in duplicates)
     ranges: list[dict[str, object]] = []
     missing_ranges = 0
-    cursor = 0
-    # Work scales with observed rows, never the number of missing expected slots.
-    for position in [*sorted(slots), expected]:
-        if position > cursor:
-            missing_ranges += 1
-            if len(ranges) < max_missing_ranges:
-                ranges.append(
-                    {
-                        "start": (first + timedelta(microseconds=cursor * step)).isoformat(),
-                        "end": (first + timedelta(microseconds=position * step)).isoformat(),
-                        "slots": position - cursor,
-                    }
-                )
-        cursor = position + 1
+    for gap in missing_slot_ranges(slots, expected):
+        missing_ranges += 1
+        if len(ranges) >= max_missing_ranges:
+            continue
+        # The stored end is exclusive, matching the caller's grid window.
+        start_time = first + timedelta(microseconds=gap.start * step)
+        end_time = first + timedelta(microseconds=gap.stop * step)
+        ranges.append(
+            {
+                "start": start_time.isoformat(),
+                "end": end_time.isoformat(),
+                "slots": len(gap),
+            }
+        )
     missing = expected - len(slots)
     return {
         "grid_basis": "caller_declared_start_and_native_daily_cadence",

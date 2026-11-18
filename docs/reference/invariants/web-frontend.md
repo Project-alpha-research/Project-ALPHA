@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: c896c1c1a488fe62
+verified: c988f4a49cf42acf
 ---
 
 # Web frontend invariants
@@ -74,15 +74,10 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 ## Workstation themes and readability
 
-- Owner request, 2026-11-18: not an all-black interface; individual charts may stay dark. The top-bar Theme selector offers Light
-  (default; off-white page, white panels), Dim (mid-grey) and Dark (the old terminal look). The document head applies the saved
-  choice before first paint; an unknown or absent value means Light.
-- Chrome colours come from the three palettes in `index.css`. Base type is at least 14 px, prose line height 1.45, numbers are
-  tabular monospace, data tables stay square. Body ink clears 7:1 on every surface, other text 4.5:1, control boundaries 3:1.
-  Status, direction and grades carry labels or shapes; disabled controls keep a dashed boundary and readable text.
-- Browser charts read scoped chart tokens (`util/tokens.ts` for canvas libraries), light in Light and Dim, each with a remembered
-  **Dark chart** checkbox. Report figures keep their recorded dark pixels on a neutral card captioned "stored figure (dark)".
-- No literal colours outside the palette declarations: `util/themeContract.test.ts` scans for them; `theme/theme.test.ts` checks contrast in all themes.
+- Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.
+- Colours come from three palettes in `index.css`; type at least 14 px, prose line height 1.45, tabular monospace numbers. Body ink 7:1, other text 4.5:1.
+- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box. Stored figures stay dark.
+- No literal colours outside the palette declarations: `util/themeContract.test.ts` scans; `theme/theme.test.ts` checks contrast in all three themes.
 
 ## Charts
 

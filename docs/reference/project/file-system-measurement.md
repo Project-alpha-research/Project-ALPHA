@@ -2,7 +2,7 @@
 owner: project layer
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 41f63fd8241be556
+verified: 92ce4d72825b64d7
 ---
 
 # File-system measurement

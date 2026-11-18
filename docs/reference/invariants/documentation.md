@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: 222ad6448b358c94
+verified: 52546db6818984d6
 ---
 
 # Documentation invariants
@@ -28,7 +28,7 @@ delivery states, the generated roadmap index, append-only records, and relative 
   credentials, identifiers, private conversations, owner data, licences and redistribution rights. A right
   to keep material privately is not a right to publish it, and private verification grants no authority.
 - One home per fact: when behaviour changes, update the one document that owns the fact (see the table in
-  the root `CONTEXT.md`) and link to it from elsewhere; never copy a fact into a second file. There is no
+  `docs/README.md`) and link to it from elsewhere; never copy a fact into a second file. There is no
   manual to update and no delivery log to append to — history is git log and pull requests.
 - Retrospectives stay true as of their date: left as-is, with path-only link fix-ups allowed. Older plans,
   records and archives were removed on 2026-11-14; read them at git tag `pre-thin-2026-11-14`. The

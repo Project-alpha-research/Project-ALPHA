@@ -1,80 +1,38 @@
 ---
 owner: file system routing
 sources:
-  - packages/*/pyproject.toml
-  - apps/*/pyproject.toml
-  - workers/*/pyproject.toml
+  - "*/*/pyproject.toml"
 verified: fe23863d02ebd749
 ---
-
-# Project ALPHA — where to start
-
+# ALPHA: start here
 ## Purpose
-
-This file routes a task to the one area that owns it. Pick the row that matches your task, open
-that area's `CONTEXT.md`, and read only what its Read first table names. Rules live in the files
-it points to, never here.
-
+Stop when you have what you need: the always rows, then only rows your task matches; then open code.
 ## Read first
-
 | Read | Section | When |
 |---|---|---|
-| [project layer](docs/reference/project/overview.md) | — | what is X for, why, where; keep or remove? Includes toolbox, Setup Lab, Monte Carlo, Kronos Studio |
-| [packages/alpha-core/CONTEXT.md](packages/alpha-core/CONTEXT.md) | — | domain types, typed errors, settings, cost helpers |
-| [packages/alpha-data/CONTEXT.md](packages/alpha-data/CONTEXT.md) | — | point-in-time store, snapshots, crypto storage (commands, reports: alpha-cli) |
-| [packages/alpha-patterns/CONTEXT.md](packages/alpha-patterns/CONTEXT.md) | — | chart-pattern geometry and indicators; shape lookalikes and novelty (STUMPY) |
-| [packages/alpha-strategies/CONTEXT.md](packages/alpha-strategies/CONTEXT.md) | — | trading signals, sizing, strategy rules |
-| [packages/alpha-backtest/CONTEXT.md](packages/alpha-backtest/CONTEXT.md) | — | the Nautilus backtest harness, fills, fees |
-| [packages/alpha-validation/CONTEXT.md](packages/alpha-validation/CONTEXT.md) | — | statistics: walk-forward, nulls, bootstrap, Deflated Sharpe, CPCV |
-| [packages/alpha-research/CONTEXT.md](packages/alpha-research/CONTEXT.md) | — | phase split, event studies, gate packet values (assembly: alpha-cli) |
-| [packages/alpha-forecast/CONTEXT.md](packages/alpha-forecast/CONTEXT.md) | — | the Kronos forecasting model |
-| [packages/alpha-study/CONTEXT.md](packages/alpha-study/CONTEXT.md) | — | study projections over research data (no authority) |
-| [apps/alpha-cli/CONTEXT.md](apps/alpha-cli/CONTEXT.md) | — | any `alpha` command or report, research cases, gate packets, control store, jobs |
-| [apps/alpha-web/CONTEXT.md](apps/alpha-web/CONTEXT.md) | — | the Workstation web app: API routes or browser panels |
-| [apps/alpha-mcp/CONTEXT.md](apps/alpha-mcp/CONTEXT.md) | — | the MCP server's tools |
-| [workers/qlib/CONTEXT.md](workers/qlib/CONTEXT.md) | — | the isolated Qlib machine-learning worker |
-| [workers/literature/CONTEXT.md](workers/literature/CONTEXT.md) | — | the literature acquisition worker |
-| [workers/rdagent/CONTEXT.md](workers/rdagent/CONTEXT.md) | — | the RD-Agent native-loop worker |
-| [workers/afml/CONTEXT.md](workers/afml/CONTEXT.md) | — | the AFML methods worker: labels, sample weights (RiskLabAI, quantowl) |
-| [scripts/CONTEXT.md](scripts/CONTEXT.md) | — | the gate, CI steps, file-system tools, generators |
-| [tests/CONTEXT.md](tests/CONTEXT.md) | — | test layout, markers, bias guards, oracles |
-| [docs/CONTEXT.md](docs/CONTEXT.md) | — | documentation, ADRs, plans, this file system |
-| [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change: shape, plan, build, verify, land (briefs and build reports: `docs/work/`) |
-| [research/CONTEXT.md](research/CONTEXT.md) | — | testing any trading idea: it sends you to the playbook (`research/PLAYBOOK.md`) and `alpha test` |
-
-A task spanning areas: start at the area whose code you change first; its Read first table links the others. A change follows `workflow/CONTEXT.md`
-for the steps.
-
-## One home per fact
-
-| Fact | Its one home |
-|---|---|
-| Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
-| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); by topic: [topic index](docs/reference/project/decisions-by-topic.md) |
-| Checking a dataset before a backtest | [data health card](research/tools/data-health.md) (`alpha data health`) |
-| A stand-in for the owner in RD-Agent tests | [propose and discuss](workers/rdagent/README.md#propose-and-discuss); the rule: topic index above |
-| The reserved period (2024-01-01 onward) | [reserved period](docs/reference/project/reserved-period.md) |
-| Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
-| Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
-| Decisions and their reasons | [docs/adr/](docs/adr/README.md) |
-| Package layers and data folders | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Current status; history | [STATUS.md](STATUS.md) (generated); git log and pull requests |
-| How an idea is researched | [research/PLAYBOOK.md](research/PLAYBOOK.md); the older staged lane: [research method](docs/reference/research-method.md) |
-| Codes and terms | [docs/reference/glossary.md](docs/reference/glossary.md) |
-| Who builds and reviews, which model, limits | [docs/reference/model-routing.md](docs/reference/model-routing.md) |
-
-When a fact changes, update its one home and link to it from elsewhere; never copy it.
-
-## Finding anything else
-
-- `uv run python scripts/fs.py orient` lists the areas; `fs.py search "<words>"` finds ranked excerpts of the documentation.
-- `fs.py stale` lists documents whose sources changed since verified; `fs.py owners <path>` names those describing a file; `fs.py verify <doc>` re-stamps one.
-
+| [project layer](docs/reference/project/overview.md) | — | what a part is for; keep or cut |
+| [alpha-core](packages/alpha-core/CONTEXT.md) | — | domain types, errors, settings |
+| [alpha-data](packages/alpha-data/CONTEXT.md) | — | point-in-time store, snapshots, crypto |
+| [alpha-patterns](packages/alpha-patterns/CONTEXT.md) | — | chart patterns, lookalikes |
+| [alpha-strategies](packages/alpha-strategies/CONTEXT.md) | — | signals, sizing, rules |
+| [alpha-backtest](packages/alpha-backtest/CONTEXT.md) | — | Nautilus backtests, fills, fees |
+| [alpha-validation](packages/alpha-validation/CONTEXT.md) | — | walk-forward, nulls, Deflated Sharpe |
+| [alpha-research](packages/alpha-research/CONTEXT.md) | — | phases, event studies, gates |
+| [alpha-forecast](packages/alpha-forecast/CONTEXT.md) | — | the Kronos model |
+| [alpha-study](packages/alpha-study/CONTEXT.md) | — | study projections |
+| [alpha-cli](apps/alpha-cli/CONTEXT.md) | — | any `alpha` command, report or job |
+| [alpha-web](apps/alpha-web/CONTEXT.md) | — | Workstation API or browser panels |
+| [alpha-mcp](apps/alpha-mcp/CONTEXT.md) | — | the MCP server's tools |
+| [qlib](workers/qlib/CONTEXT.md) | — | the Qlib worker |
+| [literature](workers/literature/CONTEXT.md) | — | the literature worker |
+| [rdagent](workers/rdagent/CONTEXT.md) | — | the RD-Agent worker |
+| [afml](workers/afml/CONTEXT.md) | — | AFML labels, sample weights |
+| [scripts](scripts/CONTEXT.md) | — | gate, CI steps, fs tools |
+| [tests](tests/CONTEXT.md) | — | tests, markers, guards, oracles |
+| [docs](docs/CONTEXT.md) | — | docs, ADRs, file system |
+| [workflow](workflow/CONTEXT.md) | — | delivering a change |
+| [research](research/CONTEXT.md) | — | testing an idea (`research/PLAYBOOK.md`) |
 ## How to change it
-
-- Add a row when a workspace is added; `tests/unit/test_filesystem_contract.py` fails otherwise.
-- Keep this file routing only: rules go in `docs/reference/`, steps in the workspace file.
-
+Add a row per new workspace.
 ## Outputs
-
-- None of its own. A finished change updates the one owning document its workspace names.
+None of its own.

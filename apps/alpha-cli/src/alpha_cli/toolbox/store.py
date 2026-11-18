@@ -16,7 +16,7 @@ from alpha_cli._identity import _digest_sources, _source_files
 from alpha_cli.ml_contract import canonical_json_bytes
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.toolbox.contract import Result, ToolSpec
-from alpha_cli.toolbox.inputs import RunSeries
+from alpha_cli.toolbox.inputs import Target
 from alpha_cli.toolbox.registry import ALIASES
 from alpha_cli.toolbox.reserve import RESERVED_START
 from alpha_core import atomic
@@ -70,7 +70,8 @@ def cached(
 
 
 def publish(
-    series: RunSeries,
+    home: Path,
+    target: Target,
     file: str,
     spec: ToolSpec,
     result: Result,
@@ -99,8 +100,8 @@ def publish(
         ),
         "reserve_start": RESERVED_START,
         "elapsed_seconds": elapsed,
-        "run_id": series.run_id,
-        "test_id": series.manifest["spine"].get("test_id"),
+        "run_id": target.run_id,
+        "test_id": target.manifest["spine"].get("test_id"),
         "recorded_at": datetime.now(UTC).isoformat(),
         "labels": labels,
         "basis": result.basis,
@@ -117,7 +118,7 @@ def publish(
             {
                 "metric": f"{spec.id}.{output.key}",
                 "value": result.values[output.key],
-                "run_id": series.run_id,
+                "run_id": target.run_id,
                 "basis": result.basis,
                 "source": f"{file}:{output.source or ('values.' + output.key)}",
                 "labels": labels,
@@ -126,7 +127,5 @@ def publish(
             for output in spec.outputs
         ],
     }
-    atomic.write_text(
-        series.home / file, json.dumps(document, sort_keys=True, indent=2, allow_nan=False)
-    )
+    atomic.write_text(home / file, json.dumps(document, sort_keys=True, indent=2, allow_nan=False))
     return document

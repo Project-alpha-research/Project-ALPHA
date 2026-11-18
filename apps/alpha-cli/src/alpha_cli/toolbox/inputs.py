@@ -11,8 +11,9 @@ import hashlib
 import math
 from dataclasses import dataclass
 from datetime import datetime
+from itertools import pairwise
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from alpha_cli import _runner
 from alpha_cli.run_store import find_run_dir, read_manifest
@@ -23,6 +24,9 @@ from alpha_cli.spine.stores import periods_per_year, resolve_asset
 from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_validation.attribution import MIN_BARS
 from alpha_validation.metrics import to_returns
+
+if TYPE_CHECKING:
+    import polars as pl
 
 
 @dataclass(frozen=True)
@@ -49,12 +53,61 @@ class RunSeries:
 RUN_KINDS = frozenset(("run_returns", "run_positions", "run_bars"))
 
 
+STORED_FILES = {
+    "stored_equity": "equity_curve.parquet",
+    "stored_benchmark": "benchmark_comparison.parquet",
+    "run_trades": "trades.parquet",
+}
+
+
 @dataclass(frozen=True)
 class Target:
     run_id: str
     directory: Path
     manifest: dict[str, Any]
-    kinds: frozenset[str] = RUN_KINDS
+
+    @property
+    def kinds(self) -> frozenset[str]:
+        return RUN_KINDS.union(
+            k for k, name in STORED_FILES.items() if (self.directory / name).is_file()
+        )
+
+    @property
+    def last_ts(self) -> datetime:
+        return datetime.fromisoformat(self.manifest["metadata"]["last_ts"])
+
+    @property
+    def ppy(self) -> int:
+        annualisation = self.manifest["spine"].get("annualisation", {})
+        value = self.manifest["metadata"].get(
+            "periods_per_year", annualisation.get("periods_per_year")
+        )
+        if type(value) is not int or value < 1:
+            raise ValueError("manifest.json requires a positive integer periods_per_year")
+        return value
+
+    def reserve_labels(self) -> tuple[str, ...]:
+        return ("reserved-period-seen",) if self.last_ts.date() >= RESERVED_DAY else ()
+
+    def table(self, kind: str, *columns: str) -> pl.DataFrame:
+        import polars as pl
+
+        name = STORED_FILES[kind]
+        try:
+            return pl.read_parquet(self.directory / name, columns=list(columns))
+        except pl.exceptions.PolarsError as exc:
+            raise ValueError(f"Cannot read {name}: {exc}") from exc
+
+    def dates(self, frame: pl.DataFrame, kind: str) -> list[datetime]:
+        dates: list[datetime] = frame["ts"].to_list()
+        name = STORED_FILES[kind]
+        if not dates or any(not isinstance(ts, datetime) or ts.utcoffset() is None for ts in dates):
+            raise ValueError(f"{name} requires dated observations with a timezone")
+        if any(before >= after for before, after in pairwise(dates)):
+            raise ValueError(f"{name} requires strictly increasing dates")
+        if dates[-1] > self.last_ts:
+            raise ValueError(f"{name} extends beyond the recorded run period")
+        return dates
 
     @property
     def labels(self) -> list[str]:
@@ -74,6 +127,10 @@ class Target:
     ) -> tuple[Market | None, dict[str, Any]]:
         from alpha_cli.ml_contract import sha256_file
 
+        files = [STORED_FILES[kind] for kind in needs if kind in STORED_FILES]
+        for name in files:
+            if not (self.directory / name).is_file():
+                raise ValueError(f"Run {self.run_id} is missing {name}")
         if not self.kinds.issuperset(needs):
             raise ValueError(f"Target {self.run_id} cannot supply {needs}")
         market = comparison(home, self, settings.get("benchmark") or settings.get("market"))
@@ -81,6 +138,7 @@ class Target:
             "manifest": sha256_file(self.directory / "manifest.json"),
             "source": self.manifest.get("source_fingerprint"),
         }
+        hashes.update({name: sha256_file(self.directory / name) for name in files})
         if market:
             hashes.update(market=market.fingerprint, market_asset=market.name)
         return market, hashes
@@ -191,9 +249,21 @@ def comparison(home: Path, target: Target, asset: str | None) -> Market | None:
 
 @dataclass(frozen=True)
 class Inputs:
-    run: RunSeries
+    source: RunSeries | Target
     market: Market | None = None
     seed: int = 0
+
+    @property
+    def run(self) -> RunSeries:
+        if not isinstance(self.source, RunSeries):
+            raise ValueError("This tool requires a full-sample replay")
+        return self.source
+
+    @property
+    def stored(self) -> Target:
+        if not isinstance(self.source, Target):
+            raise ValueError("This tool requires stored run files")
+        return self.source
 
 
 def join_market(inputs: Inputs) -> Joined:

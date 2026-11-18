@@ -90,7 +90,11 @@ def run(
             if hit is not None:
                 return hit
             attempt = append_trial(home, {**base, "outcome": "attempted"})
-            series = inputs.load_run(home, resolved)
+            series = (
+                resolved
+                if inputs.STORED_FILES.keys() & set(spec.needs)
+                else inputs.load_run(home, resolved)
+            )
             if spec.compute is None:
                 raise SpineError(
                     "STORED_TOOL", "The gauntlet stores this output.", "Run alpha results cite."
@@ -110,7 +114,8 @@ def run(
                 )
             )
             document = store.publish(
-                series,
+                home,
+                resolved,
                 file,
                 spec,
                 result,

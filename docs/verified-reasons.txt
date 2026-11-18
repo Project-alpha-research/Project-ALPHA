@@ -20,7 +20,7 @@ docs/reference/invariants/workers.md
   verified 3c7189bc6ec2738d on 2026-11-18: Re-read: discussion records who chose and only tested ideas count; the review fixes (length cap, refused late replies, unusable revision drop) change no rule stated here
 
 docs/reference/model-routing.md
-  verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
+  verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -91,6 +91,9 @@ docs/roadmap/production-scope-3.md
 docs/roadmap/production-scope.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
 
+docs/work/CONTEXT.md
+  verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+
 research/CONTEXT.md
   verified c3f7380b02d3b824 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
@@ -123,3 +126,15 @@ research/tools/walk-forward.md
 
 workers/rdagent/CONTEXT.md
   verified fd5ee42a2617426a on 2026-11-18: Re-read after the review fixes: the pause still lives in discussion.py after the family guard, the summary is kept by alpha_factor_hypothesis.py, and the named tests are right
+
+workflow/CONTEXT.md
+  verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+
+workflow/stages/03-build/CONTEXT.md
+  verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+
+workflow/stages/04-verify/CONTEXT.md
+  verified c996343fa4e67a01 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+
+workflow/stages/05-land/CONTEXT.md
+  verified 713cf355f0e49f24 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

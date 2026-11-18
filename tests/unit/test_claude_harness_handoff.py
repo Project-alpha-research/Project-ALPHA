@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import handoff
+import handoff_routing
 import pytest
 
 _FAKE_CODEX = r"""#!/usr/bin/env python3
@@ -662,8 +663,33 @@ def test_pytest_checks_run_owned_with_a_private_tmpdir(env: dict[str, Path]) -> 
     _scenario(env, GOOD)
     check = (
         'uv run pytest -q tests/test_mod.py && test -n "$ALPHA_TEST_OWNER" && '
-        'case "$TMPDIR" in /dev/shm/alpha-handoff-*) true;; *) false;; esac'
+        'case "$TMPDIR" in /dev/shm/ho-*) true;; *) false;; esac'
     )
     assert _build(env, "--check", check) == 0
     [ran] = [c for c in _record(env)["checks"] if c["name"] == "check 3"]
     assert ran["passed"] and ran["command"] == check
+
+
+def test_private_tmpdir_is_short_enough_for_unix_sockets_and_removed_after() -> None:
+    with handoff_routing.check_env() as shell:
+        private = Path(shell["TMPDIR"])
+        assert private.is_dir() and len(str(private)) <= 24
+        assert len(str(private / "sock-0123456789")) < 108
+    assert not private.exists()
+
+
+def test_the_task_report_keeps_the_build_round_and_every_fix_round(env: dict[str, Path]) -> None:
+    first = "## Changed files\n- src/mod.py: built\n## UNVERIFIED\nnone\n"
+    second = "## Changed files\n- src/mod.py: repaired\n"
+    _scenario(env, {"write": {"src/mod.py": "BAD\n"}, "last": first}, {**GOOD, "last": second})
+    assert _build(env) == 0
+    wt = Path(_record(env)["worktree"])
+    report = (wt / "docs/work/2026-11-14-demo/report.md").read_text()
+    assert report.startswith("# Build report: demo")
+    assert report.index("built") < report.index("## Fix round 1") < report.index("repaired")
+
+
+def test_join_rounds_skips_empty_fix_rounds() -> None:
+    joined = handoff_routing.join_rounds(["main", "", "again"])
+    assert joined == "main\n\n## Fix round 2\n\nagain"
+    assert handoff_routing.join_rounds([]) == ""

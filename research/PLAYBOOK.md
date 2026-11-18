@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 2b330218a6da168a
+verified: 32ec4c0a01254f65
 ---
 
 # Research playbook: how to work any idea
@@ -56,7 +56,7 @@ does not exist yet, confusing output, an audit line that is `NOT-CHECKED`. Then 
 
 ## Labels, flags and trial counts
 
-Labels and flags are how integrity shows. They go before the numbers, in plain words:
+Labels go before numbers. Label reserved-period-seen: data on or after the 2024-01-01 reserve date; `non-default-params`: say how many settings were tried.
 
 | Label | Say |
 |---|---|
@@ -107,7 +107,7 @@ benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed
 - Rivals: the loss is the market's; the rule entered late; a data error on those dates.
 - Cheapest separating test: read `drawdowns` and `by_year` in the same diagnose output (free),
   then one re-run of the rule on a second asset (one counted trial).
-- Say what changed. `alpha tool regimes` and `alpha tool attribution` describe the market's part with
+- Say what changed. `alpha tool run-set market-context <run_id>` describes the market's part with
   in-sample models ([card](tools/attribution-regimes-changepoints.md)), so "it is the regime" stays a hypothesis.
 
 **A question about the past.** "What was the Sharpe on ETH?" `alpha results --symbol ETH --json`

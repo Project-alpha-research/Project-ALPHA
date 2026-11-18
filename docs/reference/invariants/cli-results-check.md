@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 4d8da76998a5f818
+verified: 3c432eb781399d38
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -71,6 +71,8 @@ drafted answer against stored run facts, and the computed differences between ru
   broadly spread trade profits, or market-independent losses.
   Specific patterns ignore sentences containing `not`, `never`, `no longer`, `failed to` or `n't`; general
   denials do not. The optional `flags` lookup keeps existing programmatic checker callers compatible.
+- Tool facts are tagged `[<run_id>:<tool id>.<output key>]`, or `[<run_id>:<tool id>.<output key>@<output id>]` for one stored output;
+  a fact from a non-default setting must be followed by `(1 of N settings tried)` with the current count, else `SETTINGS_OMITTED`.
 - A registered metric absent from a run's built facts raises `METRIC_NOT_STORED`, with a next step to cite
   tool output. It never crashes with `KeyError`; a present fact with a null value is still `VALUE_NOT_COMPUTED`.
 - `alpha results compare` accepts two to eight runs, lists labels and flags differing metric bases.

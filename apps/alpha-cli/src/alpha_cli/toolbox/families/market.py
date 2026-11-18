@@ -1,90 +1,18 @@
-"""Investigation tools over a recorded rule test: market attribution, regimes, change points.
-
-Each tool rebuilds the run's full-sample returns (``tool_inputs.load_run``), calls one pure
-function in ``alpha_validation``, appends one ledger row and stores its output OUTSIDE the
-immutable run directory: ``<home>/diagnostics/<run_id>/<tool>-<sha8 of params>.json``.
-"""
+"""Market descriptions built from the existing validation functions."""
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
-from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
-
-import numpy as np
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.ledger import append_trial
-from alpha_cli.spine.tool_inputs import Joined, RunSeries, join_market, load_run, regime_flags
-from alpha_core import atomic
-from alpha_validation import regimes as regime_model
-from alpha_validation.attribution import market_attribution
-from alpha_validation.changepoints import change_points
-from alpha_validation.metrics import to_returns
+from alpha_cli.toolbox.contract import Output, Param, Result, ToolSpec
 
+if TYPE_CHECKING:
+    from numpy.random import Generator
 
-def record(
-    series: RunSeries,
-    tool: str,
-    params: dict[str, Any],
-    labels: list[str],
-    basis: str,
-    result: dict[str, Any],
-    facts: list[tuple[str, str, Any, str | None]],
-) -> dict[str, Any]:
-    """Count the tool run in the ledger, then publish its output beside (not inside) the run."""
-    canonical = json.dumps(params, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    relative = (
-        f"diagnostics/{series.run_id}/{tool}-{hashlib.sha256(canonical.encode()).hexdigest()[:8]}"
-        ".json"
-    )
-    spine = series.manifest["spine"]
-    labels = list(dict.fromkeys([*spine.get("labels", []), *labels]))
-    row = append_trial(
-        series.home,
-        {
-            "kind": f"tool:{tool}",
-            "run_id": series.run_id,
-            "test_id": spine.get("test_id"),
-            "name": spine.get("name"),
-            "symbol": series.manifest["metadata"]["symbol"],
-            "store": spine.get("store"),
-            "params": params,
-            "tool_output": relative,
-            "labels": labels,
-            "verdict": None,
-        },
-    )
-    document = {
-        "tool": tool,
-        "params": params,
-        "run_id": series.run_id,
-        "test_id": spine.get("test_id"),
-        "recorded_at": datetime.now(UTC).isoformat(),
-        "labels": labels,
-        "basis": basis,
-        "result": result,
-        "facts": [
-            {
-                "metric": metric,
-                "value": value,
-                "run_id": series.run_id,
-                "basis": basis,
-                "source": f"{relative}:{field}",
-                "labels": labels,
-                "reason": (reason or f"{field} is unavailable") if value is None else None,
-            }
-            for metric, field, value, reason in facts
-        ],
-    }
-    atomic.write_text(
-        series.home / relative, json.dumps(document, sort_keys=True, indent=2, allow_nan=False)
-    )
-    return {**document, "file": relative, "trials_total": row["total_trials"]}
-
+    from alpha_cli.toolbox.inputs import Inputs, Joined
 
 # Two assets' bars share a date stamp, not an instant: a coin's day opens at midnight UTC and a
 # US stock's at the exchange open, so a cross-asset comparison carries this caveat.
@@ -94,9 +22,11 @@ CLOCKS = (
 )
 
 
-def attribution(home: Path, run_id: str, benchmark: str | None = None) -> dict[str, Any]:
-    series = load_run(home, run_id)
-    joined = join_market(series, benchmark)
+def attribution(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from alpha_cli.toolbox.inputs import join_market
+    from alpha_validation.attribution import market_attribution
+
+    joined = join_market(inputs)
     result = market_attribution(joined.strategy, joined.market, periods_per_year=joined.ppy)
     basis = (
         f"full-sample strategy returns against buy-and-hold open-to-open returns of "
@@ -104,23 +34,19 @@ def attribution(home: Path, run_id: str, benchmark: str | None = None) -> dict[s
         f"{'' if joined.same_asset else CLOCKS}{result.pop('basis')}"
     )
     result.update(benchmark=joined.name, periods_per_year=joined.ppy, join=joined.counts)
-    return record(
-        series,
-        "attribution",
-        {"benchmark": joined.name, "risk_free": 0.0},
-        ["benchmark-is-same-asset"] if joined.same_asset else [],
-        basis,
-        result,
-        [
-            ("market_beta", "result.beta", result["beta"], None),
-            ("market_alpha_annual", "result.alpha_annual", result["alpha_annual"], None),
-            ("market_alpha_p", "result.alpha_p", result["alpha_p"], None),
-            ("market_r_squared", "result.r_squared", result["r_squared"], None),
-        ],
+    return Result(
+        {key: result[key] for key in ("beta", "alpha_annual", "alpha_p", "r_squared")},
+        {},
+        labels=("benchmark-is-same-asset",) if joined.same_asset else (),
+        basis=basis,
+        details=result,
+        params={"benchmark": joined.name, "risk_free": 0.0},
     )
 
 
 def _split(joined: Joined, state: list[int], k: int, basis: str) -> dict[str, Any]:
+    from alpha_validation import regimes as regime_model
+
     split = regime_model.returns_by_regime(
         joined.strategy, joined.market, state, periods_per_year=joined.ppy, k=k
     )
@@ -157,15 +83,20 @@ def regime_reading(causal: list[dict[str, Any]], hindsight: list[dict[str, Any]]
     return {"sentence": sentence, "labels": ["hindsight-disagrees"] if disagrees else []}
 
 
-def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> dict[str, Any]:
-    series = load_run(home, run_id)
-    joined = join_market(series, market)
-    fit = regime_model.volatility_regimes(joined.market, k=k, seed=0)
+def regimes(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from alpha_cli.toolbox.inputs import join_market, regime_flags
+    from alpha_validation import regimes as regime_model
+
+    joined = join_market(inputs)
+    k = params["k"]
+    # The published default fit uses seed zero, including its optimiser restarts.
+    seed = inputs.seed
+    fit = regime_model.volatility_regimes(joined.market, k=k, seed=seed)
     if not fit["converged"]:
         raise SpineError(
             "MODEL_DID_NOT_CONVERGE",
             f"The {k}-regime model did not converge on {joined.name}: {fit['reason']}.",
-            "Run alpha tool regimes again with --k 2, or with a --market with a longer history.",
+            "Use --param k=2 or --param market=SYMBOL with a longer history.",
         )
     causal = _split(joined, fit["causal_state"], k, regime_model.SPLIT_BASIS)
     hindsight = _split(joined, fit["hindsight_state"], k, regime_model.HINDSIGHT_BASIS)
@@ -202,31 +133,23 @@ def regimes(home: Path, run_id: str, market: str | None = None, k: int = 2) -> d
         "engine's open-marked equity; "
         f"{'' if joined.same_asset else CLOCKS}{regime_model.SPLIT_BASIS}"
     )
-    return record(
-        series,
-        "regimes",
-        {"market": joined.name, "k": k, "seed": 0},
-        [
+    return Result(
+        {
+            "turbulent_share_of_return": turbulent["share_of_log_return"],
+            "turbulent_share_of_time": turbulent["share_of_time"],
+        },
+        {"turbulent_share_of_return": turbulent["reasons"]["share_of_log_return"]}
+        if turbulent["share_of_log_return"] is None
+        else {},
+        labels=(
             *reading["labels"],
             *fit["labels"],
             *(["benchmark-is-same-asset"] if joined.same_asset else []),
-        ],
-        basis,
-        result,
-        [
-            (
-                "regime_turbulent_share_of_return",
-                "result.split.regimes[-1].share_of_log_return",
-                turbulent["share_of_log_return"],
-                turbulent["reasons"].get("share_of_log_return"),
-            ),
-            (
-                "regime_turbulent_share_of_time",
-                "result.split.regimes[-1].share_of_time",
-                turbulent["share_of_time"],
-                None,
-            ),
-        ],
+        ),
+        series=result.pop("series"),
+        details=result,
+        basis=basis,
+        params={"market": joined.name, "k": k, "seed": seed},
     )
 
 
@@ -301,15 +224,14 @@ def describe_changes(
     }
 
 
-def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]:
-    if on not in ("returns", "equity"):
-        raise SpineError(
-            "UNKNOWN_SERIES",
-            f"Unknown series {on!r}.",
-            "Run alpha tool changepoints with --on returns or --on equity.",
-            ["returns", "equity"],
-        )
-    series = load_run(home, run_id)
+def changepoints(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    import numpy as np
+
+    from alpha_validation.changepoints import change_points
+    from alpha_validation.metrics import annualized_volatility, to_returns
+
+    on = params["on"]
+    series = inputs.run
     returns = to_returns(series.equity)
     found = change_points(returns if on == "returns" else np.log(series.equity))
     # Return i ends at dates[i + 1]; equity point i sits at dates[i].
@@ -324,7 +246,7 @@ def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]
                 "end_date": series.dates[segment["end"] + shift - 1].isoformat(),
                 "bars": segment["n"],
                 "annual_return": float(np.mean(part)) * series.ppy,
-                "annual_volatility": float(np.std(part, ddof=1)) * math.sqrt(series.ppy),
+                "annual_volatility": annualized_volatility(part, periods_per_year=series.ppy),
             }
         )
     params = {key: found[key] for key in ("model", "min_size", "max_points")} | {"on": on}
@@ -342,21 +264,125 @@ def changepoints(home: Path, run_id: str, on: str = "returns") -> dict[str, Any]
         f"{'per-bar returns' if on == 'returns' else 'log equity curve'}; segment annual return "
         "= mean per-bar return * periods_per_year, volatility = standard deviation * sqrt of it"
     )
-    return record(
-        series,
-        "changepoints",
-        params,
-        found["labels"],
-        basis,
-        result,
-        [
-            (
-                "changepoint_count",
-                "result.behaviour_shifts",
-                changes["behaviour_shifts"],
-                None
-                if changes["behaviour_shifts"] is not None
-                else "the rule's position state was not recorded",
-            )
-        ],
+    return Result(
+        {"count": changes["behaviour_shifts"]},
+        {"count": "the rule's position state was not recorded"}
+        if changes["behaviour_shifts"] is None
+        else {},
+        labels=tuple(found["labels"]),
+        basis=basis,
+        details=result,
+        params=params,
     )
+
+
+ATTRIBUTION = ToolSpec(
+    id="market.attribution",
+    question="How much of the return comes from exposure to the benchmark?",
+    needs=("run_returns", "run_bars"),
+    params=(
+        Param("benchmark", str, None, None, "Comparison asset, defaulting to the run's own asset."),
+    ),
+    outputs=(
+        Output(
+            "beta",
+            "Market beta",
+            "How much the strategy moves when the benchmark moves by one (1 = one for one).",
+            "ratio",
+            "market_beta",
+            "result.beta",
+        ),
+        Output(
+            "alpha_annual",
+            "Annual alpha",
+            "Yearly return left over after removing the benchmark exposure.",
+            "fraction",
+            "market_alpha_annual",
+            "result.alpha_annual",
+        ),
+        Output(
+            "alpha_p",
+            "Alpha p-value",
+            "Chance of a leftover return this large if the true leftover were zero (p-value).",
+            "p_value",
+            "market_alpha_p",
+            "result.alpha_p",
+        ),
+        Output(
+            "r_squared",
+            "Explained variation",
+            "Share of the strategy's return variation explained by the benchmark.",
+            "fraction",
+            "market_r_squared",
+            "result.r_squared",
+        ),
+    ),
+    reading="Market beta is {beta:.4f} and annual alpha is {alpha_annual:.2%}.",
+    caveats=("The regression uses one benchmark and open-to-open returns on shared timestamps.",),
+    reference="tests/unit/test_attribution.py::test_matches_first_principles_and_independent_newey_west",
+    compute=attribution,
+    time_safety="needs_pit_guard",
+    poison_test="tests/unit/test_toolbox_runner.py::test_future_market_bars_do_not_change_inputs",
+)
+
+VOL_REGIMES = ToolSpec(
+    id="market.vol_regimes",
+    question="Does the rule earn its return in calm or turbulent markets?",
+    needs=("run_returns", "run_bars"),
+    params=(
+        Param("market", str, None, None, "Market asset, defaulting to the run's own asset."),
+        Param("k", int, 2, (2, 3, 4), "Number of market regimes."),
+    ),
+    outputs=(
+        Output(
+            "turbulent_share_of_return",
+            "Turbulent return share",
+            "Share of the strategy's total log return earned in the most turbulent market regime.",
+            "fraction",
+            "regime_turbulent_share_of_return",
+            "result.split.regimes[-1].share_of_log_return",
+        ),
+        Output(
+            "turbulent_share_of_time",
+            "Turbulent time share",
+            "Share of bars the market spent in its most turbulent regime.",
+            "fraction",
+            "regime_turbulent_share_of_time",
+            "result.split.regimes[-1].share_of_time",
+        ),
+    ),
+    reading=(
+        "The turbulent regime covered {turbulent_share_of_time:.2%} of bars "
+        "and earned {turbulent_share_of_return:.2%} of return."
+    ),
+    caveats=("Regime parameters use the full sample. The smoothed split uses hindsight.",),
+    reference="tests/unit/test_regimes.py::test_output_matches_statsmodels_reordered_by_variance",
+    compute=regimes,
+    seeded=True,
+    legacy_seed=0,
+    time_safety="hindsight",
+    poison_test="tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label",
+)
+
+CHANGEPOINTS = ToolSpec(
+    id="market.changepoints",
+    question="When did the behaviour of the rule change?",
+    needs=("run_returns", "run_positions"),
+    params=(Param("on", str, "returns", ("returns", "equity"), "Search returns or log equity."),),
+    outputs=(
+        Output(
+            "count",
+            "Behaviour shifts",
+            "Number of dates at which the run's behaviour shifted, found with hindsight.",
+            "count",
+            "changepoint_count",
+            "result.behaviour_shifts",
+        ),
+    ),
+    reading="Shifts in behaviour after allowing for position changes: {count}.",
+    caveats=("Breaks are found with hindsight. Frequent position switches make the split rough.",),
+    reference="tests/unit/test_changepoints.py::test_same_breaks_as_ruptures_pelt_with_the_matching_cost",
+    compute=changepoints,
+    time_safety="hindsight",
+    poison_test="tests/unit/test_toolbox_runner.py::test_future_bars_do_not_enter_replay",
+)

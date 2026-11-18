@@ -46,6 +46,8 @@ meant to become entries too, and are never slimming targets
 - A "look" class separates describing a result (adds no trial), testing it (counted per result) and
   searching variants (would add the number of variants to the many-tries correction).
 - Gates come from a frozen list that is empty today; a tool never changes a grade or a promotion.
+- A tool row has a null verdict and adds zero deflation trials (the many-tries count is not changed by a tool run;
+  [rule](../../invariants/cli-investigation-tools.md)).
 - A single run is labelled `ad-hoc`, a non-default setting `non-default-params`, and a result whose run
   already used 2024 onward `reserved-period-seen`.
 - Growth rule: moving an old tool in deletes its old command and card in the same pull request, and a test
@@ -99,11 +101,11 @@ not yet in the repository; random-exit control remains among its highest-value g
 
 1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/`
    (`costs`, `market`, `overfit`, `performance`, `resampling`, `robustness`, `trades`).
-2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. Today's fourteen ids: `market.attribution`,
-   `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`, `robustness.start_end_dates`, `trades.side_contribution`,
+2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The fourteen registered ids:
+   `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`, `robustness.start_end_dates`, `trades.side_contribution`,
    `trades.concentration`, `costs.break_even`, `resampling.sharpe_interval`, `resampling.return_interval`,
    `resampling.drawdown_distribution`, `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`.
-   Named sets are in `toolbox/sets.py` (one: `market-context`).
+   Named sets are in `toolbox/sets.py` (one: `market-context`, the three market ids).
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit, gloss), reading, caveats,
    cost class, seeded or not, time safety, look class, a poison test when time order matters, and `reference`: the test that checks its numbers.
 4. The contract refuses: an id that is not lower-case `family.name`; a reading that names something that is not an output; a `search` look without an

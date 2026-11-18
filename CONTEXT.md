@@ -50,15 +50,15 @@ for the steps.
 | Fact | Its one home |
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
-| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 5](docs/reference/project/owner-decisions-5.md) |
-| Owner decisions by topic | [topic index](docs/reference/project/decisions-by-topic.md) |
+| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); by topic: [topic index](docs/reference/project/decisions-by-topic.md) |
+| Checking a dataset before a backtest | [data health card](research/tools/data-health.md) (`alpha data health`) |
+| A stand-in for the owner in RD-Agent tests | [propose and discuss](workers/rdagent/README.md#propose-and-discuss); the rule: topic index above |
 | The reserved period (2024-01-01 onward) | [reserved period](docs/reference/project/reserved-period.md) |
 | Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |
 | Package layers and data folders | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Current status | [STATUS.md](STATUS.md) (generated) |
-| History | git log and pull requests |
+| Current status; history | [STATUS.md](STATUS.md) (generated); git log and pull requests |
 | How an idea is researched | [research/PLAYBOOK.md](research/PLAYBOOK.md); the older staged lane: [research method](docs/reference/research-method.md) |
 | Codes and terms | [docs/reference/glossary.md](docs/reference/glossary.md) |
 | Who builds and reviews, which model, limits | [docs/reference/model-routing.md](docs/reference/model-routing.md) |

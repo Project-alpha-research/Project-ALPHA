@@ -10,9 +10,9 @@ verified: f37db52ddc451a3e
 
 ## Purpose
 
-The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns
-the SQLite control store (projects, jobs, evidence, owner receipts). It may import every package below it; nothing but the surfaces' public seams may import
-it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner did not give, and never route live capital.
+The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns the SQLite control store (projects, jobs, evidence, owner
+receipts). It may import every package below it; nothing but the surfaces' public seams may import it, and the web app and MCP server call it as a subprocess.
+It must never grant authority the owner did not give, and never route live capital.
 
 ## Read first
 
@@ -41,7 +41,6 @@ it, and the web app and MCP server call it as a subprocess. It must never grant 
 | [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`, `toolbox/`: adding a test, its honesty rules, what is not built yet |
 
 ## How to change it
-
 Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` = command group, wired in `main.py`). Where to look:
 
 | Sub-area | Modules (count) | Tests in `tests/unit/` |
@@ -72,7 +71,8 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, risk, trades, costs, intervals.
+- [Rule-test periods](../../research/tools/rule-test.md) · [Data health](../../research/tools/data-health.md)
+  · [Tools](../../docs/reference/project/components/toolbox.md): market, risk, trades, costs, intervals.
 - Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) explain stored evaluations in plain words.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:

@@ -29,13 +29,13 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified a3df80ece698c6ea on 2026-11-19: Merge of main: this page's text is main's; its CLI context source changed only its tool word list
+  verified 087a6e0f02808e04 on 2026-11-19: Merge of main: the page text is main's; the CLI context source changed only in its output links and tool list
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 00914c11bd52f4e5 on 2026-11-18: re-read; it states neither who merges nor the stage count, so the workflow wording fixes change nothing here
+  verified 4eed26d21e17eb9f on 2026-11-19: Only wording and a routing row changed in the two sources; the page already links the end-to-end section
 
 docs/reference/project/components/forecasting.md
   verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -53,7 +53,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified e85e5a6f7fe9b864 on 2026-11-18: re-read after the merge; the proposal pause is described as built on the command line only, matching the README section
+  verified 3c1c2343e740d22f on 2026-11-19: Worker pages were split and re-linked; every link in this page was repointed and the statements still hold
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -69,6 +69,9 @@ docs/reference/project/components/web-workstation.md
 
 docs/reference/project/decisions-by-topic.md
   verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
+
+docs/reference/project/file-system-measurement.md
+  verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
 
 docs/reference/project/ideas-and-considered.md
   verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes

@@ -31,6 +31,7 @@ risk study. Its paths are also one family of the path-risk simulation in
 - The model downloads from the hub on first use unless offline loading is switched on (setting `forecast_local_only`,
   environment variable `ALPHA_FORECAST_LOCAL_ONLY`, default off). With it on, a missing file is an error, never a download
   ([ADR-0010](../../../adr/0010-local-kronos-weights-offline-policy.md)).
+- Tests use `FakeForecaster` (`alpha_forecast/fake.py`), an offline stand-in; nothing in the tests downloads the model.
 - Periods the model was trained on are labelled, so a forecast that has seen the future is never
   mistaken for a real one ([ADR-0009](../../../adr/0009-forecast-leakage-and-tier2-cost-policy.md)).
 
@@ -62,8 +63,8 @@ which reads stored forecast runs. Its paths also feed the Kronos family of [Mont
   ([log](../owner-decisions.md#2026-11-14-what-kronos-is-for)).
 - Decided 2026-11-18: Kronos is part of the project and is to be built in as one of RD-Agent's tools,
   never removed when slimming ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
-  Not built: no RD-Agent or toolbox entry calls it yet; the first entries of the
-  [toolbox](toolbox.md) are market descriptions only.
+  Kronos Studio (the Workstation forecast screen) stays: a slimming audit had listed it for removal and the owner said to keep Kronos. Not built: no
+  RD-Agent or [toolbox](toolbox.md) entry calls it yet.
 - Open: no machine is recorded as holding the real model files, so the real model has run only on a stand-in.
 
 ## Never

@@ -269,6 +269,15 @@ def task_folder(worktree: Path, name: str, task_dir: str | None, today: str) -> 
     )
 
 
+def join_rounds(rounds: Sequence[str]) -> str:
+    """The build round's report first, then each non-empty fix round under ``Fix round N``."""
+    parts = [rounds[0].strip()] if rounds and rounds[0].strip() else []
+    for number, text in enumerate(rounds[1:], start=1):
+        if text.strip():
+            parts.append(f"## Fix round {number}\n\n{text.strip()}")
+    return "\n\n".join(parts)
+
+
 def save_task_files(
     worktree: Path, roots: Sequence[Path], folder: str, *, brief: str | None, report: str
 ) -> list[str]:
@@ -325,7 +334,7 @@ def check_env() -> Iterator[dict[str, str]]:
     if not (shm.is_dir() and os.access(shm, os.W_OK)):
         yield env
         return
-    private = Path(tempfile.mkdtemp(prefix="alpha-handoff-", dir=shm))
+    private = Path(tempfile.mkdtemp(prefix="ho-", dir=shm))
     env["TMPDIR"] = str(private)
     try:
         yield env

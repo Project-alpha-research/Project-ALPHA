@@ -1197,8 +1197,8 @@ def cmd_build(args: argparse.Namespace, root: Path, *, codex: bool) -> int:
                 _run(build, args, root, codex=codex)
             finally:
                 brief = build.order.text if build.order.kind == "brief" else None
-                last = build.runs[-1].last_message if build.runs else ""
-                report = "\n".join(sanitize_lines(last))
+                rounds = ["\n".join(sanitize_lines(r.last_message)) for r in build.runs]
+                report = handoff_routing.join_rounds(rounds)
                 where = (build.order.name, build.order.task_dir)
                 build.notes += handoff_routing.leave_task_files(
                     wt, _main(root), *where, brief, report

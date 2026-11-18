@@ -55,7 +55,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
       {(['tradable', 'scored'] as const).map(period => {
         const row = manifest.spine?.periods?.[period]
         const charts = summaryFigures(figures ?? [], period)
-        const title = period === 'tradable' ? 'Tradable period' : 'Scored test periods only'
+        const title = period === 'tradable' ? 'Whole period the rule could trade' : 'Scored test periods only'
         return <section key={period} aria-label={title}>
           <h3>{title}</h3>
           <p>{dateRange(row?.first_ts, row?.last_ts)}</p>

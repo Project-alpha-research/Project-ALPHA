@@ -13,7 +13,7 @@ test('the rule result opens first and its setup and checks expand independently'
   await page.goto(`/#run=${runId}`)
   const summary = page.getByRole('region', { name: 'Rule test', exact: true })
   await expect(summary.getByRole('heading', { name: /Hold after a new high/ })).toBeVisible()
-  for (const period of ['Tradable period', 'Scored test periods only']) {
+  for (const period of ['Whole period the rule could trade', 'Scored test periods only']) {
     const row = summary.getByRole('region', { name: period, exact: true })
     await expect(row.getByRole('heading', { name: period })).toBeVisible()
     await expect(row.getByText('Charts: not recorded')).toBeVisible()

@@ -1155,4 +1155,4 @@ These behaviour notes were the "Intended design" of the RD-Agent project page, m
   factors; two successive failures stop the run. Prompt history is character bounded; vector receipts explain omissions. Restored panel identity
   falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
   proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
-  invariants](../../docs/reference/invariants/workers.md#rd-agent-worker).
+  invariants](../../docs/reference/invariants/rdagent.md).

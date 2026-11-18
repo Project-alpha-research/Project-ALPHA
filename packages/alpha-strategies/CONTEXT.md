@@ -20,9 +20,15 @@ the next open, never earlier.
 
 | Read | Section | When |
 |---|---|---|
-| [strategy invariants](../../docs/reference/invariants/strategies.md) | — | always |
-| [research integrity](../../docs/reference/invariants/research-integrity.md) | Decide at close, fill at next open | always |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Package boundary | always |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Decide at close, fill at next open | always |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Pure signals | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Sizing | changing position sizing |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Rule specs | changing a rule spec or its validation |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Shared lifecycle | changing the shared strategy lifecycle |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Replay and sandbox strategies | changing replay or sandbox strategies |
+| [strategy invariants](../../docs/reference/invariants/strategies.md) | Source identity | changing what strategies bind into a run id |
 | [backtest invariants](../../docs/reference/invariants/backtest.md) | Next-open fills | changing how orders are submitted |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | No live capital | changing paper or sandbox behaviour |
 | [command line runs](../../docs/reference/invariants/cli-runs.md) | Run identity | adding a strategy module (it is fingerprinted) |

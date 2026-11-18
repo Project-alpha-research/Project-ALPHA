@@ -2,7 +2,7 @@
 owner: invariants router
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 92ce4d72825b64d7
+verified: b3ea6a9e3cd79715
 ---
 # Invariants: which file to load
 | file | owns | load when |
@@ -13,6 +13,7 @@ verified: 92ce4d72825b64d7
 | [testing.md](testing.md) | test layout, markers, tiers, sweeps | adding or moving tests |
 | [core.md](core.md) | alpha_core: domain values, errors, settings | editing alpha-core |
 | [data.md](data.md) | alpha_data: storage, readers, receipts, snapshots | editing alpha-data |
+| [data-crypto.md](data-crypto.md) | alpha_data crypto: storage, identity, offline Bybit context | editing crypto storage or identity |
 | [data-bar-timeframes.md](data-bar-timeframes.md) | bars of any timeframe in the store | touching bar timeframes |
 | [crypto-providers.md](crypto-providers.md) | crypto provider modules and coverage profiles | editing crypto providers |
 | [patterns.md](patterns.md) | alpha_patterns: pattern geometry, indicators | editing alpha-patterns |
@@ -24,14 +25,18 @@ verified: 92ce4d72825b64d7
 | [study.md](study.md) | alpha_study: study contracts, authority projections | editing alpha-study |
 | [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
+| [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
 | [web-frontend.md](web-frontend.md) | Workstation single-page app | editing the browser app |
+| [web-run-detail.md](web-run-detail.md) | run detail, journey and Setup Lab binding | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
-| [workers.md](workers.md) | Qlib, literature, RD-Agent, AFML workers | editing anything under workers/ |
+| [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |
+| [rdagent.md](rdagent.md) | RD-Agent worker: boundary, runtimes, gateway, factor loop, memory, viewer | editing workers/rdagent/ |
 
 ## Command line
 | file | owns | load when |
 |---|---|---|
 | [cli-runs.md](cli-runs.md) | run composition and publication | `alpha run` and published runs |
+| [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |

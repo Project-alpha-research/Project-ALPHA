@@ -20,9 +20,16 @@ that triggered it.
 
 | Read | Section | When |
 |---|---|---|
-| [backtest invariants](../../docs/reference/invariants/backtest.md) | — | always |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Package boundary | always |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Next-open fills | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Decide at close, fill at next open | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Immutable, hash-bound artefacts | always |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Fee and slippage model | changing fees, slippage or cost assumptions |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Accounts and rejections | changing accounts, order rejections or the Nautilus harness |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Dividends | changing dividend credits in the harness |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Equity and traces | changing equity curves or traces |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Multi-asset replay | changing multi-asset replay |
+| [backtest invariants](../../docs/reference/invariants/backtest.md) | Source identity | changing what the harness binds into a run id |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Corporate actions: two clocks | changing dividend credits |
 | [command line runs](../../docs/reference/invariants/cli-runs.md) | Artifacts and run directories | changing the result schema |
 | [validation invariants](../../docs/reference/invariants/validation.md) | Gauntlet gates | a change alters what the gauntlet measures |

@@ -20,9 +20,14 @@ D2 confirmation, reveal a holdout or place orders.
 
 | Read | Section | When |
 |---|---|---|
-| [MCP invariants](../../docs/reference/invariants/mcp.md) | — | always |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | What the server is | always |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Authority | always |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Subprocess boundary | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Calling the CLI | changing how a tool calls the CLI |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Allowed alpha_cli imports | changing which alpha_cli modules the server imports |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Tool inputs | adding or changing a tool input |
+| [MCP invariants](../../docs/reference/invariants/mcp.md) | Changing the tool set | adding or removing a tool |
 | [command reference](../../docs/reference/commands.md) | — | finding the command a tool wraps |
 | [what this part is for](../../docs/reference/project/components/ai-assistants.md) | — | why it exists; before you keep, shelve or remove it |
 

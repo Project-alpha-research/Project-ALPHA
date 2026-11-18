@@ -122,5 +122,5 @@ Nautilus harness, its feed encoding, fee model and result schema, and the multi-
 ## Source identity
 
 - Package bytes feed the v3 run `execution_fingerprint` and the RD-Agent economics profile
-  ([workers § RD-Agent worker](workers.md#rd-agent-worker)).
+  ([rdagent § Install and runtimes](rdagent.md#install-and-runtimes)).
   [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).

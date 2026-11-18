@@ -21,9 +21,14 @@ it was knowable from the bars seen so far.
 
 | Read | Section | When |
 |---|---|---|
-| [pattern invariants](../../docs/reference/invariants/patterns.md) | — | always |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Package boundary | always |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Knowable-at timing | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
-| [architecture](../../docs/ARCHITECTURE.md) | 2. The Layered DAG | always |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Input series | changing how a pattern or indicator reads its input series |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Causal indicators | adding or changing an indicator |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Lookalikes and novelty | changing lookalike or novelty searches |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Ports and provenance | porting outside code or changing its provenance |
+| [pattern invariants](../../docs/reference/invariants/patterns.md) | Synthetic ground truth and controls | adding or changing synthetic controls |
 | [strategy invariants](../../docs/reference/invariants/strategies.md) | Rule specs | a strategy rule reads the changed indicator |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Statistical evidence | porting or changing a statistic |
 | [what this part is for](../../docs/reference/project/components/strategies-and-signals.md) | — | why it exists; before you keep, shelve or remove it |

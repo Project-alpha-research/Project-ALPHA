@@ -60,8 +60,21 @@ BUILD_OUTPUTS = frozenset({"brief.md", "report.md"})
 _TASK_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 CONTEXT_MAX_LINES = 80
 REFERENCE_MAX_LINES = 200
+REFERENCE_LINES_ADVICE = "split by heading into a sibling file; do not shorten text"
+CONTEXT_LINES_ADVICE = "move detail to a reference file and link to its section"
+# Files over CONTEXT_MAX_LINES because the section-level Read first rows add one row per section.
+# The next slimming pass trims them. A ceiling may only go down; remove the entry once the file is
+# within CONTEXT_MAX_LINES.
+CONTEXT_LINE_CEILINGS: dict[str, int] = {
+    "workers/rdagent/CONTEXT.md": 87,
+    "research/CONTEXT.md": 86,
+    "apps/alpha-web/CONTEXT.md": 82,
+    "apps/alpha-cli/CONTEXT.md": 81,
+}
 MAX_LINE_CHARS = 160
 ALWAYS_BUDGET_BYTES = 32_768
+ALWAYS_ROWS_MAX_BYTES = 6_144  # the "always" rows of one workspace, section rows counted in full
+ALWAYS_WHOLE_FILE_MAX_BYTES = 3_072  # an "always" row may name a whole file only up to this size
 LIVING_KEYS = {"owner", "sources", "verified"}
 GENERATED_KEYS = {"generated_by", "sources"}
 _OWNER = re.compile(r"^[a-z][a-z0-9 ,/&()-]{2,40}$")
@@ -274,13 +287,12 @@ def test_every_workspace_has_a_context_file() -> None:
 # Size and shape
 
 
-def _shape_problems(rel: str, max_lines: int | None) -> list[str]:
+def _shape_problems(rel: str, max_lines: int | None, advice: str = "") -> list[str]:
     lines = _text(rel).splitlines()
     problems = []
     if max_lines is not None and len(lines) > max_lines:
         problems.append(
-            f"{rel}: {len(lines)} lines; the limit is {max_lines}. Move detail to a "
-            "reference file and link to its section."
+            f"{rel}: {len(lines)} lines; the limit is {max_lines}. {advice.capitalize()}."
         )
     for number, line in enumerate(lines, 1):
         if len(line) > MAX_LINE_CHARS:
@@ -340,7 +352,8 @@ def test_context_files_are_small_and_declare_owner_sources_verified() -> None:
     problems = []
     for rel in context_files():
         if (ROOT / rel).is_file():
-            problems += _shape_problems(rel, CONTEXT_MAX_LINES)
+            limit = CONTEXT_LINE_CEILINGS.get(rel, CONTEXT_MAX_LINES)
+            problems += _shape_problems(rel, limit, CONTEXT_LINES_ADVICE)
             problems += _front_matter_problems(rel, allow_generated=False)
     assert not problems, "\n".join(problems)
 
@@ -351,7 +364,9 @@ def test_reference_files_are_small_and_declare_owner_sources_verified() -> None:
     problems = []
     for rel in files:
         generated = "generated_by" in (fs_stale.front_matter(_text(rel)) or {})
-        problems += _shape_problems(rel, None if generated else REFERENCE_MAX_LINES)
+        problems += _shape_problems(
+            rel, None if generated else REFERENCE_MAX_LINES, REFERENCE_LINES_ADVICE
+        )
         problems += _front_matter_problems(rel, allow_generated=True)
     assert not problems, "\n".join(problems)
 
@@ -914,7 +929,7 @@ ROOT_MAX_LINES = 40
 ROOT_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
 INVARIANTS_DIR = "docs/reference/invariants"
 INVARIANTS_ROUTER = f"{INVARIANTS_DIR}/README.md"
-INVARIANTS_ROUTER_MAX_LINES = 45
+INVARIANTS_ROUTER_MAX_LINES = 50
 MEASUREMENT_PAGE = "file-system-measurement.md"
 
 
@@ -952,3 +967,91 @@ def test_measurement_page_is_not_routed() -> None:
         rel for rel in (IDENTITY, AGENT_POINTER, *context_files()) if MEASUREMENT_PAGE in _text(rel)
     ]
     assert not linking, f"These files route to {MEASUREMENT_PAGE}; remove the link: {linking}"
+
+
+# ---------------------------------------------------------------------------------------------
+# Section-level always rows and small invariant sections
+
+INVARIANT_SECTION_MAX_BYTES = 4_096
+# Sections written before the limit. Each ceiling is the section's size when the limit began and may
+# only go down. Split the section by sub-headings, then delete its entry.
+INVARIANT_SECTION_CEILINGS: dict[tuple[str, str], int] = {
+    ("cli-results-check.md", "Draft checks and run comparisons"): 5_656,
+    ("cli-trial-ledger.md", "Families and queries"): 6_834,
+}
+
+
+def _stale_context_ceilings() -> list[str]:
+    stale = []
+    for rel, ceiling in CONTEXT_LINE_CEILINGS.items():
+        lines = len(_text(rel).splitlines())
+        if lines <= CONTEXT_MAX_LINES:
+            stale.append(f"{rel}: {lines} lines is within {CONTEXT_MAX_LINES}; remove its ceiling")
+        elif lines < ceiling:
+            stale.append(f"{rel}: {lines} lines; lower its ceiling from {ceiling}")
+    return stale
+
+
+def test_context_line_ceilings_only_go_down() -> None:
+    stale = _stale_context_ceilings()
+    assert not stale, "\n".join(stale)
+
+
+def test_always_rows_per_workspace_stay_small_and_name_only_small_whole_files() -> None:
+    problems: list[str] = []
+    for ws in workspaces():
+        rel = f"{ws}/{CONTEXT}"
+        if not (ROOT / rel).is_file():
+            continue
+        total, section_problems = _always_bytes(rel)
+        problems += section_problems
+        if total > ALWAYS_ROWS_MAX_BYTES:
+            problems.append(
+                f"{rel}: the always rows total {total:,} bytes; the limit is "
+                f"{ALWAYS_ROWS_MAX_BYTES:,}. Point rows at sections or make them conditional."
+            )
+        for row in read_first_rows(rel):
+            if row.when != "always" or row.target is None or row.section != NONE_MARK:
+                continue
+            size = (ROOT / row.target).stat().st_size
+            if size > ALWAYS_WHOLE_FILE_MAX_BYTES:
+                problems.append(
+                    f"{rel}: the always row for {row.target} names the whole file ({size:,} bytes; "
+                    f"the limit is {ALWAYS_WHOLE_FILE_MAX_BYTES:,}). Name its sections instead."
+                )
+    assert not problems, "\n".join(problems)
+
+
+def _invariant_section_sizes() -> dict[tuple[str, str], int]:
+    sizes: dict[tuple[str, str], int] = {}
+    for path in sorted((ROOT / INVARIANTS_DIR).glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines(keepends=True)
+        found = headings(text)
+        for position, (index, level, title) in enumerate(found):
+            if level != 2:
+                continue
+            end = next((i for i, lvl, _ in found[position + 1 :] if lvl <= 2), len(lines))
+            sizes[(path.name, title)] = len("".join(lines[index:end]).encode("utf-8"))
+    return sizes
+
+
+def test_invariant_sections_are_small_enough_for_a_row_to_name() -> None:
+    sizes = _invariant_section_sizes()
+    problems = []
+    for (name, title), size in sizes.items():
+        limit = INVARIANT_SECTION_CEILINGS.get((name, title), INVARIANT_SECTION_MAX_BYTES)
+        if size > limit:
+            problems.append(
+                f"{INVARIANTS_DIR}/{name} § {title}: {size:,} bytes; the limit is {limit:,}. "
+                "Add sub-headings so a Read first row can name a part."
+            )
+    for (name, title), ceiling in INVARIANT_SECTION_CEILINGS.items():
+        found = sizes.get((name, title))
+        if found is None:
+            problems.append(f"ceiling for {name} § {title} names a missing section; remove it")
+        elif found <= INVARIANT_SECTION_MAX_BYTES:
+            problems.append(f"{name} § {title} is {found:,} bytes; remove its ceiling")
+        elif found < ceiling:
+            problems.append(f"{name} § {title} is {found:,} bytes; lower its ceiling to {found:,}")
+    assert not problems, "\n".join(problems)

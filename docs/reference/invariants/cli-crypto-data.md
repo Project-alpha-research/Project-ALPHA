@@ -93,7 +93,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
   evidence. A provider `DataError` on one window is recorded and the run continues; an accounting refusal
   (`FixtureAccountingBlocked`) stops the run and never splits or retries.
 - Backfill reuses one lazily opened bulk store per command, including completed-window verification.
-  Archive revision lookup uses the store's in-memory discovery index ([data storage](data.md#crypto-storage));
+  Archive revision lookup uses the store's in-memory discovery index ([data storage](data-crypto.md#crypto-storage));
   each acquisition still checks capacity and verifies its new raw inputs.
 - Progress loads once under ownership. Saves detect stale/replaced files through device, inode, size and
   nanosecond modification/change metadata, then fsync and atomically replace the same version-1 JSON once
@@ -130,6 +130,6 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 ## Crypto research edge
 
 - `snapshot-create` and every verification (`snapshot-verify`, `storage-verify`, research registration) resolve a member through
-  one rule in `_crypto_snapshot_members.py`; the rule itself is in [data § Crypto storage](data.md#crypto-storage).
+  one rule in `_crypto_snapshot_members.py`; the rule itself is in [data-crypto § Crypto storage](data-crypto.md#crypto-storage).
 - Research may consume crypto data only through a registered snapshot re-verified at use; see
   [command line research § Research data and crypto research](cli-research.md#research-data-and-crypto-research).

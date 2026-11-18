@@ -21,9 +21,17 @@ here reaches the whole repository.
 
 | Read | Section | When |
 |---|---|---|
-| [core invariants](../../docs/reference/invariants/core.md) | — | always |
+| [core invariants](../../docs/reference/invariants/core.md) | Package boundary | always |
+| [core invariants](../../docs/reference/invariants/core.md) | Domain values | always |
+| [core invariants](../../docs/reference/invariants/core.md) | Errors | always |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Import layers | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Invalid data fails loud | always |
+| [core invariants](../../docs/reference/invariants/core.md) | Corporate actions and membership | changing corporate-action or membership types |
+| [core invariants](../../docs/reference/invariants/core.md) | Protocols | changing a protocol that other packages implement |
+| [core invariants](../../docs/reference/invariants/core.md) | Atomic publication | changing atomic file publication |
+| [core invariants](../../docs/reference/invariants/core.md) | Costs | changing cost types |
+| [core invariants](../../docs/reference/invariants/core.md) | Settings | changing settings |
+| [core invariants](../../docs/reference/invariants/core.md) | Source identity | changing what core binds into a run id |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Corporate actions: two clocks | changing corporate-action types |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Deterministic seeds and identity | changing settings or seeds |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Hash-bound source bytes | any source edit (run ids fingerprint core bytes) |

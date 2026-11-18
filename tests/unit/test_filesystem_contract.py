@@ -13,8 +13,8 @@ The file system (ADR-0040) follows the Interpretable Context Methodology adapted
   Read first, Process, Outputs, Checkpoint, and the pipeline's ``CONTEXT.md`` links every stage.
   Research is not staged: ``research/CONTEXT.md`` routes to the playbook, tool cards, skills and
   lessons, which ``tests/unit/test_research_playbook.py`` checks against the program.
-* Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` exists only on a branch while its
-  pull request is open, and holds only stage files and always its ``02-plan.md``.
+* Outputs: a task folder ``docs/work/<yyyy-mm-dd>-<slug>/`` holds a planned task's stage files
+  and its ``02-plan.md``, or a build's ``brief.md`` and ``report.md`` (``docs/work/CONTEXT.md``).
 * Layer 3: reference documents under ``docs/reference/``: the rules (``invariants/``) and the
   project layer (``project/``: what each major part is for, and the owner's decisions).
 * Loading: each workspace has a one-line ``CLAUDE.md`` that imports its ``CONTEXT.md``; Claude
@@ -55,6 +55,8 @@ WORK_DIR = "docs/work"
 TASK_PLAN = "02-plan.md"
 BUILD_RECORD = "03-build.json"  # written by scripts/handoff.py, committed with the build
 STAGE_OUTPUTS = frozenset({"01-brief.md", TASK_PLAN, BUILD_RECORD, "04-verify.md", "05-handoff.md"})
+# A build from a brief leaves these (scripts/handoff_routing.py): outputs, not living documents.
+BUILD_OUTPUTS = frozenset({"brief.md", "report.md"})
 _TASK_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*$")
 CONTEXT_MAX_LINES = 80
 REFERENCE_MAX_LINES = 200
@@ -511,12 +513,13 @@ def test_task_folders_hold_a_plan_and_only_stage_files() -> None:
         rel = folder.relative_to(ROOT).as_posix()
         if not _TASK_NAME.match(folder.name):
             problems.append(f"{rel}: name a task folder yyyy-mm-dd-<lowercase-slug>")
-        if not (folder / TASK_PLAN).is_file():
-            problems.append(f"{rel}: has no {TASK_PLAN}; commit a task folder with its plan")
+        if not (folder / TASK_PLAN).is_file() and not (folder / "brief.md").is_file():
+            problems.append(f"{rel}: has no {TASK_PLAN} or brief.md; commit it with one of them")
+        allowed = STAGE_OUTPUTS | BUILD_OUTPUTS
         problems += [
-            f"{rel}/{child.name}: not a stage file; allowed: {', '.join(sorted(STAGE_OUTPUTS))}"
+            f"{rel}/{child.name}: not a task file; allowed: {', '.join(sorted(allowed))}"
             for child in sorted(folder.iterdir())
-            if child.name not in STAGE_OUTPUTS
+            if child.name not in allowed
         ]
     assert not problems, "\n".join(problems)
 
@@ -524,7 +527,7 @@ def test_task_folders_hold_a_plan_and_only_stage_files() -> None:
 def test_work_folder_holds_only_task_folders() -> None:
     root = ROOT / WORK_DIR
     files = sorted(root.iterdir()) if root.is_dir() else []
-    stray = [p.relative_to(ROOT).as_posix() for p in files if p.is_file()]
+    stray = [p.relative_to(ROOT).as_posix() for p in files if p.is_file() and p.name != CONTEXT]
     assert not stray, f"{WORK_DIR} holds only task folders; move: {stray}"
 
 

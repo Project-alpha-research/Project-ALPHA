@@ -1247,6 +1247,20 @@
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
+      "method": "GET",
+      "mode": "automatic",
+      "operation_id": "list_runs_api_setup_runs_get",
+      "path": "/api/setup/runs",
+      "reason": "Safe read exercised against an isolated temporary store."
+    },
+    {
+      "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "run_detail_api_setup_runs__find_id__get",
+      "path": "/api/setup/runs/{find_id}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
       "method": "POST",
       "mode": "fixture_backed",
       "operation_id": "update_stage_state_api_stage_links__link_id__state_post",

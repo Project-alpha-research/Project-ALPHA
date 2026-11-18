@@ -48,6 +48,7 @@ from alpha_web.api import risk as risk_api
 from alpha_web.api import rules as rules_api
 from alpha_web.api import runs as runs_api
 from alpha_web.api import scans as scans_api
+from alpha_web.api import setup_runs as setup_runs_api
 from alpha_web.api import v3 as v3_api
 from alpha_web.api import workspaces as workspaces_api
 from alpha_web.api.errors import api_error_response, request_id, validation_field_errors
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs_api.router)
     app.include_router(native_results_api.router)
     app.include_router(rdagent_api.router)
+    app.include_router(setup_runs_api.router)
     app.include_router(investigations_api.router)
     app.include_router(activity_api.router)
     app.include_router(assistant_api.router)

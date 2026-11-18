@@ -3131,6 +3131,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/setup/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Runs
+         * @description List completed setup finds, newest recorded date first.
+         */
+        get: operations["list_runs_api_setup_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/setup/runs/{find_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run Detail
+         * @description Relay one find and all study/trade records linked by its stored identity.
+         */
+        get: operations["run_detail_api_setup_runs__find_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stage-links/{link_id}/state": {
         parameters: {
             query?: never;
@@ -12543,6 +12583,97 @@ export interface components {
             /** Value */
             value: number;
         };
+        /** SetupFigure */
+        SetupFigure: {
+            /** Name */
+            name: string;
+            /** Png */
+            png: string | null;
+        };
+        /** SetupOutcome */
+        SetupOutcome: {
+            figure: components["schemas"]["SetupFigure"];
+            /** Labels */
+            labels: string[];
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Rule Version */
+            rule_version: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            } | null;
+            /** Trial Indices */
+            trial_indices: number[] | null;
+            /** Trial Labels */
+            trial_labels?: {
+                [key: string]: string[];
+            } | null;
+        };
+        /** SetupRun */
+        SetupRun: {
+            /** Assets */
+            assets: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Description */
+            description: string | null;
+            /** Find Id */
+            find_id: string;
+            /** Labels */
+            labels: string[];
+            /** Name */
+            name: string | null;
+            /** Recorded At */
+            recorded_at: string | null;
+        };
+        /** SetupRunDetail */
+        SetupRunDetail: {
+            /** Candidates */
+            candidates: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Label Explanations */
+            label_explanations: {
+                [key: string]: string;
+            };
+            /** Limits */
+            limits: string[];
+            /** Price Bars */
+            price_bars?: null;
+            /** Price Bars Reason */
+            price_bars_reason: string;
+            run: components["schemas"]["SetupRun"];
+            /** Sheets */
+            sheets: components["schemas"]["SetupFigure"][] | null;
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            } | null;
+            /** Studies */
+            studies: components["schemas"]["SetupOutcome"][];
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            } | null;
+            /** Trades */
+            trades: components["schemas"]["SetupOutcome"][];
+            /** Trial Indices */
+            trial_indices: number[] | null;
+            /** Trial Labels */
+            trial_labels?: {
+                [key: string]: string[];
+            } | null;
+        };
+        /** SetupRunList */
+        SetupRunList: {
+            /** Items */
+            items: components["schemas"]["SetupRun"][];
+        };
         /** StageLinkCreateRequest */
         StageLinkCreateRequest: {
             /** Experiment Id */
@@ -18814,6 +18945,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScanRunResult"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    list_runs_api_setup_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupRunList"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    run_detail_api_setup_runs__find_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                find_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupRunDetail"];
                 };
             };
             /** @description Stable, redacted Workstation error */

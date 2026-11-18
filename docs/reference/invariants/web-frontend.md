@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 2f7c2226ce736ac1
+verified: 6fea7f6becd3c64a
 ---
 
 # Web frontend invariants
@@ -142,6 +142,13 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   It uses terminal chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
   The shortlist stage is bookkeeping only; blend warnings display the recorded diagnostic, never a new verdict.
   Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
+
+- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles). It reads GET setup routes only and binds each
+  response to the selected find. Stored figures have adjacent value tables; rejected candidates retain their reason in grey.
+  Every linked study/trade stays separate, with its labels, costs and trial indices; no curve or total is calculated.
+  Price snapshots, per-trade direction and aggregate returns are not recorded; sampled contact sheets are shown as stored.
+  Limits quote the setup tool cards; missing records, empty results and failed reads are distinct.
+  `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `workflowModel.test.ts` and `e2e/setup-lab.spec.ts` cover this surface.
 
 ## Generated API client
 

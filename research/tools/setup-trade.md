@@ -20,6 +20,8 @@ uv run alpha setup trade <find_id> --json
 uv run alpha results cite <trade_id> setup_trade_mean_net_return --json
 ```
 
+**See stored results:** Workstation → Research → Setup Lab.
+
 **How to read it**
 - Put `[exit]` in the spec before finding: stop/target as percent, ATR distance or a causal
   numeric expression (or a named reference), plus `time_bars` (none: 250, `no-time-exit`) or `opposite`.

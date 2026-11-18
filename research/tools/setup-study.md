@@ -21,6 +21,8 @@ uv run alpha setup study <find_id> --json
 uv run alpha results cite <study_id> setup_mean_net_return --json
 ```
 
+**See stored results:** Workstation → Research → Setup Lab.
+
 **How to read it**
 - Include `[study]` horizons and primary in the spec before finding. Only the pooled primary
   horizon is tested; others say "also looked at, not tested" and carry `not-primary`.

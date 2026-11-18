@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 8dbca97fbebb3984
+verified: b5af3d1db25c8f83
 ---
 
 # alpha-web workspace
@@ -68,6 +68,8 @@ grants authority.
   Internal coding failures have a separate sentence describing partial judging and the consecutive-failure stop.
   Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).
   Vitest discovers `.test.tsx` too, so its Node rendering test runs with the rest.
+- Setup Lab opens at Research → Setup Lab; stored fields and gaps are documented in
+  [web API reads](../../docs/reference/invariants/web-api.md#reads-and-writes).
 
 ## Outputs
 

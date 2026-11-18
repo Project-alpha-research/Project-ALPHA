@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getJSON } from '../api/client'
 import type { components } from '../api/generated'
 import { Timestamp } from '../util/formatTime'
+import { healthLine } from './ruleTestModel'
 import { curveRows, FIELD_LABELS, object, shown, stored, timelineMarks } from './setupLabModel'
 
 type Schema = components['schemas']
@@ -98,11 +99,17 @@ const TRADE_COLUMNS: readonly Column[] = [
   ['risk_fraction', 'Initial risk (%)'], ['net_return', 'Result after costs (%)'], ['r_multiple', 'R multiple'], ['complete', 'Completed'],
 ]
 
+function DataHealth({ summary }: { summary: Row }) {
+  const line = healthLine(object(summary.data_health))
+  return line && <p>{line}</p>
+}
+
 function Study({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) {
   const summary = object(outcome.summary)
   const rows = curveRows(summary.curve)
   return <section aria-label="Recorded event study">
     <h3>Average path after a match · {stored(summary.occurrences)} separate occurrences</h3>
+    <DataHealth summary={summary} />
     <Labels labels={outcome.labels} explanations={detail.label_explanations} />
     <p>Study identifier: {outcome.run_id} · Trial indices: {stored(outcome.trial_indices)}</p>
     <TrialLabels labels={outcome.trial_labels} explanations={detail.label_explanations} shownAbove={outcome.labels} />
@@ -123,6 +130,7 @@ function Trades({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) 
   const pooled = object(summary.pooled)
   return <section aria-label="Recorded setup trades">
     <h3>Trades after costs</h3>
+    <DataHealth summary={summary} />
     <Labels labels={outcome.labels} explanations={detail.label_explanations} />
     <p>Trade run identifier: {outcome.run_id} · Trial indices: {stored(outcome.trial_indices)}</p>
     <TrialLabels labels={outcome.trial_labels} explanations={detail.label_explanations} shownAbove={outcome.labels} />
@@ -142,6 +150,7 @@ function Trades({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) 
 function Detail({ detail }: { detail: SetupDetail }) {
   return <>
     <h2>{detail.run.description ?? 'Setup description: not recorded'}</h2>
+    <DataHealth summary={object(detail.summary)} />
     <Labels labels={detail.run.labels} explanations={detail.label_explanations} />
     <p>Find identifier: {detail.run.find_id} · Trial indices: {stored(detail.trial_indices)}</p>
     <TrialLabels labels={detail.trial_labels} explanations={detail.label_explanations} shownAbove={detail.run.labels} />

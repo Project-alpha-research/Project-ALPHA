@@ -39,6 +39,11 @@ LIMITS = [
     "or confirmation on reserved data. Unusual dates are not proof that the setup can be traded.",
 ]
 LABELS = {
+    "data-health-pass": "The data checks found no fault. The prices can still be wrong.",
+    "data-health-warn": "A data check found a warning. Read the finding before using this result.",
+    "data-health-fail": "A data check found a fault in the prices or their supporting records.",
+    "data-health-unchecked": "At least one series has no current data health report.",
+    "data-health-overridden": "The run records why it proceeded after a failed data check.",
     "exploratory": "An exploratory look; this does not confirm an edge.",
     "daily-only": "Only daily bars were used.",
     "dev-machine-data": "Uses data stored on the development machine.",

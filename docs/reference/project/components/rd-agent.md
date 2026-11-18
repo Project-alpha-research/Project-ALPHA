@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 9038f4943d9b0133
+verified: 4bb6e116d52db3fc
 ---
 
 # RD-Agent
@@ -61,14 +61,14 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
   Optional [futures funding](../../../../workers/rdagent/README.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
-  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
-  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
-  and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Missing declarations use the same refusal limit; proposal provider failures close rounds without trials or empty history.
-  Critic failures retain execution/value feedback; later critics in that round are skipped. Restored prompts keep four full same-panel rounds.
-  A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit.
-  Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
-  Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
+  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run. Code failures stay counted trials but do not close
+  idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
+  classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
+  or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
+  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
+  falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
+  proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
+  invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are

@@ -9,9 +9,10 @@ import importlib
 import json
 import os
 import re
+import select
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -23,6 +24,91 @@ import pandas as pd
 import pytest
 
 from tests.unit.test_rdagent_factor_judge import WORKER, data
+
+_SOCKET_FREE_GATEWAY = """
+from __future__ import annotations
+
+import os
+import signal
+import sys
+from pathlib import Path
+from typing import Any, Never
+
+worker = Path(sys.argv.pop(1))
+port = int(sys.argv.pop(1))
+ready_fd = int(sys.argv.pop(1))
+stop_before_handler = sys.argv.pop(1) == "True"
+sys.path.insert(0, str(worker.parent))
+import model_gateway
+
+def wait_for_stop() -> Never:
+    os.write(ready_fd, b"1")
+    os.close(ready_fd)
+    while True:
+        signal.pause()
+
+class Server:
+    server_address = ("127.0.0.1", port)
+
+    def __init__(self, port: int, gateway: Any, token: str) -> None:
+        assert port == 0
+
+    def __enter__(self) -> Server:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def serve_forever(self) -> None:
+        wait_for_stop()
+
+def install_handler(signum: int, handler: Any) -> Any:
+    if signum == signal.SIGTERM and stop_before_handler:
+        wait_for_stop()
+    return original_signal(signum, handler)
+
+original_signal = signal.signal
+signal.signal = install_handler
+model_gateway.GatewayServer = Server
+raise SystemExit(model_gateway.main(sys.argv[1:]))
+"""
+
+
+def spawn_socket_free_gateway(
+    spawn: Callable[..., subprocess.Popen[bytes]],
+    command: Sequence[str],
+    log: str,
+    *,
+    port: int,
+    stop_before_handler: bool,
+    **kwargs: object,
+) -> subprocess.Popen[bytes]:
+    """Run the real gateway lifecycle with a stand-in for the listening server."""
+    read_fd, write_fd = os.pipe()
+    try:
+        try:
+            child = spawn(
+                [
+                    *command[:2],
+                    "-c",
+                    _SOCKET_FREE_GATEWAY,
+                    command[2],
+                    str(port),
+                    str(write_fd),
+                    str(stop_before_handler),
+                    *command[3:],
+                ],
+                log,
+                pass_fds=(write_fd,),
+                **kwargs,
+            )
+        finally:
+            os.close(write_fd)
+        ready, _, _ = select.select([read_fd], [], [], 30)
+        assert ready and os.read(read_fd, 1) == b"1", "gateway child did not reach the test barrier"
+        return child
+    finally:
+        os.close(read_fd)
 
 
 def clock_rows(dsr: float) -> dict[str, Any]:

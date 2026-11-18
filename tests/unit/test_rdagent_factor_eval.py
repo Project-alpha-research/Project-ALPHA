@@ -992,6 +992,22 @@ def test_series_failure_changes_no_metrics_or_decisions(
     with patch.object(ev, "_write_series", side_effect=OSError("evidence disk unavailable")):
         failed = ev.evaluate(run, req, run / "other.json", tmp_path / "failed.jsonl")
     assert "evidence disk unavailable" in failed["series_note"]
+    checks = good.pop("checks")
+    assert checks["set"] == "rdagent-post-judge" and len(checks["factors"]) == 1
+    results = checks["factors"][0]["results"]
+    assert [r["tool"] for r in results] == [
+        "resampling.sharpe_interval",
+        "resampling.block_bootstrap_paths",
+    ]
+    assert failed.pop("checks") == {"set": "rdagent-post-judge", "factors": []}
+    suffix = (
+        " After the verdict, ALPHA ran its fixed checks (rdagent-post-judge) on factor."
+        " They do not change the verdict. They use the idea's daily return above the average"
+        " of all coins, after costs. This is not a profit. They are information, not a target. "
+        + " ".join(r["reading"] for r in results)
+    )
+    assert good["feedback_text"].endswith(suffix)
+    good["feedback_text"] = good["feedback_text"].removesuffix(suffix)
     good["inputs"].pop("series_sha256")
     for row in good["factors"]:
         row.pop("evidence", None)

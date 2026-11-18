@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: d6b968982525a9e8
+verified: 6bc52b780d474968
 ---
 
 # Follow one RD-Agent idea
@@ -28,7 +28,7 @@ Each available PNG has a JSON file containing its plotted numbers. A missing pic
 reason in the journey. The future-data check names how many dates ALPHA checked. Step six
 names the quick tests with recorded verdicts and shows the agent's feedback in its own words.
 Step seven shows ideas tested so far, coins with a usable number, prior exposure and shortlist
-facts. The journey is an exploratory reading of stored evidence.
+facts, and any fixed check run after the verdict. The journey is an exploratory reading of stored evidence.
 
 In the Workstation, open Research → RD-Agent, select the run, then an idea. The screen reads
 the run's own `journey/` folder; a missing journey shows the local build command. The CLI builds

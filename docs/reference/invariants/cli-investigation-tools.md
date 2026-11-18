@@ -2,6 +2,7 @@
 owner: command line runs and validation
 sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
+  - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
   - apps/alpha-cli/src/alpha_cli/spine/ledger.py
@@ -9,12 +10,12 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 74a2ad8245659793
+verified: 1cd1c3fa4ed30b3e
 ---
 
 # Investigation tools invariants
 
-Follow-up questions on one recorded rule test; part of [command line runs](cli-runs.md).
+Follow-up questions on a recorded rule test or judged factor replay; part of [command line runs](cli-runs.md).
 
 ## Rules
 
@@ -23,6 +24,9 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
   (`spine/diagnose.py:full_sample`), fail loud with `RUN_DATA_CHANGED` when the stored bars no
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels
   and ruptures in `alpha_validation` (`attribution.py`, `regimes.py`, `changepoints.py`).
+- The fixed RD-Agent checks use only the shown lead-clock replay's after-cost excess returns. Verify the manifest and replay hashes,
+  reproduce the judged annualized return, and refuse inputs that reach the reserve before consulting the cache.
+  Attempts belong to the run's checks ledger. They never enter the factor ledger, change a verdict or add a deflation trial.
 - Run-level tools use immutable walk-forward sidecars. The cache key includes each required file’s hash. A missing file records an error.
 - Seeded interval and path tests publish the effective simulation seed. The deflated Sharpe uses the ledger family frozen at publication.
 - New rule tests add `gross_return` and `cost_return` to `equity_curve.parquet` (both zero on the baseline row); older runs lack them.

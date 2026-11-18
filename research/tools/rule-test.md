@@ -32,11 +32,9 @@ runs a small gauntlet and labels the result `quick`.
 
 **What it cannot tell you**
 
-- Today's limits, planned to be lifted ([checklist rows](../../docs/roadmap/production-scope.md#4-backtest)): three
-  rule kinds only; daily bars only; long only, with no short selling; all-in sizing, with no risk-per-trade sizing.
-  If the idea needs more, say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`
-  (intraday, or a saved rule with `--strategy rules`): a plain backtest with no diagnostics, not counted in the ledger.
-  Label it so.
+- Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): three rule kinds,
+  daily bars, long only, all-in sizing. Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`
+  (intraday, or a saved rule with `--strategy rules`): a plain backtest with no diagnostics, not in the ledger. Label it so.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
 
 **Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.

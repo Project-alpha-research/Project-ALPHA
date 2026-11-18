@@ -27,3 +27,9 @@ third before and after costs against the full basket; a costed bottom third is n
 Each available PNG has a JSON file containing its plotted numbers. A missing picture has a
 reason in the journey. Check the coverage, prior exposure and shortlist facts in step seven
 before interpreting the result. The journey is an exploratory reading of stored evidence.
+
+In the Workstation, open Research → RD-Agent, select the run, then select an idea. The screen reads
+the run's own `journey/` folder. A missing journey shows the local build command. The CLI can build
+journeys for judged factors only. A loop event can have a name with no linked evaluation.
+The proposal wording and code can be excerpts. The final step carries the judge's exploratory
+label when recorded. The picker gets the verdict from the run records.

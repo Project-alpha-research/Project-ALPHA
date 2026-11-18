@@ -849,6 +849,20 @@
     },
     {
       "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "idea_journey_api_rdagent_runs__run_id__journeys__idea_id__get",
+      "path": "/api/rdagent/runs/{run_id}/journeys/{idea_id}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
+      "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get",
+      "path": "/api/rdagent/runs/{run_id}/journeys/{idea_id}/figures/{filename}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
+      "method": "GET",
       "mode": "automatic",
       "operation_id": "list_active_research_gate_overrides_api_research_gate_overrides_get",
       "path": "/api/research-gate-overrides",

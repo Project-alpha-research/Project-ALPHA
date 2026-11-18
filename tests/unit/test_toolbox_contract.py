@@ -1,9 +1,7 @@
 """Every entry advertises checkable outputs and an independent reference."""
 
 import ast
-import hashlib
 import json
-import math
 from dataclasses import replace
 from pathlib import Path
 from string import Formatter
@@ -20,36 +18,36 @@ from alpha_cli.toolbox.registry import SPECS
 from alpha_cli.toolbox.runner import run
 from tests.unit.test_spine_tools import RUN, _series
 
-
-def _canonical(value: Any) -> Any:
-    """Round every float to ten significant digits so CPU-dependent last bits cannot matter.
-
-    Values below 1e-12 in size are zero: they are rounding residue, not results.
-    """
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            return value
-        return 0.0 if abs(value) < 1e-12 else float(f"{value:.9e}")
-    if isinstance(value, dict):
-        return {key: _canonical(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_canonical(item) for item in value]
-    return value
-
-
-def _digest(result: Any) -> str:
-    return hashlib.sha256(json.dumps(_canonical(result), sort_keys=True).encode()).hexdigest()
-
-
-# SHA-256 of the complete result objects from spine.tools on the same fixture, with every float
-# rounded to ten significant digits (see _canonical).
+# The complete result objects printed by origin/main's spine/tools.py (commit 705ab13b) on the same
+# fixture, kept as JSON (their SHA-256 digests matched the previously pinned ones). Floats are
+# compared to 1e-9 relative, not bit for bit: the regime and regression fits are iterative and
+# end in different last digits on different CPUs. Everything else is compared exactly.
+REFERENCE: dict[str, Any] = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "toolbox_results.json").read_text()
+)
+REL, ABS = 1e-9, 1e-12
+# Tools the registry-entry test checks against the reference, by their default-case key.
 BASELINE = {
-    "market.attribution": "014854ca4a7c405d819c778ce4d5d664d0954ca4b82c7d2953eef91a8e7b9b03",
-    "market.vol_regimes": "a01aa8ce7fd54f2f9b128991de309f6726015ad16c97f203aae02e1ae4d74621",
-    "market.changepoints": "cd9da18d3cba6a753813ec28d04800e089b5caee206599e64023a0581a064427",
+    tool: f"{tool}|False|"
+    for tool in ("market.attribution", "market.vol_regimes", "market.changepoints")
 }
+
+
+def _assert_close(actual: Any, expected: Any, where: str = "result") -> None:
+    """Same shape, same ints, strings and None; floats equal within REL and ABS."""
+    if isinstance(expected, float):
+        assert isinstance(actual, float), where
+        assert actual == pytest.approx(expected, rel=REL, abs=ABS, nan_ok=True), where
+    elif isinstance(expected, dict):
+        assert isinstance(actual, dict) and actual.keys() == expected.keys(), where
+        for key, value in expected.items():
+            _assert_close(actual[key], value, f"{where}.{key}")
+    elif isinstance(expected, list):
+        assert isinstance(actual, list) and len(actual) == len(expected), where
+        for index, value in enumerate(expected):
+            _assert_close(actual[index], value, f"{where}[{index}]")
+    else:
+        assert type(actual) is type(expected) and actual == expected, where
 
 
 def _test_exists(reference: str) -> bool:
@@ -83,7 +81,7 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         assert spec.poison_test and _test_exists(spec.poison_test)
     if spec.look == "search":
         assert spec.evaluations is not None
-    digests = []
+    results = []
     for home in (tmp_path / "first", tmp_path / "second"):
         series = _series(home)
         series = replace(
@@ -94,14 +92,14 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         assert doc["reading"] == spec.render(doc["values"])
         assert set(doc["values"]) == {output.key for output in spec.outputs}
         assert doc["elapsed_seconds"] < {"instant": 5, "seconds": 60, "minutes": 900}[spec.cost]
-        digest = _digest(doc["result"])
-        digests.append(digest)
+        results.append(doc["result"])
         if spec.id in BASELINE:
-            assert digest == BASELINE[spec.id]
+            _assert_close(doc["result"], REFERENCE[BASELINE[spec.id]], spec.id)
         _check_reading(spec, doc, home)
         if not spec.seeded:
             break
-    assert len(set(digests)) == 1
+    for later in results[1:]:
+        _assert_close(later, results[0])
 
 
 def test_gate_freeze_and_contract_guards() -> None:
@@ -129,10 +127,10 @@ def test_describe_prints_a_readable_card() -> None:
 
 
 # Values printed by origin/main's spine/tools.py (commit 705ab13b) on the same synthetic runs:
-# (tool, always long, params) -> (SHA-256 of the result object, every fact by its old name).
+# (tool, always long, params) -> (reference key, every fact by its old name).
 LEGACY: dict[tuple[str, bool, tuple[str, ...]], tuple[str, dict[str, float | None]]] = {
     ("market.attribution", False, ()): (
-        BASELINE["market.attribution"],
+        "market.attribution|False|",
         {
             "market_beta": 0.48724361298425856,
             "market_alpha_annual": -0.10151191452002381,
@@ -141,19 +139,19 @@ LEGACY: dict[tuple[str, bool, tuple[str, ...]], tuple[str, dict[str, float | Non
         },
     ),
     ("market.vol_regimes", False, ()): (
-        BASELINE["market.vol_regimes"],
+        "market.vol_regimes|False|",
         {
             "regime_turbulent_share_of_return": None,
             "regime_turbulent_share_of_time": 0.49642346208869814,
         },
     ),
-    ("market.changepoints", False, ()): (BASELINE["market.changepoints"], {"changepoint_count": 0}),
+    ("market.changepoints", False, ()): ("market.changepoints|False|", {"changepoint_count": 0}),
     ("market.changepoints", False, ("on=equity",)): (
-        "257a126f37013d3d5ef62cbb229a1f7d533c6487ec2da844c98acfdde7517bc7",
+        "market.changepoints|False|on=equity",
         {"changepoint_count": 7},
     ),
     ("market.attribution", True, ()): (
-        "dfa1bd3e78dcc6d8f6202f53ce9b0a4e9390e18b25d357b81cec8dac6411089c",
+        "market.attribution|True|",
         {
             "market_beta": 1.0,
             "market_alpha_annual": -7.716808962665578e-16,
@@ -162,18 +160,18 @@ LEGACY: dict[tuple[str, bool, tuple[str, ...]], tuple[str, dict[str, float | Non
         },
     ),
     ("market.vol_regimes", True, ()): (
-        "734987b6cd208f356f05c16a198d205f7700117f72c6d3c8e03b1e429a70e58a",
+        "market.vol_regimes|True|",
         {
             "regime_turbulent_share_of_return": -0.3868048089390445,
             "regime_turbulent_share_of_time": 0.49642346208869814,
         },
     ),
     ("market.changepoints", True, ()): (
-        "9c244b4404f82e32caa8acd4094e90db580c1d27ccc82286574eae981698b684",
+        "market.changepoints|True|",
         {"changepoint_count": 1},
     ),
     ("market.changepoints", True, ("on=equity",)): (
-        "2219be01b08e444a8f0f48bdd4a810901d7e493d268422c708776d4fbca54d58",
+        "market.changepoints|True|on=equity",
         {"changepoint_count": 8},
     ),
 }
@@ -184,13 +182,13 @@ def test_numbers_match_the_pre_registry_code(
     case: tuple[str, bool, tuple[str, ...]], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     tool, always_long, params = case
-    digest, facts = LEGACY[case]
+    key, facts = LEGACY[case]
     series = _series(tmp_path, always_long=always_long)
     positions = tuple(always_long or i // 25 % 2 == 0 for i in range(len(series.dates)))
     series = replace(series, positions=positions)
     monkeypatch.setattr(inputs, "load_run", lambda home, run_id: series)
     doc = run(tmp_path, tool, RUN, list(params))
-    assert _digest(doc["result"]) == digest
+    _assert_close(doc["result"], REFERENCE[key], key)
     by_old_name = {
         output.legacy_metric: doc["values"][output.key]
         for spec in SPECS
@@ -198,6 +196,6 @@ def test_numbers_match_the_pre_registry_code(
         for output in spec.outputs
     }
     assert by_old_name == {
-        name: None if fact is None else pytest.approx(fact, rel=1e-9, abs=1e-12)
+        name: None if fact is None else pytest.approx(fact, rel=REL, abs=ABS)
         for name, fact in facts.items()
     }

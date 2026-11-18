@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/performance.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/robustness.py
   - tests/unit/test_toolbox_run_level_checks.py
-verified: 338886c30ad6d17f
+verified: 82034701aac7dff9
 ---
 
 # Costs, downside risk, date sensitivity and closed trades

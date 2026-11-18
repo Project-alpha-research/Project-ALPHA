@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 87efe515e760f6a1
+verified: 52a764bf55adf539
 ---
 
 # Rule test
@@ -11,7 +11,6 @@ verified: 87efe515e760f6a1
 **Reach for it when** the owner states a price rule or asks "does X work": the one route for a new idea.
 
 **Command**
-
 ```text
 uv run alpha test <spec.toml> --json
 uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --idea "<owner's words>" --json
@@ -23,15 +22,15 @@ table (`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `bre
 runs a small gauntlet and labels the result `quick`.
 
 **How to read it**
-
+- The headline starts at the first open after indicator warm-up. The smaller data dates include warm-up.
+- Tiles, Sharpe and charts share each row’s dates. “Scored test periods only” uses the fresh walk-forward portfolio.
+- Both lines use split-adjusted opens and the same recorded dividend basis. Missing period facts read “not recorded”.
 - Each asset has `run_id`, `verdict` (grade), `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`.
   `resized_entries` counts reduced scored entries; `trials_total` counts ledger trials; `test_id` names the test.
 - A failed asset keeps its row with `error` set and still counts as a trial. If every asset fails, the output
   is an `error` object: read `known` and `next`, and do what `next` says.
 - Bars per year come from the calendar of the bars (`periods_per_year`), so crypto is not treated as stocks.
-
 **What it cannot tell you**
-
 - Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): three rule kinds,
   daily bars, long only, all-in sizing. Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`
   (intraday, or a saved rule with `--strategy rules`): a plain backtest with no diagnostics, not in the ledger. Label it so.

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 14d01b534aa31f7b
+verified: dc85c46fe5c0a8d6
 ---
 
 # Follow one RD-Agent idea

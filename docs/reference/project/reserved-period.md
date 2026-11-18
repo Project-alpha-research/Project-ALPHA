@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
-verified: 2ef93cabda690ce4
+verified: fedf3f9622300245
 ---
 
 # The reserved period

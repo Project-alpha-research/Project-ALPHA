@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/controls.py
   - apps/alpha-cli/src/alpha_cli/spine/diagnose.py
-verified: d9d9586084095e97
+verified: 0122e8d3870a446d
 ---
 
 # Inverted-signal control

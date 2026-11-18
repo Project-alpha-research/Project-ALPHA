@@ -19,9 +19,18 @@ const test: RuleTest = {
     worst_drawdown: null, macro_window: null, variants_evaluated: null,
   },
 }
+const basePeriod = {
+  first_ts: '2020-02-01', last_ts: '2021-12-31', price_basis: 'with dividends',
+  strategy: test.diagnostics!.full_sample, benchmark: test.diagnostics!.benchmark,
+  relative_return: -0.0625,
+}
+const periods = {
+  tradable: basePeriod,
+  scored: { ...basePeriod, first_ts: '2020-03-01', strategy: { ...performance, trades: 4, total_return: 0.075 } },
+}
 const manifest = { n_trades: 4, verdict: { edge: 'B', robustness: 'B', risk: 'B', sample: 'B', overall: 'C', detail: {} } }
 const render = (run = test, figures: FigureCatalogueItem[] = []) =>
-  renderToStaticMarkup(<RuleTestReport test={run} manifest={manifest} runId="fixture" figures={figures} />)
+  renderToStaticMarkup(<RuleTestReport test={run} manifest={{ ...manifest, spine: { periods: run.diagnostics ? periods : undefined } }} runId="fixture" figures={figures} />)
 const tile = (html: string, label: string) => {
   const match = html.split('<div class="metric">').slice(1).map(part => part.split('</div>')[0])
     .find(part => part.includes('>' + label + '<'))
@@ -31,7 +40,7 @@ const tile = (html: string, label: string) => {
 
 describe('rule-test Summary', () => {
   it('opens with the owner’s idea, market, dates and both stored returns', () => {
-    expect(render()).toMatch(/<h2[^>]*>[^<]*Buy after a breakout[^<]*TEST[^<]*2020-01-01[^<]*2021-12-31[^<]*12\.5%[^<]*20\.0%[^<]*<\/h2>/)
+    expect(render()).toMatch(/<h2[^>]*>[^<]*Buy after a breakout[^<]*TEST[^<]*could trade from 2020-02-01[^<]*2021-12-31[^<]*12\.5%[^<]*20\.0%[^<]*<\/h2>/)
   })
 
   it('uses the plain rule when the idea is absent and explains the missing idea in the disclosure', () => {
@@ -53,17 +62,17 @@ describe('rule-test Summary', () => {
   it('adapts to missing facts without inventing a comparison or a chart', () => {
     const html = render({ ...test, idea: null, rule_sentence: null, symbol: null, diagnostics: null })
     const headline = html.match(/<h2[^>]*>(.*?)<\/h2>/)?.[1]
-    expect(headline).toContain('no return comparison')
-    expect(headline).not.toContain('not recorded')
+    expect(headline).toContain('Return comparison: not recorded')
+    expect(headline).toContain('could trade from not recorded')
     for (const label of ['Total return after costs', 'Return per year', 'Worst drop', 'Closed trades', 'Buy-and-hold return']) {
       expect(tile(html, label)).toContain('not recorded')
     }
-    expect(html).toContain('no chart stored for this run')
+    expect(html).toContain('Charts: not recorded')
   })
 
   it('keeps the flag and variants above the two closed disclosures', () => {
     const html = render()
-    const sections = ['no chart stored for this run', 'Worth a look', 'If things were slightly different',
+    const sections = ['Charts: not recorded', 'Worth a look', 'If things were slightly different',
       '<details><summary>What was tested</summary>', '<details><summary>Checks on the test itself</summary>']
     const positions = sections.map(text => html.indexOf(text))
     expect(positions.every(position => position >= 0)).toBe(true)
@@ -74,13 +83,19 @@ describe('rule-test Summary', () => {
   })
 
   it('uses the available comparison and drawdown figure cards', () => {
-    const figures = ['unrelated', 'equity_underwater', 'equity_vs_passive'].map(figure_id => ({
+    const figures = ['unrelated', 'tradable_equity_underwater', 'tradable_equity_vs_passive', 'equity_underwater', 'equity_vs_passive'].map(figure_id => ({
       figure_id, title: figure_id, summary: '', section: 'risk', panel_count: 2, available: true, unavailable_reason: null,
     }))
     const html = render(test, figures)
     expect(html).toContain('<h3>equity_vs_passive</h3>')
     expect(html).toContain('<h3>equity_underwater</h3>')
     expect(html).not.toContain('unrelated')
-    expect(html).not.toContain('no chart stored')
+    expect(html).not.toContain('Charts: not recorded')
+    const [tradable, scored] = html.split('<h3>Scored test periods only</h3>')
+    expect(tile(tradable, 'Total return after costs')).toContain('12.5%')
+    expect(tile(scored, 'Total return after costs')).toContain('7.5%')
+    expect(tradable).toContain('<h3>tradable_equity_vs_passive</h3>')
+    expect(scored).toContain('<h3>equity_vs_passive</h3>')
+    expect(scored).not.toContain('<h3>tradable_equity_underwater</h3>')
   })
 })

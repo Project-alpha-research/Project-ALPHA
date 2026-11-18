@@ -13,7 +13,7 @@ second opinion only: every failure mode (no binary, not logged in, model missing
 models cache, quota/rate limit, timeout, malformed output) yields ``available: false`` with an
 ``unavailable:<reason>`` and exit code 0 — a gate must never depend on this script.
 
-Model resolution: ``--model`` > ``ALPHA_CODEX_MODEL`` > ``gpt-6-astra``; the model must
+Model resolution: ``--model`` > ``ALPHA_CODEX_MODEL`` > ``gpt-6.2-astra``; the model must
 be present in ``$CODEX_HOME/models_cache.json``. Effort defaults to ``medium``. Stdlib only
 (runs from any agent's sandbox); output fields are coerced to the schema here and
 re-validated by the SubagentStop hook.
@@ -36,7 +36,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402  (sibling module: repo_root, codex_probe)
 
-DEFAULT_MODEL = "gpt-6-astra"
+DEFAULT_MODEL = "gpt-6.2-astra"
 MODEL_ENV = "ALPHA_CODEX_MODEL"
 DEFAULT_EFFORT = "medium"
 REVIEW_TIMEOUT = 900.0

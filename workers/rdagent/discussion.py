@@ -17,6 +17,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+hypotheses = importlib.import_module(
+    f"{__package__}.alpha_factor_hypothesis" if __package__ else "alpha_factor_hypothesis"
+)
+
 
 class AwaitingDiscussion(Exception):
     """Intentional clean stop before coding."""
@@ -144,15 +148,15 @@ def run_choices(run: Path) -> str:
         if not isinstance(reply, dict):
             continue
         number = int(path.parent.name[6:])
+        proposal = json.loads(path.with_name("proposal.json").read_bytes())
         for replacement in decision.get("replacements", []):
             if "user_idea" in replacement:
                 restored[replacement["name"]] = number
-        if note := reply.get("note_to_agent"):
+        if number + 1 != proposal.get("rounds_total") and (note := reply.get("note_to_agent")):
             if not choices and latest_note is None:
                 latest_note = note
             else:
                 choices.append({"round": number, "note_to_agent": note})
-        proposal = json.loads(path.with_name("proposal.json").read_bytes())
         for item in proposal["ideas"]:
             action = reply["ideas"][item["name"]]
             if action["action"] != "accept":
@@ -165,7 +169,7 @@ def run_choices(run: Path) -> str:
 
 FEEDBACK_INSTRUCTION = (
     "The user chose not to build the proposals listed below. A drop is not a failure. "
-    "Assess only the ideas that were built."
+    "Assess only the ideas that were built. Do not suggest a variant of a dropped proposal."
 )
 
 
@@ -272,6 +276,8 @@ def validate_decision(record: Any) -> None:
         for item in items:
             if key != "dropped" and not isinstance(item.get("name"), str):
                 raise ValueError("Expected an idea name in the decision.")
+            if not isinstance(item.get("uses_gate", False), bool):
+                raise ValueError("uses_gate must be a boolean.")
             given = {k: item[k] for k in ("honoured", "not_honoured", "agent_choices") if k in item}
             if revision_statements(given) != given:
                 raise ValueError(
@@ -304,6 +310,11 @@ def locked(folder: Path) -> Iterator[None]:
 
 def utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def rounds_total() -> int | None:
+    total = os.environ.get("ALPHA_DISCUSS_ROUNDS_TOTAL")
+    return int(total) if total is not None else None
 
 
 def budget_snapshot() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -385,26 +396,23 @@ def status(run: Path, state: str, number: int, since: datetime) -> None:
         if old.get("state") == state and old.get("round") == number:
             return
         row = dict(old)
-        row.setdefault(
-            "rounds_total",
-            int(os.environ["ALPHA_DISCUSS_ROUNDS_TOTAL"])
-            if "ALPHA_DISCUSS_ROUNDS_TOTAL" in os.environ
-            else None,
-        )
-        row.setdefault("build_seconds", [])
+        row.setdefault("rounds_total", rounds_total())
+        row.setdefault("reply_to_results_seconds", [])
         row.setdefault("reply_to_proposal_seconds", [])
         if state == "waiting" and "reply_received" in row:
             elapsed = since - datetime.fromisoformat(row.pop("reply_received"))
             row["reply_to_proposal_seconds"].append(elapsed.total_seconds())
-        if state == "applying":
-            row["reply_received"] = since.isoformat()
         if old.get("round") != number:
-            row.pop("build_started", None)
-        if state == "building":
-            row["build_started"] = since.isoformat()
-        if state == "reviewing" and old.get("state") == "evaluating" and "build_started" in row:
-            elapsed = since - datetime.fromisoformat(row.pop("build_started"))
-            row["build_seconds"].append(elapsed.total_seconds())
+            row.pop("results_reply_received", None)
+        if state == "applying":
+            row["reply_received"] = row["results_reply_received"] = since.isoformat()
+        if (
+            state == "reviewing"
+            and old.get("state") == "evaluating"
+            and "results_reply_received" in row
+        ):
+            elapsed = since - datetime.fromisoformat(row.pop("results_reply_received"))
+            row["reply_to_results_seconds"].append(elapsed.total_seconds())
         write_json(path, {**row, "state": state, "round": number, "since": since.isoformat()})
 
 
@@ -433,11 +441,13 @@ def wait_for_reply(
     timeout_record: dict[str, Any],
     clock: Callable[[], float],
     sleep: Callable[[float], None],
+    now: Callable[[], datetime],
 ) -> dict[str, Any] | None:
     folder.mkdir(parents=True, exist_ok=False)
     names = [item["name"] for item in proposal["ideas"]]
     deadline = clock() + proposal["wait_minutes"] * 60
     write_json(folder / "proposal.json", proposal)
+    status(folder.parents[1], "waiting", proposal["round"], now())
     path = folder / "reply.json"
     invalid = 0
     while True:
@@ -487,33 +497,35 @@ def revision_data(requests: list[dict[str, Any]], dropped: list[dict[str, Any]])
         ("requests", i, {k: item[k] for k in ("user_idea", "note") if k in item})
         for i, item in enumerate(requests)
     ] + [
-        ("dropped", i, {"reason": item["reason"]})
+        ("dropped", i, {k: item[k] for k in ("name", "reason") if k in item})
         for i, item in enumerate(dropped)
-        if "reason" in item
     ]
     blocks = []
+    end = "\nEnd of user data."
     data: dict[str, dict[int, dict[str, Any]]] = {"requests": {}, "dropped": {}}
     for group, i, value in entries:
         data[group][i] = value
-        if len(note_block(data)) + len("\nEnd of user data.") > 4000:
+        if len(note_block(data) + end) > 4000:
             del data[group][i]
-            blocks.append(note_block(data) + "\nEnd of user data.")
+            blocks.append(note_block(data) + end)
             data = {"requests": {}, "dropped": {}}
             data[group][i] = value
-    blocks.append(note_block(data) + "\nEnd of user data.")
+            if len(note_block(data) + end) > 4000:
+                raise UnusableRevision("a drop name and its reason exceed the prompt data cap")
+    blocks.append(note_block(data) + end)
     return "\n".join(blocks)
 
 
 def request_revision(
     loop: Any,
-    exp: Any,
+    hypothesis: Any,
     requests: list[dict[str, Any]],
     families: str,
     dropped: list[dict[str, Any]],
 ) -> list[Any]:
     """One chat submission covering all edits. Bind origin by request id, never output order."""
     converter = loop.hypothesis2experiment
-    context, _ = converter.prepare_context(exp.hypothesis, loop.trace)
+    context, _ = converter.prepare_context(hypothesis, loop.trace)
     prompt = (
         "Propose exactly one factor for each numbered request. Return a JSON object keyed by "
         "request id. Each value needs a distinct name, description with the required sign and "
@@ -526,7 +538,10 @@ def request_revision(
         "only be met with a closed idea type, say so in not_honoured and return the nearest open "
         "alternative. For a user idea, implement what the user wrote; do not add inputs or "
         "terms. Where a choice is open, use the simplest reading. List each such choice in "
-        "agent_choices (up to five strings of at most 200 characters). Do not return a dropped "
+        "agent_choices (up to five strings of at most 200 characters). Use plain words with no "
+        "variable names in honoured, not_honoured and agent_choices. Return uses_gate as a "
+        "boolean. Set it to true if the resulting idea still uses an on/off condition "
+        "in its text, honoured or agent_choices. Do not return a dropped "
         "idea. Use the scenario and current family rules. "
         + families
         + "\n"
@@ -546,7 +561,6 @@ def request_revision(
         if "proposal" in item
     }
     prompt += "Original proposals by request id: " + json.dumps(definitions)
-    prompt += "\nDropped proposal names by id: " + json.dumps([item["name"] for item in dropped])
     prompt += "\n" + revision_data(requests, dropped)
     request = urllib.request.Request(
         os.environ["LM_STUDIO_API_BASE"].rstrip("/") + "/chat/completions",
@@ -587,6 +601,7 @@ def request_revision(
             raise ValueError("expected exactly one factor per request")
         by_name = {}
         explanations = {}
+        gates = {}
         for i in range(len(requests)):
             name = items[str(i)]["name"]
             if not isinstance(name, str) or not name.strip() or name in by_name:
@@ -596,9 +611,13 @@ def request_revision(
             if not isinstance(metadata, dict):
                 raise ValueError("expected an object for proposal_metadata")
             fields = {**item, **metadata}
+            gate = fields.get("uses_gate", False)
+            if not isinstance(gate, bool):
+                raise ValueError("uses_gate must be a boolean")
+            gates[name] = gate
             # A missing or malformed list is left out and shown as "did not say", never guessed.
             explanations[name] = revision_statements(fields)
-            for key in ("honoured", "not_honoured", "agent_choices"):
+            for key in ("honoured", "not_honoured", "agent_choices", "uses_gate"):
                 item.pop(key, None)
                 metadata.pop(key, None)
             # The pinned converter accepts only strings and objects at the top level.
@@ -609,12 +628,13 @@ def request_revision(
             }
             item.pop("input_columns", None)
             by_name[name] = item
-        converted = converter.convert_response(json.dumps(by_name), exp.hypothesis, loop.trace)
+        converted = converter.convert_response(json.dumps(by_name), hypothesis, loop.trace)
         tasks = {task.factor_name: task for task in converted.sub_tasks}
         if tasks.keys() != by_name.keys() or len(converted.sub_tasks) != len(by_name):
             raise ValueError("converter returned different factors")
         for name, task in tasks.items():
             task.revision_explanation = explanations[name]
+            task.uses_gate = gates[name]
     except (ValueError, KeyError, TypeError) as error:
         raise UnusableRevision(f"{type(error).__name__}: {error}") from error
     return [tasks[name] for name in by_name]
@@ -652,6 +672,7 @@ def discuss(
     proposal = {
         "run_id": os.environ["ALPHA_GATEWAY_RUN_ID"],
         "round": number,
+        "rounds_total": rounds_total(),
         "written_at": written.isoformat(),
         "wait_minutes": minutes,
         "deadline": (written + timedelta(minutes=minutes)).isoformat(),
@@ -671,7 +692,6 @@ def discuss(
         "caution": CAUTION,
         "families": families,
     }
-    status(run, "waiting", number, written)
     proceed = proposal["on_timeout"] == "proceed"
     timeout_record = {
         "reply": "none (timed out)",
@@ -692,7 +712,12 @@ def discuss(
         else [],
     }
     reply = wait_for_reply(
-        folder, proposal, timeout_record=timeout_record, clock=time.monotonic, sleep=time.sleep
+        folder,
+        proposal,
+        timeout_record=timeout_record,
+        clock=time.monotonic,
+        sleep=time.sleep,
+        now=now,
     )
     if reply is None:
         record = timeout_record
@@ -786,9 +811,16 @@ def select_tasks(
         if budget["calls"] < 1:
             raise CallCapReached
         dropped = list(record["dropped"])
+        hypothesis = exp.hypothesis
+        if hypotheses.discussion_excluded_ideas({**record, "reply": reply}):
+            names_dropped = {item["name"] for item in dropped}
+            hypothesis = hypotheses.built_hypothesis(
+                hypothesis,
+                [task for task in exp.sub_tasks if task.factor_name not in names_dropped],
+            )
         with proposal_step(guard.round_index(), "discussion_revision", now):
             returned = request_revision(
-                guard.loop, exp, requests, guard.revision_guidance(exp), dropped
+                guard.loop, hypothesis, requests, guard.revision_guidance(exp), dropped
             )
     except CallCapReached:
         record["dropped"].extend(
@@ -846,6 +878,8 @@ def select_tasks(
                 {
                     "name": task.factor_name,
                     **explanation,
+                    "uses_gate": getattr(task, "uses_gate", False),
+                    "last_tries": guard.last_tries(proposed_families),
                     **(
                         {"user_idea": request["user_idea"]}
                         if origin == "user"

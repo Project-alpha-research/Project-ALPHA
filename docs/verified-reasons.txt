@@ -8,13 +8,10 @@ docs/CONTEXT.md
   verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/README.md
-  verified 8833dfe51b2147b6 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
-
-docs/reference/invariants/cli-research.md
-  verified c1c25f5643d20ebd on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
 
 docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -25,62 +22,65 @@ docs/reference/invariants/cli-trial-ledger.md
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
+docs/reference/invariants/rdagent.md
+  verified c813d3b1258247e2 on 2026-11-19: Re-read after merging main's split: discussion still records who selected ideas, feedback treats a drop as a choice, only tested ideas count
+
 docs/reference/invariants/workers.md
-  verified 681c75226d86a35d on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
+  verified ea10e01f6c40b705 on 2026-11-19: Re-read after merging main's split: the RD-Agent rules moved to rdagent.md; this branch's prompt and wording changes alter no worker boundary
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 docs/reference/project/components/afml-worker.md
-  verified 3854309f04792fb6 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified b47ff8d7f405ae8a on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 892ad9a460dae6c7 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified abcf679e247382b0 on 2026-11-19: After merging main: only Read first rows of the routing file changed to name sections; main's own change to this page is kept
 
 docs/reference/project/components/data-layer.md
-  verified d1c3a536e0695e17 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
   verified 96caf59a75017db3 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/components/forecasting.md
-  verified 5a7e922e1892468b on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/literature-worker.md
-  verified 839e4bfc8d94ac16 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/nautilus.md
-  verified edfd54dfceeaa1a5 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/qlib.md
-  verified 4cdcec99e2ff18b0 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified d0dd944e6f844b1d on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified bffc795bed285109 on 2026-11-19: Re-read after the worker CONTEXT line was shortened; the page text still holds
 
 docs/reference/project/components/strategies-and-signals.md
-  verified a1563514f24b543d on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
   verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 docs/reference/project/components/validation-and-evidence.md
-  verified d53932fd066760bf on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/web-workstation.md
-  verified df49ffa1ab1b1b18 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 1ac0a57e42fc186a on 2026-11-19: CONTEXT.md routing row for Setup Lab now points to the component page; nothing here changed
 
 docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 8833dfe51b2147b6 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -98,7 +98,7 @@ docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
 docs/reference/project/owner-decisions.md
-  verified 4b3d1bde3b365052 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
   verified fd13c86ac248fae3 on 2026-11-19: Re-read after merging main: the body is main's; this branch's toolbox inputs change loads benchmark dividends as of the run's last bar and leaves the reserved date and its labels as described

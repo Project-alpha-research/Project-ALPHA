@@ -14,6 +14,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.rdagent_discussion import NOTE_HELP
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.trial_query import ASSET_NOTE, asset_group
 from alpha_cli.spine.trial_reader import (
@@ -405,7 +406,7 @@ def discussion_reply(
         typer.Option(help="Ask for a change by name or list number, followed by =note."),
     ] = None,
     idea: Annotated[list[str] | None, typer.Option(help="Add your own idea (two at most).")] = None,
-    note: Annotated[str | None, typer.Option(help="A note the agent reads next round.")] = None,
+    note: Annotated[str | None, typer.Option(help=NOTE_HELP)] = None,
 ) -> None:
     """Answer RD-Agent's proposal. Ideas you do not name are built as proposed."""
     from alpha_cli.rdagent_discussion import submit

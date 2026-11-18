@@ -848,9 +848,12 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
 
     def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
         prepare = self.bounded_history or self.upstream_history
+        discussed = os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
+        if discussed:
+            trace = FamilyGuard.discussion_tools().hypotheses.discussion_history(trace)
         context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+        if discussed:
             context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().run_choices(
                 Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
             )
@@ -880,18 +883,22 @@ class AlphaFactorFeedback(Experiment2Feedback):
             "earlier text saying otherwise is out of date"
         )
         scenario += "\n" + family_permissions(closed_families(), include_counts=True)
+        discussed = os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
+        hypothesis = exp.hypothesis
+        if discussed:
+            tools = FamilyGuard.discussion_tools()
+            if tools.hypotheses.discussion_excluded_ideas(getattr(exp, "discussion", {})):
+                hypothesis = tools.hypotheses.built_hypothesis(hypothesis, exp.sub_tasks)
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
-            hypothesis_text=exp.hypothesis.hypothesis,
+            hypothesis_text=hypothesis.hypothesis,
             task_details=[
                 task.get_task_information_and_implementation_result() for task in exp.sub_tasks
             ],
             combined_result=exp.stdout,
         )
-        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
-            user += FamilyGuard.discussion_tools().feedback_block(
-                Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
-            )
+        if discussed:
+            user += tools.feedback_block(Path(os.environ["ALPHA_FACTOR_RUN_DIR"]))
         reply = APIBackend().build_messages_and_create_chat_completion(
             user_prompt=user,
             system_prompt=system,
@@ -948,14 +955,17 @@ def known_families() -> set[str]:
     return families
 
 
-def closed_families() -> set[str]:
-    """Families with enough evaluated failed tries and no candidate, from the trial ledger."""
+def recorded_family_groups() -> dict[str, list[dict[str, Any]]]:
     rows = AlphaFactorHypothesisGen.ledger_rows(os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-    families = AlphaFactorHypothesisGen.trial_families(
+    return AlphaFactorHypothesisGen.trial_families(
         AlphaFactorHypothesisGen.distinct_trials(rows or [])
     )
+
+
+def closed_families() -> set[str]:
+    """Families with enough evaluated failed tries and no candidate, from the trial ledger."""
     limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
-    return set(family_definitions().closed_groups(families, limit))
+    return set(family_definitions().closed_groups(recorded_family_groups(), limit))
 
 
 class FamilyGuard:
@@ -1002,9 +1012,10 @@ class FamilyGuard:
         ideas = []
         for task in exp.sub_tasks:
             family = family_definitions().task_family(task)
-            ideas.append(
-                discussion.idea(task, family, family_definitions().declaration(task.description))
-            )
+            item = discussion.idea(task, family, family_definitions().declaration(task.description))
+            if warnings := self.last_tries(set(family.split("; "))):
+                item["last_tries"] = warnings
+            ideas.append(item)
         discussion.discuss(
             self,
             exp,
@@ -1016,11 +1027,19 @@ class FamilyGuard:
             raise FactorEmptyError("Discussion ended with no ideas to build; no trial created.")
 
     @staticmethod
+    def last_tries(families: set[str]) -> list[dict[str, Any]]:
+        groups = recorded_family_groups()
+        limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+        return [
+            {"family": family, "failed": len(groups.get(family, [])), "limit": limit}
+            for family in sorted(families)
+            if len(groups.get(family, [])) == limit - 1
+            and all(row["status"] != "CANDIDATE" for row in groups.get(family, []))
+        ]
+
+    @staticmethod
     def plain_refusals(refused: list[str], closed: set[str], *, details: bool = False) -> list[str]:
-        rows = AlphaFactorHypothesisGen.ledger_rows(os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-        groups = AlphaFactorHypothesisGen.trial_families(
-            AlphaFactorHypothesisGen.distinct_trials(rows or [])
-        )
+        groups = recorded_family_groups()
         limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
         words = FamilyGuard.discussion_tools()
         reasons = []

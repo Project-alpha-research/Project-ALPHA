@@ -129,7 +129,7 @@ def _assert_confined(argv: list[str], *, web_search: str, root: Path) -> None:
 class TestProbeAndModel:
     def test_model_resolution_order(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(codex_bridge.MODEL_ENV, raising=False)
-        assert codex_bridge.DEFAULT_MODEL == "gpt-6-astra"
+        assert codex_bridge.DEFAULT_MODEL == "gpt-6.2-astra"
         assert codex_bridge.DEFAULT_EFFORT == "medium"
         assert codex_bridge.resolve_model(None) == codex_bridge.DEFAULT_MODEL
         monkeypatch.setenv(codex_bridge.MODEL_ENV, "gpt-5.4")

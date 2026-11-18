@@ -40,7 +40,7 @@ You do not refresh anything by hand.
 
 ## 3. Model resolution
 
-`--model` > `$ALPHA_CODEX_MODEL` > `gpt-6-astra` (`resolve_model`,
+`--model` > `$ALPHA_CODEX_MODEL` > `gpt-6.2-astra` (`resolve_model`,
 `scripts/codex_bridge.py:84`). Whatever wins **must appear in `models_cache.json`**, otherwise
 the bridge reports `unavailable: model '<name>' not in models cache (...)` and lists what is
 available. Reasoning effort defaults to `medium` (owner decision 2026-09-28). The cache is shared with the Codex desktop apps,
@@ -86,7 +86,7 @@ uv run python scripts/gate.py doctor
 ```
 
 Expected: `login status` says logged in using ChatGPT; `probe` prints
-`{"available": true, "model": "gpt-6-astra", ...}`; `doctor` shows an `ok` row for
+`{"available": true, "model": "gpt-6.2-astra", ...}`; `doctor` shows an `ok` row for
 `codex second model`. For an end-to-end check that actually calls the model, run
 `python3 scripts/codex_bridge.py review --uncommitted` on a branch with real changes and confirm
 you get `"available": true` with a `findings` list.

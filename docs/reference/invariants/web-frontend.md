@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: c896c1c1a488fe62
+verified: 4c6cb65abe123e36
 ---
 
 # Web frontend invariants
@@ -150,7 +150,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   `e2e/rdagent-story.spec.ts` checks navigation, disclosure and URL preservation using synthetic data.
 
 - Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures
-  have value tables; rejected matches stay grey with their reason; a timeline plots stored matches; long decimals are rounded for reading
+  have value tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round
   only; no curve or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
 
 ## Generated API client

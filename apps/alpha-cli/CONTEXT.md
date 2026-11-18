@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 62308eea13029a1f
+verified: 4ee5d72bc09de193
 ---
 
 # alpha-cli workspace
@@ -73,7 +73,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- Setup study/trade share per-asset costs and counted ledger families.
+- Setup trades report long or short returns in percent and initial-stop risk units. Setup studies and trades share costs and counted ledger families.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

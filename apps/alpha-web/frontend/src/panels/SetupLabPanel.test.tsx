@@ -67,6 +67,16 @@ describe('Setup Lab stored results', () => {
     expect(html).not.toContain('-0.0204081632653')
   })
 
+  it('shows percentages and R for recorded trades and keeps legacy fields unknown', () => {
+    const trade = detail.trades[0]
+    const html = render({ ...detail, trades: [{ ...trade, rows: [
+      { direction: 'short', risk_fraction: 0.05, r_multiple: -1.012, net_return: -0.0506 },
+      { net_return: 0.01 },
+    ] }] })
+    for (const text of ['Initial risk', 'R multiple', '<td>short</td>', '>5.00%</span>',
+      '>-5.06%</span>', '<td>-1.01 R</td>', '<td>not recorded</td>']) expect(html).toContain(text)
+  })
+
   it('keeps repeat labels with their recorded trial index', () => {
     const html = render({ ...detail, trial_labels: { '4': ['repeat'] }, label_explanations: { repeat: 'A repeat, not independent evidence.' } })
     expect(html).toContain('Recorded trial 4')

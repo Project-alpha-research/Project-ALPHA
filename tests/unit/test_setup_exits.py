@@ -121,3 +121,53 @@ def test_target_gap_adverse_move_ends_at_open() -> None:
     )
     assert row["reason"] == "target"
     assert row["worst_adverse_move"] == pytest.approx(-0.01)
+
+
+@pytest.mark.parametrize(
+    "tail,reason,fill,both,days",
+    [
+        ([(100, 106, 98, 103)], "stop", 105, 0, 1),
+        ([(100, 102, 94, 96)], "target", 95, 0, 1),
+        ([(100, 102, 97, 98)], "time", 98, 0, 1),
+        ([(100, 106, 94, 99)], "stop", 105, 1, 1),
+        ([(100, 102, 99, 100), (110, 112, 94, 100)], "stop-gap", 110, 1, 3),
+        ([(100, 102, 99, 100), (90, 93, 88, 92)], "target", 95, 0, 3),
+    ],
+)
+def test_short_fills_and_reflection(
+    tail: list[tuple[float, float, float, float]], reason: str, fill: float, both: int, days: int
+) -> None:
+    values = [(100, 101, 99, 100), *tail]
+    series = bars(values)
+    if len(tail) == 2:
+        series[-1].ts += timedelta(days=2)  # Three calendar days between the opens.
+    exits = dict(stop="5 %", target="5 %", time_bars=len(tail))
+    short = simulate(
+        prepare_exits(spec(direction="short", **exits), series, carry_per_day=0.0003), 1, 0.003
+    )
+    long = run([(200 - o, 200 - low, 200 - h, 200 - c) for o, h, low, c in values], **exits)
+    gross = (100 - fill) / 100
+    net = gross - 2 * (10 + 5) / 10000 - days * 3 / 10000
+    assert short["reason"] == long["reason"] == reason
+    assert short["exit_price"] == fill and short["both_touched"] == both
+    assert short["gross_return"] == pytest.approx(gross)
+    assert short["gross_return"] == pytest.approx(long["gross_return"])
+    assert short["worst_adverse_move"] == pytest.approx(long["worst_adverse_move"])
+    assert short["net_return"] == pytest.approx(net)
+    assert short["risk_fraction"] == (105 - 100) / 100
+    assert short["r_multiple"] == pytest.approx(net / 0.05)
+
+
+def test_short_atr_and_opposite_next_open() -> None:
+    values = [(100, 102, 98, 100)] * 4 + [(100, 101, 98, 99), (97, 150, 96, 98)]
+    exits = spec(direction="short", stop="2 atr(2)", target="2 atr(2)", opposite="close < 100")
+    row = simulate(prepare_exits(exits, bars(values)), 4, 0.003)
+    assert (row["stop"], row["target"], row["reason"], row["exit_price"]) == (
+        108,
+        92,
+        "opposite",
+        97,
+    )
+    assert row["worst_adverse_move"] == pytest.approx(-0.01)
+    no_stop = run(values, direction="short", time_bars=1)
+    assert no_stop["risk_fraction"] is None and no_stop["r_multiple"] is None

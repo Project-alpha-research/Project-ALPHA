@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 from alpha_cli._rdagent_judge import STATUSES
 from alpha_cli._rdagent_stability import recorded_status, status_reason
@@ -49,11 +49,14 @@ def clock_of(row: dict[str, Any]) -> str | None:
 
 
 def trial_of(row: dict[str, Any]) -> dict[str, Any]:
-    return row.get("clocks", {}).get(clock_of(row), {})
+    return cast(dict[str, Any], row.get("clocks", {}).get(clock_of(row), {}))
 
 
 def direction_of(row: dict[str, Any]) -> int | None:
-    return row.get("declared_direction") or trial_of(row).get("screen", {}).get("direction")
+    return cast(
+        int | None,
+        row.get("declared_direction") or trial_of(row).get("screen", {}).get("direction"),
+    )
 
 
 def outcome(row: dict[str, Any]) -> str:

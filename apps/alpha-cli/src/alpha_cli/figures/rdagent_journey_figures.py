@@ -262,11 +262,10 @@ def _lock(ax: Any, first: date, theme: Theme) -> None:
     ax.set_xlim(first - timedelta(days=1), end)
 
 
-def _years(ax: Any) -> None:
-    from matplotlib.dates import DateFormatter, YearLocator
-
-    ax.xaxis.set_major_locator(YearLocator())
-    ax.xaxis.set_major_formatter(DateFormatter("%Y"))
+def _years(ax: Any, first: date) -> None:
+    ticks = [date(y, 1, 1) for y in range(first.year, RESERVED_DAY.year + 1)]
+    ticks = [t for t in ticks if t >= first]
+    ax.set_xticks(ticks, [str(t.year) for t in ticks])
 
 
 def _heading(fig: Any, title: str, sub: str, theme: Theme) -> None:
@@ -332,7 +331,7 @@ def _signal(fig: Any, data: Data, theme: Theme) -> None:
             )
     for a in (upper, lower):
         _lock(a, dates[0], theme)
-    _years(lower)
+    _years(lower, dates[0])
 
 
 def _pct_points(value: float) -> str:
@@ -470,7 +469,7 @@ def _over_time(fig: Any, data: Data, theme: Theme) -> None:
     for a in (upper, lower):
         _lock(a, dates[0], theme)
     lower.margins(y=0.3)
-    _years(lower)
+    _years(lower, dates[0])
 
 
 def _trading(fig: Any, data: Data, theme: Theme) -> None:
@@ -554,7 +553,7 @@ def _trading(fig: Any, data: Data, theme: Theme) -> None:
         )
     for a in (upper, lower):
         _lock(a, dates[0], theme)
-    _years(lower)
+    _years(lower, dates[0])
 
 
 def _looks(fig: Any, data: Data, theme: Theme) -> None:
@@ -608,6 +607,7 @@ def draw(name: str, data: Data, dark: bool) -> bytes:
     from matplotlib import rc_context
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
+    from matplotlib.layout_engine import ConstrainedLayoutEngine
 
     theme = _theme(dark)
     painters = {
@@ -618,8 +618,8 @@ def draw(name: str, data: Data, dark: bool) -> bytes:
         "how-many-ideas": _looks,
     }
     with rc_context(_style(theme)):
-        fig = Figure(figsize=(8, 6.4), layout="constrained")
-        fig.get_layout_engine().set(rect=(0, 0, 1, 0.84))
+        fig = Figure(figsize=(8, 6.4))
+        fig.set_layout_engine(ConstrainedLayoutEngine(rect=(0, 0, 1, 0.84)))
         FigureCanvasAgg(fig)
         painters[name](fig, data, theme)
         for a in fig.axes:

@@ -7,7 +7,7 @@ sources:
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 1f73b2fc3159811f
+verified: f70b490227789b91
 ---
 
 # Model routing: who builds, who reviews, what happens at a limit

@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from alpha_cli.spine.facts import METRICS, TOOL_METRICS, build_facts
+from alpha_cli.spine.facts import METRICS, build_facts
+from alpha_cli.toolbox.registry import METRIC_OUTPUTS
 
 
 def test_facts_are_stored_values_and_missing_file_is_null(tmp_path: Path) -> None:
@@ -17,8 +18,8 @@ def test_facts_are_stored_values_and_missing_file_is_null(tmp_path: Path) -> Non
     )
     facts = {item["metric"]: item for item in build_facts(tmp_path)}
     # Run facts are every documented metric except those the investigation tools store.
-    assert set(facts) == set(METRICS) - set(TOOL_METRICS)
-    assert set(TOOL_METRICS) < set(METRICS)
+    assert set(facts) == set(METRICS) - set(METRIC_OUTPUTS)
+    assert set(METRIC_OUTPUTS) < set(METRICS)
     assert facts["oos_sharpe"]["value"] == pytest.approx(1.23456789)
     assert facts["oos_sharpe"]["source"] == "manifest.json:oos_metrics.sharpe"
     assert facts["oos_sharpe"]["reason"] is None

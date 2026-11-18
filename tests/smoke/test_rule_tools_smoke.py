@@ -45,17 +45,19 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     run_dir = data / "runs" / run_id
     before = _files(run_dir)
 
-    own = alpha(home, "tool", "attribution", run_id, "--json").json()
-    assert own["tool"] == "attribution"
+    own = alpha(home, "tool", "run", "market.attribution", run_id, "--json").json()
+    assert own["tool"] == "market.attribution"
     assert {"quick", "dev-machine-data", "benchmark-is-same-asset"} <= set(own["labels"])
     assert 0.0 < own["result"]["beta"] < 1.0  # long or flat in the same asset
     assert own["result"]["join"]["run_bars_dropped"] == 0
-    other = alpha(home, "tool", "attribution", run_id, "--benchmark", "QQQ", "--json").json()
+    other = alpha(
+        home, "tool", "run", "market.attribution", run_id, "--param", "benchmark=QQQ", "--json"
+    ).json()
     assert "benchmark-is-same-asset" not in other["labels"]
     assert other["result"]["benchmark"] == "QQQ@home"
     assert other["file"] != own["file"]
 
-    regimes = alpha(home, "tool", "regimes", run_id, "--json").json()
+    regimes = alpha(home, "tool", "run", "market.vol_regimes", run_id, "--json").json()
     assert "parameters-fit-in-sample" in regimes["labels"]
     assert regimes["result"]["hindsight"]["labels"] == ["hindsight"]
     assert "series" not in regimes["result"]
@@ -63,20 +65,20 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     assert regimes["result"]["split"]["unlabelled_bars"] == 1
     assert [row["name"] for row in regimes["result"]["split"]["regimes"]] == ["calm", "turbulent"]
 
-    points = alpha(home, "tool", "changepoints", run_id, "--json").json()
+    points = alpha(home, "tool", "run", "market.changepoints", run_id, "--json").json()
     assert points["labels"][-1] == "hindsight"
-    assert points["facts"][0]["metric"] == "changepoint_count"
+    assert points["facts"][0]["metric"] == "market.changepoints.count"
     assert points["facts"][0]["value"] == len(points["result"]["breaks"])
-    text = alpha(home, "tool", "changepoints", run_id, "--on", "equity").stdout
-    assert "changepoint_count" in text
+    text = alpha(home, "tool", "run", "market.changepoints", run_id, "--param", "on=equity").stdout
+    assert "market.changepoints.count" in text
     assert "Saved: diagnostics/" in text
 
     assert _files(run_dir) == before  # the immutable run directory is untouched
     shown = alpha(home, "results", "show", run_id, "--json").json()["runs"][0]
     tools = [item["tool"] for item in shown["tools"]]
-    assert tools.count("attribution") == 2
-    assert tools.count("changepoints") == 2
-    assert tools.count("regimes") == 1
+    assert tools.count("market.attribution") == 2
+    assert tools.count("market.changepoints") == 2
+    assert tools.count("market.vol_regimes") == 1
     assert all((data / item["file"]).is_file() for item in shown["tools"])
 
     ambiguous = alpha(home, "results", "cite", run_id, "market_beta", "--json", expect=1).json()
@@ -93,13 +95,22 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     listing = alpha(home, "results", "--json").json()
     kinds = [item["kind"] for item in listing["items"]]
     assert kinds[-1] == "rule_test"
-    assert kinds.count("tool:attribution") == 2
-    assert listing["total_trials"] == len(kinds) == own["trials_total"] + len(kinds) - 2
+    assert kinds.count("tool:market.attribution") == 4
+    assert own["trials_total"] == 3
+    assert listing["total_trials"] == len(kinds) == 11
 
-    missing = alpha(home, "tool", "attribution", "0" * 16, "--json", expect=1).json()
+    missing = alpha(home, "tool", "run", "market.attribution", "0" * 16, "--json", expect=1).json()
     assert missing["error"]["code"] == "UNKNOWN_RUN"
     unknown = alpha(
-        home, "tool", "attribution", run_id, "--benchmark", "NOPE", "--json", expect=1
+        home,
+        "tool",
+        "run",
+        "market.attribution",
+        run_id,
+        "--param",
+        "benchmark=NOPE",
+        "--json",
+        expect=1,
     ).json()
     assert unknown["error"]["code"] == "UNKNOWN_ASSET"
     assert unknown["error"]["known"] == ["home"]

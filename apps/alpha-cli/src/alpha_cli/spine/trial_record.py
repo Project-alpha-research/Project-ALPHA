@@ -104,7 +104,12 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("missing rule name")
         family = f"spine:{row['rule']}"
     elif kind == "tool":
-        family = f"spine-tool:{subkind}"
+        from alpha_cli.toolbox.registry import ALIASES
+
+        subkind = ALIASES.get(str(subkind), subkind)
+        legacy = next((name for name, tool in ALIASES.items() if tool == subkind), subkind)
+        family = f"spine-tool:{legacy}"
+        outcome = row.get("outcome", "recorded")
     elif kind == "setup_find":
         family = f"spine-setup:{row['name']}"
     elif kind in {"setup_study", "setup_trade"}:

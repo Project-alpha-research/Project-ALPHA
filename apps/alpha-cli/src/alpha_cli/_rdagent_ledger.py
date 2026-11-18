@@ -26,7 +26,6 @@ from alpha_cli._rdagent_judge import (
     LABEL,
     LEDGER_SCHEMAS,
     LOOP_UNIVERSE,
-    RESERVED_START,
     STATUSES,
     SURVIVORSHIP,
     TRIAL_SCHEMA,
@@ -36,6 +35,7 @@ from alpha_cli._rdagent_judge import (
     sha,
 )
 from alpha_cli._rdagent_stability import plain_name
+from alpha_cli.toolbox.reserve import RESERVED_START
 from alpha_core import DataError
 
 

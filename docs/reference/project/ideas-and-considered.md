@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 337183b85cb408c3
+verified: 83e6af903a0351b6
 ---
 
 # Ideas and things considered

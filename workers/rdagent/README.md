@@ -23,6 +23,12 @@ RD-Agent's own factor loop (`rdagent.app.qlib_rd_loop.factor`, unmodified) runs 
 - RD-Agent never sees data on or after 2024-01-01 ([reserved period](../../docs/reference/project/reserved-period.md)).
 - A run is at most 3 loops and 60 model calls. The full rule text, with every dated change, is in
   [CHANGE-NOTES.md](CHANGE-NOTES.md#alpha-judged-factor-loop-2026-11-14).
+- The data is a frozen universe file; missing days and delisted names are allowed with explicit disclosure, the data
+  is not survivorship-free, and renamed or split tickers need an owner-supplied break list.
+- Human-authored rule families (written by a person, frozen and hash-checked before the run) are backtested on
+  [Nautilus](../../docs/reference/project/components/nautilus.md) without any 2024 data and go into the same trial
+  ledger, so they count toward how many ideas were tried, but never mix into RD-Agent's factor statistics or the
+  summary it proposes from (`alpha_cli.rdagent_rule_family`).
 
 ## How to launch
 
@@ -231,3 +237,86 @@ With the pause off, only the additive summary fields enter the round and trial r
   [RD-Agent component](../../docs/reference/project/components/rd-agent.md).
 - Older material (the pinned fixture, rule and stock probes, the model gateway, research memory, failure reasons, identity breaks and every
   fix-up): [CHANGE-NOTES.md](CHANGE-NOTES.md).
+
+## Moved from the project page
+
+The RD-Agent project page keeps one dated line for each of these. The reasons are in the owner decisions volumes.
+
+- KEEP, owner, 2026-11-14
+  ([log](../../docs/reference/project/owner-decisions.md#2026-11-14-rd-agent-is-a-key-component)).
+- What is next, in order, with what each needs from the owner: [the seven
+  blockers](../../docs/roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas).
+- Decided: the Codex route comes first; an API key is the fallback, capped at about 50 US dollars a month
+  ([log](../../docs/reference/project/owner-decisions.md#2026-11-14-api-spending-limit-for-rd-agents-models)). Built
+  as the model gateway ([ADR-0044](../../docs/adr/0044-rdagent-model-gateway.md)); measured quality and how far a real
+  step got are in the [task's verification][gateway-verify].
+- Decided, for now: accept losing RD-Agent's "temperature" setting on the Codex route; launch the gateway with
+  `--accept-unhonoured temperature`
+  ([log](../../docs/reference/project/owner-decisions-2.md#2026-11-14-accept-losing-temperature-on-the-codex-route-for-now)).
+- Decided 2026-11-14: RD-Agent may use DeepSeek through OpenRouter (temperature honoured), caps unchanged. Built:
+  `--chat-route api --api-openrouter` on the gateway and the factor-loop launcher, model
+  `deepseek/deepseek-v4.1-flash-1017` at USD 0.038 / 0.50 per million input / output tokens (OpenRouter's list, read
+  2026-11-14). Codex stays the default and the fallback; how to choose: [worker README](README.md#how-to-launch).
+  First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine factors tried, no candidate; one run per route
+  is not a quality comparison (numbers in the worker change notes).
+- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors, no candidate; 15 of 18 replayed swing screen passes
+  lost money before costs (15 coins). Runs sharing a gateway can start together; feedback explains losses. Owner
+  charts: `owner/rdagent-status/` beside the checkout, outside git.
+- Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials; two fresh runs
+  (about USD 0.22) judged 11 factors, moved to new idea families, found no candidate. Embeddings were 21 of 60 and 16
+  of 47 counted calls in those runs. Decided by the owner 2026-11-17: free local embeddings are exempt, with their own
+  2,000-attempt guard; the other caps keep their values. Historical counts stay as recorded. The stores then held 15
+  coins and 9 single stocks. Long memory embeddings are chunked, never truncated.
+- Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
+  ([log](../../docs/reference/project/owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
+  2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned nothing on 15 coins,
+  so the loop is not yet meaningful ([verification][loop-verify]).
+- Open, for the owner: how RD-Agent's ideas get a backtest that can see them (a wider universe, ALPHA's own Nautilus
+  and statistical checks, or a calibration run on Qlib's public data) ([roadmap item
+  2b](../../docs/roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas)).
+- Decided: long studies use the Dell's disk for now
+  ([log](../../docs/reference/project/owner-decisions.md#2026-11-14-use-the-dells-disk-for-studies-for-now)).
+- Decided: the autonomous research team is a broader ALPHA capability built around and using RD-Agent, started small;
+  it reuses RD-Agent's native abilities and never bypasses ALPHA's controls
+  ([log](../../docs/reference/project/owner-decisions.md#2026-11-14-the-autonomous-research-team)).
+- Plan, 2026-11-18: RD-Agent becomes a collaborator, not a black box
+  ([plan](../../docs/reference/project/owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
+  [owner](../../docs/reference/project/owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)).
+  Built: the optional [proposal pause](README.md#propose-and-discuss) on the command line. The trader answers by
+  number or name before coding. Each proposer receives the trader's choices for the run. Feedback gets the full
+  round hypothesis and the names the trader dropped. Re-asks disclose their cost. The decision explains changes, choices the
+  agent made for the trader, and the recorded result for each built idea. Not built: the pause on the Workstation
+  screen, overriding an automatic refusal, honesty checks as labels.
+- Decided 2026-11-18: the run view uses the approved journey layout
+  ([log](../../docs/reference/project/owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while
+  ideas are throwaway tests a labelled stand-in user may answer its pauses, never for approvals
+  ([log](../../docs/reference/project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests);
+  [owner authority](../../docs/reference/invariants/research-integrity.md#owner-authority)).
+- Shown trading replays get the fixed [toolbox checks](../../docs/reference/project/components/toolbox.md) after the
+  verdict, under five honesty rules. Feedback and journey step 7 carry the readings. Agent choice remains a
+  recommendation. Kronos, [Monte Carlo](../../docs/reference/project/components/monte-carlo.md), lookalike and pattern
+  tools await wiring.
+- Open: no decision record states RD-Agent's role; write one once the owner confirms the summary in the
+  [overview](../../docs/reference/project/overview.md#the-research-loop).
+
+Links the project page used to carry:
+
+- Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.
+- Backlog: [autonomous research and restart](../../docs/roadmap/backlog/rdagent-autonomous-research.md), [factor loop
+  under the job supervisor](../../docs/roadmap/backlog/rdagent-factor-loop-supervision.md), [candidate to research
+  case](../../docs/roadmap/backlog/rdagent-candidate-to-research-case.md), [gate
+  coverage](../../docs/roadmap/backlog/gate-coverage-rdagent.md).
+- Decision records: [ADR-0044](../../docs/adr/0044-rdagent-model-gateway.md) (how it reaches its models),
+  [ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md) (ALPHA judges its factors),
+  [ADR-0050](../../docs/adr/0050-swing-clocks-in-the-factor-judge.md) (at swing holding periods),
+  [ADR-0055](../../docs/adr/0055-spread-check-family-brief-and-universe-file.md) (spread check, families). Related:
+  [ADR-0011](../../docs/adr/0011-evidence-gated-external-integrations.md),
+  [ADR-0035](../../docs/adr/0035-generic-study-composition-and-external-capability-adapters.md).
+- Glued under [ADR-0051](../../docs/adr/0051-glue-rules-for-outside-projects.md) (the glue rules).
+- **Plan:** [stage 9](../../docs/roadmap/production-scope-2.md#9-rd-agent-and-qlib-engines) of the checklist and
+  [RD-Agent in ALPHA](../../docs/roadmap/rd-agent-in-alpha.md).
+
+[gateway-verify]:
+  https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-rdagent-model-gateway/04-verify.md
+[loop-verify]:
+  https://github.com/tradingsystem1880-eng/Project-ALPHA/blob/pre-thin-2026-11-14/docs/work/archive/2026-11/2026-11-14-rdagent-first-real-loop/04-verify.md

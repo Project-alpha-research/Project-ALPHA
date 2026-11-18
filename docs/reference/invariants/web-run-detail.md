@@ -40,3 +40,32 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures have value
   tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round only; no curve
   or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
+
+## Workstation recorded fields
+
+View → RD-Agent and the command palette open the read-only panel in either market profile. Runs are direct child
+folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the ledger is
+`rdagent-trial-ledger/rdagent-factor-trials.jsonl` inside it. It cannot launch, approve, call models or read keys.
+
+| Response fields | Recorded source (relative to the run folder unless noted) |
+|---|---|
+| Identity, start/end, outcome | `receipt.json`: `run_id`, `started_at`, `ended_at`, `exit_status`, `loop_reason`; folder name |
+| Rounds, calls, embedding calls | Receipt: `memory.rounds_completed`, `counted_calls`, `local_embedding_calls`, `provider_embedding_calls` |
+| Spend, caps, month snapshots | Receipt: `gateway_status.this_run.usd`, `.caps`, `.months`; month selected by receipt end time |
+| Cache and providers | Receipt: `call_split.chat_usage`; no new rate calculation |
+| Funnel and list stage totals | Receipt `funnel` if present; else ledger factors plus `rounds.jsonl` refusals and provider losses |
+| Factor name, description, status | Shared ledger: `run_id` or folder name, schemas V1–V3; fixed web-owned status sentences |
+| Clock figures, deflation, write-offs | Ledger: `clocks.*.screen`, `.spread`, `.replay`, `.replay.deflated_sharpe`, `.replay.deflated_sharpe_family` |
+| Universe, gaps, ticker corrections | `panel/panel-receipt.json`: instruments, disclosure, gap counts, `identity_breaks`, `identity_rescales` |
+| Refusals and timing | `rounds.jsonl`: refusal status and families; `steps.jsonl`: step start and end times; minutes = end minus start, labelled |
+| ALPHA notes | Receipt cap/cache/memory notes, panel disclosure, `evaluations.jsonl` → `feedback_text` |
+
+New rows show declared choices, cutoff/counts, diagnostic p/q, deflation, twins and expected chance passes. The funnel
+adds "shortlisted (passed all but the many-tries correction)" before the deflation stage. Shortlisted is not a pass,
+not a candidate, and not evidence of profit; missing flags mean "not recorded". Lineage R², regressor count and
+convention are recorded diagnostics; suspects say "looks like a blend of earlier tries". The [shortlist
+policy](../../../workers/rdagent/README.md#shortlist-bookkeeping) leaves every gate and count unchanged. Old
+failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks
+counted)". Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two
+timestamps. New factor rows store family and critic status. Older rows can lack both. The panel was opened headless on
+real runs; owner acceptance remains pending.

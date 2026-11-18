@@ -11,7 +11,7 @@ docs/CONTEXT.md
   verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/README.md
-  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+  verified 817bbad6d1f431f3 on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
@@ -26,10 +26,10 @@ docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/rdagent.md
-  verified 1735d84d5a27e12e on 2026-11-19: Re-read: the discussion line now says reflections pass on in full; boundaries, caps and counting unchanged
+  verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
 
 docs/reference/invariants/workers.md
-  verified 7fe2d94f676502aa on 2026-11-19: Re-read: restoring the full reflection in discussion prompts changes no worker boundary
+  verified 93a1a6a1a66f426c on 2026-11-19: Re-read after merging main: restoring the full reflection in discussion prompts changes no worker boundary
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -65,7 +65,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified cb57a781243df6d6 on 2026-11-19: Re-read: feedback sentence now says the full round hypothesis is passed; volume 5 only gained a pointer to volume 6
+  verified e90f700e6a3bf954 on 2026-11-19: Re-read after merging main: page text holds; the discussion detail moved to the worker README, which now says the reflection passes on in full
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -80,34 +80,31 @@ docs/reference/project/components/web-workstation.md
   verified 1ac0a57e42fc186a on 2026-11-19: CONTEXT.md routing row for Setup Lab now points to the component page; nothing here changed
 
 docs/reference/project/decisions-by-topic.md
-  verified b276e6f193f1da10 on 2026-11-19: Re-read: volume 6 added with its one row; volume 5 now points to volume 6
+  verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+  verified 817bbad6d1f431f3 on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 docs/reference/project/ideas-and-considered.md
-  verified 3fc5669dbcb75d70 on 2026-11-19: Re-read: volume 5 and the log rules only gained a pointer to volume 6; no idea entry changed
+  verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
 
 docs/reference/project/owner-decisions-2.md
-  verified c6e2e7d1be986ea5 on 2026-11-19: Re-read: volume 1 only names volume 6 as the newest; this volume is unchanged
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
 
 docs/reference/project/owner-decisions-3.md
-  verified c6e2e7d1be986ea5 on 2026-11-19: Re-read: volume 1 only names volume 6 as the newest; this volume is unchanged
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
 
 docs/reference/project/owner-decisions-4.md
-  verified c6e2e7d1be986ea5 on 2026-11-19: Re-read: volume 1 names volume 6 as newest and the judge restores full reflection text; entries unchanged
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5, as this volume's own header says
 
 docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
-docs/reference/project/owner-decisions-6.md
-  verified d3dd64079e042b98 on 2026-11-19: New volume 6 with the 2026-11-19 entry on keeping RD-Agent's full research context
-
 docs/reference/project/owner-decisions.md
-  verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
+  verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
 
 docs/reference/project/reserved-period.md
-  verified 02e0e6657075c931 on 2026-11-19: Re-read: the change restores reflection text in discussion prompts only; the reserved window is untouched
+  verified fd13c86ac248fae3 on 2026-11-19: Re-read after merging main: the body is main's; this branch's toolbox inputs change loads benchmark dividends as of the run's last bar and leaves the reserved date and its labels as described
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -164,10 +161,13 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified ce819bbea4d040e4 on 2026-11-19: Re-read: routing still holds; the discussion prompts only regain the full reflection
+  verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
   verified fa176b3faf012111 on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+
+workflow/README.md
+  verified 22c2b09f2fa090ee on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

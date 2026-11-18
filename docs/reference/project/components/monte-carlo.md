@@ -3,8 +3,9 @@ owner: project layer
 sources:
   - packages/alpha-validation/src/alpha_validation/path_montecarlo.py
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
+  - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: bc7ce6c6f07fede3
+verified: b2ae2ac146533051
 ---
 
 # Monte Carlo
@@ -51,6 +52,8 @@ against an independent recomputation on 2026-11-14. `alpha monte-carlo kronos` h
 model; the real Kronos model files are not on the development machine. The Workstation groups the path figures under
 `monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on [STATUS.md](../../../../STATUS.md) and the
 [path-risk card](../../../../research/tools/path-risk.md).
+The toolbox registers `resampling.drawdown_distribution` for the IID empirical family on stored rule-test returns.
+The [resampling card](../../../../research/tools/resampling-checks.md) explains how to compare its drawdowns with the classical command.
 
 ## Where it lives
 
@@ -71,7 +74,7 @@ model; the real Kronos model files are not on the development machine. The Works
   ([log](../owner-decisions.md#2026-11-14-what-kronos-is-for)).
 - Decided 2026-11-18: the four methods are RD-Agent's tools, never slimming targets
   ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
-- Open: moving the four into the toolbox; a real-model Kronos run on the Mac.
+- Open: moving the remaining families into the toolbox; a real-model Kronos run on the Mac.
 
 ## Never
 

@@ -4,8 +4,16 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.families.costs import BREAK_EVEN
 from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REGIMES
+from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
+from alpha_cli.toolbox.families.resampling import (
+    BLOCK_PATHS,
+    DRAWDOWN_DISTRIBUTION,
+    RETURN_INTERVAL,
+    SHARPE_INTERVAL,
+)
 from alpha_cli.toolbox.families.robustness import START_END_DATES
+from alpha_cli.toolbox.families.trades import DEPENDENCE
 
 SPECS = (
     ATTRIBUTION,
@@ -16,6 +24,12 @@ SPECS = (
     SIDE_CONTRIBUTION,
     CONCENTRATION,
     BREAK_EVEN,
+    SHARPE_INTERVAL,
+    RETURN_INTERVAL,
+    DRAWDOWN_DISTRIBUTION,
+    DEPENDENCE,
+    DEFLATED_SHARPE,
+    BLOCK_PATHS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

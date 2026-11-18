@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-271 commands in 36 groups. Options marked (required) are
+273 commands in 36 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -174,7 +174,9 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger journey` — Write seven-step journeys, annotated pictures and their plotted data. Options: `--run-dir (required)`, `--factor`, `--out`, `--theme`
 - `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
+- `alpha ledger proposal` — Show the ideas RD-Agent proposes and waits on before it builds anything. Options: `--run-dir (required)`
 - `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
+- `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
 

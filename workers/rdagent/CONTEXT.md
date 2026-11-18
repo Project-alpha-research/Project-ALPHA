@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 7b14bac83b3ed594
+verified: fd5ee42a2617426a
 ---
 
 # RD-Agent worker workspace
@@ -41,8 +41,10 @@ no market, inference or evidence authority.
 - Gateway embedding backends and accounting live in `gateway_embeddings.py`: local by default,
   or an explicitly priced provider model. Both share the 2,000-attempt guard; paid embeddings
   spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts.
-  Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval.
-  See the worker invariants for accounting and compatibility.
+  Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval. See the worker invariants for accounting and compatibility.
+- The [proposal pause](README.md#propose-and-discuss) exchanges JSON with the CLI in
+  `discussion.py` after the family guard. `alpha_factor_hypothesis.py` retains the model's
+  summary on native factor tasks. Tests: `test_rdagent_discussion{,_commands}.py`.
 - Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and
   `loop_guard.py` closes exhausted-provider rounds, including proposal, without inventing trials.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
@@ -60,13 +62,11 @@ no market, inference or evidence authority.
   `test_rdagent_embedding_{cap,eval}.py`, `test_setup_rdagent.py`, `test_rdagent_viewer.py`, `test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_{gapped_universe,identity_breaks}.py` (the factor-runtime cases need
   `ALPHA_FACTOR_PYTHON` as well). Tests that need the RD-Agent source skip unless `ALPHA_RDAGENT_SOURCE` (and, for stock lanes, `ALPHA_STOCK_PYTHON`) is set.
-- There is no CI gate component for this worker; run `uv run python scripts/gate.py check` from
-  the repository root.
+- Run `uv run python scripts/gate.py check` at the root. The worker has no CI gate component.
 - Editing `alpha_core`, `alpha_patterns` or `alpha_strategies` source changes the installed rule
   profiles' measured environment; rebuild them (see the native file).
 - The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
-  Its projection, status wording and record limitations belong to the
-  [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
+  The [web workspace](../../apps/alpha-web/CONTEXT.md) owns its projection, status wording and record limitations.
 - The evaluator appends shortlist and lineage diagnostics; the worker preserves that record.
   Policy and regression convention: [README](README.md#shortlist-bookkeeping); no judging rule changes.
 - Fractional thirds, tie diagnostics and source input columns: [README](README.md#futures-funding).

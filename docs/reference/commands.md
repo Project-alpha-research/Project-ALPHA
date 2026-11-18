@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-268 commands in 37 groups. Options marked (required) are
+268 commands in 36 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -171,6 +171,7 @@ Triple-barrier labels and overlap weights (López de Prado), from the AFML worke
 Read all recorded trials through one unchanged-ledger view.
 
 - `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
+- `alpha ledger journey` — Write seven-step journeys, annotated pictures and their plotted data. Options: `--run-dir (required)`, `--factor`, `--out`, `--theme`
 - `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
 - `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
@@ -289,12 +290,6 @@ Prop-firm Monte Carlo: pass/payout probabilities for a funded-trader evaluation.
 Explicit, receipted provider readiness checks.
 
 - `alpha provider check <PROVIDER_ID>` — Run one bounded check. Options: `--json`
-
-## alpha rdagent
-
-Read stored RD-Agent evaluations and their evidence.
-
-- `alpha rdagent journey` — Write seven-step journeys, annotated pictures and their plotted data. Options: `--run-dir (required)`, `--factor`, `--out`, +1 more
 
 ## alpha report
 

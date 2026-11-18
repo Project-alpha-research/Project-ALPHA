@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 4ae3fb065e2685ee
+verified: 62b618f2ae4c653c
 ---
 
 # Follow one RD-Agent idea
@@ -11,8 +11,8 @@ verified: 4ae3fb065e2685ee
 **Reach for it when** you want to see why an idea stopped and which observations the judge used.
 
 ```text
-uv run alpha rdagent journey --run-dir <run-dir>
-uv run alpha rdagent journey --run-dir <run-dir> --factor <name> --out <directory> --theme dark
+uv run alpha ledger journey --run-dir <run-dir>
+uv run alpha ledger journey --run-dir <run-dir> --factor <name> --out <directory> --theme dark
 ```
 
 The command prints the path to the index. Each entry identifies an iteration, a factor name

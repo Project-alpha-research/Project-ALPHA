@@ -1,4 +1,4 @@
-"""Read-only projections of recorded RD-Agent runs."""
+"""Read-only projection of one recorded RD-Agent run, mounted as `alpha ledger journey`."""
 
 from enum import StrEnum
 from pathlib import Path
@@ -6,15 +6,12 @@ from typing import Annotated
 
 import typer
 
-rdagent_app = typer.Typer(help="Read stored RD-Agent evaluations and their evidence.")
-
 
 class Theme(StrEnum):
     light = "light"
     dark = "dark"
 
 
-@rdagent_app.command()
 def journey(
     run_dir: Annotated[
         Path, typer.Option(exists=True, file_okay=False, help="Recorded run folder.")

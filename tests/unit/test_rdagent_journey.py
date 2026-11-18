@@ -86,7 +86,7 @@ def make_run(base: Path) -> tuple[Path, list[dict[str, Any]]]:
 def test_journeys_from_stored_evidence(tmp_path: Path) -> None:
     run, rows = make_run(tmp_path)
     before = {p: p.read_bytes() for p in run.rglob("*") if p.is_file()}
-    result = CliRunner().invoke(app, ["rdagent", "journey", "--run-dir", str(run)])
+    result = CliRunner().invoke(app, ["ledger", "journey", "--run-dir", str(run)])
     assert result.exit_code == 0, result.output or repr(result.exception)
     root = run / "journey"
     index = json.loads((root / "index.json").read_text())["ideas"]
@@ -156,7 +156,7 @@ def test_output_cannot_follow_a_journey_symlink(tmp_path: Path) -> None:
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()
     (run / "journey").symlink_to(elsewhere, target_is_directory=True)
-    result = CliRunner().invoke(app, ["rdagent", "journey", "--run-dir", str(run)])
+    result = CliRunner().invoke(app, ["ledger", "journey", "--run-dir", str(run)])
     assert result.exit_code != 0
     assert not list(elsewhere.iterdir())
 
@@ -194,7 +194,7 @@ def test_archive_filter_and_legacy_daily_replay(tmp_path: Path) -> None:
     (folder / "result.json").unlink()
     (run / "evaluations.jsonl").write_text(json.dumps({"iteration": 1, "factors": [row]}) + "\n")
     result = CliRunner().invoke(
-        app, ["rdagent", "journey", "--run-dir", str(run), "--factor", "archived"]
+        app, ["ledger", "journey", "--run-dir", str(run), "--factor", "archived"]
     )
     assert result.exit_code == 0, repr(result.exception)
     index = json.loads((run / "journey/index.json").read_text())["ideas"]
@@ -215,7 +215,7 @@ def test_counted_only_replay_and_reserved_summary(tmp_path: Path) -> None:
     path = run / "evaluations/iter-1/result.json"
     record = {"iteration": 1, "factors": [row]}
     path.write_text(json.dumps(record))
-    args = ["rdagent", "journey", "--run-dir", str(run)]
+    args = ["ledger", "journey", "--run-dir", str(run)]
     assert CliRunner().invoke(app, args).exit_code == 0
     manifest = next((run / "journey").glob("1-*/journey.json"))
     old = manifest.read_bytes()

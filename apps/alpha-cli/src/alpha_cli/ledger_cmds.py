@@ -13,6 +13,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.rdagent_journey_cmds import journey
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.trial_query import ASSET_NOTE, asset_group
 from alpha_cli.spine.trial_reader import (
@@ -26,6 +27,7 @@ from alpha_cli.spine.trial_record import TrialRecord
 from alpha_core.config import AlphaSettings
 
 ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-ledger view.")
+ledger_app.command("journey")(journey)
 RD = Annotated[Path | None, typer.Option("--rdagent-ledger", help="RD-Agent ledger path.")]
 JSON = Annotated[bool, typer.Option("--json")]
 NOTICE = "Read-only view; the ledgers themselves are unchanged."

@@ -70,7 +70,7 @@ def test_plotted_numbers_and_reserved_boundary(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         app,
         [
-            "rdagent",
+            "ledger",
             "journey",
             "--run-dir",
             str(run),
@@ -104,7 +104,7 @@ def test_plotted_numbers_and_reserved_boundary(tmp_path: Path) -> None:
     assert story["figures"]["trading-test"]["reason"]
     (series / f"{digest}.screen.parquet").unlink()
     rerun = CliRunner().invoke(
-        app, ["rdagent", "journey", "--run-dir", str(run), "--out", str(output)]
+        app, ["ledger", "journey", "--run-dir", str(run), "--out", str(output)]
     )
     assert rerun.exit_code == 0, repr(rerun.exception)
     assert not (dest / "over-time.png").exists() and not (dest / "over-time.json").exists()

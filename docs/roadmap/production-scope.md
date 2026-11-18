@@ -86,7 +86,7 @@ How a question, a chart observation or a paper becomes something testable.
 | Source card and translation card: the original paper beside the adapted rule | Missing | idea folder | Path 1 | private |
 | Find papers, screen their claims, tie a claim to its test, keep the PDF | Unproven | `workers/literature` | Later | [papers] |
 | Papers feed RD-Agent's proposal step through a thin feeder (its own reader tried first) | Missing | `workers/rdagent` | Path 3 | [papers] |
-| One judged factor idea in seven steps with its stored evidence pictures | Unproven | `alpha rdagent journey`, [screen design](backlog/research-loop-screen.md) | Path 3 | private |
+| One judged factor idea in seven steps with its stored evidence pictures | Unproven | `alpha ledger journey`, [screen design](backlog/research-loop-screen.md) | Path 3 | private |
 | Quick recorded first look at many ideas | Working | `alpha scan hypotheses` | Now | [status] |
 | Dated log of expectations and catalysts: rumour, fact, interpretation, action kept apart | Missing | new | Later | private |
 | The owner's market views logged as dated hypotheses with rival explanations | Missing | idea trail | Path 1 | private |

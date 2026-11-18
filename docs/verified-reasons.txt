@@ -11,7 +11,7 @@ docs/CONTEXT.md
   verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/README.md
-  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+  verified 817bbad6d1f431f3 on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
@@ -29,7 +29,7 @@ docs/reference/invariants/rdagent.md
   verified c813d3b1258247e2 on 2026-11-19: Re-read after merging main's split: discussion still records who selected ideas, feedback treats a drop as a choice, only tested ideas count
 
 docs/reference/invariants/workers.md
-  verified ea10e01f6c40b705 on 2026-11-19: Re-read after merging main's split: the RD-Agent rules moved to rdagent.md; this branch's prompt and wording changes alter no worker boundary
+  verified f51c0836aedfde0e on 2026-11-19: worker README gained notes moved from the project page; the shared worker rules are unchanged
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -83,7 +83,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 65c7a46a2dc9b28a on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+  verified 817bbad6d1f431f3 on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -101,7 +101,7 @@ docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
 docs/reference/project/owner-decisions.md
-  verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
+  verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
 
 docs/reference/project/reserved-period.md
   verified fd13c86ac248fae3 on 2026-11-19: Re-read after merging main: the body is main's; this branch's toolbox inputs change loads benchmark dividends as of the run's last bar and leaves the reserved date and its labels as described
@@ -165,6 +165,9 @@ workers/rdagent/CONTEXT.md
 
 workflow/CONTEXT.md
   verified fa176b3faf012111 on 2026-11-19: Only a size limit in the contract test changed; this page's content still holds
+
+workflow/README.md
+  verified 22c2b09f2fa090ee on 2026-11-19: contract test gained cram and size checks; this page unaffected
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

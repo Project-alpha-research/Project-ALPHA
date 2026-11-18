@@ -40,6 +40,9 @@ delivery states, the generated roadmap index, append-only records, and relative 
   `fs.py stale` lists the documents to re-check and `fs.py owners <path>` names the ones that
   describe a file. The check fails while one is stale.
 - When work lands, any page that listed it as queued, open or not built is updated in the same pull request (search for the feature's name).
+- Caps are split triggers, not targets. Near a cap, split by heading into a sibling file, or summarise and link. Never drop words
+  to fit. CONTEXT files hold routing only, so they have nothing to cram. A test fails a reference file when more than 20% of its
+  prose lines are 150 to 160 characters long (a sign of text squeezed under the line cap).
 
 The project's documentation: the file system's reference material (`docs/reference/`), decision
 records (`docs/adr/`), the architecture reference, operations runbooks, governance records and the

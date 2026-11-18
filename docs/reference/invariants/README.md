@@ -2,7 +2,7 @@
 owner: invariants router
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 8833dfe51b2147b6
+verified: 817bbad6d1f431f3
 ---
 # Invariants: which file to load
 | file | owns | load when |
@@ -14,6 +14,8 @@ verified: 8833dfe51b2147b6
 | [core.md](core.md) | alpha_core: domain values, errors, settings | editing alpha-core |
 | [data.md](data.md) | alpha_data: storage, readers, receipts, snapshots | editing alpha-data |
 | [data-crypto.md](data-crypto.md) | alpha_data crypto: storage, identity, offline Bybit context | editing crypto storage or identity |
+| [data-context.md](data-context.md) | alpha_data context: macro series, SEC filings, derivatives | editing context data |
+| [data-free-sources.md](data-free-sources.md) | free data on the Dell and provider limits | adding or judging a free data source |
 | [data-bar-timeframes.md](data-bar-timeframes.md) | bars of any timeframe in the store | touching bar timeframes |
 | [crypto-providers.md](crypto-providers.md) | crypto provider modules and coverage profiles | editing crypto providers |
 | [patterns.md](patterns.md) | alpha_patterns: pattern geometry, indicators | editing alpha-patterns |
@@ -27,7 +29,7 @@ verified: 8833dfe51b2147b6
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
 | [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
 | [web-frontend.md](web-frontend.md) | Workstation single-page app | editing the browser app |
-| [web-run-detail.md](web-run-detail.md) | run detail, journey and Setup Lab binding | editing the run detail panels |
+| [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |
 | [rdagent.md](rdagent.md) | RD-Agent worker: boundary, runtimes, gateway, factor loop, memory, viewer | editing workers/rdagent/ |
@@ -40,6 +42,7 @@ verified: 8833dfe51b2147b6
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
+| [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |

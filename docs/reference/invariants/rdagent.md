@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: c813d3b1258247e2
+verified: 5ce96aafd26aa7fb
 ---
 
 # RD-Agent worker invariants
@@ -64,6 +64,12 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   sidecar; `embedding_eval.py` checks retrieval. See the worker invariants for accounting and compatibility.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions use the run id unless `--no-router-session` is set.
   Contracts: `test_rdagent_gateway_usage.py`.
+- RD-Agent reaches every model through ALPHA's local model gateway (`workers/rdagent/model_gateway.py`,
+  [ADR-0044](../../adr/0044-rdagent-model-gateway.md)): chat through the signed-in Codex program; embeddings through
+  local Ollama by default, or a configured paid provider model with explicit pricing. The gateway holds ALPHA's call
+  and dollar budget, refuses or records every setting it cannot honour, and logs each call without its text. Cache and
+  serving-provider facts reach the receipt; API calls use a run-only router session, with a comparison-run opt-out.
+  Recording details: [worker change notes](../../../workers/rdagent/CHANGE-NOTES.md#model-gateway-2026-11-14).
 
 ## Factor loop and judging
 
@@ -93,6 +99,10 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   guard preserves execution/value feedback and skips later critics in the failed round. Internal coding errors preserve completed factors for judging; two
   consecutive failures stop the run. Proposal history fits a character budget. New factor rows record the family and per-factor critic outcome. Vector rebuild
   receipts identify omitted nodes and causes. Restored panel provenance includes run receipts.
+- Runs resume from completed rounds; an unfinished round is recorded as abandoned, never invented as a trial. The
+  wrapper refuses proposals from idea families that have already failed repeatedly and asks again. Counts, caps and
+  spend are always explicit. The technical rules of each of these are change notes in the [worker change
+  notes](../../../workers/rdagent/CHANGE-NOTES.md#change-notes-moved-from-the-project-page-2026-11-18).
 
 ## Research memory
 
@@ -124,6 +134,8 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 - Source input columns: [README](../../../workers/rdagent/README.md#futures-funding). Feedback separates global looks from family failures; session
   drift suggestions follow the frozen
   source. Tests: `test_rdagent_funding_columns.py`, `test_rdagent_families.py`.
+- RD-Agent remembers across runs; what it keeps and its limits are in the worker's [research
+  memory](../../../workers/rdagent/CHANGE-NOTES.md#research-memory-2026-11-15).
 
 ## Panels and identity
 

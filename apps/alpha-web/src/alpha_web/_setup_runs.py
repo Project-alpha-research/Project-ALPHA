@@ -35,8 +35,8 @@ LIMITS = [
     "Setup study: Exits, sizing, portfolios, dividends or reserved-data confirmation. "
     "Setups cluster in market states (a double bottom follows a decline): beating random "
     "dates says the dates were unusual, not that the setup can be traded.",
-    "Setup trade: Sizing, short trades, dividends, funding, portfolios or confirmation "
-    "on reserved data. Unusual dates are not proof that the setup can be traded.",
+    "Setup trade: Currency position sizing, dividends, actual borrow or funding rates, portfolios "
+    "or confirmation on reserved data. Unusual dates are not proof that the setup can be traded.",
 ]
 LABELS = {
     "exploratory": "An exploratory look; this does not confirm an edge.",
@@ -57,6 +57,8 @@ LABELS = {
     "no-random-control": "The random-date comparison is unavailable; see the stored reason.",
     "many-skipped": "More than a quarter of occurrences were skipped while already in a trade.",
     "costs-assumed-high": "Unknown market identity used the higher crypto cost assumption.",
+    "short-costs-assumed": "Borrow or funding is an assumed charge per calendar day held.",
+    "short-needs-perpetual": "Crypto shorts need a perpetual contract. Spot prices are a proxy.",
     "older-cost-rule": "Recorded under the earlier cost rule.",
     "remeasured-new-cost-rule": "An earlier find was measured with a new cost rule; another look.",
     "repeat": "A repeat of an earlier result, not independent evidence.",

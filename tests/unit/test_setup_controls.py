@@ -193,3 +193,26 @@ def test_supported_reading_says_unusual_dates_not_tradable() -> None:
         dict(occurrences=40, mean=0.03, drift_mean=0.01, random_date_p=0.01, excess=0.02), 20, []
     )
     assert "unusual, not that the setup can be traded" in sentence
+
+
+def test_r_summary_uses_completed_trades_with_recorded_risk() -> None:
+    from alpha_cli.spine.setup_controls import trade_measures
+
+    rows = [
+        dict(
+            complete=complete,
+            bars_held=1,
+            reason="time",
+            both_touched=0,
+            net_return=0.01,
+            r_multiple=value,
+        )
+        for complete, value in [(True, -1), (True, 0), (True, 4), (True, None), (False, 50)]
+    ]
+    result = trade_measures(rows)
+    assert result["mean_r"] == result["expectancy_r"] == 1
+    assert result["median_r"] == 0
+    assert result["share_above_zero_r"] == pytest.approx(1 / 3)
+    missing = trade_measures(rows[3:])
+    for key in ("mean_r", "expectancy_r", "median_r", "share_above_zero_r"):
+        assert missing[key] is None and missing["reasons"][key] == "no completed trades with a stop"

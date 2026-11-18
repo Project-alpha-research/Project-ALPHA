@@ -26,7 +26,12 @@ def _style(theme: Theme) -> dict[Any, Any]:
 
 
 def draw_trades(
-    *, rows: list[dict[str, Any]], primary: dict[str, Any], title: str, theme: Theme
+    *,
+    rows: list[dict[str, Any]],
+    primary: dict[str, Any],
+    title: str,
+    theme: Theme,
+    direction: str = "long",
 ) -> bytes:
     import matplotlib
 
@@ -56,7 +61,10 @@ def draw_trades(
     with rc_context(_style(theme)):
         figure = Figure(figsize=(16, 9), dpi=100)
         FigureCanvasAgg(figure)
-        top, bottom = figure.subplots(2, 1, height_ratios=[3, 2])
+        grid = figure.add_gridspec(2, 2, height_ratios=[3, 2], width_ratios=[3, 2])
+        top = figure.add_subplot(grid[0, :])
+        bottom = figure.add_subplot(grid[1, 0])
+        hist = figure.add_subplot(grid[1, 1])
         done = sorted(
             (r for r in rows if r["net_return"] is not None),
             key=lambda r: (r["entry_ts"], r["asset"], r["candidate_id"]),
@@ -68,11 +76,22 @@ def draw_trades(
             range(len(done)), [r["net_return"] for r in done], color=[palette[g] for g in groups]
         )
         if done:
+            top.scatter(
+                range(len(done)),
+                [0] * len(done),
+                color=theme.ink,
+                marker="v" if direction == "short" else "^",
+                s=18,
+                label=f"{direction.title()} entry",
+            )
             top.legend(
                 handles=[
-                    Patch(color=palette[k], label=f"{names[k]}: {groups.count(k)}")
-                    for k in palette
-                    if k in groups
+                    top.collections[-1],
+                    *[
+                        Patch(color=palette[k], label=f"{names[k]}: {groups.count(k)}")
+                        for k in palette
+                        if k in groups
+                    ],
                 ],
                 loc="upper left",
                 facecolor=theme.panel,
@@ -85,6 +104,15 @@ def draw_trades(
         top.set_xlabel("Each bar is one trade, in entry-date order (year of entry below)")
         top.set_ylabel("Trade return after costs")
         _controls_panel(bottom, primary, theme)
+        multiples = [
+            r["r_multiple"] for r in done if r["complete"] and r.get("r_multiple") is not None
+        ]
+        if multiples:
+            hist.hist(multiples, bins="auto", color=theme.series_colour(0))
+        else:
+            hist.text(0.5, 0.5, "R not recorded", ha="center", transform=hist.transAxes)
+        hist.set_xlabel("Net return in initial risk units (R)")
+        hist.set_ylabel("Completed trades")
         for axes in (top, bottom):
             axes.axhline(0, color=theme.faint, linewidth=0.8)
             axes.yaxis.set_major_formatter(PercentFormatter(1))
@@ -95,7 +123,7 @@ def draw_trades(
         figure.text(
             0.05,
             0.04,
-            "Long trades after costs. Open-at-end trades excluded from the mean. "
+            f"{direction.title()} trades after costs. Open-at-end trades excluded from the mean. "
             "One counted exploratory test; not confirmed on reserved data.",
             fontsize=11,
         )
@@ -172,7 +200,7 @@ def _controls_panel(axes: Any, primary: dict[str, Any], theme: Theme) -> None:
 
 def trade_text(output: dict[str, Any]) -> str:
     row = output["pooled"]
-    lines = [output["reading"], "measure\tvalue"]
+    lines = [output["reading"], output.get("basis", ""), "measure\tvalue"]
     for title, field, percent in (
         ("trades", "trades", False),
         ("mean", "mean", True),
@@ -194,6 +222,31 @@ def trade_text(output: dict[str, Any]) -> str:
             else str(value)
         )
         lines.append(f"{title}\t{text}")
+    for label, key in (
+        ("Mean R", "mean_r"),
+        ("Median R", "median_r"),
+        ("Share above 0 R", "share_above_zero_r"),
+        ("Expectancy per trade in R", "expectancy_r"),
+    ):
+        value = row.get(key)
+        displayed = (
+            "not recorded"
+            if value is None
+            else (f"{value:.2%}" if key == "share_above_zero_r" else f"{value:.2f} R")
+        )
+        lines.append(f"{label}\t{displayed}")
+    control = output.get("controls", {}).get("opposite_direction")
+    if control:
+        net, mean_r = control["mean_net_return"], control["mean_r"]
+        lines.extend(
+            [
+                f"{control['label']} · {control['direction']}",
+                "Mean net return\t" + ("not recorded" if net is None else f"{net:.2%}"),
+                "Mean R\t" + ("not recorded" if mean_r is None else f"{mean_r:.2f} R"),
+            ]
+        )
+    if "risk_explanation" in output:
+        lines.append(output["risk_explanation"])
     lines.extend(
         [
             "by reason\t" + ", ".join(f"{k}: {v}" for k, v in row["by_reason"].items()),

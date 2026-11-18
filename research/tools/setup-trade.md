@@ -7,34 +7,34 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_trade_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 4ec2fbbae33384e0
+verified: ed6a12a8754c37c4
 ---
 
 # Setup trade
 
 **Reach for it when** the recorded matches are right and the question includes stops or targets.
 
-**Commands**
 ```text
 uv run alpha setup trade <find_id> --json
 uv run alpha results cite <trade_id> setup_trade_mean_net_return --json
 ```
-**See stored results:** Workstation → Research → Setup Lab.
-**How to read it**
-- Put `[exit]` in the spec before finding: stop/target as percent, ATR distance or a causal
-  numeric expression (or a named reference), plus `time_bars` (none: 250, `no-time-exit`) or `opposite`.
-- Levels freeze at the trigger close. Entry is the next open. Stop wins a both-touch bar;
-  stop gaps fill at the open; target gaps receive only the target. Opposite fills next open.
-- One position per asset; skipped, invalid and still-open trades are counted, never averaged.
-- Compare the mean with the same exits on every eligible date and 2,000 spaced random draws.
-  Each chronological half uses its own dates. Missing controls have a reason, never zero.
-- Stocks/ETFs pay 1 bp fee plus 2 bp slippage per side; crypto pays 10 plus 5. The market comes
-  from the stored data's identity or provider; an unknown one uses crypto costs with
-  `costs-assumed-high`. Costs per asset are in the summary.
-- Figure: one bar per trade (red stop, green target, blue time), then the mean vs random dates.
-- One counted test; repeats do not count. Changed exits mean another find and counted test.
-
-**What it cannot tell you** Sizing, short trades, dividends, funding, portfolios or confirmation
+**How to read it** in Workstation → Research → Setup Lab
+- In `[exit]`, set `direction` to `"long"` (default) or `"short"`. Stops and targets accept percent,
+  ATR distance, or a numeric expression or named reference evaluated at the trigger close.
+- Enter at the next open. A short stops above entry and targets below. A stop wins a both-touch bar.
+  Stop gaps fill at the worse open. Target gaps fill at the target. An `opposite` condition exits next open.
+- `time_bars` exits at the final held bar’s close (default 250, labelled `no-time-exit`). One position per asset.
+  Skipped, invalid and still-open entries are counted separately. Only completed trades enter averages.
+- Each side pays fees plus slippage in bps: stocks/ETFs 1 + 2, crypto 10 + 5. Unknown markets use crypto costs (`costs-assumed-high`).
+- `short-costs-assumed` adds 50 bps/year stock borrow (365 days) or 3 bps/day assumed crypto funding.
+  Charge calendar days held, including weekends and an exit day held past its open. Crypto shorts require a perpetual (`short-needs-perpetual`).
+- Initial risk is the absolute entry-to-stop distance divided by entry. R is net return divided by that risk.
+  Read mean R (expectancy per trade), median R and the share above zero. Without a stop, R is not recorded.
+- A result of +0.4 R means that, risking 1% of the account per trade, the average trade made 0.4%. No currency position sizing is simulated.
+- Compare the mean with all eligible dates and 2,000 spaced random draws, each half against its own history.
+  The uncounted opposite-direction control compares mean return and mean R on exactly the same entries with mirrored exits and its own costs.
+- The figure shows entry direction, net returns, the random-date comparison and a histogram of completed trades in R.
+- Changing direction or exits counts another trial in the same idea family. Repeating a run adds no counted trial.
+**What it cannot tell you** Currency position sizing, dividends, actual borrow or funding rates, portfolios or confirmation
 on reserved data. Unusual dates are not proof that the setup can be traded.
-
-**Next** Cite the stored reading and labels; inspect the halves before proposing another test.
+**Next** Cite the stored reading and labels and inspect the halves before proposing another test.

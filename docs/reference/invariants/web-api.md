@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: d51270845f785257
+verified: f3ab557072fe55de
 ---
 
 # Web API invariants
@@ -97,7 +97,8 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - Setup Lab's GET `/api/setup/runs` and `/{find_id}` use `_setup_runs` only: bounded, allowlisted reads, no CLI run. `setups/<id>/` files
   (`manifest.json`, `spec.json`, `summary.json`, `candidates.parquet`, `sheets/*.png`) and the linked `setup-studies/`, `setup-trades/`
   manifests, summaries, rows and PNGs, plus `ledger/trials.jsonl`, are shown as stored. Missing files stay null; corrupt, linked or
-  oversized files fail with 422. No setup price snapshot, per-trade direction or total return is stored: they stay not recorded.
+  oversized files fail with 422. Trade rows pass through direction, initial risk fraction and R when recorded. Older rows keep missing values.
+  Price snapshots and portfolio totals remain unrecorded.
 - Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
   <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
   shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides

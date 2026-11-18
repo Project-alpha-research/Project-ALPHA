@@ -6,7 +6,7 @@ sources:
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
   - packages/alpha-study/CONTEXT.md
-verified: dd1a3b82a04d6419
+verified: eb19f71b4c7482ac
 ---
 
 # Strategies and signals
@@ -52,8 +52,8 @@ random-date controls, citable facts and one counted exploratory trial. Only its 
 horizon is tested; sizing remains deferred. Its end-to-end smoke check passes; see
 [setup study](../../../../research/tools/setup-study.md).
 
-`alpha setup trade FIND_ID` applies declared exits with conservative fills and identical-rule controls,
-with one counted trial and stored facts. Its end-to-end smoke check passes; see
+`alpha setup trade FIND_ID` measures long or short trades in percent and initial-stop risk units. The opposite direction on the same entries
+is an uncounted control. For exit rules, assumed costs and stored facts, see
 [setup trade](../../../../research/tools/setup-trade.md).
 
 Plain long/flat all-in sizing is available beside volatility targeting for moving-average crossover,

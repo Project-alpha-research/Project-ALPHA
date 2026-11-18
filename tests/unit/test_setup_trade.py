@@ -363,3 +363,63 @@ def test_actual_market_net_returns(tmp_path: Path, source: str, expected: float)
     assert simulate(prepared, 1, round_trip(costs.model_dump()))["net_return"] == pytest.approx(
         expected
     )
+
+
+def test_legacy_long_figures_byte_for_byte(tmp_path: Path) -> None:
+    found = make_trade_find(tmp_path)
+    out = setup_trade.run_trade(found["find_id"], home=tmp_path)
+    assert found["find_id"] == "32d1f3b953038de2"
+    rows = pl.read_parquet(Path(out["folder"]) / "trades.parquet")
+    legacy = rows.drop("direction", "risk_fraction", strict=False).write_json()
+    assert hashlib.sha256(legacy.encode()).hexdigest() == (
+        "b865b7dc58aad8c405ffde36e060e1725122d4f4d41c124efd0ca137bf822f10"
+    )
+    stats = [out["pooled"], out["per_asset"]]
+    for group in [out["pooled"], *out["per_asset"].values()]:
+        for subset in [group, *group["stability"].values()]:
+            for added in ["median_r", "share_above_zero_r", "expectancy_r"]:
+                subset.pop(added, None)
+    assert hashlib.sha256(json.dumps(stats, sort_keys=True).encode()).hexdigest() == (
+        "c7fd78a05021d915d30ebf689be86ccc8082575fb552dce8477dac7ce543256e"
+    )
+
+
+def test_direction_change_counts_once_and_control_uses_other_sides_costs(tmp_path: Path) -> None:
+    from alpha_cli.spine.setup_trade_figure import trade_text
+
+    found = make_trade_find(tmp_path)
+    long = setup_trade.run_trade(found["find_id"], home=tmp_path)
+    path = tmp_path / "spec.toml"
+    path.write_text(path.read_text() + 'direction="short"\n')
+    short_find = setup_cmds.run_find(path, home=tmp_path)
+    short = setup_trade.run_trade(short_find["find_id"], home=tmp_path)
+    assert (
+        "short-costs-assumed" in short["labels"] and "short-needs-perpetual" not in short["labels"]
+    )
+    assert short["costs"]["SPY"]["short_borrow_bps_per_year"] == 50
+    net = -0.05 - 0.0006 - 50 / 10000 / 365
+    assert short["pooled"]["drift_mean"] == pytest.approx(net)
+    assert short["pooled"]["random_date_50"] == pytest.approx(net)
+    for run, other in [(long, short), (short, long)]:
+        control = run["controls"]["opposite_direction"]
+        assert control["direction"] == other["direction"]
+        assert control["mean_net_return"] == pytest.approx(other["pooled"]["mean"])
+        assert control["mean_r"] == pytest.approx(other["pooled"]["mean_r"])
+        assert "not counted" in control["label"]
+        rendered = trade_text(run)
+        assert "Opposite direction" in rendered and "+0.4 R" in rendered
+    trials = [r for r in spine_snapshot(tmp_path).records if r.kind == "setup_trade"]
+    assert len(trials) == 2 and all(r.counts_for_deflation for r in trials)
+    assert len({r.family_id for r in trials}) == 1
+
+
+def test_short_crypto_costs_and_labels(tmp_path: Path) -> None:
+    from alpha_cli.spine.setup_costs import asset_costs
+    from alpha_data.store import ParquetStore
+
+    ParquetStore(tmp_path / "store").write_provenance(
+        "X", source="binance", adapter_version="1", parser_version="1"
+    )
+    costs, labels = asset_costs(tmp_path, ["X"], direction="short")
+    assert costs["X"] == {"fee_bps": 10, "slippage_bps": 5, "short_carry_bps_per_day": 3}
+    assert set(labels) == {"short-costs-assumed", "short-needs-perpetual"}

@@ -51,16 +51,15 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-224 capabilities: 50 working, 67 built but unproven, 105 missing, 1 to rebuild,
-1 dropped by decision (recounted from the rows themselves on 2026-11-18: the 2026-11-17 header said 45 working and the
-table said 44, while the rows held 49; nine rows were then added and two were corrected, below).
+225 capabilities: 51 working, 67 built but unproven, 105 missing, 1 to rebuild,
+1 dropped by decision. Setup short selling and rule-test short selling have separate rows.
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 6 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
 | 3. Look before testing | 5 | 5 | 6 | 0 | 0 |
-| 4. Backtest | 3 | 3 | 10 | 0 | 0 |
+| 4. Backtest | 4 | 3 | 10 | 0 | 0 |
 | 5. Overfit tests | 10 | 9 | 3 | 0 | 0 |
 | 6. Diagnostics | 8 | 6 | 11 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 9 | 0 | 1 |
@@ -69,7 +68,7 @@ table said 44, while the rows held 49; nine rows were then added and two were co
 | 10. Screens | 1 | 3 | 15 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **50** | **67** | **105** | **1** | **1** |
+| **All** | **51** | **67** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -160,8 +159,9 @@ Simulating the idea with costs, against the right comparison.
 | The same backtest on real free data, shown on a screen | Unproven | `alpha test` report in `alpha-web` | Path 1 | [grade] |
 | Rank many assets by a factor and replay the basket with costs | Working | `alpha-cli` judge | Now | [status] |
 | One portfolio engine per kind of test; duplicates retired after a side-by-side check | Missing | `alpha-backtest` | Path 3 | [slim] |
-| Short selling in rule tests and setup trades (`alpha test` and `alpha setup trade` are long only today) | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
-| Risk-per-trade position sizing in rule tests and setup trades (all-in sizing only today) | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
+| Short selling in setup trades with assumed borrow or funding costs | Working | `alpha setup trade`, Setup Lab | Path 1 | private |
+| Short selling in rule tests | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
+| Risk-per-trade position sizing in rule tests and setup trades (setup trades report R, currency sizing remains missing) | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
 | Costs that grow with trade size, and a capacity view at the owner's size | Missing | `alpha-validation` | Path 1 | private |
 | Benchmark on a total-return basis: dividends, cash yield, real terms, every rolling window | Missing | run report | Path 1 | private |
 | Plain answer to "is this mostly the market?" beside every result | Unproven | rule-test report: buy-and-hold table and drawdown flag | Path 1 | [partner] |

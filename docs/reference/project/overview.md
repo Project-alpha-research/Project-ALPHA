@@ -58,7 +58,7 @@ the plan is the orchestrator's and reversible).
 | Golden path | The prompt it must serve | State |
 |---|---|---|
 | 1. Rule test | "Test this trend rule on these assets" | command line working ([route](../../../research/CONTEXT.md)); report screen partly built |
-| 2. Chart setup | "Show every match of this setup and what happened after" | command line working; no screen yet (Setup Lab screen being built) |
+| 2. Chart setup | "Show every match of this setup and what happened after" | command line working; read-only [Setup Lab](components/setup-lab.md) screen |
 | 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | run by hand, judged, no candidate yet; not a supervised job |
 
 The order of work since 2026-11-18 is the orchestrator's default, which the owner can reverse:
@@ -132,7 +132,10 @@ Each step needs the owner's approval before the next starts.
 | [Nautilus](components/nautilus.md) | The backtest engine (NautilusTrader) and ALPHA's harness around it |
 | [Data layer](components/data-layer.md) | Downloads, point-in-time storage and frozen snapshots |
 | [Strategies and signals](components/strategies-and-signals.md) | Trading rules, chart patterns and indicators |
-| [Forecasting](components/forecasting.md) | The Kronos price-forecasting model |
+| [Forecasting](components/forecasting.md) | The Kronos price-forecasting model and its Kronos Studio screen |
+| [Toolbox](components/toolbox.md) | The open catalogue of tests and analyses, with a record of every run |
+| [Setup Lab](components/setup-lab.md) | Chart setups: find every match, study what followed, trade it |
+| [Monte Carlo](components/monte-carlo.md) | The four path-risk methods: how bad could it get |
 | [Validation and evidence](components/validation-and-evidence.md) | The statistical checks and the reports they produce |
 | [Research cases and approval](components/research-cases-and-approval.md) | Research cases, phases and the owner's decisions |
 | [Literature worker](components/literature-worker.md) | Finds papers and screens their claims |
@@ -146,7 +149,11 @@ Each step needs the owner's approval before the next starts.
 
 Any recommendation to shelve, delete or cut the scope of a part must first cite that part's
 component file (its "Why it exists" and "Never" sections) and the
-[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md), [3](owner-decisions-3.md)
-and [4](owner-decisions-4.md)). If the two disagree with the recommendation, say so and ask
+[owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md), [3](owner-decisions-3.md),
+[4](owner-decisions-4.md) and [5](owner-decisions-5.md)). If the two disagree with the recommendation, say so and ask
 the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a task to finish, not a
-reason to shelve it.
+reason to shelve it. Kronos, the four Monte Carlos, lookalike search and the chart-pattern code are RD-Agent's
+tools: never slimming targets ([owner, 2026-11-18][tools-entry]).
+
+[tools-entry]:
+  owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox

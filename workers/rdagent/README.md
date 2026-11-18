@@ -1201,3 +1201,33 @@ The receipt's `history_rounds_full` and `history_rounds_summarised` come from `h
 Closed/open families, declaration instructions and refusal messages remain present. New experiment
 records retain their panel hash for future restoration. Declaration examples now use neutral sign
 and clock placeholders; the proposer must derive both from the idea and fill every field.
+
+## Change notes moved from the project page (2026-11-18)
+
+These behaviour notes were the "Intended design" of the RD-Agent project page, moved here so that page stays readable.
+
+- RD-Agent's factor loop is judged by ALPHA, not by its built-in Qlib backtest: ALPHA's classes
+  are named through RD-Agent's own settings, a cheap rank-IC screen over a cross-run trial ledger
+  comes first and ALPHA's cost-aware replay only for factors that pass; 2024 onward is locked away
+  from the loop ([ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md)).
+  Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
+  a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
+  The held top third must beat the bottom third before costs; failures still count. The proposer sees every family and is told to leave repeated failures.
+  The universe is a frozen file; each paid model call has a time limit
+  ([ADR-0055](../../docs/adr/0055-spread-check-family-brief-and-universe-file.md)).
+- New frozen panels allow missing days and delisted names with causal membership and explicit losses;
+  [missing-bar policy](#missing-bars-and-causal-membership).
+  The wide store may be used once every implausible gap jump is declared; freeze rescales declared redenominations, splits reused tickers and
+  refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
+  Declared renamed tickers join as one instrument under the old name, with each join receipted.
+  The owner supplies the break list: [identity policy](#identity-breaks-across-a-gap).
+  Optional [futures funding](#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
+- Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
+  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run. Code failures stay counted trials but do not close
+  idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
+  classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
+  or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
+  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
+  falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
+  proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
+  invariants](../../docs/reference/invariants/workers.md#rd-agent-worker).

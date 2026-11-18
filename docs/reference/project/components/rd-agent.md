@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
-verified: 166a407d35ed32e2
+verified: 3a3061f3266cd9a4
 ---
 
 # RD-Agent

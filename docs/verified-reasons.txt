@@ -19,6 +19,9 @@ docs/reference/model-routing.md
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
+docs/reference/project/components/ai-assistants.md
+  verified 5ab7578017d88c1e on 2026-11-18: The skill's writing-style section was only shortened to fit its 40-line limit; the page's sentence about it still holds
+
 docs/reference/project/components/command-line.md
   verified 5bac5884cd269869 on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
 

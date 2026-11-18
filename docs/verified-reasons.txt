@@ -62,7 +62,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 0fd58c1182313d1b on 2026-11-19: Re-read after merging main: feedback sentence matches the built-only hypothesis and drop instruction; main's text kept
+  verified bffc795bed285109 on 2026-11-19: Re-read after the worker CONTEXT line was shortened; the page text still holds
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 docs/CONTEXT.md
-  verified 11427c007742b1b0 on 2026-11-18: re-read: docs/README.md now says docs/work does not exist on main and the pull request is the handoff; this file's rules and links still match
+  verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
 docs/reference/model-routing.md
-  verified f70b490227789b91 on 2026-11-18: AGENTS.md, the one document it names, has the same text as when this page was last verified; the fingerprint now counts it
+  verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -62,7 +62,7 @@ docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
 docs/reference/project/owner-decisions.md
-  verified f38c799f4f7d4271 on 2026-11-18: re-read: model routing changed model names and added the build sandbox section; this volume's entries link it and state neither
+  verified f4dc8c442ce71ab2 on 2026-11-18: re-read: model routing gained routed reading, owned checks and task folders; this volume's entries link it and state none of these
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

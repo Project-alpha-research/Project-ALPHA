@@ -33,6 +33,8 @@ The pull-request description links both files.
 
 - Write a brief outside the repository, then run `uv run python scripts/handoff.py build --brief <file>`;
   the tool copies it here. To relaunch, edit this copy and build from it.
+- Landing: the one required CI check is `ci-ok`; the orchestrating session merges once it is green
+  ([stage 05](../../workflow/stages/05-land/CONTEXT.md)).
 - Never put logs, token counts, model names or machine paths in these files.
 
 ## Outputs

@@ -56,7 +56,7 @@ meant to become entries too, and are never slimming targets
 
 ## What is real today
 
-The catalogue has 14 entries. The first three describe one recorded rule test: `market.attribution` (how much return is market
+Fourteen entries are registered. Three describe one recorded rule test: `market.attribution` (how much return is market
 exposure), `market.vol_regimes` (calm versus turbulent markets) and `market.changepoints` (when behaviour
 shifted); named set `market-context` runs them together. Five more read the run's stored walk-forward files
 instead of replaying it: `performance.downside_ratios` (Sortino, Calmar, Omega, tail ratio beside the stored
@@ -71,8 +71,8 @@ family correction on the ledger count and prior comparable Sharpes frozen in the
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a reason. Commands: `alpha tool list` (filter by
 `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`, `run-set` and `history`. The only
-target is a run id. The date 2024-01-01 lives in one module, `toolbox/reserve.py`, shared with the RD-Agent
-judge. Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
+target is a run id. The reserved date is defined in `toolbox/reserve.py` and in two other places, a known defect
+([reserved period](../reserved-period.md)). Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
 [STATUS.md](../../../../STATUS.md).
 
 **Not built from this batch:**
@@ -94,6 +94,22 @@ set after judging, a budget, exporting causal tools as factor inputs); remaining
 (minimum track record length waits for a function in `alpha_validation`); and
 the growth plan. The 480-entry catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is
 not yet in the repository; random-exit control remains among its highest-value gaps.
+
+### Adding an entry
+
+1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/`
+   (`costs`, `market`, `overfit`, `performance`, `resampling`, `robustness`, `trades`).
+2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. Today's fourteen ids: `market.attribution`,
+   `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`, `robustness.start_end_dates`, `trades.side_contribution`,
+   `trades.concentration`, `costs.break_even`, `resampling.sharpe_interval`, `resampling.return_interval`,
+   `resampling.drawdown_distribution`, `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`.
+   Named sets are in `toolbox/sets.py` (one: `market-context`).
+3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit, gloss), reading, caveats,
+   cost class, seeded or not, time safety, look class, a poison test when time order matters, and `reference`: the test that checks its numbers.
+4. The contract refuses: an id that is not lower-case `family.name`; a reading that names something that is not an output; a `search` look without an
+   evaluation count; an ordered input without a poison test; repeated output or setting names; a gate that is not in the frozen list (empty).
+5. Add the reference test under `tests/unit/test_toolbox_*.py` with a known answer. Call `alpha_validation` or a library for the statistics.
+6. If the entry replaces an old command and card, delete them in the same pull request.
 
 ## Where it lives
 

@@ -43,7 +43,7 @@ plainly what was not checked. A claim without a command and its result is not ev
 3. When CI would run something heavier for this change (a component, the browser lanes, the slow
    oracles and mutation for quant files), run it with `uv run python scripts/gate.py component
    NAME` if the machine can, or list it as not run with the reason.
-4. Review: `python3 scripts/handoff.py review --base main --task docs/work/<task>/` prints the
+4. Review: `uv run python scripts/handoff.py review --base main --task docs/work/<task>/` prints the
    reviewers the [routing rules](../../../docs/reference/model-routing.md#review-by-risk-tier)
    require for this diff and, for Claude-built work, runs Codex's review. The writer is never
    the only reviewer. Give each agent only the diff, never your reasoning.

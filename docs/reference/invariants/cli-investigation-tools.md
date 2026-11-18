@@ -18,7 +18,7 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
 
 ## Rules
 
-- The three entries in `alpha tool run-set market-context <run_id>` describe one recorded rule test.
+- The three `market-context` entries (`alpha tool run-set market-context <run_id>`; fourteen entries are registered in all) describe one recorded rule test.
   They rebuild its full-sample equity through the diagnostic pass's own path
   (`spine/diagnose.py:full_sample`), fail loud with `RUN_DATA_CHANGED` when the stored bars no
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels

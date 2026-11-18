@@ -60,14 +60,14 @@ Make the plan true, one slice at a time, test first, in small commits on a branc
 
 Codex, by default; [model routing](../../../docs/reference/model-routing.md) gives the model,
 effort and time cap per task class and what stays with Claude. Run, outside any sandbox,
-`python3 scripts/handoff.py build --task docs/work/<task>/ --base main` (small route: `--brief
-<file>` with the headings Task, Decision already made, Files, Do not touch, Checks, Report). It
-runs Codex in a worktree, checks the diff against policy, runs `gate.py check` and each slice's
-`verify` itself and drives up to two fix rounds. Read only its summary and `git diff --stat`.
-Exit 0 means its own checks passed; then review (stage 04) and commit, with `03-build.json`.
-When the summary names a `fallback` (exit 10–13), or the work needs the network or a decision,
-a Claude sub-agent of the named model builds from the `prompt.md` it names; then run
-`handoff.py verify` on that worktree. Process above binds every builder.
+`uv run python scripts/handoff.py build --task docs/work/<task>/ --base main` (`python3` works too: the
+script needs only the standard library; small route: `--brief <file>` with the headings Task, Decision
+already made, Files, Do not touch, Checks, Report). It runs Codex in a worktree, checks the diff against
+policy, runs `gate.py check` and each slice's `verify` itself, drives up to two fix rounds. Read only its
+summary and `git diff --stat`. Exit 0 means its own checks passed; then review (stage 04) and commit, with
+`03-build.json`. On a `fallback` (exit 10–13), or when the work needs the network or a decision, a Claude
+sub-agent of the named model builds from the `prompt.md` it names; then run `handoff.py verify` on that
+worktree. Process above binds every builder.
 
 ## Outputs
 

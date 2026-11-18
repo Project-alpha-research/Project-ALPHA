@@ -13,6 +13,8 @@ verified: b2ae2ac146533051
 "How bad could it get?" ALPHA answers it with four Monte Carlo methods (families). Each makes many new
 possible histories for one strategy and reports the spread of final return, worst drawdown, loss and ruin.
 The owner counts the four as tools for RD-Agent and the assistant to use, never to be slimmed away.
+Three resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
+new price bars and has run only with a stand-in model.
 
 ## Why it exists
 
@@ -77,5 +79,5 @@ The [resampling card](../../../../research/tools/resampling-checks.md) explains 
 ## Never
 
 - Never present path risk as proof of an edge, or majority-vote the families.
-- Never remove a family to slim the code without the owner's sign-off.
+- Never remove or slim a family. The owner called all four "never slimming targets" (2026-11-18); one that nothing reaches yet is owed wiring, not deletion.
 - The rules: [validation invariants](../../invariants/validation.md).

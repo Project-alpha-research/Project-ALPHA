@@ -33,9 +33,8 @@ facts. The journey is an exploratory reading of stored evidence.
 In the Workstation, open Research → RD-Agent, select the run, then select an idea. The screen reads
 the run's own `journey/` folder. A missing journey shows the local build command. The CLI can build
 journeys for judged factors only. A loop event can have a name with no linked evaluation.
-Step one shows up to four short sentences: the idea type from the agent's bracketed tag, the
-first sentence of its description, the expected direction, and a note when that direction was
-chosen after seeing the data. The full description stays in the agent's own words. Code can be
-an excerpt. Long code lines wrap. The run summary shows only
+Step one shows up to four short sentences: idea type, description summary, expected direction,
+and a chosen-after-seeing-the-data note. The full description stays in the agent's own words.
+Code can be an excerpt. Long code lines wrap. The run summary shows only
 recorded values. The final step carries the judge's exploratory label when recorded. The picker
 gets the verdict from the run records.

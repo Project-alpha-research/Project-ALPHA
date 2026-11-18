@@ -2,22 +2,22 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f360868be5c01a25 on 2026-11-19: Re-read the CLI routing. The ledger attribution fields use the same CLI modules and tests listed here.
+  verified ccb173ae2ce3299f on 2026-11-19: Re-read after the merge: the RD-Agent discussion changes stay inside the rdagent_ and ledger modules and tests named in the routing table; routing and checks are unchanged.
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified dbc2a59176d184f6 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+  verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 docs/reference/invariants/cli-runs.md
-  verified 53c37cd48307ec7f on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+  verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified 372acb2717ae6830 on 2026-11-19: Re-read the CLI routing and worker invariants against the discussion changes. Their descriptions still match the worker and command entry points.
+  verified 36da56d00d1b8d08 on 2026-11-19: Re-read: the README's discussion section now documents revision explanations, drop refusal and the status file; the invariant that discussion records who selected ideas and only tested ideas count still holds unchanged.
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -26,16 +26,16 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified 5ab7578017d88c1e on 2026-11-18: The skill's writing-style section was only shortened to fit its 40-line limit; the page's sentence about it still holds
+  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 5bac5884cd269869 on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
+  verified a3df80ece698c6ea on 2026-11-19: Merge of main: this page's text is main's; its CLI context source changed only its tool word list
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing
+  verified 00914c11bd52f4e5 on 2026-11-18: re-read; it states neither who merges nor the stage count, so the workflow wording fixes change nothing here
 
 docs/reference/project/components/forecasting.md
   verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -53,22 +53,25 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 33e0f3ad54f5e204 on 2026-11-18: re-read: PR 271 moved change notes into workers/rdagent/README.md and edited this page in the same change; its links resolve and it matches
+  verified e85e5a6f7fe9b864 on 2026-11-18: re-read after the merge; the proposal pause is described as built on the command line only, matching the README section
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
-  verified 03fc2ec8aca4aa02 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+  verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 385c6d3617445444 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/web-workstation.md
-  verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
+  verified 6f015118475a7440 on 2026-11-18: re-read; the new frontend README row and wrapped bullet change nothing it says
+
+docs/reference/project/decisions-by-topic.md
+  verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
 
 docs/reference/project/ideas-and-considered.md
-  verified 2e68d05271d077ba on 2026-11-18: The new log entry records a decided writing style, not an idea under consideration, so no row here changes
+  verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -83,7 +86,10 @@ docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
 
 docs/reference/project/owner-decisions.md
-  verified f4dc8c442ce71ab2 on 2026-11-18: re-read: model routing gained routed reading, owned checks and task folders; this volume's entries link it and state none of these
+  verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
+
+docs/reference/project/reserved-period.md
+  verified 8d128cd089812ca0 on 2026-11-19: This branch adds a scored-return reader to toolbox/inputs.py; reserved-period labelling is unchanged and the new entries carry reserved-period-seen
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -98,31 +104,43 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified c3f7380b02d3b824 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/PLAYBOOK.md
-  verified ce16230858a49ab2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 383a1502ea8f14be on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+
+research/tools/README.md
+  verified 2aface65c59fa829 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/benchmark-and-drawdowns.md
-  verified 03cfcc2ee0167a3f on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified f241475c184eea0f on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 7eadec39bdc36cc2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/diagnose-and-audit.md
-  verified 66de403d59a02755 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 3b71a6fca5ba8d7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/inverted-signal-control.md
-  verified d9d9586084095e97 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/price-noise.md
-  verified a070a821d10331a6 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+
+research/tools/rdagent-journey.md
+  verified df8f12eea7539079 on 2026-11-19: Re-read after the merge: main only renamed the figure theme helper and named the light theme; the card's step-one, attribution and figure wording still match the code.
+
+research/tools/resampling-checks.md
+  verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
 
 research/tools/rule-test.md
-  verified 87efe515e760f6a1 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+  verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/run-level-checks.md
-  verified 82034701aac7dff9 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+  verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+
+research/tools/sensitivity.md
+  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

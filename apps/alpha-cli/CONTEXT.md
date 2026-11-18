@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: f360868be5c01a25
+verified: ccb173ae2ce3299f
 ---
 
 # alpha-cli workspace
@@ -61,8 +61,8 @@ Many integration tests in `tests/integration/` use the same prefixes. Shared hel
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);
 do not add a private copy.
 
-- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli` light (`tests/unit/test_public_seams.py`).
-  RD-Agent: gaps, rescaling, thirds `_rdagent_membership`/`_rdagent_identity`; inference `_rdagent_stats`/`_rdagent_twins`; compatibility `_rdagent_stability`.
+- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; `import alpha_cli` stays light (`test_public_seams.py`).
+  RD-Agent: thirds, ties, gaps `_rdagent_membership`; identity, rescaling `_rdagent_identity`; inference `_rdagent_{stats,twins}`; `_rdagent_stability`.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through
@@ -72,7 +72,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- [Registered tools](../../docs/reference/project/components/toolbox.md) cover market exposure, date sensitivity, downside risk, trades and break-even costs.
+- [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, risk, trades, costs, intervals.
 - Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) explain stored evaluations in plain words.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:

@@ -274,6 +274,61 @@ def _evidence_reading(out: _gauntlet.GauntletOutput, document: dict[str, Any]) -
     )
 
 
+def _record_periods(
+    bars: list[Bar],
+    dividends: list[CorporateAction],
+    spec: _runner.RunSpec,
+    full: BacktestResult,
+    out: _gauntlet.GauntletOutput,
+    result: dict[str, Any],
+) -> tuple[_gauntlet.GauntletOutput, list[float]]:
+    basis = "with dividends" if dividends else "price only, no dividends"
+    dates = [bar.ts for bar in bars]
+    if dates != [ts for ts, _ in full.equity_curve]:
+        raise DataError("full equity timestamps must match the loaded bars")
+    equity = [value for _, value in full.equity_curve]
+    scored_dates = out.oos.oos_timestamps
+    start = dates.index(scored_dates[0])
+    scored_bars = bars[start : start + len(scored_dates)]
+    if [bar.ts for bar in scored_bars] != list(scored_dates):
+        raise DataError("scored benchmark must cover the exact scored sessions")
+    # The rule decides after min_train closes and can first fill at the following open.
+    warmup = spec.min_train
+    periods = {}
+    markets = {}
+    for name, window, values, trades in (
+        ("full_history", bars, equity, len(full.trades)),
+        ("tradable", bars[warmup:], equity[warmup:], len(full.trades)),
+        ("scored", scored_bars, out.oos.oos_equity.tolist(), len(out.result.trades)),
+    ):
+        market = markets[name] = d.buy_and_hold(window, dividends)
+        strategy = d.performance(values, spec.periods_per_year, "engine equity after costs")
+        benchmark = d.performance(
+            market, spec.periods_per_year, "buy and hold from the first open, no costs"
+        )
+        periods[name] = {
+            "period": name,
+            "first_ts": window[0].ts.isoformat(),
+            "last_ts": window[-1].ts.isoformat(),
+            "price_basis": basis,
+            "strategy": {**strategy, "trades": trades},
+            "benchmark": benchmark,
+            "relative_return": (1 + strategy["total_return"]) / (1 + benchmark["total_return"]) - 1,
+        }
+    result["periods"] = periods
+    _artifacts.write_tradable_comparison(
+        Path(result["run_dir"]), dates[warmup:], equity[warmup:], markets["tradable"]
+    )
+    scored_result = replace(
+        out.result,
+        benchmark_curve=tuple(zip(scored_dates, markets["scored"], strict=True)),
+        benchmark_kind="passive_open_to_open_with_dividends"
+        if dividends
+        else "passive_open_to_open_price_only",
+    )
+    return replace(out, result=scored_result), markets["full_history"]
+
+
 def write_diagnostics(
     idea: IdeaSpec,
     bars: list[Bar],
@@ -287,15 +342,20 @@ def write_diagnostics(
     snapshot: LedgerSnapshot | None = None,
 ) -> _gauntlet.GauntletOutput:
     rdir = Path(result["run_dir"])
+    full, dates, equity = full_sample(bars, dividends, spec)
+    out, market = _record_periods(bars, dividends, spec, full, out, result)
+    if "no-diagnostics" in result.get("labels", []):
+        return cap_sparse_run(out, result)
     # These exact sidecars are reused by write_validation_run's idempotent publication seam.
     write_validation_sidecars(rdir, bars, spec, out, rule_test=True)
-    full, dates, equity = full_sample(bars, dividends, spec)
-    closes = {bar.ts: float(bar.close) for bar in bars}
-    market = [closes[date] for date in dates]
     ppy = spec.periods_per_year
+    full_period = result["periods"]["full_history"]
     document: dict[str, Any] = {
-        "full_sample": d.performance(equity, ppy, "full-sample backtest"),
-        "benchmark": d.performance(market, ppy, "buy and hold, same bars, no costs; close prices"),
+        "full_sample": {**full_period["strategy"], "basis": "full-sample backtest"},
+        "benchmark": {
+            **full_period["benchmark"],
+            "basis": "buy and hold, full history, " + full_period["price_basis"],
+        },
     }
     states = {item.ts: item.net_exposure for item in full.portfolio_state_trace}
     exposure = (

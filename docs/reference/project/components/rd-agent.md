@@ -3,10 +3,13 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 7d41a77468c99b32
+verified: e284a5330543b7ae
 ---
 
 # RD-Agent
+
+On this page: [Why it exists](#why-it-exists), [Its job in the research loop](#its-job-in-the-research-loop), [Intended design](#intended-design),
+[What is real today](#what-is-real-today), [Where it lives](#where-it-lives), [Decisions and open questions](#decisions-and-open-questions), [Never](#never).
 
 RD-Agent is Microsoft's open-source AI research agent. In ALPHA it is the research loop: it
 proposes an idea, turns it into an experiment, runs it, judges the result, remembers it and
@@ -129,58 +132,45 @@ New factor rows store family and critic status. Older rows can lack both. The pa
 ## Decisions and open questions
 
 - KEEP, owner, 2026-11-14 ([log](../owner-decisions.md#2026-11-14-rd-agent-is-a-key-component)).
-- What is next, in order, with what each needs from the owner:
-  [the seven blockers](../../../roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas).
-- Decided: the Codex route comes first; an API key is the fallback, capped at about 50 US dollars a
-  month ([log](../owner-decisions.md#2026-11-14-api-spending-limit-for-rd-agents-models)). Built as
-  the model gateway ([ADR-0044](../../../adr/0044-rdagent-model-gateway.md)); measured quality and
-  how far a real step got are in the
-  [task's verification][gateway-verify].
-- Decided, for now: accept losing RD-Agent's "temperature" setting on the Codex route; launch the
-  gateway with `--accept-unhonoured temperature`
+- What is next, in order, with what each needs from the owner: [the seven
+  blockers](../../../roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas).
+- Decided: the Codex route comes first; an API key is the fallback, capped at about 50 US dollars a month
+  ([log](../owner-decisions.md#2026-11-14-api-spending-limit-for-rd-agents-models)). Built as the model gateway
+  ([ADR-0044](../../../adr/0044-rdagent-model-gateway.md)); measured quality and how far a real step got are in the [task's verification][gateway-verify].
+- Decided, for now: accept losing RD-Agent's "temperature" setting on the Codex route; launch the gateway with `--accept-unhonoured temperature`
   ([log](../owner-decisions-2.md#2026-11-14-accept-losing-temperature-on-the-codex-route-for-now)).
-- Decided 2026-11-14: RD-Agent may use DeepSeek through OpenRouter (temperature honoured), caps
-  unchanged. Built: `--chat-route api --api-openrouter` on the gateway and the factor-loop launcher,
-  model `deepseek/deepseek-v4.1-flash-1017` at USD 0.038 / 0.50 per million input / output tokens
-  (OpenRouter's list, read 2026-11-14). Codex stays the default and the fallback; how to choose:
-  [worker README](../../../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14).
-  First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine factors tried, no candidate;
-  one run per route is not a quality comparison (numbers in the worker README).
-- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors, no candidate; 15 of 18 replayed swing screen passes lost money before costs (15 coins).
-  Runs sharing a gateway can start together; feedback explains losses. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
-- Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials;
-  two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
-  candidate. Embeddings were 21 of 60 and 16 of 47 counted calls in those runs. Decided by the owner
-  2026-11-17: free local embeddings are exempt, with their own 2,000-attempt guard; the other caps
-  keep their values. Historical counts stay as recorded. The stores then held 15 coins and 9 single
-  stocks. Long memory embeddings are chunked, never truncated.
+- Decided 2026-11-14: RD-Agent may use DeepSeek through OpenRouter (temperature honoured), caps unchanged. Built: `--chat-route api --api-openrouter` on the
+  gateway and the factor-loop launcher, model `deepseek/deepseek-v4.1-flash-1017` at USD 0.038 / 0.50 per million input / output tokens (OpenRouter's list,
+  read 2026-11-14). Codex stays the default and the fallback; how to choose: [worker
+  README](../../../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14). First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine
+  factors tried, no candidate; one run per route is not a quality comparison (numbers in the worker README).
+- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors, no candidate; 15 of 18 replayed swing screen passes lost money before costs (15 coins). Runs
+  sharing a gateway can start together; feedback explains losses. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
+- Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials; two fresh runs (about USD 0.22) judged 11 factors, moved to
+  new idea families, found no candidate. Embeddings were 21 of 60 and 16 of 47 counted calls in those runs. Decided by the owner 2026-11-17: free local
+  embeddings are exempt, with their own 2,000-attempt guard; the other caps keep their values. Historical counts stay as recorded. The stores then held 15
+  coins and 9 single stocks. Long memory embeddings are chunked, never truncated.
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
-  ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
-  2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned
-  nothing on 15 coins, so the loop is not yet meaningful ([verification][loop-verify]).
-- Open, for the owner: how RD-Agent's ideas get a backtest that can see them (a wider universe,
-  ALPHA's own Nautilus and statistical checks, or a calibration run on Qlib's public data)
-  ([roadmap item 2b](../../../roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas)).
-- Decided: long studies use the Dell's disk for now
-  ([log](../owner-decisions.md#2026-11-14-use-the-dells-disk-for-studies-for-now)).
-- Decided: the autonomous research team is a broader ALPHA capability built around and using
-  RD-Agent, started small; it reuses RD-Agent's native abilities and never bypasses ALPHA's controls
-  ([log](../owner-decisions.md#2026-11-14-the-autonomous-research-team)).
+  ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run, 2026-11-14: every step ran on real crypto bars, but RD-Agent's
+  built-in Qlib backtest learned nothing on 15 coins, so the loop is not yet meaningful ([verification][loop-verify]).
+- Open, for the owner: how RD-Agent's ideas get a backtest that can see them (a wider universe, ALPHA's own Nautilus and statistical checks, or a calibration
+  run on Qlib's public data) ([roadmap item 2b](../../../roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas)).
+- Decided: long studies use the Dell's disk for now ([log](../owner-decisions.md#2026-11-14-use-the-dells-disk-for-studies-for-now)).
+- Decided: the autonomous research team is a broader ALPHA capability built around and using RD-Agent, started small; it reuses RD-Agent's native abilities
+  and never bypasses ALPHA's controls ([log](../owner-decisions.md#2026-11-14-the-autonomous-research-team)).
 - Plan, 2026-11-18: RD-Agent becomes a collaborator, not a black box
   ([plan](../owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
-  [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)).
-  Built: the optional [proposal pause](../../../../workers/rdagent/README.md#propose-and-discuss) on the
-  command line. The trader answers by number or name before coding. The next proposer receives the trader's
-  reasons. Each decision records who answered, what the agent changed, and what it left out and why.
+  [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)). Built: the optional [proposal
+  pause](../../../../workers/rdagent/README.md#propose-and-discuss) on the command line. The trader answers by number or name before coding. The next
+  proposer receives the trader's reasons. Each decision records who answered, what the agent changed, and what it left out and why.
   Not built: the pause on the Workstation screen, overriding an automatic refusal, honesty checks as labels.
-- Decided 2026-11-18: the run view uses the approved journey layout
-  ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while ideas are throwaway tests a
-  labelled stand-in user may answer its pauses, never for approvals
-  ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests)).
-- Later: RD-Agent chooses tests from the [toolbox](toolbox.md) but does not write them (recommended, not confirmed);
-  Kronos, [Monte Carlo](monte-carlo.md), lookalike and pattern tools are its tools to be wired in.
-- Open: no decision record states RD-Agent's role; write one once the owner confirms the summary
-  in the [overview](../overview.md#the-research-loop).
+- Decided 2026-11-18: the run view uses the approved journey layout ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while
+  ideas are throwaway tests a labelled stand-in user may answer its pauses, never for approvals
+  ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests); [owner
+  authority](../../invariants/research-integrity.md#owner-authority)).
+- Later: RD-Agent chooses tests from the [toolbox](toolbox.md) but does not write them (recommended, not confirmed); Kronos, [Monte Carlo](monte-carlo.md),
+  lookalike and pattern tools are its tools to be wired in.
+- Open: no decision record states RD-Agent's role; write one once the owner confirms the summary in the [overview](../overview.md#the-research-loop).
 
 ## Never
 

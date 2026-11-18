@@ -45,6 +45,7 @@ other files link to it.
   in [the newest decisions volume](reference/project/owner-decisions-5.md) in the same pull request as the work it
   changes, or in a documentation pull request the same day; an idea considered but not decided goes in
   [ideas and things considered](reference/project/ideas-and-considered.md).
+- When work lands, any page that listed it as queued, open or not built is updated in the same pull request (search for the feature's name).
 - Generated pages are never edited by hand; their commands are listed in
   [docs/README.md § Generated files](README.md#generated-files).
 - Check: `uv run pytest -q tests/unit/test_docs_links.py tests/unit/test_filesystem_contract.py`,

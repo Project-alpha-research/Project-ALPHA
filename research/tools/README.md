@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 81b576ddc6bf765e
+verified: 2aface65c59fa829
 ---
 
 # Research tools, by symptom
@@ -26,14 +26,14 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Big drawdown in a short period | [benchmark and drawdowns](benchmark-and-drawdowns.md), then the macro row below |
 | Works in some years only | [benchmark and drawdowns](benchmark-and-drawdowns.md) (`by_year`), [walk-forward](walk-forward.md) |
 | Few trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [rule test](rule-test.md) on more assets |
-| Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [run-level checks](run-level-checks.md) |
+| Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [trade streaks and profit](run-level-checks.md) |
 | Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md) |
 | Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md), [break-even cost](run-level-checks.md) |
 | "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
-| "How bad could it get?" | [path risk](path-risk.md) |
+| How wide is the return range, or how bad could the drop get? | [resampling checks](resampling-checks.md), [path risk](path-risk.md) |
 | Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
 | A picture for the owner | [charts](charts.md) (`trade_pnl` for profit by trade) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |

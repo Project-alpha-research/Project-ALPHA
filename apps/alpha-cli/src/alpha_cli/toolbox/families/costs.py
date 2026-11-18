@@ -68,6 +68,7 @@ def _times(multiple: float) -> str:
 def break_even(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     import numpy as np
 
+    from alpha_cli.toolbox.inputs import HOLD_KINDS
     from alpha_validation.metrics import to_returns
 
     run = inputs.stored
@@ -101,7 +102,7 @@ def break_even(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
     if run.dates(comparison, "stored_benchmark") != dates:
         raise ValueError("Buy-and-hold dates must match the scored equity dates")
     if not all(comparison["available"]) or any(
-        kind != "passive_open_to_open_price_only" for kind in comparison["benchmark_kind"]
+        kind not in HOLD_KINDS for kind in comparison["benchmark_kind"]
     ):
         raise ValueError("A stored buy-and-hold comparison is required over the scored period")
     market = comparison["benchmark_equity"].to_numpy()

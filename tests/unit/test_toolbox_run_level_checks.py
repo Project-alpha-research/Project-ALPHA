@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.tool_cmds import tool_app
+from alpha_cli.toolbox.inputs import HOLD_KINDS
 from alpha_cli.toolbox.runner import run
 from tests.unit.test_spine_tools import RUN
 
@@ -21,6 +22,7 @@ DOWNSIDE = "performance.downside_ratios"
 DATES = "robustness.start_end_dates"
 SIDE = "trades.side_contribution"
 CONCENTRATION = "trades.concentration"
+PRICE_ONLY = "passive_open_to_open_price_only"
 START = datetime(2022, 1, 1, tzinfo=UTC)
 END = datetime(2024, 7, 1, tzinfo=UTC)
 PNL = [8.0, -2.0, 3.0, -1.0, 1.0, 0.0, 2.0, -3.0, 1.0, 1.0]
@@ -40,7 +42,7 @@ def write_trades(folder: Path, pnls: list[float], sides: list[str]) -> None:
     ).write_parquet(folder / "trades.parquet")
 
 
-def stored_run(home: Path, tool: str) -> Path:
+def stored_run(home: Path, tool: str, kind: str = PRICE_ONLY) -> Path:
     folder = home / "runs" / RUN
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "manifest.json").write_text(
@@ -71,7 +73,7 @@ def stored_run(home: Path, tool: str) -> Path:
             "strategy_equity": [value / equity[0] for value in equity],
             "benchmark_equity": [1.5 if t == END else 1.0 for t in dates],
             "available": [True] * len(dates),
-            "benchmark_kind": ["passive_open_to_open_price_only"] * len(dates),
+            "benchmark_kind": [kind] * len(dates),
         }
     ).write_parquet(folder / "benchmark_comparison.parquet")
     write_trades(folder, PNL, SIDES)
@@ -95,8 +97,10 @@ def test_downside_ratios(tmp_path: Path) -> None:
     )
 
 
-def test_date_windows(tmp_path: Path) -> None:
-    stored_run(tmp_path, DATES)
+@pytest.mark.parametrize("kind", sorted(HOLD_KINDS))
+def test_date_windows(tmp_path: Path, kind: str) -> None:
+    # The dividend-inclusive line is read like the price-only one: same windows, same numbers.
+    stored_run(tmp_path, DATES, kind)
     doc = run(tmp_path, DATES, RUN)
     rows = doc["result"]["windows"]
     assert len(rows) == 25
@@ -291,7 +295,9 @@ def test_annualisation_from_original_run_metadata(tmp_path: Path) -> None:
     assert values["sortino"] == pytest.approx(math.sqrt(252) / 2)
 
 
-def write_costs(folder: Path, gross: list[float], cost: list[float], hold: float) -> None:
+def write_costs(
+    folder: Path, gross: list[float], cost: list[float], hold: float, kind: str = PRICE_ONLY
+) -> None:
     dates = [END - timedelta(days=i) for i in reversed(range(len(gross) + 1))]
     equity = [1.0]
     for g, c in zip(gross, cost, strict=True):
@@ -310,16 +316,17 @@ def write_costs(folder: Path, gross: list[float], cost: list[float], hold: float
             "strategy_equity": equity,
             "available": [True] * len(dates),
             "benchmark_equity": [1.0] * len(gross) + [1 + hold],
-            "benchmark_kind": ["passive_open_to_open_price_only"] * len(dates),
+            "benchmark_kind": [kind] * len(dates),
         }
     ).write_parquet(folder / "benchmark_comparison.parquet")
 
 
-def test_break_even(tmp_path: Path) -> None:
+@pytest.mark.parametrize("kind", sorted(HOLD_KINDS))
+def test_break_even(tmp_path: Path, kind: str) -> None:
     folder = stored_run(tmp_path, COSTS)
     # Two identical bars: (1.1 - .02k)^2 = 1 at k=5, and = 1.04^2 at k=3.
     # At 100x both factors are negative. Their product cannot revive a bankrupt account.
-    write_costs(folder, [0.1, 0.1], [0.02, 0.02], 1.04**2 - 1)
+    write_costs(folder, [0.1, 0.1], [0.02, 0.02], 1.04**2 - 1, kind)
     values = run(tmp_path, COSTS, RUN)["values"]
     assert [values[k] for k in ("zero_multiple", "hold_multiple", "cost_share")] == pytest.approx(
         [5, 3, 0.2], rel=1e-9, abs=1e-12

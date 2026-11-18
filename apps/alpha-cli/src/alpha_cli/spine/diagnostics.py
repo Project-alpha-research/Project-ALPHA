@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 
 from alpha_cli.spine.plain_ratio import fall_comparison
-from alpha_core import DataError
+from alpha_core import ActionType, Bar, CorporateAction, DataError
 from alpha_validation.metrics import (
     FloatSeq,
     cagr,
@@ -41,6 +41,41 @@ def performance(equity: FloatSeq, ppy: int, basis: str) -> dict[str, Any]:
         "max_drawdown": max_drawdown(equity),
         "reasons": {"sharpe": reason} if reason else {},
     }
+
+
+def buy_and_hold(bars: Sequence[Bar], dividends: Sequence[CorporateAction]) -> list[float]:
+    """One share bought at the opening baseline, with entitled cash held from pay date."""
+    from nautilus_trader.model.objects import Price
+
+    from alpha_backtest.instruments import instrument_for
+
+    if not bars:
+        raise DataError("buy and hold requires a starting open")
+    first = bars[0]
+    precision = instrument_for(first.symbol).price_precision
+    initial_open = float(Price(first.open, precision))
+    if initial_open <= 0:
+        raise DataError("benchmark opening price rounds to zero at engine precision")
+    payments = []
+    for action in dividends:
+        if (
+            action.symbol != first.symbol
+            or action.action_type != ActionType.DIVIDEND
+            or action.amount is None
+        ):
+            raise DataError("expected a cash dividend on the benchmark asset")
+        if first.ts.date() < action.ex_date:
+            payments.append((max(action.ex_date, action.pay_date or action.ex_date), action.amount))
+    payments.sort()
+    cash = 0.0
+    paid = 0
+    growth = []
+    for bar in bars:
+        while paid < len(payments) and payments[paid][0] <= bar.ts.date():
+            cash += payments[paid][1]
+            paid += 1
+        growth.append((float(Price(bar.open, precision)) + cash) / initial_open)
+    return growth
 
 
 def drawdowns(equity: FloatSeq, benchmark: FloatSeq, dates: Sequence[datetime]) -> dict[str, Any]:

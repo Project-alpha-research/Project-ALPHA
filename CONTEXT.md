@@ -42,8 +42,8 @@ it points to, never here.
 | [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change: shape, plan, build, verify, land (briefs and build reports: `docs/work/`) |
 | [research/CONTEXT.md](research/CONTEXT.md) | — | testing any trading idea: it sends you to the playbook (`research/PLAYBOOK.md`) and `alpha test` |
 
-A task spanning areas: start at the area whose code you change first; its Read first table links the
-others. A change follows `workflow/CONTEXT.md` for the steps; the area's row says what to read.
+A task spanning areas: start at the area whose code you change first; its Read first table links the others. A change follows `workflow/CONTEXT.md`
+for the steps.
 
 ## One home per fact
 
@@ -51,6 +51,8 @@ others. A change follows `workflow/CONTEXT.md` for the steps; the area's row say
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
 | Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 5](docs/reference/project/owner-decisions-5.md) |
+| Owner decisions by topic | [topic index](docs/reference/project/decisions-by-topic.md) |
+| The reserved period (2024-01-01 onward) | [reserved period](docs/reference/project/reserved-period.md) |
 | Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |
@@ -65,8 +67,7 @@ When a fact changes, update its one home and link to it from elsewhere; never co
 
 ## Finding anything else
 
-- `uv run python scripts/fs.py orient` lists the areas and their module counts.
-- `uv run python scripts/fs.py search "<words>"` finds ranked excerpts of the documentation.
+- `uv run python scripts/fs.py orient` lists the areas; `fs.py search "<words>"` finds ranked excerpts of the documentation.
 - `fs.py stale` lists documents whose sources changed since verified; `fs.py owners <path>` names those describing a file; `fs.py verify <doc>` re-stamps one.
 
 ## How to change it

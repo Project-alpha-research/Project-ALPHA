@@ -1,0 +1,34 @@
+{
+  "resampling.sharpe_interval": {
+    "point": 19.65194857781739,
+    "lower": 7.3436293296192785,
+    "upper": 32.47693018389538
+  },
+  "resampling.return_interval": {
+    "point": 1.9350369414400324,
+    "lower": 0.5976563807465823,
+    "upper": 3.1573427656512396
+  },
+  "resampling.drawdown_distribution": {
+    "observed": 0.022276675032062432,
+    "median": 0.0047723796296298415,
+    "q95": 0.008269833367283801
+  },
+  "trades.dependence": {
+    "runs": 30,
+    "expected": 16.0,
+    "z": 5.202563470700445,
+    "p_value": 1.9655819607842967e-07
+  },
+  "overfit.deflated_sharpe": {
+    "dsr": 0.9260541356026146,
+    "trials": 9,
+    "benchmark": 0.7529884172037208
+  },
+  "resampling.block_bootstrap_paths": {
+    "low": 0.10330063818671416,
+    "median": 0.21642175090139215,
+    "high": 0.29330573974359525,
+    "drop_q95": 0.022306475614705792
+  }
+}

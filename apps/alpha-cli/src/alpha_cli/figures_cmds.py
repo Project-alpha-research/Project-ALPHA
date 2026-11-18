@@ -10,12 +10,25 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
-from typing import Annotated, Any, Final
+from typing import TYPE_CHECKING, Annotated, Any, Final
 
 import typer
 
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+
+if TYPE_CHECKING:
+    from alpha_research.figures.theme import Theme
+
+
+def _run_theme(manifest: dict[str, Any], dark: bool) -> Theme:
+    from alpha_cli.figures.rdagent_journey_figures import figure_theme
+    from alpha_research.figures import load_theme
+
+    if manifest.get("spine", {}).get("periods") or dark:
+        return figure_theme(dark)
+    return load_theme()
+
 
 figures_app = typer.Typer(help="Render publication-quality figures for a stored run.")
 
@@ -42,6 +55,7 @@ def _render_one(
     data_dir: Path,
     fmt: str,
     force: bool,
+    dark: bool = False,
 ) -> dict[str, Any]:
     """Render one figure into the cache, atomically, and return its projection."""
     import matplotlib
@@ -54,17 +68,16 @@ def _render_one(
         validate_format,
     )
     from alpha_cli.figures import build_figure_spec
+    from alpha_cli.figures.rule_periods import definition as run_definition
     from alpha_research.figures import (
         RENDERER_VERSION,
         RenderOptions,
         default_size,
-        figure_definition,
-        load_theme,
         render_figure,
     )
 
-    definition = figure_definition(figure_id)
-    theme = load_theme()
+    definition = run_definition(figure_id)
+    theme = _run_theme(manifest, dark)
     size = default_size(definition.panel_count)
     fmt = validate_format(fmt)
     digest, kind = input_digest(
@@ -130,6 +143,22 @@ def _render_one(
     }
 
 
+def store_rule_figures(rdir: Path, manifest: dict[str, Any], data_dir: Path) -> None:
+    """Populate the ordinary immutable figure cache before exposing the completed rule run."""
+    from alpha_cli.figures.rule_periods import CHARTS, TRADABLE
+
+    for figure in (*TRADABLE, *CHARTS):
+        _render_one(
+            figure,
+            run_id=rdir.name,
+            rdir=rdir,
+            manifest=manifest,
+            data_dir=data_dir,
+            fmt="svg",
+            force=False,
+        )
+
+
 def _publish(path: Path, payload: bytes) -> None:
     """Write via a same-directory temp file and rename, so a reader never sees a torn file."""
     import os
@@ -180,8 +209,12 @@ def _sidecar(spec: Any, definition: Any, key: str, fmt: str, size: Any) -> dict[
 
 
 def _catalogue_envelope() -> dict[str, Any]:
+    from dataclasses import asdict
+
     import matplotlib
 
+    from alpha_cli.figures.rdagent_journey_figures import figure_theme
+    from alpha_cli.figures.rule_periods import TRADABLE, definition
     from alpha_research.figures import (
         RENDERER_VERSION,
         catalog_document,
@@ -190,8 +223,10 @@ def _catalogue_envelope() -> dict[str, Any]:
     )
 
     theme = load_theme()
+    light = figure_theme(False)
     figures = []
-    for item in catalog_document():
+
+    for item in [*catalog_document(), *(asdict(definition(name)) for name in TRADABLE)]:
         panel_count = item["panel_count"]
         assert isinstance(panel_count, int)
         size = default_size(panel_count)
@@ -208,6 +243,8 @@ def _catalogue_envelope() -> dict[str, Any]:
         "matplotlib_version": matplotlib.__version__,
         "theme_id": theme.theme_id,
         "theme_digest": theme.digest(),
+        "rule_theme_id": light.theme_id,
+        "rule_theme_digest": light.digest(),
         "figures": figures,
     }
 
@@ -272,6 +309,7 @@ def render(
     force: Annotated[
         bool, typer.Option("--force", help="Re-render and assert byte identity.")
     ] = False,
+    dark: bool = typer.Option(False, "--dark", help="Use the dark figure theme."),
     as_json: _OPT_JSON = False,
 ) -> None:
     """Render figures for a run into the derived cache."""
@@ -308,6 +346,7 @@ def render(
                     data_dir=data_dir,
                     fmt=fmt,
                     force=force,
+                    dark=dark,
                 )
             )
         except DataError as error:
@@ -341,6 +380,7 @@ def path(
     run_id: Annotated[str, typer.Argument(help="Stored run id.")],
     figure: Annotated[str, typer.Option("--figure", help="Figure id.")],
     fmt: Annotated[str, typer.Option("--format", help="svg or png.")] = "svg",
+    dark: bool = typer.Option(False, "--dark", help="Use the dark figure theme."),
     as_json: _OPT_JSON = False,
 ) -> None:
     """Print a figure's cache key and path without rendering it."""
@@ -354,12 +394,14 @@ def path(
         validate_format,
     )
     from alpha_cli.figures import resolve_run
-    from alpha_research.figures import RENDERER_VERSION, default_size, figure_definition, load_theme
+    from alpha_cli.figures.rule_periods import definition as run_definition
+    from alpha_research.figures import RENDERER_VERSION, default_size
 
     data_dir = _data_dir()
     rdir, manifest = resolve_run(run_id, data_dir=data_dir)
-    definition = figure_definition(figure)
-    theme = load_theme()
+
+    definition = run_definition(figure)
+    theme = _run_theme(manifest, dark)
     size = default_size(definition.panel_count)
     digest, kind = input_digest(
         manifest, rdir, definition.required_artifacts + definition.optional_artifacts
@@ -466,13 +508,13 @@ def export(
     figure: Annotated[str, typer.Option("--figure", help="Figure id.")],
     out: Annotated[Path, typer.Option("--out", help="Destination file.")],
     fmt: Annotated[str, typer.Option("--format", help="svg or png.")] = "png",
+    dark: bool = typer.Option(False, "--dark", help="Use the dark figure theme."),
 ) -> None:
     """Write one figure outside the cache, for a paper or a deck."""
     from alpha_cli.figures import build_figure_spec, resolve_run
     from alpha_research.figures import (
         RenderOptions,
         default_size,
-        load_theme,
         render_figure,
     )
 
@@ -482,7 +524,7 @@ def export(
     payload = render_figure(
         spec,
         RenderOptions(
-            theme=load_theme(),
+            theme=_run_theme(manifest, dark),
             size=default_size(spec.panel_count),
             fmt=fmt,  # type: ignore[arg-type]
         ),

@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 4c418e7604df809a
+verified: b97f532919240f38
 ---
 
 # Web frontend invariants
@@ -20,92 +20,92 @@ verified: 4c418e7604df809a
 Rules for the Workstation single-page app (SPA) in `apps/alpha-web/frontend/` (React, TypeScript, Vite, BokehJS,
 Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.md).
 
+On this page: [No authority in the browser](#no-authority-in-the-browser), [Shell and navigation](#shell-and-navigation), [Market data
+views](#market-data-views), [Workstation themes](#workstation-themes-and-readability), [Charts](#charts), [UTC and exact
+exports](#utc-and-exact-exports), [Run detail binding](#run-detail-binding), [Generated API client](#generated-api-client), [Built static
+bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel).
+
 ## No authority in the browser
 
-- The SPA computes no metric, verdict, signal, indicator value or rule result. It renders what the server returns,
-  and shows server text (blocked reasons, watermarks, CLI errors) verbatim.
-- Owner steps run only through `components/OwnerActionButton.tsx`, which calls the owner-auth challenge/perform
-  routes. Steps an ADR keeps CLI-only get `components/CopyCommand.tsx` with the exact command (`CLI_ONLY` in
-  `panels/researchCockpitModel.ts`). See [research-integrity § Owner authority](research-integrity.md#owner-authority).
-- Never label local confirmation as verified physical presence.
-  [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
-- The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the
-  server and never grants anything. Selecting a project confers no research authority either.
-- `explain/bands.ts` mirrors the grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py` so the UI
-  can explain a grade. The persisted manifest verdict is always authoritative; band changes must stay mirrored.
-  The named `applyTradeCountCap` step mirrors the spine's `too-few-trades` cap: A/B become C, C/D/F stay,
-  and GPA is capped at 2. Stories use recorded labels and closed-trade counts (`fewer than 30` if absent),
-  explaining the dimensions' uncapped grade without replacing the stored grade or claiming C/D/F were lowered.
-  Drift is caught by `src/explain/explain.test.ts`, including synthetic capped copies of manifest fixtures.
+- The SPA computes no metric, verdict, signal, indicator value or rule result. It renders what the server returns, and shows server text (blocked reasons,
+  watermarks, CLI errors) verbatim.
+- Owner steps run only through `components/OwnerActionButton.tsx`, which calls the owner-auth challenge/perform routes. Steps an ADR keeps CLI-only get
+  `components/CopyCommand.tsx` with the exact command (`CLI_ONLY` in `panels/researchCockpitModel.ts`). See [research-integrity § Owner
+  authority](research-integrity.md#owner-authority).
+- Never label local confirmation as verified physical presence. [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
+- The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the server and never grants anything.
+  Selecting a project confers no research authority either.
+- `explain/bands.ts` mirrors the grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py` so the UI can explain a grade. The persisted
+  manifest verdict is always authoritative; band changes must stay mirrored. The named `applyTradeCountCap` step mirrors the spine's `too-few-trades` cap: A/B
+  become C, C/D/F stay, and GPA is capped at 2. Stories use recorded labels and closed-trade counts (`fewer than 30` if absent), explaining the dimensions'
+  uncapped grade without replacing the stored grade or claiming C/D/F were lowered. Drift is caught by `src/explain/explain.test.ts`, including synthetic
+  capped copies of manifest fixtures.
 - The Market Watch live ticker is display only: never stored, never read by anything else.
 
 ## Shell and navigation
 
-- `App.tsx` renders workflow pages from `shell/workflowModel.ts`. URLs are `#page=...&pane=...` (plus `run=` for a
-  run). Keep existing page and pane names stable — they are bookmarks and test targets.
-- `shell/documents.ts` is the registry: one `DocumentDefinition` per `WindowId`, each holding panes.
-  `workflowModel.DOCUMENT_PAGE` maps every `WindowId` to a page; `shell/profiles.ts` decides which windows a profile shows.
-- Only the selected task panel mounts, so hidden panels do not poll. The exception is `ChartWorkspace`: once opened it
-  stays mounted (hidden) so charts keep their captured context and range.
-- `shell/menuModel.ts` `GROUP_MENU` must name every CLI command group the server's catalog serves, and no others. An
-  unmapped group throws and blanks the menu bar. Enforced by `tests/unit/test_web_menu_groups.py`.
+- `App.tsx` renders workflow pages from `shell/workflowModel.ts`. URLs are `#page=...&pane=...` (plus `run=` for a run). Keep existing page and pane names
+  stable — they are bookmarks and test targets.
+- `shell/documents.ts` is the registry: one `DocumentDefinition` per `WindowId`, each holding panes. `workflowModel.DOCUMENT_PAGE` maps every `WindowId` to a
+  page; `shell/profiles.ts` decides which windows a profile shows.
+- Only the selected task panel mounts, so hidden panels do not poll. The exception is `ChartWorkspace`: once opened it stays mounted (hidden) so charts keep
+  their captured context and range.
+- `shell/menuModel.ts` `GROUP_MENU` must name every CLI command group the server's catalog serves, and no others. An unmapped group throws and blanks the menu
+  bar. Enforced by `tests/unit/test_web_menu_groups.py`.
 - Archive-chart identity belongs to `App`. Run, project, profile and stored-market navigation clear it.
 - A control no capability backs renders disabled with the reason in its `title`; never a silent no-op.
-- The toolbar status chip (`shell/statusModel.statusChip`) shows the strongest state: the selected run's research-gate
-  watermark verbatim, else `Research gate open` for the linked project (reason in `title`), else `Paper only`.
-- The project selector allows `No project — browse data`. A failed project inventory is shown as an error with retry,
-  never as an empty list. Loading settles after request or projection failure as well as an empty success;
-  disposed reads cannot update the selector. Enforced by `src/shell/ContextBar.test.tsx`.
+- The toolbar status chip (`shell/statusModel.statusChip`) shows the strongest state: the selected run's research-gate watermark verbatim, else `Research gate
+  open` for the linked project (reason in `title`), else `Paper only`.
+- The project selector allows `No project — browse data`. A failed project inventory is shown as an error with retry, never as an empty list. Loading settles
+  after request or projection failure as well as an empty success; disposed reads cannot update the selector. Enforced by `src/shell/ContextBar.test.tsx`.
 
 ## Market data views
 
-- Market Watch lists only profile-compatible symbols present in the stored inventory. Clicking one opens the canonical
-  price chart and clears the date window, snapshot, run and archive context (`actions.openStoredMarket`).
-- The venue comes from the stored `provenance.source`; a missing or `unknown` source shows `—`, never a guessed name.
-  USD, USDT and USDC pairs are never merged ([data § Crypto identity and features](data.md#crypto-identity-and-features)).
-- Every price is dated (Age column); rows older than two days are dimmed and a symbol without bars shows `—`. Daily %
-  is a display change between the last two stored closes, not a metric.
-- The opt-in live ticker polls only while the tab is visible. A failed, non-finite or mismatched quote leaves the stored
-  close and its date in place.
-- `components/AssetSelect.tsx` defaults to the canonical stored inventory; archive navigation is opt-in. A manually typed
-  symbol is labelled `availability not verified` and is never treated as verified provider inventory.
-- The Data Manager and status bar relay storage readiness without device names; blocked details remain visible.
-  `controlPlane.buildDataPullArgs` throws the date problem the CLI would reject.
+- Market Watch lists only profile-compatible symbols present in the stored inventory. Clicking one opens the canonical price chart and clears the date window,
+  snapshot, run and archive context (`actions.openStoredMarket`).
+- The venue comes from the stored `provenance.source`; a missing or `unknown` source shows `—`, never a guessed name. USD, USDT and USDC pairs are never
+  merged ([data § Crypto identity and features](data.md#crypto-identity-and-features)).
+- Every price is dated (Age column); rows older than two days are dimmed and a symbol without bars shows `—`. Daily % is a display change between the last two
+  stored closes, not a metric.
+- The opt-in live ticker polls only while the tab is visible. A failed, non-finite or mismatched quote leaves the stored close and its date in place.
+- `components/AssetSelect.tsx` defaults to the canonical stored inventory; archive navigation is opt-in. A manually typed symbol is labelled `availability not
+  verified` and is never treated as verified provider inventory.
+- The Data Manager and status bar relay storage readiness without device names; blocked details remain visible. `controlPlane.buildDataPullArgs` throws the
+  date problem the CLI would reject.
 
 ## Workstation themes and readability
 
 - Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.
 - Colours come from three palettes in `index.css`; type at least 14 px, prose line height 1.45, tabular monospace numbers. Body ink 7:1, other text 4.5:1.
-- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box.
-  Stored images keep their recorded colours.
+- Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box. Stored images keep their
+  recorded colours.
 - No literal colours outside the palette declarations: `util/themeContract.test.ts` scans; `theme/theme.test.ts` checks contrast in all three themes.
 
 ## Charts
 
-- Study values come only from `alpha chart overlays`. A study the CLI refuses (for example, longer than the window) is
-  dropped by name; an overlay failure shows `overlays unavailable`. Never estimate a missing value.
-- Never resample, aggregate or substitute bars in the browser. An interval needs a compatible recorded native source;
-  there is no automatic venue or market substitution.
-- Archive, run and snapshot contexts never silently fall back to canonical stored bars. A run without a recorded price
-  snapshot cannot borrow current candles. Archive charts stay separate from strategy context.
-- In `ChartWorkspace` (at most four panels) only the primary panel follows canonical market navigation. Comparison
-  panels stay pinned, and changing a panel's source never changes canonical research context.
+- Study values come only from `alpha chart overlays`. A study the CLI refuses (for example, longer than the window) is dropped by name; an overlay failure
+  shows `overlays unavailable`. Never estimate a missing value.
+- Never resample, aggregate or substitute bars in the browser. An interval needs a compatible recorded native source; there is no automatic venue or market
+  substitution.
+- Archive, run and snapshot contexts never silently fall back to canonical stored bars. A run without a recorded price snapshot cannot borrow current candles.
+  Archive charts stay separate from strategy context.
+- In `ChartWorkspace` (at most four panels) only the primary panel follows canonical market navigation. Comparison panels stay pinned, and changing a panel's
+  source never changes canonical research context.
 - Keep chart creation separate from option, evidence and selection updates; fit/reset happens only on request.
-- Analytical panels default to the `scientific` (BokehJS) renderer; Lightweight Charts (`market`) is opt-in. The default
-  `chartStyle` is `classic` (`components/technical/`).
-- The technical chart spaces bars by observation. Where the series' own calendar (weekday or continuous) has no
-  observation it draws a gap mark; it never interpolates a bar.
-- Volume colouring uses exact native-index viewport intersections, including partly visible edge bars, and classifies
-  up/down against the previous close (an unchanged close counts as up). Keep the full x/volume source.
+- Analytical panels default to the `scientific` (BokehJS) renderer; Lightweight Charts (`market`) is opt-in. The default `chartStyle` is `classic`
+  (`components/technical/`).
+- The technical chart spaces bars by observation. Where the series' own calendar (weekday or continuous) has no observation it draws a gap mark; it never
+  interpolates a bar.
+- Volume colouring uses exact native-index viewport intersections, including partly visible edge bars, and classifies up/down against the previous close (an
+  unchanged close counts as up). Keep the full x/volume source.
 - Price annotations keep unit isolation: only `unit: 'price'` annotations draw on the price pane.
-- Bokeh views own standalone documents. Release the views and the document/model registries on cancel, failure and
-  disposal.
-- A canvas is invisible to a screen reader. Every canvas chart needs a real-markup alternative: `panels/ChartDataAlternative.tsx`
-  for price bars, and `components/FigureCard.tsx` alt text, caveats and value tables for server figures.
-- Never change timing budgets or aggregate bars to make a performance test pass. The `@perf-budget` specs run only with
-  `ALPHA_PERF_BUDGETS=1` on an idle reference machine.
-- Screenshot baselines are kept per platform (`*-darwin.png`, `*-linux.png`). Re-take Linux images in the Playwright
-  Linux container; never copy macOS images over them.
+- Bokeh views own standalone documents. Release the views and the document/model registries on cancel, failure and disposal.
+- A canvas is invisible to a screen reader. Every canvas chart needs a real-markup alternative: `panels/ChartDataAlternative.tsx` for price bars, and
+  `components/FigureCard.tsx` alt text, caveats and value tables for server figures.
+- Never change timing budgets or aggregate bars to make a performance test pass. The `@perf-budget` specs run only with `ALPHA_PERF_BUDGETS=1` on an idle
+  reference machine.
+- Screenshot baselines are kept per platform (`*-darwin.png`, `*-linux.png`). Re-take Linux images in the Playwright Linux container; never copy macOS images
+  over them.
 
 ## UTC and exact exports
 
@@ -119,38 +119,33 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 ## Run detail binding
 
-- `panels/rundetail/index.tsx` tags every async result with the `runId` and request id that asked for it, and renders
-  only results for the currently selected run and its latest request. A previous run's summary, figures or trades
-  must never show or export under the new run.
-- States are explicit: no run selected → "Select a run"; error → the error; pending → "Loading run…". A trades request
-  error stays distinct from a genuinely empty trades list.
-  Enforced by `e2e/rundetail-trades-race.spec.ts`.
+- `panels/rundetail/index.tsx` tags every async result with the `runId` and request id that asked for it, and renders only results for the currently selected
+  run and its latest request. A previous run's summary, figures or trades must never show or export under the new run.
+- States are explicit: no run selected → "Select a run"; error → the error; pending → "Loading run…". A trades request error stays distinct from a genuinely
+  empty trades list. Enforced by `e2e/rundetail-trades-race.spec.ts`.
 - `reportModel.summaryRows` shows recorded manifest values only (`not recorded` otherwise) — no client arithmetic.
-- `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot
-  do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
-- A rule test opens with the saved idea (or plain rule), market, loaded dates and a comparison of the two full-history returns.
-  The five tiles show total return after costs, annual growth, worst drop, closed trades and buy-and-hold return from the stored diagnostics.
-  The Sharpe line uses the same full-history basis. Labels and flagged checks qualify their numbers. A missing value keeps its stored reason.
-  The trade tile explains a sparse grade with the manifest's walk-forward count and verdict. The two samples can have different trade counts.
-  The figure catalogue supplies separate comparison and drawdown cards for the scored period. Loading, failure and an empty list each have their own text.
-  Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail. Only variants subtract Sharpe scores.
-  Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
-- The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
-  it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
+- `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot do is disabled with the reason, and
+  question, uncertainty and caveat prose stays in the DOM in both explain modes.
+- The rule-test Summary takes its headline dates from the first executable open through the final tradable open. Loaded dates appear below. Each dated row
+  reads its own stored returns, annual growth, worst drop, closed trades, Sharpe and price basis from the manifest. Row one is “Whole period the rule could
+  trade”; “Scored test periods only” uses the walk-forward portfolio and its trade count. Each row has matching comparison and drawdown figures, stored light
+  for new runs. Old runs keep saved figures and a full-history disclosure. Missing period values read “not recorded”. A catalogue request distinguishes
+  loading, failure and missing figures. Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail.
+  Only variants subtract Sharpe scores. Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
+- The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence it renders as unavailable. Enforced
+  by `e2e/backtest-result-card.spec.ts`.
 
-- The RD-Agent picker shows each idea's name, recorded verdict in plain words and publication state.
-  The run summary omits missing values or shows “This run stored no summary.” Ledger absence appears in technical detail.
-  Selecting an idea reads its journey in place. Responses and disclosures belong to that run and idea.
-  The header repeats the recorded exploratory label from the last fact of step seven. The seven steps keep their stored order, actor and wording.
-  Each headline number uses its stored display string and a visible gloss. A step shows its PNG on a light card, or its recorded reason in muted text.
-  The card sits below the text in a narrow pane. Code keeps its indentation and wraps long lines with a hanging indent.
-  Source files, the agent's own words and code beyond twelve lines use closed disclosures.
-  Missing values read “not recorded”. A missing journey shows the local build command. The browser starts no build.
-  Covered by `RdAgentPanel.test.tsx`, `RdAgentJourney.test.tsx` and `e2e/rdagent-journey.spec.ts`.
+- The RD-Agent picker shows each idea's name, recorded verdict in plain words and publication state. The run summary omits missing values or shows “This run
+  stored no summary.” Ledger absence appears in technical detail. Selecting an idea reads its journey in place. Responses and disclosures belong to that run
+  and idea. The header repeats the recorded exploratory label from the last fact of step seven. The seven steps keep their stored order, actor and wording.
+  Each headline number uses its stored display string and a visible gloss. A step shows its PNG on a light card, or its recorded reason in muted text. The
+  card sits below the text in a narrow pane. Code keeps its indentation and wraps long lines with a hanging indent. Source files, the agent's own words and
+  code beyond twelve lines use closed disclosures. Missing values read “not recorded”. A missing journey shows the local build command. The browser starts no
+  build. Covered by `RdAgentPanel.test.tsx`, `RdAgentJourney.test.tsx` and `e2e/rdagent-journey.spec.ts`.
 
-- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures
-  have value tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round
-  only; no curve or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
+- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures have value
+  tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round only; no curve
+  or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
 
 ## Generated API client
 

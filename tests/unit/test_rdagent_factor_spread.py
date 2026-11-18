@@ -13,6 +13,7 @@ import pytest
 
 from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_core import DataError
@@ -57,7 +58,10 @@ def test_a_spread_that_exists_only_by_tie_order_fails() -> None:
     outcome = np.zeros((30, 15))
     outcome[:, 1:5] = 0.01 + np.linspace(0, 0.001, 30)[:, None]  # tied names that sort first win
     result = ev.spread(signal, outcome, 1, SYMBOLS, "d" * 64, horizon=1, n_resamples=50)
-    assert result["mean_spread"] > 0 > result["alternate_tie_order_mean_spread"]
+    # Top: name 0 plus 4/14 of each tied name; bottom: 5/14 of each tied name; five slots each.
+    # Daily spread = (4/14 - 5/14) * 4 * x / 5 = -2x/35, with mean x = 0.0105.
+    assert result["mean_spread"] == pytest.approx(-2 * 0.0105 / 35)
+    assert result["alternate_tie_order_mean_spread"] == result["mean_spread"]
     assert result["status"] == "FAIL"
 
 
@@ -81,10 +85,25 @@ def test_spread_selection_matches_the_replays_top_third() -> None:
     rng = np.random.default_rng(11)
     row = rng.normal(size=15)
     row[[2, 9]] = row[4]  # ties
+    # Upward the tie group sits below the top five; downward it shares the last two slots.
+    expected = {1: {10: 1.0, 1: 1.0, 8: 1.0, 12: 1.0, 6: 1.0}, -1: {5: 1.0, 3: 1.0, 14: 1.0}}
+    expected[-1].update(dict.fromkeys((2, 4, 9), 2 / 3))
     for direction in (1, -1):
         top, _ = ev._thirds(row, direction, SYMBOLS, reverse_ties=False)
-        ranked = sorted(range(15), key=lambda j: (-direction * row[j], SYMBOLS[j]))
-        assert top == ranked[:5]
+        assert top == list(expected[direction])
+        weights = membership.replay_weights(
+            row,
+            np.ones(15),
+            np.zeros(15),
+            np.ones(15),
+            rebalance=True,
+            direction=direction,
+            min_names=5,
+            fraction=1 / 3,
+        )
+        assert {j: 5 * w for j, w in enumerate(weights) if w > 0} == pytest.approx(
+            expected[direction]
+        )
 
 
 def test_spread_failure_is_recorded_and_never_passes(tmp_path: Path) -> None:

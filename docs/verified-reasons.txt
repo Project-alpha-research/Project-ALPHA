@@ -70,6 +70,9 @@ docs/reference/project/components/web-workstation.md
 docs/reference/project/decisions-by-topic.md
   verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
 
+docs/reference/project/file-system-measurement.md
+  verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
+
 docs/reference/project/ideas-and-considered.md
   verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
 

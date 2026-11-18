@@ -7,7 +7,7 @@ sources:
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 1f73b2fc3159811f
+verified: 2ee773427073721c
 ---
 
 # Model routing: who builds, who reviews, what happens at a limit
@@ -121,8 +121,8 @@ the sandbox does not stop a write through a hard link.
   `handoff.py` runs `uv sync --locked` before Codex starts.
 - Commits, pushes, pull requests, merges. Codex's sandbox cannot write the git directory, and
   `handoff.py` refuses a build whose HEAD moved.
-- Checks Codex's sandbox cannot run ([below](#what-the-build-sandbox-allows)); `handoff.py` runs
-  every check again outside the sandbox.
+- Checks Codex's sandbox cannot run ([below](#what-the-build-sandbox-allows)); `handoff.py` runs every check
+  again outside it: pytest under `run_owned_test.py`, a private `TMPDIR`, the built web app linked or built.
 - Decisions not written in the plan or brief; owner actions of any kind.
 - Changes to the never paths (`tests/holdout/`, `scripts/codex_bridge.py`, `scripts/claude_hooks.py`,
   `.claude/settings*.json`, credential-shaped files) — refused whatever the plan says.
@@ -176,7 +176,7 @@ and `fallback`, and the pull request's "Who built and who reviewed".
 
 ## Economy rules for the Claude side
 
-- Briefs point at routing files and sections (a Read first table); they never paste context.
+- Briefs point at routing files and sections (a Read first table), never paste context; `handoff.py` adds the touched workspaces' rows (≤ 24 KB).
 - The orchestrator reads `handoff.py`'s summary (≤ 40 lines) and `git diff --stat`, not logs or
   event streams; it opens the diff only to review or when the summary says something failed.
 - Fix rounds are driven by `handoff.py` (`codex exec resume` with the failing command and its
@@ -191,10 +191,10 @@ and `fallback`, and the pull request's "Who built and who reviewed".
 
 `handoff.py` writes a JSON build record for every run under its home (default
 `<parent of the main checkout>/tmp/handoff/records/`, or `ALPHA_HANDOFF_HOME`); for a task folder
-it also writes `docs/work/<task>/03-build.json` on the task branch (removed with the folder before
-merge; its numbers go into the pull request). On the small route the
-record stays outside the tree and its numbers go into the pull request under "Who built and who
-reviewed". Worktrees are `<home>/wt/<name>` on branch `build/<name>`; `handoff.py status` lists
+it also writes `docs/work/<task>/03-build.json`. A brief build leaves `brief.md` and the builder's
+`report.md` in `docs/work/<date>-<slug>/` ([task folders](../work/CONTEXT.md)), merged with the
+work; the record stays outside the tree and its numbers go into the pull request under "Who built
+and who reviewed". Worktrees are `<home>/wt/<name>` on branch `build/<name>`; `handoff.py status` lists
 them and `handoff.py clean` removes merged ones (only those it created). A later run on the same
 worktree (a fix by hand, or the Claude fallback through `handoff.py verify`) keeps the earlier
 attempts under `previous_attempts`, so the fallback stays visible.

@@ -46,7 +46,8 @@ read owner data, credentials or hidden tests.
   machine setup: `setup.sh` (wraps `setup_rdagent.sh`) and the machine section of `gate.py doctor`
   ([development loop](../docs/operations/development-loop.md#set-up-a-fresh-machine));
   Codex: `handoff.py` (builds; rules in `docs/reference/model-routing.md`) with `handoff_sandbox.py`
-  (what the build sandbox may reach: its package cache and read-only links), `codex_bridge.py` (reviews).
+  (what the build sandbox may reach: its package cache and read-only links) and `handoff_routing.py`
+  (routed reading, the `docs/work/` brief and report, how checks run), `codex_bridge.py` (reviews).
 - Tests: `tests/unit/test_gate_*.py` (the doctor's machine section is `test_gate_machine_doctor.py`),
   `test_setup_script.py`, `test_git_guard.py`, `test_fs_*.py`, `test_roadmap_index.py`,
   `test_commands_reference.py`, `test_claude_harness_*.py`, `test_mutation_*.py`, `test_code_size.py` (the size limit,

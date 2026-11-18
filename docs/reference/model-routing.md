@@ -17,6 +17,10 @@ usually has cleaner better code"; Claude is better at planning and decision maki
 the ChatGPT Pro plan (generous, weekly limits); Claude runs on Max 5x, which is the one to ration.
 Apply the tables below mechanically; `scripts/handoff.py` applies the build and review rows itself.
 
+On this page: [Roles](#roles), [Task classes](#task-classes), [What the build sandbox allows](#what-the-build-sandbox-allows),
+[What stays with Claude or the machine](#what-stays-with-claude-or-the-machine), [Review by risk tier](#review-by-risk-tier),
+[Limits and fallback](#limits-and-fallback), [Economy rules](#economy-rules-for-the-claude-side), [Records](#records).
+
 ## Roles
 
 - **Orchestrating Claude session** — decides; writes briefs and plans; runs `handoff.py`; reads its
@@ -177,24 +181,20 @@ and `fallback`, and the pull request's "Who built and who reviewed".
 ## Economy rules for the Claude side
 
 - Briefs point at routing files and sections (a Read first table), never paste context; `handoff.py` adds the touched workspaces' rows (≤ 24 KB).
-- The orchestrator reads `handoff.py`'s summary (≤ 40 lines) and `git diff --stat`, not logs or
-  event streams; it opens the diff only to review or when the summary says something failed.
-- Fix rounds are driven by `handoff.py` (`codex exec resume` with the failing command and its
-  output tail), never by a Claude turn. Budget: `--fix-rounds`, default 2.
-- Sub-agent models are set in each agent's front matter (`model:`); override per call only as the
-  review table says.
+- The orchestrator reads `handoff.py`'s summary (≤ 40 lines) and `git diff --stat`, not logs or event streams; it opens the diff only to review or
+  when the summary says something failed.
+- Fix rounds are driven by `handoff.py` (`codex exec resume` with the failing command and its output tail), never by a Claude turn. Budget: `--fix-rounds`,
+  default 2.
+- Sub-agent models are set in each agent's front matter (`model:`); override per call only as the review table says.
 - One small route task per brief; batch unrelated small fixes into separate parallel builds.
-- A brief says what to change and where; a style remark about a whole file reads as an order to
-  rewrite it (calibration task A re-wrapped a whole reference file that way).
+- A brief says what to change and where; a style remark about a whole file reads as an order to rewrite it (calibration task A re-wrapped a whole
+  reference file that way).
 
 ## Records
 
-`handoff.py` writes a JSON build record for every run under its home (default
-`<parent of the main checkout>/tmp/handoff/records/`, or `ALPHA_HANDOFF_HOME`); for a task folder
-it also writes `docs/work/<task>/03-build.json`. A brief build leaves `brief.md` and the builder's
-`report.md` in `docs/work/<date>-<slug>/` ([task folders](../work/CONTEXT.md)), merged with the
-work; the record stays outside the tree and its numbers go into the pull request under "Who built
-and who reviewed". Worktrees are `<home>/wt/<name>` on branch `build/<name>`; `handoff.py status` lists
-them and `handoff.py clean` removes merged ones (only those it created). A later run on the same
-worktree (a fix by hand, or the Claude fallback through `handoff.py verify`) keeps the earlier
-attempts under `previous_attempts`, so the fallback stays visible.
+`handoff.py` writes a JSON build record for every run under its home (default `<parent of the main checkout>/tmp/handoff/records/`, or
+`ALPHA_HANDOFF_HOME`); for a task folder it also writes `docs/work/<task>/03-build.json`. A brief build leaves `brief.md` and the builder's
+`report.md` in `docs/work/<date>-<slug>/` ([task folders](../work/CONTEXT.md)), merged with the work; the record stays outside the tree and its
+numbers go into the pull request under "Who built and who reviewed". Worktrees are `<home>/wt/<name>` on branch `build/<name>`; `handoff.py status`
+lists them and `handoff.py clean` removes merged ones (only those it created). A later run on the same worktree (a fix by hand, or the Claude fallback
+through `handoff.py verify`) keeps the earlier attempts under `previous_attempts`, so the fallback stays visible.

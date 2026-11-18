@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b19bd244f0a0ad2d
+verified: 3be4ec6d2d9239c4
 ---
 
 # Command line runs invariants
@@ -96,7 +96,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1` (lock file, strict JSON, fsync); `trial_index` and `total_trials` equal the 1-based line number and
   corruption fails loud. Errors count as trials with an `error` label and null unavailable metrics; the command output explains them.
-- Quick (20/4/4 paths, 50 resamples), all-in, dev-machine-data, source and history labels accompany [data health](../../../research/tools/data-health.md).
+- `quick` = 20/4/4 null paths, 50 resamples. Every run carries `all-in`, `dev-machine-data`, a data-health label; defaulted sources and short history too.
 - CASH equity-sized long entries from flat are capped at the affordable size step including fees at the open; the existing buffer stays. The manifest/result
   counts `resized_entries` in scored execution and prints a line above zero; older runs load without it.
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
@@ -163,12 +163,12 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
 ## Setup find
 - `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
-- Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud.
-- Events at most ten bars apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
+- Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud. Events at most ten bars
+  apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
 - Sheets stop at the trigger plus entry open; rejected samples stop at their decision boundary. Pending and warm-up rows are not drawn.
 - Accepted sheets are capped and labelled when truncated; rejected sheets sample at most four reasons and four days per reason.
-- Find ids bind spec, context (default 60 bars), asset fingerprints and health evidence. Unchecked finds keep the prior id if its folder is free or matches.
-- The atomic manifest is last; repeats append a ledger row without rewriting artifacts. A `setup_find` row is an uncounted look, with no verdict.
+- Find ids bind spec, context (60 bars by default), asset fingerprints and health evidence, never sheet limits; unchecked finds keep a free or
+  matching old id. The atomic manifest is last; repeats append a ledger row, rewrite nothing. A `setup_find` row is an uncounted look, no verdict.
 ## Setup study
 - `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
 - Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find.

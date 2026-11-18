@@ -29,6 +29,8 @@ part that owns it can link to one clear entry.
 - **In practice:** each stand-in exchange is judged as a test of the collaboration flow, and the
   report says what it was like to use.
 - **Governs:** [RD-Agent](components/rd-agent.md); [research cases and approval](components/research-cases-and-approval.md).
+  The rule that only the owner approves: [owner authority](../invariants/research-integrity.md#owner-authority).
+- **Status (2026-11-18):** the pause ("propose and discuss") mode is built on the command line only (PR #281); the Workstation screen for it is not built.
 
 ### 2026-11-18 Kronos, the four Monte Carlos, lookalike and pattern tools are RD-Agent's toolbox
 
@@ -165,6 +167,8 @@ part that owns it can link to one clear entry.
 - **Decided:** queued, not built. It is listed in [ideas and things considered](ideas-and-considered.md).
 - **Status 2026-11-19:** rule tests and setup runs now carry the report. RD-Agent panels remain queued.
 - **Governs:** [data layer](components/data-layer.md).
+- **Status (2026-11-18):** step 1 is built (PR #278): `alpha data health` and its saved report. Attaching the verdict to runs
+  is not built. The decision above is left as recorded.
 
 ### 2026-11-18 Rule: a directional statement lands in this log in the same change
 

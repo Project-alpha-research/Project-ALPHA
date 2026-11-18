@@ -111,6 +111,8 @@ The stages of one governed research case. Data is split by date groups, 60/20/20
 - **Manifest** — The list of files and their hashes that identifies one stored item exactly.
 - **Receipt** — A saved proof of a request, its version and its exact content hash.
 - **Snapshot** — A frozen, hashed copy of data that a run is tied to.
+- **Reserved period / holdout** — Data on or after 2024-01-01, kept back from ideas. Only RD-Agent's factor loop locks it today.
+  Where it is defined, what respects it and what is open: [reserved period](project/reserved-period.md). Only the owner reveals a holdout.
 
 ## Tools and parts
 

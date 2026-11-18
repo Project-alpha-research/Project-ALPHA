@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 9e59f2a27fcfe2f4
+verified: a3480c23a04bafd2
 ---
 
 # alpha-web workspace
@@ -37,13 +37,13 @@ grants authority.
 | [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
 | [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | the Setup Lab panel or `/api/setup/runs` |
+| [frontend README](frontend/README.md) | — | taking or checking screenshots (2% tolerance, Linux container, test backend port 8802) |
 
 ## How to change it
 
-- Backend code: `apps/alpha-web/src/alpha_web/` (routes in `api/`; copy a sibling such as
-  `api/native_results.py` with its adapter `_native_results.py`; response models are one module per area in `api/models/`,
-  not one big file). Frontend: `frontend/src/`
-  (`panels/`, `shell/`, `components/`, `api/`). The built bundle `src/alpha_web/static/app` is
+- Backend code: `apps/alpha-web/src/alpha_web/` (routes in `api/`; copy a sibling such as `api/native_results.py` with its adapter
+  `_native_results.py`; response models are one module per area in `api/models/`, not one big file). Frontend: `frontend/src/` (`panels/`, `shell/`,
+  `components/`, `api/`). The built bundle `src/alpha_web/static/app` is
   build output, not committed; `npm ci && npm run build` writes it, and must run before serving or building the wheel. Never edit it by hand.
 - Backend tests: `tests/unit/test_web_*.py`, `tests/integration/test_web_api_*.py`,
   `tests/integration/test_openapi_safe_routes.py`. Frontend unit tests sit next to the code as

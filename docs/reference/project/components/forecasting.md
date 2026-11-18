@@ -28,7 +28,9 @@ risk study. Its paths are also one family of the path-risk simulation in
 
 - The model code is kept in ALPHA at a pinned version (vendored), unlike RD-Agent, Qlib and
   Nautilus, which are installed packages; the reasons are in ADR-0008.
-- Weights are local and the model runs offline ([ADR-0010](../../../adr/0010-local-kronos-weights-offline-policy.md)).
+- The model downloads from the hub on first use unless offline loading is switched on (setting `forecast_local_only`,
+  environment variable `ALPHA_FORECAST_LOCAL_ONLY`, default off). With it on, a missing file is an error, never a download
+  ([ADR-0010](../../../adr/0010-local-kronos-weights-offline-policy.md)).
 - Periods the model was trained on are labelled, so a forecast that has seen the future is never
   mistaken for a real one ([ADR-0009](../../../adr/0009-forecast-leakage-and-tier2-cost-policy.md)).
 
@@ -62,7 +64,7 @@ which reads stored forecast runs. Its paths also feed the Kronos family of [Mont
   never removed when slimming ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
   Not built: no RD-Agent or toolbox entry calls it yet; the first entries of the
   [toolbox](toolbox.md) are market descriptions only.
-- Open: the Kronos model files are not on every machine, so the real model has run only on a stand-in.
+- Open: no machine is recorded as holding the real model files, so the real model has run only on a stand-in.
 
 ## Never
 

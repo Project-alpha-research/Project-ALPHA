@@ -693,7 +693,10 @@ ROUTING = "docs/reference/model-routing.md"
 def test_model_routing_has_its_home_and_matches_the_handoff_tool() -> None:
     import handoff
 
-    assert f"]({ROUTING})" in _text(CONTEXT), f"root {CONTEXT}: add {ROUTING} to One home per fact"
+    home = "docs/README.md"  # the One home per fact table moved here from the root
+    assert f"](reference/{Path(ROUTING).name})" in _text(home), (
+        f"{home}: add {ROUTING} to One home per fact"
+    )
     text = _text(ROUTING)
     problems = [
         f"{ROUTING}: class {name!r} must name model {p.model!r} and effort {p.effort!r}"
@@ -901,3 +904,51 @@ def test_owner_decisions_are_dated_quoted_and_say_what_they_govern(volume: str) 
         if "**Governs:**" not in text:
             problems.append(f"{volume}: entry {title!r} needs a '**Governs:**' line")
     assert not problems, "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------------------------
+# Routing-only root, invariants router, measurement page off the route
+
+ROOT_MAX_BYTES = 2_200
+ROOT_MAX_LINES = 40
+ROOT_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
+INVARIANTS_DIR = "docs/reference/invariants"
+INVARIANTS_ROUTER = f"{INVARIANTS_DIR}/README.md"
+INVARIANTS_ROUTER_MAX_LINES = 45
+MEASUREMENT_PAGE = "file-system-measurement.md"
+
+
+def test_root_is_routing_only() -> None:
+    path = ROOT / CONTEXT
+    size = path.stat().st_size
+    lines = len(_text(CONTEXT).splitlines())
+    titles = [title for _, level, title in headings(_text(CONTEXT)) if level == 2]
+    problems = []
+    if size > ROOT_MAX_BYTES:
+        problems.append(f"{size} bytes; the limit is {ROOT_MAX_BYTES}")
+    if lines > ROOT_MAX_LINES:
+        problems.append(f"{lines} lines; the limit is {ROOT_MAX_LINES}")
+    if titles != list(ROOT_SECTIONS):
+        problems.append(f"level-2 sections must be exactly {list(ROOT_SECTIONS)}; found {titles}")
+    assert not problems, (
+        f"root {CONTEXT} is routing only: " + "; ".join(problems) + ". Move facts to "
+        "docs/README.md (One home per fact) or the owning workspace file."
+    )
+
+
+def test_invariants_router_lists_every_invariants_file() -> None:
+    router = _text(INVARIANTS_ROUTER)
+    lines = len(router.splitlines())
+    assert lines <= INVARIANTS_ROUTER_MAX_LINES, (
+        f"{INVARIANTS_ROUTER}: {lines} lines; the limit is {INVARIANTS_ROUTER_MAX_LINES}"
+    )
+    files = sorted(p.name for p in (ROOT / INVARIANTS_DIR).glob("*.md") if p.name != "README.md")
+    missing = [name for name in files if f"[{name}]({name})" not in router]
+    assert not missing, f"{INVARIANTS_ROUTER} has no row for: {missing}. Add one row per file."
+
+
+def test_measurement_page_is_not_routed() -> None:
+    linking = [
+        rel for rel in (IDENTITY, AGENT_POINTER, *context_files()) if MEASUREMENT_PAGE in _text(rel)
+    ]
+    assert not linking, f"These files route to {MEASUREMENT_PAGE}; remove the link: {linking}"

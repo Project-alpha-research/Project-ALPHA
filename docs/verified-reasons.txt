@@ -2,10 +2,13 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified cccd38a6760e26c6 on 2026-11-19: CLI routing and ownership still apply to all changed discussion commands and journey wording
+  verified d78abbd684e38fb4 on 2026-11-19: Re-read after merging main: discussion reply help, decision text and degenerate wording add no command, route or package boundary
 
 docs/CONTEXT.md
-  verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
+  verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
+
+docs/reference/invariants/README.md
+  verified 92ce4d72825b64d7 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
@@ -14,10 +17,13 @@ docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/invariants/cli-trial-ledger.md
-  verified 18fa04151f7762ec on 2026-11-19: Reply help does not change the ledger exchange, counting, or owner authority
+  verified 18fa04151f7762ec on 2026-11-19: Re-read after merging main: reply help wording changes no ledger exchange, counting or owner authority
+
+docs/reference/invariants/documentation.md
+  verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/workers.md
-  verified 43abdbac77d77cc7 on 2026-11-19: Discussion uses the same worker boundaries, evaluation rules, and model caps
+  verified 43abdbac77d77cc7 on 2026-11-19: Re-read after merging main: discussion prompts keep the same worker boundaries, evaluation rules and model call caps
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -29,13 +35,13 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 087a6e0f02808e04 on 2026-11-19: Merge of main: the page text is main's; the CLI context source changed only in its output links and tool list
+  verified 5c83c0289457f709 on 2026-11-19: CONTEXT.md only shortened one line; the command-line page still matches
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 4eed26d21e17eb9f on 2026-11-19: Only wording and a routing row changed in the two sources; the page already links the end-to-end section
+  verified 96caf59a75017db3 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/components/forecasting.md
   verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -53,7 +59,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 3a3061f3266cd9a4 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
+  verified c3ab11d18a81fed4 on 2026-11-19: Re-read after merging main: feedback sentence matches the built-only hypothesis and drop instruction; main's post-verdict checks text kept
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -68,13 +74,13 @@ docs/reference/project/components/web-workstation.md
   verified 1ac0a57e42fc186a on 2026-11-19: CONTEXT.md routing row for Setup Lab now points to the component page; nothing here changed
 
 docs/reference/project/decisions-by-topic.md
-  verified 9733a6315203022f on 2026-11-19: owner-decisions-5 change only marks an older status line as superseded; topic rows stay true
+  verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
+  verified 92ce4d72825b64d7 on 2026-11-19: Re-read: only the contract test gained three routing checks; the page and the pipeline steps are unchanged
 
 docs/reference/project/ideas-and-considered.md
-  verified 5b6014c61359fa7c on 2026-11-19: owner-decisions-5 change only marks an older status line as superseded; topic rows stay true
+  verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -92,7 +98,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified e34d363b4c5ea368 on 2026-11-19: Judge changes only affect discussion prompts and display of existing family counts
+  verified e34d363b4c5ea368 on 2026-11-19: Re-read after merging main: judge changes touch only discussion prompts and display of existing family counts, not the reserved window
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -131,7 +137,7 @@ research/tools/price-noise.md
   verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/rdagent-journey.md
-  verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
+  verified 64627061b152c5e2 on 2026-11-19: Re-read after merging main: degenerate wording names only the stored screen figures that failed; main's post-verdict checks text kept
 
 research/tools/resampling-checks.md
   verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
@@ -152,7 +158,7 @@ workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
-  verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified a42a10a11f190b51 on 2026-11-19: Re-read: only the contract test gained three routing checks; the page and the pipeline steps are unchanged
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

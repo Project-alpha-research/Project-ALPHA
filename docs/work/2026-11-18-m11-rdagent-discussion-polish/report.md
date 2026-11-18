@@ -44,7 +44,7 @@ Removed the journey’s unconditional tied-day append, inline semicolon joins fo
 **Exact degenerate result line**
 
 ```text
-Carry: about 54% of the values were tied and only 42% of coin-days had a value, so the coins could not be ranked.
+Carry: only 42% of coin-days had a value, so the coins could not be ranked.
 ```
 
 **Exact revised decision**
@@ -114,3 +114,9 @@ None from the decided behavior. The final-round estimate uses earlier reply-to-r
 ## Questions
 
 None.
+
+## Review correction
+
+Tie share never decides the DEGENERATE screen in `_rdagent_judge.py` (coverage under 0.8, all-tied days
+over 5%, or any thin day do). The review removed it from the degenerate line, so the line names only
+figures that caused the verdict. The exact line above is the corrected one.

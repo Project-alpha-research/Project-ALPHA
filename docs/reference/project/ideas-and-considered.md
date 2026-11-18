@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 5b6014c61359fa7c
+verified: 83e6af903a0351b6
 ---
 
 # Ideas and things considered
@@ -28,6 +28,7 @@ something is considered, rejected or left open.
 | 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Built for runs | PRs #278, #286; RD-Agent panels queued |
 | 2026-11-18 | Break-even cost: the cost at which an edge vanishes | Built | PR #277; toolbox entry `costs.break_even`; older runs keep net only |
 | 2026-11-18 | RD-Agent writes its own statistical tests | Not recommended | Marks its own homework; [entry][own-tests] |
+| 2026-11-19 | RD-Agent toolbox access | Fixed set built | ALPHA runs both checks on shown replays; agent choice remains open |
 
 ## Open questions
 

@@ -290,6 +290,14 @@ def _story(
     _verify(code, row["code_sha256"])
     trial = words.trial_of(row)
     figures = _figures(run, dest, row, record.get("inputs", {}), folder, ledger, history, dark)
+    checks = next(
+        (
+            entry
+            for entry in record.get("checks", {}).get("factors", [])
+            if (entry["name"], entry["code_sha256"]) == (row["name"], row["code_sha256"])
+        ),
+        None,
+    )
     steps = [
         words.idea_step(row, task, round_sources),
         words.code_step(
@@ -301,7 +309,7 @@ def _story(
         words.quick_step(row, trial, sources),
         words.trading_step(row, trial, sources),
         words.feedback_step(row, rnd.get("feedback", {}), round_sources),
-        words.limits_step(row, trial, sources),
+        words.limits_step(row, trial, sources, checks),
     ]
     for n, names in (
         (1, ["signal"]),

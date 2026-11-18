@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: cccd38a6760e26c6
+verified: d78abbd684e38fb4
 ---
 
 # alpha-cli workspace
@@ -73,7 +73,7 @@ do not add a private copy.
 ## Outputs
 - [Rule-test periods](../../research/tools/rule-test.md) · [Data health](../../research/tools/data-health.md)
   · [Tools](../../docs/reference/project/components/toolbox.md): market, risk, trades, costs, intervals.
-- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) and proposals explain stored verdicts.
+- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) and proposals explain verdicts and checks.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

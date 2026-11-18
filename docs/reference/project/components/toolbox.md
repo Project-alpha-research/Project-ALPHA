@@ -4,14 +4,15 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
-verified: dc347a428583f6a7
+  - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
+verified: 94e1a94326724cbb
 ---
 
 # Toolbox
 
 The toolbox is one catalogue of tests and analyses that can be run on a stored result. Each has a plain
 question, declared inputs and settings, a plain reading and caveats, and every attempt to run one is
-recorded. The owner's AI assistant uses it today; RD-Agent is meant to choose from it later.
+recorded. The owner's AI assistant uses the catalogue. ALPHA also runs two fixed checks on judged RD-Agent ideas.
 
 ## Why it exists
 
@@ -71,9 +72,18 @@ Sharpe and compound yearly return intervals, independent-return drawdowns, and b
 family correction on the ledger count and prior comparable Sharpes frozen in the run, and states that count. See the
 [family counting card](../../../../research/tools/deflated-sharpe-and-trials.md).
 
+For RD-Agent, every idea with a shown trading replay and recorded evidence gets the set `rdagent-post-judge`, pass or fail:
+`resampling.sharpe_interval` then `resampling.block_bootstrap_paths`, default settings, seed 0. Ideas stopped earlier get no checks.
+The series is the verdict's own: the lead clock's daily after-cost return of the top third above the average of all coins, read from the hash-verified replay.
+Five honesty rules hold: (1) the set is declared in `toolbox/sets.py` before any result; (2) every attempt is logged in the run's
+`checks/ledger/trials.jsonl`; (3) the checks add zero deflation trials and zero factor-ledger rows; (4) they cannot change a verdict;
+(5) every input ends before the reserved date, else the check is refused. Outputs live in `checks/diagnostics/<target>/`.
+Readings reach the agent's feedback and journey step 7 as information, not a target. The JSON `basis` field still names rule-test equity;
+the `excess-over-equal-weight-basket` label marks the factor series.
+
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a reason. Commands: `alpha tool list` (filter by
-`--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`, `run-set` and `history`. The only
-target is a run id. The toolbox uses the [shared reserved date](../reserved-period.md).
+`--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`, `run-set` and `history`. The CLI takes a rule-test run id.
+The toolbox uses the [shared reserved date](../reserved-period.md).
 Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
 [STATUS.md](../../../../STATUS.md).
 
@@ -85,14 +95,13 @@ Results are stored under the data directory's `diagnostics/<run>/`. See the capa
   test needs OHLC bars and a callable that re-scores the strategy on each new permutation. There is no
   public validation function to rank the stored scores alone.
 
-No command or card was replaced or deleted. Later one-in-one-out candidates are the interval lines in
+The RD-Agent checks replace no existing command, card or verdict. Later one-in-one-out candidates are the interval lines in
 `alpha report`, the IID drawdown summary in `alpha monte-carlo classical`, the runs z-score shown by
 `alpha figures render` and the family DSR reported by `alpha results cite`. Each command also serves other uses.
 
-**Other work outstanding:** targets other than a run; a cut-off that hides the reserved period from tool inputs (today
-it only labels, and a run made on all data has already seen it); listing in the Workstation, MCP and a
-generated catalogue; counting sweep variants in the deflation; RD-Agent access (an evidence file, a fixed
-set after judging, a budget, exporting causal tools as factor inputs); remaining first-batch entries
+**Other work outstanding:** letting the agent name checks in its proposal before judging, showing checks in the proposal discussion, and more input adapters.
+Other gaps include a reserved-period cut-off for rule-test inputs (today they carry exposure labels), a Workstation and MCP listing, a generated catalogue,
+counting sweep variants in deflation, a budget for agent-selected checks, exporting causal tools as factor inputs, and remaining first-batch entries
 (minimum track record length waits for a function in `alpha_validation`); and
 the growth plan. The 480-entry catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is
 not yet in the repository; random-exit control remains among its highest-value gaps.
@@ -105,7 +114,7 @@ not yet in the repository; random-exit control remains among its highest-value g
    `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`, `robustness.start_end_dates`, `trades.side_contribution`,
    `trades.concentration`, `costs.break_even`, `resampling.sharpe_interval`, `resampling.return_interval`,
    `resampling.drawdown_distribution`, `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`.
-   Named sets are in `toolbox/sets.py` (one: `market-context`, the three market ids).
+   Named sets and their execution order live in `toolbox/sets.py`.
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit, gloss), reading, caveats,
    cost class, seeded or not, time safety, look class, a poison test when time order matters, and `reference`: the test that checks its numbers.
 4. The contract refuses: an id that is not lower-case `family.name`; a reading that names something that is not an output; a `search` look without an

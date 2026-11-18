@@ -59,6 +59,7 @@ def run(
     seed: int = 0,
     *,
     set_name: str | None = None,
+    source: inputs.Target | None = None,
 ) -> dict[str, Any]:
     with store.target_lock(home, target):
         started = monotonic()
@@ -80,7 +81,7 @@ def run(
             base.update(settings=tried, version=spec.version, look=spec.look, tool_kind=spec.kind)
             if any(settings[p.name] != p.default for p in spec.params) or (spec.seeded and seed):
                 base["labels"].append("non-default-params")
-            resolved = inputs.resolve(home, target)
+            resolved = source if source is not None else inputs.resolve(home, target)
             base.update(resolved.ledger_fields())
             market, hashes = resolved.prepare(home, spec.needs, settings)
             key = {"inputs": hashes, "params": settings, "seed": seed, "version": spec.version}

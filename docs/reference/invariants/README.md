@@ -1,0 +1,44 @@
+---
+owner: invariants router
+sources:
+  - tests/unit/test_filesystem_contract.py
+verified: 92ce4d72825b64d7
+---
+# Invariants: which file to load
+| file | owns | load when |
+|---|---|---|
+| [research-integrity.md](research-integrity.md) | project-wide honesty rules: point-in-time, fills, authority | any change to research, data or results |
+| [engineering.md](engineering.md) | project-wide coding rules | writing or reviewing code |
+| [documentation.md](documentation.md) | rules for documents under docs/ | adding or changing a document |
+| [testing.md](testing.md) | test layout, markers, tiers, sweeps | adding or moving tests |
+| [core.md](core.md) | alpha_core: domain values, errors, settings | editing alpha-core |
+| [data.md](data.md) | alpha_data: storage, readers, receipts, snapshots | editing alpha-data |
+| [data-bar-timeframes.md](data-bar-timeframes.md) | bars of any timeframe in the store | touching bar timeframes |
+| [crypto-providers.md](crypto-providers.md) | crypto provider modules and coverage profiles | editing crypto providers |
+| [patterns.md](patterns.md) | alpha_patterns: pattern geometry, indicators | editing alpha-patterns |
+| [strategies.md](strategies.md) | alpha_strategies: signals, sizing, rule specs | editing alpha-strategies |
+| [backtest.md](backtest.md) | alpha_backtest: Nautilus harness, fees, results | editing alpha-backtest |
+| [validation.md](validation.md) | alpha_validation: statistics and gate semantics | editing alpha-validation |
+| [research.md](research.md) | alpha_research: phase primitives | editing alpha-research |
+| [forecast.md](forecast.md) | alpha_forecast: Kronos facade, quantile signal | editing alpha-forecast |
+| [study.md](study.md) | alpha_study: study contracts, authority projections | editing alpha-study |
+| [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
+| [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
+| [web-frontend.md](web-frontend.md) | Workstation single-page app | editing the browser app |
+| [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
+| [workers.md](workers.md) | Qlib, literature, RD-Agent, AFML workers | editing anything under workers/ |
+
+## Command line
+| file | owns | load when |
+|---|---|---|
+| [cli-runs.md](cli-runs.md) | run composition and publication | `alpha run` and published runs |
+| [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
+| [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
+| [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
+| [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
+| [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
+| [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
+| [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |
+| [cli-native.md](cli-native.md) | native upstream lanes: RD-Agent loop, rule studies | native loops, costed rule studies |
+| [cli-paper.md](cli-paper.md) | paper trading, scheduler, provider status | `alpha paper` |
+| [cli-assistant.md](cli-assistant.md) | advisory assistant, Codex investigations | `alpha assistant`, investigations |

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 2d75649ab5aecc73
+verified: 7eadec39bdc36cc2
 ---
 
 # Sensitivity: costs, delay and nearby settings
@@ -32,7 +32,7 @@ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY -
 
 **What it cannot tell you**
 
-- A break-even cost, or costs that grow with trade size (capacity): not available yet. Costs are flat.
+- For the scored break-even cost, use the [run-level check](run-level-checks.md). Costs here are flat and do not model trade capacity.
 - Wider parameter ranges: the re-runs are one step each side only. A sweep is
   [deflated Sharpe and trials](deflated-sharpe-and-trials.md), and it must be reported as a search.
 

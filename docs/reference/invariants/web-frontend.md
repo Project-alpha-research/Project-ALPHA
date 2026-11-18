@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: bf4b8b59dec4581b
+verified: 4c418e7604df809a
 ---
 
 # Web frontend invariants
@@ -138,11 +138,13 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence
   it renders as unavailable. Enforced by `e2e/backtest-result-card.spec.ts`.
 
-- The RD-Agent picker shows each idea's name, recorded verdict and publication state. The run summary and technical detail stay available.
+- The RD-Agent picker shows each idea's name, recorded verdict in plain words and publication state.
+  The run summary omits missing values or shows “This run stored no summary.” Ledger absence appears in technical detail.
   Selecting an idea reads its journey in place. Responses and disclosures belong to that run and idea.
   The header repeats the recorded exploratory label from the last fact of step seven. The seven steps keep their stored order, actor and wording.
   Each headline number uses its stored display string and a visible gloss. A step shows its PNG on a light card, or its recorded reason in muted text.
-  The card sits below the text in a narrow pane. Source files, the agent's own words and code beyond twelve lines use closed disclosures.
+  The card sits below the text in a narrow pane. Code keeps its indentation and wraps long lines with a hanging indent.
+  Source files, the agent's own words and code beyond twelve lines use closed disclosures.
   Missing values read “not recorded”. A missing journey shows the local build command. The browser starts no build.
   Covered by `RdAgentPanel.test.tsx`, `RdAgentJourney.test.tsx` and `e2e/rdagent-journey.spec.ts`.
 

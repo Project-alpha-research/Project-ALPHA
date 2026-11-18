@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: d0542f35f45ef689
+verified: 61050c6c520e288d
 ---
 
 # alpha-cli workspace
@@ -72,8 +72,8 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- [Rule-test periods and charts](../../research/tools/rule-test.md) · [Registered investigation tools](../../docs/reference/project/components/toolbox.md).
-- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) read stored evaluations.
+- [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, dates, risk, trades, costs.
+- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) explain stored evaluations in plain words.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

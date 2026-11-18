@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 2d0c1f8ad6801e91
+verified: b56c701e0fb74b51
 ---
 
 # alpha-web workspace
@@ -63,7 +63,8 @@ grants authority.
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
   The run reader and its journey/PNG routes share the read-only router in `api/rdagent.py`.
-  `panels/RdAgentJourney.tsx` renders the selected idea's seven stored steps. Unit tests sit beside both panels.
+  `panels/RdAgentJourney.tsx` renders the selected idea's seven stored steps and wraps code excerpts.
+  The run summary shows recorded values. Unit tests sit beside both panels.
   The browser interaction spec is `e2e/rdagent-journey.spec.ts`.
   Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).

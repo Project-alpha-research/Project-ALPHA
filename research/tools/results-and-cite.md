@@ -32,9 +32,9 @@ verified: c7bbffda47912f7d
   `trades.side_contribution.long_count`, `trades.side_contribution.long_profit_share`, `trades.side_contribution.long_win_rate`,
   `trades.side_contribution.long_average_pnl`, `trades.side_contribution.short_count`, `trades.side_contribution.short_profit_share`,
   `trades.side_contribution.short_win_rate`, `trades.side_contribution.short_average_pnl`, `trades.concentration.without_best_1`,
-  `trades.concentration.without_best_3`, `trades.concentration.without_best_5`, `trades.concentration.top_decile_share`. Setup studies: `setup_occurrences`,
-  `setup_mean_net_return`, `setup_median_net_return`, `setup_hit_rate`, `setup_excess_over_drift`, `setup_random_date_p` ([limits](setup-study.md)). Trades:
-  `setup_trades`, `setup_trade_mean_net_return`, `setup_trade_hit_rate`, `setup_trade_mean_bars_held`, `setup_trade_excess_over_drift`,
-  `setup_trade_random_date_p`, `setup_trade_mean_r` ([limits](setup-trade.md)).
-**What it cannot tell you** `cite` never computes (gaps: `null` + reasons; else `UNKNOWN_METRIC` / `UNKNOWN_RUN`); no word search; `check` can't judge logic.
-**Next** No row for the question: say "not tested" and offer the [rule test](rule-test.md).
+  `trades.concentration.without_best_3`, `trades.concentration.without_best_5`, `trades.concentration.top_decile_share`,
+  `costs.break_even.zero_multiple`, `costs.break_even.hold_multiple`, `costs.break_even.cost_share`, `costs.break_even.sentence`. Setup studies:
+  `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`, `setup_hit_rate`, `setup_excess_over_drift`, `setup_random_date_p`
+  ([limits](setup-study.md)). Trades: `setup_trades`, `setup_trade_mean_net_return`, `setup_trade_hit_rate`, `setup_trade_mean_bars_held`,
+  `setup_trade_excess_over_drift`, `setup_trade_random_date_p`, `setup_trade_mean_r` ([limits](setup-trade.md)).
+**What it cannot tell you** `cite` never computes (a gap is `null` + reason); no logic check. **Next** No row: say "not tested"; offer a [test](rule-test.md).

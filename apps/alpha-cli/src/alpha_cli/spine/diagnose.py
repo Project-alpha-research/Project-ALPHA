@@ -39,6 +39,7 @@ from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
+from alpha_cli.validate_cmds import write_validation_sidecars
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation.metrics import to_returns
 
@@ -346,13 +347,7 @@ def write_diagnostics(
     if "no-diagnostics" in result.get("labels", []):
         return cap_sparse_run(out, result)
     # These exact sidecars are reused by write_validation_run's idempotent publication seam.
-    _artifacts.write_run_sidecars(
-        rdir,
-        equity=list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True)),
-        trades=out.result.trades,
-        trace_result=out.result,
-        periods_per_year=spec.periods_per_year,
-    )
+    write_validation_sidecars(rdir, bars, spec, out, rule_test=True)
     ppy = spec.periods_per_year
     full_period = result["periods"]["full_history"]
     document: dict[str, Any] = {

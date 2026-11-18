@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 7072e4fc367eb415
+verified: 81b576ddc6bf765e
 ---
 
 # Research tools, by symptom
@@ -28,7 +28,7 @@ its limits and what to try next. The method is in [the playbook](../PLAYBOOK.md)
 | Few trades | [diagnose and audit](diagnose-and-audit.md) (`enough-trades`), [rule test](rule-test.md) on more assets |
 | Profit from a handful of trades | [diagnose and audit](diagnose-and-audit.md) (`concentrated-profit`), [run-level checks](run-level-checks.md) |
 | Would a slightly different data feed change the answer? | [price-noise robustness](price-noise.md) |
-| Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md) |
+| Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md), [break-even cost](run-level-checks.md) |
 | "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |

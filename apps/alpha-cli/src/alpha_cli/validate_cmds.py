@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import typer
 
@@ -17,9 +17,13 @@ from alpha_cli import _artifacts, _forecast_cache, _gauntlet, _runner, rules_cmd
 from alpha_cli._identity import RunIdentity
 from alpha_cli.spine.deflation import validation_family
 from alpha_cli.spine.errors import SpineError, fail
-from alpha_core import Bar, DataError
+from alpha_core import Bar, DataError, bps_rate
 from alpha_core.config import AlphaSettings
-from alpha_validation import render_tearsheet_html, report_to_manifest
+from alpha_validation import FloatArray, render_tearsheet_html, report_to_manifest
+
+if TYPE_CHECKING:
+    from alpha_backtest.results import BacktestResult
+
 
 # monkeypatchable load seams (mirror backtest_cmds); tests point them at fixture stores
 _load_bars = _runner.load_bars
@@ -234,6 +238,83 @@ def _ledger_family(data_dir: Path, strategy: str, periods_per_year: int, run_id:
         fail(exc, json_out=False)
 
 
+def scored_bar_returns(
+    bars: Sequence[Bar],
+    spec: _runner.RunSpec,
+    result: BacktestResult,
+    net_returns: FloatArray,
+) -> tuple[FloatArray, FloatArray]:
+    """Split each scored bar's net return into before-cost return and costs charged.
+
+    The engine values a long position at the opening quote's BID (its liquidation price), so a
+    buy at the ask loses the whole bid-ask gap in the very bar it fills, and a later sell at the
+    bid costs only its fee. Costs are therefore booked on the bar where the engine's equity takes
+    them: fee on every fill, plus ``quantity x (price - bid)`` on a buy. The before-cost return is
+    the bid-to-bid move of the held units (plus any dividend cash), so it equals net + cost.
+    Long-or-flat only: a short would be valued at the ask instead.
+    """
+    import numpy as np
+    from nautilus_trader.model.objects import Money, Price
+
+    from alpha_backtest.instruments import instrument_for
+
+    if result.fills != len(result.fill_trace):
+        raise DataError("Scored costs require a complete fill trace")
+    if not result.fill_trace:
+        return net_returns.copy(), np.zeros_like(net_returns)
+    equity = result.equity_curve
+    if len(equity) != len(net_returns) + 1 or equity[0][1] != 1.0:
+        raise DataError("Scored costs require the normalized fresh portfolio and its bar returns")
+    # Equity is pre-fill except at the terminal open, which settles its own fills too.
+    interval = {ts: min(i, len(net_returns) - 1) for i, (ts, _) in enumerate(equity)}
+    instrument = instrument_for(bars[0].symbol)
+    opens = {bar.ts: bar.open for bar in bars}
+    rate = bps_rate(spec.fee_bps)
+    charged = np.zeros_like(net_returns)
+    units = 0.0
+    for fill in sorted(result.fill_trace, key=lambda item: item.sequence_id):
+        if fill.ts not in interval or fill.ts not in opens:
+            raise DataError("Scored fill has no matching equity sample and opening price")
+        # The same bid as feed.to_execution_feed: open less the half-spread, on the tick grid.
+        bid = float(
+            Price(opens[fill.ts] * (1.0 - spec.slippage_bps / 10_000.0), instrument.price_precision)
+        )
+        units += fill.quantity if fill.side == "BUY" else -fill.quantity
+        spread = fill.price - bid if fill.side == "BUY" else bid - fill.price
+        if fill.side not in {"BUY", "SELL"} or spread < 0 or fill.quantity <= 0 or units < 0:
+            raise DataError("Scored costs need long-or-flat fills at or beyond the bid")
+        # BpsFeeModel charges Money in quote currency, rounded on each fill.
+        fee = float(Money(fill.quantity * fill.price * rate, instrument.quote_currency))
+        charged[interval[fill.ts]] += fee + fill.quantity * spread
+    prior_capital = np.array([value for _, value in equity[:-1]]) * spec.starting_cash
+    costs = charged / prior_capital
+    return net_returns + costs, costs
+
+
+def write_validation_sidecars(
+    rdir: Path,
+    bars: Sequence[Bar],
+    spec: _runner.RunSpec,
+    out: _gauntlet.GauntletOutput,
+    *,
+    rule_test: bool,
+) -> None:
+    """Stage the same scored evidence for the diagnostic audit and final publication."""
+    equity = list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True))
+    if rule_test and equity != out.result.equity_curve:
+        raise DataError("Scored equity timestamps and values must match the execution trace")
+    _artifacts.write_run_sidecars(
+        rdir,
+        equity=equity,
+        trades=out.result.trades,
+        trace_result=out.result,
+        bar_returns=(
+            scored_bar_returns(bars, spec, out.result, out.oos.oos_returns) if rule_test else None
+        ),
+        periods_per_year=spec.periods_per_year,
+    )
+
+
 def write_validation_run(
     data_dir: Path,
     bars: Sequence[Bar],
@@ -249,7 +330,6 @@ def write_validation_run(
 ) -> tuple[Path, dict[str, Any]]:
     """Publish the common validation artifact contract, with the manifest always last."""
     rdir = _artifacts.run_dir(data_dir, identity.run_id)
-    equity = list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True))
     manifest = report_to_manifest(out.report)
     if manifest.get("dsr") is not None and manifest.get("verdict") is not None:
         manifest["verdict"]["n_trials"] = manifest["dsr"]["n_trials"]
@@ -286,13 +366,7 @@ def write_validation_run(
             ("bar_permutation", out.tier3_null.tolist()),
         ),
     )
-    _artifacts.write_run_sidecars(
-        rdir,
-        equity=equity,
-        trades=out.result.trades,
-        trace_result=out.result,
-        periods_per_year=spec.periods_per_year,
-    )
+    write_validation_sidecars(rdir, bars, spec, out, rule_test="spine" in manifest)
     _artifacts.publish_artifact(
         rdir / "tearsheet.html",
         lambda path: render_tearsheet_html(

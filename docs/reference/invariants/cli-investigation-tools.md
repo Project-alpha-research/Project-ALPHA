@@ -9,7 +9,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 1808768abaef1258
+verified: dbc2a59176d184f6
 ---
 
 # Investigation tools invariants
@@ -24,6 +24,9 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels
   and ruptures in `alpha_validation` (`attribution.py`, `regimes.py`, `changepoints.py`).
 - Run-level descriptions use immutable walk-forward sidecars. The cache key includes the hash of each required sidecar, and a missing file records an error.
+- New rule tests add `gross_return` and `cost_return` to `equity_curve.parquet` (both zero on the baseline row); older runs lack them.
+  Cost per bar comes from the stored fills: the rounded commission, plus on a buy the gap between the fill and the opening bid. The engine
+  values a long at the bid, so the whole spread of a round trip lands on its buy bar. Gross is net plus cost; the writer refuses a gap over 1e-12.
 - The engine samples equity at each bar's open, so market and benchmark returns are open-to-open
   on shared timestamps; the output reports the bars each side lost to the join. A comparison of
   two assets with different session clocks says that a shared date is not a shared instant.

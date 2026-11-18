@@ -2,28 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d0542f35f45ef689 on 2026-11-18: The equity figure marks the full-resolution worst drop for its declared period. The workspace route and period contract describe these samples.
-
-apps/alpha-web/CONTEXT.md
-  verified 2d0c1f8ad6801e91 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 61050c6c520e288d on 2026-11-18: Merge combines both lines: this branch's break-even tools wording and main's plain-words RD-Agent journey wording; both match their code
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 1808768abaef1258 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-docs/reference/invariants/cli-results-check.md
-  verified a1bdd5d151065d18 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified dbc2a59176d184f6 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 docs/reference/invariants/cli-runs.md
-  verified 1a3fcef2bfdba3bb on 2026-11-18: The equity figure marks the full-resolution worst drop for its declared period. The workspace route and period contract describe these samples.
-
-docs/reference/invariants/web-api.md
-  verified 0a096941998e87bd on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-docs/reference/invariants/web-frontend.md
-  verified bf4b8b59dec4581b on 2026-11-18: The Summary browser spec now checks the recorded-chart status in each dated row. The documented two-row rendering contract covers both.
+  verified 53c37cd48307ec7f on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 docs/reference/model-routing.md
   verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
@@ -35,7 +23,7 @@ docs/reference/project/components/ai-assistants.md
   verified 02c397709d5bf8cd on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
 
 docs/reference/project/components/command-line.md
-  verified 4732bf4533a0c205 on 2026-11-18: The CLI workspace links to its rule-test period card. The command-line component still owns the same capabilities.
+  verified 170d610dc69779fe on 2026-11-18: The workspace page only changed its two outputs lines, for break-even costs and journey wording; this component summary still holds
 
 docs/reference/project/components/data-layer.md
   verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
@@ -65,13 +53,13 @@ docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
-  verified 2fe433d031bbfeb7 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 03fc2ec8aca4aa02 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 8a49a8f0fbaf9e58 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 385c6d3617445444 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 docs/reference/project/components/web-workstation.md
-  verified 4f68f3b5b493b152 on 2026-11-18: re-read: the routing file swapped the story-view module notes for the journey view; this page names no modules and already records the approved idea-journey layout
+  verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/ideas-and-considered.md
   verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
@@ -101,49 +89,31 @@ docs/roadmap/production-scope.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
 
 research/CONTEXT.md
-  verified c95f618e921553fe on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified c3f7380b02d3b824 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/PLAYBOOK.md
-  verified c758286afa436133 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/lessons/README.md
-  verified ebf02de03fe7765f on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/tools/README.md
-  verified 7072e4fc367eb415 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified ce16230858a49ab2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/benchmark-and-drawdowns.md
-  verified 8c0a7ccf7c9423ad on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/tools/charts.md
-  verified 0fad7a4d0cc073b9 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 03cfcc2ee0167a3f on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 2d75649ab5aecc73 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 7eadec39bdc36cc2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/diagnose-and-audit.md
-  verified fda62249daf082fd on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 66de403d59a02755 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/inverted-signal-control.md
-  verified 1a8a89f6f3fdbea1 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified d9d9586084095e97 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/price-noise.md
-  verified fa794e226a7170df on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/tools/rdagent-journey.md
-  verified d4cd3a5ca3b60253 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/tools/results-and-cite.md
-  verified c7bbffda47912f7d on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified a070a821d10331a6 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/rule-test.md
-  verified d6d0b117f164a345 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 87efe515e760f6a1 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 research/tools/run-level-checks.md
-  verified b0612afd8fb4b55b on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
-
-research/tools/sensitivity.md
-  verified 2d75649ab5aecc73 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 82034701aac7dff9 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 research/tools/walk-forward.md
-  verified ce6c86a7bf9ba208 on 2026-11-18: Reviewed the period, benchmark, publication and figure changes against each source-linked description. The rule-test, figure and citation text describes the new records. The other documented commands and research procedures still apply.
+  verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

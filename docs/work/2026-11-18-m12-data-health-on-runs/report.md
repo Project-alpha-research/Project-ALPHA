@@ -166,3 +166,5 @@ Checks after the main merge: the run-health tests (19 passed); the broad unit se
 (207 passed, 4 skipped); smoke `rule or setup or health` (9 passed); frontend lint, build with type-check, 703 unit tests;
 browser lanes at the reference viewport (passed, no baseline changed; native lane skipped); semgrep; `fs.py stale` (0 stale);
 `alpha partner selftest` (25 of 25). Screenshots of the warn and overridden Summaries are kept outside git.
+CI found one more draft that cites a new run without saying "data health unchecked" (`tests/smoke/test_inverted_control_smoke.py`).
+The draft now discloses it, as the new checker rule requires.

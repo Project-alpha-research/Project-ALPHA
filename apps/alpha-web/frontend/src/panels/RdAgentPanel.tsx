@@ -1,9 +1,11 @@
 import { Timestamp, formatDuration } from '../util/formatTime'
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { getJSON } from '../api/client'
 import type { components } from '../api/generated'
 import { Placeholder } from '../components/Placeholder'
 import { Section } from './rundetail/common'
+import { notice, stages, recorded, storySummary, glossary, directionSentence, clockSentence,
+  systemStory, testStory, labelSentence, verdictNumbers, roundHeading, runOutcome, statusSentence, type Idea } from '../explain/rdagentStory'
 
 type Schema = components['schemas']
 export type Fact = Schema['RecordedFact']
@@ -11,7 +13,7 @@ export type Run = Schema['RdAgentRun']
 export type Detail = Schema['RdAgentDetail']
 type RunList = Schema['RdAgentRunList']
 
-const NOTICE = 'Exploratory results. Nothing here is evidence of an edge until a candidate is confirmed on reserved data.'
+const NOTICE = notice
 const FUNNEL: Record<string, string> = {
   proposed: 'ideas proposed', refused_closed_family: 'refused: idea family already closed',
   stopped_by_provider: 'stopped by the model provider',
@@ -33,8 +35,8 @@ const LABELS: Record<string, string> = {
   local_embedding_calls: 'Local embedding calls', provider_embedding_calls: 'Paid embedding calls',
   cache_hit_rate: 'Cache hit rate (fraction)', 'mean_ci_95.lower': '95% range, low end', 'mean_ci_95.upper': '95% range, high end', instruments_ended_early: 'Instruments whose data ended early',
 }
-const dark: CSSProperties = {
-  background: 'var(--panel)', color: 'var(--ink)', padding: 12, minHeight: '100%',
+const surface: CSSProperties = {
+  background: 'var(--panel)', color: 'var(--ink)', padding: 'var(--pad)', minHeight: '100%',
 } as CSSProperties
 
 function factText(fact: Fact | undefined): string {
@@ -142,20 +144,120 @@ function RunDetail({ detail }: { detail: Detail }) {
   </>
 }
 
+function StoryLink({ target, children }: { target: string; children: ReactNode }) {
+  return <a href={`#${target}`} onClick={event => {
+    event.preventDefault()
+    const destination = document.getElementById(target)
+    if (destination instanceof HTMLDetailsElement) destination.open = true
+    destination?.scrollIntoView({ block: 'start' })
+    destination?.focus({ preventScroll: true })
+  }}>{children}</a>
+}
+
+const storyCard: CSSProperties = {
+  border: 'thin solid var(--line-strong)', padding: 'var(--pad)', marginBottom: 'var(--pad)',
+  background: 'var(--panel)', color: 'var(--ink)', overflowWrap: 'anywhere',
+}
+
+function IdeaCard({ idea, sameFeedbackAs }: { idea: Idea; sameFeedbackAs: string | null }) {
+  const numbers = verdictNumbers(idea.trial)
+  return <article id={`idea-${idea.id}`} tabIndex={-1} style={storyCard}>
+    <h3 style={{ fontSize: 'var(--font-size)' }}>{recorded(idea.name)}</h3>
+    <p>{recorded(idea.description)}</p>
+    <p>{directionSentence(idea.direction.value)} {clockSentence(idea.clock.value)}</p>
+    <p>Reason given: {recorded(idea.reason)}</p>
+    <h4 style={{ fontSize: 'var(--font-size)' }}>What the system did</h4>
+    <p>{systemStory(idea)}</p>
+    {idea.stages.refused && <p>Stored refusal: {recorded(idea.refusal)}</p>}
+    <h4 style={{ fontSize: 'var(--font-size)' }}>What the test said</h4>
+    <p>{testStory(idea)}</p>
+    {numbers.length ? <dl>{numbers.map(number => <div key={number.label}>
+      <dt>{number.label}: <strong>{number.value}</strong></dt>
+      <dd style={{ marginInlineStart: 'var(--pad)' }}>{number.gloss}</dd>
+    </div>)}</dl> : <p>The deciding numbers are not recorded for this verdict.</p>}
+    {idea.labels.map(label => <p key={label}>{labelSentence(label)}</p>)}
+    {idea.trial && idea.trial.figures.shortlist?.value == null && <p>Shortlist status: not recorded.</p>}
+    <h4 style={{ fontSize: 'var(--font-size)' }}>What it was told next</h4>
+    {idea.feedback_scope === 'round' && !sameFeedbackAs && <p>This feedback was stored for the whole round, not for this idea alone.</p>}
+    {sameFeedbackAs ? <p>The same feedback as for {sameFeedbackAs} above; it was stored once for the whole round.</p> : <p>{recorded(idea.feedback)}</p>}
+    <details><summary>technical detail</summary>
+      <p>Code file: {recorded(idea.code_file)}</p>
+      <p>Stored row, limited to display-safe fields:</p>
+      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size)' }}>{idea.raw}</pre>
+      {idea.trial && <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size)' }}>{JSON.stringify(idea.trial, null, 2)}</pre>}
+    </details>
+  </article>
+}
+
+function RunStory({ detail }: { detail: Detail }) {
+  const story = detail.story ?? null
+  const groups = new Map<string, Idea[]>()
+  for (const idea of story?.ideas ?? []) {
+    const heading = roundHeading(idea)
+    groups.set(heading, [...groups.get(heading) ?? [], idea])
+  }
+  return <>
+    <h2 style={{ fontSize: 'var(--font-size)' }}>What happened in this run</h2>
+    {storySummary(story, detail.run).map((parts, index) => <p key={index}>
+      {parts.map((part, position) => part.target
+        ? <StoryLink key={position} target={part.target}>{part.text}</StoryLink>
+        : <span key={position}>{part.text}</span>)}
+    </p>)}
+    <section aria-label="Idea journey">
+      <h3 style={{ fontSize: 'var(--font-size)' }}>Idea journey</h3>
+      <div style={{ display: 'flex', gap: 'var(--pad-sm)', overflowX: 'auto', alignItems: 'start' }}>
+        {Object.entries(stages).map(([key, label], index) => <div key={key} style={{ flex: '1 0 auto' }}>
+          {index > 0 && <span aria-hidden="true">→ </span>}
+          <details id={`journey-${key}`} tabIndex={-1} style={{ display: 'inline-block', verticalAlign: 'top' }}>
+            <summary>{label}: {recorded(story?.journey[key])}</summary>
+            <p>{story?.journey[key]?.value == null ? 'The complete count is not recorded; any linked ideas are listed below.' : 'Ideas counted in this step:'}</p>
+            <ul>{story?.ideas.filter(idea => idea.stages[key] === true).map(idea => <li key={idea.id}>
+              <StoryLink target={`idea-${idea.id}`}>{recorded(idea.name)}</StoryLink>
+            </li>)}</ul>
+            {story?.journey[key]?.value === 0 && <p>No recorded ideas in this step.</p>}
+          </details>
+        </div>)}
+      </div>
+    </section>
+    {story?.missing_links.map(note => <p key={note} className="muted">{note}</p>)}
+    {story?.events?.length ? <details><summary>Recorded round events</summary>
+      {story.events.map(event => <p key={event}>{statusSentence(event)}</p>)}
+    </details> : null}
+    {groups.size === 0 && <p>Idea descriptions and their links to rounds are not recorded.</p>}
+    {[...groups].map(([heading, ideas]) => <section key={heading} aria-label={heading}>
+      <h3 style={{ fontSize: 'var(--font-size)' }}>{heading}</h3>
+      {ideas.map((idea, position) => {
+        const first = ideas.findIndex(other => idea.feedback.value !== null && other.feedback.value === idea.feedback.value)
+        return <IdeaCard key={idea.id} idea={idea} sameFeedbackAs={first >= 0 && first < position ? recorded(ideas[first].name) : null} />
+      })}
+    </section>)}
+    <aside aria-label="Words used here" style={storyCard}>
+      <h3 style={{ fontSize: 'var(--font-size)' }}>Words used here</h3>
+      <dl>{Object.entries(glossary).map(([term, definition]) => <div key={term}>
+        <dt><strong>{term}</strong></dt><dd style={{ marginInlineStart: 'var(--pad)' }}>{definition}</dd>
+      </div>)}</dl>
+    </aside>
+    <details id="run-record" tabIndex={-1}><summary>technical detail for this run</summary>
+      <p>Legacy receipt counts below may use proposal rows or trials; the idea journey above uses linked idea cards.</p>
+      <RunDetail detail={detail} />
+    </details>
+  </>
+}
+
 export function RdAgentView({ list, selected, detail, error, onSelect }: {
   list: RunList | null; selected: string | null; detail: Detail | null; error: string | null; onSelect: (id: string) => void
 }) {
-  return <div className="panel"><div className="panel-body" tabIndex={0}><div style={dark}>
-    <p style={{ position: 'sticky', top: -12, margin: '-12px -12px 8px', background: 'var(--panel)', padding: '20px 12px 8px', zIndex: 1 }}>{NOTICE}</p>
+  return <div className="panel"><div className="panel-body" tabIndex={0}><div style={surface}>
+    <p style={{ background: 'var(--panel)', padding: 'var(--pad-sm)', borderBottom: 'thin solid var(--line-strong)' }}>{NOTICE}</p>
     {error && <p role="alert">{error}</p>}
     {!list && !error && <Placeholder>Loading recorded runs…</Placeholder>}
     {list && !list.items.length && <Placeholder big="No RD-Agent runs">{list.reason ?? 'No recorded factor runs were found.'}</Placeholder>}
     {list?.ledger_reason && <p>{list.ledger_reason}</p>}
-    {list && list.items.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 24%) minmax(0, 1fr)', gap: 16 }}>
-      <nav aria-label="RD-Agent runs" style={{ maxHeight: '75vh', overflowY: 'auto', alignSelf: 'start' }}>{list.items.map(run => <button key={run.run_id} type="button" aria-pressed={selected === run.run_id} onClick={() => onSelect(run.run_id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 8, marginBottom: 8, background: 'var(--panel)', color: 'var(--ink)', border: `1px solid var(${selected === run.run_id ? '--accent' : '--line-strong'})` }}>
-        <strong>{run.folder}</strong><br /><RecordedFact name="started_at" fact={run.started_at} /><br />{factText(run.outcome)}
+    {list && list.items.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 24%) minmax(0, 1fr)', gap: 'var(--pad)' }}>
+      <nav aria-label="RD-Agent runs" style={{ maxHeight: '75vh', overflowY: 'auto', alignSelf: 'start' }}>{list.items.map(run => <button key={run.run_id} type="button" aria-pressed={selected === run.run_id} onClick={() => onSelect(run.run_id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 'var(--pad-sm)', marginBottom: 'var(--pad-sm)', overflowWrap: 'anywhere', background: 'var(--panel)', color: 'var(--ink)', border: `thin solid var(${selected === run.run_id ? '--accent' : '--line-strong'})` }}>
+        <strong>{run.folder}</strong><br /><RecordedFact name="started_at" fact={run.started_at} /><br />{runOutcome(run.outcome.value)}
       </button>)}</nav>
-      <main aria-label="Selected RD-Agent run" aria-live="polite">{detail?.run.run_id === selected ? <RunDetail detail={detail} /> : !error && <Placeholder>{selected ? 'Loading recorded run…' : 'Select a run to see what happened.'}</Placeholder>}</main>
+      <main aria-label="Selected RD-Agent run" aria-live="polite">{detail?.run.run_id === selected ? <RunStory detail={detail} /> : !error && <Placeholder>{selected ? 'Loading recorded run…' : 'Select a run to see what happened.'}</Placeholder>}</main>
     </div>}
   </div></div></div>
 }

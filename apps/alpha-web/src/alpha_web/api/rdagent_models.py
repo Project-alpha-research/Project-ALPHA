@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import ConfigDict
+from typing import Literal
+
+from pydantic import ConfigDict, Field
 
 from alpha_web.api.models import StrictModel
 
@@ -62,6 +64,36 @@ class RdAgentFactor(StrictModel):
     clocks: dict[str, RdAgentClock]
 
 
+class RdAgentIdea(StrictModel):
+    id: str
+    round: RecordedFact
+    round_kind: Literal["evaluation", "loop", "unknown"]
+    name: RecordedFact
+    description: RecordedFact
+    direction: RecordedFact
+    clock: RecordedFact
+    reason: RecordedFact
+    system_statuses: list[str]
+    refusal: RecordedFact
+    feedback: RecordedFact
+    feedback_scope: Literal["round", "unknown"]
+    trial: RdAgentFactor | None
+    stages: dict[str, bool | None]
+    labels: list[str]
+    code_file: RecordedFact
+    raw: str
+
+
+class RdAgentStory(StrictModel):
+    ideas: list[RdAgentIdea]
+    journey: dict[str, RecordedFact]
+    missing_links: list[str]
+    ending: str
+    ending_reason: RecordedFact
+    minutes: RecordedFact
+    events: list[str] = Field(default_factory=list)
+
+
 class RdAgentDetail(StrictModel):
     run: RdAgentRun
     funnel: dict[str, RecordedFact]
@@ -79,3 +111,4 @@ class RdAgentDetail(StrictModel):
     identity_splits: list[dict[str, RecordedFact]]
     identity_rescales: list[dict[str, RecordedFact]]
     notes: list[str]
+    story: RdAgentStory | None = None

@@ -5,7 +5,7 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: 7696bf156a08a889
+verified: d8eafe07731d91c2
 ---
 
 # AI assistants
@@ -53,7 +53,7 @@ The partner's instructions are four small sets of files, each with one job:
 
 ## What is real today
 
-The playbook, eleven tool cards, the six skills and the lessons folder are written, and the check
+The playbook, eighteen tool cards, the six skills and the lessons folder are written, and the check
 above passes. They are unproven as behaviour: no test yet shows that an AI following them stays
 honest. The report and answer skills now require `alpha results check` before an answer is sent. The
 checker checks tagged numbers, labels and flag contradictions; `alpha partner selftest` exercises 25

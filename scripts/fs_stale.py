@@ -7,17 +7,25 @@ document declares ``generated_by`` instead of ``owner``/``verified``; its freshn
 by its generator, so it is skipped here.
 
 The fingerprint is a hash of the path and content of every source file in the working tree
-(tracked, or new and not ignored; the file system's own documents do not count). A document is
-stale when its ``verified`` differs from the current fingerprint: any source was edited, added
-or removed since. ``verify`` writes the current fingerprint; ``owners`` answers the reverse
-question, which documents describe a path. A fingerprint, unlike a commit, can be written in
-the same commit as the source change, needs no history, and two branches that each change a
-document's sources both rewrite the one ``verified`` line, so git reports a conflict.
+(tracked, or new and not ignored). The file system's own documents count only when ``sources``
+names one by its exact path, and then only by their text below the front matter, so a source
+document being re-stamped does not cascade; a document a glob merely covers (a routing file
+inside a code tree) and the document itself never count. A document with nothing left to
+fingerprint "cannot be checked": it is listed as a warning and ``verify`` refuses it. A document
+is stale when its ``verified`` differs from the current fingerprint: any source was edited, added
+or removed since. ``verify`` writes the current fingerprint, but only with evidence of a re-read:
+the document's own text changed since its last stamp, or a ``reason`` it is still correct, which
+is kept in ``REASONS_LOG`` (one entry per document; git keeps the older ones). ``owners``
+answers the reverse question, which documents describe a path. A fingerprint, unlike a commit,
+can be written in the same commit as the source change, needs no history, and two branches that
+each change a document's sources both rewrite the one ``verified`` line, so git reports a
+conflict.
 Standard library only.
 """
 
 from __future__ import annotations
 
+import datetime
 import functools
 import hashlib
 import os
@@ -31,6 +39,9 @@ FRONT_MATTER_KEYS = ("owner", "sources", "verified")
 GENERATED_KEYS = ("generated_by", "sources")
 _KEY = re.compile(r"^([a-z_]+):\s*(.*?)\s*$")
 _ITEM = re.compile(r"^\s+-\s+(.+?)\s*$")
+EMPTY_FINGERPRINT = hashlib.sha256().hexdigest()[:16]
+REASONS_LOG = "docs/verified-reasons.txt"
+_FINGERPRINT = re.compile(r"[0-9a-f]{16}")
 
 
 class FrontMatterError(ValueError):
@@ -134,14 +145,38 @@ class Tree:
     digests: dict[str, str | None] = field(default_factory=dict)
 
 
-def fingerprint(tree: Tree, sources: list[str]) -> str:
+def body(text: str) -> str:
+    """A document's text below its front matter (all of it when it has none)."""
+    if text.splitlines()[:1] != ["---"]:
+        return text
+    _, _, rest = text.partition("\n---")
+    return rest.partition("\n")[2]
+
+
+def _document_digest(path: Path) -> str | None:
+    if not path.is_file() or path.is_symlink():
+        return _digest(path)
+    return hashlib.sha256(body(path.read_text(encoding="utf-8")).encode()).hexdigest()
+
+
+def counted(tree: Tree, sources: list[str], own: str, rel: str) -> bool:
+    """Whether ``rel`` feeds the fingerprint of document ``own``."""
+    if rel == own:
+        return False
+    if rel in tree.skip:
+        return rel in sources
+    return covers(sources, rel)
+
+
+def fingerprint(tree: Tree, sources: list[str], own: str = "") -> str:
     """Sixteen hex characters naming the content of the source files as they are on disk."""
     combined = hashlib.sha256()
     for rel in tree.files:
-        if rel in tree.skip or not covers(sources, rel):
+        if not counted(tree, sources, own, rel):
             continue
         if rel not in tree.digests:
-            tree.digests[rel] = _digest(tree.root / rel)
+            path = tree.root / rel
+            tree.digests[rel] = _document_digest(path) if rel in tree.skip else _digest(path)
         digest = tree.digests[rel]
         if digest is not None:  # a tracked file deleted from the working tree is gone
             combined.update(f"{rel}\0{digest}\n".encode())
@@ -155,10 +190,16 @@ class Report:
     fingerprint: str = ""
     changed_files: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
+    source_changes: list[tuple[str, int, int]] = field(default_factory=list)
+
+    @property
+    def unchecked(self) -> bool:
+        """Nothing it names can change: no stamp could ever say it is out of date."""
+        return not self.problems and self.fingerprint == EMPTY_FINGERPRINT
 
     @property
     def stale(self) -> bool:
-        return not self.problems and self.verified != self.fingerprint
+        return not self.problems and not self.unchecked and self.verified != self.fingerprint
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -166,6 +207,7 @@ class Report:
             "verified": self.verified,
             "fingerprint": self.fingerprint,
             "stale": self.stale,
+            "unchecked": self.unchecked,
             "files": self.changed_files,
             "problems": self.problems,
         }
@@ -193,16 +235,55 @@ def living_documents(root: Path) -> dict[str, dict[str, str | list[str]]]:
 def file_system_documents(root: Path, documents: dict[str, Any]) -> frozenset[str]:
     """Living documents and instruction files: prose, so never a source of another document."""
     loaders = git(root, "ls-files", "-z", "--", "CLAUDE.md", "*/CLAUDE.md", "AGENTS.md")
-    return frozenset({*documents, *(rel for rel in loaders.split("\0") if rel)})
+    return frozenset({*documents, REASONS_LOG, *(rel for rel in loaders.split("\0") if rel)})
 
 
-def _changed_since_last_commit(root: Path, rel: str, sources: list[str]) -> list[str]:
+def _changed_since_last_commit(tree: Tree, rel: str, sources: list[str]) -> list[str]:
     """A hint for the reader: sources that differ from the commit that last changed ``rel``."""
-    last = git(root, "log", "-1", "--format=%H", "--", rel).strip()
+    last = git(tree.root, "log", "-1", "--format=%H", "--", rel).strip()
     if not last:
         return []
-    names = git(root, "diff", "--name-only", last, "--").splitlines()
-    return [name for name in names if covers(sources, name)]
+    names = git(tree.root, "diff", "--name-only", last, "--").splitlines()
+    return [name for name in names if counted(tree, sources, rel, name)]
+
+
+def last_stamp(root: Path, rel: str) -> str:
+    """The last commit that wrote ``rel``'s ``verified`` line ("" when none did).
+
+    Merges count against their first parent: a stamp that arrived in a merge (a pull request's
+    merge commit, or main merged into a branch) is still a stamp.
+    """
+    log = ("log", "-1", "--format=%H", "-m", "--first-parent", "-G", "^verified:", "--", rel)
+    return git(root, *log).strip()
+
+
+def source_changes(tree: Tree, rel: str, sources: list[str]) -> list[tuple[str, int, int]]:
+    """``(path, lines added, lines removed)`` for each source changed since ``rel``'s last stamp."""
+    since = last_stamp(tree.root, rel)
+    if not since:
+        return []
+    changes = []
+    for line in git(tree.root, "diff", "--numstat", "--no-renames", since, "--").splitlines():
+        added, removed, name = line.split("\t", 2)
+        if counted(tree, sources, rel, name):
+            changes.append(
+                (name, int(added) if added != "-" else 0, int(removed) if removed != "-" else 0)
+            )
+    new = git(tree.root, "ls-files", "-z", "--others", "--exclude-standard").split("\0")
+    for name in sorted(p for p in new if p and counted(tree, sources, rel, p)):
+        path = tree.root / name
+        lines = len(path.read_bytes().splitlines()) if path.is_file() else 0
+        changes.append((name, lines, 0))
+    return changes
+
+
+def _text_changed_since_stamp(root: Path, rel: str, verified: str) -> bool:
+    """Evidence of a re-read: the document was never stamped, or its text differs from then."""
+    since = last_stamp(root, rel)
+    if not since or not _FINGERPRINT.fullmatch(verified):
+        return True
+    then = git(root, "show", f"{since}:{rel}")
+    return body(then) != body((root / rel).read_text(encoding="utf-8"))
 
 
 def read_tree(root: Path, documents: dict[str, Any]) -> Tree:
@@ -210,7 +291,6 @@ def read_tree(root: Path, documents: dict[str, Any]) -> Tree:
 
 
 def check_document(tree: Tree, rel: str, meta: dict[str, str | list[str]]) -> Report:
-    root = tree.root
     verified = meta.get("verified", "")
     sources = meta.get("sources", [])
     report = Report(rel, verified if isinstance(verified, str) else "")
@@ -224,11 +304,9 @@ def check_document(tree: Tree, rel: str, meta: dict[str, str | list[str]]) -> Re
         return report
     # Edits to file-system documents themselves (this one, or a routing file inside a source
     # tree) do not make a document stale: they are prose, checked by the link and contract tests.
-    report.fingerprint = fingerprint(tree, sources)
+    report.fingerprint = fingerprint(tree, sources, rel)
     if report.stale:
-        report.changed_files = [
-            p for p in _changed_since_last_commit(root, rel, sources) if p not in tree.skip
-        ]
+        report.changed_files = _changed_since_last_commit(tree, rel, sources)
     return report
 
 
@@ -240,7 +318,11 @@ def stale(root: Path) -> list[Report]:
 
 
 def owners(root: Path, paths: list[str]) -> dict[str, list[str]]:
-    """For each path, the living documents whose ``sources`` cover it (none for a document)."""
+    """For each path, the living documents whose ``sources`` cover it (none for a document).
+
+    A document that names another document is still told by ``stale`` (and the gate) when that
+    document's text changes; this answer, which the edit hook shows, stays code-only.
+    """
     documents = living_documents(root)
     skip = file_system_documents(root, documents)
     return {
@@ -258,33 +340,92 @@ def owners(root: Path, paths: list[str]) -> dict[str, list[str]]:
 _VERIFIED_LINE = re.compile(r"^verified:.*$", re.MULTILINE)
 
 
-def verify(root: Path, rels: list[str]) -> list[Report]:
-    """Write the current fingerprint into each named document; refuse what cannot be checked."""
+def describe_changes(changes: list[tuple[str, int, int]]) -> str:
+    return ", ".join(f"{name} (+{added} -{removed})" for name, added, removed in changes)
+
+
+def verify(root: Path, rels: list[str], reason: str = "") -> list[Report]:
+    """Write the current fingerprint into each named document, given evidence of a re-read.
+
+    A stale document is stamped only when its own text changed since its last stamp, or with a
+    ``reason`` (at least three words) why it is still correct, recorded in ``REASONS_LOG``.
+    Nothing is written unless every named document can be stamped.
+    """
+    reason = " ".join(reason.split())
+    if reason and len(reason.split()) < 3:
+        raise ValueError(f"--reason {reason!r}: say why the document is still correct")
     documents = living_documents(root)
     tree = read_tree(root, documents)
-    reports = []
+    reports, refused = [], []
     for rel in rels:
         if rel not in documents:
             raise ValueError(f"{rel} is not a living document (owner / sources / verified)")
         report = check_document(tree, rel, documents[rel])
         if report.problems:
             raise ValueError(f"{rel}: {'; '.join(report.problems)}")
+        if report.unchecked:
+            raise ValueError(f"{rel} cannot be checked: {_UNCHECKED_FIX}")
+        if report.stale:
+            sources = documents[rel]["sources"]
+            assert isinstance(sources, list)
+            report.source_changes = source_changes(tree, rel, sources)
+            if not reason and not _text_changed_since_stamp(root, rel, report.verified):
+                changed = describe_changes(report.source_changes) or "none since the last stamp"
+                refused.append(f"{rel}: sources changed: {changed}")
         reports.append(report)
+    if refused:
+        raise ValueError(
+            "re-read each document against its changed sources; correct it, or, when it is "
+            'still right, pass --reason "<why it is still correct>":\n' + "\n".join(refused)
+        )
     for report in reports:
         if report.stale:
             path = root / report.path
-            head, rule, body = path.read_text(encoding="utf-8").partition("\n---")
+            head, rule, rest = path.read_text(encoding="utf-8").partition("\n---")
             stamped = _VERIFIED_LINE.sub(f"verified: {report.fingerprint}", head, count=1)
-            path.write_text(stamped + rule + body, encoding="utf-8")
+            path.write_text(stamped + rule + rest, encoding="utf-8")
+    if reason:
+        _record_reasons(root, [r for r in reports if r.stale], reason)
     return reports
+
+
+def _record_reasons(root: Path, reports: list[Report], reason: str) -> None:
+    """One entry per document, in path order, blank-line separated (so branches merge cleanly)."""
+    log = root / REASONS_LOG
+    entries: dict[str, str] = {}
+    if log.is_file():
+        for block in log.read_text(encoding="utf-8").strip().split("\n\n"):
+            if block.strip() and not block.startswith("#"):
+                name, _, rest = block.partition("\n")
+                entries[name] = rest
+    stamp = datetime.date.today().isoformat()
+    for report in reports:
+        entries[report.path] = f"  verified {report.fingerprint} on {stamp}: {reason}"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    blocks = [_LOG_HEADER, *(f"{name}\n{entries[name]}" for name in sorted(entries))]
+    log.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
+
+
+_LOG_HEADER = (
+    "# Why each document was re-stamped without an edit: written by `scripts/fs.py verify\n"
+    "# --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest."
+)
+_UNCHECKED_FIX = (
+    "its sources name no file whose change it could notice; list the code, or name the "
+    "document it follows by its exact path"
+)
 
 
 def render_text(reports: list[Report]) -> str:
     flagged = [r for r in reports if r.stale or r.problems]
     lines = [
         f"{len(reports)} living documents checked; {sum(r.stale for r in reports)} "
-        f"stale; {sum(bool(r.problems) for r in reports)} with problems"
+        f"stale; {sum(bool(r.problems) for r in reports)} with problems; "
+        f"{sum(r.unchecked for r in reports)} cannot be checked"
     ]
+    for report in reports:
+        if report.unchecked:
+            lines.append(f"WARNING {report.path} cannot be checked: {_UNCHECKED_FIX}")
     for report in flagged:
         if report.problems:
             lines.append(f"PROBLEM {report.path}")
@@ -295,6 +436,7 @@ def render_text(reports: list[Report]) -> str:
     if any(r.stale for r in reports):
         lines.append(
             "To fix: re-read each stale document against its sources, correct it, then run "
-            "`uv run python scripts/fs.py verify <document>...`."
+            '`uv run python scripts/fs.py verify <document>...` (with `--reason "<why it is '
+            'still correct>"` when its text needed no change).'
         )
     return "\n".join(lines)

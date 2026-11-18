@@ -118,7 +118,7 @@ def test_side_contribution(tmp_path: Path) -> None:
     values = run(tmp_path, SIDE, RUN)["values"]
     assert values["sides"] == "long and short"
     for side, total, wins in (("long", 8 - 2 + 0 + 2 + 1, 3), ("short", 3 - 1 + 1 - 3 + 1, 3)):
-        assert values[f"{side}_count"] == 5
+        assert values[f"{side}_count"] == 5 and type(values[f"{side}_count"]) is int
         assert values[f"{side}_profit_share"] == pytest.approx(total / (9 + 1))
         assert values[f"{side}_average_pnl"] == pytest.approx(total / 5)
         assert values[f"{side}_win_rate"] == wins / 5

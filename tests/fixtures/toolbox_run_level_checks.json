@@ -415,11 +415,11 @@
     "tool": "trades.side_contribution",
     "values": {
       "long_average_pnl": 1.8,
-      "long_count": 5.0,
+      "long_count": 5,
       "long_profit_share": 0.9,
       "long_win_rate": 0.6,
       "short_average_pnl": 0.2,
-      "short_count": 5.0,
+      "short_count": 5,
       "short_profit_share": 0.1,
       "short_win_rate": 0.6,
       "sides": "long and short"

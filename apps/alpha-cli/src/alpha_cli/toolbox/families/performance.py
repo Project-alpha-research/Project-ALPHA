@@ -121,11 +121,8 @@ def side_contribution(inputs: Inputs, params: dict[str, Any], rng: Generator | N
         if group:
             present.append(direction)
         stats = {s.metric: s.value for s in _trade_statistics(group)}
-        for key, metric in (
-            ("count", "trade_count"),
-            ("win_rate", "win_rate"),
-            ("average_pnl", "average_realized_pnl"),
-        ):
+        values[f"{direction}_count"] = len(group) if group else None
+        for key, metric in (("win_rate", "win_rate"), ("average_pnl", "average_realized_pnl")):
             values[f"{direction}_{key}"] = stats[metric] if group else None
         share = f"{direction}_profit_share"
         values[share] = (
@@ -230,7 +227,8 @@ CONCENTRATION = ToolSpec(
             Output(
                 f"without_best_{n}",
                 f"Profit without best {n}",
-                f"Net realized profit after removing the best {n} closed trades.",
+                f"After-cost realized profit left after removing the {n} most profitable"
+                f" closed trade{'s' if n > 1 else ''}.",
                 "currency",
             )
             for n in (1, 3, 5)

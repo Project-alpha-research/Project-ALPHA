@@ -89,9 +89,13 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         )
         monkeypatch.setattr(inputs, "load_run", lambda home, run_id, result=series: result)
         if set(spec.needs) & inputs.STORED_FILES.keys():
+            from tests.unit.test_toolbox_resampling_checks import TOOLS, prepare_sample
             from tests.unit.test_toolbox_run_level_checks import stored_run
 
-            stored_run(home, spec.id)
+            if spec.id in TOOLS:
+                prepare_sample(home)
+            else:
+                stored_run(home, spec.id)
         doc = run(home, spec.id, RUN)
         assert doc["reading"] == spec.render(doc["values"])
         assert set(doc["values"]) == {output.key for output in spec.outputs}

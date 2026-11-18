@@ -28,6 +28,8 @@ from alpha_validation.metrics import to_returns
 if TYPE_CHECKING:
     import polars as pl
 
+    from alpha_validation.metrics import FloatArray
+
 
 @dataclass(frozen=True)
 class RunSeries:
@@ -110,6 +112,20 @@ class Target:
         if dates[-1] > self.last_ts:
             raise ValueError(f"{name} extends beyond the recorded run period")
         return dates
+
+    def scored_returns(self) -> FloatArray:
+        """One after-cost return per interval in the immutable walk-forward equity file."""
+        import numpy as np
+
+        frame = self.table("stored_equity", "ts", "equity")
+        if frame.height:
+            self.dates(frame, "stored_equity")
+        equity = frame["equity"].to_numpy()
+        if equity.size < 2:
+            if not np.isfinite(equity).all() or np.any(equity <= 0):
+                raise ValueError("Stored equity must be finite and positive")
+            return np.empty(0, dtype=np.float64)
+        return to_returns(equity)
 
     @property
     def labels(self) -> list[str]:

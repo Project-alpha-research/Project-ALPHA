@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 06d9c94325c51620
+verified: 23173d21631370be
 ---
 
 # alpha-cli workspace
@@ -50,7 +50,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
 | Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`, `test_look*` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
-| Crypto, daily data, macro | `_crypto_*`, `crypto_*`, `data_cmds`, `context*_cmds` | `test_crypto_*`, `test_tiingo_*`, `test_alpaca_*`, `test_context_*` |
+| Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
 | RD-Agent ledger | `rdagent_*`, `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
 | Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |

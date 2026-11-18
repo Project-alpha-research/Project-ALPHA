@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 06d9c94325c51620 on 2026-11-18: Re-read after merging main: main's break-even and journey wording stays; the RD-Agent change only adds critic fields to new ledger rows and the failed stage to feedback in existing rdagent modules, so no CLI rule here changed.
+  verified 23173d21631370be on 2026-11-18: merged main: main verified its own toolbox and diagnose changes; this branch only adds the health helper row
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -20,10 +20,10 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 170d610dc69779fe on 2026-11-18: The workspace page only changed its two outputs lines, for break-even costs and journey wording; this component summary still holds
+  verified 5bac5884cd269869 on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
 
 docs/reference/project/components/data-layer.md
-  verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
+  verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
   verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing

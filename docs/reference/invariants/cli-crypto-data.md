@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: 0bed3e1e29e927a6
+verified: e4e633018007a223
 ---
 
 # Command line data invariants
@@ -20,6 +20,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 
 ## Stock and CCXT market data
 
+- A saved [daily health report](../../../research/tools/data-health.md) is readable only while its input fingerprints match.
 - Tiingo bytes become receipt, candidate, quality report and only then canonical promotion
   (`stage_and_promote`). [ADR-0017](../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md)
 - Once a symbol's canonical source is Tiingo, Yahoo and Stooq pulls are audit-only and must fail rather than replace

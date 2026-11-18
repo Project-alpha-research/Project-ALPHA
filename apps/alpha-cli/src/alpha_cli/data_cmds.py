@@ -7,6 +7,7 @@ import json
 from datetime import UTC, date, datetime, time
 from inspect import Parameter, signature
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -425,6 +426,24 @@ def audit(
             allow_nan=False,
         )
     )
+
+
+@data_app.command()
+def health(
+    asset: str = typer.Argument(..., help="Daily symbol, optionally qualified as SYMBOL@STORE."),
+    universe: Annotated[
+        Path | None, typer.Option(help="Membership CSV or stored membership JSON.")
+    ] = None,
+    stored: bool = typer.Option(False, "--stored", help="Verify and read the saved report."),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+) -> None:
+    """Check daily bars for adjustment, timestamp, gap and survivorship faults."""
+    from alpha_cli._data_health import run_health
+
+    try:
+        run_health(AlphaSettings().data_dir, asset, universe, stored, json_out)
+    except (DataError, OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @data_app.command()

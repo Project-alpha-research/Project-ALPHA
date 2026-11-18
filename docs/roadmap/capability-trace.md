@@ -21,6 +21,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
 | `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |
+| `setup-trade` | Short selling in setup trades with assumed borrow or funding costs |
 | `setup-trade` | Which came first after each match, target or stop, with still-open trades counted |
 | `setup-trade` | The same study against random dates and plain market drift |
 | `setup-study` | What happened after each match (event study) |

@@ -62,7 +62,7 @@ def find_fixture(home: Path, find_id: str = FIND) -> Path:
     return folder
 
 
-def outcome_fixture(home: Path, kind: str) -> Path:
+def outcome_fixture(home: Path, kind: str, **fields: Any) -> Path:
     trade = kind == "trade"
     run_id = TRADE if trade else STUDY
     folder = home / ("setup-trades" if trade else "setup-studies") / run_id
@@ -97,7 +97,7 @@ def outcome_fixture(home: Path, kind: str) -> Path:
         "complete": True,
     }
     parquet = "trades.parquet" if trade else "outcomes.parquet"
-    pl.DataFrame([row]).write_parquet(folder / parquet)
+    pl.DataFrame([{**row, **fields}]).write_parquet(folder / parquet)
     # Valid PNG signature is enough for the reader; no image is generated here.
     png = "trades.png" if trade else "event-study.png"
     (folder / png).write_bytes(b"\x89PNG\r\n\x1a\nsynthetic")
@@ -272,3 +272,17 @@ def test_total_read_budget_and_trial_identity(
     monkeypatch.setattr(_setup_runs, "MAX_READ_BYTES", 1)
     with pytest.raises(ValueError, match="limit"):
         _setup_runs.read_run(tmp_path, FIND)
+
+
+def test_trade_fields_round_trip_and_old_rows_stay_unknown(tmp_path: Path) -> None:
+    find_fixture(tmp_path)
+    outcome_fixture(tmp_path, "trade")
+    old = _setup_runs.read_run(tmp_path, FIND).trades[0].rows
+    fields = dict(direction="short", risk_fraction=0.01, r_multiple=-2.0)
+    assert old and all(old[0].get(key) is None for key in fields)
+    outcome_fixture(tmp_path, "trade", **fields)
+    detail = _setup_runs.read_run(tmp_path, FIND)
+    rows = detail.trades[0].rows
+    assert rows and {k: rows[0][k] for k in fields} == fields
+    for label in ("short-costs-assumed", "short-needs-perpetual"):
+        assert detail.label_explanations[label]

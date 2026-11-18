@@ -154,3 +154,13 @@ def test_daily_only_and_suffix(tmp_path: Path) -> None:
 def test_filter_names_cannot_impersonate_built_in_reasons(name: str) -> None:
     with pytest.raises((ValidationError, DataError), match="reserved"):
         SetupSpec.load(minimal(filters={name: "close > 1"}))
+
+
+def test_exit_direction_defaults_without_changing_legacy_identity() -> None:
+    legacy = SetupSpec.load(minimal(exit={"time_bars": 1}))
+    explicit = SetupSpec.load(minimal(exit={"time_bars": 1, "direction": "long"}))
+    short = SetupSpec.load(minimal(exit={"time_bars": 1, "direction": "short"}))
+    assert legacy.exit is not None and legacy.exit.direction == "long"
+    assert legacy.spec_sha256 == explicit.spec_sha256 != short.spec_sha256
+    with pytest.raises(ValidationError):
+        SetupSpec.load(minimal(exit={"direction": "sideways"}))

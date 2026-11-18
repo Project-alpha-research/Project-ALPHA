@@ -12,8 +12,7 @@ verified: d421d0d1feeab9d5
 
 The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns
 the SQLite control store (projects, jobs, evidence, owner receipts). It may import every package below it; nothing but the surfaces' public seams may import
-it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner
-did not give, and never route live capital.
+it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner did not give, and never route live capital.
 
 ## Read first
 

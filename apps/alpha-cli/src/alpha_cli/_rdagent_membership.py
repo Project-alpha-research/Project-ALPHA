@@ -239,6 +239,26 @@ class Account:
                     self.write_off(j, day, terminal=True)
 
 
+def third_weights(scores: np.ndarray, direction: int, fraction: float) -> np.ndarray:
+    """Membership units: a boundary group of g names shares its s remaining slots (s/g).
+
+    Divide by k = max(1, round(fraction * finite names)) for portfolio weights.
+    Finite names alone set k; instrument order never chooses a member of a tie.
+    """
+    weights = np.zeros(len(scores))
+    finite = np.flatnonzero(np.isfinite(scores))
+    if not len(finite):
+        return weights
+    k = max(1, round(fraction * len(finite)))
+    ranked = direction * scores[finite]
+    boundary = np.sort(ranked)[-k]
+    above = ranked > boundary
+    tied = ranked == boundary
+    weights[finite[above]] = 1.0
+    weights[finite[tied]] = (k - int(above.sum())) / int(tied.sum())
+    return weights
+
+
 def replay_weights(
     scores: np.ndarray,
     closes: np.ndarray,
@@ -271,9 +291,8 @@ def replay_weights(
     if len(available) < min_names:
         return np.zeros(len(scores))
     if rebalance:
-        selected = sorted(available, key=lambda j: (-direction * scores[j], j))
         k = max(1, round(fraction * len(available)))
-        return np.array([1 / k if j in selected[:k] else 0.0 for j in range(len(scores))])
+        return third_weights(scores, direction, fraction) / k
     weights = np.zeros(len(scores))
     active = (base > 0) & np.isfinite(closes) & np.isfinite(base_closes) & np.isfinite(scores)
     weights[active] = base[active] * (closes[active] / base_closes[active])
@@ -466,7 +485,7 @@ def holding_returns(
 ) -> tuple[np.ndarray, dict[str, int]]:
     """Hypothetical spread positions obey the same causal wait as replay holdings.
 
-    Counts describe the ordinary tie order's top and bottom legs, not both tie-order checks.
+    Counts describe names with positive fractional membership in either spread leg.
     A missed entry is uninvested cash. A gap inside the hold triggers exit even before its
     scheduled endpoint; an outstanding hold is valued conservatively at panel end.
     """

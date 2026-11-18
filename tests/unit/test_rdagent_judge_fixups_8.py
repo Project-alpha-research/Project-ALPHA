@@ -399,9 +399,20 @@ def test_tie_free_screen_restores_original_bytes_without_new_fields() -> None:
     result = judge.screen(signal, outcome, "a" * 64, n_resamples=20)
     assert result.pop("all_tied_day_share") == result["tie_share"] == 0
     assert result.pop("boundary_tie_share") == 0
-    assert judge.sha(judge.canonical(result)) == (
-        "e98e2cf672ffcdb496b887dee3798880b0f38f37dcd256f7184b6b63f130e1b5"
+    # Pinned from main's screen; ten significant digits absorb last-bit platform differences.
+    assert judge.sha(judge.canonical(_rounded(result))) == (
+        "9600c8d01a110e9c93c2c7a810930fa99279d7c2bac769c957704f5ab165fbe6"
     )
+
+
+def _rounded(value: Any) -> Any:
+    if isinstance(value, float):
+        return float(f"{value:.10g}")
+    if isinstance(value, dict):
+        return {key: _rounded(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_rounded(item) for item in value]
+    return value
 
 
 def test_family_filter_rejects_changed_frozen_source(tmp_path: Path) -> None:

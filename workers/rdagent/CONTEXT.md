@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 476fc9d11f2f987e
+verified: 6147c6be03863cf9
 ---
 
 # RD-Agent worker workspace

@@ -50,11 +50,19 @@ audited result through the playbook and `alpha test`, and a first report screen 
 remains is the benchmark on that screen's chart and the honesty traps, the check that an AI
 following the playbook stays honest.
 
+The three paths are general ways of working, not strategies: ALPHA is a general tool, not built around one
+strategy, market or data source, and the ideas tested today are throwaway material to prove it works
+([owner, 2026-11-18](owner-decisions-4.md#2026-11-18-what-the-owner-said-about-the-purpose-of-alpha);
+the plan is the orchestrator's and reversible).
+
 | Golden path | The prompt it must serve | State |
 |---|---|---|
-| 1. Rule test | "Test this trend rule on these assets" | built ([route](../../../research/CONTEXT.md)), first report screen; honesty traps remain |
-| 2. Chart setup | "Show every match of this setup and what happened after" | after 1 |
-| 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | after 2 |
+| 1. Rule test | "Test this trend rule on these assets" | command line working ([route](../../../research/CONTEXT.md)); report screen partly built |
+| 2. Chart setup | "Show every match of this setup and what happened after" | command line working; no screen yet (Setup Lab screen being built) |
+| 3. Factor mining | "Mine factors on this universe", through RD-Agent with memory | run by hand, judged, no candidate yet; not a supervised job |
+
+The order of work since 2026-11-18 is the orchestrator's default, which the owner can reverse:
+paths 1 and 2 reach a screen first ([entry](owner-decisions-4.md#2026-11-18-working-order-golden-paths-1-and-2-reach-the-screen-first)).
 
 ## The research loop
 

@@ -223,26 +223,31 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
     assert record["disclosures"].pop("spread_check").startswith("ADR-0055")
     # Recording metadata and presentation are checked before the pinned byte projection.
     assert record["factors"][0].pop("recorded_at") == "2026-11-17T00:00:00+00:00"
-    assert (
-        "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included): 1"
-        in record["feedback_text"]
+    looks = (
+        "looks so far across all ideas: 1 (sets the screen cutoff); "
+        "primary clocks now; legacy clocks and unreadable rows included;"
     )
+    assert looks in record["feedback_text"]
+    assert "Factor-family trials" not in record["feedback_text"]
+    # Input-column disclosure is add-only: removing it must leave the pinned bytes unchanged.
+    assert record["factors"][0].pop("input_columns_method").startswith("fallback:")
     assert "Ledger rows, all families (rules, repeats too): 1" in record["feedback_text"]
     assert "Factor failed: reason not recorded." in record["feedback_text"]
     record["feedback_text"] = (
         record["feedback_text"]
-        .replace(
-            "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included)",
-            "Ledger trials",
-        )
+        .replace(looks, "Ledger trials: 1;")
         .replace(
             "Ledger rows, all families (rules, repeats too)",
             "ledger_trials_all_families",
         )
     )
+    cutoff = "(0 confirmed); looks so far across all ideas: 1 (sets the screen cutoff)."
     for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
-        container[key] = container[key].replace(
-            "Factor failed: reason not recorded. ", "Factor execution failed."
+        assert cutoff in container[key]
+        container[key] = (
+            container[key]
+            .replace("Factor failed: reason not recorded. ", "Factor execution failed.")
+            .replace(cutoff, "(1 looks, 0 confirmed).")
         )
     # Keep explicit unavailable-value assertions before the byte projection.
     for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
@@ -1050,10 +1055,14 @@ def test_bucket_three_matches_replay_ties_and_direction(tmp_path: Path, directio
     outcomes = outcomes[2:] / outcomes[1:-1] - 1
     buckets, daily = ev._bucket_frames(signal, outcomes, days, symbols, direction)
     assert buckets["observations"].sum() == len(days) * len(symbols)
-    selected = [
-        t.symbol for t in data["targets"] if t.origin_ts.date() == days[0] and t.target_weight > 0
-    ]
-    assert selected == symbols[:5] if direction == 1 else selected == symbols[7:12]
+    held = {
+        t.symbol: t.target_weight
+        for t in data["targets"]
+        if t.origin_ts.date() == days[0] and t.target_weight > 0
+    }
+    # Five slots shared equally by the whole tied group: 7 names at 1/7, or 8 names at 1/8.
+    tied = symbols[:7] if direction == 1 else symbols[7:]
+    assert held == pytest.approx(dict.fromkeys(tied, 1 / len(tied)))
     for i, day in enumerate(days):
         weights = np.array([t.target_weight for t in data["targets"] if t.origin_ts.date() == day])
         assert daily.filter((pl.col("date") == day) & (pl.col("bucket") == 3))["mean_outcome"][

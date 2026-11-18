@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: c8c26e9f37b318f5
+verified: 62308eea13029a1f
 ---
 
 # alpha-cli workspace
@@ -63,7 +63,7 @@ do not add a private copy.
 
 - Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
   light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Declared choices gate candidates; `_rdagent_stats`/`_rdagent_twins` own inference/identity. Compatibility: `_rdagent_stability`; worker README owns policy.
+  Shared thirds: `_rdagent_membership`; inference/twins: `_rdagent_stats`/`_rdagent_twins`; compatibility: `_rdagent_stability`. Policy: worker README.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

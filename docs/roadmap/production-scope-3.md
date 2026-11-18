@@ -17,10 +17,11 @@ Every result visible in the Workstation, in a quant style, with text.
 | Capability | State | Where | By | Source |
 |---|---|---|---|---|
 | The Workstation opens in a browser | Working | `alpha-web` | Now | [ui] |
+| Setup Lab screen: every setup match on the chart, what followed, the trade study (a screen is being built) | Missing | `alpha-web` | Path 2 | [ui] |
 | Idea screen: spec, clocks, source card, match gallery | Missing | `alpha-web` | Path 2 | [ui] |
 | Results screen: annotated equity against benchmark, overfit tests, labels | Unproven | `alpha-web` report: rule-test section built; benchmark not yet drawn on the chart | Path 1 | [ui] |
 | Trail screen: the reasoning from observation to next step | Missing | `alpha-web` | Path 1 | [partner] |
-| Ledger screen: every idea and trial, counts, RD-Agent runs | Missing | `alpha-web` | Path 3 | [ui] |
+| Ledger screen: every idea tried, counts, lessons, RD-Agent runs | Missing | `alpha-web` | Path 1 | [ui] |
 | Data screen: what is stored, coverage, quality | Unproven | `alpha-web` | Path 1 | [ui] |
 | Research loop screen: Learn, Live and Findings views | Missing | prototype only | Path 3 | [style] |
 | RD-Agent results readable in the Workstation | Unproven | `alpha-web`: read-only panel built; browser and real-run check pending | Path 3 | [ui] |

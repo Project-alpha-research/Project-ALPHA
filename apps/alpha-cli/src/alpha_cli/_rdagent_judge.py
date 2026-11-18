@@ -88,7 +88,7 @@ CONFIG: dict[str, Any] = {
     "spread_check": (
         "ADR-0055: a screened clock passes only if the mean over its decision days of the top "
         "third's minus the bottom third's forward return (before costs, claimed direction) is "
-        "positive under both tie orders; otherwise it is SPREAD_FAIL "
+        "positive with equal fractional boundary-tie weights; otherwise it is SPREAD_FAIL "
         f"({SPREAD_REASON}) whatever its replay shows. The bar is the sign only, not "
         "significance; the t-statistic and interval are reported, not applied. A spread failure "
         "is still replayed and counted as a trial, so the Deflated Sharpe's trials are unchanged"
@@ -592,7 +592,12 @@ def screen(
         bool(row.size and np.ptp(row) == 0) for row in (r[np.isfinite(r)] for r in values)
     ) / len(values)
     thin_days = int((finite.sum(axis=1) < MIN_NAMES).sum())
-    result: dict[str, Any] = {"coverage": coverage, "tie_share": ties, "thin_days": thin_days}
+    result: dict[str, Any] = {
+        "coverage": coverage,
+        **tie_diagnostics(values),
+        "all_tied_day_share": ties,
+        "thin_days": thin_days,
+    }
     if gap_policy:
         result["breadth_skipped_days"] = skipped
     if eligible is not None:
@@ -765,7 +770,7 @@ def replay(
         "rebalances": rebalances,
         "unrankable_instrument_rebalances": missing,
         "cash_days": cash_days,
-        "tie_break": "instrument name ascending",
+        "tie_break": "equal fractional boundary weights",
         "available_at": (
             "origin session + 23h (ALPHA canonical daily close stamp; bar d contains the full "
             "UTC day)"
@@ -773,20 +778,36 @@ def replay(
     }, net
 
 
+def tie_diagnostics(values: np.ndarray) -> dict[str, float]:
+    tied_shares, boundary_shares = [], []
+    for row in values:
+        finite = row[np.isfinite(row)]
+        if not len(finite):
+            tied_shares.append(0.0)
+            boundary_shares.append(0.0)
+            continue
+        _, counts = np.unique(finite, return_counts=True)
+        tied_shares.append(float(counts[counts > 1].sum() / len(finite)))
+        top = membership.third_weights(finite, 1, TOP_FRACTION)
+        bottom = membership.third_weights(finite, -1, TOP_FRACTION)
+        boundary_shares.append(
+            float((((top > 0) & (top < 1)) | ((bottom > 0) & (bottom < 1))).mean())
+        )
+    return {
+        "tie_share": math.fsum(tied_shares) / len(values),
+        "boundary_tie_share": math.fsum(boundary_shares) / len(values),
+    }
+
+
 def _thirds(
     row: np.ndarray, direction: int, symbols: list[str], *, reverse_ties: bool
 ) -> tuple[list[int], list[int]]:
-    """Top and bottom third by the claimed direction among names with a value at decision time.
-
-    The replay's own order: k = round(n / 3) names, ties broken by instrument name ascending;
-    ``reverse_ties`` breaks them descending instead, so a spread that only exists because of the
-    tie order can be seen.
-    """
-    available = [j for j, value in enumerate(row) if math.isfinite(value)]
-    by_name = sorted(available, key=lambda j: symbols[j], reverse=reverse_ties)
-    ranked = sorted(by_name, key=lambda j: -direction * row[j])  # stable: name order breaks ties
-    k = max(1, round(TOP_FRACTION * len(available)))
-    return ranked[:k], ranked[len(ranked) - k :]
+    """Names with positive fractional membership, listed in the legacy display order."""
+    by_name = sorted(range(len(row)), key=lambda j: symbols[j], reverse=reverse_ties)
+    ranked = sorted(by_name, key=lambda j: -direction * row[j] if np.isfinite(row[j]) else math.inf)
+    top = membership.third_weights(row, direction, TOP_FRACTION)
+    bottom = membership.third_weights(row, -direction, TOP_FRACTION)
+    return [j for j in ranked if top[j] > 0], [j for j in ranked if bottom[j] > 0]
 
 
 def spread(
@@ -806,41 +827,38 @@ def spread(
     One observation per decision day: the mean forward return of the top third minus that of the
     bottom third, ranked at the decision day's close, returns from the next open (the screen's own
     non-overlapping windows, so consecutive observations share no return day). Passing needs a
-    positive mean spread in the claimed direction under both tie orders; this only adds a way to
+    positive mean spread in the claimed direction with fractional boundary ties; this adds a way to
     fail before the replay. Uncertainty reuses the screen's estimators: the autocorrelation-adjusted
     effective sample size (t-statistic) and the seeded stationary-bootstrap interval.
     """
     if direction not in (1, -1):
         raise DataError("spread check needs a claimed direction")
-    observed: dict[bool, list[float]] = {False: [], True: []}
-    tops, bottoms, members = [], [], []
+    observed, tops, bottoms, members = [], [], [], []
     skipped = 0
     for scores, returns in zip(np.asarray(signal, float), np.asarray(outcome, float), strict=True):
-        if gap_policy and np.isfinite(scores).sum() < MIN_NAMES:
+        n = int(np.isfinite(scores).sum())
+        if gap_policy and n < MIN_NAMES:
             skipped += 1
             continue
-        for reverse in (False, True):
-            top, bottom = _thirds(scores, direction, symbols, reverse_ties=reverse)
-            if len(top) + len(bottom) > np.isfinite(scores).sum() or not top:
-                raise DataError("spread check needs a top and a bottom third that do not overlap")
-            held = returns[[*top, *bottom]]
-            if not np.isfinite(held).all():
-                # The replay needs every held name's bars too; dropping the name would keep only
-                # the names that survived the holding period.
-                raise DataError("spread check needs a forward return for every ranked name")
-            high = math.fsum(returns[top]) / len(top)
-            low = math.fsum(returns[bottom]) / len(bottom)
-            observed[reverse].append(high - low)
-            if not reverse:
-                tops.append(high)
-                bottoms.append(low)
-                members.append(set(top))
-    values = np.asarray(observed[False], dtype=float)
+        k = max(1, round(TOP_FRACTION * n))
+        if 2 * k > n:
+            raise DataError("spread check needs a top and a bottom third that do not overlap")
+        top = membership.third_weights(scores, direction, TOP_FRACTION)
+        bottom = membership.third_weights(scores, -direction, TOP_FRACTION)
+        if not np.isfinite(returns[(top > 0) | (bottom > 0)]).all():
+            raise DataError("spread check needs a forward return for every ranked name")
+        high = math.fsum(returns[top > 0] * top[top > 0]) / k
+        low = math.fsum(returns[bottom > 0] * bottom[bottom > 0]) / k
+        observed.append(high - low)
+        tops.append(high)
+        bottoms.append(low)
+        members.append((top, k))
+    values = np.asarray(observed, dtype=float)
     if values.size < 2 or float(values.std(ddof=1)) <= 0:
         raise DataError("spread check needs at least two decision days with varying spreads")
     effective = autocorrelation_effective_size(values)
     mean = math.fsum(values) / values.size
-    alternate = math.fsum(observed[True]) / len(observed[True])
+    alternate = mean  # Retain the stored field; fractional ties have no alternate order.
     t = mean / (float(values.std(ddof=1)) / math.sqrt(effective))
     interval = block_bootstrap_ci(
         values,
@@ -848,7 +866,10 @@ def spread(
         seed=int(sha((digest + "spread").encode())[:8], 16),
         n_resamples=BOOTSTRAP_RESAMPLES if n_resamples is None else n_resamples,
     )
-    changed = [len(b - a) / len(b) for a, b in zip(members, members[1:], strict=False)]
+    changed = [
+        math.fsum(np.maximum(b - a, 0.0)) / k
+        for (a, _), (b, k) in zip(members, members[1:], strict=False)
+    ]
     turnover = math.fsum(changed) / len(changed)
     passed = mean > 0 and alternate > 0
     result = {

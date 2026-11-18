@@ -6,7 +6,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 - **Capabilities:** 28 working, 30 partly working, 0 demo only, 5 shelved, 1 not started.
 - **Known defects:** 0.
-- **Decisions waiting for you:** 0.
+- **Decisions waiting for you:** 5.
 
 "Working" means the workflow was run from start to finish through the installed program
 on made-up (synthetic) data.
@@ -105,7 +105,13 @@ Found by running the installed program; each has a check that will fail once it 
 
 The full triage sheet, with what each item does and why: [docs/roadmap/triage-2026-11.md](docs/roadmap/triage-2026-11.md). Write your answer in its "Your decisions" table.
 
-- None.
+**Recommended: Your call**
+
+- Card N2: RD-Agent idea-family failure limit (three near-copies in one round close a family)
+- Card N3: Move RD-Agent research toward stocks and the owner's own setups
+- Card N4: Make the Qlib v3 feature recipe the default
+- Card N5: When to resume Workstation screen work
+- Card N6: Add the purpose and the three golden paths to CLAUDE.md
 
 ## Next up
 

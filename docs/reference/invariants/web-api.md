@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: 54eaae43a4142024
+verified: d51270845f785257
 ---
 
 # Web API invariants
@@ -23,19 +23,15 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 
 ## What the backend is
 
-- Keep it a thin relay that composes nothing — all composition stays behind the `alpha` CLI.
-  [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
-  The general rule is in [engineering § Subprocess boundary](engineering.md#subprocess-boundary).
+- Keep it a thin relay that composes nothing; the `alpha` CLI composes. [ADR-0002](../../adr/0002-cli-sole-composer-subprocess-surfaces.md)
+  General rule: [engineering](engineering.md#subprocess-boundary).
 - Bind loopback only (`127.0.0.1`). The port comes from `ALPHA_WEB_PORT`, then `PORT`, default 8801; an invalid value fails
-  loud. Requests to `127.0.0.1` redirect (307) to `localhost`, the one origin owner confirmation accepts.
-  Enforced by `tests/unit/test_web_port_config.py`.
-- Resolve the store through `AlphaSettings().data_dir` (`api/_common.data_dir`) so web, its child processes, the CLI and
-  MCP share one store.
+  loud. Requests to `127.0.0.1` redirect (307) to `localhost`, the one origin owner confirmation accepts. Enforced by `tests/unit/test_web_port_config.py`.
+- Resolve the store through `AlphaSettings().data_dir` (`api/_common.data_dir`) so web, its child processes, the CLI and MCP share one store.
 
 ## Calling the CLI
 
-- Spawn `alpha` only through `_catalog._run_json` (synchronous `--json` projection) or `_invoke.launch` (background job).
-  Do not add another spawn path.
+- Spawn `alpha` only through `_catalog._run_json` (synchronous `--json` projection) or `_invoke.launch` (background job). Do not add another spawn path.
 - Keep every synchronous call time-bounded. `_run_json` defaults to 60 s; long calls pass a larger but finite timeout.
 - Pass the child only the allowlisted environment built by `_catalog._cli_environment`: process basics, bulk-data paths,
   and a provider credential only for the exact command that needs it. It sets `ALPHA_DATA_DIR` and `TYPER_USE_RICH=0`.
@@ -81,8 +77,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   Never add another ignore entry to make an import pass.
 - Never import matplotlib or `alpha_research` in the web process. Enforced by
   `tests/unit/test_web_figures.py::test_the_web_process_never_imports_matplotlib_or_the_renderer`.
-- Bounded Polars reads of artifacts are allowed (`_runs.py`, `_ml.py`). No engine, gauntlet, Nautilus, Qlib or Kronos
-  in-process.
+- Bounded Polars reads of artifacts are allowed (`_runs.py`, `_ml.py`). No engine, gauntlet, Nautilus, Qlib or Kronos in-process.
 
 ## Reads and writes
 
@@ -99,6 +94,10 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
   Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
   Idea cards supply counts, receipts supply cost/time/ending, rounds supply feedback; hashes name code archives; old candidates retain derived status.
+- Setup Lab's GET `/api/setup/runs` and `/{find_id}` use `_setup_runs` only: bounded, allowlisted reads, no CLI run. `setups/<id>/` files
+  (`manifest.json`, `spec.json`, `summary.json`, `candidates.parquet`, `sheets/*.png`) and the linked `setup-studies/`, `setup-trades/`
+  manifests, summaries, rows and PNGs, plus `ledger/trials.jsonl`, are shown as stored. Missing files stay null; corrupt, linked or
+  oversized files fail with 422. No setup price snapshot, per-trade direction or total return is stored: they stay not recorded.
 - Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
   <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
   shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides
@@ -172,8 +171,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - Take the actor from the verified authorization, never from the request. Re-derive the artifact hash server-side and
   refuse a mismatch. Tokens are single-use and expire after 60 s.
   Enforced by `tests/unit/test_owner_auth_api.py`, `tests/unit/test_owner_local_confirmation.py`.
-- Refuse (403) unless Origin is exactly `http://localhost:<port>`, Host matches, content type is JSON, and
-  `Sec-Fetch-Site` is absent or `same-origin`.
+- Refuse (403) unless Origin is exactly `http://localhost:<port>`, Host matches, content type is JSON, and `Sec-Fetch-Site` is absent or `same-origin`.
 - Local confirmation is not proof that a human was present. Never label it as verified physical presence.
 - The closed action list is the `OwnerActionChallengeRequest.action_type` literal. Enforced against the generated
   contract by `tests/unit/test_web_owner_actions_drift.py`.
@@ -187,8 +185,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   plus the key environment the CLI publishes. Serve on a hit; on a miss subprocess `alpha figures render` behind a
   single-flight lock, so concurrent requests render once.
 - Bare image URL: strong `ETag` + `must-revalidate`. Pinned `?key=`: `immutable`. A stale pinned key returns 409 with
-  the current key — never different bytes at one URL. A traversal-shaped figure id never reaches the filesystem.
-  Enforced by `tests/unit/test_web_figures.py`.
+  the current key — never different bytes at one URL. A traversal-shaped figure id never reaches the filesystem. Enforced by `tests/unit/test_web_figures.py`.
 
 ## Adding a route
 

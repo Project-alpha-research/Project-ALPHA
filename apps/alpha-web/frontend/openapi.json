@@ -25031,6 +25031,365 @@
         "title": "SemanticPointV1",
         "type": "object"
       },
+      "SetupFigure": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Png"
+          }
+        },
+        "required": [
+          "name",
+          "png"
+        ],
+        "title": "SetupFigure",
+        "type": "object"
+      },
+      "SetupOutcome": {
+        "additionalProperties": false,
+        "properties": {
+          "figure": {
+            "$ref": "#/components/schemas/SetupFigure"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "rule_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Version"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "trial_indices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Indices"
+          },
+          "trial_labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Labels"
+          }
+        },
+        "required": [
+          "run_id",
+          "rule_version",
+          "summary",
+          "rows",
+          "figure",
+          "labels",
+          "trial_indices"
+        ],
+        "title": "SetupOutcome",
+        "type": "object"
+      },
+      "SetupRun": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "find_id": {
+            "title": "Find Id",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          }
+        },
+        "required": [
+          "find_id",
+          "description",
+          "name",
+          "recorded_at",
+          "assets",
+          "labels"
+        ],
+        "title": "SetupRun",
+        "type": "object"
+      },
+      "SetupRunDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "candidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidates"
+          },
+          "label_explanations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Label Explanations",
+            "type": "object"
+          },
+          "limits": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limits",
+            "type": "array"
+          },
+          "price_bars": {
+            "title": "Price Bars",
+            "type": "null"
+          },
+          "price_bars_reason": {
+            "title": "Price Bars Reason",
+            "type": "string"
+          },
+          "run": {
+            "$ref": "#/components/schemas/SetupRun"
+          },
+          "sheets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SetupFigure"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheets"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec"
+          },
+          "studies": {
+            "items": {
+              "$ref": "#/components/schemas/SetupOutcome"
+            },
+            "title": "Studies",
+            "type": "array"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/SetupOutcome"
+            },
+            "title": "Trades",
+            "type": "array"
+          },
+          "trial_indices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Indices"
+          },
+          "trial_labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Labels"
+          }
+        },
+        "required": [
+          "run",
+          "summary",
+          "spec",
+          "candidates",
+          "price_bars_reason",
+          "sheets",
+          "studies",
+          "trades",
+          "trial_indices",
+          "limits",
+          "label_explanations"
+        ],
+        "title": "SetupRunDetail",
+        "type": "object"
+      },
+      "SetupRunList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SetupRun"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SetupRunList",
+        "type": "object"
+      },
       "StageLinkCreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -35272,6 +35631,83 @@
         "summary": "Run Scan",
         "tags": [
           "scans"
+        ]
+      }
+    },
+    "/api/setup/runs": {
+      "get": {
+        "description": "List completed setup finds, newest recorded date first.",
+        "operationId": "list_runs_api_setup_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupRunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "setup"
+        ]
+      }
+    },
+    "/api/setup/runs/{find_id}": {
+      "get": {
+        "description": "Relay one find and all study/trade records linked by its stored identity.",
+        "operationId": "run_detail_api_setup_runs__find_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "find_id",
+            "required": true,
+            "schema": {
+              "maxLength": 16,
+              "pattern": "^[0-9a-f]{16}$",
+              "title": "Find Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupRunDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Run Detail",
+        "tags": [
+          "setup"
         ]
       }
     },

@@ -3,6 +3,11 @@ import { DOCUMENTS } from './documents'
 import { workflowPages, resolveWorkflow, workflowHash } from './workflowModel'
 
 describe('workflow navigation', () => {
+  it('opens Setup Lab from Research in both market profiles', () => {
+    for (const profile of ['crypto', 'equities'] as const) {
+      expect(resolveWorkflow('#page=research&pane=SetupLabPanel', profile)).toEqual({ page: 'research', pane: 'SetupLabPanel', runId: null })
+    }
+  })
   it('keeps every existing document pane reachable in its market', () => {
     for (const profile of ['crypto', 'equities'] as const) {
       const pages = workflowPages(profile)

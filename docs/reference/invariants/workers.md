@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 36672548245ab33c
+verified: ac2095351b53b84f
 ---
 
 # Worker invariants
@@ -168,7 +168,7 @@ On this page: [Shared rules](#shared-rules), [Qlib worker](#qlib-worker), [Liter
   loop names its exit. Proposal failures close rounds without empty trace entries; critic failures retain execution/value feedback and skip later critics in
   that round; budgets still end the run. Internal coding errors retain completed factors for judging; two consecutive failures stop the run. Restored prompts
   retain up to four full same-panel rounds within the history budget. For memory resume, families, budgets and call counts see the [worker
-  README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
+  change notes](../../../workers/rdagent/CHANGE-NOTES.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_{restore_and_history,families,budget_and_caps,gateway_usage}.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather

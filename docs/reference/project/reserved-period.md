@@ -40,8 +40,11 @@ Only labels it:
 
 Holds nothing back:
 
-- `alpha test` (rule tests) and `alpha setup`, according to [ideas and things considered](ideas-and-considered.md#open-questions). A search of
-  `test_cmds.py` and `setup_cmds.py` finds no use of the date or of `reserve.py`; the code they call was not traced. Not verified further.
+- `alpha test` (rule tests) and `alpha setup`. Checked in code at 458503bb: every import reachable from `test_cmds.py` and `setup_cmds.py` (198
+  modules) was searched for `RESERVED_DAY`, `RESERVED_START`, `toolbox.reserve` and the text `2024-01-01`. The hits are the toolbox store and inputs
+  (labels only), the RD-Agent judge, thirds and journey-figure modules, and the daily funding reader. They are imported through the ledger readers;
+  none cuts the bars a rule test or setup reads. An import is not a call, so this shows no use of the date, not a full call trace. The same finding is
+  in [ideas and things considered](ideas-and-considered.md#open-questions).
 - Every other command: not verified.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
@@ -50,9 +53,11 @@ Holds nothing back:
 - 2026-11-18: shortlisted factors may be confirmed once each on the reserved data. There are ten slots for the life of the reserved window, and each
   needs the owner's own yes. Approved, not built, queued behind the screens. Nothing may use a slot yet, and a stand-in user can never give the yes
   ([log](owner-decisions-5.md#2026-11-18-one-shot-confirmation-of-shortlisted-factors-on-reserved-data-approved-not-built)).
-- Only the owner reveals a holdout ([owner authority](../invariants/research-integrity.md#owner-authority)).
+- Settled, and a different matter: only the owner reveals a project's sealed holdout ([owner authority](../invariants/research-integrity.md#owner-authority)).
+  That rule is about the holdout, not about the reserved period.
 
 ## What is open
 
 - The reserve policy for rule tests and setups: one held-back period for everything, a held-back tail chosen per idea, or the status quo with
-  labels. Who may reveal it is also open ([open questions](ideas-and-considered.md#open-questions)).
+  labels ([open questions](ideas-and-considered.md#open-questions)).
+- Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.

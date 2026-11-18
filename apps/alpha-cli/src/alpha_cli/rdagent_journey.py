@@ -15,9 +15,9 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from alpha_cli import rdagent_journey_words as words
-from alpha_cli._rdagent_judge import RESERVED_START
 from alpha_cli.figures import rdagent_journey_figures as charts
 from alpha_cli.ledger_cmds import DEFAULT_RDAGENT_LEDGER
+from alpha_cli.toolbox.reserve import RESERVED_START
 from alpha_core.atomic import write_text
 
 Row = dict[str, Any]

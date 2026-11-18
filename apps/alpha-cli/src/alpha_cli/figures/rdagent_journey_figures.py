@@ -12,9 +12,9 @@ from typing import Any
 
 import polars as pl
 
-from alpha_cli._rdagent_judge import RESERVED_DAY
 from alpha_cli.rdagent_journey_words import CLOCK, display, pass_line
 from alpha_cli.spine.setup_trade_figure import _style
+from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_research.figures.theme import Theme, load_theme
 
 Data = dict[str, Any]

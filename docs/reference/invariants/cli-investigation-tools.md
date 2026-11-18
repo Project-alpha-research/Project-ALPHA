@@ -34,7 +34,7 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
 - Change points within five bars of a portfolio flat/in-market transition are position changes, excluded from `market.changepoints.count`; both counts are
   reported. Without a recorded position series each reads "position state unknown" and the count is null. `near_switch_share` is the share of
   bars within five bars of a switch; above 20% the sentence calls the split rough.
-- The [toolbox contract](../project/toolbox-registry.md) governs attempts, settings and cache identity.
+- The [toolbox contract](../project/components/toolbox.md) governs attempts, settings and cache identity.
   Each attempt writes an `attempted` ledger row before computing and an `ok` or `error` row (with `error_code`) after; an identical
   request (inputs, settings, seed, version) returns the stored file with no new row. Rows carry `tool_kind` and `look`. A setting off its
   default, or a re-rolled seed of a seeded entry, adds `non-default-params`; `alpha tool history <run_id>` lists every attempt.

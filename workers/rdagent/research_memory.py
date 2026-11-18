@@ -265,6 +265,8 @@ def _hash(path: Path) -> str | None:
 def judge_sha256() -> str:
     names = (
         "alpha_factor_judge.py",
+        "alpha_factor_hypothesis.py",
+        "discussion.py",
         "alpha_factor_data.py",
         "factor_loop_entry.py",
         "idea_families.py",
@@ -457,6 +459,8 @@ def close_unfinished_rounds(session: Path, *, exit_reason: str = "") -> None:
     reason = exit_reason or (
         json.loads(receipt.read_text()).get("loop_reason", "") if receipt.exists() else ""
     )
+    if reason == "awaiting-discussion":
+        return  # An intentional discussion stop has its own round record.
     steps = record.parent / "steps.jsonl"
     failed = {
         r["loop"]

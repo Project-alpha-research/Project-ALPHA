@@ -131,6 +131,8 @@ def validate(args: argparse.Namespace, environ: dict[str, str]) -> dict[str, Pat
         raise LaunchError("--loop-n must be 1, 2 or 3")
     if not 1 <= args.run_max_calls <= MAX_CALLS:
         raise LaunchError(f"--run-max-calls must be between 1 and {MAX_CALLS}")
+    if args.discuss_wait_minutes < 0:
+        raise LaunchError("--discuss-wait-minutes must be non-negative")
     if args.wall_seconds <= 0:
         raise LaunchError("--wall-seconds must be positive")
     if not 0 < args.api_timeout <= 900:
@@ -537,6 +539,13 @@ class Launch:
             ALPHA_GATEWAY_CALLS=str(self.args.gateway_data_dir / "model-gateway/calls.jsonl"),
             ALPHA_GATEWAY_RUN_ID=self.args.run_id,
         )
+        if self.args.discuss:
+            environment.update(
+                ALPHA_FACTOR_DISCUSS="1",
+                ALPHA_DISCUSS_WAIT_MINUTES=str(self.args.discuss_wait_minutes),
+                ALPHA_DISCUSS_ON_TIMEOUT=self.args.discuss_on_timeout,
+                ALPHA_DISCUSS_MAX_CALLS=str(self.args.run_max_calls),
+            )
         (self.run / "home").mkdir()
         self.log("loop", status="started", keys=sorted(environment))
         child = self.spawn(
@@ -880,7 +889,7 @@ def call_split(
     split["proposal_prompt_chars"] = [
         {"loop": c.get("loop"), "step": c["step"], "chars": c["total_prompt_chars"]}
         for c in labelled or []
-        if c.get("step") in ("direct_exp_gen", "proposal_reask")
+        if c.get("step") in ("direct_exp_gen", "proposal_reask", "discussion_revision")
         and c.get("endpoint") == "/v1/chat/completions"
         and "total_prompt_chars" in c
     ]
@@ -964,6 +973,9 @@ def parser() -> argparse.ArgumentParser:
     r.add_argument("--run-id", required=True)
     r.add_argument("--loop-n", type=int, default=2)
     r.add_argument("--memory-dir", type=Path)
+    r.add_argument("--discuss", action="store_true", help="Wait for a reply before coding.")
+    r.add_argument("--discuss-wait-minutes", type=int, default=30)
+    r.add_argument("--discuss-on-timeout", choices=("proceed", "stop"), default="proceed")
     r.add_argument("--no-memory", action="store_true")
     r.add_argument("--coder-max-loop", type=int, default=2)
     r.add_argument("--run-max-calls", type=int, default=MAX_CALLS)

@@ -33,6 +33,25 @@ or in the Workstation's technical detail.
 - **Ideas tested so far** — Every idea tested makes a lucky result more likely, so the pass line rises with this count.
 - **Coins with a usable number** — This is the share of eligible coin observations with a usable number.
 
+## RD-Agent proposal idea types
+
+| Recorded family | Plain name in the proposal |
+|---|---|
+| futures funding | futures funding |
+| price near its high / range position | price within its recent range |
+| intraday return and gaps | price changes within and between trading days |
+| illiquidity | ease of trading |
+| return-volume relation | how price changes with trading volume |
+| skewness and lottery returns | unusually large gains or losses |
+| drawdown | fall from a previous high |
+| past return (momentum or reversal) | whether past price moves continue or reverse |
+| volatility and beta | price swings and market sensitivity |
+| range and compression | widening or narrowing price ranges |
+| volume level and trend | trading volume and its trend |
+| VWAP distance | distance from the volume-weighted average price |
+
+The proposal shows “not classified” for an idea type without a known plain name.
+
 ## Work packages
 
 The roadmap has 19 work packages, W01 to W19. None is declared fully accepted yet. Older numbering

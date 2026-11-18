@@ -2,13 +2,13 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d1abd06b142f352b on 2026-11-19: The CLI re-exports the same reserve names and the toolbox keeps the same label and input behavior.
+  verified b27b7887cc849c1a on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 07d082a5ad4d4e01 on 2026-11-19: The CLI re-exports the same reserve names and the toolbox keeps the same label and input behavior.
+  verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -16,14 +16,8 @@ docs/reference/invariants/cli-runs.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
-docs/reference/invariants/core.md
-  verified 0aa46f3715578a6f on 2026-11-19: The shared reserve module uses only the standard library and follows the documented source identity rules.
-
-docs/reference/invariants/data.md
-  verified d88ae808b699f286 on 2026-11-19: The funding cutoff and reads keep their existing behavior and the reserve import follows the core-only package boundary.
-
 docs/reference/invariants/workers.md
-  verified ac2095351b53b84f on 2026-11-19: Re-read after merging main: main's README split changes no rule here, and this branch's panel-date wording through the worker's one reserved-date constant is still accurate
+  verified 3cc9c22191e6ab00 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -59,7 +53,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 3c1c2343e740d22f on 2026-11-19: Worker pages were split and re-linked; every link in this page was repointed and the statements still hold
+  verified 8ba0d4e7256327df on 2026-11-19: Re-read after merging the README split: the proposal-pause entry (answer by number or name, reasons reach the next proposer, decisions record what the agent did and left out) matches the short README and CONTEXT; history now lives in CHANGE-NOTES.
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -98,7 +92,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified 8d128cd089812ca0 on 2026-11-19: This branch adds a scored-return reader to toolbox/inputs.py; reserved-period labelling is unchanged and the new entries carry reserved-period-seen
+  verified 383d46efc5e63521 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -111,12 +105,6 @@ docs/roadmap/production-scope.md
 
 docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
-
-packages/alpha-core/CONTEXT.md
-  verified f09c218332089ad6 on 2026-11-19: The shared reserve module uses only the standard library and follows the documented source identity rules.
-
-packages/alpha-data/CONTEXT.md
-  verified 638f802b62b82c2c on 2026-11-19: The funding cutoff and reads keep their existing behavior and the reserve import follows the core-only package boundary.
 
 research/CONTEXT.md
   verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -143,7 +131,7 @@ research/tools/price-noise.md
   verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/rdagent-journey.md
-  verified dc85c46fe5c0a8d6 on 2026-11-18: Re-read: this branch only renamed the journey theme helper to figure_theme and named its light variant; light stays default and --theme dark still selects dark, as the card says
+  verified df8f12eea7539079 on 2026-11-19: Re-read after the merge: main only renamed the figure theme helper and named the light theme; the card's step-one, attribution and figure wording still match the code.
 
 research/tools/resampling-checks.md
   verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
@@ -161,7 +149,7 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified 5a5143fbb114833c on 2026-11-19: The same isolated worker data module now renders the panel dates for the proposer, with the same text and cutoff.
+  verified 476fc9d11f2f987e on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

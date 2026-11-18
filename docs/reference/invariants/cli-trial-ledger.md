@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 8b99f4e9e22ed806
+verified: b8f3b5923975d849
 ---
 
 # One trial ledger invariants
@@ -19,6 +19,7 @@ model. [ADR-0053](../../adr/0053-one-trial-ledger-read-model.md) owns the outcom
 counting decision. Options are in the [command reference](../commands.md#alpha-ledger).
 
 The run-folder commands `proposal` and `reply` exchange build choices with a waiting worker.
+Between proposals, the command reads the worker's phase and its latest decision.
 A reply publishes a file in that round's folder. Trial counts and owner approvals come from
 their existing records. See the [discussion protocol](../../../workers/rdagent/README.md#propose-and-discuss).
 

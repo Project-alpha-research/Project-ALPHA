@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, cast
 
+from alpha_cli._rdagent_clocks import tied_days_feedback
 from alpha_cli._rdagent_judge import STATUSES
 from alpha_cli._rdagent_stability import recorded_status
 from alpha_cli.rdagent_discussion import summary_fields
@@ -82,7 +83,11 @@ def direction_of(row: dict[str, Any]) -> int | None:
 def outcome(row: dict[str, Any]) -> str:
     if row["status"] not in STATUSES:
         raise ValueError(f"Unknown factor status {row['status']!r}")
-    return VERDICTS[recorded_status(row)]
+    verdict = VERDICTS[recorded_status(row)]
+    if row["status"] == "DEGENERATE":
+        screen = trial_of(row).get("screen", row.get("screen", {}))
+        verdict += " " + tied_days_feedback(screen)
+    return verdict
 
 
 def lead_sentence(value: str) -> str:
@@ -164,19 +169,26 @@ def idea_step(row: dict[str, Any], task: dict[str, Any], sources: list[str]) -> 
         plain = source.get("plain_summary")
         if (
             isinstance(plain, str)
-            and not source.get("plain_summary_status")
-            and "plain_summary_status" not in summary_fields(plain)
+            and source.get("plain_summary_status", "ok") == "ok"
+            and summary_fields(plain)["plain_summary_status"] == "ok"
         ):
             # The agent's own plain sentence replaces the lead taken from its description.
             sentence = plain.strip()
             sentence += "" if sentence.endswith((".", "!", "?")) else "."
             sentences = [sentence, sentences[0], claim]
             break
+    attribution = {**row, **task}
+    who = {
+        "user": "You (the user)",
+        "agent-revised-by-user": "RD-Agent (AI), changed at your request",
+    }.get(attribution.get("origin", "agent"), AI)
+    if attribution.get("answered_by", attribution.get("author")) == "stand-in user, not the owner":
+        who += " — answered by a stand-in user"
     return step(
         "The idea",
-        AI,
+        who,
         " ".join(filter(None, sentences)),
-        "This is the relationship the AI expected before the test. Its full description is in "
+        "This is the relationship the idea predicted before the test. Its full description is in "
         "its own words.",
         sources,
         own_words=desc or MISSING,

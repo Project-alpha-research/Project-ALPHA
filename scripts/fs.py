@@ -4,14 +4,18 @@
     uv run python scripts/fs.py search "QUERY" [--kind KIND] [--limit N] [--format text|json]
     uv run python scripts/fs.py stale [--strict] [--format text|json]
     uv run python scripts/fs.py owners PATH... [--json]
-    uv run python scripts/fs.py verify DOCUMENT...
+    uv run python scripts/fs.py verify DOCUMENT... [--reason "WHY IT IS STILL CORRECT"]
 
 ``orient`` lists components, module counts and the routing documents to read first. ``search``
 returns ranked excerpts of tracked documentation (path, heading, line range, kind). ``stale``
 lists living documents whose ``sources`` no longer match their ``verified`` fingerprint; it
-exits 0 (a report) unless ``--strict`` is given or a document's front matter cannot be checked.
+exits 0 (a report) unless ``--strict`` is given or a document's front matter is broken; a
+document whose sources give nothing to fingerprint is a warning ("cannot be checked").
 ``owners`` lists the living documents that describe each path. ``verify`` is the only command
-that writes: after you re-read a document against its sources, it records their fingerprint.
+that writes: after you re-read a document against its sources, it records their fingerprint and
+prints which sources changed by how many lines. It refuses unless the document's own text changed
+since its last stamp or ``--reason`` says why it is still correct (kept in
+``docs/verified-reasons.txt``).
 """
 
 from __future__ import annotations
@@ -47,6 +51,9 @@ def build_parser() -> argparse.ArgumentParser:
     owners.add_argument("--json", action="store_true")
     verify = sub.add_parser("verify", help="record that a document matches its sources now")
     verify.add_argument("documents", nargs="+")
+    verify.add_argument(
+        "--reason", default="", help="why the document is still correct without an edit"
+    )
     return parser
 
 
@@ -88,12 +95,14 @@ def main(argv: list[str] | None = None) -> int:
                 for path, documents in found.items():
                     print(f"{path}: {', '.join(documents) or 'no living document describes it'}")
         elif args.command == "verify":
-            for report in fs_stale.verify(root, [_relative(root, name) for name in args.documents]):
-                print(
-                    f"verified {report.path}: {report.verified} -> {report.fingerprint}"
-                    if report.stale
-                    else f"already current {report.path}"
-                )
+            documents = [_relative(root, name) for name in args.documents]
+            for report in fs_stale.verify(root, documents, reason=args.reason):
+                if not report.stale:
+                    print(f"already current {report.path}")
+                    continue
+                print(f"verified {report.path}: {report.verified} -> {report.fingerprint}")
+                for name, added, removed in report.source_changes:
+                    print(f"  - source changed: {name} (+{added} -{removed})")
         else:
             result = fs_search.search(root, args.query, kind=args.kind, limit=args.limit)
             print(

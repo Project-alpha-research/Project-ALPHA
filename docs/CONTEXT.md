@@ -38,8 +38,9 @@ other files link to it.
   lines for a CONTEXT file and 200 for a reference file; no line over 160 characters; no paragraph
   repeated across files.
 - When the code a document describes changes, re-read the document, fix it and run
-  `uv run python scripts/fs.py verify <document>`; `fs.py stale` lists the documents to re-check
-  and `fs.py owners <path>` names the ones that describe a file. The check fails while one is stale.
+  `uv run python scripts/fs.py verify <document>` (with `--reason "<why>"` when it needed no fix);
+  `fs.py stale` lists the documents to re-check and `fs.py owners <path>` names the ones that
+  describe a file. The check fails while one is stale.
 - Generated pages are never edited by hand; their commands are listed in
   [docs/README.md § Generated files](README.md#generated-files).
 - Check: `uv run pytest -q tests/unit/test_docs_links.py tests/unit/test_filesystem_contract.py`,

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 14d01b534aa31f7b
+verified: c542ac53654882e0
 ---
 
 # Follow one RD-Agent idea
@@ -33,8 +33,8 @@ facts. The journey is an exploratory reading of stored evidence.
 In the Workstation, open Research → RD-Agent, select the run, then an idea. The screen reads
 the run's own `journey/` folder; a missing journey shows the local build command. The CLI builds
 journeys for judged factors only; a loop event can have a name with no linked evaluation.
-Step one starts with the agent's plain sentence when it passed the checks, else the description's
-lead; then idea type, expected direction and a chosen-after-seeing-the-data note. The full text
-stays in the agent's own words. Code can be an excerpt; long lines wrap. The run summary and the
+Step one names the proposer and identifies a stand-in's answer. It leads with the complete valid
+plain sentence or the description's lead, then the idea type, direction and any later choice of sign.
+The full description stays in the idea's own words. Code can be an excerpt; long lines wrap. The run summary and the
 final step's exploratory label show only recorded values; the picker reads verdicts from the run.
 To choose ideas before they are built, see [propose and discuss](../../workers/rdagent/README.md#propose-and-discuss).

@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: fd5ee42a2617426a
+verified: 891b44f8865eb35f
 ---
 
 # RD-Agent worker workspace
@@ -43,8 +43,8 @@ no market, inference or evidence authority.
   spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts.
   Model-bound memory uses a sidecar; `embedding_eval.py` checks retrieval. See the worker invariants for accounting and compatibility.
 - The [proposal pause](README.md#propose-and-discuss) exchanges JSON with the CLI in
-  `discussion.py` after the family guard. `alpha_factor_hypothesis.py` retains the model's
-  summary on native factor tasks. Tests: `test_rdagent_discussion{,_commands}.py`.
+  `discussion.py` after the family guard. It records revision explanations, passes choices to the
+  next proposer and writes `discussion/status.json`. Tests: `test_rdagent_discussion{,_commands}.py`.
 - Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and
   `loop_guard.py` closes exhausted-provider rounds, including proposal, without inventing trials.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.

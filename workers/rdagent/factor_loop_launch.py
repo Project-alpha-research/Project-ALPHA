@@ -735,6 +735,16 @@ class Launch:
             "loop", event="end", exit_reason=self.receipt["loop_reason"], exit_status=exit_status
         )
         print(f"RD-Agent loop ended: {self.receipt['loop_reason']}.")
+        discussion_path = self.run / "discussion/status.json"
+        if discussion_path.exists():
+            previous = json.loads(discussion_path.read_bytes())
+            if previous["state"] != "stopped":
+                importlib.import_module("discussion").status(
+                    self.run,
+                    "ended",
+                    previous["round"],
+                    datetime.fromisoformat(self.receipt["ended_at"]),
+                )
         (self.run / "receipt.json").write_text(json.dumps(self.receipt, indent=2, sort_keys=True))
         return exit_status
 

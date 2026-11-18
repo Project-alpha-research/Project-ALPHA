@@ -266,6 +266,7 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                 raise DataError(f"invalid historical item {len(rows) + 1}: {error}") from error
             row = {
                 "schema": "AlphaRdagentFactorTrialV2",
+                **summary_fields(None),
                 "trial_index": len(history) + len(rows) + 1,
                 "name": item["name"],
                 "plain_name": plain_name(item["name"]),
@@ -336,9 +337,14 @@ def new_factor_row(
         status != "reviewed" and not (isinstance(reason, str) and reason.strip())
     ):
         raise DataError("invalid code critic status or missing reason")
+    attribution = {}
+    if "answered_by" in factor or "author" in factor:
+        answer = factor.get("answered_by", factor.get("author"))
+        attribution = {"answered_by": answer, "author": answer}
     return {
         **factor,
         **summary_fields(factor.get("plain_summary")),
+        **attribution,
         "critic_status": status,
         **({"critic_reason": reason} if status != "reviewed" else {}),
         "schema": TRIAL_SCHEMA,

@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 7c22bd309638dc89
+verified: d66a74f6e285fce6
 ---
 
 # Command line runs invariants
@@ -88,7 +88,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   owner review. [ADR-0029](../../adr/0029-four-family-monte-carlo-validation.md)
 ## General rule trials
 - `alpha test` accepts a TOML/JSON idea or rule flags, evaluates each asset long/flat with all-in sizing, and publishes ordinary `validate` artifacts under
-  the home data directory, even for another store's bars.
+  the home data directory, even for another store's bars. Scored equity stores per-bar gross returns and fill costs ([cost check](cli-investigation-tools.md)).
 - `spec.json` is included before the immutable manifest. The manifest's `spine` key records the test id, spec hash, name, idea, rule, store, integrity labels
   and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar dates are
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.

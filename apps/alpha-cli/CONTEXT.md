@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: b54e5ff10a4bf386
+verified: e3e1638ccf5e49eb
 ---
 
 # alpha-cli workspace
@@ -72,7 +72,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- [Registered tools](../../docs/reference/project/components/toolbox.md) describe market exposure, date sensitivity, downside risk and closed trades.
+- [Registered tools](../../docs/reference/project/components/toolbox.md) cover market exposure, date sensitivity, downside risk, trades and break-even costs.
 - Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) read stored evaluations.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:

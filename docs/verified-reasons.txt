@@ -29,7 +29,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 087a6e0f02808e04 on 2026-11-19: Merge of main: the page text is main's; the CLI context source changed only in its output links and tool list
+  verified 5c83c0289457f709 on 2026-11-19: CONTEXT.md only shortened one line; the command-line page still matches
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

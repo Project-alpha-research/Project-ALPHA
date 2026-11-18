@@ -111,7 +111,7 @@ Run on the Dell on 2026-11-14:
    RD-Agent, so temperature can be honoured; the gateway and launcher now support it
    (`deepseek/deepseek-v4.1-flash-1017`, USD 0.038 / 0.50 per million tokens, read that day).
    Not run yet: loading the key needs a permission this agent did not have; the one command is in
-   the [worker README](../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14).
+   the [worker README](../../workers/rdagent/README.md#how-to-launch).
 2b. ~~**A backtest that can see the idea.**~~ Done 2026-11-14 without needing your choice:
    ALPHA judges RD-Agent's factors itself (the second option below), with a pinned install and
    one launch command ([ADR-0049](../adr/0049-alpha-judges-rdagent-factors.md)). Still open: a
@@ -169,4 +169,4 @@ Technical detail: [worker README](../../workers/rdagent/README.md).
 
 To repeat the ALPHA-judged loop (real model calls, about 40 per run, never more than 60):
 `bash scripts/setup_rdagent.sh --with-factor-runtime` once, then the one `factor_loop_launch.py
-run` command in the [worker README](../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14).
+run` command in the [worker README](../../workers/rdagent/README.md#how-to-launch).

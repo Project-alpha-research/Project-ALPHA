@@ -28,6 +28,8 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | changing what a native result may claim |
 | [what this part is for](../../docs/reference/project/components/rd-agent.md) | — | why it exists; before you keep, shelve or remove it |
+| [worker README](README.md) | — | launching a loop, propose and discuss (stand-in answers), thirds and ties with their do-not-change list, futures funding |
+| [change notes](CHANGE-NOTES.md) | — | the history of a rule, the pinned probe, the model gateway, research memory; every dated fix-up |
 
 ## How to change it
 
@@ -36,8 +38,10 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 - Gateway embedding backends and accounting live in `gateway_embeddings.py`: local by default, or an explicitly priced provider model. Both share the
   2,000-attempt guard; paid embeddings spend money but no chat calls. Paid memory inputs batch by 32, with per-request receipts. Model-bound memory uses a
   sidecar; `embedding_eval.py` checks retrieval. See the worker invariants for accounting and compatibility.
-- The [proposal pause](README.md#propose-and-discuss) exchanges JSON with the CLI in `discussion.py` after the family guard. It records revision explanations,
-  passes the user's choices to the next proposer and writes `discussion/status.json`. Tests: `test_rdagent_discussion{,_commands}.py`.
+- The [proposal pause and stand-in answers](README.md#propose-and-discuss) (`--discuss`; a stand-in answers with `alpha ledger reply --as stand-in`;
+  the owner rule is the [stand-in entry](../../docs/reference/project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests))
+  exchange JSON with the CLI in `discussion.py` after the family guard. It records revision explanations, passes the user's choices to the next proposer
+  and writes `discussion/status.json`. Tests: `test_rdagent_discussion{,_commands}.py`.
 - Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and `loop_guard.py` closes exhausted-provider rounds, including
   proposal, without inventing trials. Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure. The code-critic
   guard preserves execution/value feedback and skips later critics in the failed round. Internal coding errors preserve completed factors for judging; two
@@ -70,4 +74,4 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 
 - Root tests under `tests/unit/test_native_*.py` and `tests/unit/test_rdagent_model_gateway.py`.
 - The owning document: `docs/reference/invariants/workers.md` § RD-Agent worker. Identity split counts
-  and write-offs reach proposer feedback; rescaling, reproducibility and family refusal rules: [README](README.md#identity-breaks-across-a-gap).
+  and write-offs reach proposer feedback; rescaling, reproducibility and family refusal rules: [change notes](CHANGE-NOTES.md#identity-breaks-across-a-gap).

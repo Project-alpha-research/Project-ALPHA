@@ -3,7 +3,8 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: e284a5330543b7ae
+  - workers/rdagent/CHANGE-NOTES.md
+verified: 8ba0d4e7256327df
 ---
 
 # RD-Agent
@@ -46,7 +47,7 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   configured paid provider model with explicit pricing. The gateway holds ALPHA's call and dollar budget, refuses or records
   every setting it cannot honour, and logs each call without its text. Cache and serving-provider
   facts reach the receipt; API calls use a run-only router session, with a comparison-run opt-out.
-  Recording details: [worker README](../../../../workers/rdagent/README.md#model-gateway-2026-11-14).
+  Recording details: [worker change notes](../../../../workers/rdagent/CHANGE-NOTES.md#model-gateway-2026-11-14).
 - ALPHA, not RD-Agent's built-in Qlib backtest, judges the factor loop: a cheap rank screen first, then a
   cost-aware replay only for factors that pass, with 2024 onward locked away from the loop
   ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md), [ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
@@ -57,9 +58,9 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
 - Runs resume from completed rounds; an unfinished round is recorded as abandoned, never invented as a trial.
   The wrapper refuses proposals from idea families that have already failed repeatedly and asks again.
   Counts, caps and spend are always explicit. The technical rules of each of these are change notes in the
-  [worker README](../../../../workers/rdagent/README.md#change-notes-moved-from-the-project-page-2026-11-18).
-- RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
-  [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
+  [worker change notes](../../../../workers/rdagent/CHANGE-NOTES.md#change-notes-moved-from-the-project-page-2026-11-18).
+- RD-Agent remembers across runs; what it keeps and its limits are in the worker's
+  [research memory](../../../../workers/rdagent/CHANGE-NOTES.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are
   backtested on [Nautilus](nautilus.md) without any 2024 data and go into the same trial ledger,
   so they count toward how many ideas were tried, but never mix into RD-Agent's factor statistics
@@ -142,8 +143,8 @@ New factor rows store family and critic status. Older rows can lack both. The pa
 - Decided 2026-11-14: RD-Agent may use DeepSeek through OpenRouter (temperature honoured), caps unchanged. Built: `--chat-route api --api-openrouter` on the
   gateway and the factor-loop launcher, model `deepseek/deepseek-v4.1-flash-1017` at USD 0.038 / 0.50 per million input / output tokens (OpenRouter's list,
   read 2026-11-14). Codex stays the default and the fallback; how to choose: [worker
-  README](../../../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14). First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine
-  factors tried, no candidate; one run per route is not a quality comparison (numbers in the worker README).
+  README](../../../../workers/rdagent/README.md#how-to-launch). First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine
+  factors tried, no candidate; one run per route is not a quality comparison (numbers in the worker change notes).
 - Measured 2026-11-16 (system tests, about USD 0.66): 66 factors, no candidate; 15 of 18 replayed swing screen passes lost money before costs (15 coins). Runs
   sharing a gateway can start together; feedback explains losses. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials; two fresh runs (about USD 0.22) judged 11 factors, moved to

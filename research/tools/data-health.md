@@ -17,6 +17,7 @@ Add `--universe members.csv` (membership intervals) to check survivorship. `--js
 
 **How to read it** Four groups come in order: adjustments, timestamps, gaps, survivorship.
 Each group shows its worst status, then one sentence per check. The verdict is the worst status of all.
+Statuses, best to worst: not-applicable (the check does not apply, such as splits for crypto), pass, warn and fail.
 - Adjustments: an overnight jump close to a split ratio with no recorded split. The command compares no other series,
   so such a jump warns. A real crash that happens to match a ratio also warns; check it by hand.
 - Timestamps: time zone, order, midnight UTC stamps, closed-exchange days, unfinished bars, and data that stops early.

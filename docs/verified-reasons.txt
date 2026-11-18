@@ -2,10 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f37db52ddc451a3e on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
-
-apps/alpha-web/CONTEXT.md
-  verified a3480c23a04bafd2 on 2026-11-19: Re-read after the main merge: the frontend adds one data-health line and five label texts inside existing Summary and Setup Lab panels; no route, response model or workflow step changed
+  verified 1692a010c3aa156b on 2026-11-19: Re-read after merging main: main's text already links the data health card on runs; this branch's command and run changes need no other routing change
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -19,9 +16,6 @@ docs/reference/invariants/cli-runs.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
-docs/reference/invariants/web-api.md
-  verified a73e99b16de49e2c on 2026-11-19: Re-read: _setup_runs.py only adds five label explanations to an existing dict; no route, response model or OpenAPI operation changed
-
 docs/reference/invariants/workers.md
   verified 485c52a41070dfd5 on 2026-11-18: re-read after the merge; main's own update for the proposal pause is kept and the contents list and thirds link are accurate
 
@@ -32,16 +26,16 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified 0c17927b73c27ea2 on 2026-11-19: Re-read: the playbook gained three data-health rows in its label table and a shorter rival-explanations step; the page's description of the playbook and checker roles still holds
+  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 5227e09777b4ad91 on 2026-11-19: Re-read after the main merge: the CLI context gained one data-health link; this page's account of commands, ledger and labels is unchanged and still right
+  verified 087a6e0f02808e04 on 2026-11-19: Merge of main: the page text is main's; the CLI context source changed only in its output links and tool list
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
-  verified 00914c11bd52f4e5 on 2026-11-18: re-read; it states neither who merges nor the stage count, so the workflow wording fixes change nothing here
+  verified 4eed26d21e17eb9f on 2026-11-19: Only wording and a routing row changed in the two sources; the page already links the end-to-end section
 
 docs/reference/project/components/forecasting.md
   verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -59,7 +53,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified e85e5a6f7fe9b864 on 2026-11-18: re-read after the merge; the proposal pause is described as built on the command line only, matching the README section
+  verified 3c1c2343e740d22f on 2026-11-19: Worker pages were split and re-linked; every link in this page was repointed and the statements still hold
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -68,13 +62,16 @@ docs/reference/project/components/toolbox.md
   verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 docs/reference/project/components/validation-and-evidence.md
-  verified e38c0e0be6f7ce03 on 2026-11-19: Re-read: the spine adds a data-health lookup and three citation-checker label phrases; the page already says the checker verifies run labels, which now include these
+  verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/web-workstation.md
   verified 6f015118475a7440 on 2026-11-18: re-read; the new frontend README row and wrapped bullet change nothing it says
 
 docs/reference/project/decisions-by-topic.md
-  verified 770dd9ac02f1c126 on 2026-11-19: Re-read: volume 5 only gained a dated status line under the data health request; the topic row and its anchor are unchanged
+  verified 53fc670d3f00701a on 2026-11-19: Re-read after merging main: volume 5 gained a 2026-11-19 status line under the data health request; the topic row and its anchor are unchanged
+
+docs/reference/project/file-system-measurement.md
+  verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
 
 docs/reference/project/ideas-and-considered.md
   verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
@@ -110,25 +107,22 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified 09127db77cb34a55 on 2026-11-19: Re-read after the main merge: routing and rules are unchanged; data health appears as labels on runs, which the page already describes as how integrity shows
+  verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/PLAYBOOK.md
-  verified d64bc6458852558a on 2026-11-19: Re-read after review edits: the label table rows for data health match the checker's required phrases; step 6 keeps 'always consider' wording within the 120-line cap
+  verified 383a1502ea8f14be on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/README.md
-  verified da00d6c89561cc88 on 2026-11-19: Re-read: the index already routes stored-data faults to the data health card, which now covers runs; no new card was added
+  verified 2aface65c59fa829 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/benchmark-and-drawdowns.md
-  verified 99c41b067819bb0a on 2026-11-19: Re-read: spine changes add a data-health record and label only; benchmark and drawdown figures are byte-identical (pass-report byte proof test)
-
-research/tools/data-health.md
-  verified 0814b2295c388803 on 2026-11-19: Re-read after the review edits: the On a run section states the final behaviour: fingerprint match, worst-of order, --check-data peers, one-command override, period covered
+  verified f241475c184eea0f on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 894fd7728ec403ef on 2026-11-19: Re-read: the spine change adds no trial and changes no count; a stopped run writes no ledger row, an overridden run counts as before
+  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/diagnose-and-audit.md
-  verified b935f18bd0baef22 on 2026-11-19: Re-read: no flag or audit check changed; results show now prints the data health sentence first, which this card does not describe
+  verified 3b71a6fca5ba8d7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -143,13 +137,13 @@ research/tools/resampling-checks.md
   verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
 
 research/tools/rule-test.md
-  verified c44b9665ce3d68fb on 2026-11-19: Re-read after review edits: the card's data health line (per-asset verdict, --check-data) matches the final code; only message wording changed since
+  verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/run-level-checks.md
   verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 research/tools/sensitivity.md
-  verified 894fd7728ec403ef on 2026-11-19: Re-read: sensitivity sweeps do not go through the health lookup and their numbers and counts are unchanged
+  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

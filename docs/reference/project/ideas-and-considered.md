@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 89a71fde11cf98d0
+verified: 7990298b24b5033e
 ---
 
 # Ideas and things considered
@@ -25,7 +25,8 @@ something is considered, rejected or left open.
 | 2026-11-18 | Full bypass of the Codex build sandbox | Rejected | Risk of exposing keys; a limited widening was approved |
 | 2026-11-18 | One backtest engine per kind of test | Open | Needs a side-by-side check before duplicates retire |
 | 2026-11-18 | Qlib used in a real research path | Open | Installed in its worker; no real path uses it yet |
-| 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Built 2026-11-19 | Rule tests and setups built. RD-Agent panels queued |
+| 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Built for runs | PR #278 report; PR #286 on rule tests and setups. RD-Agent panels queued |
+| 2026-11-18 | Break-even cost: the cost at which an edge vanishes | Built | PR #277; toolbox entry `costs.break_even`; older runs keep net only |
 | 2026-11-18 | RD-Agent writes its own statistical tests | Not recommended | Marks its own homework; [entry][own-tests] |
 
 ## Open questions
@@ -36,8 +37,6 @@ Not yet decided; each needs the owner or a measurement before it is built.
   and only RD-Agent's judge locks 2024 onward. Options: one held-back period for everything, a held-back
   tail chosen per idea, or the status quo with labels. See the [toolbox](components/toolbox.md).
 - **Near-duplicate ideas.** Should two near-identical ideas count once toward a family's failed tries?
-- **Break-even cost.** Built (PR #277): new rule tests store gross returns and costs separately, and the
-  `costs.break_even` toolbox entry finds the cost at which an edge vanishes. Older runs keep only the net result.
 - **Minimum track record.** The validation package has no function for the shortest history that
   supports a given Sharpe ratio.
 

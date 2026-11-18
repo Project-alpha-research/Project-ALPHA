@@ -166,6 +166,8 @@ def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
     monkeypatch.setenv(handoff.HOME_ENV, str(tmp_path / "home"))
+    for name in ("UV_CACHE_DIR", "UV_OFFLINE"):  # CI sets its own; the tool must add none
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(handoff, "plan_check", lambda path: (True, "ok"))
     return {"bin": bin_dir, "repo": repo, "home": tmp_path / "home", "tmp": tmp_path}
 

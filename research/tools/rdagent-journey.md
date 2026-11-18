@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 6bc52b780d474968
+verified: 64627061b152c5e2
 ---
 
 # Follow one RD-Agent idea
@@ -24,9 +24,9 @@ when rankings favour the proposed direction. Compare years in the lower panel. T
 compares the top and bottom thirds before costs. The trading picture shows the selected
 third before and after costs against the full basket; a costed bottom third is not stored.
 
-Each available PNG has a JSON file containing its plotted numbers. A missing picture has a
-reason in the journey. The future-data check names how many dates ALPHA checked. Step six
-names the quick tests with recorded verdicts and shows the agent's feedback in its own words.
+Each available PNG has a JSON file containing its plotted numbers. A missing picture has a reason in the journey.
+The future-data check names how many dates ALPHA checked. Step six names the quick tests with recorded verdicts,
+explains from stored screen figures why coins could not be ranked, and shows the agent's feedback in its own words.
 Step seven shows ideas tested so far, coins with a usable number, prior exposure and shortlist
 facts, and any fixed check run after the verdict. The journey is an exploratory reading of stored evidence.
 

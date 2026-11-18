@@ -102,7 +102,8 @@ Then add what you want to change. Name an idea by its number or its name:
   --drop 1                      do not build idea 1 (add =reason to say why)
   --revise "1=what to change"   ask the agent to change idea 1
   --idea "your idea"            add your own idea (two at most)
-  --note "text"                 tell the agent something for this run
+  --note "text"                 guide the next proposal
+A note guides the agent's next proposal. The agent does not answer questions.
 Ideas you do not name are built as proposed.
 A stand-in user answers with --as stand-in instead of --as owner.
 """
@@ -143,6 +144,7 @@ def test_commands(tmp_path: Path) -> None:
         "Change: Volume. Your note: Use turnover.\n"
         "Your own idea: Try spreads.\n"
         "Note to the agent: Look at funding next.\n"
+        "A note guides the agent's next proposal. The agent does not answer questions.\n"
         "Saved in discussion/round-10/reply.json.\n"
     )
     reply = json.loads((folder / "reply.json").read_bytes())
@@ -528,7 +530,7 @@ def test_results_follow_built_round_even_after_skipped_round(tmp_path: Path) -> 
     (folder / "decision.json").write_text(json.dumps(record))
     text = rdagent_discussion.proposal_text(tmp_path, last_decision=True)
     assert "Results are not ready." in text
-    assert "Choices the agent made for you: Used one day." in text
+    assert "Choices the agent made for you:\n   - Used one day." in text
     factors = [
         {"name": n, "discussion_round": 2, "status": v}
         for n, v in zip(names, ["SCREEN_FAIL", "LOOKAHEAD", "CANDIDATE"], strict=True)
@@ -550,7 +552,7 @@ def test_results_follow_built_round_even_after_skipped_round(tmp_path: Path) -> 
 
 
 @pytest.mark.parametrize("state", ["building", "applying", "evaluating"])
-def test_final_round_estimate_uses_median_build_time(tmp_path: Path, state: str) -> None:
+def test_final_round_estimate_uses_median_reply_to_results(tmp_path: Path, state: str) -> None:
     folder = tmp_path / "discussion/round-2"
     example(folder)
     (folder / "decision.json").write_text(json.dumps({"selected_tasks": [{"name": "Funding"}]}))
@@ -562,7 +564,8 @@ def test_final_round_estimate_uses_median_build_time(tmp_path: Path, state: str)
                     "state": state,
                     "round": 2,
                     "rounds_total": 3,
-                    "build_seconds": durations,
+                    "build_seconds": [1020],
+                    "reply_to_results_seconds": durations,
                     "reply_to_proposal_seconds": [60],
                 }
             )
@@ -690,3 +693,135 @@ def test_every_ledger_verdict_has_one_plain_result_line() -> None:
     assert discussion_outcome({"status": "LOOKAHEAD"}).endswith("so the result is void.")
     assert discussion_outcome({"status": "NEW_VALUE"}) == "result not recorded."
     assert discussion_outcome({}) == "result not recorded."
+
+
+def test_degenerate_result_names_only_the_screen_causes() -> None:
+    from alpha_cli.rdagent_journey_words import discussion_outcome, outcome, quick_verdicts
+
+    screen: dict[str, Any] = {"tie_share": 0.54, "coverage": 0.42, "all_tied_day_share": 0}
+    row: dict[str, Any] = {"status": "DEGENERATE", "screen": screen}
+    # Tie share does not decide the screen, so it is never given as the reason.
+    expected = "Only 42% of coin-days had a value, so the coins could not be ranked."
+    assert outcome(row) == expected
+    assert discussion_outcome(row) == expected[0].lower() + expected[1:]
+    assert quick_verdicts(row) == [expected]
+    assert "tied" not in outcome(row)
+    screen["all_tied_day_share"] = 0.2
+    assert outcome(row) == (
+        "Only 42% of coin-days had a value and all coins were tied on 20% of days, "
+        "so the coins could not be ranked."
+    )
+    row["screen"] = {"all_tied_day_share": 0.0}
+    assert "0%" not in outcome(row)
+    row["screen"] = {"reason": "IC has no usable variation", "coverage": 1.0}
+    assert "variation" in outcome(row) and "100%" not in outcome(row)
+
+
+def test_reply_help_and_final_note(tmp_path: Path) -> None:
+    runner = CliRunner()
+    folder = tmp_path / "discussion/round-2"
+    example(folder)
+    (folder.parent / "status.json").write_text(
+        json.dumps({"round": 2, "rounds_total": 3, "state": "waiting"})
+    )
+    help_text = runner.invoke(ledger_app, ["reply", "--help"]).output
+    assert "The agent does not answer" in help_text
+    result = runner.invoke(
+        ledger_app,
+        ["reply", "--run-dir", str(tmp_path), "--as", "owner", "--note", "Look at funding next"],
+    )
+    assert result.exit_code == 0, result.output
+    assert result.output == (
+        "Your answer for round 2 is saved. RD-Agent reads it within seconds.\n"
+        "Answered by: the owner.\n"
+        "Build as proposed: Funding, Volume.\n"
+        "Note to the agent: Look at funding next.\n"
+        "A note guides the agent's next proposal. The agent does not answer questions.\n"
+        "This is the last round, so the note will not be used.\n"
+        "Saved in discussion/round-2/reply.json.\n"
+    )
+    assert (
+        json.loads((folder / "reply.json").read_bytes())["note_to_agent"] == "Look at funding next"
+    )
+
+
+def test_decision_prints_revision_choices_and_gate_warning(tmp_path: Path) -> None:
+    folder = tmp_path / "discussion/round-0"
+    example(folder)
+    record = {
+        "selected_tasks": [{"name": "Carry"}],
+        "replacements": [
+            {
+                "name": "Carry",
+                "revised_from": "Funding",
+                "honoured": ["Kept cheaper coins.; ", "Used the monthly payment."],
+                "not_honoured": ["Costs were unavailable;"],
+                "agent_choices": ["Used Monday.", "Kept the old price condition. "],
+                "uses_gate": True,
+                "last_tries": [{"family": "futures funding", "failed": 2, "limit": 3}],
+            }
+        ],
+    }
+    (folder / "decision.json").write_text(json.dumps(record))
+    assert rdagent_discussion.decision_text(folder) == (
+        "Last decision, round 0:\n"
+        "Built: Carry.\n"
+        "Changed Funding into Carry, as you asked.\n"
+        "   What the agent changed:\n"
+        "   - Kept cheaper coins.\n"
+        "   - Used the monthly payment.\n"
+        "   What the agent did not do, and why:\n"
+        "   - Costs were unavailable.\n"
+        "   Choices the agent made for you:\n"
+        "   - Used Monday.\n"
+        "   - Kept the old price condition.\n"
+        "   This idea still uses an on/off condition. "
+        "It may have a value on too few days to rank coins.\n"
+        "   This idea type has failed 2 of 3 tries. "
+        "If this idea fails, the type is closed for later rounds.\n"
+        "Results are not ready."
+    )
+
+
+def test_decision_validates_gate_as_a_boolean() -> None:
+    for validate in (discussion.validate_decision, rdagent_discussion.validate_decision):
+        record = {"selected_tasks": [], "replacements": [{"name": "Carry", "uses_gate": "true"}]}
+        with pytest.raises(ValueError, match="uses_gate"):
+            validate(record)
+
+
+def test_proposal_estimate_never_borrows_results_duration() -> None:
+    status = {"round": 1, "rounds_total": 3, "reply_to_results_seconds": [105]}
+    assert "in a few minutes." in rdagent_discussion.time_estimate(status)
+    assert "in about 7 minutes." in rdagent_discussion.time_estimate(
+        {**status, "reply_to_proposal_seconds": [360, 420, 1050]}
+    )
+
+
+def test_coding_usage_splits_chat_and_embedding_rows(tmp_path: Path) -> None:
+    example(tmp_path / "discussion/round-0")
+    (tmp_path / "receipt.json").write_text(
+        json.dumps(
+            {
+                "discussion_usage": {
+                    "chat_used": 20,
+                    "chat_cap": 60,
+                    "embedding_used": 266,
+                    "embedding_cap": 2000,
+                }
+            }
+        )
+    )
+    calls = [
+        {"step": step, "endpoint": endpoint}
+        for step, endpoint, count in (
+            ("coding", "/v1/chat/completions", 16),
+            ("coding", "/v1/embeddings", 266),
+            ("feedback", "/v1/chat/completions", 4),
+        )
+        for _ in range(count)
+    ]
+    (tmp_path / "calls-labelled.jsonl").write_text("".join(json.dumps(row) + "\n" for row in calls))
+    text = rdagent_discussion.proposal_text(tmp_path)
+    assert "20 of 60 chat calls, 266 of 2000 embedding calls." in text
+    assert "During coding: 16 chat requests and 266 embedding requests." in text

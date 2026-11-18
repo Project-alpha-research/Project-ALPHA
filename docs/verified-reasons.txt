@@ -22,8 +22,11 @@ docs/reference/invariants/cli-trial-ledger.md
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
+docs/reference/invariants/rdagent.md
+  verified c813d3b1258247e2 on 2026-11-19: Re-read after merging main's split: discussion still records who selected ideas, feedback treats a drop as a choice, only tested ideas count
+
 docs/reference/invariants/workers.md
-  verified 681c75226d86a35d on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
+  verified ea10e01f6c40b705 on 2026-11-19: Re-read after merging main's split: the RD-Agent rules moved to rdagent.md; this branch's prompt and wording changes alter no worker boundary
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -59,7 +62,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 497750d9a16212c4 on 2026-11-19: After merging main: only Read first rows of the routing file changed to name sections; main's own change to this page is kept
+  verified bffc795bed285109 on 2026-11-19: Re-read after the worker CONTEXT line was shortened; the page text still holds
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them

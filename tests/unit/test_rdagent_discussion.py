@@ -536,7 +536,12 @@ HOSTILE = (
 
 
 def revise_with_note(
-    root: Path, monkeypatch: pytest.MonkeyPatch, note: str, content: str
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    note: str,
+    content: str,
+    *,
+    drop_season: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any], Any]:
     """One discussed round whose revision note is ``note``; returns request, decision, build."""
     root.mkdir()
@@ -544,6 +549,12 @@ def revise_with_note(
     folder = root / "discussion/round-0"
     answer = choose(Funding={"action": "revise", "note": note}, Season={"action": "accept"})
     answer["note_to_agent"] = note
+    if drop_season:
+        answer["ideas"]["Season"] = {"action": "drop"}
+        exp.hypothesis.hypothesis = "Season: dropped hypothesis text."
+        exp.sub_tasks[0].description = (
+            "Retained funding hypothesis.\n" + exp.sub_tasks[0].description
+        )
     monkeypatch.setattr(
         time, "sleep", lambda _: (folder / "reply.json").write_text(json.dumps(answer))
     )
@@ -557,7 +568,10 @@ def revise_with_note(
 
     loop.trace = SimpleNamespace()
     loop.hypothesis2experiment = SimpleNamespace(
-        prepare_context=lambda h, t: ({"scenario": "rules", "hypothesis_and_feedback": "p"}, True),
+        prepare_context=lambda h, t: (
+            {"scenario": "rules", "hypothesis_and_feedback": h.hypothesis},
+            True,
+        ),
         convert_response=ProposalResponse(convert),
     )
     sent: list[dict[str, Any]] = []
@@ -762,7 +776,7 @@ def test_worker_reports_active_steps_and_estimate(
     discussion.status(tmp_path, "waiting", 1, start + timedelta(minutes=4))
     status = json.loads(path.read_bytes())
     assert status["rounds_total"] == 2 and status["round"] == 1
-    assert status["build_seconds"] == [180]
+    assert status["reply_to_results_seconds"] == [240]
     assert status["reply_to_proposal_seconds"] == [300]
     assert states == ["proposing", "evaluating", "reviewing", "proposing"]
 
@@ -981,3 +995,159 @@ def test_each_revision_direction_survives_json_expansion() -> None:
         requests == {"0": {"user_idea": note}, "1": {"note": note}}
         and dropped["0"]["reason"] == note
     )
+
+
+@pytest.mark.parametrize("gate", [True, False, "true", None])
+def test_revision_uses_gate_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, gate: bool | str | None
+) -> None:
+    item: dict[str, Any] = {"name": "Carry", "agent_choices": ["Kept Mondays."]}
+    if gate is not None:
+        item["uses_gate"] = gate
+    sent, decision, built = revise_with_note(
+        tmp_path / "run", monkeypatch, "Use carry.", json.dumps({"0": item})
+    )
+    prompt = sent["messages"][1]["content"]
+    assert "uses_gate" in prompt and "plain words" in prompt and "variable names" in prompt
+    if gate == "true":
+        assert [t.factor_name for t in built.sub_tasks] == ["Season"]
+        assert "uses_gate" in decision["dropped"][0]["reason"]
+    else:
+        assert decision["replacements"][0]["uses_gate"] is bool(gate)
+
+
+def test_revision_quotes_current_dropped_name_in_the_data_block(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent, _, built = revise_with_note(
+        tmp_path / "run",
+        monkeypatch,
+        "Use carry.",
+        json.dumps({"0": {"name": "Carry"}}),
+        drop_season=True,
+    )
+    before, data = sent["messages"][1]["content"].split(discussion.USER_DATA + "\n", 1)
+    assert "Retained funding hypothesis." in before
+    assert "Season" not in before and "dropped hypothesis text" not in before
+    assert json.loads(data.splitlines()[0])["dropped"] == {"0": {"name": "Season"}}
+    assert [task.factor_name for task in built.sub_tasks] == ["Carry"]
+
+
+def test_revision_data_refuses_a_drop_name_that_cannot_fit() -> None:
+    with pytest.raises(discussion.UnusableRevision, match="drop name"):
+        discussion.revision_data([], [{"name": "s" * 4000}])
+
+
+def test_a_note_for_the_last_round_stays_in_the_reply(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, guard, _, exp, _ = fixture_round(tmp_path, monkeypatch)
+    monkeypatch.setenv("ALPHA_DISCUSS_ROUNDS_TOTAL", "1")
+    folder = tmp_path / "discussion/round-0"
+    answer = choose(Funding={"action": "accept"}, Season={"action": "accept"})
+    answer["note_to_agent"] = "Try a longer window."
+    monkeypatch.setattr(
+        time, "sleep", lambda _: (folder / "reply.json").write_text(json.dumps(answer))
+    )
+    guard.develop(exp)
+    stored = json.loads((folder / "decision.json").read_bytes())
+    assert stored["reply"] == answer
+    assert "Try a longer window." not in discussion.run_choices(tmp_path)
+
+
+def test_last_tries_use_open_distinct_ledger_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.rdagent_discussion import proposal_text
+
+    _, guard, _, exp, _ = fixture_round(tmp_path, monkeypatch)
+    ledger = tmp_path / "ledger"
+    rows = [json.loads(line) for line in ledger.read_text().splitlines()]
+    funding = [
+        {**rows[0], "name": "Funding", "code_sha256": i, "description": "Futures funding."}
+        for i in ("1" * 64, "2" * 64)
+    ]
+    ledger.write_text("".join(json.dumps(row) + "\n" for row in rows + funding + funding))
+    folder = tmp_path / "discussion/round-0"
+    revised = proposal("Carry", "Futures funding.").sub_tasks
+    monkeypatch.setattr(discussion, "request_revision", Mock(return_value=revised))
+    answer = choose(Funding={"action": "accept"}, Season={"action": "accept"})
+    answer["user_ideas"] = ["Try funding carry."]
+    observed: list[str] = []
+
+    def answer_after_reading(_: float) -> None:
+        observed.append(proposal_text(tmp_path))
+        (folder / "reply.json").write_text(json.dumps(answer))
+
+    monkeypatch.setattr(time, "sleep", answer_after_reading)
+    assert [task.factor_name for task in guard.develop(exp).sub_tasks] == [
+        "Funding",
+        "Season",
+        "Carry",
+    ]
+    warning = (
+        "This idea type has failed 2 of 3 tries. "
+        "If this idea fails, the type is closed for later rounds."
+    )
+    assert warning in observed[0].split("2. Season", 1)[0]
+    assert warning not in observed[0].split("2. Season", 1)[1]
+    decision = proposal_text(tmp_path, last_decision=True)
+    assert "Your idea is of type futures funding, which has failed 2 of 3 tries." in decision
+    assert decision.index("has failed 2 of 3 tries") < decision.index("Results are not ready")
+
+
+def test_dropped_hypothesis_does_not_reach_model_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from workers.rdagent.research_memory import ProposalHistory
+
+    ns, guard, loop, exp, _ = fixture_round(tmp_path, monkeypatch)
+    universe_run(tmp_path, monkeypatch)
+    monkeypatch.delenv("ALPHA_FACTOR_TRIAL_LEDGER")
+    folder = tmp_path / "discussion/round-0"
+    exp.hypothesis.hypothesis = "Season: dropped hypothesis text. Funding: original text."
+    exp.hypothesis.reason = "Season: dropped hypothesis reason."
+    exp.sub_tasks[0].description = "Retained funding hypothesis.\n" + exp.sub_tasks[0].description
+    exp.sub_tasks[0].get_task_information_and_implementation_result = lambda: "Built funding task"
+    reply = choose(Funding={"action": "accept"}, Season={"action": "drop", "reason": "private"})
+    monkeypatch.setattr(
+        time, "sleep", lambda _: (folder / "reply.json").write_text(json.dumps(reply))
+    )
+    guard.develop(exp)
+    exp.stdout = "results"
+    exp.alpha_evaluation = {"decision": False, "iteration": 0, "factors": []}
+    fb = ns["AlphaFactorFeedback"]()
+    fb.scen = SimpleNamespace(get_scenario_all_desc=lambda: "scenario")
+    backend = Mock()
+    backend.build_messages_and_create_chat_completion.return_value = json.dumps(
+        {"New Hypothesis": "Season variant", "Reasoning": "dropped hypothesis reason"}
+    )
+    ns["APIBackend"] = lambda: backend
+    ns["T"] = lambda name: SimpleNamespace(r=lambda **kw: kw.get("hypothesis_text", "system"))
+    feedback = fb.generate_feedback(exp, SimpleNamespace(hist=[]))
+    prompt = backend.build_messages_and_create_chat_completion.call_args.kwargs["user_prompt"]
+    assert "Retained funding hypothesis." in prompt
+    assert "Do not suggest a variant of a dropped proposal." in prompt
+    assert "Season" not in prompt.split(discussion.USER_DATA, 1)[0]
+    assert json.loads(prompt.split(discussion.USER_DATA + "\n")[1].splitlines()[0])["dropped"] == [
+        {"round": 0, "name": "Season"}
+    ]
+
+    def render(trace: Any) -> tuple[dict[str, str], bool]:
+        old, result = trace.hist[-1]
+        text = f"{old.hypothesis.hypothesis} {old.hypothesis.reason} {result.new_hypothesis}"
+        return {"hypothesis_and_feedback": text, "last_hypothesis_and_feedback": text}, True
+
+    loop.trace = SimpleNamespace(hist=[(exp, feedback)])
+    gen = ns["AlphaFactorHypothesisGen"]()
+    gen.bounded_history = render
+    converter = ProposalHistory(
+        lambda h, t: render(t), 0, "panel", component="experiment", closed_families=lambda: set()
+    )
+    for context in (gen.prepare_context(loop.trace)[0], converter("current", loop.trace)[0]):
+        for value in context.values():
+            before = value.split(discussion.USER_DATA, 1)[0]
+            assert "Retained funding hypothesis." in before
+            assert "Season" not in before and "dropped hypothesis" not in before
+    assert exp.hypothesis.hypothesis.startswith("Season")
+    assert feedback.new_hypothesis == "Season variant"

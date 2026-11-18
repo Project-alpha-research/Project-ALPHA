@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: 229a136520a33864
+verified: c813d3b1258247e2
 ---
 
 # RD-Agent worker invariants

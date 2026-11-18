@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 095f2f22bb96915a
+verified: 8e3da54382b55785
 ---
 
 # RD-Agent worker workspace
@@ -51,7 +51,7 @@ imports it, though its probes import ALPHA packages inside qualified profile env
 - The [proposal pause and stand-in answers](README.md#propose-and-discuss) (`--discuss`; a stand-in answers with `alpha ledger reply --as stand-in`;
   the owner rule is the [stand-in entry](../../docs/reference/project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests))
   exchange JSON with the CLI in `discussion.py` after the family guard. Each proposer and re-ask reads choices from this run's decisions.
-  Feedback reads only dropped names. The worker records revision explanations, re-ask costs and build times. Tests: `test_rdagent_discussion{,_commands}.py`.
+  Feedback gets drop names and built hypotheses. The worker records revision notes, re-ask costs and times from each reply. Tests: `test_rdagent_discussion*`.
 - Exact-text embedding reuse is process-local; `idea_families.py` parses named inputs and `loop_guard.py` closes exhausted-provider rounds, including
   proposal, without inventing trials. Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure. The code-critic
   guard preserves execution/value feedback and skips later critics in the failed round. Internal coding errors preserve completed factors for judging; two

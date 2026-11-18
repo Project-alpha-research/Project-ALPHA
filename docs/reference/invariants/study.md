@@ -5,7 +5,7 @@ sources:
   - tests/unit/study/test_*.py
   - tests/bias_guards/test_study_double_bottom_future_poison.py
   - tests/bias_guards/test_verified_semantic_read_future_poison.py
-verified: 45f660a33236b489
+verified: 9d6563640f164847
 ---
 
 # Study invariants
@@ -56,6 +56,7 @@ registry, and the blind semantic-read contract. The package is a projection laye
 - Daily `setup/` expressions read only the current and earlier rows: shifts of n ≥ 1, trailing
   full windows, causal EWM and row-wise logic. Non-finite values become null; text length, nesting
   and emitted size are bounded so a pathological expression fails loud.
+- Exit direction defaults to long. Only short adds a direction key to the serialized spec, preserving the identity of earlier finds.
 - Filters decide the reason in file order. A trigger window that runs past the last bar is
   `pending` / `pending-trigger`, never `no-trigger`. Entry is only the next bar's open.
 - `tests/bias_guards/test_setup_future_poison.py` truncates and poisons later bars (x1000, huge,

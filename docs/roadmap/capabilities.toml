@@ -1384,11 +1384,11 @@ docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md"
 
 [[capability]]
 id = "setup-trade"
-name = "Trade setup occurrences with declared exits"
-what = "Apply frozen stops, targets and time or opposite exits with conservative fills and per-asset costs, compared with identical-rule drift and random dates."
+name = "Trade setup occurrences long or short with declared exits and results in R"
+what = "Measure long or short setup trades after per-asset costs in percent and initial-stop risk units (R). Compare ordinary dates, random dates and the opposite direction on the same entries."
 see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> setup_trade_mean_net_return", "Workstation: Research → Setup Lab (stored results only)"]
 entry_points = ["cli: alpha setup", "cli: alpha results", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
-proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars"]
+proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_short_fills_and_reflection", "tests/unit/test_setup_trade.py::test_direction_change_counts_once_and_control_uses_other_sides_costs", "tests/unit/test_setup_trade.py::test_legacy_long_figures_byte_for_byte", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars"]
 proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repeat"]
 real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
 needs = []

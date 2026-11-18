@@ -103,6 +103,8 @@ def parse_exit(text: str) -> ExitValue:
 
 
 class Exit(_Frozen):
+    # The default spelling must serialize exactly like a pre-direction spec.
+    direction: Literal["long", "short"] = Field("long", exclude_if=lambda side: side == "long")
     time_bars: PositiveInt | None = None
     stop: Text | None = None
     target: Text | None = None

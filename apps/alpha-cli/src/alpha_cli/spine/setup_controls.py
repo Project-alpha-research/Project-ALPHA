@@ -303,6 +303,7 @@ def trade_measures(rows: list[dict[str, Any]]) -> dict[str, Any]:
     stats = _stats(values)
     held = [r["bars_held"] for r in done]
     risks = [r["r_multiple"] for r in done if r["r_multiple"] is not None]
+    risk_stats = _stats(risks)
     losses = -sum(v for v in values if v < 0)
     stats.update(
         trades=len(done),
@@ -311,20 +312,24 @@ def trade_measures(rows: list[dict[str, Any]]) -> dict[str, Any]:
         open_at_end=sum(r["reason"] == "open-at-end" for r in rows),
         mean_bars_held=float(np.mean(held)) if held else None,
         median_bars_held=float(np.median(held)) if held else None,
-        mean_r=float(np.mean(risks)) if risks else None,
+        mean_r=risk_stats["mean"],
+        median_r=risk_stats["median"],
+        share_above_zero_r=risk_stats["hit_rate"],
+        expectancy_r=risk_stats["mean"],
         profit_factor=sum(v for v in values if v > 0) / losses if losses else None,
         by_reason=dict(Counter(r["reason"] for r in rows)),
         both_touched=sum(r["both_touched"] for r in rows),
     )
-    for key in ("mean_bars_held", "median_bars_held", "mean_r", "profit_factor"):
-        if stats[key] is None:
-            stats["reasons"][key] = (
-                "no losses"
-                if key == "profit_factor"
-                else "no completed trades with a stop"
-                if key == "mean_r"
-                else "no completed trades"
+    if not risks:
+        stats["reasons"].update(
+            dict.fromkeys(
+                ("mean_r", "median_r", "share_above_zero_r", "expectancy_r"),
+                "no completed trades with a stop",
             )
+        )
+    for key in ("mean_bars_held", "median_bars_held", "profit_factor"):
+        if stats[key] is None:
+            stats["reasons"][key] = "no losses" if key == "profit_factor" else "no completed trades"
     return stats
 
 

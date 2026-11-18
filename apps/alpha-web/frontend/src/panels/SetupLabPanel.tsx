@@ -12,6 +12,12 @@ type Row = Record<string, unknown>
 type Column = readonly [string, string]
 
 function Value({ value, name = '' }: { value: unknown; name?: string }) {
+  if (typeof value === 'number') {
+    if (name === 'net_return' || name === 'risk_fraction') {
+      return <span title={`${shown(value)} as a fraction`}>{(100 * value).toFixed(2)}%</span>
+    }
+    if (name === 'r_multiple') return <>{value.toFixed(2)} R</>
+  }
   return typeof value === 'string' && (name.endsWith('_ts') || name.endsWith('_bar'))
     ? <Timestamp value={value} /> : <>{shown(value)}</>
 }
@@ -89,7 +95,7 @@ const TRADE_COLUMNS: readonly Column[] = [
   ['asset', 'Instrument'], ['candidate_id', 'Match identifier'], ['entry_ts', 'Entry date'],
   ['direction', 'Direction'], ['entry_price', 'Entry price'], ['stop', 'Stop price'], ['target', 'Target price'],
   ['exit_ts', 'Exit date'], ['exit_price', 'Exit price'], ['reason', 'Exit reason'],
-  ['net_return', 'Result after costs (fraction)'], ['complete', 'Completed'],
+  ['risk_fraction', 'Initial risk (%)'], ['net_return', 'Result after costs (%)'], ['r_multiple', 'R multiple'], ['complete', 'Completed'],
 ]
 
 function Study({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) {
@@ -125,7 +131,7 @@ function Trades({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) 
     <p>Stop: the protective exit. Target: the declared profit exit. Time: the holding limit. Other recorded exit reasons stay visible.</p>
     {outcome.rows === null ? <p>Trade rows: not recorded</p> : outcome.rows.length === 0 ? <p>No trades recorded.</p>
       : <Table caption="Every recorded trade, including skipped and unfinished entries" columns={TRADE_COLUMNS} rows={outcome.rows} />}
-    <p aria-label="Recorded trade totals">Total completed trades: {stored(pooled.trades)} · Mean return after costs: {shown(pooled.mean)} · Total return: not recorded</p>
+    <p aria-label="Recorded trade totals">Total completed trades: {stored(pooled.trades)} · Mean return after costs: <Value name="net_return" value={pooled.mean} /> · Total return: not recorded</p>
     <h4>Cost rule</h4><p>Basis points (bps) are hundredths of one percent. Values below are the recorded per-asset cost assumptions.</p>
     <Fields value={summary.costs} explanations={detail.label_explanations} />
     <Figure figure={outcome.figure} title="Recorded trade results and random-date comparison" />

@@ -33,6 +33,10 @@ export const FIELD_LABELS: Record<string, string> = {
   mean_bars_held: 'Average holding length (bars)', median_bars_held: 'Middle holding length (bars)',
   fee_bps: 'fee bps (fee per side)', slippage_bps: 'slippage bps (assumed execution cost per side)',
   stability: 'Chronological halves', draws: 'Random-date samples', controls: 'Comparison rules',
+  median_r: 'Middle return divided by initial stop risk', share_above_zero_r: 'Share of trades above 0 R',
+  expectancy_r: 'Expectancy per trade in R', risk_explanation: 'How to read R',
+  short_borrow_bps_per_year: 'assumed stock borrow, bps per year', short_carry_bps_per_day: 'assumed crypto funding, bps per day',
+  opposite_direction: 'Opposite direction on the same entries (a control)',
 }
 
 /** Rounds long stored decimals for reading only; the stored value is unchanged. */

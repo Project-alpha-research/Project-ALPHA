@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: b8eb428238d0f54b
+verified: 2d1cb41a135727c6
 ---
 
 # Command line runs invariants
@@ -185,16 +185,16 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 ## Setup trade
 - `alpha setup trade FIND_ID` shares verified find inputs; missing/empty exits raise `SPEC_HAS_NO_EXIT`. [Details](../../../research/tools/setup-trade.md).
 - Freeze percent, evaluator ATR and numeric/reference levels at trigger close; entry is the recorded next open. CLI aliases preserve original hashed names.
-- Bar order: stop gap at open, stop touch, target touch at target, opposite at next open, time at close. Both-touch is a counted stop.
+- Both directions check stop gap at open, stop touch, target at target, opposite at next open, then time at close. A both-touch bar counts as a stop.
 - Entry is bar one; exits at an open exclude that new bar from duration. No time limit implies 250 bars and `no-time-exit`.
 - One position per asset, including the exit bar. Count skipped/invalid/open-at-end separately; only completed trades enter tested means.
-- Mark open-at-end to final close. Adverse move sees only an exit open or stop fill, never the later low; target exits conservatively include the bar's low.
+- Mark open-at-end to final close. Adverse move sees only an open or stop fill on that exit, otherwise the adverse extreme (low for long, high for short).
 - Costs use the dataset asset class, then slash pairs or a crypto provider (any `:` part), then a stock provider (yfinance, alpaca, tiingo, stooq);
-  unknown markets use crypto costs with `costs-assumed-high`.
+  unknown markets use crypto costs with `costs-assumed-high`. Short borrow/funding assumptions are stored per asset; a short without its carry fails.
 - Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, weight assets by completed trades.
-- Use 2,000 exact spaced draws; causal expressions evaluate at arbitrary bars. Pattern-only levels or undefined draw means null controls with reasons.
+- Use 2,000 spaced draws. Missing comparisons carry reasons. An uncounted control replays the same entries in the opposite direction with its own costs.
 - Halves use their own entry-date ranges. Support requires 30 completed trades, positive excess, p ≤ 0.05, agreeing halves and available controls; exploratory
   only.
 - Hash find id with `setup-trade-1`; publish parquet, summary and deterministic 1600 × 900 PNG before a hash-bound manifest in `setup-trades/<trade_id>`.
-- Repeats rewrite nothing and do not count; changed exits count anew in `setup:<idea>`. Trade ids support citations/checks; no sizing, dividends or funding.
+- Repeats preserve records. New exits or direction count in `setup:<idea>`. R divides net return by initial stop risk. No currency sizing.
 - Find output derives `outcomes-viewed` from sibling study/trade manifests without rewriting its folder.

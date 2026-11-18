@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -16,15 +17,21 @@ from alpha_cli.spine.setup_controls import (
     _draw_means,
     null_trade_controls,
 )
-from alpha_cli.spine.setup_costs import asset_costs, round_trip
-from alpha_cli.spine.setup_exits import prepare_exits, simulate, trade_candidates, trades_frame
+from alpha_cli.spine.setup_costs import SHORT_COST_RULE, asset_costs, daily_carry, round_trip
+from alpha_cli.spine.setup_exits import (
+    PreparedExits,
+    prepare_exits,
+    simulate,
+    trade_candidates,
+    trades_frame,
+)
 from alpha_cli.spine.setup_find import load_find, study_inputs
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
 TRADE_RULE_VERSION = "setup-trade-1"
 BASIS = (
-    "long trades with frozen trigger-close levels, conservative fills "
+    "{direction} trades with frozen trigger-close levels, conservative fills "
     "and per-asset round-trip costs"
 )
 
@@ -96,6 +103,39 @@ def trade_controls(
     return dict(pooled=result, assets=assets)
 
 
+def _opposite_control(
+    rows: list[dict[str, Any]],
+    prepared: dict[str, PreparedExits],
+    costs: dict[str, Any],
+    direction: str,
+    labels: list[str],
+) -> dict[str, Any]:
+    from alpha_cli.spine.setup_controls import trade_measures
+
+    # Replay exactly the entries the primary side actually opened. Reapplying
+    # occupancy on this side would silently change the set of dates.
+    mirror = {
+        a: replace(p, direction=direction, reflect_levels=True, carry_per_day=daily_carry(costs[a]))
+        for a, p in prepared.items()
+    }
+    trades = [
+        simulate(mirror[r["asset"]], r["entry_index"], round_trip(costs[r["asset"]]))
+        for r in rows
+        if r["exit_index"] is not None
+    ]
+    measures = trade_measures(trades)
+    return dict(
+        label="Opposite direction on the same entries (control only, not counted)",
+        direction=direction,
+        entries=len(trades),
+        trades=measures["trades"],
+        mean_net_return=measures["mean"],
+        mean_r=measures["mean_r"],
+        costs=costs,
+        labels=labels,
+    )
+
+
 def _summary(
     spec: Any,
     manifest: dict[str, Any],
@@ -112,6 +152,10 @@ def _summary(
     primary = report["pooled"]
     labels = trade_labels(manifest, primary, spec, len(cache), len(rows)) + cost_labels
     sentence, outcome = trade_reading(primary, labels)
+    direction = spec.exit.direction
+    basis = BASIS.format(direction=direction)
+    if direction == "short":
+        basis += ". " + SHORT_COST_RULE
     fields = dict(
         setup_trades="trades",
         setup_trade_mean_net_return="mean",
@@ -126,7 +170,7 @@ def _summary(
             metric=metric,
             value=primary[field],
             run_id=trade_id,
-            basis=BASIS,
+            basis=basis,
             source=f"summary.json:pooled.{field}",
             labels=labels,
             reason=primary["reasons"].get(field),
@@ -145,9 +189,14 @@ def _summary(
         per_asset=report["assets"],
         labels=labels,
         reading=sentence,
+        direction=direction,
+        risk_explanation=(
+            "A result of +0.4 R means that, risking 1% of the account per trade, "
+            "the average trade made 0.4%. No position sizing in currency is simulated."
+        ),
         outcome=outcome,
         facts=facts,
-        basis=BASIS,
+        basis=basis,
         costs=costs,
         controls=dict(
             draws=RANDOM_DRAWS,
@@ -167,6 +216,7 @@ def _publish(
     png = draw_trades(
         rows=rows,
         primary=summary["pooled"],
+        direction=summary["direction"],
         theme=load_theme(),
         title=f"{summary['name']}: {summary['pooled']['trades']} trades from "
         f"{summary['occurrences']} separate occurrences",
@@ -193,6 +243,7 @@ def _publish(
                 trade_rule_version=TRADE_RULE_VERSION,
                 spec_sha256=summary["spec_sha256"],
                 assets=manifest["assets"],
+                direction=summary["direction"],
                 costs=summary["costs"],
                 labels=summary["labels"],
                 files=files,
@@ -206,7 +257,7 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
     import polars as pl
 
     folder, manifest, spec = load_find(home, find_id)
-    if spec.exit is None or not any(spec.exit.model_dump().values()):
+    if spec.exit is None or not any(spec.exit.model_dump(exclude={"direction"}).values()):
         raise SpineError(
             "SPEC_HAS_NO_EXIT",
             "The find's spec has no exit fields.",
@@ -220,8 +271,12 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         summary["labels"] = [*summary["labels"], "repeat"]
         summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
     else:
-        prepared = {a: prepare_exits(spec, s) for a, s in bars.items()}
-        costs, cost_labels = asset_costs(home, list(bars))
+        direction = spec.exit.direction
+        other = "short" if direction == "long" else "long"
+        costs, cost_labels = asset_costs(home, list(bars), direction=direction)
+        prepared = {
+            a: prepare_exits(spec, s, carry_per_day=daily_carry(costs[a])) for a, s in bars.items()
+        }
         charges = {a: round_trip(c) for a, c in costs.items()}
         rows = trade_candidates(
             pl.read_parquet(folder / "candidates.parquet").to_dicts(), prepared, charges
@@ -235,6 +290,10 @@ def _run(find_id: str, home: Path) -> dict[str, Any]:
         }
         reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
         summary = _summary(spec, manifest, rows, cache, trade_id, costs, cost_labels, reason)
+        control_costs, control_labels = asset_costs(home, list(bars), direction=other)
+        summary["controls"]["opposite_direction"] = _opposite_control(
+            rows, prepared, control_costs, other, control_labels
+        )
         add_study_trial_fact(home, summary)
         _publish(destination, summary, rows, manifest)
     primary = summary["pooled"]

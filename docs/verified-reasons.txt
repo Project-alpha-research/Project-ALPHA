@@ -109,6 +109,9 @@ research/tools/inverted-signal-control.md
 research/tools/price-noise.md
   verified a070a821d10331a6 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
+research/tools/resampling-checks.md
+  verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
+
 research/tools/rule-test.md
   verified 87efe515e760f6a1 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 

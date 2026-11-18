@@ -73,13 +73,12 @@ open pull requests.
 | [Intraday candles and run charts in the Workstation](backlog/workstation-intraday-charts.md) | Idea | M |
 | [Workstation screen ideas from the owner's reference images](backlog/workstation-ui-ideas-from-owner-references.md) | Idea | M |
 
-## Staged refactors (6)
+## Staged refactors (5)
 
 | Refactor | Risk |
 | --- | --- |
 | [Restructure the flat alpha_cli package into subpackages](refactors/alpha-cli-subpackages.md) | H |
 | [Consolidate canonical-JSON, hash and strict-validator helpers](refactors/canonical-json-helper-consolidation.md) | H |
 | [Split control_store.py behind the unchanged ControlStore facade](refactors/control-store-split.md) | H |
-| [Wire in or remove the test-only funding modules](refactors/funding-test-only-modules.md) | L |
 | [Break up oversized functions](refactors/oversized-functions.md) | M |
 | [Reduce `# type: ignore` suppressions](refactors/type-ignore-reduction.md) | L |

@@ -11,10 +11,10 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 0c8fe3137226d0ae on 2026-11-18: re-read: apps/alpha-cli/CONTEXT.md re-wrapped a line and added the registered tools note; this page already links the toolbox page and states no tool list
+  verified 85e32c60c5aa06da on 2026-11-18: the CONTEXT change only adds the health helper to the market data row; this page names no module rows
 
 docs/reference/project/components/data-layer.md
-  verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
+  verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
   verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing
@@ -72,3 +72,6 @@ docs/roadmap/production-scope-3.md
 
 docs/roadmap/production-scope.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+research/tools/data-health.md
+  verified e09788c145598921 on 2026-11-18: re-read against health.py and the command after the frozen-bar and split rule changes

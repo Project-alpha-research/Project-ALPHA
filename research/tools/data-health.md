@@ -4,7 +4,7 @@ sources:
   - packages/alpha-data/src/alpha_data/health.py
   - apps/alpha-cli/src/alpha_cli/_data_health.py
   - apps/alpha-cli/src/alpha_cli/data_cmds.py
-verified: 6d2f2b6e5cae8b7a
+verified: e09788c145598921
 ---
 
 # Daily data health

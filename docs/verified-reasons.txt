@@ -92,7 +92,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified 383d46efc5e63521 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
+  verified e9b6b6af599a87f8 on 2026-11-19: Discussion reads recorded decisions and verdicts. The panel and funding guards still enforce the same reserved date.
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: df8f12eea7539079
+verified: 595927efc1fd1a00
 ---
 
 # Follow one RD-Agent idea
@@ -37,4 +37,4 @@ Step one names the proposer and identifies a stand-in's answer. It leads with th
 plain sentence or the description's lead, then the idea type, direction and any later choice of sign.
 The full description stays in the idea's own words. Code can be an excerpt; long lines wrap. The run summary and the
 final step's exploratory label show only recorded values; the picker reads verdicts from the run.
-To choose ideas before they are built, see [propose and discuss](../../workers/rdagent/README.md#propose-and-discuss).
+During a run, `alpha ledger proposal` shows the last results; to answer, see [propose and discuss](../../workers/rdagent/README.md#propose-and-discuss).

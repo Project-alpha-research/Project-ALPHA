@@ -10,12 +10,13 @@ verified: b2ae2ac146533051
 
 # Monte Carlo
 
-"How bad could it get?" ALPHA answers it with four Monte Carlo methods (families). Each makes many new
-possible histories for one strategy and reports the spread of final return, worst drawdown, loss and ruin.
+A Monte Carlo result is never proof of an edge; it measures path risk. "How bad could it get?" ALPHA answers it with four Monte Carlo methods
+(families). Each makes many new possible histories for one strategy and reports the spread of final return, worst drawdown, loss and ruin.
 The owner counts the four as tools for RD-Agent and the assistant to use, never to be slimmed away.
 **A Monte Carlo warning pauses progression until the owner records a decision.** Each family is graded on its own and never majority-voted.
-Three resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
-new price bars and has run only with a stand-in model.
+Three families resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
+new price bars and has run only with a stand-in model. Of the four, the toolbox exposes only the IID empirical family, as
+`resampling.drawdown_distribution` on stored rule-test returns ([resampling card](../../../../research/tools/resampling-checks.md)).
 
 ## Why it exists
 
@@ -53,8 +54,7 @@ against an independent recomputation on 2026-11-14. `alpha monte-carlo kronos` h
 model; the real Kronos model files are not on the development machine. The Workstation groups the path figures under
 `monte_carlo` (ADR-0029); Kronos Studio shows forecast runs. See the capability on [STATUS.md](../../../../STATUS.md) and the
 [path-risk card](../../../../research/tools/path-risk.md).
-The toolbox registers `resampling.drawdown_distribution` for the IID empirical family on stored rule-test returns.
-The [resampling card](../../../../research/tools/resampling-checks.md) explains how to compare its drawdowns with the classical command.
+The resampling card explains how to compare the toolbox drawdowns with the classical command.
 
 ## Where it lives
 

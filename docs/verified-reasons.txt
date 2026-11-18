@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified 3cc9c22191e6ab00 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
+  verified d1e0655b8cbdaeb0 on 2026-11-19: README change adds one pointer line on stand-in limits; no rule or fact on this page changed
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -53,7 +53,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 8ba0d4e7256327df on 2026-11-19: Re-read after merging the README split: the proposal-pause entry (answer by number or name, reasons reach the next proposer, decisions record what the agent did and left out) matches the short README and CONTEXT; history now lives in CHANGE-NOTES.
+  verified 166a407d35ed32e2 on 2026-11-19: README change adds one pointer line on stand-in limits; no rule or fact on this page changed
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -65,16 +65,16 @@ docs/reference/project/components/validation-and-evidence.md
   verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/web-workstation.md
-  verified 6f015118475a7440 on 2026-11-18: re-read; the new frontend README row and wrapped bullet change nothing it says
+  verified 1ac0a57e42fc186a on 2026-11-19: CONTEXT.md routing row for Setup Lab now points to the component page; nothing here changed
 
 docs/reference/project/decisions-by-topic.md
-  verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
+  verified 9733a6315203022f on 2026-11-19: owner-decisions-5 change only marks an older status line as superseded; topic rows stay true
 
 docs/reference/project/file-system-measurement.md
   verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
 
 docs/reference/project/ideas-and-considered.md
-  verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
+  verified 5b6014c61359fa7c on 2026-11-19: owner-decisions-5 change only marks an older status line as superseded; topic rows stay true
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right

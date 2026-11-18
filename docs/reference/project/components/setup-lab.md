@@ -12,7 +12,8 @@ verified: ace952b390858ffe
 
 Setup Lab is golden path 2: the owner describes a chart setup ("a double bottom", "a pullback in an
 uptrend") and sees every past match, and then what happened after, before any trading rule is fixed. It has
-three commands and one Workstation screen.
+three commands and one Workstation screen. The screen shows the data health finding beside each result that is not a pass.
+Older runs read “Data health: not recorded.”
 
 ## Why it exists
 
@@ -41,7 +42,7 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
   after per-asset costs, in percent and in risk units of the initial stop (R). The opposite direction on the
   same entries is an uncounted control.
 - The Workstation screen (Research → Setup Lab) only reads stored results through
-  `GET /api/setup/runs`. It shows the data health finding beside each non-pass result. Older runs read “Data health: not recorded.”
+  `GET /api/setup/runs`.
 
 ## What is real today
 

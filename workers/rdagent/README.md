@@ -169,6 +169,11 @@ a note for the next round with `--note`. A stand-in answers with `--as stand-in`
 `discussion/round-<n>/`; each built idea records who proposed it in `origin` and who answered in
 `answered_by`. The deprecated `author` on built ideas holds the same value as `answered_by`.
 
+A stand-in user only discusses ideas. Only the owner approves: reserved-data slots, promotion, paper or live trading, and guard changes
+([rule](../../docs/reference/project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests)). Owner approvals go only through
+`apps/alpha-cli/src/alpha_cli/owner_auth.py`, and the `pre-owner-action-guard` hook in `scripts/claude_hooks.py` blocks agent tools
+from the owner-action routes.
+
 - The proposal starts with the deadline and timeout action, then a trader-style summary per idea and a caution about
   on/off rules; `--details` adds all families. The worker writes its phase to `discussion/status.json`, so between
   proposals the command shows the phase, a time estimate from this run and the latest decision.

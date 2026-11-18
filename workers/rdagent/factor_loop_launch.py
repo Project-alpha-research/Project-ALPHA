@@ -877,6 +877,13 @@ def call_split(
         for c in labelled or []
         if c.get("step") == "proposal_reask" and c.get("endpoint") == "/v1/chat/completions"
     ]
+    split["proposal_prompt_chars"] = [
+        {"loop": c.get("loop"), "step": c["step"], "chars": c["total_prompt_chars"]}
+        for c in labelled or []
+        if c.get("step") in ("direct_exp_gen", "proposal_reask")
+        and c.get("endpoint") == "/v1/chat/completions"
+        and "total_prompt_chars" in c
+    ]
     split["reask_calls"] = sum(int(c.get("attempts") or 0) for c in reasks)
     split["reask_usd"] = sum(float(c.get("usd") or 0) for c in reasks)
     split["chat_usage"] = gateway_usage.receipt_usage(calls, labelled)

@@ -1192,15 +1192,31 @@ in that coding round are skipped with the same note; the next round starts with 
 These are advisory coding outcomes: ALPHA's screen, spread, replay, deflation and trial rules do not change.
 Whole coding failures still use `coding_failed_provider_timeout` / `coding_failed_provider_error`.
 
-Restored proposal context keeps `RESTORED_ROUNDS_FULL = 4` recent rounds with a matching panel hash
-in full. Older rounds and other panels become one line of factor names, families and statuses; other
-panels say “different coin panel”. Judged rounds take the hash from their recorded evaluation inputs;
-a round with no evaluation and no hash says “coin panel not recorded” and is summarised.
-Both hypothesis and experiment prompts use this view; trace records and the ledger remain intact.
-The receipt's `history_rounds_full` and `history_rounds_summarised` come from `history-context.json`.
-Closed/open families, declaration instructions and refusal messages remain present. New experiment
-records retain their panel hash for future restoration. Declaration examples now use neutral sign
-and clock placeholders; the proposer must derive both from the idea and fill every field.
+The hypothesis and experiment prompts share an 84,000-character budget per prompt for the rendered
+history fields, including any repeated last round. Up to four restored rounds with matching panel
+hashes can appear in full. When the budget binds, the oldest full round becomes one line per factor
+giving its name, family, verdict and the evaluator's stored reason (the stage it stopped at). If one
+line per factor still exceeds the budget, the oldest lines are left out and one line says "N older
+ideas omitted from this summary (kept on disk)"; the proposer never stops for this, and
+`history_ideas_omitted` records N. Other panels and unknown panels always get summaries with their
+provenance. Judged rounds take the hash from the evaluation inputs. Current universe and ledger
+instructions are appended to the history. The stored trace keeps the original feedback. New
+proposals drop carried suggestions for closed families and for session drift families unavailable on
+the frozen venue, with the reason shown in their place.
+
+`history-context.json` records the character count, full and summarised rounds and omitted ideas for
+each rendered history. The receipt copies these and lists the full system-plus-user prompt sizes for
+labelled proposal calls under `call_split.proposal_prompt_chars`. New experiment records retain
+their panel hash for future restoration. Declaration examples use neutral sign and clock
+placeholders.
+
+Each new factor trial and evaluation stores the `family` the judge classified it under for the tally
+(sent in the evaluation request; multiple families are separated by `; `) and `critic_status`. A
+`skipped` or `unavailable` opinion includes a `critic_reason`. Feedback names the failed stage, the
+stored primary-clock spread status and the exact ledger cutoff alongside the one-sided comparison. A
+spread can have a recorded PASS even when the rank screen stopped the factor. Counts above the
+family limit give the failure count, limit and closure status. `knowledge-vectors.json` and the run
+receipt identify left-out nodes and their reasons in `knowledge_vectors_left_out_nodes`.
 
 ## Change notes moved from the project page (2026-11-18)
 
@@ -1212,7 +1228,7 @@ These behaviour notes were the "Intended design" of the RD-Agent project page, m
   from the loop ([ADR-0049](../../docs/adr/0049-alpha-judges-rdagent-factors.md)).
   Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
   a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
-  The held top third must beat the bottom third before costs; failures still count. The proposer sees every family and is told to leave repeated failures.
+  The held top third must beat the bottom third before costs; failures still count. The proposer sees the venue's available families and their failure counts.
   The universe is a frozen file; each paid model call has a time limit
   ([ADR-0055](../../docs/adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
@@ -1227,7 +1243,7 @@ These behaviour notes were the "Intended design" of the RD-Agent project page, m
   idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
   classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
   or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
-  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
+  factors; two successive failures stop the run. Prompt history is character bounded; vector receipts explain omissions. Restored panel identity
   falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
   proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
   invariants](../../docs/reference/invariants/workers.md#rd-agent-worker).

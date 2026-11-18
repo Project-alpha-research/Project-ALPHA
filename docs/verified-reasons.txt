@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 23173d21631370be on 2026-11-18: merged main: main verified its own toolbox and diagnose changes; this branch only adds the health helper row
+  verified 339d07f7bdfd297d on 2026-11-18: Re-read after merging main: main's data-health and toolbox wording stays; the RD-Agent change only adds critic fields to new ledger rows and the failed stage to feedback in existing rdagent modules, so no CLI rule here changed.
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold

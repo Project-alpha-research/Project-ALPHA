@@ -498,3 +498,74 @@ def test_logistic_mix_name_identifies_composite() -> None:
     from workers.rdagent.idea_families import idea_family
 
     assert idea_family("logistic_mix", variables={"price_delay": "feature"}) == "other: price_delay"
+
+
+@pytest.mark.parametrize("crypto", [True, False])
+def test_session_families_absent_from_all_crypto_tallies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, crypto: bool
+) -> None:
+    universe_run(tmp_path, monkeypatch)
+    if crypto:
+        (tmp_path / "panel/universe.json").unlink()  # legacy Binance spot panel
+    else:
+        spec = {"source": "alpaca-us-equities", "survivorship": "141 instruments, survivors only"}
+        (tmp_path / "panel/universe.json").write_bytes(judge.canonical(spec))
+        receipt = json.loads((tmp_path / "panel/panel-receipt.json").read_text())
+        receipt["universe_sha256"] = judge.sha(judge.canonical(spec))
+        (tmp_path / "panel/panel-receipt.json").write_text(json.dumps(receipt))
+    names = ["overnight_drift", "intraday_drift", "overnight_minus_intraday"]
+    rows = [
+        {
+            "schema": "AlphaRdagentFactorTrialV1",
+            "name": name,
+            "screen": {},
+            "q": 1,
+            "run_id": "r",
+            "code_sha256": name,
+            "status": "SCREEN_FAIL",
+        }
+        for name in names
+    ]
+    path = tmp_path / "ledger"
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    monkeypatch.setenv("ALPHA_FACTOR_TRIAL_LEDGER", str(path))
+    ns = judge_namespace()
+    context = {"hypothesis_and_feedback": ""}
+    ns["append_swing_context"](context, str(path))
+    text = context["hypothesis_and_feedback"] + ns["family_permissions"](
+        {"other: intraday_drift"}, include_counts=True
+    )
+    # Stock universes keep every session family and its count; nothing on disk changes.
+    assert all((name in text) is not crypto for name in names)
+    assert len(path.read_text().splitlines()) == len(names)
+
+
+def test_over_limit_count_respects_candidate_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rows = [
+        {
+            "schema": "AlphaRdagentFactorTrialV1",
+            "name": f"funding_{i}",
+            "screen": {},
+            "q": 1,
+            "run_id": "r",
+            "code_sha256": str(i),
+            "status": "SCREEN_FAIL",
+        }
+        for i in range(27)
+    ]
+    path = tmp_path / "ledger"
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    monkeypatch.setenv("ALPHA_FACTOR_TRIAL_LEDGER", str(path))
+    ns = judge_namespace()
+    context = {"hypothesis_and_feedback": ""}
+    ns["append_ledger_context"](context, str(path), "synthetic", 0)
+    for text in (
+        context["hypothesis_and_feedback"],
+        ns["family_permissions"](ns["closed_families"](), include_counts=True),
+    ):
+        assert "closed: 27 failed tries (limit 3)" in text
+        assert "27 of the limit" not in text
+    summary = ns["family_summary"]([*rows, {**rows[0], "status": "CANDIDATE"}], 3)
+    assert "closed: 27" not in summary and "27 failed tries (limit 3)" in summary

@@ -252,6 +252,18 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
             .replace("Factor failed: reason not recorded. ", "Factor execution failed.")
             .replace(cutoff, "(1 looks, 0 confirmed).")
         )
+    # Assert every added field and phrase before reproducing the immutable baseline.
+    assert "family" not in row  # this request names no family; the judge always sends one
+    assert row.pop("critic_status") == "unavailable"
+    assert row.pop("critic_reason") == "no code critic opinion recorded"
+    for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
+        for added in (
+            "failed: coding or execution; spread status: not recorded. ",
+            "Code critic unavailable: no code critic opinion recorded. ",
+            "Ledger screen cutoff: 0.1. ",
+        ):
+            assert container[key].count(added) == 1
+            container[key] = container[key].replace(added, "")
     # Keep explicit unavailable-value assertions before the byte projection.
     for container, key in ((record, "feedback_text"), (record["legacy_result"], "factor.feedback")):
         assert "None" not in container[key]
@@ -1248,3 +1260,44 @@ def test_plain_factor_stems() -> None:
         plain_name("ltr_mdd_vwap_60d")
         == "Long-term reversal max drawdown VWAP distance over 60 days"
     )
+
+
+def test_feedback_records_failed_screen_even_when_spread_passed(tmp_path: Path) -> None:
+    from alpha_cli._rdagent_clocks import clock_feedback
+
+    run = tmp_path / "noise"
+    req = fixture(run, noise=True)
+    result = evaluate(run, req, tmp_path / "ledger")
+    row = json.loads((tmp_path / "ledger").read_text())
+    assert row["status"] == "SCREEN_FAIL"
+    row["clocks"][row["lead_clock"]]["spread"] = {"status": "PASS"}
+    row["screen_cutoff"] = 0.000123456789
+    text = clock_feedback(row)
+    assert "failed: rank screen" in text
+    assert "spread status: PASS" in text
+    assert "screen cutoff: 0.000123456789" in text
+    assert f"screen cutoff: {result['factors'][0]['screen_cutoff']}" in result["feedback_text"]
+
+
+def test_factor_ledger_stores_the_judges_family_and_critic_status(tmp_path: Path) -> None:
+    run = tmp_path / "mix"
+    req = fixture(run)
+    request = json.loads(req.read_text())
+    request["factors"][0].update(
+        name="ml_mix",
+        variables={"funding_7d": "", "drawdown_60d": ""},
+        status="FAILED",
+        family="drawdown; futures funding",
+        critic_status="skipped",
+        critic_reason="earlier provider timeout in this round",
+    )
+    req.write_text(json.dumps(request))
+    result = evaluate(run, req, tmp_path / "ledger")
+    row = json.loads((tmp_path / "ledger").read_text())
+    assert row == result["factors"][0]
+    assert row["family"] == "drawdown; futures funding"
+    assert (row["critic_status"], row["critic_reason"]) == (
+        "skipped",
+        "earlier provider timeout in this round",
+    )
+    assert "Code critic skipped: earlier provider timeout in this round." in result["feedback_text"]

@@ -256,6 +256,26 @@ class AlphaFactorCoSTEER(FactorCoSTEER):
             return super().develop(exp)
 
 
+class FactorCritic(CriticEvaluator):
+    """Attach the outcome of this attempt to the feedback used to judge this implementation."""
+
+    def evaluate(self, target_task: Any, implementation: Any, *args: Any, **kwargs: Any) -> Any:
+        skipped, unavailable = len(self.skipped), len(self.unavailable)
+        result = super().evaluate(target_task, implementation, *args, **kwargs)
+        status = None
+        if len(self.skipped) > skipped:
+            status = "skipped"
+        elif len(self.unavailable) > unavailable:
+            status = "unavailable"
+        if status:
+            result.alpha_critic_status = status
+            if self.exp is not None and getattr(result, "value_generated_flag", False):
+                self.exp.alpha_completed_coding[target_task.factor_name][
+                    1
+                ].alpha_critic_status = status
+        return result
+
+
 @contextmanager
 def tolerant_critic(evaluator: Any, run: Path, exp: Any = None) -> Iterator[None]:
     """Wrap the pinned CoSTEER single evaluator for this round, leaving its code path intact."""
@@ -276,7 +296,7 @@ def tolerant_critic(evaluator: Any, run: Path, exp: Any = None) -> Iterator[None
     )
     if exp is not None:
         exp.alpha_completed_coding = {}
-    wrapped = CriticEvaluator(original, guard, exp)
+    wrapped = FactorCritic(original, guard, exp)
     evaluator.single_evaluator = wrapped
     try:
         yield

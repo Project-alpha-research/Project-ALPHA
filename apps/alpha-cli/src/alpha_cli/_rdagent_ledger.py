@@ -274,6 +274,8 @@ def import_historical(ledger: Path, source: Path) -> list[dict[str, Any]]:
                 "iteration": item["iteration"],
                 "windows": item["windows"],
                 "status": "IMPORTED",
+                "critic_status": "unavailable",
+                "critic_reason": "historical import has no recorded code critic",
                 "reason": "historical result imported without re-evaluation",
                 "stage": "none",
                 "p": 1.0,
@@ -323,8 +325,20 @@ def new_factor_row(
 ) -> dict[str, Any]:
     from alpha_cli._rdagent_stats import FACTOR_DEFLATION_RULE, SCREEN_RULE
 
+    status = factor.get("critic_status", "unavailable")
+    reason = (
+        factor.get("critic_reason")
+        if "critic_status" in factor
+        else "no code critic opinion recorded"
+    )
+    if status not in ("reviewed", "skipped", "unavailable") or (
+        status != "reviewed" and not (isinstance(reason, str) and reason.strip())
+    ):
+        raise DataError("invalid code critic status or missing reason")
     return {
         **factor,
+        "critic_status": status,
+        **({"critic_reason": reason} if status != "reviewed" else {}),
         "schema": TRIAL_SCHEMA,
         "plain_name": plain_name(factor["name"]),
         "trial_index": index,

@@ -3,9 +3,10 @@ owner: web workstation
 sources:
   - apps/alpha-web/src/alpha_web/*.py
   - apps/alpha-web/src/alpha_web/api/**
+  - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 8dbca97fbebb3984
+verified: 25bf8ebf68b22c52
 ---
 
 # alpha-web workspace
@@ -55,7 +56,7 @@ grants authority.
 - Frontend loop, in `apps/alpha-web/frontend`: `npm ci`; `npm run generate:api`;
   `npm run lint -- --deny-warnings`; `npm run build` (also rebuilds the served bundle);
   `npm run test:coverage`; browser lanes `npm run test:e2e:built`. Commit `src/api/generated.ts`
-  with the source.
+  with the source. For appearance changes, follow the [theme contract](../../docs/reference/invariants/web-frontend.md#workstation-themes-and-readability).
 - CI runs the whole loop as `uv run python scripts/gate.py component frontend`; it fails if the
   generated client differs from what is committed.
 

@@ -1,3 +1,4 @@
+import { useChartPalette } from '../../theme/themeState'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import type { Candle, ChartAnnotation, ChartOverlays } from '../../api/types'
@@ -40,7 +41,8 @@ export function TechnicalChart({ bars, title, styleName, evidence = EMPTY, annot
   const [undrawn, setUndrawn] = useState(0)
   // The window handed to the latest mount: survives a rebuild that starts before the last mount resolved.
   const windowRef = useRef<[number, number] | null>(null)
-  const style = technicalStyle(styleName)
+  const palette = useChartPalette()
+  const style = useMemo(() => technicalStyle(styleName, palette), [styleName, palette])
   const intraday = useMemo(() => medianSpacing(bars.map(b => b.t)) < 86400, [bars])
   const decimals = useMemo(() => priceDecimals(bars.map(b => b.c)), [bars])
   const points = useMemo(() => bars.map(b => ({ time: b.t, value: b.c })), [bars])

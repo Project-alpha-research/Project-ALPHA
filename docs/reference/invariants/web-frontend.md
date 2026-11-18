@@ -1,6 +1,7 @@
 ---
 owner: web frontend
 sources:
+  - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/e2e/**
   - apps/alpha-web/frontend/package.json
@@ -11,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 2f7c2226ce736ac1
+verified: 8cc08f58a7a1f39a
 ---
 
 # Web frontend invariants
@@ -71,14 +72,20 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - The Data Manager and status bar relay storage readiness without device names; blocked details remain visible.
   `controlPlane.buildDataPullArgs` throws the date problem the CLI would reject.
 
-## Dark terminal theme
+## Workstation themes and readability
 
-- One dark theme, no light toggle; square corners and 11 px terminal type. `index.css` owns chrome tokens;
-  generated canvas tokens and the Python figure theme stay mirrored. Technical chart styles share dark surfaces.
-- No literal colours in styles or components outside explicit token definitions (`index.css`, `theme.generated.css`,
-  `util/tokens.ts`, `technicalTokens.ts`); the frontend theme contract scans CSS, TS and TSX, excluding tests/generated code.
-- Text pairs clear WCAG AA 4.5:1; control boundaries and focus indicators clear 3:1. Accent/negative text use AA variants.
-  Status retains words; disabled controls have a dashed boundary/struck text. Root `color-scheme: dark` covers native controls.
+- On 2026-11-18 the owner requested a readable light Workstation and the option to keep individual charts dark.
+  The top-bar Theme selector offers Light (default, off-white page and white panels), Dim (mid-grey) and Dark (terminal).
+  The document head reads the browser's saved choice before paint. Unknown or absent values select Light.
+- Chrome colours come from the three palettes in `index.css`. Use at least 14 px base type, 1.45 line height for prose,
+  tabular monospace numbers and square data tables. Body ink clears 7:1 on every surface, other text 4.5:1, and control boundaries and focus rings 3:1.
+  Status, direction and grades have labels or shapes. Disabled controls retain their dashed boundary and struck text.
+- Browser charts have light surfaces in Light and Dim. Each chart has a remembered **Dark chart** checkbox, keyed by chart or workspace panel.
+  SVG and HTML use scoped chart tokens. Canvas libraries use the same computed tokens through `util/tokens.ts`. Lines also use dash patterns and labels.
+- Report figures retain their recorded pixels and exports. Their neutral frame carries the caption “stored figure (dark)”.
+  The generated terminal stylesheet still mirrors the backend figure palette.
+- Production panels, styles and renderers must use tokens for colours. The literal-colour guard scans frontend source outside the palette declarations.
+  Vitest checks text/surface contrast in all three themes. Playwright covers theme persistence and independent chart choices.
 
 ## Charts
 
@@ -139,7 +146,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 
 - `RdAgentPanel` uses generated response types, recorded-only meters and factor chips with text. Its View/palette entry
   comes from the document registry. Async reads are bound to the selected run; missing counts never become zero bars.
-  It uses terminal chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
+  It uses the selected chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
   The shortlist stage is bookkeeping only; blend warnings display the recorded diagnostic, never a new verdict.
   Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
 

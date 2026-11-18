@@ -195,7 +195,11 @@ test('@reference-only PNG download includes header, calendar dates and study leg
     const context = canvas.getContext('2d')!
     context.drawImage(image, 0, 0)
     const pixels = context.getImageData(0, 0, image.width, 30).data
-    const ink = pixels.filter((value, index) => index % 4 !== 3 && value > 180).length
+    // Count glyph pixels against the actual background in the exported header.
+    let ink = 0
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (Math.abs(pixels[i] - pixels[0]) + Math.abs(pixels[i + 1] - pixels[1]) + Math.abs(pixels[i + 2] - pixels[2]) > 120) ink++
+    }
     const scale = image.width / hostBox.width
     const headerHeight = image.height - hostBox.height * scale
     const bars = [1, 4, 6].map(dx => [...context.getImageData(

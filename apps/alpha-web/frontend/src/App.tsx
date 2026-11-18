@@ -1,3 +1,4 @@
+import { ThemeSwitch } from './theme/ThemeSwitch'
 /** Workflow pages over the existing CLI-backed panels. Only the selected task mounts. */
 import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react'
 import type { ArchiveChartDataset } from './api/client'
@@ -167,6 +168,7 @@ function WorkstationApp() {
     <div className="workflow-content">
       <header className="workflow-topbar" aria-label="Terminal controls">
         <div id="analytical-toolbar" hidden={route.pane !== 'PriceChart'} /><details className="desk-options" hidden={route.pane !== 'PriceChart'}><summary>Docks</summary><div id="dock-toolbar" /></details>
+        <ThemeSwitch />
         <label>Profile<select aria-label="Market profile" className="field" value={profile} onChange={e => setSettings({ profile: e.target.value as 'crypto' | 'equities' })}><option value="crypto">Crypto</option><option value="equities">Equities</option></select></label>
         <ContextBar archive={archiveContext} />
         <button className="btn toolbar-search" onClick={() => setPaletteOpen(true)}>Search · Ctrl+K</button>

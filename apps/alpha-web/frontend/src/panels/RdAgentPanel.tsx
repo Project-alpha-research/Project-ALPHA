@@ -1,3 +1,4 @@
+import { ChartSurface } from '../theme/ChartSurface'
 import { Timestamp, formatDuration } from '../util/formatTime'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { getJSON } from '../api/client'
@@ -80,13 +81,15 @@ function RunDetail({ detail }: { detail: Detail }) {
     <Facts facts={{ outcome: detail.run.outcome, started_at: detail.run.started_at, ended_at: detail.run.ended_at, rounds_completed: detail.run.rounds_completed }} />
     <Section title="Ideas through the checks">
       <p>Shortlisted means the declared primary screen, spread check and replay passed. Shortlisted is not a pass, not a candidate, and not evidence of profit.</p>
+      <ChartSurface id="rd-agent.funnel">
       {Object.entries(FUNNEL).map(([key, label]) => {
         const value = detail.funnel[key]
         return <div key={key} style={{ marginBottom: 8 }}>
           <div>{label}: {factText(value)}{value?.basis && <span className="muted"> ({value.basis})</span>}</div>
-          {typeof value?.value === 'number' && <div aria-hidden="true" style={{ width: `${value.value / maximum * 100}%`, minWidth: value.value ? 2 : 0, height: 8, background: 'var(--accent)' }} />}
+          {typeof value?.value === 'number' && <div aria-hidden="true" style={{ width: `${value.value / maximum * 100}%`, minWidth: value.value ? 2 : 0, height: 8, background: 'var(--chart-accent)' }} />}
         </div>
       })}
+      </ChartSurface>
     </Section>
     <Section title="Recorded caps">
       <Meter label="Calls" cap={detail.caps.calls} />

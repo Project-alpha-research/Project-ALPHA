@@ -13,9 +13,12 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+from typer.testing import CliRunner
 
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
+from alpha_cli.ledger_cmds import ledger_app
+from alpha_cli.spine.trial_reader import LedgerSource, read_ledgers, trials_for_deflation
 from alpha_core import DataError
 from alpha_data.crypto.contracts import CryptoDatasetIdentityV1
 from alpha_data.crypto.ingestion import ingest_provider_payload
@@ -1154,3 +1157,94 @@ def test_rule_family_excluded_from_factor_statistics_and_repeats(tmp_path: Path)
     assert mixed["factors"][0]["trial_index"] == 2
     assert "Ledger rows, all families (rules, repeats too): 2" in mixed["feedback_text"]
     assert len(ev._read_ledger(ledger)) == 2
+
+
+@pytest.mark.parametrize("reason", ["critic_rejected", "cap_reached", "exception", "bad_output"])
+def test_failure_reason_reaches_ledger_and_proposer(tmp_path: Path, reason: str) -> None:
+    run = tmp_path / "run"
+    request_path = fixture(run)
+    request = json.loads(request_path.read_text())
+    request["factors"][0].update(
+        status="FAILED", failure_reason=reason, failure_detail="first error line"
+    )
+    request_path.write_text(json.dumps(request))
+    ledger = tmp_path / "ledger.jsonl"
+    result = ev.evaluate(run, request_path, run / "result.json", ledger)
+    row = json.loads(ledger.read_text())
+    assert row["failure_reason"] == reason
+    assert reason in result["feedback_text"]
+    assert "first error line" in result["feedback_text"]
+
+
+def test_evaluation_uses_receipt_identity_and_records_utc(tmp_path: Path) -> None:
+    run = tmp_path / "different-folder-name"
+    request_path = fixture(run)
+    (run / "run-identity.json").write_text(json.dumps({"run_id": "receipt-id"}))
+    request = json.loads(request_path.read_text())
+    request["factors"][0].update(status="FAILED", failure_reason="critic_rejected")
+    request_path.write_text(json.dumps(request))
+    result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
+    row = result["factors"][0]
+    assert row["run_id"] == "receipt-id"
+    assert datetime.fromisoformat(row["recorded_at"]).tzinfo == UTC
+
+
+def test_proposer_counts_have_plain_labels(tmp_path: Path) -> None:
+    run = tmp_path / "run"
+    request_path = fixture(run)
+    request: dict[str, Any] = json.loads(request_path.read_text())
+    request["factors"][0].update(status="FAILED", failure_reason="critic_rejected")
+    request_path.write_text(json.dumps(request))
+    result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
+    assert (
+        "looks so far across all ideas: 1 (sets the screen cutoff); "
+        "primary clocks now; legacy clocks and unreadable rows included;"
+    ) in result["feedback_text"]
+    assert "Ledger rows, all families (rules, repeats too): 1" in result["feedback_text"]
+    assert "ledger_trials_all_families:" not in result["feedback_text"]
+
+
+@pytest.mark.parametrize("status", ["LOOKAHEAD", "UNSTABLE"])
+def test_invalid_trials_keep_counts_reason_and_have_no_lead(tmp_path: Path, status: str) -> None:
+    run = tmp_path / "run"
+    path = fixture(run)
+    request = json.loads(path.read_text())
+    request["factors"][0].update(
+        status=status,
+        lookahead={
+            "status": status,
+            "first_mismatch": {
+                "cut": "2021-03-31",
+                "date": "2021-03-01",
+                "instrument": "C0USDT",
+                "absolute_difference": 0.25,
+                "reason": "value changed",
+            },
+        },
+    )
+    path.write_text(json.dumps(request))
+    ledger = tmp_path / "ledger"
+    result = ev.evaluate(run, path, run / "result.json", ledger)
+    assert result["lead_factor"] is None
+    assert result["family_size"] == 1 and result["total_trials"] == 1
+    snapshot = read_ledgers([LedgerSource("rdagent", str(ledger))])
+    assert not snapshot.unknown
+    record = snapshot.records[0]
+    assert record.outcome == "invalid"
+    assert record.reason and "2021-03-01" in record.reason and "0.25" in record.reason
+    assert "C0USDT" in result["feedback_text"]
+    if status == "UNSTABLE":
+        assert "different answers on the same data" in result["feedback_text"]
+    assert trials_for_deflation(snapshot, "rdagent-factors")["all_trials"] == 1
+    assert ev._read_ledger(ledger)[0]["status"] == status
+    output = CliRunner().invoke(ledger_app, ["list", "--rdagent-ledger", str(ledger)])
+    assert output.exit_code == 0 and "0.25" in output.output
+
+
+def test_plain_factor_stems() -> None:
+    from alpha_cli.rdagent_factor_eval import plain_name
+
+    assert (
+        plain_name("ltr_mdd_vwap_60d")
+        == "Long-term reversal max drawdown VWAP distance over 60 days"
+    )

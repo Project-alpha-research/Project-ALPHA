@@ -38,6 +38,7 @@ isolated workers keep their own suites. Tests must never read the guarded
   `tests/fixtures/` (goldens), `tests/acceptance/` (17 visible acceptance tests, always run), `tests/smoke/` (end-to-end
   workflows through the installed programs; marker `smoke`, not in the fast tier; crypto downloads go through
   the offline recorded provider `tests/smoke/_recorded_provider.py`, a loopback TLS proxy).
+- Keep fixes in the test file for the behaviour they cover. New test filenames must avoid `fixups` and numbered suffixes.
 - A new file's name decides its tier: `tests/_tiers.py` moves files with listed prefixes out of
   the fast local tier. Never add the `platform` marker by hand.
 - Run one file: `uv run pytest -q tests/unit/test_x.py`; the fast check:

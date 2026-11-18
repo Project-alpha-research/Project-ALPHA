@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ import polars as pl
 import pytest
 
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli import rdagent_factor_eval as evaluator
 from tests.unit.test_context_daily_funding import write_funding
 
@@ -321,7 +323,7 @@ def test_factor_specific_mask_and_price_only_parity(
 def test_scenario_columns_follow_prepared_data(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
+    from tests.unit._rdagent_support import judge_namespace
 
     data = worker("alpha_factor_data")
     setting = judge_namespace()["current_funding_setting"]
@@ -330,11 +332,13 @@ def test_scenario_columns_follow_prepared_data(
     full = tmp_path / "factor_data/full"
     full.mkdir(parents=True)
     (full / "daily_pv.h5").write_bytes(b"fixture")
-    monkeypatch.setattr(pd, "read_hdf", lambda *args, **kwargs: pd.DataFrame(columns=["$close"]))
-    assert setting() == ""
-    monkeypatch.setattr(
-        pd, "read_hdf", lambda *args, **kwargs: pd.DataFrame(columns=data.FUNDING_COLUMNS)
-    )
+    store = MagicMock()
+    monkeypatch.setattr(pd, "HDFStore", store)
+    columns = store.return_value.__enter__.return_value.get_storer.return_value.read_index
+    for names in (["$close"], data.FUNDING_COLUMNS[:-1]):
+        columns.return_value = pd.Index(names)
+        assert setting() == ""
+    columns.return_value = pd.Index(data.FUNDING_COLUMNS)
     assert all(name in setting() for name in data.FUNDING_COLUMNS)
 
 
@@ -433,3 +437,45 @@ def test_complete_price_evaluation_ignores_funding_file(tmp_path: Path) -> None:
             row.pop("recorded_at")
         results.append(record)
     assert judge.canonical(results[0]) == judge.canonical(results[1])
+
+
+@pytest.mark.parametrize(
+    "selector",
+    [
+        "df['$funding_sum']",
+        "df.get('$funding_sum')",
+        "df.filter(items=['$funding_sum'])",
+        "df.__getitem__('$funding_sum')",
+    ],
+)
+def test_input_columns_only_read_selectors(tmp_path: Path, selector: str) -> None:
+    code = ("# df['$funding_last']\nnote = '$funding_count'\nx = " + selector).encode()
+    digest = judge.sha(code)
+    (tmp_path / "code").mkdir()
+    (tmp_path / "code" / f"{digest}.py").write_bytes(code)
+    (tmp_path / "panel").mkdir()
+    (tmp_path / "panel/funding.parquet").write_bytes(b"funding")
+    row: dict[str, Any] = {}
+    with patch.object(ev, "funding_eligibility", return_value=np.ones((1, 5), dtype=bool)):
+        ev._factor_eligibility(
+            tmp_path,
+            {"code_sha256": digest, "status": "OK"},
+            row,
+            [date(2021, 1, 1)],
+            list("ABCDE"),
+            None,
+        )
+    assert row["input_columns"] == ["$funding_sum"]
+    assert row["input_columns_method"] == "source-selectors"
+    assert row["eligibility"] == "perp-funding"
+
+
+def test_input_columns_detection_miss_is_disclosed(tmp_path: Path) -> None:
+    code = b"column = '$' + 'close'\nx = df[column]"
+    digest = judge.sha(code)
+    (tmp_path / "code").mkdir()
+    (tmp_path / "code" / f"{digest}.py").write_bytes(code)
+    row: dict[str, Any] = {}
+    ev._factor_eligibility(tmp_path, {"code_sha256": digest, "status": "OK"}, row, [], [], None)
+    assert row["input_columns_method"].startswith("fallback:")
+    assert row.get("input_columns", []) == []

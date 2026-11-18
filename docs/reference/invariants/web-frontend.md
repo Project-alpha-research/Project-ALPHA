@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: aa2b2db0da27d730
+verified: c896c1c1a488fe62
 ---
 
 # Web frontend invariants
@@ -152,6 +152,10 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   Raw rows, legacy receipt counts and code filenames appear only inside technical detail; theme tokens supply colour/type.
   Async reads remain bound to the selected run. Node tests check writer vocabulary, figures and markup; the browser spec
   `e2e/rdagent-story.spec.ts` checks navigation, disclosure and URL preservation using synthetic data.
+
+- Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures
+  have value tables; rejected matches stay grey with their reason; a timeline plots stored matches; long decimals are rounded for reading
+  only; no curve or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
 
 ## Generated API client
 

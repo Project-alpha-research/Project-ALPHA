@@ -17,7 +17,7 @@ uptrend") and wants to see every past match before any rule is fixed.
 uv run alpha setup find <spec.toml> --json
 uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
 ```
-
+**See stored results:** Workstation → Research → Setup Lab.
 **How to read it**
 
 - The spec (TOML) has a setup table (name, idea, assets, timeframe "1D", event), ordered filters, an optional

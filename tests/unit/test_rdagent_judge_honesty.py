@@ -14,7 +14,10 @@ from alpha_cli import _rdagent_clocks as clocks
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import rdagent_factor_eval as ev
 from alpha_cli._rdagent_stability import deflation_note
+from alpha_cli.spine.trial_record import map_row
 from alpha_core import DataError
+from tests.unit._rdagent_support import clock_rows, judge_namespace
+from tests.unit.test_trial_record import factor
 
 
 @pytest.mark.parametrize("m", [1, 10, 237])
@@ -72,7 +75,7 @@ def test_undeclared_sign_cannot_pass() -> None:
 
 
 def test_nonprimary_pass_cannot_select_clock() -> None:
-    from tests.unit.test_rdagent_fixups_5 import clock_rows
+    from tests.unit._rdagent_support import clock_rows
 
     trials = clock_rows(0.99)
     assert clocks.overall_status(trials, primary_clock="monthly") == ("SCREEN_FAIL", "monthly")
@@ -131,7 +134,7 @@ def test_old_deflation_is_labelled_without_recalculation() -> None:
 def test_web_and_ledger_derive_same_old_status(tmp_path: Path) -> None:
     from alpha_cli.spine.trial_record import map_row
     from alpha_web._rdagent_runs import _factor
-    from tests.unit.test_rdagent_fixups_5 import clock_rows
+    from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
     row = factor(clocks=clock_rows(0.04))
@@ -249,7 +252,7 @@ def test_primary_only_replay_and_negation_repeat(tmp_path: Path) -> None:
 def test_real_stored_old_figure_is_not_recomputed(tmp_path: Path) -> None:
     from alpha_cli.spine.trial_record import map_row
     from alpha_web._rdagent_runs import _factor
-    from tests.unit.test_rdagent_fixups_5 import clock_rows
+    from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
     # Read-only ledger observation, 2026-11-17: ltr_189d_skip21d, weekly.
@@ -277,7 +280,7 @@ def test_real_stored_old_figure_is_not_recomputed(tmp_path: Path) -> None:
 def test_merged_family_closes_for_either_sign(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
+    from tests.unit._rdagent_support import judge_namespace
 
     rows = [
         {
@@ -305,7 +308,7 @@ def test_missing_proposal_fields_use_same_reask_limit(
     from types import SimpleNamespace
     from unittest.mock import Mock
 
-    from tests.unit.test_rdagent_loop_fixups_3 import ProposingLoop, judge_namespace, proposal
+    from tests.unit._rdagent_support import ProposingLoop, judge_namespace, proposal
 
     ns = judge_namespace()
     monkeypatch.setenv("ALPHA_FACTOR_RUN_DIR", str(tmp_path))
@@ -418,7 +421,7 @@ def test_effective_size_reports_newey_west_estimate() -> None:
 def test_web_derivation_matches_ledger_for_nonfinite_old_figure() -> None:
     from alpha_cli._rdagent_stability import recorded_status
     from alpha_web._rdagent_runs import _derived_status
-    from tests.unit.test_rdagent_fixups_5 import clock_rows
+    from tests.unit._rdagent_support import clock_rows
     from tests.unit.test_trial_record import factor
 
     row = factor(clocks=clock_rows(float("nan")))
@@ -434,3 +437,46 @@ def test_repeat_pointer_has_final_same_batch_status(tmp_path: Path) -> None:
     rows = ev.evaluate(run, path, run / "result.json", tmp_path / "ledger")["factors"]
     assert rows[0]["status"] == "CANDIDATE"
     assert rows[1]["first_trial"]["status"] == rows[0]["status"]
+
+
+@pytest.mark.parametrize(
+    "value,status", [(0.04, "DEFLATION_FAIL"), (0.95, "CANDIDATE"), (0.96, "CANDIDATE")]
+)
+def test_candidate_requires_recorded_deflation(value: float, status: str) -> None:
+    assert clocks.overall_status(clock_rows(value)) == (status, "weekly")
+
+
+def test_missing_deflation_cannot_be_candidate() -> None:
+    trials = clock_rows(0.99)
+    trials["weekly"]["replay"] = {}
+    assert clocks.overall_status(trials)[0] != "CANDIDATE"
+
+
+def test_old_candidate_derived_without_rewriting_and_counts(tmp_path: Path) -> None:
+    row = factor(clocks=clock_rows(0.04))
+    record = map_row("rdagent", tmp_path / "ledger", 1, row)
+    assert record.raw_status == "DEFLATION_FAIL" and record.outcome == "rejected"
+    assert record.counts_for_deflation and row["status"] == "CANDIDATE"
+    assert record.reason is not None
+    assert all(s in record.reason for s in ("derived", "0.04", "0.95", "42 trials"))
+
+
+def test_ledger_proposer_text_reports_deflation() -> None:
+    trials = clock_rows(0.04)
+    trials["weekly"]["replay"].update(gross={}, net={})
+    row = {
+        "schema": "AlphaRdagentFactorTrialV3",
+        "name": "idea",
+        "status": "DEFLATION_FAIL",
+        "clocks": trials,
+        "lead_clock": "weekly",
+    }
+    assert all(s in judge_namespace()["ledger_summary"](row) for s in ("0.04", "0.95", "42 trials"))
+
+
+def test_new_round_outcomes_have_plain_sentences() -> None:
+    from alpha_web._rdagent_runs import STATUS_SENTENCES
+
+    for step in ("proposal_failed", "critic_unavailable"):
+        for failure in ("provider_timeout", "provider_error"):
+            assert STATUS_SENTENCES[f"{step}_{failure}"]

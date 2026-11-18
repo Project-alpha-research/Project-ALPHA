@@ -9,8 +9,11 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -794,3 +797,196 @@ def test_a_counted_only_replay_is_never_shown_to_the_proposer_as_a_result() -> N
     note = swing_parts()["replay_note"]("weekly", replay)
     assert note == "; weekly replay counted only, not a result"
     assert "%" not in note
+
+
+def test_failure_message_never_prints_none_for_the_difference() -> None:
+    """Old rows lack the difference; structural or non-finite mismatches have none to give."""
+    from alpha_cli._rdagent_stability import failure_message
+
+    base = {"cut": "2020-12-31", "date": "2019-02-01", "instrument": "ADAUSDT"}
+    old = failure_message({"status": "LOOKAHEAD", "lookahead": {"first_mismatch": base}})
+    none = failure_message(
+        {
+            "status": "LOOKAHEAD",
+            "lookahead": {"first_mismatch": {**base, "absolute_difference": None}},
+        }
+    )
+    value = failure_message(
+        {
+            "status": "UNSTABLE",
+            "lookahead": {"first_mismatch": {**base, "absolute_difference": 0.25}},
+        }
+    )
+    assert "None" not in old + none
+    assert "absolute difference not recorded" in old
+    assert "absolute difference not computable" in none
+    assert "absolute difference 0.25" in value
+
+
+@pytest.mark.parametrize(
+    "feedback,expected",
+    [
+        (
+            SimpleNamespace(
+                execution_feedback="ValueError: bad input\ntrace", final_decision=False
+            ),
+            "exception",
+        ),
+        (
+            SimpleNamespace(execution_feedback="call cap reached", final_decision=False),
+            "cap_reached",
+        ),
+        (
+            SimpleNamespace(
+                execution_feedback='Traceback (most recent call last):\n  File "factor.py", '
+                "line 3\nKeyError: 'close'",
+                final_decision=False,
+            ),
+            "exception",
+        ),
+        (
+            SimpleNamespace(
+                execution_feedback="Code ran; the output looks wrong.", final_decision=False
+            ),
+            "critic_rejected",
+        ),
+    ],
+)
+def test_runner_keeps_execution_reason_before_critic(feedback: Any, expected: str) -> None:
+    class Feedback:
+        execution_feedback = feedback.execution_feedback
+
+        def __bool__(self) -> bool:
+            return False
+
+    cls = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
+    values, reason, detail = cls.execute_factor(Mock(), Feedback())
+    assert values is None and reason == expected
+    assert "\n" not in detail and not detail.startswith("Traceback")
+    if "Traceback" in feedback.execution_feedback:
+        assert detail == "KeyError: 'close'"
+
+
+def test_runner_records_exception_and_bad_shape() -> None:
+    cls = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
+    workspace = Mock()
+    workspace.execute.side_effect = ValueError("broken first line\nsecond line")
+    assert cls.execute_factor(workspace, True) == (
+        None,
+        "exception",
+        "ValueError: broken first line",
+    )
+    workspace.execute.side_effect = None
+    workspace.execute.return_value = ("ran", pd.DataFrame({"a": [1], "b": [2]}))
+    assert cls.execute_factor(workspace, True)[1] == "bad_output"
+    assert cls.execute_factor(workspace, False)[1] == "critic_rejected"
+
+
+def test_bad_factor_format_is_recorded_before_prefix_check() -> None:
+    frame = pd.DataFrame(
+        {"factor": ["not numeric"]}, index=pd.MultiIndex.from_tuples([("bad date", "A")])
+    )
+    workspace = Mock()
+    workspace.execute.return_value = ("ran", frame)
+    runner = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
+    assert runner.execute_factor(workspace, True)[1] == "bad_output"
+
+
+@pytest.mark.parametrize("unstable", [True, False])
+def test_same_input_regression_instability_is_distinct_from_real_peek(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unstable: bool
+) -> None:
+    cut = "2021-03-31"
+    source = tmp_path / cut / "daily_pv.h5"
+    source.parent.mkdir()
+    source.write_bytes(b"identical truncated data")
+    monkeypatch.setattr(data, "CUTS", (cut,))
+    idx = pd.MultiIndex.from_product(
+        [pd.date_range("2021-03-30", periods=2), ["A", "B"]], names=["datetime", "instrument"]
+    )
+    full = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]}, index=idx)
+    # Exactly identified, ill-conditioned two-equation regression. Different reduction
+    # orders perturb its coefficients despite identical underlying observations.
+    x = np.array([[1.0, 1.0], [1.0, 1.0 + 1e-12]])
+    y = np.array([1.0, 2.0])
+    values = [float(np.linalg.solve(x, y)[0]), float(np.linalg.lstsq(x, y, rcond=None)[0][0])]
+    assert abs(values[0] - values[1]) > 1
+    calls: list[bytes] = []
+
+    def run(command: list[str], *, cwd: Path, **kwargs: Any) -> SimpleNamespace:
+        calls.append((cwd / "daily_pv.h5").read_bytes())
+        return SimpleNamespace(returncode=0)
+
+    def read(path: Path, *, key: str) -> pd.DataFrame:
+        result = full.copy()
+        result.iloc[0, 0] = values[min(len(calls) - 1, 1)] if unstable else 10.0
+        return result
+
+    monkeypatch.setattr(data.subprocess, "run", run)
+    monkeypatch.setattr(data.pd, "read_hdf", read)
+    result = data.check_prefix_invariance(b"regression", full, tmp_path, sys.executable, 10)
+    assert result["status"] == ("UNSTABLE" if unstable else "LOOKAHEAD")
+    assert len(calls) == 2 and calls[0] == calls[1]
+    detail = result["first_mismatch"]
+    assert detail["cut"] == cut and detail["instrument"] == "A"
+    assert detail["date"].startswith("2021-03-30")
+    assert detail["absolute_difference"] > 0
+
+
+def test_structural_prefix_mismatch_has_row_and_instrument() -> None:
+    index = pd.MultiIndex.from_product([pd.date_range("2021-01-01", periods=2), ["A", "B"]])
+    full = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]}, index=index)
+    result = data.compare_prefix(full, full.iloc[:3], "2021-01-02")
+    assert result is not None
+    assert result["date"].startswith("2021-01-02") and result["instrument"] == "B"
+    assert "absolute_difference" in result and result["absolute_difference"] is None
+
+
+def test_real_whole_panel_peek_is_reproducible_lookahead(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Run actual factor subprocesses, replacing only the unavailable HDF serializer."""
+    cut = "2021-01-02"
+    index = pd.MultiIndex.from_product(
+        [pd.date_range("2021-01-01", periods=4), ["A", "B"]],
+        names=["datetime", "instrument"],
+    )
+    prices = pd.DataFrame({"close": np.arange(1.0, 9.0)}, index=index)
+    source = tmp_path / cut / "daily_pv.h5"
+    source.parent.mkdir()
+    prices.iloc[:4].to_parquet(source)
+    full = prices / prices.mean()
+    monkeypatch.setattr(data, "CUTS", (cut,))
+
+    def read(path: Path, *, key: str) -> pd.DataFrame:
+        assert key == "data"
+        return pd.read_parquet(path)
+
+    monkeypatch.setattr(data.pd, "read_hdf", read)
+    code = (
+        b"import pandas as pd\n"
+        b"f = pd.read_parquet('daily_pv.h5')\n"
+        b"(f / f.mean()).to_parquet('result.h5')\n"
+    )
+    result = data.check_prefix_invariance(code, full, tmp_path, sys.executable, 30)
+    assert result["status"] == "LOOKAHEAD"
+    assert result["repeat_mismatch"] is None
+    assert result["first_mismatch"]["absolute_difference"] > 0
+
+
+def test_model_text_missing_and_small_figures() -> None:
+    from tests.unit._rdagent_support import judge_namespace
+
+    ns = judge_namespace()
+    assert ns["_rounded"](None) == "not available"
+    assert ns["_rounded"](0.00001234567) == "1.235e-05"
+    note = ns["replay_note"](
+        "weekly",
+        {
+            "gross": {"annualized_return": 0.123456},
+            "net": {"annualized_return": 0.1},
+            "annual_cost": 0.0000123456,
+            "mean_turnover": 0.00000123456,
+        },
+    )
+    assert "12.35%" in note and "0.001235%" in note and "0.0001235%" in note

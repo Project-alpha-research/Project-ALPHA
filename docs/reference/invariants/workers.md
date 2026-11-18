@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: d80d5035f60d26d1
+verified: 9ee6c122ed2dbb3f
 ---
 
 # Worker invariants
@@ -175,7 +175,7 @@ The general rule is [research integrity § Models and isolated workers](research
   that round; budgets still end the run. Internal coding errors retain completed factors for judging; two consecutive failures stop the run. Restored prompts
   keep four full same-panel rounds. Memory resume (no invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
-  `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
+  `test_rdagent_research_memory.py`, `test_rdagent_{restore_and_history,families,budget_and_caps,gateway_usage}.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
   than becoming a trial outcome. A family appends one block of `AlphaRuleTrialV1` rows to the same append-only ledger

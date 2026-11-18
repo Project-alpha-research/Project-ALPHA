@@ -13,12 +13,14 @@ import numpy as np
 import polars as pl
 import pytest
 
+from alpha_cli import _rdagent_identity as identity
 from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
-from alpha_cli._rdagent_clocks import CLOCKS, clock_samples
+from alpha_cli._rdagent_clocks import CLOCKS, clock_feedback, clock_samples
 from alpha_core import DataError
 from tests.unit.test_rdagent_gapped_universe import walk_panel
+from tests.unit.test_trial_record import factor
 
 
 def declaration(day: str = "2021-02-10", instrument: str = "C0") -> dict[str, str]:
@@ -337,7 +339,7 @@ def test_feedback_keeps_authoritative_split_message(
     from tests.unit.test_rdagent_factor_judge import judge_parts
 
     ns = judge_parts("record_round")
-    from tests.unit.test_rdagent_loop_fixups_3 import judge_namespace
+    from tests.unit._rdagent_support import judge_namespace
 
     ns.update({key: judge_namespace()[key] for key in ("family_permissions", "closed_families")})
     ns["Experiment2Feedback"] = object
@@ -479,3 +481,178 @@ def test_refusal_names_every_undeclared_jump_at_once(tmp_path: Path) -> None:
     assert "2 undeclared" in message
     assert "C0" in message and "C1" in message
     assert message.count("new_from=") == 2
+
+
+def rescale(day: str = "2021-01-12", ratio: float = 1000) -> dict[str, Any]:
+    return {"instrument": "C0", "new_from": day, "reason": "redenominated", "ratio": ratio}
+
+
+def test_redenomination_freeze_is_continuous_and_receipted(tmp_path: Path) -> None:
+    receipt, panel = freeze_panel(tmp_path, jump_panel(10, 1000), [rescale()])
+    coin = panel.filter(pl.col("instrument") == "C0")
+    assert coin["close"].to_list() == [10, 10]
+    assert coin["volume"].to_list() == [1, 1000]
+    assert coin["quote_volume"].to_list() == [10, 10]
+    assert panel["instrument"].n_unique() == 3
+    assert receipt["identity_rescales"] == [rescale()]
+    assert receipt["identity_breaks"] == []
+
+
+@pytest.mark.parametrize("ratio", [None, 0, -1, True, "1000", float("inf"), float("nan")])
+def test_redenomination_requires_positive_finite_ratio(ratio: Any) -> None:
+    entry = rescale()
+    if ratio is None:
+        entry.pop("ratio")
+    else:
+        entry["ratio"] = ratio
+    with pytest.raises(DataError, match="redenominated.*ratio") as raised:
+        identity.validate_breaks([entry], ["C0"])
+    # The direction must be unambiguous: new units per old, so later prices are divided by it.
+    assert "C0" in str(raised.value)
+    assert "new price units per old unit" in str(raised.value)
+    assert "divided by" in str(raised.value)
+
+
+def test_rescale_holds_position_and_future_poison_changes_no_past() -> None:
+    bars = walk_panel()
+    boundary = date(2021, 2, 10)
+    selected = (pl.col("instrument") == "C0") & (pl.col("date") >= boundary)
+    raw = bars.with_columns(
+        [
+            pl.when(selected).then(pl.col(c) * 1000).otherwise(pl.col(c)).alias(c)
+            for c in judge.PRICE_COLUMNS
+        ]
+    )
+    adjusted, _ = identity.relabel(raw, [rescale(boundary.isoformat())])
+    assert adjusted.filter(pl.col("date") < boundary).equals(bars.filter(pl.col("date") < boundary))
+    assert adjusted["instrument"].n_unique() == bars["instrument"].n_unique()
+    account = membership.Account(["C0"], fee_bps=0, slippage_bps=0)
+    coin = adjusted.filter(pl.col("instrument") == "C0")
+    account.trade(0, 1, coin["close"][0], coin["date"][0], "open")
+    for day, close in coin.select("date", "close").iter_rows():
+        account.observe(day, np.array([close]))
+    assert account.quantities[0] == 1 and account.haircuts == 0
+    days = [date(2021, 1, 1) + timedelta(days=i) for i in range(70)]
+    signals = np.tile(np.arange(9.0), (70, 1))
+    signals[:, 0] = 20.0  # Poison a held name, so the future change has power.
+    outputs: list[dict[str, Any]] = []
+    for panel in (raw, adjusted):
+        series: dict[str, Any] = {}
+        judge.replay(panel, signals, days, 1, gap_policy=True, series=series)
+        outputs.append(series)
+    for key in ("events", "positions"):
+        assert [r for r in outputs[0][key] if r["date"] < boundary] == [
+            r for r in outputs[1][key] if r["date"] < boundary
+        ]
+    assert [p for p in outputs[0]["periods"] if p.exit_ts.date() < boundary] == [
+        p for p in outputs[1]["periods"] if p.exit_ts.date() < boundary
+    ]
+    assert outputs[0]["positions"] != outputs[1]["positions"]
+
+
+def test_universe_text_counts_pairs_not_split_series() -> None:
+    """A reused ticker adds a price series, not a pair: 141 pairs stay 141 in the text."""
+
+    spec = {"survivorship": "3 pairs chosen by listing date, 1 later delisted"}
+    split = universes.disclosure(spec, {"instruments": {"A": {}, "A~2": {}, "B": {}, "C": {}}})
+    plain = universes.disclosure(spec, {"instruments": {"A": {}, "B": {}, "C": {}}})
+    assert split["universe_text"].startswith(
+        "3 instruments (4 price series after 1 ticker split), 1 later delisted"
+    )
+    assert plain["universe_text"].startswith("3 instruments, 1 later delisted")
+    assert split["universe_includes_delisted"] is plain["universe_includes_delisted"] is True
+
+
+def renamed(**changes: Any) -> dict[str, Any]:
+    return {
+        "instrument": "C0",
+        "new_from": "2021-01-12",
+        "reason": "renamed",
+        "continues_as": "NEW",
+        **changes,
+    }
+
+
+def rename_panel() -> pl.DataFrame:
+    panel = jump_panel(10, 1000)
+    return panel.with_columns(
+        pl.when((pl.col("instrument") == "C0") & (pl.col("date") >= date(2021, 1, 12)))
+        .then(pl.lit("NEW"))
+        .otherwise(pl.col("instrument"))
+        .alias("instrument")
+    )
+
+
+def test_rename_freeze_continuous_series_and_join_receipt(tmp_path: Path) -> None:
+    receipt, panel = freeze_panel(tmp_path, rename_panel(), [renamed(ratio=1000)])
+    coin = panel.filter(pl.col("instrument") == "C0")
+    assert coin["close"].to_list() == [10.0, 10.0]
+    assert coin["volume"].to_list() == [1.0, 1000.0]
+    assert coin["quote_volume"].to_list() == [10.0, 10.0]
+    assert "NEW" not in panel["instrument"].to_list()
+    assert receipt["identity_joins"] == [renamed(ratio=1000)]
+    assert receipt["instruments"]["C0"]["missing_days"] == 10
+
+
+def test_rename_default_ratio_and_future_poison() -> None:
+    bars = rename_panel()
+    boundary = date(2021, 1, 12)
+    adjusted, applied = identity.relabel(bars, [renamed()])
+    assert applied == [renamed(ratio=1)]
+    poison = bars.with_columns(
+        pl.when(pl.col("date") >= boundary)
+        .then(pl.col("close") * 17)
+        .otherwise(pl.col("close"))
+        .alias("close")
+    )
+    changed, _ = identity.relabel(poison, [renamed()])
+    past = pl.col("date") < boundary
+    assert adjusted.filter(past).equals(bars.filter(past))
+    assert changed.filter(past).equals(adjusted.filter(past))
+    assert not changed.equals(adjusted)
+    assert adjusted.filter(pl.col("instrument") == "C0")["close"].to_list() == [10.0, 10000.0]
+
+
+def test_rename_overlap_refused() -> None:
+    bars = rename_panel()
+    overlap = bars.filter(pl.col("instrument") == "NEW").with_columns(
+        pl.lit("C0").alias("instrument")
+    )
+    with pytest.raises(DataError, match="overlap.*C0.*NEW"):
+        identity.relabel(pl.concat([bars, overlap]), [renamed()])
+
+
+def test_rename_missing_successor_names_instrument(tmp_path: Path) -> None:
+    with pytest.raises(DataError, match="NEW.*(?:missing|absent)"):
+        freeze_panel(tmp_path, jump_panel(10, 1), [renamed()])
+
+
+def test_rename_successor_must_belong_to_universe() -> None:
+    with pytest.raises(DataError, match="NEW.*universe"):
+        universes.validate(
+            {**universes.DEFAULT, "instruments": ["C0"], "identity_breaks": [renamed()]}
+        )
+
+
+@pytest.mark.parametrize("ratio", [0, -1, True, "1", float("inf"), float("nan")])
+def test_rename_invalid_ratio_refused(ratio: Any) -> None:
+    with pytest.raises(DataError, match="ratio"):
+        identity.validate_breaks([renamed(ratio=ratio)], "all-in-store")
+
+
+def test_identity_singular_and_model_figures() -> None:
+    assert (
+        identity.disclosure([{"instrument": "C0"}])
+        == "1 ticker was split at declared identity breaks."
+    )
+    row = factor(version=2, status="SCREEN_FAIL", screen={"mean_ic": 0.0000123456}, replay={})
+    text = clock_feedback(row)
+    assert "None" not in text and "not available" in text
+    assert "1.235e-05" in text
+
+
+def test_rename_refuses_old_bars_on_or_after_new_from() -> None:
+    bars = rename_panel()
+    late = renamed(new_from="2021-01-01")  # the old series still has its bar on the 1st
+    with pytest.raises(DataError, match="overlap.*C0.*on or after new_from 2021-01-01.*NEW"):
+        identity.relabel(bars, [late])

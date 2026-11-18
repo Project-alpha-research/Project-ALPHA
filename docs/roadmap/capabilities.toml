@@ -213,24 +213,6 @@ missing = "shelved 2026-11-14: not wired into any command; kept for a future dow
 triage = { card = "2", recommendation = "SHELVE", owner_decision = "SHELVE" }
 
 [[capability]]
-id = "funding-download"
-name = "Bybit funding-rate download"
-what = "Download Bybit funding rates (the regular payments between long and short traders) with the raw bytes kept."
-see_it = ["nothing to see yet — internal only"]
-entry_points = [
-  "code: packages/alpha-data/src/alpha_data/crypto/funding_ingestion.py",
-  "code: packages/alpha-data/src/alpha_data/crypto/providers/bybit_funding.py",
-  "code: packages/alpha-data/src/alpha_data/crypto/providers/funding_transport.py",
-]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = []
-state = "Shelved"
-missing = "shelved 2026-11-14: not wired into any command (real downloads refused on purpose); kept for funding-event research"
-# owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): shelve; kept for funding-event research
-triage = { card = "B", recommendation = "SHELVE", owner_decision = "SHELVE" }
-
-[[capability]]
 id = "retained-coverage"
 name = "\"Are my downloaded daily bars complete?\" check"
 what = "Check downloaded daily prices for missing, duplicated or out-of-place days against the calendar you expect."
@@ -1063,6 +1045,13 @@ triage = { card = "13", recommendation = "KEEP", owner_decision = "KEEP" }
 
 # Triage cards that are not a user-facing workflow of their own.
 [[decision]]
+card = "B"
+name = "Bybit funding-rate download modules"
+recommendation = "SHELVE"
+# shelved 2026-11-14, then deleted 2026-11-18 on the owner's approval to delete unreached code: the Binance funding importer replaces it
+owner_decision = "DELETE"
+
+[[decision]]
 card = "C"
 name = "The RD-Agent runtime as a whole (covers cards 7, 8 and 9)"
 recommendation = "KEEP"
@@ -1345,9 +1334,9 @@ docs = ["research/tools/walk-forward.md", "docs/reference/invariants/cli-runs.md
 id = "setup-find"
 name = "Find every match of a chart setup"
 what = "Record daily setup matches and separate occurrences, then inspect contact sheets ending at the entry open without viewing outcomes."
-see_it = ["alpha setup find <spec.toml> --json"]
-entry_points = ["cli: alpha setup"]
-proof_synthetic = ["tests/unit/test_setup_find.py::test_worked_counts_ledger_and_cluster_sheets", "tests/unit/test_setup_find.py::test_nothing_after_the_trigger_reaches_any_file_or_sheet", "tests/unit/test_contact_sheet.py::test_outcome_blindness_dimensions_and_determinism"]
+see_it = ["alpha setup find <spec.toml> --json", "Workstation: Research → Setup Lab (stored results only)"]
+entry_points = ["cli: alpha setup", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
+proof_synthetic = ["tests/unit/test_setup_find.py::test_worked_counts_ledger_and_cluster_sheets", "tests/unit/test_setup_find.py::test_nothing_after_the_trigger_reaches_any_file_or_sheet", "tests/unit/test_contact_sheet.py::test_outcome_blindness_dimensions_and_determinism", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars"]
 proof_smoke = ["tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat"]
 real_data = "on 2026-11-17 a double-bottom spec on the Dell's SPY (8,507 daily bars, Yahoo) and BTC/USDT (3,361) found 19 and 26 separate occurrences (21 and 30 matching days), as the evaluator's own check did; a system test, not evidence of an edge"
 needs = []
@@ -1384,9 +1373,9 @@ docs = ["research/tools/diagnose-and-audit.md", "docs/reference/invariants/cli-r
 id = "setup-study"
 name = "Study outcomes after every separate setup occurrence"
 what = "Measure net forward returns against drift and spaced random dates, with one counted exploratory trial, a figure and citable facts."
-see_it = ["alpha setup study <find_id> --json", "alpha results cite <study_id> setup_mean_net_return"]
-entry_points = ["cli: alpha setup", "cli: alpha results"]
-proof_synthetic = ["tests/unit/test_setup_study.py::test_returns_incomplete_facts_repeat_and_blindness", "tests/unit/test_setup_controls.py::test_fixed_seed_null_calibration_and_planted_effect", "tests/unit/test_setup_controls.py::test_halves_compare_with_controls_from_their_own_half", "tests/unit/test_event_study_figure.py::test_dimensions_and_bytes"]
+see_it = ["alpha setup study <find_id> --json", "alpha results cite <study_id> setup_mean_net_return", "Workstation: Research → Setup Lab (stored results only)"]
+entry_points = ["cli: alpha setup", "cli: alpha results", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
+proof_synthetic = ["tests/unit/test_setup_study.py::test_returns_incomplete_facts_repeat_and_blindness", "tests/unit/test_setup_controls.py::test_fixed_seed_null_calibration_and_planted_effect", "tests/unit/test_setup_controls.py::test_halves_compare_with_controls_from_their_own_half", "tests/unit/test_event_study_figure.py::test_dimensions_and_bytes", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars"]
 proof_smoke = ["tests/smoke/test_setup_study_smoke.py::test_setup_study_and_repeat"]
 real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was studied at 5, 10, 20 and 60 bars (primary 20) against drift and 2,000 random-date draws; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
 needs = []
@@ -1397,9 +1386,9 @@ docs = ["research/tools/setup-study.md", "docs/reference/invariants/cli-runs.md"
 id = "setup-trade"
 name = "Trade setup occurrences with declared exits"
 what = "Apply frozen stops, targets and time or opposite exits with conservative fills and per-asset costs, compared with identical-rule drift and random dates."
-see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> setup_trade_mean_net_return"]
-entry_points = ["cli: alpha setup", "cli: alpha results"]
-proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions"]
+see_it = ["alpha setup trade <find_id> --json", "alpha results cite <trade_id> setup_trade_mean_net_return", "Workstation: Research → Setup Lab (stored results only)"]
+entry_points = ["cli: alpha setup", "cli: alpha results", "api: GET /api/setup/runs", "panel: apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx"]
+proof_synthetic = ["tests/unit/test_setup_exits.py::test_price_exits", "tests/unit/test_setup_exits.py::test_frozen_atr_levels_and_future_poison", "tests/unit/test_setup_trade.py::test_publication_costs_facts_repeat_and_exit_identity", "tests/unit/test_setup_trade.py::test_seeded_null_calibration_and_planted_effect", "tests/unit/test_setup_trade_figure.py::test_identical_bytes_and_dimensions", "tests/unit/test_web_setup_runs.py::test_reads_candidates_curves_trades_costs_and_missing_bars"]
 proof_smoke = ["tests/smoke/test_setup_trade_smoke.py::test_setup_trade_and_repeat"]
 real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT daily bars was traded with a 1.5 ATR stop, 3 ATR target and 20-bar time exit against same-exit drift and 2,000 random-date draws; trades hand-checked from the bars; one exploratory counted look in a scratch ledger, a system test, not evidence of an edge"
 needs = []

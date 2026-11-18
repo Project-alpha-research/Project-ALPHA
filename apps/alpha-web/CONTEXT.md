@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: a1c4e1d10e0954cb
+verified: 249cdeb0758427b1
 ---
 
 # alpha-web workspace
@@ -69,6 +69,8 @@ grants authority.
   coverage in `e2e/rdagent-story.spec.ts`. Missing links and counts remain unknown; all journey counts use idea cards.
   Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
   [story view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
+- Setup Lab opens at Research → Setup Lab; stored fields and gaps are documented in
+  [web API reads](../../docs/reference/invariants/web-api.md#reads-and-writes).
 
 ## Outputs
 

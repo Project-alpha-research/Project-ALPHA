@@ -16,8 +16,11 @@ from alpha_cli import _rdagent_judge as judge
 from alpha_cli import _rdagent_membership as membership
 from alpha_cli import _rdagent_universe as universes
 from alpha_cli import rdagent_factor_eval as ev
+from alpha_cli._rdagent_clocks import clock_feedback
 from alpha_core import DataError
+from tests.unit._rdagent_support import judge_namespace
 from tests.unit.test_rdagent_factor_eval import evaluate, fixture
+from tests.unit.test_trial_record import factor
 
 SYMBOLS = [f"C{i:02}USDT" for i in range(15)]
 
@@ -332,3 +335,30 @@ def test_feedback_never_shows_a_failed_clocks_replay_as_a_result(tmp_path: Path)
     text = record["feedback_text"]
     assert "net annual excess counted only, not a result" in text
     assert "net annual excess 5." not in text
+
+
+def test_spread_message_says_replay_counts_only() -> None:
+    row = factor(version=2, status="SPREAD_FAIL", screen={}, replay={"counted_only": "spread"})
+    assert "replayed only to count the trial; its result is not used" in clock_feedback(row)
+
+
+def test_failed_screen_does_not_print_unused_spread() -> None:
+    row = factor(version=2, status="SCREEN_FAIL", replay={}, screen={})
+    row["spread"] = {"status": "FAIL"}  # no figures should even be read
+    assert "top third" not in clock_feedback(row)
+
+
+def test_failed_spread_feedback_prints_the_checked_figure() -> None:
+    signal = np.tile([3.0, 2.0, 0.0, 0.0, 0.0, -1.0, -2.0, -3.0, -4.0, -5.0], (3, 1))
+    outcome = np.tile([0.0, 0.0, -0.9, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0], (3, 1))
+    outcome *= np.array([[1.0], [0.5], [2.0]])
+    result = judge.spread(
+        signal, outcome, 1, list("ABCDEFGHIJ"), "b" * 64, horizon=7, n_resamples=20
+    )
+    assert result["status"] == "FAIL"
+    assert result["mean_spread"] == result["alternate_tie_order_mean_spread"] < 0
+    ns = judge_namespace()
+    assert ns["percent"](result["annualized_spread"], signed=True) in ns["spread_line"](
+        "weekly", result
+    )
+    assert clocks.figure(result["annualized_spread"], percent=True) in clocks.spread_note(result)

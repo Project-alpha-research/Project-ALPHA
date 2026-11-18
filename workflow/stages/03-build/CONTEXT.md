@@ -6,7 +6,7 @@ sources:
   - scripts/gate.py
   - tests/_tiers.py
   - .codex/config.toml
-verified: bb1aeb759516c0ff
+verified: 598f33bd28e6329f
 ---
 
 # Stage 03 — build: plan to code
@@ -72,7 +72,7 @@ a Claude sub-agent of the named model builds from the `prompt.md` it names; then
 ## Outputs
 
 - Commits on the branch, one or more per slice, with the plan's slice statuses kept true.
-- `03-build.json`, the build record (who built, checks, rounds); stage 04 records the rest.
+- `03-build.json`, the build record; from a brief, `brief.md` and `report.md` ([task folders](../../../docs/work/CONTEXT.md)).
 
 ## Checkpoint
 

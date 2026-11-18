@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 31fd64a0afc8f0a2
+verified: c9ae31e4eb22b52b
 ---
 
 # Command line
@@ -46,6 +46,8 @@ labelled figure ([strategies and signals](strategies-and-signals.md)); a lookali
 in the same ledger as an exploratory trial. `alpha tool` lists, describes and runs the registered
 toolbox checks on a target ([toolbox](toolbox.md); code in `apps/alpha-cli/src/alpha_cli/toolbox/`),
 and `alpha tool history` lists every attempt, failed and unfinished ones included.
+The [RD-Agent discussion commands](../../../../workers/rdagent/README.md#propose-and-discuss)
+let the user choose the ideas a waiting worker builds.
 
 ## Where it lives
 

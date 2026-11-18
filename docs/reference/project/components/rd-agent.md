@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 6b0960fc5a0d180e
+verified: e85e5a6f7fe9b864
 ---
 
 # RD-Agent
@@ -158,14 +158,15 @@ New factor rows store family and critic status. Older rows can lack both. The pa
 - Decided: long studies use the Dell's disk for now ([log](../owner-decisions.md#2026-11-14-use-the-dells-disk-for-studies-for-now)).
 - Decided: the autonomous research team is a broader ALPHA capability built around and using RD-Agent, started small; it reuses RD-Agent's native abilities
   and never bypasses ALPHA's controls ([log](../owner-decisions.md#2026-11-14-the-autonomous-research-team)).
-- Plan, 2026-11-18 (not built yet): RD-Agent becomes a collaborator, not a black box: every automatic refusal is shown with its reason and can be
-  overridden, a "propose and discuss" mode shows ideas and reasoning before anything is spent, and honesty checks appear as labels
+- Plan, 2026-11-18: RD-Agent becomes a collaborator, not a black box
   ([plan](../owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
-  [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)).
+  [owner](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)). Built: the optional [proposal
+  pause](../../../../workers/rdagent/README.md#propose-and-discuss) on the command line; the user accepts, drops, revises or adds ideas before coding, and the
+  run records who chose. Not built: the pause on the Workstation screen, overriding an automatic refusal, honesty checks as labels.
 - Decided 2026-11-18: the run view uses the approved journey layout ([log](../owner-decisions-5.md#2026-11-18-the-idea-journey-layout-is-approved)); while
-  ideas are throwaway tests a labelled stand-in user may answer its pauses (the pause mode is not built yet), never for approvals
-  ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests);
-  [owner authority](../../invariants/research-integrity.md#owner-authority)).
+  ideas are throwaway tests a labelled stand-in user may answer its pauses, never for approvals
+  ([log](../owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests); [owner
+  authority](../../invariants/research-integrity.md#owner-authority)).
 - Later: RD-Agent chooses tests from the [toolbox](toolbox.md) but does not write them (recommended, not confirmed); Kronos, [Monte Carlo](monte-carlo.md),
   lookalike and pattern tools are its tools to be wired in.
 - Open: no decision record states RD-Agent's role; write one once the owner confirms the summary in the [overview](../overview.md#the-research-loop).

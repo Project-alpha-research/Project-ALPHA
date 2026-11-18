@@ -30,7 +30,7 @@ part that owns it can link to one clear entry.
   report says what it was like to use.
 - **Governs:** [RD-Agent](components/rd-agent.md); [research cases and approval](components/research-cases-and-approval.md).
   The rule that only the owner approves: [owner authority](../invariants/research-integrity.md#owner-authority).
-- **Status (2026-11-18):** the pause ("propose and discuss") mode this answers is not on main yet, so there is nothing to answer today.
+- **Status (2026-11-18):** the pause ("propose and discuss") mode is built on the command line only (PR #281); the Workstation screen for it is not built.
 
 ### 2026-11-18 Kronos, the four Monte Carlos, lookalike and pattern tools are RD-Agent's toolbox
 

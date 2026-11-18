@@ -9,7 +9,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: e4ae18283257e340
+verified: 8b99f4e9e22ed806
 ---
 
 # One trial ledger invariants
@@ -17,6 +17,10 @@ verified: e4ae18283257e340
 `alpha ledger` reads the spine ledger and the external RD-Agent factor/rule ledger as one
 model. [ADR-0053](../../adr/0053-one-trial-ledger-read-model.md) owns the outcome mappings and
 counting decision. Options are in the [command reference](../commands.md#alpha-ledger).
+
+The run-folder commands `proposal` and `reply` exchange build choices with a waiting worker.
+A reply publishes a file in that round's folder. Trial counts and owner approvals come from
+their existing records. See the [discussion protocol](../../../workers/rdagent/README.md#propose-and-discuss).
 
 ## Sources and snapshots
 
@@ -33,7 +37,7 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 - Non-object JSON, missing required mapping fields, unknown schemas/statuses and malformed
   field values become unknown rows with a reason. An incomplete final line is reported as
   `incomplete last line (a writer may be mid-append)`. File access failures fail loud.
-- Every command reports sources and unknown rows in JSON. Human output names each source read, includes unknown counts
+- Every ledger snapshot command reports sources and unknown rows in JSON. Human output names each source read, includes unknown counts
   and reasons and ends with `Read-only view; the ledgers themselves are unchanged.`
 
 ## Families and queries

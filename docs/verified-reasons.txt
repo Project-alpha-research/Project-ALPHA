@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 339d07f7bdfd297d on 2026-11-18: Re-read after merging main: main's data-health and toolbox wording stays; the RD-Agent change only adds critic fields to new ledger rows and the failed stage to feedback in existing rdagent modules, so no CLI rule here changed.
+  verified b8b3c640b580c44d on 2026-11-18: Re-read after a type-only fix in rdagent_discussion.py: the routing row is unchanged and still correct
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -13,6 +13,12 @@ docs/reference/invariants/cli-investigation-tools.md
 docs/reference/invariants/cli-runs.md
   verified 53c37cd48307ec7f on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
+docs/reference/invariants/cli-trial-ledger.md
+  verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
+
+docs/reference/invariants/workers.md
+  verified 485c52a41070dfd5 on 2026-11-18: re-read after the merge; main's own update for the proposal pause is kept and the contents list and thirds link are accurate
+
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
@@ -20,7 +26,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 31fd64a0afc8f0a2 on 2026-11-18: re-read; it names no RD-Agent module so the wording fix in the CLI workspace file changes nothing here
+  verified c9ae31e4eb22b52b on 2026-11-18: re-read; it names no RD-Agent module so the CLI workspace wording fix changes nothing here
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -44,7 +50,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 33e0f3ad54f5e204 on 2026-11-18: re-read: PR 271 moved change notes into workers/rdagent/README.md and edited this page in the same change; its links resolve and it matches
+  verified e85e5a6f7fe9b864 on 2026-11-18: re-read after the merge; the proposal pause is described as built on the command line only, matching the README section
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -58,8 +64,11 @@ docs/reference/project/components/validation-and-evidence.md
 docs/reference/project/components/web-workstation.md
   verified 6f015118475a7440 on 2026-11-18: re-read; the new frontend README row and wrapped bullet change nothing it says
 
+docs/reference/project/decisions-by-topic.md
+  verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
+
 docs/reference/project/ideas-and-considered.md
-  verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
+  verified 0750f4f677e5db9d on 2026-11-18: re-read; the log only gained a Status line and the idea rows still agree with it
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -117,6 +126,9 @@ research/tools/run-level-checks.md
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
+
+workers/rdagent/CONTEXT.md
+  verified fd5ee42a2617426a on 2026-11-18: Re-read after the review fixes: the pause still lives in discussion.py after the family guard, the summary is kept by alpha_factor_hypothesis.py, and the named tests are right
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

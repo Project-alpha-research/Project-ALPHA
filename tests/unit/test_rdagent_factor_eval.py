@@ -232,6 +232,10 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
     )
     assert looks in record["feedback_text"]
     assert "Factor-family trials" not in record["feedback_text"]
+    # This request predates proposal summaries. Verify both additive fields before comparing
+    # every previously recorded byte against the existing digest.
+    assert row.pop("plain_summary") is None
+    assert row.pop("plain_summary_status") == "missing"
     # Input-column disclosure is add-only: removing it must leave the pinned bytes unchanged.
     assert record["factors"][0].pop("input_columns_method").startswith("fallback:")
     assert "Ledger rows, all families (rules, repeats too): 1" in record["feedback_text"]

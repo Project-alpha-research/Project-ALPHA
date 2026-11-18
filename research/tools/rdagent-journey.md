@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 5622b318ac20f757
+verified: 14d01b534aa31f7b
 ---
 
 # Follow one RD-Agent idea
@@ -30,11 +30,11 @@ names the quick tests with recorded verdicts and shows the agent's feedback in i
 Step seven shows ideas tested so far, coins with a usable number, prior exposure and shortlist
 facts. The journey is an exploratory reading of stored evidence.
 
-In the Workstation, open Research → RD-Agent, select the run, then select an idea. The screen reads
-the run's own `journey/` folder. A missing journey shows the local build command. The CLI can build
-journeys for judged factors only. A loop event can have a name with no linked evaluation.
-Step one shows up to four short sentences: idea type, description summary, expected direction,
-and a chosen-after-seeing-the-data note. The full description stays in the agent's own words.
-Code can be an excerpt. Long code lines wrap. The run summary shows only
-recorded values. The final step carries the judge's exploratory label when recorded. The picker
-gets the verdict from the run records.
+In the Workstation, open Research → RD-Agent, select the run, then an idea. The screen reads
+the run's own `journey/` folder; a missing journey shows the local build command. The CLI builds
+journeys for judged factors only; a loop event can have a name with no linked evaluation.
+Step one starts with the agent's plain sentence when it passed the checks, else the description's
+lead; then idea type, expected direction and a chosen-after-seeing-the-data note. The full text
+stays in the agent's own words. Code can be an excerpt; long lines wrap. The run summary and the
+final step's exploratory label show only recorded values; the picker reads verdicts from the run.
+To choose ideas before they are built, see [propose and discuss](../../workers/rdagent/README.md#propose-and-discuss).

@@ -172,9 +172,10 @@ def submit(
             if sep:
                 choice["note" if action == "revise" else "reason"] = detail
             choices[name] = choice
+    chosen = {name: choices.get(name, {"action": "accept"}) for name in names}
     reply = {
         "author": "stand-in user, not the owner" if author == "stand-in" else author,
-        "ideas": {name: choices.get(name, {"action": "accept"}) for name in names},
+        "ideas": chosen,
         **({"user_ideas": ideas} if ideas else {}),
         **({"note_to_agent": note} if note is not None else {}),
     }
@@ -190,7 +191,6 @@ def submit(
         write_text(folder / "reply.json", json.dumps(reply, indent=2) + "\n")
     finally:
         os.close(fd)
-    chosen = reply["ideas"]
     lines = [
         f"Your answer for round {folder.name[6:]} is saved. RD-Agent reads it within seconds.",
         f"Answered by: {'the owner' if author == 'owner' else 'a stand-in user, not the owner'}.",

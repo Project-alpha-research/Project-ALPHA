@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: bedc004430dcf4e0
+verified: 0f70e38ee9fc2848
 ---
 
 # Bar timeframes
@@ -44,6 +44,8 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
   none is a `calendar_gap`, and an off-grid bar is `misaligned_bar`; all critical. Pre-market and
   after-hours bars are kept and counted (`extended_hours_rows`). Tests: `tests/unit/test_bar_timeframe.py`,
   `tests/unit/test_ingest_pipeline_intraday.py`.
+
+Daily health reports use exchange close instants for the requested historical range, including shortened sessions.
 
 ## Reading intraday bars
 

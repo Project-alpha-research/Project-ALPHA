@@ -34,7 +34,7 @@ an ADR, never a quiet code change.
   dates it was listed. `tests/bias_guards/test_survivorship.py`.
 - Never add a bias guard without its leaky control, and never delete or loosen an existing guard.
 - Provider, venue, market type, unit and quote currency are part of a dataset's identity. No fallback or
-  join may silently swap one for another ([data § Crypto identity and features](data.md#crypto-identity-and-features)).
+  join may silently swap one for another ([data-crypto § Crypto identity and features](data-crypto.md#crypto-identity-and-features)).
 - The query-level contracts for these reads are in the
   [research platform contracts](../../operations/research-platform-contracts.md).
 

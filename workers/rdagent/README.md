@@ -226,7 +226,7 @@ With the pause off, only the additive summary fields enter the round and trial r
 - ALPHA code the loop calls (`apps/alpha-cli/src/alpha_cli/`): `rdagent_factor_eval.py`, `_rdagent_judge.py`, `_rdagent_membership.py` (thirds and ties),
   `_rdagent_identity.py`, `rdagent_discussion.py`, `ledger_cmds.py`.
 - Tests: `tests/unit/test_rdagent_*.py`; the thirds and ties tests are `test_rdagent_ties_and_thirds.py`.
-- Rules and budgets: [worker invariants](../../docs/reference/invariants/workers.md#rd-agent-worker). Why the part exists:
+- Rules and budgets: [worker invariants](../../docs/reference/invariants/rdagent.md). Why the part exists:
   [RD-Agent component](../../docs/reference/project/components/rd-agent.md).
 - Older material (the pinned fixture, rule and stock probes, the model gateway, research memory, failure reasons, identity breaks and every
   fix-up): [CHANGE-NOTES.md](CHANGE-NOTES.md).

@@ -21,11 +21,15 @@ other files link to it.
 
 | Read | Section | When |
 |---|---|---|
-| [documentation invariants](reference/invariants/documentation.md) | — | always |
+| [documentation invariants](reference/invariants/documentation.md) | Document lifecycle | always |
+| [documentation invariants](reference/invariants/documentation.md) | Links | always |
 | [documentation index](README.md) | Lifecycle | always |
 | [documentation index](README.md) | Folders | deciding where a new document goes |
 | [documentation invariants](reference/invariants/documentation.md) | Decision records | writing or superseding an ADR |
 | [documentation invariants](reference/invariants/documentation.md) | Feature plans | writing or closing a plan |
+| [documentation invariants](reference/invariants/documentation.md) | Front matter | writing or changing front matter, owner or sources |
+| [documentation invariants](reference/invariants/documentation.md) | Roadmap index | changing the roadmap index |
+| [documentation invariants](reference/invariants/documentation.md) | Generated files | adding or changing a generated file |
 | [outside projects register](reference/project/outside-projects.md) | — | adding, upgrading or judging a library or outside project |
 | [command reference](reference/commands.md) | — | documenting a command (link here; never copy it) |
 | [what this part is for](reference/project/components/delivery-and-agent-tooling.md) | — | why it exists; before you keep, shelve or remove it |

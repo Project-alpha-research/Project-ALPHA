@@ -162,39 +162,10 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   `tests/unit/test_chart_overlays_bias_guard.py`.
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
 ## Setup find
-- `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
-- Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud. Events at most ten bars
-  apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
-- Sheets stop at the trigger plus entry open; rejected samples stop at their decision boundary. Pending and warm-up rows are not drawn.
-- Accepted sheets are capped and labelled when truncated; rejected sheets sample at most four reasons and four days per reason.
-- Find ids bind spec, context (60 bars by default), asset fingerprints and health evidence, never sheet limits; unchecked finds keep a free or
-  matching old id. The atomic manifest is last; repeats append a ledger row, rewrite nothing. A `setup_find` row is an uncounted look, no verdict.
+Moved to [cli-setups.md § Setup find](cli-setups.md#setup-find).
+
 ## Setup study
-- `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
-- Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find.
-- Recorded next-open entry to close h−1 positions later, less per-asset round-trip `setup_costs` (stocks/ETFs: 1+2 bp per side; crypto: 10+5 bp); no exits,
-  dividends or sizing.
-- Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.
-- SHA-256 seeds exclude health metadata. Draw dates uniformly over 10 bars apart. Tail (b+1)/(2,000+1). Pool by complete occurrence counts.
-- Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
-- `setup-studies/<id>` binds find id, `setup-study-2` and new health evidence. Old folders read with `older-cost-rule`.
-  Re-studying a find with an older-rule study is labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
-- Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
-- Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
-- One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).
+Moved to [cli-setups.md § Setup study](cli-setups.md#setup-study).
+
 ## Setup trade
-- `alpha setup trade FIND_ID` shares verified find inputs; missing/empty exits raise `SPEC_HAS_NO_EXIT`. [Details](../../../research/tools/setup-trade.md).
-- Freeze percent, evaluator ATR and numeric/reference levels at trigger close; entry is the recorded next open. CLI aliases preserve original hashed names.
-- Both directions check stop gap at open, stop touch, target at target, opposite at next open, then time at close. A both-touch bar counts as a stop.
-- Entry is bar one; exits at an open exclude that new bar from duration. No time limit implies 250 bars and `no-time-exit`.
-- One position per asset, including the exit bar. Count skipped/invalid/open-at-end separately; only completed trades enter tested means.
-- Mark open-at-end to final close. Adverse move sees only an open or stop fill on that exit, otherwise the adverse extreme (low for long, high for short).
-- Costs use the dataset asset class, then slash pairs or a crypto provider (any `:` part), then a stock provider (yfinance, alpaca, tiingo, stooq);
-  unknown markets use crypto costs with `costs-assumed-high`. Short borrow/funding assumptions are stored per asset; a short without its carry fails.
-- Drift starts after every eligible bar, without occupancy. Random controls draw occurrence counts, apply occupancy, weight assets by completed trades.
-- Use 2,000 spaced draws. Missing comparisons carry reasons. An uncounted control replays the same entries in the opposite direction with its own costs.
-- Halves use their own entry-date ranges. Support requires 30 completed trades, positive excess, p ≤ 0.05, agreeing halves and available controls; exploratory
-  only.
-- Hash find id with `setup-trade-1`; publish parquet, summary and deterministic 1600 × 900 PNG before a hash-bound manifest in `setup-trades/<trade_id>`.
-- Repeats preserve records. New exits or direction count in `setup:<idea>`. R divides net return by initial stop risk. No currency sizing.
-- Find output derives `outcomes-viewed` from sibling study/trade manifests without rewriting its folder.
+Moved to [cli-setups.md § Setup trade](cli-setups.md#setup-trade).

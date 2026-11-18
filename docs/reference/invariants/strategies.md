@@ -113,5 +113,5 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 
 - `strategy_fingerprint` hashes `base.py`, `signals.py`, `sizing.py` plus the selected strategy module
   (`apps/alpha-cli/src/alpha_cli/_identity.py`); the whole package also feeds `execution_fingerprint`
-  and the RD-Agent rule profiles ([workers § RD-Agent worker](workers.md#rd-agent-worker)). Any byte change
+  and the RD-Agent rule profiles ([rdagent § Install and runtimes](rdagent.md#install-and-runtimes)). Any byte change
   makes new run identities. [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).

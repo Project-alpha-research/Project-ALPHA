@@ -20,9 +20,16 @@ inside. [ADR-0008](../../docs/adr/0008-vendored-kronos-and-alpha-forecast-layer.
 
 | Read | Section | When |
 |---|---|---|
-| [forecast invariants](../../docs/reference/invariants/forecast.md) | — | always |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Package boundary | always |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Sampling contract | always |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Settings and leakage | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Models and isolated workers | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Vendored model | changing the vendored Kronos model |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Forecast values | changing forecast values or their quantiles |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Signal rule | changing the quantile signal rule |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Fake forecaster | changing the fake forecaster used in tests |
+| [forecast invariants](../../docs/reference/invariants/forecast.md) | Source identity | changing what the facade binds into a run id |
 | [command line machine learning](../../docs/reference/invariants/cli-ml.md) | Kronos forecasts | changing how the CLI runs or caches forecasts |
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Polars by default | touching the pandas edge in `kronos.py` |
 | [what this part is for](../../docs/reference/project/components/forecasting.md) | — | why it exists; before you keep, shelve or remove it |

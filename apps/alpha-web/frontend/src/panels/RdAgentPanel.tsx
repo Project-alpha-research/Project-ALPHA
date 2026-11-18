@@ -145,13 +145,17 @@ function RunDetail({ detail }: { detail: Detail }) {
 }
 
 function SelectedRun({ detail }: { detail: Detail }) {
-  const counts = detail.story?.journey
+  const { outcome, started_at, ended_at, rounds_completed } = detail.run
+  const fields = Object.entries({ outcome, started_at, ended_at, rounds_completed })
+    .filter(([, fact]) => fact?.value != null)
+  const counts = Object.entries(detail.story?.journey ?? {}).filter(([, fact]) => fact?.value != null)
   return <>
     <h2>{detail.run.folder}</h2>
-    <Facts facts={{ outcome: detail.run.outcome, started_at: detail.run.started_at, ended_at: detail.run.ended_at, rounds_completed: detail.run.rounds_completed }} />
-    {counts && <p>{Object.entries(counts).map(([stage, value]) => <span key={stage} style={{ marginRight: 'var(--pad)' }}>
+    {fields.length > 0 && <Facts facts={Object.fromEntries(fields)} />}
+    {counts.length > 0 && <p>{counts.map(([stage, value]) => <span key={stage} style={{ marginRight: 'var(--pad)' }}>
       {stage === 'shortlisted' ? 'shortlisted (not a pass)' : stage}: {factText(value)}
     </span>)}</p>}
+    {!fields.length && !counts.length && <p className="muted">This run stored no summary.</p>}
     <JourneyPicker runId={detail.run.run_id} ideas={detail.journeys ?? []} />
     <details><summary>Technical detail for this run</summary><RunDetail detail={detail} /></details>
   </>
@@ -165,10 +169,14 @@ export function RdAgentView({ list, selected, detail, error, onSelect }: {
     {error && <p role="alert">{error}</p>}
     {!list && !error && <Placeholder>Loading recorded runs…</Placeholder>}
     {list && !list.items.length && <Placeholder big="No RD-Agent runs">{list.reason ?? 'No recorded factor runs were found.'}</Placeholder>}
-    {list?.ledger_reason && <p>{list.ledger_reason}</p>}
+    {list && !list.items.length && list.ledger_reason && <details>
+      <summary>Technical detail</summary><p>{list.ledger_reason}</p>
+    </details>}
     {list && list.items.length > 0 && <div className="rdagent-run-layout">
       <nav aria-label="RD-Agent runs" style={{ maxHeight: '75vh', overflowY: 'auto', alignSelf: 'start' }}>{list.items.map(run => <button key={run.run_id} type="button" aria-pressed={selected === run.run_id} onClick={() => onSelect(run.run_id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: 'var(--pad-sm)', marginBottom: 'var(--pad-sm)', overflowWrap: 'anywhere', background: 'var(--panel)', color: 'var(--ink)', border: `thin solid var(${selected === run.run_id ? '--accent' : '--line-strong'})` }}>
-        <strong>{run.folder}</strong><br /><RecordedFact name="started_at" fact={run.started_at} /><br />{factText(run.outcome)}
+        <strong>{run.folder}</strong>
+        {run.started_at?.value != null && <><br /><RecordedFact name="started_at" fact={run.started_at} /></>}
+        {run.outcome?.value != null && <><br />{factText(run.outcome)}</>}
       </button>)}</nav>
       <main aria-label="Selected RD-Agent run" aria-live="polite">{detail?.run.run_id === selected ? <SelectedRun key={selected} detail={detail} /> : !error && <Placeholder>{selected ? 'Loading recorded run…' : 'Select a run to see what happened.'}</Placeholder>}</main>
     </div>}

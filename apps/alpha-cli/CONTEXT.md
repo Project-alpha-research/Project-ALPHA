@@ -39,6 +39,7 @@ did not give, and never route live capital.
 | [Codex investigations runbook](../../docs/operations/codex-investigations.md) | — | running or changing a recorded-run investigation |
 | [local operations runbook](../../docs/operations/README.md) | — | daily Tiingo data, IBKR Paper setup or the acceptance steps |
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
+| [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`, `toolbox/`: adding a test, its honesty rules, what is not built yet |
 
 ## How to change it
 
@@ -61,9 +62,8 @@ Many integration tests in `tests/integration/` use the same prefixes. Shared hel
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);
 do not add a private copy.
 
-- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli`
-  light (`tests/unit/test_public_seams.py`). RD-Agent gaps and identity rescaling: `_rdagent_membership`, `_rdagent_identity`;
-  Shared thirds: `_rdagent_membership`; inference/twins: `_rdagent_stats`/`_rdagent_twins`; compatibility: `_rdagent_stability`. Policy: worker README.
+- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli` light (`tests/unit/test_public_seams.py`).
+  RD-Agent: gaps, rescaling, thirds `_rdagent_membership`/`_rdagent_identity`; inference `_rdagent_stats`/`_rdagent_twins`; compatibility `_rdagent_stability`.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

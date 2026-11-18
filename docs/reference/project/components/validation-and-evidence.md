@@ -60,7 +60,7 @@ Neither is proof of an edge. See the [noise card](../../../../research/tools/pri
 
 Three follow-up [investigation tools](../../invariants/cli-investigation-tools.md) answer
 questions the flags raise, on one recorded rule test. They are entries of the
-[toolbox registry](../toolbox-registry.md), run together with `alpha tool run-set market-context`:
+[toolbox](toolbox.md), run together with `alpha tool run-set market-context`:
 `market.attribution` (how much of the return is market exposure, with Newey-West uncertainty),
 `market.vol_regimes` (calm versus turbulent markets from a Markov-switching model) and
 `market.changepoints` (dates where the behaviour shifted). They are glue over statsmodels and
@@ -72,8 +72,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Where it lives
 
 - **Workspaces:** `packages/alpha-validation`
-- **Capabilities:** `validation-gauntlet`, `monte-carlo`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
-  `investigation-tools`, `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`, `price-noise`, `implausibly-good`
+- **Capabilities:** `validation-gauntlet`, `risk-numbers`, `prop-firm-check`, `run-reports`, `result-diagnostics`,
+  `answer-check`, `family-deflated-sharpe`, `inverted-signal-control`, `walk-forward-efficiency`, `price-noise`, `implausibly-good`
 - Code: `packages/alpha-validation/src/`; the gauntlet is assembled in
   `apps/alpha-cli/src/alpha_cli/_gauntlet.py`.
 - Tests: `tests/smoke/test_validation_smoke.py`, `tests/oracles/`, and the validation tests under `tests/unit/`.
@@ -87,6 +87,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 ## Decisions and open questions
 
 - Triage card 5 (risk numbers): KEEP, 2026-11-14 under the owner's delegation ([triage sheet](../../../roadmap/triage-2026-11.md)).
+- Path-risk simulation has its own page, [Monte Carlo](monte-carlo.md); the investigation tools are in the [toolbox](toolbox.md).
 
 ## Never
 

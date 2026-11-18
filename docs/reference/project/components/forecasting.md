@@ -34,7 +34,9 @@ risk study. Its paths are also one family of the path-risk simulation in
 
 ## What is real today
 
-See the capability below on [STATUS.md](../../../../STATUS.md).
+See the capability below on [STATUS.md](../../../../STATUS.md). The command is `alpha forecast run`; the
+Workstation screen is Kronos Studio (View → Forecast, `apps/alpha-web/frontend/src/panels/KronosStudio.tsx`),
+which reads stored forecast runs. Its paths also feed the Kronos family of [Monte Carlo](monte-carlo.md).
 
 ## Where it lives
 
@@ -52,12 +54,15 @@ See the capability below on [STATUS.md](../../../../STATUS.md).
 
 ## Decisions and open questions
 
-- No owner decision about this part is in the [owner decisions log](../owner-decisions.md) yet.
-- Decided: Kronos is a flexible research and exploration tool. It generates market paths for one
-  Monte Carlo method and is open for forecast exploration; it is not tied to signals or risk yet,
-  and its output needs validation before any decision relies on it
+- Decided 2026-11-14: Kronos is a flexible research and exploration tool. It generates market paths
+  for one Monte Carlo method and is open for forecast exploration; it is not tied to signals or risk
+  yet, and its output needs validation before any decision relies on it
   ([log](../owner-decisions.md#2026-11-14-what-kronos-is-for)).
-
+- Decided 2026-11-18: Kronos is part of the project and is to be built in as one of RD-Agent's tools,
+  never removed when slimming ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
+  Not built: no RD-Agent or toolbox entry calls it yet; the first entries of the
+  [toolbox](toolbox.md) are market descriptions only.
+- Open: the Kronos model files are not on every machine, so the real model has run only on a stand-in.
 
 ## Never
 

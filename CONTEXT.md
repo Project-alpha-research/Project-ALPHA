@@ -19,7 +19,7 @@ it points to, never here.
 
 | Read | Section | When |
 |---|---|---|
-| [project layer](docs/reference/project/overview.md) | — | what is X for, why, where is X; should X be kept, changed, shelved or removed |
+| [project layer](docs/reference/project/overview.md) | — | what is X for, why, where; keep or remove? Includes toolbox, Setup Lab, Monte Carlo, Kronos Studio |
 | [packages/alpha-core/CONTEXT.md](packages/alpha-core/CONTEXT.md) | — | domain types, typed errors, settings, cost helpers |
 | [packages/alpha-data/CONTEXT.md](packages/alpha-data/CONTEXT.md) | — | point-in-time store, snapshots, crypto storage (commands, reports: alpha-cli) |
 | [packages/alpha-patterns/CONTEXT.md](packages/alpha-patterns/CONTEXT.md) | — | chart-pattern geometry and indicators; shape lookalikes and novelty (STUMPY) |
@@ -39,19 +39,18 @@ it points to, never here.
 | [scripts/CONTEXT.md](scripts/CONTEXT.md) | — | the gate, CI steps, file-system tools, generators |
 | [tests/CONTEXT.md](tests/CONTEXT.md) | — | test layout, markers, bias guards, oracles |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | — | documentation, ADRs, plans, this file system |
-| [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change stage by stage: shape, plan, build, verify, land |
+| [workflow/CONTEXT.md](workflow/CONTEXT.md) | — | delivering a change: shape, plan, build, verify, land (today the pull request is the handoff) |
 | [research/CONTEXT.md](research/CONTEXT.md) | — | testing any trading idea: it sends you to the playbook (`research/PLAYBOOK.md`) and `alpha test` |
 
-A task that spans areas: start at the area whose code you change first; its Read first table
-links the others it depends on. A change to anything follows `workflow/CONTEXT.md` for the steps;
-the area's row says what to read.
+A task spanning areas: start at the area whose code you change first; its Read first table links the
+others. A change follows `workflow/CONTEXT.md` for the steps; the area's row says what to read.
 
 ## One home per fact
 
 | Fact | Its one home |
 |---|---|
 | Commands and options | [docs/reference/commands.md](docs/reference/commands.md) (generated) |
-| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 4](docs/reference/project/owner-decisions-4.md) |
+| Part purposes, owner decisions | [project layer](docs/reference/project/overview.md); newest: [vol. 5](docs/reference/project/owner-decisions-5.md) |
 | Outside libraries and engines, and how to add one | [register](docs/reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [docs/reference/invariants/](docs/reference/invariants/research-integrity.md) |
 | Decisions and their reasons | [docs/adr/](docs/adr/README.md) |

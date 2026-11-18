@@ -11,9 +11,8 @@ verified: 202b70e8311abd31
 
 # Research tools, by symptom
 
-One card per tool that exists and runs today. Start from what you see, not from the tool you
-already know. Every card says when to reach for it, the exact command, how to read the output,
-what it cannot tell you and what to try next. The method is in [the playbook](../PLAYBOOK.md).
+Start from the symptom. Each card gives the command for an available tool, how to read its output,
+its limits and what to try next. The method is in [the playbook](../PLAYBOOK.md).
 
 | What you see or need | Open |
 |---|---|
@@ -35,6 +34,7 @@ what it cannot tell you and what to try next. The method is in [the playbook](..
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
 | "How bad could it get?" | [path risk](path-risk.md) |
+| Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
 | A picture for the owner | [charts](charts.md) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
 | Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |

@@ -917,6 +917,23 @@ triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]
 
 [[capability]]
+id = "rdagent-idea-journey"
+name = "Follow one judged idea through seven steps"
+codes = ["RD-Agent"]
+what = "Read a proposal, its judge's verdict and annotated pictures from the stored observations."
+see_it = ["alpha ledger journey --run-dir <run-dir>"]
+entry_points = ["cli: alpha ledger journey"]
+proof_synthetic = [
+  "tests/unit/test_rdagent_journey.py::test_journeys_from_stored_evidence",
+  "tests/unit/test_rdagent_journey_figures.py::test_plotted_numbers_and_reserved_boundary",
+]
+real_data = "not yet confirmed on a recorded market-data run"
+needs = []
+state = "Partial"
+missing = "tested in-process only; no end-to-end smoke check yet"
+docs = ["research/tools/rdagent-journey.md", "docs/roadmap/backlog/research-loop-screen.md"]
+
+[[capability]]
 id = "rdagent-workstation-panel"
 name = "RD-Agent recorded runs in the Workstation"
 codes = ["RD-Agent"]

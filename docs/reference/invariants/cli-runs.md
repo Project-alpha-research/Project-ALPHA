@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 91f3b265b361a327
+verified: 7c22bd309638dc89
 ---
 
 # Command line runs invariants
@@ -135,11 +135,11 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Figures are a derived cache under `data_dir/figures/<run_id>/`, never run artifacts. Writing into a run directory would break the manifest's exact file set.
 - The cache key hashes renderer identity plus the run's declared artifact digests. Legacy runs fall back to size and mtime and are tagged so the two kinds of
   key cannot collide (`figure_cache.input_digest`).
-- Write the image first and the JSON sidecar last; the sidecar marks completion. A forced re-render with different bytes fails because rendering must stay
-  deterministic.
+- Write the image first and the JSON sidecar last; the sidecar marks completion. Forced re-renders must be byte-identical.
 - `figure_cache.py` must not import Polars, numpy, matplotlib or the renderer. Enforced by `tests/unit/test_figure_cache.py`.
 - `figures list --json` without `--run` publishes the key environment, so the web computes keys without the renderer.
 - Builders read declared artifacts only and report an honest unavailability reason instead of guessing.
+- RD-Agent [journeys](../../../research/tools/rdagent-journey.md) publish only under the selected journey folder and exclude reserved-period observations.
 - A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
   `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
   (`tests/unit/test_run_projection_security.py`).

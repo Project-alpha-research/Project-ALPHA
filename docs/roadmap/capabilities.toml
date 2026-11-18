@@ -1104,6 +1104,41 @@ recommendation = "DELETE"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): delete: command, adapter and archive code removed; registered QuantPad datasets stay readable
 owner_decision = "DELETE"
 
+[[decision]]
+card = "N1"
+name = "Confirm shortlisted RD-Agent factors once on the reserved data (ten slots, each use permanent)"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N2"
+name = "RD-Agent idea-family failure limit (three near-copies in one round close a family)"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N3"
+name = "Move RD-Agent research toward stocks and the owner's own setups"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N4"
+name = "Make the Qlib v3 feature recipe the default"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N5"
+name = "When to resume Workstation screen work"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
 [[capability]]
 id = "macro-context"
 name = "Macro context data as first published"

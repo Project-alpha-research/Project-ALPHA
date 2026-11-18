@@ -41,8 +41,10 @@ is the result. The intended next step is for [RD-Agent](rd-agent.md) to drive Ql
 
 ## What is real today
 
-See the capabilities below on [STATUS.md](../../../../STATUS.md). The worker is tested with a
-stand-in on the Dell, where its install is not present.
+See the capabilities below on [STATUS.md](../../../../STATUS.md). On the Dell the worker's own
+install (`workers/qlib/.venv`) has `pyqlib` 0.9.7 installed. A fresh checkout or worktree has no
+such install until the worker is set up there, and its tests then use a stand-in. Qlib is not yet
+used in any real research path ([order of work](../owner-decisions-4.md#2026-11-18-working-order-golden-paths-1-and-2-reach-the-screen-first)).
 
 ## Where it lives
 

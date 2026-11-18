@@ -366,3 +366,71 @@ def declaration(description: str) -> dict[str, Any]:
         "primary_clock": clock.group(1).lower(),
         "direction_reason": reason.group(1).strip(),
     }
+
+
+def row_families(row: dict[str, Any]) -> list[str]:
+    return (
+        row["family"]
+        if "family" in row
+        else idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        )
+    ).split("; ")
+
+
+def mentions_family(text: str, families: set[str]) -> bool:
+    """Match named families and construct names despite case, spacing or window suffixes."""
+    normalized = " " + re.sub(r"[^a-z0-9]+", " ", text.lower()) + " "
+    for family in families:
+        name = family.removeprefix("other: ")
+        words = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+        if " " + words + " " in normalized:
+            return True
+    return False
+
+
+def count_note(family: str, count: int, limit: int | None, closed: bool) -> str:
+    if limit is not None and count > limit:
+        return (
+            f"failed tries in this idea family ({family}): "
+            + ("closed: " if closed else "")
+            + f"{count} failed tries (limit {limit})"
+        )
+    return f"failed tries in this idea family ({family}): {count} of the limit {limit}"
+
+
+def hidden_families(source: str | None) -> set[str]:
+    return set(SESSION_FAMILIES) - offered_families(set(SESSION_FAMILIES), source)
+
+
+def suggestion_reason(text: str, closed: set[str], hidden: set[str]) -> str | None:
+    if mentions_family(text, hidden):
+        return "Dropped suggestion because its family is not offered on this venue."
+    if mentions_family(text, closed) or closed.intersection(name_matches(text)):
+        return "Dropped suggestion because its family is closed."
+    return None
+
+
+def filter_history(text: str, hidden: set[str], closed: set[str]) -> str:
+    lines: list[str] = []
+    for line in text.split("\n"):
+        if mentions_family(line, hidden):
+            line = "Dropped earlier text because its family is not offered on this venue."
+        elif re.search(
+            r"\b(?:try|propose|explore|suggest|recommend|next hypothesis)\b", line, re.I
+        ):
+            line = suggestion_reason(line, closed, hidden) or line
+        if not (line.startswith("Dropped ") and lines and lines[-1] == line):
+            lines.append(line)
+    return "\n".join(lines)
+
+
+def closed_groups(groups: dict[str, list[dict[str, Any]]], limit: int) -> set[str]:
+    return {
+        name
+        for name, members in groups.items()
+        if len(members) >= limit and not any(m["status"] == "CANDIDATE" for m in members)
+    }

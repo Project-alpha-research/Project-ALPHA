@@ -174,6 +174,9 @@ def test_prepare_rebuilds_mixed_search_table(tmp_path: Path, refused: bool) -> N
         "knowledge_vectors": 107 - int(refused),
         "knowledge_vectors_reembedded": 107 - int(refused),
         "knowledge_vectors_left_out": int(refused),
+        "knowledge_vectors_left_out_nodes": [{"id": "0", "reason": "embedding refused"}]
+        if refused
+        else [],
         "knowledge_vector_dimension": 4096,
     }
     # A second prepare repairs a stale table from cached current-model nodes without new calls.
@@ -678,3 +681,27 @@ def test_upstream_search_failing_inside_numpy_is_recovered(tmp_path: Path) -> No
     recovered = guard.develop(exp)
     assert [t.factor_name for t in recovered.sub_tasks] == ["f0"]
     assert exp.alpha_internal_coding["exception_type"] == "ValueError"
+
+
+def test_rebuild_receipt_explains_each_vectorless_node(tmp_path: Path) -> None:
+    def embed(text: str) -> tuple[str, list[float]]:
+        raise memory.MemoryEmbeddingError("embedding_input_refused", "input too long")
+
+    graph = SimpleNamespace(
+        nodes={
+            "long": SimpleNamespace(content="long", embedding=None),
+            "blank": SimpleNamespace(content="  ", embedding=None),
+        }
+    )
+    cache = memory.EmbeddingMemory(tmp_path / "sidecar", tmp_path / "events", "current", embed)
+    removed = cache.prepare(graph, lambda node, error: None)
+    graph.nodes.update(removed)
+    graph.nodes["new"] = SimpleNamespace(content="new", embedding=None)
+    cache.rebuild(graph)
+    receipt = json.loads((tmp_path / "knowledge-vectors.json").read_text())
+    assert receipt["knowledge_vectors_left_out"] == 3
+    assert receipt["knowledge_vectors_left_out_nodes"] == [
+        {"id": "blank", "reason": "empty text"},
+        {"id": "long", "reason": "over length"},
+        {"id": "new", "reason": "no current vector"},
+    ]

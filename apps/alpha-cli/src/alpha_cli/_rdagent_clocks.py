@@ -187,8 +187,40 @@ def figure(value: Any, *, percent: bool = False) -> str:
     return f"{value * 100:.4g}%" if percent else f"{value:.4g}"
 
 
+FAILED_STAGE = {
+    "SCREEN_FAIL": "rank screen",
+    "DEGENERATE": "rank screen",
+    "SPREAD_FAIL": "spread check",
+    "REPLAY_FAIL": "replay",
+    "DEFLATION_FAIL": "deflation",
+    "LOOKAHEAD": "prefix check",
+    "UNSTABLE": "prefix check",
+    "FAILED": "coding or execution",
+    "FAST_ONLY": "swing clock",
+    "CANDIDATE": "none",
+}
+
+
+def failed_stage(row: dict[str, Any]) -> str:
+    """The stage a stored row stopped at, read from its status and lead-clock results."""
+    if row["status"] == "ERROR":
+        trial = row.get("clocks", {}).get(row.get("lead_clock"), row)
+        for stage, part in (("rank screen", "screen"), ("spread check", "spread")):
+            if trial.get(part, {}).get("status") == "ERROR":
+                return stage
+        return "replay" if trial.get("replay", {}).get("error") else "stage not recorded"
+    return FAILED_STAGE.get(row["status"], "stage not recorded")
+
+
 def clock_feedback(row: dict[str, Any]) -> str:
-    parts = [f"{row['name']}: {row['status']}."]
+    trial = row.get("clocks", {}).get(row.get("lead_clock"), row)
+    spread_status = trial.get("spread", {}).get("status", "not recorded")
+    parts = [
+        f"{row['name']}: {row['status']}.",
+        f"failed: {failed_stage(row)}; spread status: {spread_status}.",
+    ]
+    if row.get("critic_status") in ("unavailable", "skipped"):
+        parts.append(f"Code critic {row['critic_status']}: {row['critic_reason']}.")
     for clock, trial in trial_clocks(row).items():
         screen, replay = trial["screen"], trial["replay"]
         if "counted_only" in replay:  # ADR-0055: replayed only to count the trial
@@ -229,8 +261,7 @@ def clock_feedback(row: dict[str, Any]) -> str:
             "Only a weekly or monthly pass can be a candidate."
         ),
         "SCREEN_FAIL": (
-            "No swing clock passed both the screen and replay; "
-            "only a weekly or monthly pass can be a candidate."
+            "The rank screen failed; only a weekly or monthly pass can be a candidate."
         ),
         "DEGENERATE": "Every clock has degenerate signal coverage, ties or thin decision days.",
         "ERROR": "Evaluation failed; the recorded clock errors require investigation.",
@@ -245,7 +276,8 @@ def clock_feedback(row: dict[str, Any]) -> str:
     parts.append(reason[row["status"]])
     if row.get("screen_rule"):
         parts.append(
-            f"One-sided screen cutoff {figure(row.get('screen_cutoff', 0) / 2)} "
+            f"Ledger screen cutoff: {row['screen_cutoff']}. "
+            f"One-sided screen cutoff {figure(row['screen_cutoff'] / 2)} "
             f"({row.get('screen_confirmed')} confirmed); "
             f"looks so far across all ideas: {row.get('screen_m')} (sets the screen cutoff)."
         )

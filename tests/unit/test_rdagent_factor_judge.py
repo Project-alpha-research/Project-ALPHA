@@ -269,6 +269,13 @@ def test_runner_archives_code_exclusively_and_refuses_conflicts(
     runner = namespace["AlphaFactorRunner"]()
     with pytest.raises(ValueError, match="every factor as FAILED"):
         runner.develop(exp)
+    # The request carries the family the tally counts, so the ledger row stores it verbatim.
+    sent = json.loads((tmp_path / "evaluations/iter-0/request.json").read_text())["factors"][0]
+    assert sent["family"] == namespace["family_definitions"]().idea_family(
+        "test", task.description, "", None
+    )
+    assert sent["family"] == "other: test"
+    assert sent["critic_status"] == "unavailable"
     archive = tmp_path / "code" / f"{digest}.py"
     assert archive.read_bytes() == code.encode()
     before = archive.stat().st_mtime_ns
@@ -300,7 +307,17 @@ def test_round_text_retains_words_and_factor_hashes(tmp_path: Path) -> None:
                 variables={"x": "price"},
             )
         ],
-        alpha_evaluation={"factors": [{"name": "vol_7d", "code_sha256": "a" * 64}]},
+        alpha_evaluation={
+            "factors": [
+                {
+                    "name": "vol_7d",
+                    "code_sha256": "a" * 64,
+                    "family": "volatility and beta",
+                    "critic_status": "skipped",
+                    "critic_reason": "earlier provider timeout",
+                }
+            ]
+        },
     )
     feedback = SimpleNamespace(
         observations="unchanged\n",
@@ -334,6 +351,9 @@ def test_round_text_retains_words_and_factor_hashes(tmp_path: Path) -> None:
             "formulation": "x / y",
             "variables": {"x": "price"},
             "code_sha256": "a" * 64,
+            "family": "volatility and beta",
+            "critic_status": "skipped",
+            "critic_reason": "earlier provider timeout",
         }
     ]
     assert record["feedback"] == vars(feedback)
@@ -990,3 +1010,28 @@ def test_model_text_missing_and_small_figures() -> None:
         },
     )
     assert "12.35%" in note and "0.001235%" in note and "0.0001235%" in note
+
+
+def test_runner_records_reviewed_skipped_and_unavailable_critic() -> None:
+    from types import SimpleNamespace
+
+    runner = judge_parts("AlphaFactorRunner")["AlphaFactorRunner"]
+    for opinion, marker, status in [
+        ("checked implementation", None, "reviewed"),
+        ("Final decision is True and there are no code critics.", None, "skipped"),
+        (
+            "code critic unavailable (provider timeout); judged on execution only",
+            "unavailable",
+            "unavailable",
+        ),
+        (
+            "code critic unavailable (provider timeout); judged on execution only",
+            "skipped",
+            "skipped",
+        ),
+    ]:
+        feedback = SimpleNamespace(code_feedback=opinion, alpha_critic_status=marker)
+        fields = runner.critic_fields(feedback)
+        assert fields["critic_status"] == status
+        if status != "reviewed":
+            assert opinion in fields["critic_reason"]

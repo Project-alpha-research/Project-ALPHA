@@ -5,7 +5,7 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: d8eafe07731d91c2
+verified: a73efdd73f0ddf7f
 ---
 
 # AI assistants
@@ -58,6 +58,8 @@ above passes. They are unproven as behaviour: no test yet shows that an AI follo
 honest. The report and answer skills now require `alpha results check` before an answer is sent. The
 checker checks tagged numbers, labels and flag contradictions; `alpha partner selftest` exercises 25
 planted answers without a model. Its installed smoke check passes, and no lesson has been recorded.
+Since 2026-11-18 the report skill and `CLAUDE.md` also set a writing style for text the owner reads:
+answer first, short sentences, one idea in each, one name for one thing. No test enforces it yet.
 The research-case protocol library (`.agents/skills/alpha-research-protocols/`) is still loaded
 by the program and the tool server. For the rest see the capabilities below on
 [STATUS.md](../../../../STATUS.md).

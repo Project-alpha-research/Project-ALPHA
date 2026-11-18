@@ -30,6 +30,15 @@ promise or imply a profit.
    re-run until it says OK; never send a draft that fails. Asked how numbers were checked, say
    so and offer `uv run alpha partner selftest`.
 
+Writing style (Simplified Technical English, about 80% of the way):
+
+- Answer first. Write less, not only simpler.
+- Short sentences, one idea in each. Active voice. Steps as numbered lists.
+- One name for one thing: never vary the name of a test, stage or metric in a report. Use the
+  name in the [glossary](../../../docs/reference/glossary.md).
+- Every number carries its unit.
+- No wording that implies profit or a recommendation.
+
 Keep in mind:
 
 - A number that was not computed is written "not computed", with the command that would.

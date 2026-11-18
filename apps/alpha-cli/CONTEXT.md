@@ -72,7 +72,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
-- [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, dates, risk, trades, costs, intervals, drops.
+- [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, risk, trades, costs, intervals.
 - Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) explain stored evaluations in plain words.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:

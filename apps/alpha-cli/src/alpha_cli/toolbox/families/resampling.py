@@ -115,26 +115,41 @@ RETURN_INTERVAL = _interval_spec(
 )
 
 
+# Bound the paths-by-bars matrices allocated by path_metric_arrays, even on long histories.
+PATH_CHUNK_CELLS = 4_000_000
+
+
 def drawdowns(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
-    from alpha_validation.path_montecarlo import (
-        empirical_return_paths,
-        path_metric_arrays,
-        summarize_path_family,
-    )
+    import numpy as np
+
+    from alpha_core import DataError
+    from alpha_validation.path_montecarlo import empirical_return_paths, path_metric_arrays
 
     returns = inputs.stored.scored_returns()
     if len(returns) < 2:
         return _unavailable(
             ("observed", "median", "q95"), "Paths need at least 2 scored bar returns.", inputs.seed
         )
-    paths = empirical_return_paths(returns, seed=inputs.seed, **params)
-    summary = summarize_path_family("iid_empirical", paths)
+    n_paths = params["n_paths"]
+    if n_paths < 1:
+        raise DataError(f"n_paths must be >= 1, got {n_paths}")
+    chunk_size = max(1, PATH_CHUNK_CELLS // len(returns))
+    maximum_drawdowns = np.empty(n_paths)
+    # empirical_return_paths calls default_rng(seed), which reuses a supplied Generator.
+    # Keep its state (including a buffered integer) across calls to reproduce one large draw.
+    chunk_params = {**params, "seed": np.random.default_rng(inputs.seed)}
+    for start in range(0, n_paths, chunk_size):
+        stop = min(start + chunk_size, n_paths)
+        chunk_params["n_paths"] = stop - start
+        paths = empirical_return_paths(returns, **chunk_params)
+        maximum_drawdowns[start:stop] = path_metric_arrays(paths).maximum_drawdown
+    median, q95 = np.quantile(maximum_drawdowns, [0.50, 0.95])
     observed = path_metric_arrays(returns[None, :]).maximum_drawdown[0]
     return Result(
         {
             "observed": float(observed),
-            "median": summary.maximum_drawdown_q50,
-            "q95": summary.maximum_drawdown_q95,
+            "median": float(median),
+            "q95": float(q95),
         },
         {},
         details={"seed": inputs.seed},

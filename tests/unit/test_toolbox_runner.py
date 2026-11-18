@@ -51,8 +51,9 @@ def test_reserved_boundary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, days
     assert sum(s["bars"] for s in doc["result"]["segments"]) == len(series.equity) - 1
 
 
+@pytest.mark.parametrize("attribution", [False, True])
 def test_future_market_bars_do_not_change_inputs(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, attribution: bool
 ) -> None:
     from types import SimpleNamespace
 
@@ -62,7 +63,7 @@ def test_future_market_bars_do_not_change_inputs(
     series = _series(tmp_path)
     _other_asset(monkeypatch, tmp_path, keep=1)
     resolved = inputs.resolve(tmp_path, RUN)
-    baseline = inputs.comparison(tmp_path, resolved, "QQQ")
+    baseline = inputs.comparison(tmp_path, resolved, "QQQ", attribution=attribution)
     original = _runner.load_bars
 
     def poisoned(symbol: str, *, data_dir: Path, as_of: datetime) -> tuple[list[object], None]:
@@ -70,7 +71,7 @@ def test_future_market_bars_do_not_change_inputs(
         return [*bars, SimpleNamespace(ts=series.dates[-1] + timedelta(days=1), open=-100)], None
 
     monkeypatch.setattr(_runner, "load_bars", poisoned)
-    assert inputs.comparison(tmp_path, resolved, "QQQ") == baseline
+    assert inputs.comparison(tmp_path, resolved, "QQQ", attribution=attribution) == baseline
 
 
 def test_future_bars_do_not_enter_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -323,3 +324,113 @@ def test_a_reseeded_entry_is_labelled_and_counted(
         {"market": None, "k": 2, "seed": 0},
         {"market": None, "k": 2, "seed": 7},
     ]
+
+
+@pytest.mark.parametrize("external", [False, True])
+def test_attribution_uses_full_history_dividend_cash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, external: bool
+) -> None:
+    import json
+    from types import SimpleNamespace
+
+    from alpha_cli import _runner
+    from alpha_cli.spine import diagnose
+    from alpha_core import ActionType, Bar, CorporateAction
+    from alpha_validation.attribution import market_attribution
+    from alpha_validation.metrics import to_returns
+
+    series = _series(tmp_path)
+    dates = series.dates
+
+    # One share from the opening baseline. A delayed payment remains cash after it arrives.
+    def bars_for(symbol: str) -> list[Bar]:
+        return [
+            Bar(symbol=symbol, ts=ts, open=price, close=price, high=price, low=price, volume=10)
+            for ts, price in series.opens.items()
+        ]
+
+    def actions_for(symbol: str) -> list[CorporateAction]:
+        return [
+            CorporateAction(
+                symbol=symbol,
+                action_type=ActionType.DIVIDEND,
+                ex_date=dates[ex].date(),
+                pay_date=dates[pay].date(),
+                amount=amount,
+            )
+            for ex, pay, amount in [(0, 5, 50.0), (30, 44, 3.0), (690, 699, 1.0)]
+        ]
+
+    home_bars = bars_for("SPY")
+    target = inputs.resolve(tmp_path, RUN)
+    target.manifest["source_fingerprint"] = _runner.source_fingerprint(
+        home_bars, dividends=actions_for("SPY")
+    )
+    (target.directory / "manifest.json").write_text(json.dumps(target.manifest))
+    (target.directory / "spec.json").write_text(
+        json.dumps({"assets": ["SPY"], "rule": {"kind": "ma_cross", "fast": 2, "slow": 5}})
+    )
+    (target.directory / "diagnostics.json").write_text("{}")
+    monkeypatch.setattr(
+        inputs,
+        "resolve_asset",
+        lambda asset, data_dir: SimpleNamespace(
+            symbol=asset.split("@")[0], store_name="home", data_dir=data_dir
+        ),
+    )
+
+    def load_bars(symbol: str, **kwargs: object) -> tuple[list[Bar], None]:
+        if symbol == "QQQ":
+            assert kwargs["as_of"] == dates[-1]
+            return bars_for(symbol)[::2], None
+        return home_bars, None
+
+    def load_dividends(symbol: str, **kwargs: object) -> list[CorporateAction]:
+        if symbol == "QQQ":
+            assert kwargs["as_of"] == dates[-1]
+        return actions_for(symbol)
+
+    monkeypatch.setattr(_runner, "load_bars", load_bars)
+    monkeypatch.setattr(_runner, "load_dividends", load_dividends)
+    trace = [SimpleNamespace(ts=ts, net_exposure=1) for ts in dates]
+    monkeypatch.setattr(
+        diagnose,
+        "full_sample",
+        lambda *args: (SimpleNamespace(portfolio_state_trace=trace), dates, series.equity),
+    )
+    settings = ["benchmark=QQQ"] if external else []
+    doc = run(tmp_path, "market.attribution", RUN, settings)
+    result = doc["result"]
+    stride = 2 if external else 1
+    # Mirrors the rule test's full_history window, including the pre-warm-up bars.
+    # No entitlement on the first ex-date. Hold cash from the first shared open on/after payment.
+    levels = [
+        round(series.opens[dates[i]], 2) + (3.0 if i >= 44 else 0.0) + (1.0 if i >= 699 else 0.0)
+        for i in range(0, len(dates), stride)
+    ]
+    expected = market_attribution(
+        to_returns(series.equity[::stride]),
+        to_returns(levels),
+        periods_per_year=183 if external else 365,
+    )
+    values = {k: result[k] for k in ("beta", "alpha_annual")}
+    assert values == pytest.approx({k: expected[k] for k in values}, rel=1e-9, abs=1e-12)
+    if external:
+
+        def revised_actions(symbol: str, **kwargs: object) -> list[CorporateAction]:
+            if symbol == "QQQ":
+                return actions_for(symbol)[:1]
+            return load_dividends(symbol, **kwargs)
+
+        monkeypatch.setattr(_runner, "load_dividends", revised_actions)
+        revised = run(tmp_path, "market.attribution", RUN, settings)
+        assert revised["file"] != doc["file"]
+        assert revised["values"]["beta"] != pytest.approx(values["beta"], rel=1e-9, abs=1e-12)
+    else:
+        # The original fixture has no dividends. Pin the same strategy with recorded cash
+        # payments as a separate case so the price-only reference remains independently checked.
+        from tests.unit.test_toolbox_contract import REFERENCE
+
+        assert values == pytest.approx(
+            REFERENCE["market.attribution|dividends|"], rel=1e-9, abs=1e-12
+        )

@@ -237,3 +237,54 @@ def test_constant_history_has_no_reportable_interval(tool: str, tmp_path: Path) 
     doc = run(tmp_path, tool, RUN)
     assert all(value is None for value in doc["values"].values())
     assert all("varying" in reason for reason in doc["reasons"].values())
+
+
+def test_drawdown_peak_memory(tmp_path: Path) -> None:
+    import tracemalloc
+
+    from alpha_cli.toolbox.families.resampling import drawdowns
+
+    folder = stored_run(tmp_path, DROP)
+    returns = np.random.default_rng(137).normal(0.0002, 0.01, 7500)
+    dates = [END - timedelta(days=i) for i in reversed(range(7501))]
+    pl.DataFrame({"ts": dates, "equity": np.r_[1.0, np.cumprod(1 + returns)]}).write_parquet(
+        folder / "equity_curve.parquet"
+    )
+    inputs = Inputs(resolve(tmp_path, RUN), seed=19)
+    n_paths = 10_000  # The entry's default: the size that used about 3.7 GB on a real run.
+    tracemalloc.start()
+    try:
+        drawdowns(inputs, {"n_paths": n_paths}, np.random.default_rng(inputs.seed))
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    # Traced bytes do not depend on the machine. One full paths-by-bars float matrix is 600 MB,
+    # and the unchunked entry held several at once; the chunked entry stays near 130 MB.
+    assert peak < n_paths * len(returns) * 8
+
+
+@pytest.mark.parametrize("chunk_size", [1, 7, 31])
+def test_drawdown_chunk_sizes_match_one_draw(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, chunk_size: int
+) -> None:
+    from alpha_cli.toolbox.families import resampling
+    from alpha_validation import path_montecarlo
+
+    returns = prepare_sample(tmp_path)
+    # Odd horizons also exercise the generator's saved half-word across chunk boundaries.
+    returns = returns[:-1]
+    write_equity(tmp_path / "runs" / RUN, np.r_[1.0, np.cumprod(1.0 + returns)])
+    inputs = Inputs(resolve(tmp_path, RUN), seed=19)
+    sizes = []
+
+    def draw(values: FloatArray, *, n_paths: int, seed: Any) -> FloatArray:
+        sizes.append(n_paths)
+        return empirical_return_paths(values, n_paths=n_paths, seed=seed)
+
+    monkeypatch.setattr(path_montecarlo, "empirical_return_paths", draw)
+    monkeypatch.setattr(resampling, "PATH_CHUNK_CELLS", chunk_size * len(returns))
+    got = resampling.drawdowns(inputs, PARAMS[DROP], np.random.default_rng(inputs.seed))
+    assert got.values == pytest.approx(
+        direct(DROP, inputs.stored.scored_returns(), 19), rel=1e-9, abs=1e-12
+    )
+    assert sum(sizes) == PARAMS[DROP]["n_paths"] and max(sizes) <= chunk_size

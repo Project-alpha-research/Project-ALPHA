@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 3537f9b2231070a6 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
+  verified f9e49df15e422661 on 2026-11-19: Re-read after merging main: the body is main's; this branch only changes source_fingerprint ordering and toolbox inputs, which add no command, route or package boundary
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -92,7 +92,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified 42dab5a84f07cc9b on 2026-11-19: Re-read after review: discussion reads recorded decisions and verdicts only; the panel and funding guards still enforce the same reserved date
+  verified fd13c86ac248fae3 on 2026-11-19: Re-read after merging main: the body is main's; this branch's toolbox inputs change loads benchmark dividends as of the run's last bar and leaves the reserved date and its labels as described
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

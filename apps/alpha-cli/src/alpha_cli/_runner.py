@@ -662,7 +662,7 @@ def source_fingerprint(bars: Sequence[Bar], *, dividends: Sequence[CorporateActi
         )
         for bar in bars
     )
-    action_rows = sorted(
+    action_rows = [
         (
             action.symbol,
             action.action_type.value,
@@ -674,7 +674,9 @@ def source_fingerprint(bars: Sequence[Bar], *, dividends: Sequence[CorporateActi
             action.amount,
         )
         for action in dividends
-    )
+    ]
+    # Only the comparison key tags missing fields. The hashed rows retain their original bytes.
+    action_rows.sort(key=lambda row: tuple((value is not None, value) for value in row))
     canonical = json.dumps(
         {"bars": bar_rows, "dividends": action_rows},
         sort_keys=True,

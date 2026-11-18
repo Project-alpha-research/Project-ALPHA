@@ -5,7 +5,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/attribution.py
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
-verified: 2047bd8c67526dbe
+verified: 73c93045391ff4f1
 ---
 
 # Market attribution, regimes and change points
@@ -25,8 +25,8 @@ uv run alpha tool describe market.changepoints
 - Each tool rebuilds the run's full-sample equity from the stored bars and fails with `RUN_DATA_CHANGED`
   if they no longer reproduce it. History records attempts and outcomes. Reading an identical result reuses its file.
 - Attribution: `market.attribution.beta` (1 = one for one), `market.attribution.alpha_annual` with its
-  `market.attribution.alpha_p`, and `market.attribution.r_squared`. Returns are open-to-open; the benchmark is price only (the
-  strategy keeps dividend cash, so alpha includes it); the default is the run's own asset (label `benchmark-is-same-asset`).
+  `market.attribution.alpha_p`, and `market.attribution.r_squared`. Buy and hold starts at the first shared open and keeps eligible dividends
+  as cash from their payment date, as in the rule test’s full-history comparison. The default is the run’s own asset (label `benchmark-is-same-asset`).
 - Regimes: the headline split labels each bar with the market regime known the bar before;
   `market.vol_regimes.turbulent_share_of_return` against `market.vol_regimes.turbulent_share_of_time` says where the return came from.
 - The causal split leads; the second is "with hindsight (not knowable at the time)". Opposite signs

@@ -28,6 +28,7 @@ from alpha_validation.metrics import to_returns
 if TYPE_CHECKING:
     import polars as pl
 
+    from alpha_core import Bar, CorporateAction
     from alpha_validation.metrics import FloatArray
 
 
@@ -44,6 +45,7 @@ class RunSeries:
     equity: tuple[float, ...]
     # The engine samples equity at each bar's open, so a fair market return is open-to-open.
     opens: dict[datetime, float]
+    benchmark_equity: dict[datetime, float]
     positions: tuple[bool, ...] = ()
 
     def reserve_labels(self) -> tuple[str, ...]:
@@ -154,7 +156,12 @@ class Target:
                 raise ValueError(f"Run {self.run_id} is missing {name}")
         if not self.kinds.issuperset(needs):
             raise ValueError(f"Target {self.run_id} cannot supply {needs}")
-        market = comparison(home, self, settings.get("benchmark") or settings.get("market"))
+        market = comparison(
+            home,
+            self,
+            settings.get("benchmark") or settings.get("market"),
+            attribution="benchmark" in settings,
+        )
         hashes = {
             "manifest": sha256_file(self.directory / "manifest.json"),
             "source": self.manifest.get("source_fingerprint"),
@@ -185,6 +192,7 @@ def resolve(home: Path, run_id: str) -> Target:
 
 def load_run(home: Path, target: Target) -> RunSeries:
     from alpha_cli.spine.diagnose import full_sample
+    from alpha_cli.spine.diagnostics import buy_and_hold
     from alpha_cli.spine.facts import read_json
 
     rdir, manifest, run_id = target.directory, target.manifest, target.run_id
@@ -218,6 +226,8 @@ def load_run(home: Path, target: Target) -> RunSeries:
     states = {row.ts: row.net_exposure != 0 for row in full.portfolio_state_trace}
     if not set(dates) <= states.keys():
         raise ValueError("portfolio state trace does not cover the full-sample dates")
+    if tuple(bar.ts for bar in bars) != dates:
+        raise ValueError("full equity timestamps must match the loaded bars")
     return RunSeries(
         home=home,
         run_id=run_id,
@@ -227,6 +237,7 @@ def load_run(home: Path, target: Target) -> RunSeries:
         dates=dates,
         equity=tuple(float(value) for value in equity),
         opens={bar.ts: float(bar.open) for bar in bars},
+        benchmark_equity=dict(zip(dates, buy_and_hold(bars, dividends), strict=True)),
         positions=tuple(states[ts] for ts in dates),
     )
 
@@ -245,11 +256,14 @@ class Joined:
 @dataclass(frozen=True)
 class Market:
     name: str
-    opens: dict[datetime, float]
+    bars: dict[datetime, Bar]
+    dividends: tuple[CorporateAction, ...]
     fingerprint: str
 
 
-def comparison(home: Path, target: Target, asset: str | None) -> Market | None:
+def comparison(
+    home: Path, target: Target, asset: str | None, *, attribution: bool = False
+) -> Market | None:
     if asset is None:
         return None
     resolved = resolve_asset(asset, data_dir=home)
@@ -259,13 +273,18 @@ def comparison(home: Path, target: Target, asset: str | None) -> Market | None:
         return None
     last = datetime.fromisoformat(meta["last_ts"])
     bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=last)
-    opens = {bar.ts: float(bar.open) for bar in bars if bar.ts <= last}
+    selected = {bar.ts: bar for bar in bars if bar.ts <= last}
     from alpha_cli.ml_contract import canonical_json_bytes
 
-    fingerprint = hashlib.sha256(
-        canonical_json_bytes({ts.isoformat(): value for ts, value in opens.items()})
-    ).hexdigest()
-    return Market(name, opens, fingerprint)
+    opens = {ts.isoformat(): float(bar.open) for ts, bar in selected.items()}
+    digest = hashlib.sha256(canonical_json_bytes(opens))
+    dividends: tuple[CorporateAction, ...] = ()
+    if attribution:
+        dividends = tuple(
+            _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=last)
+        )
+        digest.update(_runner.source_fingerprint([], dividends=dividends).encode())
+    return Market(name, selected, dividends, digest.hexdigest())
 
 
 @dataclass(frozen=True)
@@ -287,12 +306,15 @@ class Inputs:
         return self.source
 
 
-def join_market(inputs: Inputs) -> Joined:
-    """Join immutable run dates to the exact benchmark opens used in the cache key."""
+def join_market(inputs: Inputs, *, attribution: bool = False) -> Joined:
+    """Align both legs on shared opens before turning their levels into interval returns."""
+    from alpha_cli.spine.diagnostics import buy_and_hold
+
     series, other = inputs.run, inputs.market
-    name, opens = (other.name, other.opens) if other else (series.asset, series.opens)
-    common = [date for date in series.dates if date in opens]
-    inside = sum(series.dates[0] <= ts <= series.dates[-1] for ts in opens)
+    name = other.name if other else series.asset
+    market_dates = other.bars.keys() if other else series.opens.keys()
+    common = [date for date in series.dates if date in market_dates]
+    inside = sum(series.dates[0] <= ts <= series.dates[-1] for ts in market_dates)
     counts = {
         "run_bars": len(series.dates),
         "other_bars_in_run_window": inside,
@@ -308,12 +330,18 @@ def join_market(inputs: Inputs) -> Joined:
             "Run alpha tool again with a benchmark or market that covers the run's dates.",
         )
     equity = dict(zip(series.dates, series.equity, strict=True))
+    if other:
+        bars = [other.bars[ts] for ts in common]
+        levels = buy_and_hold(bars, other.dividends) if attribution else [bar.open for bar in bars]
+    else:
+        market = series.benchmark_equity if attribution else series.opens
+        levels = [market[ts] for ts in common]
     return Joined(
         name=name,
         same_asset=name == series.asset,
         dates=common,
         strategy=to_returns([equity[date] for date in common]),
-        market=to_returns([opens[date] for date in common]),
+        market=to_returns(levels),
         ppy=series.ppy if len(common) == len(series.dates) else periods_per_year(common),
         counts=counts,
     )

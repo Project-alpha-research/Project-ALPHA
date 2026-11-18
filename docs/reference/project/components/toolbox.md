@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
-verified: adb185e2fe4320df
+verified: dc347a428583f6a7
 ---
 
 # Toolbox
@@ -58,9 +58,9 @@ meant to become entries too, and are never slimming targets
 
 ## What is real today
 
-Fourteen entries are registered. Three describe one recorded rule test: `market.attribution` (how much return is market
-exposure), `market.vol_regimes` (calm versus turbulent markets) and `market.changepoints` (when behaviour
-shifted); named set `market-context` runs them together. Five more read the run's stored walk-forward files
+Fourteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against full-history buy and hold,
+including eligible cash dividends. `market.vol_regimes` compares calm and turbulent markets. `market.changepoints` identifies when behaviour shifted.
+The named set `market-context` runs all three. Five more read the run's stored walk-forward files
 instead of replaying it: `performance.downside_ratios` (Sortino, Calmar, Omega, tail ratio beside the stored
 Sharpe), `robustness.start_end_dates` (25 windows with moved first and last dates, against buy and hold),
 `trades.side_contribution` (long versus short), `trades.concentration` (profit without the best trades) and

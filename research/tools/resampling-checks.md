@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/resampling.py
   - tests/unit/test_toolbox_resampling_checks.py
-verified: 8cfe879110118c7b
+verified: c37da61556254595
 ---
 
 # Uncertainty in one rule test

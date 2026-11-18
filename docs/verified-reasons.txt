@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified d1e0655b8cbdaeb0 on 2026-11-19: README change adds one pointer line on stand-in limits; no rule or fact on this page changed
+  verified b5bd7da78c76ee30 on 2026-11-19: Re-read after merging main: the RD-Agent section now says feedback treats a drop as a choice; the other worker rules are unchanged
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

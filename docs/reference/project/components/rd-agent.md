@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 33e0f3ad54f5e204
+verified: d861d5f4757fe48f
 ---
 
 # RD-Agent
@@ -124,7 +124,7 @@ Lineage R², regressor count and convention are recorded diagnostics; suspects s
 The [shortlist policy](../../../../workers/rdagent/README.md#shortlist-bookkeeping) leaves every gate and count unchanged.
 Old failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks counted)".
 Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two timestamps.
-Idea-family labels remain unknown unless stored. The panel was opened headless on real runs; owner acceptance remains pending.
+New factor rows store family and critic status. Older rows can lack both. The panel was opened headless on real runs; owner acceptance remains pending.
 
 ## Decisions and open questions
 

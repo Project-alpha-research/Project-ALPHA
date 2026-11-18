@@ -969,7 +969,12 @@ class Gateway:
         try:
             plan = self.chat_plan(request, row)
             prompt, instructions = plan.prompt, plan.instructions
-            row.update(effort=plan.effort, prompt_sha256=digest(prompt), prompt_chars=len(prompt))
+            row.update(
+                effort=plan.effort,
+                prompt_sha256=digest(prompt),
+                prompt_chars=len(prompt),
+                total_prompt_chars=len(prompt) + len(instructions),
+            )
             json_failures = 0
             timeout_retry = False
             while True:

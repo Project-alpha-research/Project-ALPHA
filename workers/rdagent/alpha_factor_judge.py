@@ -160,10 +160,11 @@ def family_permissions(
     if (rows := AlphaFactorHypothesisGen.ledger_rows(path)) is not None:
         limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
         count_text = "".join(
-            f"\nfailed tries in this idea family ({family}): {count} of the limit {limit}"
+            "\n" + family_definitions().count_note(family, count, limit, family in closed)
             for family, count in sorted(family_definitions().family_failure_counts(rows).items())
+            if family in family_definitions().offered_families({family}, source)
         )
-    closed_text = "; ".join(sorted(closed)) or "none"
+    closed_text = "; ".join(sorted(family_definitions().offered_families(closed, source))) or "none"
     opened_text = "; ".join(sorted(family_definitions().offered_families(opened, source)))
     return (
         f"Closed families: {closed_text}. open families: {opened_text}. "
@@ -199,20 +200,30 @@ FAMILY_REFUSALS = list[str]()
 def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
     families = AlphaFactorHypothesisGen.trial_families(rows)
+    source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+    offered = family_definitions().offered_families(set(families), source)
     lines, closed = [], []
     for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        if family not in offered:
+            continue
         best = min(members, key=_rank)
+        best_name = best["name"]
+        if family_definitions().mentions_family(
+            best_name, family_definitions().hidden_families(source)
+        ):
+            best_name = "factor from an unavailable family"
         counts: dict[str, int] = {}
         for member in members:
             counts[member["status"]] = counts.get(member["status"], 0) + 1
         failed = ", ".join(f"{n} {status}" for status, n in sorted(counts.items()))
+        is_closed = len(members) >= switch_after and "CANDIDATE" not in counts
+        count = len(members) - counts.get("CANDIDATE", 0)
         lines.append(
             f"- {family}: {len(members)} {'try' if len(members) == 1 else 'tries'}; "
-            f"best {best['name']} ({best['status']}); {failed}; "
-            f"failed tries in this idea family ({family}): "
-            f"{sum(m['status'] != 'CANDIDATE' for m in members)} of the limit {switch_after}"
+            f"best {best_name} ({best['status']}); {failed}; "
+            + family_definitions().count_note(family, count, switch_after, is_closed)
         )
-        if len(members) >= switch_after and not any(m["status"] == "CANDIDATE" for m in members):
+        if is_closed:
             closed.append(family)
     text = "\nALPHA idea families (all runs; tries, best result, how they failed)\n" + "\n".join(
         lines
@@ -229,7 +240,10 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
 
 
 def ledger_summary(
-    row: dict[str, Any], failures: dict[str, int] | None = None, limit: int | None = None
+    row: dict[str, Any],
+    failures: dict[str, int] | None = None,
+    limit: int | None = None,
+    closed: set[str] | None = None,
 ) -> str:
     effective = family_definitions().recorded_status(row)
     derived = effective != row["status"]
@@ -242,9 +256,8 @@ def ledger_summary(
         count_text += f"; looks so far across all ideas: {looks} (sets the screen cutoff)"
     if failures is not None and row["status"] != "IMPORTED":
         for family in AlphaFactorHypothesisGen.row_families(row):
-            count_text += (
-                f"; failed tries in this idea family ({family}): "
-                f"{failures.get(family, 0)} of the limit {limit}"
+            count_text += "; " + family_definitions().count_note(
+                family, failures.get(family, 0), limit, family in (closed or set())
             )
     if row["schema"] == "AlphaRdagentFactorTrialV3":
         clocks = row["clocks"]
@@ -290,7 +303,11 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
         f"\nALPHA refused this round's earlier proposal: {message}" for message in FAMILY_REFUSALS
     )
     append_ledger_context(context, ledger_name, universe, len(correction) + len(refusals))
-    context["hypothesis_and_feedback"] += refusals + correction
+    source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+    hidden = family_definitions().hidden_families(source)
+    context["hypothesis_and_feedback"] += (
+        family_definitions().filter_history(refusals, hidden, set()) + correction
+    )
 
 
 def append_ledger_context(
@@ -315,8 +332,14 @@ def append_ledger_context(
     used, omitted = len(heading) + reserved_chars, 0
     failures = family_definitions().family_failure_counts(rows)
     switch_after = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+    groups = AlphaFactorHypothesisGen.trial_families(AlphaFactorHypothesisGen.distinct_trials(rows))
+    closed = family_definitions().closed_groups(groups, switch_after)
+    source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+    hidden = family_definitions().hidden_families(source)
     for row in (r for r in reversed(rows) if r["schema"] in known):
-        line = ledger_summary(row, failures, switch_after)
+        line = ledger_summary(row, failures, switch_after, closed)
+        if family_definitions().mentions_family(line, hidden):
+            continue
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
         seen.add(row["code_sha256"])
@@ -400,7 +423,7 @@ def record_code(run: Path, digest: str, code: bytes) -> None:
 
 
 def record_round(run: Path, exp: Any, feedback: Any, row: dict[str, Any]) -> None:
-    hashes = {f["name"]: f["code_sha256"] for f in exp.alpha_evaluation.get("factors", [])}
+    factors = {f["name"]: f for f in exp.alpha_evaluation.get("factors", [])}
     record = {
         "schema": "AlphaRdagentRoundV1",
         **row,
@@ -420,7 +443,12 @@ def record_round(run: Path, exp: Any, feedback: Any, row: dict[str, Any]) -> Non
                 "name": task.factor_name,
                 **{key: getattr(task, key, None) for key in ("description", "variables")},
                 "formulation": getattr(task, "factor_formulation", None),
-                "code_sha256": hashes.get(task.factor_name),
+                "code_sha256": factors.get(task.factor_name, {}).get("code_sha256"),
+                **{
+                    k: v
+                    for k, v in factors.get(task.factor_name, {}).items()
+                    if k in {"critic_status", "critic_reason", "family"}
+                },
             }
             for task in exp.sub_tasks
         ],
@@ -517,6 +545,26 @@ class AlphaFactorScenario(QlibFactorScenario):
 
 class AlphaFactorRunner(Developer):
     @staticmethod
+    def critic_fields(feedback: Any) -> dict[str, str]:
+        opinion = getattr(feedback, "code_feedback", None)
+        status = getattr(feedback, "alpha_critic_status", None)
+        if status in ("skipped", "unavailable"):
+            return {"critic_status": status, "critic_reason": opinion}
+        if not opinion:
+            return {
+                "critic_status": "unavailable",
+                "critic_reason": "no code critic opinion recorded",
+            }
+        if opinion in (
+            "Final decision is True and there are no code critics.",
+            "This task has failed too many times, skip code evaluation.",
+        ):
+            return {"critic_status": "skipped", "critic_reason": opinion}
+        if opinion.startswith("code critic unavailable (provider "):
+            return {"critic_status": "unavailable", "critic_reason": opinion}
+        return {"critic_status": "reviewed"}
+
+    @staticmethod
     def text_reason(text: str) -> str | None:
         """cap_reached or exception when the text says so; otherwise None."""
         lowered = text.lower()
@@ -611,6 +659,14 @@ class AlphaFactorRunner(Developer):
                 identity = code
             factor = {
                 "name": task.factor_name,
+                # The family the tally counts this row under, stored once (no re-derivation).
+                "family": family_definitions().idea_family(
+                    task.factor_name,
+                    getattr(task, "description", "") or "",
+                    getattr(task, "factor_formulation", "") or "",
+                    getattr(task, "variables", None),
+                ),
+                **self.critic_fields(feedback),
                 **family_definitions().declaration(getattr(task, "description", "") or ""),
                 "code_sha256": hashlib.sha256(identity).hexdigest(),
                 "status": "FAILED",
@@ -751,12 +807,7 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
 
     @staticmethod
     def row_families(row: dict[str, Any]) -> list[str]:
-        return idea_family(
-            row["name"],
-            row.get("description") or "",
-            row.get("formulation") or "",
-            row.get("variables"),
-        ).split("; ")
+        return list(family_definitions().row_families(row))
 
     @classmethod
     def trial_families(cls, rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
@@ -776,8 +827,15 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
                 families.setdefault(family, []).append(row)
         return families
 
+    bounded_history: Any = None
+
+    @property
+    def upstream_history(self) -> Any:
+        return super().prepare_context
+
     def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
-        context, flag = super().prepare_context(trace)
+        prepare = self.bounded_history or self.upstream_history
+        context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
         return context, flag
 
@@ -876,11 +934,7 @@ def closed_families() -> set[str]:
         AlphaFactorHypothesisGen.distinct_trials(rows or [])
     )
     limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
-    return {
-        family
-        for family, members in families.items()
-        if len(members) >= limit and not any(m["status"] == "CANDIDATE" for m in members)
-    }
+    return set(family_definitions().closed_groups(families, limit))
 
 
 class FamilyGuard:

@@ -9,16 +9,21 @@ import sys
 from datetime import UTC, datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # -I removes the script directory: add only ALPHA's worker scripts, never the source root.
 WORKER = Path(__file__).resolve().parent
 if str(WORKER) not in sys.path:
     sys.path.insert(0, str(WORKER))
 
-from research_memory import open_factor_loop  # noqa: E402
-from source_pin import verify_source  # noqa: E402
-from stock_fixture_entry import SourceFinder  # noqa: E402
+if TYPE_CHECKING:
+    from .research_memory import ProposalHistory, limit_restored_history, open_factor_loop
+    from .source_pin import verify_source
+    from .stock_fixture_entry import SourceFinder
+else:
+    from research_memory import ProposalHistory, limit_restored_history, open_factor_loop
+    from source_pin import verify_source
+    from stock_fixture_entry import SourceFinder
 
 
 def install_source(source: Path) -> str:
@@ -86,6 +91,8 @@ def main() -> None:
 
     record_steps(LoopBase)
     loop, total = open_factor_loop(FactorRDLoop, FACTOR_PROP_SETTING, int(sys.argv[2]), os.environ)
+    if not isinstance(loop.hypothesis2experiment.prepare_context, ProposalHistory):
+        limit_restored_history(loop, os.environ)
     loop._init_base_features(None)
     asyncio.run(loop.run(loop_n=total))
 

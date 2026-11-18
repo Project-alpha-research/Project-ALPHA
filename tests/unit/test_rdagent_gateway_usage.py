@@ -522,3 +522,13 @@ def test_receipt_separates_failed_wait_from_retried_calls(
     assert "provider_wait_seconds" not in receipt
     assert receipt["history_rounds_full"] == 4
     assert receipt["history_rounds_summarised"] == 17
+
+
+def test_proposal_receipt_counts_full_prompt_characters(model: gw.Gateway) -> None:
+    model.chat(chat())
+    row = rows(model)[0]
+    assert row["total_prompt_chars"] == len("systemhello")
+    labelled = [{**row, "step": "direct_exp_gen", "loop": 2}]
+    assert launch.call_split([row], labelled)["proposal_prompt_chars"] == [
+        {"loop": 2, "step": "direct_exp_gen", "chars": len("systemhello")}
+    ]

@@ -398,3 +398,135 @@ def test_inherited_legacy_round_uses_its_workspace_run_receipt(tmp_path: Path) -
     )
     wrapper = memory.ProposalHistory(Mock(), 1, "same")
     assert wrapper.counts(SimpleNamespace(hist=[(exp, None)]))["history_rounds_full"] == 1
+
+
+def test_bounded_history_keeps_newest_round_and_per_factor_stages(tmp_path: Path) -> None:
+    def prepare(trace: Any) -> tuple[dict[str, Any], bool]:
+        return {"hypothesis_and_feedback": "\n".join(f.observations for _, f in trace.hist)}, True
+
+    hist = []
+    for i in range(3):
+        factors = [
+            {
+                "name": f"price_delay_{i}",
+                "status": "SCREEN_FAIL",
+                "reason": "failed the rank screen",
+            },
+            {
+                "name": f"funding_{i}",
+                "status": "SPREAD_FAIL",
+                "reason": "stopped by the spread check",
+            },
+        ]
+        exp = SimpleNamespace(
+            alpha_panel_sha256="panel",
+            sub_tasks=[SimpleNamespace(factor_name=f["name"]) for f in factors],
+            alpha_evaluation={"factors": factors},
+        )
+        hist.append((exp, SimpleNamespace(observations=str(i) * 45000)))
+    run = tmp_path / "run"
+    (run / "panel").mkdir(parents=True)
+    (run / "panel/panel-receipt.json").write_text('{"panel_sha256":"panel"}')
+    loop = SimpleNamespace(
+        trace=SimpleNamespace(hist=hist),
+        hypothesis_gen=SimpleNamespace(prepare_context=prepare),
+        hypothesis2experiment=SimpleNamespace(prepare_context=prepare),
+    )
+    memory.limit_restored_history(loop, {"ALPHA_FACTOR_RUN_DIR": str(run)})
+    for component in (loop.hypothesis_gen, loop.hypothesis2experiment):
+        text = component.prepare_context(loop.trace)[0]["hypothesis_and_feedback"]
+        assert len(text) <= 84000
+        assert hist[-1][1].observations in text
+        for i in range(2):
+            assert any(
+                f"price_delay_{i}; other: price_delay; SCREEN_FAIL" in line
+                and line.endswith("failed the rank screen")
+                for line in text.splitlines()
+            )
+            assert any(
+                f"funding_{i}; futures funding; SPREAD_FAIL" in line
+                and line.endswith("stopped by the spread check")
+                for line in text.splitlines()
+            )
+    record = json.loads((run / "history-context.json").read_text())
+    assert record["history_rounds_summarised"] == 2
+    assert record["history_ideas_omitted"] == 0
+    assert "omitted from this summary" not in text
+
+
+def test_history_over_budget_as_one_line_each_omits_oldest_ideas(tmp_path: Path) -> None:
+    def prepare(trace: Any) -> tuple[dict[str, Any], bool]:
+        return {"hypothesis_and_feedback": "\n".join(f.observations for _, f in trace.hist)}, True
+
+    names = [f"idea_{i:04d}_" + "x" * 60 for i in range(1500)]  # about 120,000 characters
+    exp = SimpleNamespace(
+        alpha_panel_sha256="older panel",
+        sub_tasks=[SimpleNamespace(factor_name=n) for n in names],
+        alpha_evaluation={
+            "factors": [{"name": n, "status": "SCREEN_FAIL", "reason": "failed"} for n in names]
+        },
+    )
+    trace = SimpleNamespace(hist=[(exp, SimpleNamespace(observations="restored"))])
+    receipt = tmp_path / "history-context.json"
+    receipt.write_text("{}")
+    wrapper = memory.ProposalHistory(prepare, 1, "panel", receipt=receipt)
+    text = wrapper(trace)[0]["hypothesis_and_feedback"]  # never raises over the budget
+    assert len(text) <= memory.HISTORY_CHAR_BUDGET
+    omitted = json.loads(receipt.read_text())["history_ideas_omitted"]
+    assert 0 < omitted < len(names)
+    lines = text.splitlines()
+    assert lines[0] == f"{omitted} older ideas omitted from this summary (kept on disk)"
+    assert names[omitted] in lines[1] and names[omitted - 1] not in text
+    assert names[-1] in text
+    assert len(exp.sub_tasks) == len(names)  # the stored round is untouched
+
+
+def test_carried_suggestion_filtered_without_rewriting_trace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.unit._rdagent_support import closed_volatility_ledger
+
+    closed_volatility_ledger(tmp_path, monkeypatch)
+    (tmp_path / "panel").mkdir()
+    (tmp_path / "panel/panel-receipt.json").write_text('{"panel_sha256":"current"}')
+    for suggestion in ("Try overnight_drift across the panel.", "Explore volatility and beta."):
+        feedback = SimpleNamespace(
+            new_hypothesis=suggestion, reason="Reason for it", observations="Measured outcome"
+        )
+        trace = SimpleNamespace(hist=[(SimpleNamespace(alpha_panel_sha256="current"), feedback)])
+
+        def prepare(current: Any) -> tuple[dict[str, Any], bool]:
+            rendered = "\n".join(f.observations + "\n" + f.new_hypothesis for _, f in current.hist)
+            return {
+                "hypothesis_and_feedback": rendered,
+                "last_hypothesis_and_feedback": rendered,
+            }, True
+
+        wrapper = memory.ProposalHistory(
+            prepare, 1, "current", closed_families=judge_namespace()["closed_families"]
+        )
+        context, _ = wrapper(trace)
+        for text in context.values():
+            assert suggestion not in text and "dropped" in text.lower()
+            assert "Measured outcome" in text
+        assert feedback.new_hypothesis == suggestion
+
+
+def test_history_with_one_line_longer_than_the_budget_keeps_only_the_note(tmp_path: Path) -> None:
+    def prepare(trace: Any) -> tuple[dict[str, Any], bool]:
+        return {"hypothesis_and_feedback": ""}, True
+
+    name = "idea_" + "y" * (memory.HISTORY_CHAR_BUDGET + 10)
+    exp = SimpleNamespace(
+        alpha_panel_sha256="older panel",
+        sub_tasks=[SimpleNamespace(factor_name=name)],
+        alpha_evaluation={"factors": [{"name": name, "status": "SCREEN_FAIL"}]},
+    )
+    trace = SimpleNamespace(hist=[(exp, SimpleNamespace(observations="restored"))])
+    receipt = tmp_path / "history-context.json"
+    receipt.write_text("{}")
+    text = memory.ProposalHistory(prepare, 1, "panel", receipt=receipt)(trace)[0][
+        "hypothesis_and_feedback"
+    ]
+    assert text.strip() == "1 older ideas omitted from this summary (kept on disk)"
+    assert json.loads(receipt.read_text())["history_ideas_omitted"] == 1

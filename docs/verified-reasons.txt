@@ -4,6 +4,9 @@
 apps/alpha-cli/CONTEXT.md
   verified f9e49df15e422661 on 2026-11-19: Re-read after merging main: the body is main's; this branch only changes source_fingerprint ordering and toolbox inputs, which add no command, route or package boundary
 
+apps/alpha-cli/README.md
+  verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+
 docs/CONTEXT.md
   verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 

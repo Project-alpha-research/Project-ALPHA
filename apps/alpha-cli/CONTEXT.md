@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 7d161e4f99fbf253
+verified: 67ff07e8aff56c04
 ---
 
 # alpha-cli workspace
@@ -52,7 +52,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`, `test_suite_*` |
 | Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
-| RD-Agent ledger | `rdagent_*`, `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
+| RD-Agent ledger and discussion | `rdagent_*`, `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
 | Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
 | Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |

@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 7d161e4f99fbf253 on 2026-11-18: Re-read after the review round: the toolbox output list and the seed and frozen-family rules still describe the code
+  verified 67ff07e8aff56c04 on 2026-11-18: Merge of main: main's RD-Agent discussion commands and this branch's toolbox entries are both described; re-read both pages after the merge
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -13,6 +13,12 @@ docs/reference/invariants/cli-investigation-tools.md
 docs/reference/invariants/cli-runs.md
   verified 53c37cd48307ec7f on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
+docs/reference/invariants/cli-trial-ledger.md
+  verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
+
+docs/reference/invariants/workers.md
+  verified 3c7189bc6ec2738d on 2026-11-18: Re-read: discussion records who chose and only tested ideas count; the review fixes (length cap, refused late replies, unusable revision drop) change no rule stated here
+
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
@@ -20,7 +26,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 5bac5884cd269869 on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
+  verified 542506588d2f3128 on 2026-11-18: Merge of main: main's RD-Agent discussion commands and this branch's toolbox entries are both described; re-read both pages after the merge
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -120,6 +126,9 @@ research/tools/run-level-checks.md
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
+
+workers/rdagent/CONTEXT.md
+  verified fd5ee42a2617426a on 2026-11-18: Re-read after the review fixes: the pause still lives in discussion.py after the family guard, the summary is kept by alpha_factor_hypothesis.py, and the named tests are right
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

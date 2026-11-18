@@ -17,10 +17,14 @@ if str(WORKER) not in sys.path:
     sys.path.insert(0, str(WORKER))
 
 if TYPE_CHECKING:
+    from .alpha_factor_hypothesis import ProposalResponse
+    from .discussion import AwaitingDiscussion
     from .research_memory import ProposalHistory, limit_restored_history, open_factor_loop
     from .source_pin import verify_source
     from .stock_fixture_entry import SourceFinder
 else:
+    from alpha_factor_hypothesis import ProposalResponse
+    from discussion import AwaitingDiscussion
     from research_memory import ProposalHistory, limit_restored_history, open_factor_loop
     from source_pin import verify_source
     from stock_fixture_entry import SourceFinder
@@ -67,6 +71,9 @@ def record_steps(loop_class: Any) -> None:
         before = _step_exception(self, li)
         try:
             return await original(self, li, *args, **kwargs)
+        except AwaitingDiscussion:
+            status = "skipped"
+            raise
         except BaseException as error:
             error_type, status = type(error).__name__, "error"
             raise
@@ -93,8 +100,13 @@ def main() -> None:
     loop, total = open_factor_loop(FactorRDLoop, FACTOR_PROP_SETTING, int(sys.argv[2]), os.environ)
     if not isinstance(loop.hypothesis2experiment.prepare_context, ProposalHistory):
         limit_restored_history(loop, os.environ)
+    converter = loop.hypothesis2experiment
+    converter.convert_response = ProposalResponse(converter.convert_response)
     loop._init_base_features(None)
-    asyncio.run(loop.run(loop_n=total))
+    try:
+        asyncio.run(loop.run(loop_n=total))
+    except AwaitingDiscussion:
+        return  # The decision and loop-stop receipt have already been published.
 
 
 if __name__ == "__main__":

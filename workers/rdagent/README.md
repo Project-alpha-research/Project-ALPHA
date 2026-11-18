@@ -1218,6 +1218,38 @@ spread can have a recorded PASS even when the rank screen stopped the factor. Co
 family limit give the failure count, limit and closure status. `knowledge-vectors.json` and the run
 receipt identify left-out nodes and their reasons in `knowledge_vectors_left_out_nodes`.
 
+## Propose and discuss
+
+Add `--discuss` to the factor-loop launch to see each round's ideas after the family and
+declaration checks and before any coding. In another terminal, use the folder you passed to
+`--run-dir`:
+
+```sh
+alpha ledger proposal --run-dir "$run_dir"
+alpha ledger reply --run-dir "$run_dir" --as owner --drop "NAME=reason" --revise "OTHER=note"
+```
+
+Ideas you do not name are built as proposed. Add up to two ideas of your own with `--idea` and
+a note for the next round with `--note`. A stand-in answers with `--as stand-in`, recorded as
+`stand-in user, not the owner`. The run keeps the proposal, the reply and the decision under
+`discussion/round-<n>/`; each built idea records its `origin` and the reply's `author`.
+
+- A dropped idea is never built: no trial row, no family failure, no look. Dropping is only
+  possible before coding. A second reply, or one after the round closed, is refused and kept as
+  `refused-reply-<k>.json`.
+- One extra proposal call covers all revisions and added ideas. The gateway counts it toward the
+  usual caps. At the cap, or if the answer is unusable, those ideas are dropped with the reason
+  and the accepted ones are built. Replacements meet the same refusals and tests as any idea.
+- Notes, reasons and ideas are at most 500 characters each and reach the agent as quoted data.
+  They cannot change a test, threshold or limit. A reply only chooses what is built; it never
+  approves, admits or promotes anything.
+- The default wait is 30 minutes, then the ideas are built as proposed. `--discuss-wait-minutes N`
+  changes the wait; `--discuss-on-timeout stop` stops cleanly before coding instead. The launch's
+  `--wall-seconds` limit still applies, so set it longer than the waits you expect.
+
+Without `--discuss` the loop runs as before; only the `plain_summary` fields are new. This adds an
+optional pause and replaces or deletes no feature.
+
 ## Change notes moved from the project page (2026-11-18)
 
 These behaviour notes were the "Intended design" of the RD-Agent project page, moved here so that page stays readable.

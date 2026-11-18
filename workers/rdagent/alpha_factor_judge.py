@@ -438,9 +438,12 @@ def record_round(run: Path, exp: Any, feedback: Any, row: dict[str, Any]) -> Non
                 "concise_knowledge",
             )
         },
+        **({"discussion": exp.discussion} if hasattr(exp, "discussion") else {}),
         "tasks": [
             {
                 "name": task.factor_name,
+                **getattr(task, "summary_fields", {}),
+                **getattr(task, "discussion_fields", {}),
                 **{key: getattr(task, key, None) for key in ("description", "variables")},
                 "formulation": getattr(task, "factor_formulation", None),
                 "code_sha256": factors.get(task.factor_name, {}).get("code_sha256"),
@@ -513,7 +516,11 @@ class AlphaFactorScenario(QlibFactorScenario):
             "screen windows phased at 2021-01-01. ALPHA canonical synchronized long-only replay "
             "(not Nautilus), top third equal "
             "weighted, against the equal-weight basket; 10 bps fee plus 6 bps slippage per side, "
-            "365 days/year. " + DECLARATION_TEMPLATE + " The conservative screen "
+            "365 days/year. " + DECLARATION_TEMPLATE + " "
+            "For each factor add a proposal_metadata object with plain_summary: one sentence "
+            "of at most 30 words saying what the number measures and what it expects, "
+            "without formula symbols, variable names or code."
+            " The conservative screen "
             "counts each new factor once; "
             "historical per-clock looks remain counted. A screened primary clock can pass only "
             "if the top third it would hold beat its bottom third before costs. "
@@ -525,6 +532,12 @@ class AlphaFactorScenario(QlibFactorScenario):
             "A candidate must pass the declared primary screen, spread, costed"
             " replay and deflation. "
             "It is a lead for one owner-approved reserved-data check, never evidence by itself."
+            + (
+                " Include input_columns in proposal_metadata, a list of the panel columns the "
+                "factor plans to read."
+                if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
+                else ""
+            )
         )
 
     @property
@@ -659,6 +672,8 @@ class AlphaFactorRunner(Developer):
                 identity = code
             factor = {
                 "name": task.factor_name,
+                **getattr(task, "summary_fields", {}),
+                **getattr(task, "discussion_fields", {}),
                 # The family the tally counts this row under, stored once (no re-derivation).
                 "family": family_definitions().idea_family(
                     task.factor_name,
@@ -837,6 +852,9 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         prepare = self.bounded_history or self.upstream_history
         context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
+        if note := getattr(self, "discussion_note", None):
+            context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().note_block(note)
+            self.discussion_note = None
         return context, flag
 
 
@@ -952,35 +970,72 @@ class FamilyGuard:
     def __getattr__(self, name: str) -> Any:
         return getattr(object.__getattribute__(self, "coder"), name)
 
+    @staticmethod
+    def refusals(tasks: list[Any], closed: set[str]) -> tuple[set[str], list[str]]:
+        proposed: set[str] = set()
+        missing = []
+        for task in tasks:
+            description = getattr(task, "description", "") or ""
+            proposed.update(
+                idea_family(
+                    task.factor_name,
+                    description,
+                    getattr(task, "factor_formulation", "") or "",
+                    getattr(task, "variables", None),
+                ).split("; ")
+            )
+            try:
+                family_definitions().declaration(description)
+            except ValueError as error:
+                missing.append(
+                    f"missing declaration in {task.factor_name}: {str(error).rstrip('.')}"
+                )
+        return proposed, sorted(proposed & closed) + missing
+
+    @staticmethod
+    def discussion_tools() -> Any:
+        import importlib
+
+        package = family_definitions().__package__
+        return importlib.import_module(f"{package}.discussion" if package else "discussion")
+
+    def admit(self, exp: Any, closed: set[str], proposed: set[str]) -> None:
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") != "1":
+            return
+        discussion = self.discussion_tools()
+        ideas = []
+        for task in exp.sub_tasks:
+            family = idea_family(
+                task.factor_name, task.description, task.factor_formulation, task.variables
+            )
+            ideas.append(
+                discussion.idea(task, family, family_definitions().declaration(task.description))
+            )
+        discussion.discuss(
+            self,
+            exp,
+            ideas,
+            family_permissions(closed, proposed),
+            lambda tasks: self.refusals(tasks, closed_families()),
+        )
+        if not exp.sub_tasks:
+            raise FactorEmptyError("Discussion ended with no ideas to build; no trial created.")
+
     def develop(self, exp: Any) -> Any:
         try:
             for attempt in range(1, FAMILY_PROPOSALS_PER_ROUND + 1):
-                closed = closed_families()
-                proposed = set()
                 for task in exp.sub_tasks:
-                    proposed.update(
-                        idea_family(
-                            task.factor_name,
-                            getattr(task, "description", "") or "",
-                            getattr(task, "factor_formulation", "") or "",
-                            getattr(task, "variables", None),
-                        ).split("; ")
+                    task.summary_fields = self.discussion_tools().summary_fields(
+                        getattr(task, "plain_summary", None)
                     )
-                refused = sorted(proposed & closed)
-                missing = []
-                for task in exp.sub_tasks:
-                    try:
-                        family_definitions().declaration(getattr(task, "description", "") or "")
-                    except ValueError as error:
-                        missing.append(
-                            f"missing declaration in {task.factor_name}: {str(error).rstrip('.')}"
-                        )
-                refused.extend(missing)
+                closed = closed_families()
+                proposed, refused = self.refusals(exp.sub_tasks, closed)
                 if not refused:
                     if self.loop is not None and hasattr(self.loop, "loop_prev_out"):
                         previous = self.loop.loop_prev_out[self.round_index()]
                         previous["direct_exp_gen"] = {"propose": exp.hypothesis, "exp_gen": exp}
                     exp.alpha_refused_before_coding = list(FAMILY_REFUSALS)
+                    self.admit(exp, closed, proposed)
                     return self.coder.develop(exp)
                 final = attempt == FAMILY_PROPOSALS_PER_ROUND or self.loop is None
                 self._refuse(exp, refused, proposed, closed, attempt, final)
@@ -1052,6 +1107,7 @@ class FamilyGuard:
                 or any(item.startswith("missing declaration") for item in refused)
             ],
             "refused_families": refused,
+            "plain_summary": {t.factor_name: t.summary_fields for t in exp.sub_tasks},
             "all_closed_families": sorted(closed),
             "open_families": open_families,
             "hypothesis": str(exp.hypothesis),
@@ -1088,30 +1144,9 @@ class FamilyGuard:
     def _propose_again(self) -> Any:
         """The same two calls and plan fields as upstream RDLoop.direct_exp_gen, nothing more."""
         loop = self.loop
-        from datetime import UTC, datetime
-
-        row = {
-            "schema": "AlphaRdagentStepV1",
-            "loop": self.round_index(),
-            "step_index": -1,
-            "step": "proposal_reask",
-        }
-        path = Path(os.environ["ALPHA_FACTOR_RUN_DIR"]) / "steps.jsonl"
-
-        def append(event: dict[str, Any]) -> None:  # the same line shape as record_steps
-            with path.open("a") as stream:
-                line = {**row, **event, "ts": datetime.now(UTC).isoformat()}
-                stream.write(json.dumps(line, sort_keys=True) + "\n")
-
-        append({"event": "start"})
-        status, error_type = "ok", None
-        try:
+        tools = self.discussion_tools()
+        with tools.proposal_step(self.round_index(), "proposal_reask", tools.utc_now):
             exp = loop._exp_gen(loop._propose())
-        except BaseException as error:
-            status, error_type = "error", type(error).__name__
-            raise
-        finally:
-            append({"event": "end", "status": status, "error_type": error_type})
         exp.base_features = loop.plan["features"]
         exp.base_feature_codes = loop.plan["feature_codes"]
         if exp.based_experiments:

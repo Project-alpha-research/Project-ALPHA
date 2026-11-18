@@ -7,6 +7,7 @@ from typing import Any, cast
 
 from alpha_cli._rdagent_judge import STATUSES
 from alpha_cli._rdagent_stability import recorded_status
+from alpha_cli.rdagent_discussion import summary_fields
 from alpha_cli.spine.trial_record import universe_label
 
 MISSING = "not recorded"
@@ -159,6 +160,18 @@ def idea_step(row: dict[str, Any], task: dict[str, Any], sources: list[str]) -> 
     if row.get("declared_direction") is None and direction:
         claim += " That direction was chosen after seeing these years, so it is not a prediction."
     sentences = [f"Idea type: {kind}." if kind else "", summary, claim]
+    for source in (task, row):
+        plain = source.get("plain_summary")
+        if (
+            isinstance(plain, str)
+            and not source.get("plain_summary_status")
+            and "plain_summary_status" not in summary_fields(plain)
+        ):
+            # The agent's own plain sentence replaces the lead taken from its description.
+            sentence = plain.strip()
+            sentence += "" if sentence.endswith((".", "!", "?")) else "."
+            sentences = [sentence, sentences[0], claim]
+            break
     return step(
         "The idea",
         AI,

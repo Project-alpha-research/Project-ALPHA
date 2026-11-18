@@ -108,6 +108,7 @@
 .report-summary-composition { display: grid; grid-template-columns: minmax(250px, 0.9fr) minmax(350px, 1.8fr); gap: 4px; align-items: start; }
 .report-summary-composition .recorded-panel { min-height: 320px; }
 .rule-test { display: flex; flex-direction: column; gap: var(--pad); margin: 0 0 var(--pad); padding-bottom: var(--pad); border-bottom: 1px solid var(--line-strong); }
+.rule-test .metric-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 .rule-test .summary-table { max-width: none; width: calc(100% - 2 * var(--pad)); }
 .rule-test .summary-table td { white-space: normal; vertical-align: top; }
 .rule-test .summary-table td.k { width: 28%; }

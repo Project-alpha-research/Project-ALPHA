@@ -39,13 +39,14 @@ read owner data, credentials or hidden tests.
 ## How to change it
 
 - Protected files (change only in a reviewed pull request that lists them): `scripts/gate*.py`,
-  `scripts/git_guard.py`, `scripts/harness_*.py`, `scripts/handoff.py`, `scripts/codex_bridge.py`.
+  `scripts/git_guard.py`, `scripts/harness_*.py`, `scripts/handoff*.py`, `scripts/codex_bridge.py`.
 - Where things are: `gate.py` + `gate_components.py` (CI job steps) + `gate_select.py` (tests mapped
   from changed files); `fs.py` with `fs_orient.py`, `fs_search.py`, `fs_stale.py`; generators
   `roadmap_index.py`, `status.py` (STATUS.md), `commands_reference.py`, `generate_web_openapi.py`, `check_openapi_operations.py`;
   machine setup: `setup.sh` (wraps `setup_rdagent.sh`) and the machine section of `gate.py doctor`
   ([development loop](../docs/operations/development-loop.md#set-up-a-fresh-machine));
-  Codex: `handoff.py` (builds; rules in `docs/reference/model-routing.md`), `codex_bridge.py` (reviews).
+  Codex: `handoff.py` (builds; rules in `docs/reference/model-routing.md`) with `handoff_sandbox.py`
+  (what the build sandbox may reach: its package cache and read-only links), `codex_bridge.py` (reviews).
 - Tests: `tests/unit/test_gate_*.py` (the doctor's machine section is `test_gate_machine_doctor.py`),
   `test_setup_script.py`, `test_git_guard.py`, `test_fs_*.py`, `test_roadmap_index.py`,
   `test_commands_reference.py`, `test_claude_harness_*.py`, `test_mutation_*.py`, `test_code_size.py` (the size limit,

@@ -51,25 +51,25 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-214 capabilities: 45 working, 65 built but unproven, 102 missing, 1 to rebuild,
-1 dropped by decision (recounted 2026-11-17 after two passes of rows for plans recovered from earlier material,
-then two diagnostics rows made working by the investigation tools, the setup contact sheets, the setup study and the setup trade).
+223 capabilities: 50 working, 66 built but unproven, 105 missing, 1 to rebuild,
+1 dropped by decision (recounted from the rows themselves on 2026-11-18: the 2026-11-17 header said 45 working and the
+table said 44, while the rows held 49; nine rows were then added and two were corrected, below).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
 | 1. Idea | 2 | 5 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
-| 3. Look before testing | 5 | 5 | 4 | 0 | 0 |
-| 4. Backtest | 3 | 3 | 8 | 0 | 0 |
-| 5. Overfit tests | 6 | 8 | 8 | 0 | 0 |
-| 6. Diagnostics | 7 | 6 | 12 | 0 | 0 |
+| 3. Look before testing | 5 | 5 | 6 | 0 | 0 |
+| 4. Backtest | 3 | 3 | 10 | 0 | 0 |
+| 5. Overfit tests | 10 | 9 | 3 | 0 | 0 |
+| 6. Diagnostics | 8 | 6 | 11 | 0 | 0 |
 | 7. Records and memory | 3 | 6 | 9 | 0 | 1 |
 | 8. AI partner | 3 | 8 | 5 | 1 | 0 |
-| 9. RD-Agent and Qlib engines | 5 | 6 | 12 | 0 | 0 |
-| 10. Screens | 1 | 3 | 14 | 0 | 0 |
+| 9. RD-Agent and Qlib engines | 5 | 6 | 16 | 0 | 0 |
+| 10. Screens | 1 | 3 | 15 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **44** | **66** | **102** | **1** | **1** |
+| **All** | **50** | **66** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -144,6 +144,8 @@ Seeing what a setup looks like, and what followed, before any rule is fixed.
 | Dense multi-panel price charts, full screen, trade markers, two chart styles | Unproven | `alpha-web` charts | Path 2 | [ui] |
 | Near misses and ordinary periods, picked without seeing outcomes, kept beside the matches | Missing | new Setup Lab | Path 2 | private |
 | Which came first after each match, target or stop, with still-open trades counted | Working | `alpha setup trade` (stop, target, time exit; same-exit controls) | Path 2 | private |
+| The owner's own named chart setups kept as ready-made setup specs, to run on any asset | Missing | `alpha-study` setup specs; from the owner's private research, described here in plain words only | Later | private |
+| A daily "what is setting up today" scan over a watchlist, listing the live matches, exportable | Missing | `alpha setup find` over a watchlist; new | Later | private |
 | A pattern detector checked against a hand-labelled set of examples before it is trusted | Missing | new Setup Lab; [note](backlog/rescued-test-fixtures.md) | Path 2 | private |
 | What winners and losers looked like before entry, beside a random-date control | Missing | `alpha-research`; [note](backlog/rescued-research-ideas.md) | Path 2 | private |
 
@@ -157,6 +159,8 @@ Simulating the idea with costs, against the right comparison.
 | The same backtest on real free data, shown on a screen | Unproven | `alpha test` report in `alpha-web` | Path 1 | [grade] |
 | Rank many assets by a factor and replay the basket with costs | Working | `alpha-cli` judge | Now | [status] |
 | One portfolio engine per kind of test; duplicates retired after a side-by-side check | Missing | `alpha-backtest` | Path 3 | [slim] |
+| Short selling in rule tests and setup trades (`alpha test` and `alpha setup trade` are long only today) | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
+| Risk-per-trade position sizing in rule tests and setup trades (all-in sizing only today) | Missing | `alpha-backtest`, `alpha-cli` spine | Path 1 | private |
 | Costs that grow with trade size, and a capacity view at the owner's size | Missing | `alpha-validation` | Path 1 | private |
 | Benchmark on a total-return basis: dividends, cash yield, real terms, every rolling window | Missing | run report | Path 1 | private |
 | Plain answer to "is this mostly the market?" beside every result | Unproven | rule-test report: buy-and-hold table and drawdown flag | Path 1 | [partner] |

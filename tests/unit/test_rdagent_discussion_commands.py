@@ -698,17 +698,15 @@ def test_every_ledger_verdict_has_one_plain_result_line() -> None:
 def test_degenerate_result_names_only_the_screen_causes() -> None:
     from alpha_cli.rdagent_journey_words import discussion_outcome, outcome, quick_verdicts
 
-    row = {
-        "status": "DEGENERATE",
-        "screen": {"tie_share": 0.54, "coverage": 0.42, "all_tied_day_share": 0},
-    }
+    screen: dict[str, Any] = {"tie_share": 0.54, "coverage": 0.42, "all_tied_day_share": 0}
+    row: dict[str, Any] = {"status": "DEGENERATE", "screen": screen}
     # Tie share does not decide the screen, so it is never given as the reason.
     expected = "Only 42% of coin-days had a value, so the coins could not be ranked."
     assert outcome(row) == expected
     assert discussion_outcome(row) == expected[0].lower() + expected[1:]
     assert quick_verdicts(row) == [expected]
     assert "tied" not in outcome(row)
-    row["screen"]["all_tied_day_share"] = 0.2
+    screen["all_tied_day_share"] = 0.2
     assert outcome(row) == (
         "Only 42% of coin-days had a value and all coins were tied on 20% of days, "
         "so the coins could not be ranked."

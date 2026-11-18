@@ -41,8 +41,8 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 ### Daily data health
 `alpha data health` checks one stored daily series for adjustment, timestamp, gap and survivorship faults, and saves the report
-with a hash of its inputs, so a changed byte makes it "out of date". Runs do not read it yet. [Tool card](../../../../research/tools/data-health.md)
-
+with a hash of its inputs. Rule tests and setup runs look up the report for each series and stop on a failure unless the user records a reason.
+Their summaries show the worst verdict. RD-Agent panels are next. [Tool card](../../../../research/tools/data-health.md)
 ### Context data
 Daily market series such as Treasury yields and the VIX have no revision history at FRED; each
 value is stored as known from the day after its date and the series is marked `approximate`.
@@ -185,7 +185,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 - Triage 2026-11-14 ([sheet](../../../roadmap/triage-2026-11.md)): cards 1, 3, 4 KEEP; card 2 (download
   bookkeeping) SHELVE, kept for a future download-budget policy. Card B (Bybit funding download modules)
   was shelved, then deleted 2026-11-18 (PR #261); funding context comes from the Binance importer and Bybit import.
-- [The request for a data health report](../owner-decisions-5.md#2026-11-18-request-one-data-health-report): step 1 built; attaching it to runs is not.
+- [Data health request](../owner-decisions-5.md#2026-11-18-request-one-data-health-report): built for rule tests and setups.
 
 ## Never
 

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 52a764bf55adf539
+verified: 863f768761806227
 ---
 
 # Rule test
@@ -22,6 +22,7 @@ table (`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `bre
 runs a small gauntlet and labels the result `quick`.
 
 **How to read it**
+- Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after indicator warm-up. The smaller data dates include warm-up.
 - Tiles, Sharpe and charts share each row’s dates. “Scored test periods only” uses the fresh walk-forward portfolio.
 - Both lines use split-adjusted opens and the same recorded dividend basis. Missing period facts read “not recorded”.

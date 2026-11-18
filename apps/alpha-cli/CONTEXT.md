@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: b0effe47937fef41
+verified: d4ca3a79d25fbd7a
 ---
 
 # alpha-cli workspace
@@ -73,7 +73,7 @@ do not add a private copy.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
 - [Rule-test periods](../../research/tools/rule-test.md) · [Tools](../../docs/reference/project/components/toolbox.md): market, dates, risk, trades, costs.
-- Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) explain stored evaluations in plain words.
+- [Data health](../../research/tools/data-health.md) on runs; setup returns in percent and R; [RD-Agent journeys](../../research/tools/rdagent-journey.md).
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:
   [data layer § Context data](../../docs/reference/project/components/data-layer.md#context-data));

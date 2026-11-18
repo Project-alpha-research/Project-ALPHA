@@ -1,0 +1,148 @@
+"""Bind stored daily health evidence to the inputs of one rule test or setup."""
+
+from __future__ import annotations
+
+import json
+import shlex
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
+
+from alpha_cli.spine.errors import SpineError
+
+if TYPE_CHECKING:
+    from alpha_cli.spine.stores import ResolvedAsset
+
+# In increasing order of severity. Stale evidence and absent evidence share a disclosure label.
+_LABELS = {
+    "pass": "data-health-pass",
+    "warn": "data-health-warn",
+    "unchecked": "data-health-unchecked",
+    "out-of-date": "data-health-unchecked",
+    "fail": "data-health-fail",
+}
+
+
+def _series(asset: ResolvedAsset, check_data: bool, report_time: datetime | None) -> dict[str, Any]:
+    from alpha_cli._data_health import compute_report, current_fingerprint, read_report
+
+    store = asset.daily_store()
+    saved = read_report(store, asset.symbol)
+    fingerprint = current_fingerprint(store, asset.symbol, saved)
+    if check_data and (saved is None or saved.source_fingerprint != fingerprint):
+        saved = compute_report(
+            store,
+            asset.symbol,
+            saved.universe_file if saved else None,
+            report_time or datetime.now(UTC),
+            use_peers=True,
+        )
+        fingerprint = saved.source_fingerprint
+    outcome = "unchecked"
+    checks = []
+    if saved is not None:
+        outcome = saved.verdict if saved.source_fingerprint == fingerprint else "out-of-date"
+        if outcome != "out-of-date":
+            checks = [
+                c.model_dump(mode="json", include={"id", "status", "finding", "example_dates"})
+                for c in saved.checks
+                if c.status in {"warn", "fail"}
+            ]
+    return dict(
+        asset=f"{asset.symbol}@{asset.store_name}",
+        status=outcome,
+        checks=checks,
+        report_time=saved.report_time.isoformat() if saved else None,
+        source_fingerprint=fingerprint,
+        report_fingerprint=saved.source_fingerprint if saved else None,
+        peers_used=len(saved.peer_symbols) if saved and saved.peer_symbols is not None else None,
+    )
+
+
+def run_health_record(
+    assets: Sequence[ResolvedAsset],
+    *,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
+) -> dict[str, Any]:
+    if accept_bad_data is not None and not accept_bad_data.strip():
+        raise SpineError(
+            "BAD_OPTION",
+            "--accept-bad-data needs a reason.",
+            'Give the reason in quotes, for example --accept-bad-data "checked the raw prices".',
+        )
+    series = [_series(a, check_data, report_time) for a in assets]
+    verdict = max((s["status"] for s in series), key=tuple(_LABELS).index)
+    parts = [f"Data health: {verdict}."]
+    failures = []
+    for row in series:
+        asset = row["asset"]
+        for check in row["checks"]:
+            parts.append(f"{asset}: {check['finding']}")
+            if check["status"] == "fail":
+                dates = ", ".join(check["example_dates"]) or "none recorded"
+                name = check["id"].replace("_", " ")
+                failures.append(f"{asset}, check {name}: {check['finding']} First dates: {dates}.")
+        if row["status"] in {"unchecked", "out-of-date"}:
+            why = (
+                "No report" if row["status"] == "unchecked" else "The stored report is out of date"
+            )
+            parts.append(
+                f"{asset}: {why}. Check it with uv run alpha data health {shlex.quote(asset)}, "
+                "or run again with --check-data."
+            )
+        else:
+            # The report covers every stored bar at its report time: the bytes this run reads.
+            checked = f"{asset}: report of {row['report_time'][:10]} covers all stored bars."
+            parts.append(checked)
+            if row["status"] == "fail":
+                failures.append(checked)
+        if row["status"] not in {"unchecked", "out-of-date"} and row["peers_used"] is not None:
+            count = row["peers_used"]
+            peer_count = f"{asset}: {count} stock {'peer' if count == 1 else 'peers'} used."
+            parts.append(peer_count)
+            if row["status"] == "fail":
+                failures.append(peer_count)
+    reason = accept_bad_data.strip() if accept_bad_data and verdict == "fail" else None
+    if verdict == "fail" and not reason:
+        step = 'Fix the data, or run again with --accept-bad-data "reason".'
+        raise SpineError(
+            "DATA_HEALTH_FAILED",
+            " ".join(["Data health: fail.", *failures, step]),
+            # A re-check with --check-data keeps the stock peers that made the split check fail.
+            "After a repair, run the same command again with --check-data.",
+        )
+    if reason:
+        parts.append(f"Data health overridden: {reason}.")
+    return dict(verdict=verdict, series=series, override_reason=reason, sentence=" ".join(parts))
+
+
+def health_labels(record: dict[str, Any]) -> list[str]:
+    labels = [_LABELS[record["verdict"]]]
+    if record["override_reason"]:
+        labels.append("data-health-overridden")
+    return labels
+
+
+def health_sentence(record: dict[str, Any] | None) -> str:
+    return record["sentence"] if record else "Data health: not recorded."
+
+
+def identity_part(record: dict[str, Any]) -> str:
+    return json.dumps(record, sort_keys=True, separators=(",", ":"))
+
+
+def verify_inputs(assets: Sequence[ResolvedAsset], record: dict[str, Any]) -> None:
+    """Reject a data promotion between the health lookup and the run's input read."""
+    from alpha_cli._data_health import current_fingerprint, read_report
+
+    for asset, row in zip(assets, record["series"], strict=True):
+        store = asset.daily_store()
+        fingerprint = current_fingerprint(store, asset.symbol, read_report(store, asset.symbol))
+        if fingerprint != row["source_fingerprint"]:
+            raise SpineError(
+                "DATA_CHANGED",
+                f"{row['asset']}: source changed during run preparation.",
+                "Run the command again on stable data.",
+            )

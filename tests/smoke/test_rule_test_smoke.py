@@ -44,6 +44,9 @@ def test_rule_test_records_two_assets(tmp_path: Path) -> None:
         rdir = data / "runs" / run_id
         assert Path(result["run_dir"]) == rdir
         manifest = json.loads((rdir / "manifest.json").read_text())
+        assert result["data_health"] == manifest["data_health"]
+        assert manifest["data_health"]["verdict"] == "unchecked"
+        assert "data-health-unchecked" in result["labels"]
         assert manifest["command"] == "validate"
         assert manifest["spine"]["test_id"] == output["test_id"]
         assert manifest["spine"]["spec_sha256"] == output["spec_sha256"]

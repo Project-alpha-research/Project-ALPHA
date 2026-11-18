@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.contact_sheet import Panel
+from alpha_cli.spine.data_health import run_health_record, verify_inputs
 from alpha_cli.spine.errors import SpineError, setup_error
+from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
 from alpha_core import DataError
 
 CLUSTER_GAP_BARS = 10
@@ -134,14 +138,15 @@ def sheet_panels(
     )
 
 
-def _asset(spec: Any, asset: str, home: Path, result: dict[str, Any]) -> tuple[Any, Any]:
+def _asset(
+    spec: Any, asset: str, resolved: ResolvedAsset, result: dict[str, Any]
+) -> tuple[Any, Any]:
     import polars as pl
 
     from alpha_cli import _runner
-    from alpha_cli.spine.stores import periods_per_year, resolve_asset
+    from alpha_cli.spine.stores import periods_per_year
     from alpha_study.setup.evaluate import find_candidates
 
-    resolved = resolve_asset(asset, data_dir=home)
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
@@ -169,10 +174,19 @@ def _asset(spec: Any, asset: str, home: Path, result: dict[str, Any]) -> tuple[A
     )
 
 
-def prepare_assets(spec: Any, home: Path, assets: list[str] | None) -> tuple[Any, Any, Any]:
+def prepare_assets(
+    spec: Any,
+    home: Path,
+    assets: list[str] | None,
+    *,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
+) -> tuple[Any, Any, Any, Any]:
     from alpha_cli.spine.stores import _stores
 
     results, candidates, frames = [], [], {}
+    selected: list[tuple[ResolvedAsset, dict[str, Any]]] = []
     for asset in spec.setup.assets:
         if assets and asset not in assets:
             continue
@@ -190,13 +204,29 @@ def prepare_assets(spec: Any, home: Path, assets: list[str] | None) -> tuple[Any
         )
         result.update(asset=asset, labels=[])
         try:
-            frame, rows = _asset(spec, asset, home, result)
+            selected.append((resolve_asset(asset, data_dir=home), result))
+        except (DataError, ValueError, OSError) as exc:
+            result["error"] = setup_error(exc, list(_stores(home))).payload
+        results.append(result)
+    sources = [resolved for resolved, _ in selected]
+    record = (
+        run_health_record(
+            sources, check_data=check_data, accept_bad_data=accept_bad_data, report_time=report_time
+        )
+        if sources
+        else None
+    )
+    for resolved, result in selected:
+        asset = result["asset"]
+        try:
+            frame, rows = _asset(spec, asset, resolved, result)
             frames[asset] = frame
             candidates.append(rows)
         except (DataError, ValueError, OSError) as exc:
             result["error"] = setup_error(exc, list(_stores(home))).payload
-        results.append(result)
-    return results, candidates, frames
+    if record is not None:
+        verify_inputs(sources, record)
+    return results, candidates, frames, record
 
 
 def _counts(candidates: Any) -> dict[str, Any]:
@@ -234,10 +264,15 @@ def load_spec(path: Path, assets: list[str] | None) -> Any:
     return spec
 
 
-def study_inputs(home: Path, manifest: dict[str, Any], spec: Any) -> tuple[dict[str, Any], int]:
+def study_inputs(
+    home: Path,
+    manifest: dict[str, Any],
+    spec: Any,
+    *,
+    sources: dict[str, ResolvedAsset] | None = None,
+) -> tuple[dict[str, Any], int]:
     """Reload the find's exact sources; compile only warm-up lengths, never detect again."""
     from alpha_cli import _runner
-    from alpha_cli.spine.stores import resolve_asset
     from alpha_study.setup.expr import compile_expr
 
     texts = [spec.setup.event, *spec.filters.values(), *spec.reference.values()]
@@ -248,7 +283,11 @@ def study_inputs(home: Path, manifest: dict[str, Any], spec: Any) -> tuple[dict[
     for asset in manifest["assets"]:
         if asset["error"] is not None:
             continue  # Failed assets have no recorded candidates; preserve them in the manifest.
-        resolved = resolve_asset(asset["asset"], data_dir=home)
+        resolved = (
+            sources[asset["asset"]]
+            if sources is not None
+            else resolve_asset(asset["asset"], data_dir=home)
+        )
         bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
         if (
             _runner.source_fingerprint(bars) != asset["source_fingerprint"]
@@ -262,10 +301,69 @@ def study_inputs(home: Path, manifest: dict[str, Any], spec: Any) -> tuple[dict[
     return bars_by_asset, warmup
 
 
+def checked_study_inputs(
+    home: Path,
+    manifest: dict[str, Any],
+    spec: Any,
+    *,
+    check_data: bool,
+    accept_bad_data: str | None,
+    report_time: datetime | None,
+) -> tuple[dict[str, Any], int, dict[str, Any]]:
+    sources = {
+        a["asset"]: resolve_asset(a["asset"], data_dir=home)
+        for a in manifest["assets"]
+        if a["error"] is None
+    }
+    assets = list(sources.values())
+    record = run_health_record(
+        assets, check_data=check_data, accept_bad_data=accept_bad_data, report_time=report_time
+    )
+    bars, warmup = study_inputs(home, manifest, spec, sources=sources)
+    verify_inputs(assets, record)
+    return bars, warmup, record
+
+
 def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:
     """The context shown in a contact sheet is part of its immutable identity."""
     payload = spec_sha256 + f"|context={context_bars}|" + "|".join(sorted(keys))
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def source_keys(results: list[dict[str, Any]]) -> list[str]:
+    return [f"{r['asset']}={r['source_fingerprint']}" for r in results if r["error"] is None]
+
+
+def health_find_id(
+    home: Path, spec_hash: str, results: list[dict[str, Any]], context: int, record: dict[str, Any]
+) -> str:
+    from alpha_cli.spine.data_health import identity_part
+
+    keys = source_keys(results)
+    if all(row["status"] == "unchecked" for row in record["series"]):
+        # Preserve historical ids and control seeds when there is no report. If that folder
+        # already records other evidence (including no field), leave it immutable.
+        original = find_identity(spec_hash, keys, context)
+        path = home / "setups" / original / "manifest.json"
+        if not path.exists() or json.loads(path.read_bytes()).get("data_health") == record:
+            return original
+    return find_identity(spec_hash, [*keys, identity_part(record)], context)
+
+
+def outcome_ids(manifest: dict[str, Any], version: str, record: dict[str, Any]) -> tuple[str, str]:
+    from alpha_cli.spine.data_health import identity_part
+
+    # Control draws use the original spec, bars and rule version, independent of the health check.
+    base = manifest["find_id"]
+    if "data_health" in manifest:
+        base = find_identity(
+            manifest["spec_sha256"], source_keys(manifest["assets"]), manifest["context_bars"]
+        )
+    seed = hashlib.sha256(f"{base}|{version}".encode()).hexdigest()[:16]
+    payload = f"{manifest['find_id']}|{version}"
+    if manifest.get("data_health") != record:
+        payload += "|" + identity_part(record)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16], seed
 
 
 def load_find(home: Path, find_id: str) -> tuple[Path, dict[str, Any], Any]:

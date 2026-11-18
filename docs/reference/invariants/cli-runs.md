@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: c01fe819c4495339
+verified: b19bd244f0a0ad2d
 ---
 
 # Command line runs invariants
@@ -96,7 +96,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1` (lock file, strict JSON, fsync); `trial_index` and `total_trials` equal the 1-based line number and
   corruption fails loud. Errors count as trials with an `error` label and null unavailable metrics; the command output explains them.
-- Quick mode (20/4/4 null paths, 50 resamples) is labelled `quick`; all runs carry `all-in` and `dev-machine-data`; defaulted sources and short history too.
+- Quick (20/4/4 paths, 50 resamples), all-in, dev-machine-data, source and history labels accompany [data health](../../../research/tools/data-health.md).
 - CASH equity-sized long entries from flat are capped at the affordable size step including fees at the open; the existing buffer stays. The manifest/result
   counts `resized_entries` in scored execution and prints a line above zero; older runs load without it.
 - Runs recorded before the entry-gap fix may contain late entries. Hashing inputs/rules stay unchanged; source edits change the fingerprint.
@@ -167,7 +167,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Events at most ten bars apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.
 - Sheets stop at the trigger plus entry open; rejected samples stop at their decision boundary. Pending and warm-up rows are not drawn.
 - Accepted sheets are capped and labelled when truncated; rejected sheets sample at most four reasons and four days per reason.
-- `setups/<find_id>` hashes the spec, context (default 60 bars) and sorted asset fingerprints; sheet limits do not affect identity.
+- Find ids bind spec, context (default 60 bars), asset fingerprints and health evidence. Unchecked finds keep the prior id if its folder is free or matches.
 - The atomic manifest is last; repeats append a ledger row without rewriting artifacts. A `setup_find` row is an uncounted look, with no verdict.
 ## Setup study
 - `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
@@ -175,10 +175,10 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Recorded next-open entry to close h−1 positions later, less per-asset round-trip `setup_costs` (stocks/ETFs: 1+2 bp per side; crypto: 10+5 bp); no exits,
   dividends or sizing.
 - Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.
-- SHA-256 study/asset/horizon seeds; exact uniform draws of dates more than ten bars apart; tail (b+1)/(2,000+1). Pool by complete occurrence counts.
+- SHA-256 seeds exclude health metadata. Draw dates uniformly over 10 bars apart. Tail (b+1)/(2,000+1). Pool by complete occurrence counts.
 - Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
-- `setup-studies/<id>` hashes find id and `setup-study-2`; old folders read with `older-cost-rule`. Re-studying a find that has an older-rule study is
-  labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
+- `setup-studies/<id>` binds find id, `setup-study-2` and new health evidence. Old folders read with `older-cost-rule`.
+  Re-studying a find with an older-rule study is labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
 - Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
 - Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
 - One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).

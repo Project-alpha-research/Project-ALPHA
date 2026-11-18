@@ -25,6 +25,8 @@ def test_setup_find_and_repeat(tmp_path: Path) -> None:
         'timeframe="1D"\nevent="close > 0"\n[reference]\nbase="low"\n'
     )
     first = alpha(home, "setup", "find", str(spec), "--json").json()
+    assert first["data_health"]["verdict"] == "unchecked"
+    assert "data-health-unchecked" in first["labels"]
     folder = Path(first["folder"])
     assert folder == data / "setups" / first["find_id"]
     for name in (

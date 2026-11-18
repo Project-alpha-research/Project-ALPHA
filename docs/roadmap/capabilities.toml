@@ -1443,13 +1443,13 @@ docs = ["research/tools/data-health.md", "docs/reference/project/components/data
 
 [[capability]]
 id = "data-health-on-runs"
-name = "Data health verdict attached to every run"
-what = "Look up a series' saved health report when a run starts, label the run with its verdict, and stop on a fail unless the owner overrides it."
-see_it = ["nothing to see yet — not built"]
-entry_points = []
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
+name = "Data health on rule tests and setup runs"
+what = "Record the worst health verdict for the data used. A failure stops the run unless the user gives a reason. RD-Agent panels are not built yet."
+see_it = ["alpha test <spec.toml> --check-data", "alpha setup find <spec.toml> --check-data", "alpha results show <run_id>"]
+entry_points = ["cli: alpha test", "cli: alpha setup find", "cli: alpha setup study", "cli: alpha setup trade"]
+proof_synthetic = ["tests/unit/test_run_data_health.py::test_stock_peers_worst_and_override", "tests/unit/test_run_data_health.py::test_rule_override_is_stored", "tests/unit/test_run_data_health.py::test_setup_override_is_per_invocation"]
+proof_smoke = ["tests/smoke/test_rule_test_smoke.py::test_rule_test_records_two_assets", "tests/smoke/test_setup_find_smoke.py::test_setup_find_and_repeat"]
+real_data = "not yet confirmed (synthetic stores only)"
 needs = []
-state = "Not started"
-missing = "step 2 of the data health report: runs, setup finds and the RD-Agent panel do not read the saved report yet"
+state = "Working"
 docs = ["research/tools/data-health.md"]

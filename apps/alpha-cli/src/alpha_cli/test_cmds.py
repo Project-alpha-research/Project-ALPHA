@@ -9,7 +9,8 @@ from pathlib import Path
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.spine.errors import fail, test_error
+from alpha_cli.spine.data_health import health_sentence
+from alpha_cli.spine.errors import SpineError, fail, test_error
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_cli.spine.stores import _stores
@@ -32,6 +33,14 @@ def test_rule(
     no_diagnose: bool = typer.Option(
         False, "--no-diagnose", help="Skip automatic diagnostics; labelled no-diagnostics."
     ),
+    check_data: bool = typer.Option(
+        False, "--check-data", help="Compute missing or out-of-date daily health reports."
+    ),
+    accept_bad_data: str | None = typer.Option(
+        None,
+        "--accept-bad-data",
+        help="Proceed after a failed health check for this run. Give a reason.",
+    ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Test a long/flat trading rule on several assets and record every trial."""
@@ -53,6 +62,8 @@ def test_rule(
                 home=settings.data_dir,
                 seed=settings.random_seed,
                 quick=quick,
+                check_data=check_data,
+                accept_bad_data=accept_bad_data,
                 no_diagnose=no_diagnose,
             )
         if all(result["error"] is not None for result in output["results"]):
@@ -63,6 +74,8 @@ def test_rule(
                 ),
                 json_out,
             )
+    except SpineError as exc:
+        fail(exc, json_out)
     except (ValueError, OSError, DataError) as exc:
         fail(test_error(str(exc)), json_out)
     lines = [
@@ -82,4 +95,6 @@ def test_rule(
                 )
             )
         )
+        if result.get("data_health"):
+            lines.append(health_sentence(result["data_health"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))

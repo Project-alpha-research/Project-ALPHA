@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 2e68d05271d077ba
+verified: f08f42eacd06ec26
 ---
 
 # Ideas and things considered
@@ -25,7 +25,7 @@ something is considered, rejected or left open.
 | 2026-11-18 | Full bypass of the Codex build sandbox | Rejected | Risk of exposing keys; a limited widening was approved |
 | 2026-11-18 | One backtest engine per kind of test | Open | Needs a side-by-side check before duplicates retire |
 | 2026-11-18 | Qlib used in a real research path | Open | Installed in its worker; no real path uses it yet |
-| 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Queued | Owner request; not built |
+| 2026-11-18 | One data health report: adjustments, timestamps, gaps, survivorship | Built 2026-11-19 | Rule tests and setups built. RD-Agent panels queued |
 | 2026-11-18 | RD-Agent writes its own statistical tests | Not recommended | Marks its own homework; [entry][own-tests] |
 
 ## Open questions

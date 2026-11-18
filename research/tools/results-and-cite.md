@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: c7bbffda47912f7d
+verified: 9939370d47c39596
 ---
 # Results and cite
 **Reach for it when** quoting a stored run or checking what was tried. **Commands**
@@ -11,7 +11,7 @@ verified: c7bbffda47912f7d
 `alpha results compare <run_id> <run_id>`, `alpha results check <file>`. **How to read it**
 - List includes failed trials. Show gives facts, flags, charts and trial counts. Filter by `--idea-id`; a failed asset has a reason.
 - Cite copies a value, source and basis. Period facts include dates. Select repeat tool outputs with `--tool-output <id>` and report non-default settings tried.
-- Compare uses the first run as base. Check a tagged draft against the stored values and correct each reported problem.
+- Show gives the [data health verdict](data-health.md). Compare uses the first run as base. Check each tagged draft and correct each reported problem.
 - Period metrics include `tradable_total_return`, `tradable_cagr`, `tradable_sharpe`, `tradable_max_drawdown`, `tradable_trades`,
   `tradable_benchmark_total_return`, `tradable_benchmark_cagr`, `tradable_benchmark_sharpe`, `tradable_benchmark_max_drawdown`, `scored_total_return`,
   `scored_cagr`, `scored_sharpe`, `scored_max_drawdown`, `scored_trades`, `scored_benchmark_total_return`, `scored_benchmark_cagr`, `scored_benchmark_sharpe`,

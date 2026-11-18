@@ -163,6 +163,7 @@ part that owns it can link to one clear entry.
   one report on the health of the stored data covering price adjustments, timestamps, gaps and
   survivorship.
 - **Decided:** queued, not built. It is listed in [ideas and things considered](ideas-and-considered.md).
+- **Status 2026-11-19:** rule tests and setup runs now carry the report. RD-Agent panels remain queued.
 - **Governs:** [data layer](components/data-layer.md).
 
 ### 2026-11-18 Rule: a directional statement lands in this log in the same change

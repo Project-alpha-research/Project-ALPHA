@@ -7,9 +7,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 14a0e5f4ca2f5afc
+verified: 6eb4c599a9d03988
 ---
-
 # Setup study
 
 **Reach for it when** a recorded setup find has the intended matches and the owner wants to
@@ -33,6 +32,7 @@ uv run alpha results cite <study_id> setup_mean_net_return --json
   evidence to omit; each half meets controls from its own years.
 - Each study counts one trial; repeating it labels `repeat` without rewriting the folder.
 
+The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)
 **What it cannot tell you** Exits, sizing, portfolios, dividends or reserved-data confirmation.
 Setups cluster in market states (a double bottom follows a decline): beating random dates says
 the dates were unusual, not that the setup can be traded.

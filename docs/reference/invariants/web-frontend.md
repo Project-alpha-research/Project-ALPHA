@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: b97f532919240f38
+verified: 03318a9474fb4e16
 ---
 
 # Web frontend invariants
@@ -128,7 +128,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - `reportModel.summaryRows` shows recorded manifest values only (`not recorded` otherwise) — no client arithmetic.
 - `reportModel.reportTree` keeps empty leaves visible with their reason. In the figure overlay a Copy the browser cannot
   do is disabled with the reason, and question, uncertainty and caveat prose stays in the DOM in both explain modes.
-- The rule-test Summary takes its headline dates from the first executable open through the final tradable open. Loaded dates appear below.
+- Rule tests show the first executable to final tradable open and loaded dates. Rule tests and Setup Lab show non-pass health findings beside the headline.
   Each dated row reads its own stored returns, annual growth, worst drop, closed trades, Sharpe and price basis from the manifest.
   Row one is “Whole period the rule could trade”; “Scored test periods only” uses the walk-forward portfolio and its trade count.
   Each row has matching comparison and drawdown figures, stored light for new runs. Old runs keep saved figures and a full-history disclosure.

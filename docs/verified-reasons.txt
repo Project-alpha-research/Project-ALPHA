@@ -2,7 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b0effe47937fef41 on 2026-11-18: Re-read after merging the propose-and-discuss change: body text equals main's, which already describes the new discussion command; this branch's rule-test and tools lines are unchanged
+  verified d4ca3a79d25fbd7a on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
+
+apps/alpha-web/CONTEXT.md
+  verified 9e59f2a27fcfe2f4 on 2026-11-19: Reviewed health lookup, display, historical control seeds and tests. The documented workflows and input contracts still apply.
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -10,11 +13,20 @@ docs/CONTEXT.md
 docs/reference/invariants/cli-investigation-tools.md
   verified 6206e1d5ca27b481 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
+docs/reference/invariants/cli-results-check.md
+  verified 7e29058fe5d0f0ec on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
+
 docs/reference/invariants/cli-runs.md
-  verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified b19bd244f0a0ad2d on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
+
+docs/reference/invariants/web-api.md
+  verified 4ff3d5999e3aa7e3 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
+
+docs/reference/invariants/web-frontend.md
+  verified 03318a9474fb4e16 on 2026-11-19: Reviewed health lookup, display, historical control seeds and tests. The documented workflows and input contracts still apply.
 
 docs/reference/invariants/workers.md
   verified 3c7189bc6ec2738d on 2026-11-18: Re-read: discussion records who chose and only tested ideas count; the review fixes (length cap, refused late replies, unusable revision drop) change no rule stated here
@@ -26,10 +38,10 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
+  verified 0129777b84c44fb7 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
 
 docs/reference/project/components/command-line.md
-  verified 6d2ae04ff23571c1 on 2026-11-18: Re-read after merging the propose-and-discuss change: body text equals main's, which already describes the new discussion command; this branch's rule-test and tools lines are unchanged
+  verified a45e2cc8a36e3786 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -55,20 +67,23 @@ docs/reference/project/components/qlib.md
 docs/reference/project/components/rd-agent.md
   verified 33e0f3ad54f5e204 on 2026-11-18: re-read: PR 271 moved change notes into workers/rdagent/README.md and edited this page in the same change; its links resolve and it matches
 
+docs/reference/project/components/setup-lab.md
+  verified ace952b390858ffe on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
+
 docs/reference/project/components/strategies-and-signals.md
-  verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
+  verified b1521897bb8f2000 on 2026-11-19: Reviewed health lookup, display, historical control seeds and tests. The documented workflows and input contracts still apply.
 
 docs/reference/project/components/toolbox.md
   verified e5829ce307d7d01b on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 302ddefc006f0eff on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
 
 docs/reference/project/components/web-workstation.md
   verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/ideas-and-considered.md
-  verified 2e68d05271d077ba on 2026-11-18: The new log entry records a decided writing style, not an idea under consideration, so no row here changes
+  verified f08f42eacd06ec26 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -98,22 +113,28 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 19b2266336c85055 on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
 
 research/PLAYBOOK.md
-  verified 383a1502ea8f14be on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 25aecdc471287c18 on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
 
 research/tools/README.md
-  verified 2aface65c59fa829 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 0da03d0b8690be05 on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified f241475c184eea0f on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 069ad1cf78d97856 on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
+
+research/tools/charts.md
+  verified d9900203e77fec78 on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
+
+research/tools/data-health.md
+  verified 87e102d967fd4265 on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 95c6daa1e2b75052 on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
 
 research/tools/diagnose-and-audit.md
-  verified 3b71a6fca5ba8d7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 9c5175ed90719a1d on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -124,14 +145,26 @@ research/tools/price-noise.md
 research/tools/rdagent-journey.md
   verified dc85c46fe5c0a8d6 on 2026-11-18: Re-read: this branch only renamed the journey theme helper to figure_theme and named its light variant; light stays default and --theme dark still selects dark, as the card says
 
+research/tools/results-and-cite.md
+  verified 9939370d47c39596 on 2026-11-19: The find-summary integrity error retains its original exception. Command behavior, stored fields and report wording are unchanged.
+
 research/tools/rule-test.md
-  verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 863f768761806227 on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
 
 research/tools/run-level-checks.md
   verified 82034701aac7dff9 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 research/tools/sensitivity.md
-  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 95c6daa1e2b75052 on 2026-11-19: The citation checker also accepts the printed health verdict. Results show reads find summaries separately from citable outcomes; the other documented interfaces still apply.
+
+research/tools/setup-find.md
+  verified eaa0976cee0b9537 on 2026-11-19: Reviewed health lookup, display, historical control seeds and tests. The documented workflows and input contracts still apply.
+
+research/tools/setup-study.md
+  verified 6eb4c599a9d03988 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
+
+research/tools/setup-trade.md
+  verified 1b15e30c3efef394 on 2026-11-19: Reviewed the described commands, store reads, trial accounting and UI against the change. The health lookup adds a run annotation and a pre-run check; the other documented behavior still applies.
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

@@ -156,22 +156,18 @@ def family_permissions(
     ) - closed
     source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
     count_text = ""
-    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
-    if include_counts and path and Path(path).exists():
-        raw = Path(path).read_bytes()
-        rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER") if include_counts else None
+    if (rows := AlphaFactorHypothesisGen.ledger_rows(path)) is not None:
         limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
         count_text = "".join(
             f"\nfailed tries in this idea family ({family}): {count} of the limit {limit}"
             for family, count in sorted(family_definitions().family_failure_counts(rows).items())
         )
-    opened = family_definitions().offered_families(opened, source)
+    closed_text = "; ".join(sorted(closed)) or "none"
+    opened_text = "; ".join(sorted(family_definitions().offered_families(opened, source)))
     return (
-        "Closed families: "
-        + ("; ".join(sorted(closed)) or "none")
-        + ". open families: "
-        + "; ".join(sorted(opened))
-        + ". A mechanism that belongs to none of the closed families is allowed."
+        f"Closed families: {closed_text}. open families: {opened_text}. "
+        "A mechanism that belongs to none of the closed families is allowed."
         + (
             " Session drift families are not offered because this 24/7 crypto venue's daily "
             "bars run from midnight to midnight, without an overnight trading break."
@@ -202,25 +198,7 @@ FAMILY_REFUSALS = list[str]()
 
 def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     """Every idea family: tries, best result, how each failed, and which to leave."""
-    families: dict[str, list[dict[str, Any]]] = {}
-    for row in rows:
-        row = {**row, "status": family_definitions().recorded_status(row)}
-        if row["status"] not in {
-            "SCREEN_FAIL",
-            "SPREAD_FAIL",
-            "REPLAY_FAIL",
-            "FAST_ONLY",
-            "CANDIDATE",
-            "DEFLATION_FAIL",
-        }:
-            continue
-        for family in idea_family(
-            row["name"],
-            row.get("description") or "",
-            row.get("formulation") or "",
-            row.get("variables"),
-        ).split("; "):
-            families.setdefault(family, []).append(row)
+    families = AlphaFactorHypothesisGen.trial_families(rows)
     lines, closed = [], []
     for family, members in sorted(families.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         best = min(members, key=_rank)
@@ -256,23 +234,14 @@ def ledger_summary(
     effective = family_definitions().recorded_status(row)
     derived = effective != row["status"]
     row = {**row, "status": effective}
-    if row.get("schema") not in {
-        "AlphaRdagentFactorTrialV1",
-        "AlphaRdagentFactorTrialV2",
-        "AlphaRdagentFactorTrialV3",
-    }:
+    if row.get("schema") not in AlphaFactorHypothesisGen.TRIAL_SCHEMAS:
         raise ValueError("invalid ALPHA trial ledger schema")
     count_text = ""
     looks = row.get("screen_m", row.get("family_size"))
     if looks is not None:
         count_text += f"; looks so far across all ideas: {looks} (sets the screen cutoff)"
     if failures is not None and row["status"] != "IMPORTED":
-        for family in idea_family(
-            row["name"],
-            row.get("description") or "",
-            row.get("formulation") or "",
-            row.get("variables"),
-        ).split("; "):
+        for family in AlphaFactorHypothesisGen.row_families(row):
             count_text += (
                 f"; failed tries in this idea family ({family}): "
                 f"{failures.get(family, 0)} of the limit {limit}"
@@ -327,18 +296,13 @@ def append_swing_context(context: dict[str, Any], ledger_name: str | None) -> No
 def append_ledger_context(
     context: dict[str, Any], ledger_name: str | None, universe: str, reserved_chars: int
 ) -> None:
-    if not ledger_name or not Path(ledger_name).exists():
-        return
-    raw = Path(ledger_name).read_bytes()
-    # Another run may be appending; only complete lines participate in the summary.
-    rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
-    if not rows:
+    if not (rows := AlphaFactorHypothesisGen.ledger_rows(ledger_name)):
         return
     heading = "\nALPHA trial ledger (all runs; exploratory, not admitted; " + universe + ")\n"
     lines: list[str] = []
     seen: set[str] = set()
     unknown: list[str] = []
-    known = {"AlphaRdagentFactorTrialV1", "AlphaRdagentFactorTrialV2", "AlphaRdagentFactorTrialV3"}
+    known = AlphaFactorHypothesisGen.TRIAL_SCHEMAS
     for row in rows:
         if not isinstance(row, dict) or not isinstance(row.get("schema"), str):
             raise ValueError("invalid ALPHA trial ledger schema")
@@ -363,11 +327,9 @@ def append_ledger_context(
         used += len(line) + 1
     if omitted:
         lines.append(f"({omitted} older distinct factors not shown)")
-    distinct: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        if row["schema"] in known and row["status"] not in ("REPEAT", "IMPORTED"):
-            distinct.setdefault(row["code_sha256"], row)
-    context["hypothesis_and_feedback"] += family_summary(list(distinct.values()), switch_after)
+    context["hypothesis_and_feedback"] += family_summary(
+        AlphaFactorHypothesisGen.distinct_trials(rows), switch_after
+    )
     context["hypothesis_and_feedback"] += heading + "\n".join(lines)
     if unknown:
         context["hypothesis_and_feedback"] += (
@@ -477,9 +439,14 @@ def current_funding_setting() -> str:
     path = Path(run) / "factor_data/full/daily_pv.h5" if run else None
     if path is None or not path.exists():
         return ""
-    frame = pd.read_hdf(path, key="data")
-    if not {"$funding_sum", "$funding_last", "$funding_count"} <= set(frame.columns):
-        return ""
+    receipt = path.parents[1] / "prepare-receipt.json"
+    if not (receipt.exists() and "funding_sha256" in json.loads(receipt.read_bytes())):
+        # prepare writes fixed-format frames, whose column index is stored as axis0.
+        store: Any
+        with pd.HDFStore(path, mode="r") as store:
+            columns = store.get_storer("data").read_index("axis0")
+        if not {"$funding_sum", "$funding_last", "$funding_count"} <= set(columns):
+            return ""
     return (
         " Futures funding inputs: $funding_sum, $funding_last, $funding_count. "
         "Missing funding stays NaN, never zero or forward-filled; only settlements known "
@@ -489,6 +456,8 @@ def current_funding_setting() -> str:
 
 
 class AlphaFactorScenario(QlibFactorScenario):
+    _funding_text: str | None = None
+
     def get_runtime_environment(self) -> str:
         # Upstream runs `python runtime_info.py` through a conda-derived PATH; without conda that
         # PATH has no `python`. Run RD-Agent's own probe with the factor runtime's interpreter.
@@ -533,7 +502,8 @@ class AlphaFactorScenario(QlibFactorScenario):
     @property
     def experiment_setting(self) -> str:
         universe_text: str = current_universe()
-        funding_text: str = current_funding_setting()
+        if self._funding_text is None:
+            self._funding_text = current_funding_setting()
         return (
             "Binance USDT spot coins, daily bars: " + universe_text + ". History only: "
             "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
@@ -541,7 +511,7 @@ class AlphaFactorScenario(QlibFactorScenario):
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
             "not all. Daily, weekly (7-day) and monthly (28-day) holding/rebalance clocks are "
             "fixed in advance; only a weekly or monthly pass can become a candidate. "
-            "exploratory, not admitted, not yet confirmed." + funding_text
+            "exploratory, not admitted, not yet confirmed." + self._funding_text
         )
 
 
@@ -740,6 +710,72 @@ class AlphaFactorRunner(Developer):
 
 
 class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
+    TRIAL_SCHEMAS = {
+        "AlphaRdagentFactorTrialV1",
+        "AlphaRdagentFactorTrialV2",
+        "AlphaRdagentFactorTrialV3",
+    }
+    _ledger_snapshot: tuple[tuple[str, int, int], list[dict[str, Any]]] | None = None
+
+    def gen(self, trace: Any, plan: Any = None) -> Any:
+        # The guard's re-asks are part of the same round.
+        if not FAMILY_REFUSALS:
+            AlphaFactorHypothesisGen._ledger_snapshot = None
+        return super().gen(trace, plan)
+
+    @classmethod
+    def ledger_rows(cls, name: str | None) -> list[dict[str, Any]] | None:
+        if not name:
+            return None
+        path = Path(name)
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            cls._ledger_snapshot = None
+            return None
+        key = (name, stat.st_size, stat.st_mtime_ns)
+        if cls._ledger_snapshot is None or cls._ledger_snapshot[0] != key:
+            raw = path.read_bytes()
+            # Another run may be appending; consume only complete lines.
+            rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+            cls._ledger_snapshot = key, rows
+        return cls._ledger_snapshot[1]
+
+    @classmethod
+    def distinct_trials(cls, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        distinct: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            if row["schema"] in cls.TRIAL_SCHEMAS and row["status"] not in {"REPEAT", "IMPORTED"}:
+                distinct.setdefault(row["code_sha256"], row)
+        return list(distinct.values())
+
+    @staticmethod
+    def row_families(row: dict[str, Any]) -> list[str]:
+        return idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; ")
+
+    @classmethod
+    def trial_families(cls, rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+        families: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            row = {**row, "status": family_definitions().recorded_status(row)}
+            if row["status"] not in {
+                "SCREEN_FAIL",
+                "SPREAD_FAIL",
+                "REPLAY_FAIL",
+                "FAST_ONLY",
+                "CANDIDATE",
+                "DEFLATION_FAIL",
+            }:
+                continue
+            for family in cls.row_families(row):
+                families.setdefault(family, []).append(row)
+        return families
+
     def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
         context, flag = super().prepare_context(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
@@ -825,61 +861,25 @@ class AlphaFactorFeedback(Experiment2Feedback):
 
 
 def known_families() -> set[str]:
-    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
-    raw = Path(path).read_bytes() if path and Path(path).exists() else b""
+    rows = AlphaFactorHypothesisGen.ledger_rows(os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
     families: set[str] = set()
-    for line in raw[: raw.rfind(b"\n") + 1].splitlines():
-        row = json.loads(line)
+    for row in rows or []:
         if row.get("schema", "").startswith("AlphaRdagentFactorTrial"):
-            families.update(
-                idea_family(
-                    row["name"],
-                    row.get("description") or "",
-                    row.get("formulation") or "",
-                    row.get("variables"),
-                ).split("; ")
-            )
+            families.update(AlphaFactorHypothesisGen.row_families(row))
     return families
 
 
 def closed_families() -> set[str]:
     """Families with enough evaluated failed tries and no candidate, from the trial ledger."""
-    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
-    raw = Path(path).read_bytes() if path and Path(path).exists() else b""
-    rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
-    known = {
-        "AlphaRdagentFactorTrialV1",
-        "AlphaRdagentFactorTrialV2",
-        "AlphaRdagentFactorTrialV3",
-    }
-    distinct: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        if row["schema"] in known and row["status"] not in {"REPEAT", "IMPORTED"}:
-            distinct.setdefault(row["code_sha256"], row)
-    families: dict[str, list[str]] = {}
-    for row in distinct.values():
-        row = {**row, "status": family_definitions().recorded_status(row)}
-        if row["status"] not in {
-            "SCREEN_FAIL",
-            "SPREAD_FAIL",
-            "REPLAY_FAIL",
-            "FAST_ONLY",
-            "CANDIDATE",
-            "DEFLATION_FAIL",
-        }:
-            continue
-        for family in idea_family(
-            row["name"],
-            row.get("description") or "",
-            row.get("formulation") or "",
-            row.get("variables"),
-        ).split("; "):
-            families.setdefault(family, []).append(row["status"])
+    rows = AlphaFactorHypothesisGen.ledger_rows(os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
+    families = AlphaFactorHypothesisGen.trial_families(
+        AlphaFactorHypothesisGen.distinct_trials(rows or [])
+    )
     limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
     return {
         family
-        for family, statuses in families.items()
-        if len(statuses) >= limit and "CANDIDATE" not in statuses
+        for family, members in families.items()
+        if len(members) >= limit and not any(m["status"] == "CANDIDATE" for m in members)
     }
 
 

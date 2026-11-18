@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_journey*.py
   - apps/alpha-cli/src/alpha_cli/figures/rdagent_journey_figures.py
-verified: 386bf25df3abfe4c
+verified: 5622b318ac20f757
 ---
 
 # Follow one RD-Agent idea
@@ -25,11 +25,16 @@ compares the top and bottom thirds before costs. The trading picture shows the s
 third before and after costs against the full basket; a costed bottom third is not stored.
 
 Each available PNG has a JSON file containing its plotted numbers. A missing picture has a
-reason in the journey. Check the coverage, prior exposure and shortlist facts in step seven
-before interpreting the result. The journey is an exploratory reading of stored evidence.
+reason in the journey. The future-data check names how many dates ALPHA checked. Step six
+names the quick tests with recorded verdicts and shows the agent's feedback in its own words.
+Step seven shows ideas tested so far, coins with a usable number, prior exposure and shortlist
+facts. The journey is an exploratory reading of stored evidence.
 
 In the Workstation, open Research → RD-Agent, select the run, then select an idea. The screen reads
 the run's own `journey/` folder. A missing journey shows the local build command. The CLI can build
 journeys for judged factors only. A loop event can have a name with no linked evaluation.
-The proposal wording and code can be excerpts. The final step carries the judge's exploratory
-label when recorded. The picker gets the verdict from the run records.
+Step one shows up to four short sentences: idea type, description summary, expected direction,
+and a chosen-after-seeing-the-data note. The full description stays in the agent's own words.
+Code can be an excerpt. Long code lines wrap. The run summary shows only
+recorded values. The final step carries the judge's exploratory label when recorded. The picker
+gets the verdict from the run records.

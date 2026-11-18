@@ -15,11 +15,22 @@
 }
 .journey-step h3 { margin-top: 0; }
 .journey-step pre {
+  box-sizing: border-box;
   max-width: 100%;
-  overflow: auto;
   padding: var(--pad-sm);
   background: var(--panel-2);
   font-family: var(--font-mono);
+  white-space: normal;
+}
+.journey-code-line {
+  --journey-wrap-indent: min(calc(var(--journey-code-indent) + 2ch), 45%);
+  display: block;
+  min-height: 1lh;
+  white-space: break-spaces;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  padding-inline-start: var(--journey-wrap-indent);
+  text-indent: calc(-1 * var(--journey-wrap-indent));
 }
 .journey-image { background: var(--panel); color: var(--ink); margin: 0; }
 .journey-numbers { display: flex; flex-wrap: wrap; gap: var(--pad); }

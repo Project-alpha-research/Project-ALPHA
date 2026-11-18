@@ -213,24 +213,6 @@ missing = "shelved 2026-11-14: not wired into any command; kept for a future dow
 triage = { card = "2", recommendation = "SHELVE", owner_decision = "SHELVE" }
 
 [[capability]]
-id = "funding-download"
-name = "Bybit funding-rate download"
-what = "Download Bybit funding rates (the regular payments between long and short traders) with the raw bytes kept."
-see_it = ["nothing to see yet — internal only"]
-entry_points = [
-  "code: packages/alpha-data/src/alpha_data/crypto/funding_ingestion.py",
-  "code: packages/alpha-data/src/alpha_data/crypto/providers/bybit_funding.py",
-  "code: packages/alpha-data/src/alpha_data/crypto/providers/funding_transport.py",
-]
-proof_synthetic = []
-real_data = "not yet confirmed (to check on the Mac later)"
-needs = []
-state = "Shelved"
-missing = "shelved 2026-11-14: not wired into any command (real downloads refused on purpose); kept for funding-event research"
-# owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): shelve; kept for funding-event research
-triage = { card = "B", recommendation = "SHELVE", owner_decision = "SHELVE" }
-
-[[capability]]
 id = "retained-coverage"
 name = "\"Are my downloaded daily bars complete?\" check"
 what = "Check downloaded daily prices for missing, duplicated or out-of-place days against the calendar you expect."
@@ -1063,6 +1045,13 @@ triage = { card = "13", recommendation = "KEEP", owner_decision = "KEEP" }
 
 # Triage cards that are not a user-facing workflow of their own.
 [[decision]]
+card = "B"
+name = "Bybit funding-rate download modules"
+recommendation = "SHELVE"
+# shelved 2026-11-14, then deleted 2026-11-18 on the owner's approval to delete unreached code: the Binance funding importer replaces it
+owner_decision = "DELETE"
+
+[[decision]]
 card = "C"
 name = "The RD-Agent runtime as a whole (covers cards 7, 8 and 9)"
 recommendation = "KEEP"
@@ -1103,6 +1092,48 @@ name = "QuantPad code"
 recommendation = "DELETE"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): delete: command, adapter and archive code removed; registered QuantPad datasets stay readable
 owner_decision = "DELETE"
+
+[[decision]]
+card = "N1"
+name = "Confirm shortlisted RD-Agent factors once on the reserved data (ten slots, each use permanent)"
+recommendation = "YOUR CALL"
+# owner, 2026-11-18: yes; ten slots for the life of the reserved window, each needing the owner's own yes; not built yet
+owner_decision = "KEEP"
+
+[[decision]]
+card = "N2"
+name = "RD-Agent idea-family failure limit (three near-copies in one round close a family)"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N3"
+name = "Move RD-Agent research toward stocks and the owner's own setups"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N4"
+name = "Make the Qlib v3 feature recipe the default"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N5"
+name = "When to resume Workstation screen work"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
+
+[[decision]]
+card = "N6"
+name = "Add the purpose and the three golden paths to CLAUDE.md"
+recommendation = "YOUR CALL"
+# open since 2026-11-18, listed in docs/reference/project/owner-decisions-4.md
+owner_decision = "undecided"
 
 [[capability]]
 id = "macro-context"

@@ -32,8 +32,8 @@ Telling a real edge from luck after many tries.
 | Sample-size check: is there enough data to say anything | Unproven | `alpha-research` | Path 2 | private |
 | Quick-screen score corrected for overlapping windows (the weights exist; nothing uses them yet) | Missing | `workers/afml` | Later | [status] |
 | Prop-firm challenge check, as an optional tool and never the goal | Unproven | `alpha-validation` | Later | [status] |
-| Labels with a target, a stop and a time limit; splits that respect multi-day labels | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
-| Second-opinion overfitting numbers and the minimum track record a result needs | Missing | [toolkit](backlog/afml-toolkit-worker.md) | Later | private |
+| Labels with a target, a stop and a time limit | Working | `alpha labels barrier`; the splits for multi-day labels are in stage 9 | Now | private |
+| Second-opinion overfitting numbers and the minimum track record a result needs | Unproven | `workers/afml` stats; tested in-process, no end-to-end check ([toolkit](backlog/afml-toolkit-worker.md)) | Path 1 | private |
 | Combined signals never count the same input twice as evidence | Missing | ledger; [practice](backlog/practitioner-research-ideas.md) | Later | private |
 | Walk-forward efficiency (out-of-sample over in-sample result), labelled as a rule of thumb | Working | [efficiency](../../research/tools/walk-forward.md) in `alpha diagnose` | Now | private |
 | Inverted-signal control: the opposite trade must lose, or the edge is a data artefact | Working | [control](../../research/tools/inverted-signal-control.md) in `alpha diagnose`; a check, not proof | Now | private |
@@ -146,6 +146,10 @@ The pinned upstream engines and how much of each ALPHA uses.
 | Purged splits by label end time, with embargo, backtest paths and a leak checker | Unproven | `workers/afml` | Path 3 | [status] |
 | Fractional differencing with d chosen on training data only | Unproven | `workers/afml` | Path 3 | [status] |
 | Second opinions on PSR, DSR, PBO; minimum track record; strategy risk | Unproven | `workers/afml` | Path 1 | [status] |
+| One-shot confirmation of shortlisted factors on the reserved data (approved by the owner 2026-11-18, not started; queued behind the screens) | Missing | `workers/rdagent`, `alpha-cli` judge | Path 3 | private |
+| Every automatic refusal shown with its reason and open to the owner's override (orchestrator's plan, 2026-11-18) | Missing | `workers/rdagent`, `alpha-cli` judge, `alpha-web` | Path 3 | private |
+| A "propose and discuss" mode: the agent shows its ideas and reasoning before any spending (orchestrator's plan) | Missing | `workers/rdagent`, `alpha-cli` | Path 3 | private |
+| RD-Agent's reasoning shown on screen, with honesty checks as labels on results (orchestrator's plan) | Missing | `alpha-web` | Path 3 | private |
 | A map of everything Qlib and RD-Agent offer, each item with a state | Missing | [coverage maps](backlog/engine-coverage-maps.md) | Path 3 | [rd-all] |
 | Feature attribution (SHAP-style) for tree models, tracked over time as an early drift warning | Missing | `workers/qlib`; [note](backlog/engine-coverage-maps.md) | Later | private |
 | Automated loops scored on out-of-sample result, complexity and trade count, not return alone | Missing | `workers/rdagent`; [note](backlog/rescued-research-ideas.md) | Path 3 | private |

@@ -160,7 +160,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 
 - **Workspaces:** `packages/alpha-data`
 - **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
-  `funding-download`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
+  `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
   `filing-events`, `crypto-derivatives-context`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.

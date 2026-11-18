@@ -27,6 +27,34 @@ const detail: Detail = {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('RD-Agent recorded panel', () => {
+  it('shows a linked story, round cards, explanations and raw rows only inside technical detail', () => {
+    const idea = {
+      id: 'trial-0', round: fact(2), round_kind: 'evaluation' as const,
+      name: fact('Synthetic idea'), description: fact('The proposer’s own words.'),
+      direction: fact(-1), clock: fact('weekly'), reason: fact('A stored economic reason.'),
+      system_statuses: ['coded'], refusal: fact(), feedback: fact('Try a different mechanism.'),
+      feedback_scope: 'round' as const, trial: detail.factors[0],
+      stages: { proposed: true, refused: false, coded: true, ran: true, judged: true, shortlisted: true, candidate: true },
+      labels: ['shortlist', 'perp-funding', 'composite_suspect', 'diagnostic clocks'],
+      code_file: fact('synthetic.py'), raw: '{"raw_marker":"technical only"}',
+    }
+    const story = { ideas: [idea], journey: Object.fromEntries(Object.entries(idea.stages).map(([key, value]) => [key, fact(value ? 1 : 0)])),
+      missing_links: [], ending: 'finished', ending_reason: fact('completed'), minutes: fact(2) }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={{ ...detail, story }} error={null} onSelect={() => undefined} />)
+    for (const text of ['What happened in this run', 'Idea journey', 'The proposer’s own words.',
+      'What the system did', 'What the test said', 'What it was told next', 'Try a different mechanism.',
+      'not a pass', 'funding coverage', 'earlier tries', 'cannot pass', 'Words used here']) expect(html).toContain(text)
+    for (const stage of Object.keys(idea.stages)) {
+      expect(html).toContain(`id="journey-${stage}"`)
+      expect(html).toContain(`href="#journey-${stage}"`)
+    }
+    expect(html).toContain('href="#idea-trial-0"')
+    expect(html).toContain('id="idea-trial-0"')
+    expect(html).toMatch(/<details[^>]*><summary>technical detail<\/summary>[\s\S]*raw_marker/)
+    expect(html.indexOf('What the system did')).toBeLessThan(html.indexOf('What the test said'))
+    expect(html.indexOf('What the test said')).toBeLessThan(html.indexOf('What it was told next'))
+  })
+
   it('uses terminal panel surfaces and ink instead of figure-canvas colours', () => {
     const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
     expect(html).toContain('background:var(--panel)')
@@ -104,5 +132,20 @@ describe('RD-Agent recorded panel', () => {
     const pending = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="second" detail={detail} error={null} onSelect={() => undefined} />)
     expect(pending).not.toContain('slow_rank')
     expect(pending).toContain('Loading recorded run')
+  })
+  it('shows a round\'s feedback once and points later cards of that round to it', () => {
+    const base = {
+      round: fact(0), round_kind: 'evaluation' as const, description: fact(), direction: fact(), clock: fact(), reason: fact(),
+      system_statuses: ['coded'], refusal: fact(), feedback: fact('Synthetic round feedback.'), feedback_scope: 'round' as const,
+      trial: null, stages: { proposed: true, refused: false, coded: true, ran: true, judged: true, shortlisted: false, candidate: false },
+      labels: [], code_file: fact(), raw: '{}',
+    }
+    const story = {
+      ideas: [{ ...base, id: 'a', name: fact('First synthetic') }, { ...base, id: 'b', name: fact('Second synthetic') }],
+      journey: {}, missing_links: [], ending: 'finished', ending_reason: fact(), minutes: fact(), events: [],
+    }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={{ ...detail, story }} error={null} onSelect={() => undefined} />)
+    expect(html.split('Synthetic round feedback.').length - 1).toBe(1)
+    expect(html).toContain('The same feedback as for First synthetic above')
   })
 })

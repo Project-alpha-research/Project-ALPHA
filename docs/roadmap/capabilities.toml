@@ -1045,6 +1045,13 @@ triage = { card = "13", recommendation = "KEEP", owner_decision = "KEEP" }
 
 # Triage cards that are not a user-facing workflow of their own.
 [[decision]]
+card = "B"
+name = "Bybit funding-rate download modules"
+recommendation = "SHELVE"
+# shelved 2026-11-14, then deleted 2026-11-18 on the owner's approval to delete unreached code: the Binance funding importer replaces it
+owner_decision = "DELETE"
+
+[[decision]]
 card = "C"
 name = "The RD-Agent runtime as a whole (covers cards 7, 8 and 9)"
 recommendation = "KEEP"

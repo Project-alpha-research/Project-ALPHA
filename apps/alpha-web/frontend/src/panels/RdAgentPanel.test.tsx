@@ -27,6 +27,34 @@ const detail: Detail = {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('RD-Agent recorded panel', () => {
+  it('shows a linked story, round cards, explanations and raw rows only inside technical detail', () => {
+    const idea = {
+      id: 'trial-0', round: fact(2), round_kind: 'evaluation' as const,
+      name: fact('Synthetic idea'), description: fact('The proposer’s own words.'),
+      direction: fact(-1), clock: fact('weekly'), reason: fact('A stored economic reason.'),
+      system_statuses: ['coded'], refusal: fact(), feedback: fact('Try a different mechanism.'),
+      feedback_scope: 'round' as const, trial: detail.factors[0],
+      stages: { proposed: true, refused: false, coded: true, ran: true, judged: true, shortlisted: true, candidate: true },
+      labels: ['shortlist', 'perp-funding', 'composite_suspect', 'diagnostic clocks'],
+      code_file: fact('synthetic.py'), raw: '{"raw_marker":"technical only"}',
+    }
+    const story = { ideas: [idea], journey: Object.fromEntries(Object.entries(idea.stages).map(([key, value]) => [key, fact(value ? 1 : 0)])),
+      missing_links: [], ending: 'finished', ending_reason: fact('completed'), minutes: fact(2) }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={{ ...detail, story }} error={null} onSelect={() => undefined} />)
+    for (const text of ['What happened in this run', 'Idea journey', 'The proposer’s own words.',
+      'What the system did', 'What the test said', 'What it was told next', 'Try a different mechanism.',
+      'not a pass', 'funding coverage', 'earlier tries', 'cannot pass', 'Words used here']) expect(html).toContain(text)
+    for (const stage of Object.keys(idea.stages)) {
+      expect(html).toContain(`id="journey-${stage}"`)
+      expect(html).toContain(`href="#journey-${stage}"`)
+    }
+    expect(html).toContain('href="#idea-trial-0"')
+    expect(html).toContain('id="idea-trial-0"')
+    expect(html).toMatch(/<details[^>]*><summary>technical detail<\/summary>[\s\S]*raw_marker/)
+    expect(html.indexOf('What the system did')).toBeLessThan(html.indexOf('What the test said'))
+    expect(html.indexOf('What the test said')).toBeLessThan(html.indexOf('What it was told next'))
+  })
+
   it('uses terminal panel surfaces and ink instead of figure-canvas colours', () => {
     const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={detail} error={null} onSelect={() => undefined} />)
     expect(html).toContain('background:var(--panel)')

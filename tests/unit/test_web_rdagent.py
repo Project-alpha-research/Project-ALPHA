@@ -537,3 +537,251 @@ def test_round_outcomes_of_the_loop_guard_and_resume_have_sentences() -> None:
     for code in codes:
         assert reader.status_sentence(code, None)
     assert reader.status_sentence("DEFLATION_FAIL", None)
+
+
+def test_story_links_tasks_by_evaluation_name_and_hash_not_loop_number(store: Path) -> None:
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    trial = {
+        **json.loads(ledger.read_text()),
+        "iteration": 4,
+        "code_sha256": "a" * 64,
+        "declared_direction": -1,
+        "primary_clock": "weekly",
+        "direction_reason": "Synthetic reason.",
+        "shortlist": True,
+        "diagnostics": {"daily": {"label": "diagnostic only: cannot pass"}},
+        "twin": {"is_twin": True, "mean_abs_correlation": 0.99},
+    }
+    write_lines(ledger, [trial])
+    write_lines(
+        store / "new/evaluations.jsonl",
+        [
+            {
+                "iteration": 4,
+                "factors": [trial],
+                "feedback_text": "Judge feedback.",
+            }
+        ],
+    )
+    write_lines(
+        store / "new/rounds.jsonl",
+        [
+            {
+                "iteration": 4,
+                "tasks": [
+                    {
+                        "name": "slow_rank",
+                        "code_sha256": "a" * 64,
+                        "description": "The proposer's own words.",
+                    }
+                ],
+                "feedback": {
+                    "observations": "Try a different mechanism.",
+                    "reason": "Stored reason.",
+                },
+            },
+            {
+                "iteration": 4,
+                "status": "refused_missing_declaration",
+                "attempt": 1,
+                "factor_names": ["slow_rank", "second"],
+                "trial_created": False,
+                "message": "Direction was missing.",
+            },
+        ],
+    )
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    assert len(story.ideas) == 3
+    judged = next(idea for idea in story.ideas if idea.trial is not None)
+    assert judged.description.value == "The proposer's own words."
+    assert judged.feedback.value == "Try a different mechanism. Stored reason."
+    assert judged.round_kind == "evaluation"
+    assert judged.direction.value == -1
+    assert story.journey["refused"].value == 2
+    assert story.journey["judged"].value == 1
+    assert story.journey["proposed"].value == 3
+    refused = [idea for idea in story.ideas if idea.round_kind == "loop"]
+    assert all(idea.trial is None and idea.feedback.value is None for idea in refused)
+    assert "loop" in " ".join(story.missing_links).lower()
+
+
+def test_story_never_joins_matching_names_with_different_hashes(store: Path) -> None:
+    write_lines(
+        store / "new/rounds.jsonl",
+        [
+            {
+                "iteration": 0,
+                "tasks": [{"name": "slow_rank", "code_sha256": "b" * 64}],
+                "feedback": {"observations": "Must not attach to a different trial."},
+            }
+        ],
+    )
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    trial = next(idea for idea in story.ideas if idea.trial is not None)
+    assert trial.feedback.value is None
+    assert trial.round.value is None
+    assert story.journey["proposed"].value is None
+
+
+def test_story_missing_counts_remain_unknown_and_partial_lines_are_disclosed(store: Path) -> None:
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert story.journey["proposed"].value is None
+    assert story.journey["judged"].value is None
+    (store / "new/evaluations.jsonl").write_text('{"iteration":')
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    assert any("still being written" in note for note in story.missing_links)
+
+
+def test_story_keeps_tasks_without_hashes_and_never_counts_critic_events_twice(store: Path) -> None:
+    write_lines(
+        store / "new/rounds.jsonl",
+        [
+            {
+                "iteration": 0,
+                "tasks": [{"name": "old proposal", "description": "Stored words."}],
+                "feedback": {"reason": "Stored round feedback."},
+            },
+            {
+                "iteration": 1,
+                "status": "critic_unavailable_provider_error",
+                "factor_names": ["slow_rank"],
+            },
+        ],
+    )
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    assert any(idea.description.value == "Stored words." for idea in story.ideas)
+    assert story.journey["proposed"].value is None
+    assert story.journey["judged"].value is None
+
+
+def test_story_all_refused_has_zero_judged_and_preserves_refusal_text(store: Path) -> None:
+    write_lines(
+        store / "old/rounds.jsonl",
+        [
+            {
+                "iteration": 0,
+                "status": "refused_closed_family",
+                "trial_created": False,
+                "factor_names": ["first", "second"],
+                "message": "Refused closed families: synthetic.",
+            }
+        ],
+    )
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert story.journey["proposed"].value == 2
+    assert story.journey["refused"].value == 2
+    assert story.journey["judged"].value == 0
+    assert story.ideas[0].refusal.value == "Refused closed families: synthetic."
+
+
+@pytest.mark.parametrize(
+    ("reason", "exit_status", "ending"),
+    [
+        ("completed", 0, "finished"),
+        ("budget_exhausted", 1, "budget"),
+        ("provider_timeout", 1, "provider"),
+        (
+            "Two consecutive rounds ended with an internal coding error; run stopped",
+            1,
+            "internal_error",
+        ),
+        ("an unknown error", 1, "error"),
+    ],
+)
+def test_story_ending_is_the_run_ending_not_a_failed_round(
+    store: Path,
+    reason: str,
+    exit_status: int,
+    ending: str,
+) -> None:
+    path = store / "new/receipt.json"
+    receipt = json.loads(path.read_text())
+    write_json(path, {**receipt, "loop_reason": reason, "exit_status": exit_status})
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    assert story.ending == ending
+
+
+def test_story_conflicting_links_fail_loud(store: Path) -> None:
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    trial = {**json.loads(ledger.read_text()), "iteration": 0, "code_sha256": "c" * 64}
+    write_lines(ledger, [trial])
+    write_lines(
+        store / "new/evaluations.jsonl",
+        [
+            {"iteration": 0, "factors": [{**trial, "status": "SCREEN_FAIL"}]},
+        ],
+    )
+    with pytest.raises(HTTPException) as error:
+        rdagent.run_detail("new")
+    assert error.value.status_code == 422
+
+
+def test_story_code_paths_cannot_escape_archive(store: Path, tmp_path: Path) -> None:
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    trial = {**json.loads(ledger.read_text()), "iteration": 0, "code_sha256": "d" * 64}
+    write_lines(ledger, [trial])
+    archive = store / "new/code"
+    archive.mkdir()
+    outside = tmp_path / "outside.py"
+    outside.write_text("SECRET CODE")
+    (archive / ("d" * 64 + ".py")).symlink_to(outside)
+    with pytest.raises(HTTPException) as error:
+        rdagent.run_detail("new")
+    assert error.value.status_code == 422
+
+
+def test_story_preserves_legacy_evaluation_without_a_linkable_hash(store: Path) -> None:
+    trial = {
+        "schema": "AlphaRdagentFactorTrialV3",
+        "name": "legacy idea",
+        "run_id": "old",
+        "status": "SCREEN_FAIL",
+        "description": "Stored legacy description.",
+    }
+    write_lines(store / "old/evaluations.jsonl", [{"iteration": 3, "factors": [trial]}])
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert len(story.ideas) == 1
+    assert story.ideas[0].description.value == "Stored legacy description."
+    assert story.ideas[0].round.value == 3
+    assert story.ideas[0].feedback.value is None
+
+
+def test_story_rejects_evaluation_trials_from_a_different_run(store: Path) -> None:
+    trial = {
+        "schema": "AlphaRdagentFactorTrialV3",
+        "name": "foreign idea",
+        "run_id": "other",
+        "status": "SCREEN_FAIL",
+        "iteration": 3,
+        "code_sha256": "a" * 64,
+    }
+    write_lines(store / "old/evaluations.jsonl", [{"iteration": 3, "factors": [trial]}])
+    with pytest.raises(HTTPException) as error:
+        rdagent.run_detail("old")
+    assert error.value.status_code == 422
+
+
+def test_story_provider_failure_before_any_proposal_records_zero_judged(store: Path) -> None:
+    write_lines(
+        store / "old/rounds.jsonl",
+        [
+            {
+                "iteration": 0,
+                "status": "proposal_failed_provider_timeout",
+                "factor_names": [],
+                "trial_created": False,
+            }
+        ],
+    )
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert story.journey["judged"].value == 0
+    assert story.events == ["proposal_failed_provider_timeout"]

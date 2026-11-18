@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: fc36cde6dd136b87
+verified: 2f7c2226ce736ac1
 ---
 
 # Web frontend invariants
@@ -140,6 +140,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
 - `RdAgentPanel` uses generated response types, recorded-only meters and factor chips with text. Its View/palette entry
   comes from the document registry. Async reads are bound to the selected run; missing counts never become zero bars.
   It uses terminal chrome tokens (`--panel`, `--ink`, `--accent`), including its sticky notice and run buttons.
+  The shortlist stage is bookkeeping only; blend warnings display the recorded diagnostic, never a new verdict.
   Node render tests in `RdAgentPanel.test.tsx` run under Vitest (`*.test.{ts,tsx}`); no browser is simulated.
 
 ## Generated API client

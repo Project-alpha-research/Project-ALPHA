@@ -316,7 +316,11 @@ def test_recorded_funnel_is_copied_without_deriving_counts(store: Path) -> None:
     }
     write_json(path, receipt)
     detail = rdagent.run_detail("new")
-    assert {key: value.value for key, value in detail.funnel.items()} == receipt["funnel"]
+    # A receipt written before the shortlist stage, over rows without the flag: not recorded.
+    assert {key: value.value for key, value in detail.funnel.items()} == {
+        **receipt["funnel"],
+        "shortlisted": None,
+    }
     assert detail.run.factors_proposed.value == 3
 
 
@@ -402,6 +406,7 @@ def test_funnel_is_counted_from_recorded_rows_and_receipt_wins(store: Path) -> N
         "code_ran": 3,
         "passed_rank_screen": 2,
         "passed_spread_check": 1,
+        "shortlisted": None,  # these rows predate the shortlist flag: not recorded, never zero
         "passed_deflation": 1,
     }
     listed = {row.run_id: row for row in rdagent.list_runs().items}

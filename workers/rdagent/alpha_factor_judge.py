@@ -686,6 +686,8 @@ class AlphaFactorRunner(Developer):
                 lines[-1] if lines else f"ALPHA evaluator exit {result.returncode}"
             )
         record = json.loads((folder / "result.json").read_bytes())
+        # The evaluator writes the trial ledger and records shortlist/lineage diagnostics.
+        # Preserve those fields in alpha_evaluation; only its existing decision judges the run.
         exp.result = pd.Series(
             {**dict.fromkeys(VIEWER_KEYS, float("nan")), **record["legacy_result"]}
         )

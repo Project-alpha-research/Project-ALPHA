@@ -458,6 +458,103 @@ def matrix(frame: pl.DataFrame, value: str, days: list[date], symbols: list[str]
     return np.column_stack(columns).astype(float)
 
 
+LINEAGE_CONVENTION = "pooled-xs-rank-ols-v1"
+
+
+def _lineage_ranks(values: np.ndarray) -> np.ndarray:
+    """Average tied ranks, scaled to [-0.5, 0.5] within each finite cross-section."""
+    ranked = np.full(values.shape, np.nan)
+    for index, row in enumerate(values):
+        finite = np.isfinite(row)
+        count = int(finite.sum())
+        if count < 2:
+            ranked[index, finite] = 0.0
+            continue
+        _, inverse, counts = np.unique(row[finite], return_inverse=True, return_counts=True)
+        average = np.cumsum(counts) - (counts + 1) / 2
+        ranked[index, finite] = average[inverse] / (count - 1) - 0.5
+    return ranked
+
+
+def lineage(
+    signal: np.ndarray,
+    history: list[dict[str, Any]],
+    panel_hash: str,
+    days: list[date],
+    symbols: list[str],
+) -> dict[str, Any]:
+    """Diagnostic pooled rank OLS against earlier hash-bound twin-check values only.
+
+    With no intercept, adjusted R² is 1 - (SSE / (n - rank(X))) / (y'y / n).
+    Missing earlier archives make the top-correlated selection unknowable, not a proxy fit.
+    """
+    if signal.shape != (len(days), len(symbols)) or any(d >= RESERVED_DAY for d in days):
+        raise DataError("lineage requires a matching pre-reserved dated matrix")
+    result: dict[str, Any] = {
+        "lineage_r2": None,
+        "lineage_regressors": 0,
+        "lineage_convention": LINEAGE_CONVENTION,
+        "lineage_reason": None,
+        "composite_suspect": None,
+    }
+    target = _lineage_ranks(signal)
+    finite = np.isfinite(target)
+    y = target[finite]
+    if y.size < 1000:
+        return {**result, "lineage_reason": "fewer than 1,000 usable target rows"}
+    total = float(y @ y)
+    if total == 0:
+        return {**result, "lineage_reason": "target cross-sectional ranks have no variation"}
+    regressors: list[tuple[float, np.ndarray]] = []
+    unavailable = 0
+    for row in history:
+        # These outcomes store no values of their own (look-ahead code is never written).
+        if row["status"] in {"REPEAT", "FAILED", "UNSTABLE", "IMPORTED", "LOOKAHEAD"}:
+            continue
+        if row["panel_sha256"] != panel_hash:
+            continue
+        stored = row.get("factor_values", {})
+        path = Path(stored["path"]) if stored else None
+        if path is None or not path.exists():
+            unavailable += 1
+            continue
+        raw = path.read_bytes()
+        if sha(raw) != stored["sha256"]:
+            raise DataError("earlier factor values differ from their recorded hash")
+        values = pl.read_parquet(io.BytesIO(raw))
+        if row["name"] not in values.columns:
+            # The verified file holds no value for it: an all-centre regressor, which adds nothing.
+            continue
+        values = values.with_columns(_days(values))
+        if (values["date"] >= RESERVED_DAY).any():
+            raise DataError("earlier factor values reach reserved window")
+        ranks = _lineage_ranks(matrix(values, row["name"], days, symbols))
+        x = np.nan_to_num(ranks[finite], nan=0.0)
+        centred = x - x.mean()
+        norm = float(np.linalg.norm(centred) * np.linalg.norm(y))
+        correlation = abs(float(centred @ y)) / norm if norm else 0.0
+        regressors.append((correlation, x))
+    if unavailable:
+        return {
+            **result,
+            "lineage_reason": f"factor values unavailable for {unavailable} earlier judged factors",
+        }
+    if not regressors:
+        return {**result, "lineage_reason": "no earlier judged factor on the same panel"}
+    # Python's stable sort leaves equal correlations in ledger order.
+    selected = sorted(regressors, key=lambda item: -item[0])[:20]
+    design = np.column_stack([item[1] for item in selected])
+    coefficients, _, rank, _ = np.linalg.lstsq(design, y, rcond=None)
+    residual = y - design @ coefficients
+    adjusted = max(0.0, 1 - float(residual @ residual) / total * y.size / (y.size - int(rank)))
+    return {
+        **result,
+        "lineage_r2": adjusted,
+        "lineage_regressors": len(selected),
+        "composite_suspect": adjusted >= 0.5,
+    }
+
+
 def screen(
     signal: np.ndarray,
     outcome: np.ndarray,

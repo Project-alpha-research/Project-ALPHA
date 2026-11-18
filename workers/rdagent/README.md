@@ -575,6 +575,29 @@ export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the se
   `logs/` and `receipt.json`. The trial ledger is shared by all runs and append-only.
 - Generated factor code runs with the gateway's address and token removed from its environment.
 
+### Shortlist bookkeeping
+
+Every new evaluation factor and its trial-ledger row records `shortlist`: true only for
+`CANDIDATE` or `DEFLATION_FAIL`, after the declared primary screen, spread and replay passed.
+Shortlisted is not a pass, not a candidate, and not evidence of profit. This flag never changes
+status, confirmed counts, screen cutoffs, deflation N or family counts. Old missing flags mean
+"not recorded", never false. It is bookkeeping for a later owner-approved confirmation stage;
+this addition reads no reserved data and grants no confirmation authority.
+
+For shortlisted factors, `lineage_r2` uses the twin check's hash-bound factor-value Parquet files
+on the same panel. `pooled-xs-rank-ols-v1` ranks finite values within each date, uses average tied
+ranks scaled to [-0.5, 0.5] (a singleton has rank zero), then selects at most 20 earlier judged
+factors by absolute pooled rank correlation, with ties in ledger order. Repeats, imports and
+failed, unstable or look-ahead code store no values and supply no regressor. All finite target rows enter one pooled OLS fit
+without an intercept; missing regressor cells contribute zero. The adjusted R² is
+`max(0, 1 - (SSE / (n - rank(X))) / (sum(y²) / n))`; `lineage_regressors` records the column count.
+`composite_suspect` is true at R² ≥ 0.5: "looks like a blend of earlier tries", diagnostic only.
+Fewer than 1,000 target rows, no earlier factor, a constant target, or unavailable earlier value
+archives give null with `lineage_reason`; no proxy or incomplete top-20 selection is invented.
+If the calculation itself fails, the row records null and the error as `lineage_reason`; the verdict stands.
+Retain each earlier factor's dated instrument values and their hash to make that comparison possible.
+`test_rdagent_shortlist.py` checks blends, independent noise, missing values and unchanged decisions.
+
 ### Futures funding
 
 `factor_loop_launch.py run --funding-dir <data_dir>` (also the evaluator's `freeze` option)

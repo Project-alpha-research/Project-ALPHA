@@ -35,7 +35,7 @@ from alpha_cli._rdagent_judge import (
     sha,
 )
 from alpha_cli._rdagent_stability import plain_name
-from alpha_cli.rdagent_discussion import summary_fields
+from alpha_cli.rdagent_discussion import revision_statements, summary_fields
 from alpha_cli.toolbox.reserve import RESERVED_START
 from alpha_core import DataError
 
@@ -337,6 +337,10 @@ def new_factor_row(
         status != "reviewed" and not (isinstance(reason, str) and reason.strip())
     ):
         raise DataError("invalid code critic status or missing reason")
+    if "agent_choices" in factor and (
+        revision_statements(factor).get("agent_choices", ()) != factor["agent_choices"]
+    ):
+        raise DataError("invalid agent_choices: expected up to five short statements")
     attribution = {}
     if "answered_by" in factor or "author" in factor:
         answer = factor.get("answered_by", factor.get("author"))

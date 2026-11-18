@@ -302,6 +302,15 @@ def idea_family(
     return name_family(name)
 
 
+def task_family(task: Any) -> str:
+    return idea_family(
+        task.factor_name,
+        getattr(task, "description", "") or "",
+        getattr(task, "factor_formulation", "") or "",
+        getattr(task, "variables", None),
+    )
+
+
 def recorded_status(row: dict[str, Any]) -> str:
     """Old candidate rows retain their bytes, but a recorded failed deflation rejects them."""
     trial = row.get("clocks", {}).get(row.get("lead_clock", "daily"), row)

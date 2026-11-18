@@ -546,6 +546,7 @@ class Launch:
         if self.args.discuss:
             environment.update(
                 ALPHA_FACTOR_DISCUSS="1",
+                ALPHA_DISCUSS_ROUNDS_TOTAL=str(self.args.loop_n),
                 ALPHA_DISCUSS_WAIT_MINUTES=str(self.args.discuss_wait_minutes),
                 ALPHA_DISCUSS_ON_TIMEOUT=self.args.discuss_on_timeout,
                 ALPHA_DISCUSS_MAX_CALLS=str(self.args.run_max_calls),
@@ -735,6 +736,16 @@ class Launch:
                 else "Local embeddings are free and are not counted toward the 60-call cap."
             ),
         )
+        if getattr(self.args, "discuss", False) and counters:
+            self.receipt["discussion_usage"] = {
+                "chat_used": self.receipt["counted_calls"],
+                "chat_cap": self.args.run_max_calls,
+                "embedding_used": counters.get("local_embedding_calls", 0)
+                + counters.get("provider_embedding_calls", 0),
+                "embedding_cap": importlib.import_module(
+                    "gateway_embeddings"
+                ).EMBEDDING_CALLS_PER_RUN,
+            }
         self.receipt["memory"] = (
             research_memory.record(
                 self.memory_plan,
@@ -752,6 +763,11 @@ class Launch:
             "loop", event="end", exit_reason=self.receipt["loop_reason"], exit_status=exit_status
         )
         print(f"RD-Agent loop ended: {self.receipt['loop_reason']}.")
+        if usage := self.receipt.get("discussion_usage"):
+            print(
+                f"Usage in this run: {usage['chat_used']} of {usage['chat_cap']} chat calls, "
+                f"{usage['embedding_used']} of {usage['embedding_cap']} embedding calls."
+            )
         discussion_path = self.run / "discussion/status.json"
         if discussion_path.exists():
             previous = json.loads(discussion_path.read_bytes())

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 087a6e0f02808e04
+verified: 6860621d2b0edb14
 ---
 
 # Command line
@@ -47,7 +47,7 @@ in the same ledger as an exploratory trial. `alpha tool` lists, describes and ru
 checks on a recorded rule test, including seeded intervals and path-risk estimates.
 `alpha tool history` lists every attempt, failed and unfinished ones included. [Toolbox](toolbox.md).
 The [RD-Agent discussion commands](../../../../workers/rdagent/README.md#propose-and-discuss)
-let the user choose the ideas a waiting worker builds.
+let the user choose the ideas a waiting worker builds and read the verdict for each built idea.
 
 ## Where it lives
 

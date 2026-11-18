@@ -673,11 +673,11 @@ class AlphaFactorRunner(Developer):
                 **getattr(task, "summary_fields", {}),
                 **getattr(task, "discussion_fields", {}),
                 # The family the tally counts this row under, stored once (no re-derivation).
-                "family": family_definitions().idea_family(
-                    task.factor_name,
-                    getattr(task, "description", "") or "",
-                    getattr(task, "factor_formulation", "") or "",
-                    getattr(task, "variables", None),
+                "family": family_definitions().task_family(task),
+                **(
+                    {"discussion_round": exp.discussion_round}
+                    if hasattr(exp, "discussion_round")
+                    else {}
                 ),
                 **self.critic_fields(feedback),
                 **family_definitions().declaration(getattr(task, "description", "") or ""),
@@ -841,7 +841,6 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         return families
 
     bounded_history: Any = None
-    discussion_choices: list[dict[str, Any]]
 
     @property
     def upstream_history(self) -> Any:
@@ -851,14 +850,10 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         prepare = self.bounded_history or self.upstream_history
         context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-        note = getattr(self, "discussion_note", None)
-        choices = getattr(self, "discussion_choices", [])
-        if choices or note:
-            context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().choices_block(
-                choices, note
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().run_choices(
+                Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
             )
-            self.discussion_choices = []
-            self.discussion_note = None
         return context, flag
 
 
@@ -893,6 +888,10 @@ class AlphaFactorFeedback(Experiment2Feedback):
             ],
             combined_result=exp.stdout,
         )
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            user += FamilyGuard.discussion_tools().feedback_block(
+                Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+            )
         reply = APIBackend().build_messages_and_create_chat_completion(
             user_prompt=user,
             system_prompt=system,
@@ -980,14 +979,7 @@ class FamilyGuard:
         missing = []
         for task in tasks:
             description = getattr(task, "description", "") or ""
-            proposed.update(
-                idea_family(
-                    task.factor_name,
-                    description,
-                    getattr(task, "factor_formulation", "") or "",
-                    getattr(task, "variables", None),
-                ).split("; ")
-            )
+            proposed.update(family_definitions().task_family(task).split("; "))
             try:
                 family_definitions().declaration(description)
             except ValueError as error:
@@ -1009,9 +1001,7 @@ class FamilyGuard:
         discussion = self.discussion_tools()
         ideas = []
         for task in exp.sub_tasks:
-            family = idea_family(
-                task.factor_name, task.description, task.factor_formulation, task.variables
-            )
+            family = family_definitions().task_family(task)
             ideas.append(
                 discussion.idea(task, family, family_definitions().declaration(task.description))
             )
@@ -1020,12 +1010,64 @@ class FamilyGuard:
             exp,
             ideas,
             family_permissions(closed, proposed),
-            lambda tasks: self.refusals(tasks, closed_families()),
+            self.revision_refusals,
         )
         if not exp.sub_tasks:
             raise FactorEmptyError("Discussion ended with no ideas to build; no trial created.")
 
+    @staticmethod
+    def plain_refusals(refused: list[str], closed: set[str], *, details: bool = False) -> list[str]:
+        rows = AlphaFactorHypothesisGen.ledger_rows(os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
+        groups = AlphaFactorHypothesisGen.trial_families(
+            AlphaFactorHypothesisGen.distinct_trials(rows or [])
+        )
+        limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+        words = FamilyGuard.discussion_tools()
+        reasons = []
+        for key in refused:
+            if key in closed:
+                name, meaning = words.family_words(key)
+                if not details:
+                    reasons.append(f"the idea type is closed: {name}")
+                    continue
+                count = len(groups[key])
+                reasons.append(
+                    f"the idea type is {name} ({meaning[0].lower()}{meaning[1:-1]}). "
+                    "This idea type is closed in this run after "
+                    f"{count} failed tries in all recorded runs (limit {limit}). "
+                    "You can ask for a different kind of signal."
+                )
+            elif key.startswith("missing declaration"):
+                reasons.append("the proposal did not say which coins to buy, for how long, or why")
+            else:
+                reasons.append(key)
+        return reasons
+
+    def revision_refusals(self, tasks: list[Any]) -> tuple[set[str], list[str]]:
+        closed = closed_families()
+        families, reasons = self.refusals(tasks, closed)
+        return families, self.plain_refusals(reasons, closed, details=True)
+
+    def revision_guidance(self, exp: Any) -> str:
+        closed = closed_families()
+        proposed = {
+            key
+            for task in exp.sub_tasks
+            for key in family_definitions().task_family(task).split("; ")
+        }
+        source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+        offered = family_definitions().offered_families(closed, source)
+        plain = "".join(
+            "\n- " + ": ".join(self.discussion_tools().family_words(key)) for key in sorted(offered)
+        )
+        return family_permissions(closed, proposed) + (
+            "\nClosed idea types in plain words:" + plain if plain else ""
+        )
+
     def develop(self, exp: Any) -> Any:
+        discussed = os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
+        refused_proposals: list[dict[str, Any]] = []
+        reask_calls = 0
         try:
             for attempt in range(1, FAMILY_PROPOSALS_PER_ROUND + 1):
                 for task in exp.sub_tasks:
@@ -1039,11 +1081,25 @@ class FamilyGuard:
                         previous = self.loop.loop_prev_out[self.round_index()]
                         previous["direct_exp_gen"] = {"propose": exp.hypothesis, "exp_gen": exp}
                     exp.alpha_refused_before_coding = list(FAMILY_REFUSALS)
+                    if discussed:
+                        exp.refused_proposals = refused_proposals
+                        exp.reask_calls = reask_calls
                     self.admit(exp, closed, proposed)
                     return self.coder.develop(exp)
                 final = attempt == FAMILY_PROPOSALS_PER_ROUND or self.loop is None
-                self._refuse(exp, refused, proposed, closed, attempt, final)
+                row = self._refuse(exp, refused, proposed, closed, attempt, final)
+                if discussed:
+                    tools = self.discussion_tools()
+                    refused_proposals.append(
+                        {
+                            "names": row["factor_names"],
+                            "reasons": self.plain_refusals(refused, closed),
+                        }
+                    )
+                    before = tools.chat_calls_used()
                 exp = self._propose_again()
+                if discussed:
+                    reask_calls += tools.chat_calls_used() - before
         finally:
             FAMILY_REFUSALS.clear()
         raise AssertionError("unreachable: the last refusal ends the round")
@@ -1056,7 +1112,7 @@ class FamilyGuard:
         closed: set[str],
         attempt: int,
         final: bool,
-    ) -> None:
+    ) -> dict[str, Any]:
         open_families = sorted(
             ({name for name, _ in FAMILY_KEYWORDS} | known_families() | proposed) - closed
         )
@@ -1099,15 +1155,7 @@ class FamilyGuard:
             "factor_names": [
                 task.factor_name
                 for task in exp.sub_tasks
-                if set(
-                    idea_family(
-                        task.factor_name,
-                        getattr(task, "description", "") or "",
-                        getattr(task, "factor_formulation", "") or "",
-                        getattr(task, "variables", None),
-                    ).split("; ")
-                )
-                & closed
+                if set(family_definitions().task_family(task).split("; ")) & closed
                 or any(item.startswith("missing declaration") for item in refused)
             ],
             "refused_families": refused,
@@ -1144,6 +1192,8 @@ class FamilyGuard:
             + "). "
             + message
         )
+
+        return row
 
     def _propose_again(self) -> Any:
         """The same two calls and plan fields as upstream RDLoop.direct_exp_gen, nothing more."""

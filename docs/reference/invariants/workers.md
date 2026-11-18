@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: e335a1518609f680
+verified: 681c75226d86a35d
 ---
 
 # Worker invariants
@@ -160,7 +160,7 @@ On this page: [Shared rules](#shared-rules), [Qlib worker](#qlib-worker), [Liter
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
   `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
   Closed or undeclared proposals stop before coding, with two re-asks; sign mirrors share a family and past-return reversal joins momentum.
-  [Discussion](../../../workers/rdagent/README.md#propose-and-discuss) records who selected ideas. Only tested ideas count.
+  [Discussion](../../../workers/rdagent/README.md#propose-and-discuss) records who selected ideas. Feedback treats a drop as a choice. Only tested ideas count.
   Rank twins (absolute correlation 0.98) repeat same-panel trials; missing values are disclosed. Code failures never close families.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway

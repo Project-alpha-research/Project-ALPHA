@@ -189,6 +189,13 @@ class ProposalHistory:
                 omitted += 1
 
         context.update(fields)
+        if self.component == "experiment" and os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            discussion = importlib.import_module(
+                f"{__package__}.discussion" if __package__ else "discussion"
+            )
+            context["hypothesis_and_feedback"] += discussion.run_choices(
+                Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+            )
         if self.receipt is not None:
             counts = {
                 "history_rounds_full": len(full),

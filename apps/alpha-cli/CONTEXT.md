@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: a35110ab6b80c5b1
+verified: b54e5ff10a4bf386
 ---
 
 # alpha-cli workspace
@@ -12,8 +12,7 @@ verified: a35110ab6b80c5b1
 
 The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns
 the SQLite control store (projects, jobs, evidence, owner receipts). It may import every package below it; nothing but the surfaces' public seams may import
-it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner
-did not give, and never route live capital.
+it, and the web app and MCP server call it as a subprocess. It must never grant authority the owner did not give, and never route live capital.
 
 ## Read first
 
@@ -73,6 +72,7 @@ do not add a private copy.
 - A new or changed command: run `uv run python scripts/commands_reference.py` and commit the page.
   If the web or MCP surface exposes it, also run `uv run python scripts/check_openapi_operations.py --write`.
 ## Outputs
+- [Registered tools](../../docs/reference/project/components/toolbox.md) describe market exposure, date sensitivity, downside risk and closed trades.
 - Setup trades report percent and stop-risk returns. [RD-Agent journeys](../../research/tools/rdagent-journey.md) read stored evaluations.
 - Tests for the changed sub-area (above); a bias guard for any new data read; an integration test through the real command for any new command.
 - The owning document: the sub-area's `docs/reference/invariants/cli-*.md` file (`alpha context` includes offline Bybit import/read:

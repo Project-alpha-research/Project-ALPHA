@@ -1,0 +1,429 @@
+{
+  "performance.downside_ratios": {
+    "basis": "Stored walk-forward equity, one return per bar, and the manifest's out-of-sample Sharpe.",
+    "caveats": [
+      "These ratios cannot tell you how large the next loss will be."
+    ],
+    "figure": null,
+    "labels": [
+      "ad-hoc",
+      "reserved-period-seen"
+    ],
+    "params": {},
+    "reading": "Sortino 9.55, Calmar 188.08, Omega 2.00 and tail ratio 2.00, beside the stored Sharpe of 1.75.",
+    "reasons": {},
+    "reserve_start": "2024-01-01",
+    "result": {},
+    "settings_tried": [
+      {}
+    ],
+    "tool": "performance.downside_ratios",
+    "values": {
+      "calmar": 188.0832432592618,
+      "omega": 2.0,
+      "sharpe": 1.75,
+      "sortino": 9.5524865872714,
+      "tail_ratio": 1.9999999999999991
+    },
+    "version": 1
+  },
+  "robustness.start_end_dates": {
+    "basis": "Walk-forward equity and its stored open-to-open buy-and-hold comparison over the same dates.",
+    "caveats": [
+      "Overlapping windows cannot tell you how the rule will perform on fresh data."
+    ],
+    "figure": null,
+    "labels": [
+      "ad-hoc",
+      "reserved-period-seen"
+    ],
+    "params": {
+      "step_months": 3
+    },
+    "reading": "Across the shifted date windows total return ranged from 0.0% to 25.0%; 20% of windows gained and 16% beat buy and hold over the same dates.",
+    "reasons": {},
+    "reserve_start": "2024-01-01",
+    "result": {
+      "windows": [
+        {
+          "benchmark_return": 0.5,
+          "cagr": 0.09341557891381491,
+          "end_months": 0,
+          "first_date": "2022-01-01",
+          "last_date": "2024-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.4671108730750291,
+          "start_months": 0,
+          "total_return": 0.25
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.10429277906030077,
+          "end_months": 3,
+          "first_date": "2022-01-01",
+          "last_date": "2024-04-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.4923044934521544,
+          "start_months": 0,
+          "total_return": 0.25
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.1180339887498949,
+          "end_months": 6,
+          "first_date": "2022-01-01",
+          "last_date": "2024-01-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.5220702328384105,
+          "start_months": 0,
+          "total_return": 0.25
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.13616720351147737,
+          "end_months": 9,
+          "first_date": "2022-01-01",
+          "last_date": "2023-10-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.5584193779511016,
+          "start_months": 0,
+          "total_return": 0.25
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.1608715455333216,
+          "end_months": 12,
+          "first_date": "2022-01-01",
+          "last_date": "2023-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.6035987921057345,
+          "start_months": 0,
+          "total_return": 0.25
+        },
+        {
+          "benchmark_return": 0.5,
+          "cagr": 0.0,
+          "end_months": 0,
+          "first_date": "2022-04-01",
+          "last_date": "2024-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.10400655419133478,
+          "start_months": 3,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 3,
+          "first_date": "2022-04-01",
+          "last_date": "2024-04-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1102822967878455,
+          "start_months": 3,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 6,
+          "first_date": "2022-04-01",
+          "last_date": "2024-01-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.11785098983989334,
+          "start_months": 3,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 9,
+          "first_date": "2022-04-01",
+          "last_date": "2023-10-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.12734364407250642,
+          "start_months": 3,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 12,
+          "first_date": "2022-04-01",
+          "last_date": "2023-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.13957478723058547,
+          "start_months": 3,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.5,
+          "cagr": 0.0,
+          "end_months": 0,
+          "first_date": "2022-07-01",
+          "last_date": "2024-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1102822967878455,
+          "start_months": 6,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 3,
+          "first_date": "2022-07-01",
+          "last_date": "2024-04-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.11785098983989334,
+          "start_months": 6,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 6,
+          "first_date": "2022-07-01",
+          "last_date": "2024-01-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1272278200676715,
+          "start_months": 6,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 9,
+          "first_date": "2022-07-01",
+          "last_date": "2023-10-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1394223230502378,
+          "start_months": 6,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 12,
+          "first_date": "2022-07-01",
+          "last_date": "2023-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.15596488957113439,
+          "start_months": 6,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.5,
+          "cagr": 0.0,
+          "end_months": 0,
+          "first_date": "2022-10-01",
+          "last_date": "2024-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.11794302805470996,
+          "start_months": 9,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 3,
+          "first_date": "2022-10-01",
+          "last_date": "2024-04-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.12734364407250642,
+          "start_months": 9,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 6,
+          "first_date": "2022-10-01",
+          "last_date": "2024-01-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1394223230502378,
+          "start_months": 9,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 9,
+          "first_date": "2022-10-01",
+          "last_date": "2023-10-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.15596488957113439,
+          "start_months": 9,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 12,
+          "first_date": "2022-10-01",
+          "last_date": "2023-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.18025848222223356,
+          "start_months": 9,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.5,
+          "cagr": 0.0,
+          "end_months": 0,
+          "first_date": "2023-01-01",
+          "last_date": "2024-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.1274597849800411,
+          "start_months": 12,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 3,
+          "first_date": "2023-01-01",
+          "last_date": "2024-04-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.13957478723058542,
+          "start_months": 12,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 6,
+          "first_date": "2023-01-01",
+          "last_date": "2024-01-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.15596488957113439,
+          "start_months": 12,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 9,
+          "first_date": "2023-01-01",
+          "last_date": "2023-10-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.18025848222223356,
+          "start_months": 12,
+          "total_return": 0.0
+        },
+        {
+          "benchmark_return": 0.0,
+          "cagr": 0.0,
+          "end_months": 12,
+          "first_date": "2023-01-01",
+          "last_date": "2023-07-01",
+          "max_drawdown": -0.19999999999999996,
+          "reasons": {},
+          "sharpe": 0.2211777545605528,
+          "start_months": 12,
+          "total_return": 0.0
+        }
+      ]
+    },
+    "settings_tried": [
+      {
+        "step_months": 3
+      }
+    ],
+    "tool": "robustness.start_end_dates",
+    "values": {
+      "beat_hold_share": 0.16,
+      "cagr_max": 0.1608715455333216,
+      "cagr_min": 0.0,
+      "max_drawdown_max": -0.19999999999999996,
+      "max_drawdown_min": -0.19999999999999996,
+      "positive_share": 0.2,
+      "sharpe_max": 0.6035987921057345,
+      "sharpe_min": 0.10400655419133478,
+      "total_return_max": 0.25,
+      "total_return_min": 0.0
+    },
+    "version": 1
+  },
+  "trades.concentration": {
+    "basis": "After-cost realized profit on closed walk-forward trades, in account currency.",
+    "caveats": [
+      "This sum cannot tell you how removing trades would affect later position sizes."
+    ],
+    "figure": null,
+    "labels": [
+      "ad-hoc",
+      "reserved-period-seen"
+    ],
+    "params": {},
+    "reading": "The best tenth of closed trades supplied 80.0% of after-cost profit; without the single best trade the total was 2.00.",
+    "reasons": {},
+    "reserve_start": "2024-01-01",
+    "result": {},
+    "settings_tried": [
+      {}
+    ],
+    "tool": "trades.concentration",
+    "values": {
+      "top_decile_share": 0.8,
+      "without_best_1": 2.0,
+      "without_best_3": -3.0,
+      "without_best_5": -5.0
+    },
+    "version": 1
+  },
+  "trades.side_contribution": {
+    "basis": "After-cost realized profit on closed walk-forward trades, in account currency.",
+    "caveats": [
+      "Closed trades cannot tell you the profit still open at the end."
+    ],
+    "figure": null,
+    "labels": [
+      "ad-hoc",
+      "reserved-period-seen"
+    ],
+    "params": {},
+    "reading": "Sides traded: long and short. Long trades supplied 90% of after-cost profit and short trades 10%.",
+    "reasons": {},
+    "reserve_start": "2024-01-01",
+    "result": {},
+    "settings_tried": [
+      {}
+    ],
+    "tool": "trades.side_contribution",
+    "values": {
+      "long_average_pnl": 1.8,
+      "long_count": 5,
+      "long_profit_share": 0.9,
+      "long_win_rate": 0.6,
+      "short_average_pnl": 0.2,
+      "short_count": 5,
+      "short_profit_share": 0.1,
+      "short_win_rate": 0.6,
+      "sides": "long and short"
+    },
+    "version": 1
+  }
+}

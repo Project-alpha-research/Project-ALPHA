@@ -9,7 +9,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 4994a9a9dbf1a69a
+verified: ef3b28605401fd72
 ---
 
 # Investigation tools invariants
@@ -23,6 +23,7 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
   (`spine/diagnose.py:full_sample`), fail loud with `RUN_DATA_CHANGED` when the stored bars no
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels
   and ruptures in `alpha_validation` (`attribution.py`, `regimes.py`, `changepoints.py`).
+- Run-level descriptions use immutable walk-forward sidecars. The cache key includes the hash of each required sidecar, and a missing file records an error.
 - The engine samples equity at each bar's open, so market and benchmark returns are open-to-open
   on shared timestamps; the output reports the bars each side lost to the join. A comparison of
   two assets with different session clocks says that a shared date is not a shared instant.

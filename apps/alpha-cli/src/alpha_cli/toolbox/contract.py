@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 InputKind = Literal[
     "run_returns",
     "run_positions",
+    "stored_equity",
+    "stored_benchmark",
     "run_trades",
     "run_bars",
     "study_events",
@@ -49,7 +51,7 @@ class Output:
     key: str
     label: str
     gloss: str
-    unit: Literal["ratio", "fraction", "count", "p_value", "date", "bps"]
+    unit: Literal["ratio", "fraction", "count", "p_value", "date", "bps", "currency", "text"]
     legacy_metric: str | None = None
     source: str | None = None
 

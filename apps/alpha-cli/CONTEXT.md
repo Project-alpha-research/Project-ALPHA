@@ -61,8 +61,8 @@ Many integration tests in `tests/integration/` use the same prefixes. Shared hel
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);
 do not add a private copy.
 
-- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; keep `import alpha_cli` light (`tests/unit/test_public_seams.py`).
-  RD-Agent: gaps, rescaling, thirds `_rdagent_membership`/`_rdagent_identity`; inference `_rdagent_stats`/`_rdagent_twins`; compatibility `_rdagent_stability`.
+- Check: `uv run python scripts/gate.py check`. Engine imports stay lazy; `import alpha_cli` stays light (`test_public_seams.py`).
+  RD-Agent: thirds, ties, gaps `_rdagent_membership`; identity, rescaling `_rdagent_identity`; inference `_rdagent_{stats,twins}`; `_rdagent_stability`.
 - Owner approvals bind code structure, not bytes ([ADR-0045](../../docs/adr/0045-approvals-bind-code-structure.md)): editing
   `research_intake.py`, `research_runtime.py`, `research_crypto_data.py` or `research_crypto_runtime.py` invalidates them only
   when behaviour changes (comments and formatting are free); every `alpha_cli` file the daily rule lane runs through

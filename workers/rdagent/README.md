@@ -7,6 +7,26 @@ upstream `LoopMeta` and inherits upstream `run`, `_run_step`, `dump` and `load` 
 That original fixture never imports or instantiates stock `RDLoop`; the separate
 stock continuation diagnostic below does.
 
+On this page:
+
+- Setup and scope: [Reproduce](#reproduce), [Install](#install-on-a-development-machine), [Contracts exercised](#contracts-exercised),
+  [Scope and limits](#scope-and-limits), [Bounded W04 admission fixture](#bounded-w04-admission-fixture)
+- Rule and stock-loop probes: [Closed frozen-rule authority profiles](#closed-frozen-rule-authority-profiles-2026-10-26),
+  [Stock RDLoop continuation](#stock-rdloop-continuation-diagnostic), [Retained-owner dispatch](#retained-owner-stock-dispatch-successor),
+  [Typed stock-worker boundary](#typed-stock-worker-boundary-successor)
+- [Model gateway](#model-gateway-2026-11-14)
+- [ALPHA-judged factor loop](#alpha-judged-factor-loop-2026-11-14): [Shortlist bookkeeping](#shortlist-bookkeeping),
+  [Futures funding](#futures-funding), [Thirds and ties](#thirds-and-ties), [Research memory](#research-memory-2026-11-15),
+  [Failure reasons and idea families](#failure-reasons-idea-families-and-the-call-split-2026-11-17),
+  [Embedding retrieval](#compare-embedding-retrieval), [Run viewer](#rd-agents-own-log-viewer-2026-11-15),
+  [Evidence per trial](#evidence-recorded-per-trial), [Human-authored rule families](#human-authored-rule-families),
+  [Exposure log](#exposure-log-and-imported-trials), [Missing bars](#missing-bars-and-causal-membership),
+  [Identity breaks](#identity-breaks-across-a-gap), [Reproducibility and feedback](#reproducibility-and-plain-feedback-third-loop-fix-up),
+  [Provider failures and deflation](#provider-failures-cache-reuse-and-deflation-fourth-loop-fix-up),
+  [Code critic](#code-critic-and-bounded-proposal-history-sixth-loop-fix-up)
+- [Propose and discuss](#propose-and-discuss)
+- [Change notes moved from the project page](#change-notes-moved-from-the-project-page-2026-11-18)
+
 ## Reproduce
 
 Obtain upstream commit `484776c211e4fbbeef03e0ec00d6bbee7362a4f4` as a pristine checkout, either
@@ -640,8 +660,20 @@ If source is missing, the factor failed, or no literal selector is detected, no 
 (as before) and `input_columns_method` says `fallback` and why. This does not change eligibility.
 
 The unchanged coverage threshold is 80%; half of funded names is still DEGENERATE. At least five
-finite names are needed on a decision day (the existing gap policy skips thin days). Thirds use
-`k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
+finite names are needed on a decision day (the existing gap policy skips thin days).
+
+Synthetic checks: `test_context_daily_funding.py` (poison, prefixes, intervals, absent days,
+reserved rows, checksum); `test_rdagent_funding_columns.py` (identity join, partitions, source
+selectors, coverage, price-only parity, pre-change freeze bytes and prepare frames).
+
+### Thirds and ties
+
+The rule lives in `alpha_cli._rdagent_membership.third_weights`
+(`apps/alpha-cli/src/alpha_cli/_rdagent_membership.py`), not in the worker: `alpha_factor_judge.py` runs inside
+RD-Agent's environment, imports no ALPHA package and calls the evaluator `alpha_cli.rdagent_factor_eval` as a
+subprocess. Tests: `tests/unit/test_rdagent_ties_and_thirds.py`.
+
+Thirds use `k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
 `s/g` membership per name (s remaining slots, g tied names); portfolio weights are `(s/g)/k`.
 The spread, both replay paths and bucket reports share `_rdagent_membership.third_weights`.
 Spread returns use these membership units divided by k; replacement turnover sums positive changes
@@ -656,9 +688,13 @@ names in a tie crossing either third boundary, once per name; empty days contrib
 never grants a pass. Outcomes remain panel spot returns; clocks, cost rates, pass thresholds, deflation,
 counting and twin rules are unchanged. Price-only evaluations retain the original eligibility.
 
-Synthetic checks: `test_context_daily_funding.py` (poison, prefixes, intervals, absent days,
-reserved rows, checksum); `test_rdagent_funding_columns.py` (identity join, partitions, source
-selectors, coverage, price-only parity, pre-change freeze bytes and prepare frames).
+Do not change without the owner:
+
+- clocks, cost rates, pass thresholds, deflation, trial counting and twin rules (all unchanged by the thirds rule);
+- the 80% coverage threshold, the five-name minimum (`MIN_NAMES`) and the 5% all-tied-day guard;
+- a nonpositive spread stays `SPREAD_FAIL`: a stricter gate, never a pass;
+- the loop never sees data on or after 2024-01-01 ([reserved period](../../docs/reference/project/reserved-period.md));
+- never weaken a bias guard or oracle to get green; run `uv run python scripts/gate.py check`.
 
 ### Research memory (2026-11-15)
 

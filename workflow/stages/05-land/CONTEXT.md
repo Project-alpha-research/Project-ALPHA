@@ -66,5 +66,6 @@ Done means all of these hold:
 
 ## Checkpoint
 
-The owner reads the pull request (it mirrors `05-handoff.md`) and merges or asks for changes.
+The owner may read the pull request (it mirrors `05-handoff.md`) and ask for changes; the orchestrating
+session merges it once `ci-ok` is green (step 4).
 After the merge, the pull request and git log are the task's history.

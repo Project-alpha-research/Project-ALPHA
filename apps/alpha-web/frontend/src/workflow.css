@@ -43,7 +43,7 @@
 .market-desk { display: flex; flex-direction: column; flex: 1; min-height: 0; position: relative; }
 .market-desk-tools { display: flex; flex-direction: column; align-items: stretch; gap: 3px; padding: 2px 3px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
 .market-desk-windows { display: flex; flex: 1; min-height: 0; gap: 2px; }
-.market-desk-left { flex-shrink: 0; min-width: 230px; max-width: 35%; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+.market-desk-left { flex-shrink: 0; min-width: 360px; max-width: 35%; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .market-desk-right { width: 310px; min-width: 240px; max-width: 40%; overflow: auto; }
 .market-desk-chart { flex-direction: column; flex: 1; min-width: 0; min-height: 0; display: flex; }
 .terminal-dock { border: 1px solid var(--line-strong); background: var(--panel); display: flex; flex-direction: column; min-height: 100px; flex: 1; overflow: auto; }
@@ -71,15 +71,15 @@
 .analytical-title .btn, .analytical-title .field { min-height: 24px; padding: 1px 3px; font-size: var(--font-size); }
 .active-panel > .analytical-title { box-shadow: inset 0 -2px var(--selection); }
 .analytical-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
-.analytical-content > .panel { flex: 1; min-height: 0; }
+.analytical-content > .panel { flex: 1 0 auto; min-height: 0; }
 .analytical-content .price-toolbar { padding: 2px 5px; gap: 3px; flex-wrap: wrap; min-height: 0; }
 .analytical-content .price-toolbar > .title, .analytical-content .price-toolbar > .sym-input { display: none; }
 .analytical-content .price-toolbar .chip { font-size: var(--font-size); white-space: normal; }
 .analytical-content .price-toolbar .btn { min-height: 24px; padding: 1px 4px; }
 .analytical-content .price-body { padding: 0; }
 .analytical-content .price-chart-canvas-wrap { min-height: 120px; }
-.analytical-content .price-chart-frame { min-height: 160px; }
-.analytical-content .chart-foot { font-size: var(--font-size); padding: 2px 5px; }
+.analytical-content .price-chart-frame { min-height: 320px; }
+.analytical-content .chart-foot { font-size: var(--font-size); padding: 2px 5px; flex-wrap: wrap; justify-content: flex-start; column-gap: 14px; }
 .analytical-content .trace-evidence-panel { max-height: 120px; overflow: auto; }
 .panel-maximized { position: fixed; inset: 23px 2px 23px; z-index: 80; }
 .panel-maximized .analytical-title { min-height: 24px; }
@@ -131,7 +131,7 @@
 .figure-surface .figure-image { max-width: 100%; }
 .figure-surface-title { padding: 2px 5px; font-size: var(--font-size); display: flex; align-items: center; gap: 6px; }
 .figure-surface-title > span { margin-right: auto; }
-@media (max-width: 1000px) { .workflow-topbar { gap: 2px; } #analytical-toolbar { flex-wrap: wrap; } .market-desk-left { min-width: 200px; } .market-desk-right { max-width: 40%; width: 260px; } .workflow-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .workflow-topbar { gap: 2px; } #analytical-toolbar { flex-wrap: wrap; } .market-desk-left { min-width: 300px; } .market-desk-right { max-width: 40%; width: 260px; } .workflow-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 800px) { .market-desk-windows { flex-wrap: wrap; overflow: auto; } .market-desk-left { display: none; } .market-desk-right { max-width: 100%; width: 100%; max-height: 300px; } .analytical-workspace { display: flex; flex-direction: column; overflow: auto; min-height: 0; } .analytical-panel:not(.panel-maximized) { position: relative; inset: auto !important; visibility: visible !important; min-height: 330px; flex-shrink: 0; pointer-events: auto !important; } .workspace-splitter { display: none; } .scientific-grid, .report-summary-composition, .report-summary-figures, .rule-test { grid-template-columns: 1fr; } .workflow-cards { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .report-document .figure-report { display: block; overflow-y: auto; } .report-document .figure-scroll { overflow: visible; padding-bottom: var(--pad); } .report-toolbar { flex-wrap: wrap; row-gap: 4px; } .rule-test .summary-table { margin-left: 0; margin-right: 0; width: 100%; } .rule-test .summary-table td, .rule-test .summary-table th { padding-left: 4px; padding-right: 4px; } .rule-test-bar { width: 14%; } }
 @media (prefers-reduced-motion: reduce) { .workflow-shell button { transition: none; } }

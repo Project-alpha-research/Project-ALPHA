@@ -2567,7 +2567,8 @@ textarea.field:focus {
 /* Workstation v3: causal evidence, Kronos, native analytics, and development control. */
 .price-evidence-layout {
   display: grid;
-  grid-template-rows: minmax(180px, 1fr) auto;
+  grid-template-rows: minmax(320px, 1fr) auto;
+  overflow: auto;
   gap: 6px;
 }
 
@@ -4692,10 +4693,11 @@ html[data-workspace-mode='guided'] .advanced-only { display: none !important; }
 .market-watch-head { white-space: nowrap; }
 .terminal .market-watch-table th, .terminal .market-watch-table td { padding: 1px 4px; line-height: 1.3; height: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .market-watch-table { table-layout: fixed; width: 100%; font-size: var(--font-size); }
-.market-watch-table th:nth-child(1) { width: 70px; }
-.market-watch-table th:nth-child(2) { width: 60px; }
-.market-watch-table th:nth-child(4) { width: 52px; }
-.market-watch-table th:nth-child(5) { width: 36px; }
+.market-watch-table thead th { text-transform: none; letter-spacing: 0; }
+.market-watch-table th:nth-child(1) { width: 94px; }
+.market-watch-table th:nth-child(2) { width: 66px; }
+.market-watch-table th:nth-child(4) { width: 64px; }
+.market-watch-table th:nth-child(5) { width: 56px; }
 .market-watch-table tr { height: auto; }
 .watch-row .watch-select { min-height: 24px; padding: 1px 0; }
 .navigator .settings-row { justify-content: flex-start; gap: 6px; }

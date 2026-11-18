@@ -16822,6 +16822,16 @@
           "run": {
             "$ref": "#/components/schemas/RdAgentRun"
           },
+          "story": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdAgentStory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "timing": {
             "items": {
               "additionalProperties": {
@@ -16918,6 +16928,122 @@
           "clocks"
         ],
         "title": "RdAgentFactor",
+        "type": "object"
+      },
+      "RdAgentIdea": {
+        "additionalProperties": false,
+        "properties": {
+          "clock": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "code_file": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "description": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "feedback": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "feedback_scope": {
+            "enum": [
+              "round",
+              "unknown"
+            ],
+            "title": "Feedback Scope",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "name": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "refusal": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "round": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "round_kind": {
+            "enum": [
+              "evaluation",
+              "loop",
+              "unknown"
+            ],
+            "title": "Round Kind",
+            "type": "string"
+          },
+          "stages": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Stages",
+            "type": "object"
+          },
+          "system_statuses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "System Statuses",
+            "type": "array"
+          },
+          "trial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdAgentFactor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "round",
+          "round_kind",
+          "name",
+          "description",
+          "direction",
+          "clock",
+          "reason",
+          "system_statuses",
+          "refusal",
+          "feedback",
+          "feedback_scope",
+          "trial",
+          "stages",
+          "labels",
+          "code_file",
+          "raw"
+        ],
+        "title": "RdAgentIdea",
         "type": "object"
       },
       "RdAgentRun": {
@@ -17028,6 +17154,59 @@
           "items"
         ],
         "title": "RdAgentRunList",
+        "type": "object"
+      },
+      "RdAgentStory": {
+        "additionalProperties": false,
+        "properties": {
+          "ending": {
+            "title": "Ending",
+            "type": "string"
+          },
+          "ending_reason": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "ideas": {
+            "items": {
+              "$ref": "#/components/schemas/RdAgentIdea"
+            },
+            "title": "Ideas",
+            "type": "array"
+          },
+          "journey": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecordedFact"
+            },
+            "title": "Journey",
+            "type": "object"
+          },
+          "minutes": {
+            "$ref": "#/components/schemas/RecordedFact"
+          },
+          "missing_links": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ideas",
+          "journey",
+          "missing_links",
+          "ending",
+          "ending_reason",
+          "minutes"
+        ],
+        "title": "RdAgentStory",
         "type": "object"
       },
       "RecordedFact": {

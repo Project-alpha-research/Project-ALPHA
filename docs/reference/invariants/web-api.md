@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: bed4bde1e25b857c
+verified: 54eaae43a4142024
 ---
 
 # Web API invariants
@@ -96,9 +96,9 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
 - The only file the web code writes itself is a named workspace, `data_dir/web/workspaces/<slug>.json` (atomic write through
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
-- RD-Agent's two GET routes read bounded, allowlisted receipt/ledger facts through `_rdagent_runs`; IDs select listed folders,
-  never request paths. Old failed-deflation candidates use the ledger's derived status (parity-tested local rule); internal coding
-  failures have own wording; missing flags/counts stay null; shortlist/lineage: [facts](../project/components/rd-agent.md#workstation-recorded-fields).
+- RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
+  Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
+  Idea cards supply counts, receipts supply cost/time/ending, rounds supply feedback; hashes name code archives; old candidates retain derived status.
 - Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
   <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period
   shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides

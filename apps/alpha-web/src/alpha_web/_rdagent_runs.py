@@ -849,7 +849,11 @@ def _idea(
     stages: dict[str, bool | None] = {
         "proposed": True,
         "refused": refused,
-        "coded": True if ran or row.get("coding_status") == "coded" else None if open_end else False,
+        "coded": True
+        if ran or row.get("coding_status") == "coded"
+        else None
+        if open_end
+        else False,
         "ran": True if ran else None if open_end else False,
         "judged": evaluated
         if trial is not None

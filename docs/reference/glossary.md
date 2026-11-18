@@ -19,6 +19,20 @@ Owner-facing text uses the plain name first, with the code in brackets. Example:
 that state what they are based on (C04)". Work package list:
 [feature readiness checklist](../archive/research-notes/feature-readiness-checklist-2026-10-27.md).
 
+## RD-Agent journey
+
+The journey uses these plain names. Stored verdict codes belong in the agent's own words
+or in the Workstation's technical detail.
+
+- **Future-data check** — ALPHA hides later data and checks whether earlier numbers change.
+- **Quick test** — ALPHA checks whether the idea ranks coins in the expected order of later returns.
+  Name the holding period when reporting the verdict, for example **daily quick test**.
+- **Spread check** — Checks whether the top third beat the bottom third before costs.
+- **Trading test with costs** — Replays holding the top third and compares it with holding every coin.
+- **Multiple-testing test** — Checks the result with an allowance for how many ideas were tested.
+- **Ideas tested so far** — Every idea tested makes a lucky result more likely, so the pass line rises with this count.
+- **Coins with a usable number** — This is the share of eligible coin observations with a usable number.
+
 ## Work packages
 
 The roadmap has 19 work packages, W01 to W19. None is declared fully accepted yet. Older numbering

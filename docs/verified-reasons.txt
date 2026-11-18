@@ -2,13 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 781a7437af0e54e1 on 2026-11-18: The CLI change only adds critic fields to new ledger rows and the failed stage to feedback in existing rdagent modules; no module was added or removed and no CLI rule changed.
+  verified 366c0e47efca5da5 on 2026-11-18: plain-words journey change already described here
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
-
-docs/reference/invariants/workers.md
-  verified 457bff16680b35d6 on 2026-11-18: Re-read after the run-6 feedback change: its history line already says rounds stay full only within the history budget; no rule it states changed.
 
 docs/reference/model-routing.md
   verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
@@ -17,7 +14,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 0c8fe3137226d0ae on 2026-11-18: re-read: apps/alpha-cli/CONTEXT.md re-wrapped a line and added the registered tools note; this page already links the toolbox page and states no tool list
+  verified 8d3911c3d1ba8121 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/components/data-layer.md
   verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
@@ -41,7 +38,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified d861d5f4757fe48f on 2026-11-18: Re-read after the run-6 feedback change and main's page rewrite: it already says new factor rows store family and critic status; no stated purpose or rule changed.
+  verified 33e0f3ad54f5e204 on 2026-11-18: re-read: PR 271 moved change notes into workers/rdagent/README.md and edited this page in the same change; its links resolve and it matches
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -50,7 +47,7 @@ docs/reference/project/components/validation-and-evidence.md
   verified e1c214a6d07651bb on 2026-11-18: re-read: its routing file only gained the Monte Carlo row; this page already links the Monte Carlo component
 
 docs/reference/project/components/web-workstation.md
-  verified 4f68f3b5b493b152 on 2026-11-18: re-read: the routing file swapped the story-view module notes for the journey view; this page names no modules and already records the approved idea-journey layout
+  verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/ideas-and-considered.md
   verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
@@ -78,6 +75,3 @@ docs/roadmap/production-scope-3.md
 
 docs/roadmap/production-scope.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
-
-workers/rdagent/CONTEXT.md
-  verified 7b14bac83b3ed594 on 2026-11-18: Re-read after the run-6 feedback change: it already lists the history budget, family and critic fields and vector omission reasons.

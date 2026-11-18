@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from copy import copy, deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -316,13 +315,15 @@ class RoundRecord:
         return result
 
 
-@dataclass
 class ExecutedFeedback:
-    """Execution survived an internal error before the coder could return its feedback."""
+    """Execution survived an internal error before the coder could return its feedback.
 
-    execution_feedback: str
-    final_decision: bool
-    value_generated_flag: bool = True
+    A plain class, not a dataclass: tests load this file without registering it as a module.
+    """
+
+    def __init__(self, execution_feedback: str, final_decision: bool) -> None:
+        self.execution_feedback, self.final_decision = execution_feedback, final_decision
+        self.value_generated_flag = True
 
     def __bool__(self) -> bool:
         return self.final_decision

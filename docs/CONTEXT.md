@@ -5,7 +5,7 @@ sources:
   - scripts/roadmap_index.py
   - scripts/fs_stale.py
   - tests/unit/test_docs_links.py
-verified: ed8f02cd3d4ed6b5
+verified: 8041bb08053ae94b
 ---
 
 # docs workspace
@@ -30,7 +30,6 @@ other files link to it.
 | [command reference](reference/commands.md) | — | documenting a command (link here; never copy it) |
 | [what this part is for](reference/project/components/delivery-and-agent-tooling.md) | — | why it exists; before you keep, shelve or remove it |
 | [ideas and things considered](reference/project/ideas-and-considered.md) | — | before proposing an idea; one line each, with its status |
-| [file-system measurement](reference/project/file-system-measurement.md) | — | judging whether a reader can find things here; the ten-question test |
 
 ## How to change it
 

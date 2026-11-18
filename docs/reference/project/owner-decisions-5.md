@@ -190,3 +190,10 @@ part that owns it can link to one clear entry.
   short sentences with one idea in each, and keep one name for one thing. The style does not shorten
   an answer by itself: write less as well.
 - **Governs:** `CLAUDE.md` (Check and land); the report-to-owner skill; [AI assistants](components/ai-assistants.md).
+
+### 2026-11-19 Claude agents build until the Codex subscription returns; the file system comes first
+
+- **Said:** exact words not recorded; paraphrased by the orchestrating AI agent. The owner said the Codex
+  subscription has expired, and asked for the file system to match the research paper's spec first, to cut reading.
+- **Decided:** until the owner says otherwise, Claude agents build (Sonnet builds, Opus reviews honesty and statistics) or the orchestrator does.
+- **Governs:** [model routing](../model-routing.md); [workflow stages](../../../workflow/CONTEXT.md); [file system](../../CONTEXT.md).

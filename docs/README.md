@@ -44,7 +44,27 @@ Do not edit these by hand; rerun the command and commit the result.
 | `docs/reference/commands.md` | `uv run python scripts/commands_reference.py` (`--check` verifies freshness) |
 | `STATUS.md` (from `docs/roadmap/capabilities.toml`) | `uv run python scripts/status.py` (`--check` verifies freshness) |
 
-To find a document, see [Finding anything else](../CONTEXT.md#finding-anything-else) in the root `CONTEXT.md`.
+To find a document, run `uv run python scripts/fs.py orient` or `fs.py search "<words>"`.
+
+## One home per fact
+
+| Fact | Its one home |
+|---|---|
+| Commands and options | [docs/reference/commands.md](reference/commands.md) (generated) |
+| Part purposes, owner decisions | [project layer](reference/project/overview.md); by topic: [topic index](reference/project/decisions-by-topic.md) |
+| Checking a dataset before a backtest | [data health card](../research/tools/data-health.md) (`alpha data health`) |
+| A stand-in for the owner in RD-Agent tests | [propose and discuss](../workers/rdagent/README.md#propose-and-discuss); the rule: topic index above |
+| The reserved period (2024-01-01 onward) | [reserved period](reference/project/reserved-period.md) |
+| Outside libraries and engines, and how to add one | [register](reference/project/outside-projects.md) (links the glue rules) |
+| Rules that must not break | [reference/invariants/](reference/invariants/README.md) |
+| Decisions and their reasons | [docs/adr/](adr/README.md) |
+| Package layers and data folders | [docs/ARCHITECTURE.md](ARCHITECTURE.md) |
+| Current status; history | [STATUS.md](../STATUS.md) (generated); git log and pull requests |
+| How an idea is researched | [research/PLAYBOOK.md](../research/PLAYBOOK.md); the older staged lane: [research method](reference/research-method.md) |
+| Codes and terms | [docs/reference/glossary.md](reference/glossary.md) |
+| Who builds and reviews, which model, limits | [docs/reference/model-routing.md](reference/model-routing.md) |
+
+When a fact changes, update its one home and link to it from elsewhere; never copy it.
 
 ## Plan lifecycle
 

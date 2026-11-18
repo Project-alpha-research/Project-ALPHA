@@ -74,7 +74,7 @@ docs/reference/project/file-system-measurement.md
   verified 41f63fd8241be556 on 2026-11-19: Dropped two unrelated sources from the front matter; the page text is unchanged and still correct
 
 docs/reference/project/ideas-and-considered.md
-  verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
+  verified 086ba7af12fa8859 on 2026-11-19: Re-read after merging main: the data health row says built for runs (PR 278 report, PR 286 on rule tests and setups); volume 5 keeps main's pointer and adds a 2026-11-19 status line
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right

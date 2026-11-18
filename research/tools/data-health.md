@@ -29,13 +29,12 @@ Prices are raw. Dividends are separate cash events; this report does not check t
 **Saved report** Each check writes `health/<symbol>.json` in the store. `--stored` reads it back.
 If any input byte changed since, it says "out of date" instead of the old verdict. Run it again without `--stored`.
 **On a run** A rule test or a setup find, study or trade looks up this report for each series it reads.
-It counts only if it was made from the same bytes the run reads. Each series is pass, warn, fail, out-of-date (the bytes changed) or unchecked (no report).
-The run takes the worst, in order: fail, out-of-date, unchecked, warn, pass. Its label is `data-health-<verdict>`;
-out-of-date also gets `data-health-unchecked`. The run never makes a report unless you add `--check-data`.
-`--check-data` makes missing or out-of-date reports first. For a stock it compares up to 20 other stock series
-in the same store, on the same calendar, with overlapping dates. The summary gives the peer count.
+It counts only if it was made from the same bytes. Each series is pass, warn, fail, out-of-date (bytes changed) or unchecked.
+The run takes the worst: fail, out-of-date, unchecked, warn, pass. Its label is `data-health-<verdict>`;
+out-of-date uses `data-health-unchecked`. The run makes no report itself unless you add `--check-data`, which makes
+missing or out-of-date reports first; for a stock it compares up to 20 stock series in the same store and calendar.
 A fail stops the run before any test work. Fix the data, or run again with `--accept-bad-data "reason"` (one command only).
-The verdict covers all stored bars, as checked at the report time shown. Older runs read "Data health: not recorded."
+The verdict covers all stored bars at the report time shown. Older runs read "Data health: not recorded."
 
 **What it cannot tell you** A clean report only means these faults were not found. The prices can still be wrong.
 **Next** Check flagged dates against another source. RD-Agent panels remain the next integration.

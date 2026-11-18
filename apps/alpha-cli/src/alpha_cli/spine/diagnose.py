@@ -39,6 +39,7 @@ from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
+from alpha_cli.validate_cmds import write_validation_sidecars
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation.metrics import to_returns
 
@@ -287,13 +288,7 @@ def write_diagnostics(
 ) -> _gauntlet.GauntletOutput:
     rdir = Path(result["run_dir"])
     # These exact sidecars are reused by write_validation_run's idempotent publication seam.
-    _artifacts.write_run_sidecars(
-        rdir,
-        equity=list(zip(out.oos.oos_timestamps, out.oos.oos_equity.tolist(), strict=True)),
-        trades=out.result.trades,
-        trace_result=out.result,
-        periods_per_year=spec.periods_per_year,
-    )
+    write_validation_sidecars(rdir, bars, spec, out, rule_test=True)
     full, dates, equity = full_sample(bars, dividends, spec)
     closes = {bar.ts: float(bar.close) for bar in bars}
     market = [closes[date] for date in dates]

@@ -2,10 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 366c0e47efca5da5 on 2026-11-18: plain-words journey change already described here
+  verified 61050c6c520e288d on 2026-11-18: Merge combines both lines: this branch's break-even tools wording and main's plain-words RD-Agent journey wording; both match their code
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
+
+docs/reference/invariants/cli-investigation-tools.md
+  verified dbc2a59176d184f6 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+
+docs/reference/invariants/cli-runs.md
+  verified 53c37cd48307ec7f on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
 
 docs/reference/model-routing.md
   verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
@@ -14,7 +20,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 8d3911c3d1ba8121 on 2026-11-18: journey wording change leaves this component summary correct
+  verified 170d610dc69779fe on 2026-11-18: The workspace page only changed its two outputs lines, for break-even costs and journey wording; this component summary still holds
 
 docs/reference/project/components/data-layer.md
   verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
@@ -43,8 +49,11 @@ docs/reference/project/components/rd-agent.md
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
+docs/reference/project/components/toolbox.md
+  verified 03fc2ec8aca4aa02 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+
 docs/reference/project/components/validation-and-evidence.md
-  verified e1c214a6d07651bb on 2026-11-18: re-read: its routing file only gained the Monte Carlo row; this page already links the Monte Carlo component
+  verified 385c6d3617445444 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
 
 docs/reference/project/components/web-workstation.md
   verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
@@ -75,3 +84,33 @@ docs/roadmap/production-scope-3.md
 
 docs/roadmap/production-scope.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+research/CONTEXT.md
+  verified c3f7380b02d3b824 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/PLAYBOOK.md
+  verified ce16230858a49ab2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/benchmark-and-drawdowns.md
+  verified 03cfcc2ee0167a3f on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/deflated-sharpe-and-trials.md
+  verified 7eadec39bdc36cc2 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/diagnose-and-audit.md
+  verified 66de403d59a02755 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/inverted-signal-control.md
+  verified d9d9586084095e97 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/price-noise.md
+  verified a070a821d10331a6 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/rule-test.md
+  verified 87efe515e760f6a1 on 2026-11-18: diagnose.py now stages sidecars through the shared validation writer, which adds two cost columns to rule-test equity files; this document does not describe those files
+
+research/tools/run-level-checks.md
+  verified 82034701aac7dff9 on 2026-11-18: Text already rewritten earlier on this branch for per-bar cost storage and the break-even check; re-read against the final code and it matches
+
+research/tools/walk-forward.md
+  verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

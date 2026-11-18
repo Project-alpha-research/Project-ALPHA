@@ -639,6 +639,9 @@ class Launch:
 
     def finish(self, exit_status: int, reason: str) -> int:
         evaluations = self.run / "evaluations.jsonl"
+        stop = self.run / "loop-stop.json"
+        if stop.exists():
+            reason = json.loads(stop.read_text())["loop_reason"]
         self.receipt.update(
             ended_at=_now(),
             exit_status=exit_status,
@@ -654,6 +657,9 @@ class Launch:
             else None,
         )
         self.receipt.update(round_counts(self.run))
+        vectors = self.run / "knowledge-vectors.json"
+        if vectors.exists():
+            self.receipt.update(json.loads(vectors.read_text()))
         history = self.run / "history-context.json"
         self.receipt.update(
             json.loads(history.read_text())

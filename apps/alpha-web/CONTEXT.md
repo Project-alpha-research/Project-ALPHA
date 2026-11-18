@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 1abd0e3bcba7d489
+verified: 2c30cb1d4236022f
 ---
 
 # alpha-web workspace
@@ -64,7 +64,8 @@ grants authority.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
   Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
   Old failed-deflation candidates have derived status; declaration, count and diagnostic fields stay recorded facts.
-  The funnel counts provider-lost factors as proposed and as its own panel stage, stopped by the model provider.
+  The funnel counts provider-lost factors as proposed and as stopped by the model provider.
+  Internal coding failures have a separate sentence describing partial judging and the consecutive-failure stop.
   Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).
   Vitest discovers `.test.tsx` too, so its Node rendering test runs with the rest.
 

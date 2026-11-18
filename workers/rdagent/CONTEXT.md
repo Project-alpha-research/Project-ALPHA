@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: d671bec724c2d3d6
+verified: 492225cc5ef71218
 ---
 
 # RD-Agent worker workspace
@@ -47,7 +47,8 @@ no market, inference or evidence authority.
   `loop_guard.py` closes exhausted-provider rounds, including proposal, without inventing trials.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
   The code-critic guard preserves execution/value feedback and skips later critics in the failed round.
-  Restored prompts retain four full same-panel rounds; the other rounds stay as summaries.
+  Internal coding errors preserve completed factors for judging; two consecutive failures stop the run.
+  Memory search tables use one vector dimension; restored panel provenance includes run receipts.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and
   factor-specific eligibility: [README](README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
 - Chat cache/provider observations and receipt summaries live in `gateway_usage.py`; API sessions

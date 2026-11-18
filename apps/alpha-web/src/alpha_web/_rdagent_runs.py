@@ -86,6 +86,10 @@ STATUS_SENTENCES = {
         "The model provider failed after the allowed attempts, so this round stopped; no trial"
         " was invented and the next round ran."
     ),
+    "coding_failed_internal_error": (
+        "An internal coding error ended this round; completed factors still went to ALPHA's "
+        "judge. Two consecutive rounds with this error stop the run."
+    ),
     "critic_unavailable_provider_timeout": (
         "The code critic timed out; execution and value checks supplied feedback, "
         "and later code critics in this round were skipped. ALPHA's judging rules stayed the same."
@@ -767,6 +771,7 @@ def read_run(root: Path, ledger: Path, run_id: str) -> RdAgentDetail:
                 "abandoned_after_error",
                 "coding_failed_provider_timeout",
                 "coding_failed_provider_error",
+                "coding_failed_internal_error",
                 "proposal_failed_provider_timeout",
                 "proposal_failed_provider_error",
                 "critic_unavailable_provider_timeout",

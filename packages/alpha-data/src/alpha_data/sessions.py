@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
 import exchange_calendars as xcals  # type: ignore[import-untyped]
@@ -52,6 +52,16 @@ def session_bounds(calendar: str, session_date: date) -> tuple[datetime, datetim
 def sessions_between(calendar: str, first: date, last: date) -> list[date]:
     """Every exchange session date from ``first`` to ``last`` inclusive."""
     return [ts.date() for ts in _calendar(calendar).sessions_in_range(first, last)]
+
+
+def daily_session_closes(calendar: str, first: date, last: date) -> dict[date, datetime]:
+    """Exchange close instants for an explicit history, including old and shortened sessions."""
+    # Pad the constructor bounds so a holiday at either edge is still queryable.
+    exchange = xcals.get_calendar(
+        calendar, start=first - timedelta(days=7), end=last + timedelta(days=7)
+    )
+    closes = exchange.closes.loc[first.isoformat() : last.isoformat()]
+    return {session.date(): closing.to_pydatetime() for session, closing in closes.items()}
 
 
 def session_date_of(ts: datetime, calendar: str | None) -> date:

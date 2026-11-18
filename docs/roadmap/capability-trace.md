@@ -35,6 +35,8 @@ table. A capability may serve several rows; a row may be served by several capab
 | `afml-fracdiff` | Fractional differencing with d chosen on training data only |
 | `afml-stats-second-opinion` | Second opinions on PSR, DSR, PBO; minimum track record; strategy risk |
 | `retained-coverage` | Completeness check on downloaded bars |
+| `data-health` | Completeness check on downloaded bars |
+| `data-health-on-runs` | Completeness check on downloaded bars |
 | `crypto-snapshots` | Reads see only what was known then; snapshots and receipts never change |
 | `backtest` | One-asset rule backtest with costs: decide at a close, fill at the next open |
 | `backtest` | Rank many assets by a factor and replay the basket with costs |

@@ -302,6 +302,20 @@ def test_actual_nested_replay_figures_and_counted_only(store: Path) -> None:
     assert shown["counted_only"].value == "spread check failed"
 
 
+def test_nested_newey_west_screen_figures_are_read_not_refused(store: Path) -> None:
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    row = json.loads(ledger.read_text())
+    row["clocks"]["weekly"].setdefault("screen", {})["newey_west"] = {
+        "effective_n": 156.0,
+        "lag": 5,
+        "long_run_variance": 0.02,
+    }
+    write_lines(ledger, [row])
+    shown = rdagent.run_detail("new").factors[0].clocks["weekly"].screen
+    assert shown["newey_west.effective_n"].value == 156.0
+    assert shown["newey_west.lag"].value == 5
+
+
 def test_recorded_funnel_is_copied_without_deriving_counts(store: Path) -> None:
     path = store / "new/receipt.json"
     receipt = json.loads(path.read_text())
@@ -785,3 +799,60 @@ def test_story_provider_failure_before_any_proposal_records_zero_judged(store: P
     assert story is not None
     assert story.journey["judged"].value == 0
     assert story.events == ["proposal_failed_provider_timeout"]
+
+
+def test_story_counts_recorded_ideas_when_a_later_round_died_before_recording_any(
+    store: Path,
+) -> None:
+    write_lines(
+        store / "old/rounds.jsonl",
+        [
+            {
+                "iteration": 1,
+                "status": "refused_closed_family",
+                "trial_created": False,
+                "factor_names": ["only_one"],
+                "message": "Refused closed families: synthetic.",
+            },
+            {"loop": 1, "status": "abandoned_after_error", "trial_created": False},
+        ],
+    )
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert story.journey["proposed"].value == 1
+    assert story.journey["refused"].value == 1
+    assert story.journey["judged"].value == 0
+    assert any("before any idea of it was recorded" in item for item in story.missing_links)
+
+
+def test_story_failed_screen_is_not_shortlisted_even_in_old_rows(store: Path) -> None:
+    ledger = store / "rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+    row = json.loads(ledger.read_text())
+    row["status"] = "SCREEN_FAIL"
+    row.pop("shortlist", None)
+    write_lines(ledger, [row])
+    story = rdagent.run_detail("new").story
+    assert story is not None
+    assert all(idea.stages["shortlisted"] is False for idea in story.ideas)
+
+
+def test_story_provider_stopped_coding_means_zero_coded_and_ran(store: Path) -> None:
+    write_lines(
+        store / "old/rounds.jsonl",
+        [
+            {
+                "iteration": 0,
+                "status": "coding_failed_provider_timeout",
+                "factor_names": ["one", "two"],
+                "trial_created": False,
+            }
+        ],
+    )
+    story = rdagent.run_detail("old").story
+    assert story is not None
+    assert [story.journey[key].value for key in ("proposed", "coded", "ran", "judged")] == [
+        2,
+        0,
+        0,
+        0,
+    ]

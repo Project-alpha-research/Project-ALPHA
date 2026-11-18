@@ -11,7 +11,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: c8a696c0c7d1e5a2
+verified: f8a838e7811b1655
 ---
 
 # Web frontend invariants
@@ -143,6 +143,7 @@ Lightweight Charts). The backend it talks to is covered in [web-api.md](web-api.
   proposer words; trial declarations supply direction, clock and reason; round feedback is explicitly shared by the round.
   Stored primary-clock figures explain the verdict, including the half-cutoff rule; counted-only replay returns are not story results.
   Shortlisted always means not a pass; funding eligibility, blend warnings and diagnostic clocks have fixed explanations.
+  A round's shared feedback prints once; later cards point to it. Figures show three significant digits; technical detail keeps all.
   Missing descriptions, declarations, feedback and code files say not recorded; the glossary explains the screen's terms.
   Raw rows, legacy receipt counts and code filenames appear only inside technical detail; theme tokens supply colour/type.
   Async reads remain bound to the selected run. Node tests check writer vocabulary, figures and markup; the browser spec

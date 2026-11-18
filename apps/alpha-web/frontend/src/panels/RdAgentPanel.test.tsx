@@ -133,4 +133,19 @@ describe('RD-Agent recorded panel', () => {
     expect(pending).not.toContain('slow_rank')
     expect(pending).toContain('Loading recorded run')
   })
+  it('shows a round\'s feedback once and points later cards of that round to it', () => {
+    const base = {
+      round: fact(0), round_kind: 'evaluation' as const, description: fact(), direction: fact(), clock: fact(), reason: fact(),
+      system_statuses: ['coded'], refusal: fact(), feedback: fact('Synthetic round feedback.'), feedback_scope: 'round' as const,
+      trial: null, stages: { proposed: true, refused: false, coded: true, ran: true, judged: true, shortlisted: false, candidate: false },
+      labels: [], code_file: fact(), raw: '{}',
+    }
+    const story = {
+      ideas: [{ ...base, id: 'a', name: fact('First synthetic') }, { ...base, id: 'b', name: fact('Second synthetic') }],
+      journey: {}, missing_links: [], ending: 'finished', ending_reason: fact(), minutes: fact(), events: [],
+    }
+    const html = renderToStaticMarkup(<RdAgentView list={{ items: [run], reason: null, ledger_reason: null }} selected="first" detail={{ ...detail, story }} error={null} onSelect={() => undefined} />)
+    expect(html.split('Synthetic round feedback.').length - 1).toBe(1)
+    expect(html).toContain('The same feedback as for First synthetic above')
+  })
 })

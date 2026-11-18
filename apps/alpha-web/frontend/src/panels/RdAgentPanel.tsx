@@ -159,7 +159,7 @@ const storyCard: CSSProperties = {
   background: 'var(--panel)', color: 'var(--ink)', overflowWrap: 'anywhere',
 }
 
-function IdeaCard({ idea }: { idea: Idea }) {
+function IdeaCard({ idea, sameFeedbackAs }: { idea: Idea; sameFeedbackAs: string | null }) {
   const numbers = verdictNumbers(idea.trial)
   return <article id={`idea-${idea.id}`} tabIndex={-1} style={storyCard}>
     <h3 style={{ fontSize: 'var(--font-size)' }}>{recorded(idea.name)}</h3>
@@ -178,8 +178,8 @@ function IdeaCard({ idea }: { idea: Idea }) {
     {idea.labels.map(label => <p key={label}>{labelSentence(label)}</p>)}
     {idea.trial && idea.trial.figures.shortlist?.value == null && <p>Shortlist status: not recorded.</p>}
     <h4 style={{ fontSize: 'var(--font-size)' }}>What it was told next</h4>
-    {idea.feedback_scope === 'round' && <p>This feedback was stored for the whole evaluation round.</p>}
-    <p>{recorded(idea.feedback)}</p>
+    {idea.feedback_scope === 'round' && !sameFeedbackAs && <p>This feedback was stored for the whole round, not for this idea alone.</p>}
+    {sameFeedbackAs ? <p>The same feedback as for {sameFeedbackAs} above; it was stored once for the whole round.</p> : <p>{recorded(idea.feedback)}</p>}
     <details><summary>technical detail</summary>
       <p>Code file: {recorded(idea.code_file)}</p>
       <p>Stored row, limited to display-safe fields:</p>
@@ -226,7 +226,10 @@ function RunStory({ detail }: { detail: Detail }) {
     {groups.size === 0 && <p>Idea descriptions and their links to rounds are not recorded.</p>}
     {[...groups].map(([heading, ideas]) => <section key={heading} aria-label={heading}>
       <h3 style={{ fontSize: 'var(--font-size)' }}>{heading}</h3>
-      {ideas.map(idea => <IdeaCard key={idea.id} idea={idea} />)}
+      {ideas.map((idea, position) => {
+        const first = ideas.findIndex(other => idea.feedback.value !== null && other.feedback.value === idea.feedback.value)
+        return <IdeaCard key={idea.id} idea={idea} sameFeedbackAs={first >= 0 && first < position ? recorded(ideas[first].name) : null} />
+      })}
     </section>)}
     <aside aria-label="Words used here" style={storyCard}>
       <h3 style={{ fontSize: 'var(--font-size)' }}>Words used here</h3>

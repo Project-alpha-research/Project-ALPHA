@@ -77,6 +77,11 @@ export function recorded(fact: Fact | undefined | null): string {
   if (fact?.value === null || fact?.value === undefined) return 'not recorded'
   return Array.isArray(fact.value) ? fact.value.join(', ') : String(fact.value)
 }
+/** A figure for reading, not for audit: three significant digits; the technical detail keeps every digit. */
+export function shown(fact: Fact | undefined | null): string {
+  const value = fact?.value
+  return typeof value === 'number' && !Number.isInteger(value) ? String(Number(value.toPrecision(3))) : recorded(fact)
+}
 export function directionSentence(value: Fact['value']): string {
   if (value === null) return 'Direction: not recorded.'
   if (value === 1) return 'The proposer intended to buy high-ranked names.'
@@ -114,10 +119,10 @@ export function storySummary(story: Story | null, run: Schema['RdAgentRun'] | nu
     : ''
   return [
     [text('Ideas proposed: '), count('proposed'), text('.')],
-    [count('refused'), text(` ideas were refused before coding${reason ? `: ${reason}` : story?.journey.refused?.value === 0 ? '' : '; the refusal reasons are not recorded'}.`)],
-    [count('coded'), text(' ideas were coded, '), count('ran'), text(' ran, and '), count('judged'), text(` were judged${noJudging}.`)],
-    [count('shortlisted'), text(' ideas were shortlisted (not a pass), and '), count('candidate'), text(' became candidates for an owner-approved confirmation, not evidence of an edge.')],
-    [text('The recorded cost was '), { text: `${recorded(run?.cost_usd)} USD`, target: 'run-record' }, text(' and elapsed time was '),
+    [text('Refused before coding: '), count('refused'), text(reason ? `. ${reason}.` : story?.journey.refused?.value === 0 ? '.' : '; the refusal reasons are not recorded.')],
+    [text('Coded: '), count('coded'), text('; ran: '), count('ran'), text('; judged: '), count('judged'), text(`${noJudging}.`)],
+    [text('Shortlisted (not a pass): '), count('shortlisted'), text('; candidates for an owner-approved confirmation, not evidence of an edge: '), count('candidate'), text('.')],
+    [text('The recorded cost was '), { text: `${shown(run?.cost_usd)} USD`, target: 'run-record' }, text(' and elapsed time was '),
       { text: typeof story?.minutes.value === 'number' ? formatDuration(story.minutes.value) : 'not recorded', target: 'run-record' }, text('.')],
     [text(endingSentence(story?.ending ?? 'not_recorded'))],
   ]
@@ -130,15 +135,15 @@ export function verdictNumbers(factor: Factor | null): StoryNumber[] {
   if (typeof clockName !== 'string') return []
   const clock = factor.clocks[clockName]
   if (!clock) return []
-  const number = (label: string, fact: Fact | undefined, gloss: string): StoryNumber => ({ label, value: recorded(fact), gloss })
-  const cutoff = recorded(clock.figures.screen_cutoff?.value == null ? factor.figures.screen_cutoff : clock.figures.screen_cutoff)
+  const number = (label: string, fact: Fact | undefined, gloss: string): StoryNumber => ({ label, value: shown(fact), gloss })
+  const cutoff = shown(clock.figures.screen_cutoff?.value == null ? factor.figures.screen_cutoff : clock.figures.screen_cutoff)
   const passLine = factor.figures.screen_rule?.value === 'alpha-investing-simple-1'
-    ? `the pass line is half the recorded cutoff ${cutoff}`
+    ? `the screen passes an idea only at half the stored cutoff of ${cutoff}`
     : `the recorded cutoff is ${cutoff}; the pass-line convention is not recorded`
   const screen = number('Noise-test probability', clock.figures.p,
     `Under no predictive relationship, the chance of a result this strong; ${passLine}.`)
   const deflation = number('Many-tries confidence', clock.deflation.dsr,
-    `Recorded confidence after allowing for repeated tries; the pass line was ${recorded(clock.deflation.threshold)}.`)
+    `Recorded confidence after allowing for repeated tries; the pass line was ${shown(clock.deflation.threshold)}.`)
   const excess = number('Annual excess return after costs', clock.replay.net_annual_excess,
     'The replay’s yearly return above its benchmark after trading costs; a fraction, not a promise.')
   if (factor.status === 'SPREAD_FAIL') return [
@@ -160,8 +165,8 @@ export function verdictNumbers(factor: Factor | null): StoryNumber[] {
 export function roundHeading(idea: Idea): string {
   if (idea.round.value === null || idea.round_kind === 'unknown') return 'Round: not recorded'
   return idea.round_kind === 'evaluation'
-    ? `Evaluation round ${recorded(idea.round)} — loop round link not recorded`
-    : `Loop round ${recorded(idea.round)} — evaluation link not recorded`
+    ? `Evaluation round ${recorded(idea.round)}`
+    : `Loop round ${recorded(idea.round)}`
 }
 export function systemStory(idea: Idea): string {
   return idea.system_statuses.length ? idea.system_statuses.map(statusSentence).join(' ') : 'What the system did: not recorded.'

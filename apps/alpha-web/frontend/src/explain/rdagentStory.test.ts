@@ -81,7 +81,7 @@ describe('recorded RD-Agent stories', () => {
     const screen = verdictNumbers(factor)
     expect(screen.map(number => number.value)).toEqual(['0.26', '27'])
     expect(screen[0].gloss).toContain('0.0004')
-    expect(screen[0].gloss).toContain('half the recorded cutoff')
+    expect(screen[0].gloss).toContain('half the stored cutoff')
     expect(screen[0].gloss).not.toContain('chance this is luck')
     expect(verdictNumbers({ ...factor, status: 'SPREAD_FAIL' }).map(number => number.value)).toEqual(['-0.02', '0.01', '-0.03'])
     const deflation = verdictNumbers({ ...factor, status: 'DEFLATION_FAIL' })

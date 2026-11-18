@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: aefc22c68329fac5
+verified: 2216c0e74cbb8506
 ---
 
 # Web API invariants
@@ -97,7 +97,7 @@ as JSON and SSE (server-sent events, a one-way live stream) and serves the built
   `alpha_core.atomic`, slugified name). It is presentation state with no research or execution authority.
 - Never reconstruct trading evidence or compute metrics in the backend; relay what the CLI and artifacts record.
 - RD-Agent GETs read bounded receipt/ledger/round/evaluation files; IDs select listed folders, never paths; raw fields are allowlisted/redacted.
-  Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; missing links and duplicate counts stay unknown.
+  Tasks join trials by evaluation number/name/hash, never loop count; conflicts fail loud; unlinked counts stay unknown; empty dead rounds are disclosed.
   Idea cards supply counts, receipts supply cost/time/ending, rounds supply feedback; hashes name code archives; old candidates retain derived status.
 - Run labels are server-side: `_runs.display_name` builds `<strategy> <bar> — <symbol> · <source> · <first → last> · run
   <8 hex>` from the manifest (`<bar>` from its `timeframe`: `M5`, `H1`, ..., `D1` when absent; the period

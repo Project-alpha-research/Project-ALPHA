@@ -123,7 +123,9 @@ SCREEN = (
     "clustered_p",
     "two_sided_p",
     "dependence_rule",
-    "newey_west",
+    "newey_west.effective_n",
+    "newey_west.lag",
+    "newey_west.long_run_variance",
     "z",
     "p",
     "direction",
@@ -789,6 +791,18 @@ def _story_raw(row: dict[str, Any]) -> str:
     )
 
 
+BEFORE_SHORTLIST = frozenset(
+    {"SCREEN_FAIL", "SPREAD_FAIL", "REPLAY_FAIL", "FAILED", "LOOKAHEAD", "UNSTABLE", "DEGENERATE"}
+)
+
+
+def _shortlisted(row: dict[str, Any]) -> bool | None:
+    """The stored flag; else False only for a status the writer gives before the shortlist step."""
+    if type(row.get("shortlist")) is bool:
+        return bool(row["shortlist"])
+    return False if row.get("status") in BEFORE_SHORTLIST else None
+
+
 def _idea(
     identity: str,
     row: dict[str, Any],
@@ -800,6 +814,13 @@ def _idea(
     if status:
         status_sentence(status, None)  # unknown stored states fail loud
     refused = status in STORY_REFUSALS
+    stopped = (
+        trial is None
+        and row.get("trial_created") is False
+        and row.get("coding_status") is None
+        and str(status).startswith(("coding_failed_provider_", "proposal_failed_provider_"))
+    )
+    open_end = not (refused or stopped)  # only these stored states prove nothing was coded
     factor = _factor(trial) if trial is not None else None
     evaluated = factor is not None and factor.status not in {"IMPORTED", "REPEAT", "FAILED"}
     ran = evaluated or source.get("failure_reason") == "critic_rejected"
@@ -828,14 +849,14 @@ def _idea(
     stages: dict[str, bool | None] = {
         "proposed": True,
         "refused": refused,
-        "coded": True if ran or row.get("coding_status") == "coded" else False if refused else None,
-        "ran": True if ran else False if refused else None,
+        "coded": True if ran or row.get("coding_status") == "coded" else None if open_end else False,
+        "ran": True if ran else None if open_end else False,
         "judged": evaluated
         if trial is not None
         else False
         if refused or row.get("trial_created") is False
         else None,
-        "shortlisted": source.get("shortlist") if trial is not None else False if refused else None,
+        "shortlisted": _shortlisted(source) if trial is not None else False if refused else None,
         "candidate": factor.status == "CANDIDATE" if factor else False if refused else None,
     }
     return RdAgentIdea(
@@ -979,7 +1000,12 @@ def _story(
         names = record.get("factor_names", [])
         if not isinstance(names, list) or any(not isinstance(name, str) for name in names):
             raise ValueError("Invalid recorded proposal names.")
-        if not names:
+        if not names and record.get("trial_created") is False and record.get("status"):
+            missing.append(
+                "A round ended before any idea of it was recorded; ideas it may have "
+                "proposed are not counted."
+            )
+        elif not names:
             missing.append("An event has no recorded idea names; its idea count is not recorded.")
             uncertain = True
         if record.get("trial_created") is not False and names:

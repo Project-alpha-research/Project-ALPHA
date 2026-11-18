@@ -978,6 +978,7 @@ INVARIANT_SECTION_MAX_BYTES = 4_096
 INVARIANT_SECTION_CEILINGS: dict[tuple[str, str], int] = {
     ("cli-results-check.md", "Draft checks and run comparisons"): 5_656,
     ("cli-trial-ledger.md", "Families and queries"): 6_834,
+    ("cli-investigation-tools.md", "Rules"): 4_104,
 }
 
 

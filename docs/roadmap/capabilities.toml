@@ -1425,3 +1425,29 @@ real_data = "on 2026-11-17 the double-bottom find on the Dell's SPY and BTC/USDT
 needs = []
 state = "Working"
 docs = ["research/tools/setup-trade.md", "docs/reference/invariants/cli-runs.md", "docs/reference/project/components/strategies-and-signals.md"]
+
+[[capability]]
+id = "data-health"
+name = "Daily data health report"
+what = "Check a stored daily series for adjustments, timestamps, gaps and survivorship, save the report, and say when the source bytes have changed since."
+see_it = ["alpha data health SPY@home", "alpha data health SPY@home --stored --json"]
+entry_points = ["cli: alpha data health"]
+proof_synthetic = ["tests/unit/test_data_health_report.py::test_clean_and_inapplicable_checks", "tests/unit/test_data_health_report.py::test_future_stock_bars_change_no_finding_dated_before_the_report_time", "tests/unit/test_data_health_command.py::test_health_command_and_stored_fingerprint"]
+proof_smoke = ["tests/smoke/test_data_health_smoke.py::test_health_report_is_printed_saved_and_goes_out_of_date"]
+real_data = "on 2026-11-18 run read-only on copies of the Dell's two stock stores and its crypto daily bars; one false alarm (repeated closes in the coarse-tick era) led to the frozen-price rule now needing the whole bar to repeat"
+needs = []
+state = "Working"
+docs = ["research/tools/data-health.md", "docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "data-health-on-runs"
+name = "Data health verdict attached to every run"
+what = "Look up a series' saved health report when a run starts, label the run with its verdict, and stop on a fail unless the owner overrides it."
+see_it = ["nothing to see yet — not built"]
+entry_points = []
+proof_synthetic = []
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Not started"
+missing = "step 2 of the data health report: runs, setup finds and the RD-Agent panel do not read the saved report yet"
+docs = ["research/tools/data-health.md"]

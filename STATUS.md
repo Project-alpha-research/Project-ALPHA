@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 28 working, 31 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 29 working, 31 partly working, 0 demo only, 4 shelved, 2 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -42,6 +42,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Implausible-result observation** — alpha diagnose <run_id> (a real run is recorded) More: [research/tools/diagnose-and-audit.md](research/tools/diagnose-and-audit.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Study outcomes after every separate setup occurrence** — alpha setup study <find_id> --json (a real run is recorded) More: [research/tools/setup-study.md](research/tools/setup-study.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
 - **Trade setup occurrences long or short with declared exits and results in R** — alpha setup trade <find_id> --json (a real run is recorded) More: [research/tools/setup-trade.md](research/tools/setup-trade.md). More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/components/strategies-and-signals.md](docs/reference/project/components/strategies-and-signals.md).
+- **Daily data health report** — alpha data health SPY@home (a real run is recorded) More: [research/tools/data-health.md](research/tools/data-health.md). More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 
 ## Partly working
 
@@ -100,6 +101,7 @@ Found by running the installed program; each has a check that will fail once it 
 ## Not started
 
 - **Autonomous AI research team** — a backlog item only (moved from a plan 2026-11-14); one advisory slice shipped.
+- **Data health verdict attached to every run** — step 2 of the data health report: runs, setup finds and the RD-Agent panel do not read the saved report yet.
 
 ## Waiting for your decision
 

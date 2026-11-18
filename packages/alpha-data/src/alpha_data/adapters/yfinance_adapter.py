@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, date, datetime
+from typing import cast
 
 import pandas as pd
 import polars as pl
@@ -56,6 +57,14 @@ def _unadjust_factor(session: date, splits: list[tuple[date, float]]) -> float:
     return factor
 
 
+def split_discontinuity(previous_close: float, following_open: float, ratio: float) -> bool | None:
+    """Does the raw price step match this split? Small splits cannot be distinguished."""
+    expected = math.log(ratio)
+    if abs(expected) < _MIN_DETECTABLE_LOG_RATIO:
+        return None
+    return abs(math.log(previous_close / following_open) - expected) <= abs(expected) / 2.0
+
+
 def _check_split_discontinuity(
     rows: list[dict[str, object]], splits: list[tuple[date, float]], symbol: str
 ) -> None:
@@ -67,18 +76,17 @@ def _check_split_discontinuity(
     Ratios within ~25% of 1 are skipped — too small to separate from a real overnight move.
     """
     for ex, ratio in splits:
-        expected = math.log(ratio)
-        if abs(expected) < _MIN_DETECTABLE_LOG_RATIO:
-            continue
         prev = next((r for r in reversed(rows) if _row_date(r) < ex), None)
         after = next((r for r in rows if _row_date(r) >= ex), None)
         if prev is None or after is None:
             continue  # split sits at the window edge — nothing to compare
-        step = math.log(float(prev["close"]) / float(after["open"]))  # type: ignore[arg-type]
-        if abs(step - expected) > abs(expected) / 2.0:
+        previous_close = float(cast(float, prev["close"]))
+        following_open = float(cast(float, after["open"]))
+        if split_discontinuity(previous_close, following_open, ratio) is False:
             raise DataError(
                 f"yfinance split reconstruction failed for {symbol}: the {ratio:g}:1 split on "
-                f"{ex} shows a close->open factor of {math.exp(step):.3f} instead of ~{ratio:g}. "
+                f"{ex} shows a close->open factor of {previous_close / following_open:.3f} "
+                f"instead of ~{ratio:g}. "
                 "Yahoo's split-adjustment convention appears to have changed - refusing to store "
                 "prices of unknown adjustment state."
             )

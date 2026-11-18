@@ -16,6 +16,7 @@ its limits and what to try next. The method is in [the playbook](../PLAYBOOK.md)
 
 | What you see or need | Open |
 |---|---|
+| Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
 | An idea to test | [rule test](rule-test.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |

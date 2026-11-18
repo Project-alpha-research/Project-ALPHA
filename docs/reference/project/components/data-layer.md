@@ -7,22 +7,19 @@ verified: e3b0c44298fc1c14
 
 # Data layer
 
-The data layer downloads market data (stocks, ETFs and crypto), stores it exactly as received,
-and lets every later step read only what was known at a given moment. It also freezes the exact
-data a test used into a snapshot that can be checked later.
+The data layer downloads market data (stocks, ETFs and crypto), stores it exactly as received, and lets every later step
+read only what was known at a given moment. It also freezes the exact data a test used into a snapshot that can be checked later.
 
 ## Why it exists
 
-A backtest is only as honest as its data. If a test can see a price, a split or a list of index
-members before they were public, the result is worthless, and with live capital at stake that is
-not acceptable ([owner decisions](../owner-decisions.md#2026-11-14-precision-and-live-capital)).
-The data layer is where that honesty is enforced.
+A backtest is only as honest as its data. If a test can see a price, a split or a list of index members before they were
+public, the result is worthless, and with live capital at stake that is not acceptable
+([owner decisions](../owner-decisions.md#2026-11-14-precision-and-live-capital)). The data layer is where that honesty is enforced.
 
 ## Its job in the research loop
 
-Step 2 of the [research loop](../overview.md#the-research-loop): every experiment reads frozen,
-point-in-time data from here. The triage sheet calls getting real history the platform's main
-bottleneck.
+Step 2 of the [research loop](../overview.md#the-research-loop): every experiment reads frozen, point-in-time data from here.
+The triage sheet calls getting real history the platform's main bottleneck.
 
 ## Intended design
 
@@ -41,6 +38,10 @@ bottleneck.
 ## What is real today
 
 See the capabilities below on [STATUS.md](../../../../STATUS.md).
+
+### Daily data health
+`alpha data health` checks one stored daily series for adjustment, timestamp, gap and survivorship faults, and saves the report
+with a hash of its inputs, so a changed byte makes it "out of date". Runs do not read it yet. [Tool card](../../../../research/tools/data-health.md)
 
 ### Context data
 Daily market series such as Treasury yields and the VIX have no revision history at FRED; each
@@ -159,7 +160,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 
 - **Workspaces:** `packages/alpha-data`
 - **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
-  `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
+  `data-health`, `data-health-on-runs`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
   `filing-events`, `crypto-derivatives-context`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.
@@ -184,8 +185,7 @@ download shows `quality_status: passed`, which means only that the mechanical ch
 - Triage 2026-11-14 ([sheet](../../../roadmap/triage-2026-11.md)): cards 1, 3, 4 KEEP; card 2 (download
   bookkeeping) SHELVE, kept for a future download-budget policy. Card B (Bybit funding download modules)
   was shelved, then deleted 2026-11-18 (PR #261); funding context comes from the Binance importer and Bybit import.
-- Queued 2026-11-18, not built: one data health report (adjustments, timestamps, gaps, survivorship)
-  ([log](../owner-decisions-5.md#2026-11-18-request-one-data-health-report)).
+- [The request for a data health report](../owner-decisions-5.md#2026-11-18-request-one-data-health-report): step 1 built; attaching it to runs is not.
 
 ## Never
 

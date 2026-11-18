@@ -10,6 +10,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import stat
 import subprocess
 from pathlib import Path
@@ -548,7 +549,10 @@ def test_built_files_are_linked_for_codex_and_gone_before_verification(
     wt = Path(rec["worktree"])
     assert not (wt / "apps/alpha-web/src/alpha_web").exists() and not (wt / NODES).exists()
     assert rec["files_changed"] == [{"status": "M", "path": "src/mod.py"}]
-    assert all(c["links"] == [] for c in _calls(env, "uv-calls.jsonl"))
+    uv = _calls(env, "uv-calls.jsonl")
+    assert all(c["links"] == [] for c in uv if c["codex_calls"] == 0), "nothing before Codex"
+    # The checks outside the sandbox get the built app again, linked for them and removed after.
+    assert all(c["links"] == [ASSETS, NODES] for c in uv if c["codex_calls"] > 0)
     status = _git(wt, "status", "--porcelain", "--ignored")
     assert "M src/mod.py" in status and "alpha-web" not in status
     assert (env["repo"] / ASSETS / "index.html").is_file(), "the main checkout keeps its files"
@@ -573,3 +577,93 @@ def test_without_a_working_cache_codex_gets_the_old_sandbox_form(env: dict[str, 
     assert "`.venv/bin/...`" in prompt and "UV_OFFLINE" not in prompt
     assert any("package cache not provided" in n for n in _record(env)["notes"])
     assert not list((env["home"] / "cache" / "uv").iterdir())
+
+
+_ROUTED_CONTEXT = """# src
+
+## Read first
+
+| Read | Section | When |
+|---|---|---|
+| [rules](../docs/rules.md) | Checks | always |
+| [design](../docs/design.md) | — | adding a feature |
+"""
+
+
+def _commit_files(env: dict[str, Path], files: dict[str, str]) -> None:
+    for rel, text in files.items():
+        (env["repo"] / rel).parent.mkdir(parents=True, exist_ok=True)
+        (env["repo"] / rel).write_text(text)
+    _git(env["repo"], "add", "-A")
+    _git(env["repo"], "commit", "-qm", "files")
+    _git(env["repo"], "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+def test_the_builder_reads_the_routed_sections_and_the_record_sizes_them(
+    env: dict[str, Path],
+) -> None:
+    rules = "# Rules\n\n## Checks\n\nrun the gate\n\n## Other\n\nlong\n"
+    _commit_files(
+        env,
+        {
+            "src/CONTEXT.md": _ROUTED_CONTEXT,
+            "docs/rules.md": rules,
+            "docs/design.md": "# Design\n",
+        },
+    )
+    _scenario(env, GOOD)
+    assert _build(env) == 0
+    prompt = _calls(env)[0]["prompt"]
+    checks = len("## Checks\n\nrun the gate\n\n")
+    routed_from = "always (routed from `src/CONTEXT.md`)"
+    assert f"- `docs/rules.md` — Checks ({checks} bytes); {routed_from}" in prompt
+    assert "- `docs/design.md` — whole file (9 bytes); adding a feature" in prompt
+    routed = _record(env)["routed_reads"]
+    assert [e["path"] for e in routed["entries"]] == ["docs/rules.md", "docs/design.md"]
+    assert routed["total_bytes"] == checks + 9 and routed["left_out"] == []
+
+
+def test_a_brief_build_leaves_its_brief_and_report_in_a_task_folder(env: dict[str, Path]) -> None:
+    brief = env["tmp"] / "fix-it.md"
+    brief.write_text(
+        "# Fix it\n\n## Task\nfix; notes in /home/someone/designs/x.md\n"
+        "## Decision already made\nx\n"
+        "## Files\n- `src/mod.py`\n## Do not touch\n- `docs/`\n## Checks\n- `test -f src/mod.py`\n"
+        "## Report\nthe usual\n"
+    )
+    last = f"## Changed files\n- {env['repo']}/src/mod.py: x\n## UNVERIFIED\nnone\n"
+    _scenario(env, {**GOOD, "last": last})
+    assert handoff.main(["--repo", str(env["repo"]), "build", "--brief", str(brief)]) == 0
+    rec = _record(env)
+    wt = Path(rec["worktree"])
+    [folder] = [p for p in (wt / "docs/work").iterdir() if p.name.endswith("-fix-it")]
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}-fix-it", folder.name)
+    saved = (folder / "brief.md").read_text()
+    assert "## Decision already made" in saved and "<outside-repo>" in saved
+    assert "/home/" not in saved
+    report = (folder / "report.md").read_text()
+    assert report.startswith("# Build report: fix-it") and "- src/mod.py: x" in report
+    assert "/home/" not in report and "tokens" not in report
+    assert rec["verdict"] == "passed" and rec["outside_scope"] == []
+    assert any("docs/work/" in note and "brief.md" in note for note in rec["notes"])
+
+
+def test_checks_outside_the_sandbox_see_the_built_web_app(env: dict[str, Path]) -> None:
+    _main_built_files(env)
+    _scenario(env, GOOD)
+    assert _build(env, "--check", f"test -f {ASSETS}/index.html") == 0
+    rec = _record(env)
+    assert [c["passed"] for c in rec["checks"] if c["name"] == "check 3"] == [True]
+    assert any("linked the main checkout's built web app" in n for n in rec["notes"])
+    assert not os.path.lexists(Path(rec["worktree"]) / ASSETS), "and the link is gone after"
+
+
+def test_pytest_checks_run_owned_with_a_private_tmpdir(env: dict[str, Path]) -> None:
+    _scenario(env, GOOD)
+    check = (
+        'uv run pytest -q tests/test_mod.py && test -n "$ALPHA_TEST_OWNER" && '
+        'case "$TMPDIR" in /dev/shm/alpha-handoff-*) true;; *) false;; esac'
+    )
+    assert _build(env, "--check", check) == 0
+    [ran] = [c for c in _record(env)["checks"] if c["name"] == "check 3"]
+    assert ran["passed"] and ran["command"] == check

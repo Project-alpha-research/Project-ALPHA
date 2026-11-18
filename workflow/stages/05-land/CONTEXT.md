@@ -4,7 +4,7 @@ sources:
   - .github/pull_request_template.md
   - scripts/handoff.py
   - scripts/status.py
-verified: 3d5b17e2a25e9e25
+verified: 097180ffd6978485
 ---
 
 # Stage 05 — land: pull request to merged and closed
@@ -30,8 +30,8 @@ record of the task.
 
 1. Check "done" (below). Anything not met goes back to stage 03 or 04, or into the hand-off.
 2. Write `05-handoff.md`, push the branch and open a **draft** pull request whose body is that
-   file: `gh pr create --draft --body-file docs/work/<task>/05-handoff.md`. Then remove the task
-   folder in a last commit (`git rm -r docs/work/<task>`): `main` never holds one.
+   file: `gh pr create --draft --body-file docs/work/<task>/05-handoff.md`. Then remove a planned
+   task's folder in a last commit (`git rm -r docs/work/<task>`); a brief's `brief.md` and `report.md` stay.
 3. CI on the pull request is the merge gate ([ADR-0039](../../../docs/adr/0039-ci-is-the-merge-gate.md)).
    Fix every failing job on the branch; mark the pull request ready only when CI is green. Review
    by another model goes on the pull request and is advisory.

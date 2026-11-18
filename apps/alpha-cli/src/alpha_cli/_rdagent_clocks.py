@@ -212,6 +212,13 @@ def failed_stage(row: dict[str, Any]) -> str:
     return FAILED_STAGE.get(row["status"], "stage not recorded")
 
 
+def tied_days_feedback(screen: dict[str, Any]) -> str:
+    share = screen.get("all_tied_day_share")
+    if share is None:
+        return "The share of days with all coins tied was not recorded."
+    return f"All coins were tied on {figure(share, percent=True)} of days."
+
+
 def clock_feedback(row: dict[str, Any]) -> str:
     trial = row.get("clocks", {}).get(row.get("lead_clock"), row)
     spread_status = trial.get("spread", {}).get("status", "not recorded")
@@ -236,6 +243,8 @@ def clock_feedback(row: dict[str, Any]) -> str:
         )
         if replay and "error" not in replay and "counted_only" not in replay:
             parts.append(f"{clock}: {deflation_note(replay)}.")
+        if trial["status"] == "DEGENERATE":
+            parts.append(tied_days_feedback(screen))
         parts.extend(screen.get("warnings", []))
         if trial["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS") and trial.get(
             "spread", {}

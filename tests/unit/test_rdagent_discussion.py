@@ -40,7 +40,7 @@ def test_summary_keeps_raw_value(raw: Any) -> None:
 
 def test_summary_word_limit() -> None:
     text = " ".join(["word"] * 30)
-    assert discussion.summary_fields(text) == {"plain_summary": text}
+    assert discussion.summary_fields(text) == {"plain_summary": text, "plain_summary_status": "ok"}
 
 
 def fixture_round(
@@ -78,12 +78,17 @@ def test_wait_invalid_then_accept_drop(tmp_path: Path, monkeypatch: pytest.Monke
     reply = choose(Funding={"action": "accept"}, Season={"action": "drop", "reason": "later"})
     ledger = tmp_path / "ledger"
     before = ledger.read_bytes()
+    universe_run(tmp_path, monkeypatch)
     failed = ns["closed_families"]()
     clock = Mock(side_effect=[0, 1, 2, 3, 4, 5, 6])
 
     def respond(_: float) -> None:
         coder.develop.assert_not_called()
         data = json.loads((folder / "proposal.json").read_bytes())
+        assert data["ideas"][0]["plain_summary_status"] == "ok"
+        assert data["ideas"][0]["instrument_count"] == 141
+        assert "A rule that is true on only a few days" in data["caution"]
+        assert json.loads((folder.parent / "status.json").read_bytes())["state"] == "waiting"
         assert data["round"] == 0 and data["run_id"] == "test"
         assert data["ideas"][0]["input_columns"] == ["$close"]
         assert data["ideas"][0]["plain_summary"] == exp.sub_tasks[0].plain_summary
@@ -102,7 +107,11 @@ def test_wait_invalid_then_accept_drop(tmp_path: Path, monkeypatch: pytest.Monke
     coder.develop.assert_called_once_with(built)
     assert [t.factor_name for t in built.sub_tasks] == ["Funding"]
     assert built.sub_workspace_list == [None]
-    assert built.sub_tasks[0].discussion_fields == {"origin": "agent", "author": "owner"}
+    assert built.sub_tasks[0].discussion_fields == {
+        "origin": "agent",
+        "author": "owner",
+        "answered_by": "owner",
+    }
     assert json.loads((folder / "decision.json").read_bytes())["reply"] == reply
     assert ledger.read_bytes() == before and ns["closed_families"]() == failed
 
@@ -132,17 +141,21 @@ def test_single_revision_with_user_idea(
 
     monkeypatch.setattr(time, "sleep", respond)
     revised = proposal("Carry", "").sub_tasks + proposal("Weekday", "").sub_tasks
+    revised[0].revision_explanation = {"honoured": ["Used monthly carry."], "not_honoured": []}
     ask = Mock(return_value=revised)
     monkeypatch.setattr(discussion, "request_revision", ask)
     built = guard.develop(exp)
     assert [(t.factor_name, t.discussion_fields) for t in built.sub_tasks] == [
-        ("Season", {"origin": "agent", "author": author}),
+        ("Season", {"origin": "agent", "author": author, "answered_by": author}),
         *(
             []
             if blocked
             else [
-                ("Carry", {"origin": "agent-revised-by-user", "author": author}),
-                ("Weekday", {"origin": "user", "author": author}),
+                (
+                    "Carry",
+                    {"origin": "agent-revised-by-user", "author": author, "answered_by": author},
+                ),
+                ("Weekday", {"origin": "user", "author": author, "answered_by": author}),
             ]
         ),
     ]
@@ -193,6 +206,7 @@ def test_off_restores_round_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     raw = (tmp_path / "rounds.jsonl").read_bytes()
     additions = (
         b'"plain_summary": "It measures funding and expects cheaper coins to rise.", ',
+        b'"plain_summary_status": "ok", ',
         b'"plain_summary": null, "plain_summary_status": "missing", ',
     )
     for fragment in additions:
@@ -264,7 +278,12 @@ def test_revision_gateway_charge_and_guard(
     )
     response = {
         "1": {"name": "volatility_30d"},
-        "0": {"name": "Carry", "plain_summary": "Cheap coins may rise."},
+        "0": {
+            "name": "Carry",
+            "plain_summary": "Cheap coins may rise.",
+            "honoured": ["Used carry."],
+            "not_honoured": [],
+        },
     }
     model.chat_backend = Mock(spec=gw.ChatBackend)
     model.chat_backend.complete.return_value = gw.ChatResult(
@@ -279,11 +298,16 @@ def test_revision_gateway_charge_and_guard(
     monkeypatch.setattr(urllib.request, "urlopen", send)
     built = guard.develop(exp)
     assert [t.factor_name for t in built.sub_tasks] == ["Carry"]
-    assert built.sub_tasks[0].summary_fields == {"plain_summary": "Cheap coins may rise."}
+    assert built.sub_tasks[0].summary_fields == {
+        "plain_summary": "Cheap coins may rise.",
+        "plain_summary_status": "ok",
+    }
     assert model.budget.status()["runs"]["test"]["counted_calls"] == 1
     assert model.budget.status()["runs"]["test"]["usd"] == pytest.approx(0.01)
     assert len(rows(model)) == 1
     decision = json.loads((folder / "decision.json").read_bytes())
+    assert decision["replacements"][0]["honoured"] == ["Used carry."]
+    assert decision["replacements"][0]["not_honoured"] == []
     assert any("volatility and beta" in item.get("reason", "") for item in decision["dropped"])
 
 
@@ -325,7 +349,9 @@ def test_gateway_receipt_marks_revision_as_a_proposal(
                 "total_prompt_chars": 10,
             }
         )
-        return list(proposal("Carry", "").sub_tasks)
+        tasks = list(proposal("Carry", "").sub_tasks)
+        tasks[0].revision_explanation = {"honoured": ["Used carry."], "not_honoured": []}
+        return tasks
 
     monkeypatch.setattr(discussion, "request_revision", ask)
     guard.develop(exp)
@@ -389,6 +415,8 @@ def test_trial_ledger_only_receives_selected_tasks(
         ("Funding", "FAILED", 1)
     ]
     assert audited[0]["plain_summary"] == exp.sub_tasks[0].plain_summary
+    assert audited[0]["plain_summary_status"] == "ok"
+    assert audited[0]["answered_by"] == "owner"
     assert audited[0]["origin"] == "agent" and audited[0]["author"] == "owner"
     assert ns["family_definitions"]().family_failure_counts(audited) == {}
 
@@ -506,20 +534,31 @@ def revise_with_note(
     monkeypatch.setattr(urllib.request, "urlopen", send)
     built = guard.develop(exp)
     decision = json.loads((folder / "decision.json").read_bytes())
-    return sent[0], decision, (built, loop.hypothesis_gen.discussion_note)
+    assert len(sent) == 1  # one revision call at most
+    return sent[0], decision, (built, loop.hypothesis_gen)
 
 
 def test_hostile_note_changes_only_the_idea_text(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    content = json.dumps({"0": {"name": "Carry", "plain_summary": "Carry may pay."}})
+    content = json.dumps(
+        {
+            "0": {
+                "name": "Carry",
+                "plain_summary": "Carry may pay.",
+                "honoured": ["Used carry."],
+                "not_honoured": [],
+            }
+        }
+    )
     benign = "Use the monthly carry."
-    calm, calm_decision, (calm_built, calm_note) = revise_with_note(
+    calm, calm_decision, (calm_built, calm_gen) = revise_with_note(
         tmp_path / "a", monkeypatch, benign, content
     )
-    loud, loud_decision, (loud_built, loud_note) = revise_with_note(
+    loud, loud_decision, (loud_built, loud_gen) = revise_with_note(
         tmp_path / "b", monkeypatch, HOSTILE, content
     )
+    calm_note, loud_note = calm_gen.discussion_note, loud_gen.discussion_note
     # The note travels only as one JSON string inside the request data; every instruction,
     # the system message and the output format are byte-identical.
     assert json.dumps(HOSTILE) in loud["messages"][1]["content"]
@@ -540,6 +579,20 @@ def test_hostile_note_changes_only_the_idea_text(
     block = discussion.note_block(loud_note)
     assert block.endswith("\n" + json.dumps(HOSTILE)) and discussion.USER_DATA in block
     assert calm_note == benign
+    # The next round's choices block: fixed sentences first, then one capped JSON line.
+    blocks = [
+        discussion.choices_block(gen.discussion_choices, gen.discussion_note)
+        for gen in (calm_gen, loud_gen)
+    ]
+    head = f"\n{discussion.DISCUSSION_INSTRUCTION} {discussion.USER_DATA}\n"
+    for text, note in zip(blocks, (benign, HOSTILE), strict=True):
+        assert text.startswith(head) and text.endswith("\nEnd of user data.")
+        assert len(text) <= 4000 and text.count("\n") == 3
+        data = json.loads(text[len(head) : -len("\nEnd of user data.")])
+        assert data["note_to_agent"] == note and data["choices"][0]["note"] == note
+    assert blocks[0].replace(json.dumps(benign)[1:-1], "N") == blocks[1].replace(
+        json.dumps(HOSTILE)[1:-1], "N"
+    )
 
 
 def test_unusable_revision_drops_only_the_revised_ideas(
@@ -550,3 +603,165 @@ def test_unusable_revision_drops_only_the_revised_ideas(
     )
     assert [t.factor_name for t in built.sub_tasks] == ["Season"]
     assert decision["dropped"][0]["reason"].startswith("revision answer unusable")
+
+
+@pytest.mark.parametrize("bad", ["absent", None, "changed", [1], [""], ["x" * 201]])
+def test_bad_statement_list_is_left_out_not_assumed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bad: Any
+) -> None:
+    from alpha_cli.rdagent_discussion import proposal_text
+
+    item = {"name": "Carry", "honoured": ["Changed timing."], "not_honoured": bad}
+    if bad == "absent":
+        item = {"name": "Carry"}
+    sent, decision, (built, _) = revise_with_note(
+        tmp_path / "run", monkeypatch, "Use monthly carry.", json.dumps({"0": item})
+    )
+    # The idea is still built; the bad list is not stored and is never read as "all done".
+    assert [t.factor_name for t in built.sub_tasks] == ["Season", "Carry"]
+    replacement = decision["replacements"][0]
+    assert "not_honoured" not in replacement
+    assert "graded" in sent["messages"][1]["content"]
+    text = proposal_text(tmp_path / "run", last_decision=True)
+    if bad == "absent":
+        assert "honoured" not in replacement
+        assert "The agent did not say what it changed." in text
+    else:
+        assert replacement["honoured"] == ["Changed timing."]
+        assert "Not done: the agent did not say." in text
+
+
+def test_statement_lists_are_capped() -> None:
+    many = [f"Change {i}." for i in range(8)]
+    assert discussion.revision_statements({"honoured": many}) == {"honoured": many[:5]}
+
+
+@pytest.mark.parametrize("replacement", ["Funding", "Carry"])
+def test_revision_cannot_return_dropped_idea(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replacement: str
+) -> None:
+    ns, guard, loop, exp, coder = fixture_round(tmp_path, monkeypatch)
+    folder = tmp_path / "discussion/round-0"
+    reply = choose(
+        Funding={"action": "drop", "reason": "too costly"},
+        Season={"action": "revise", "note": "Use weekdays."},
+    )
+    reply["note_to_agent"] = "Try a slow rule."
+    monkeypatch.setattr(
+        time, "sleep", lambda _: (folder / "reply.json").write_text(json.dumps(reply))
+    )
+    ask = Mock(return_value=proposal(replacement, "").sub_tasks)
+    monkeypatch.setattr(discussion, "request_revision", ask)
+    before = (tmp_path / "ledger").read_bytes()
+    with pytest.raises(ns["FactorEmptyError"], match="no ideas to build"):
+        guard.develop(exp)
+    assert (
+        json.loads((folder / "decision.json").read_bytes())["dropped"][-1]["reason"]
+        == "revision returned a dropped idea"
+    )
+    ask.assert_called_once()
+    coder.develop.assert_not_called()
+    universe_run(tmp_path, monkeypatch)
+    gen = ns["AlphaFactorHypothesisGen"]()
+    gen.discussion_note = loop.hypothesis_gen.discussion_note
+    gen.discussion_choices = loop.hypothesis_gen.discussion_choices
+    with monkeypatch.context() as context_env:
+        context_env.delenv("ALPHA_FACTOR_TRIAL_LEDGER")
+        context = gen.prepare_context(None)[0]["hypothesis_and_feedback"]
+    for value in (
+        "Funding",
+        "futures funding",
+        "too costly",
+        "Use weekdays.",
+        "Try a slow rule.",
+        "close variant",
+    ):
+        assert value in context
+    loop.loop_idx = 1
+    loop.loop_prev_out[1] = {}
+    next_exp = proposal("Funding", "")
+    next_exp.sub_tasks += proposal("Volume", "").sub_tasks
+    second = folder.parent / "round-1"
+    monkeypatch.setattr(
+        time,
+        "sleep",
+        lambda _: (second / "reply.json").write_text(
+            json.dumps(choose(Volume={"action": "accept"}))
+        ),
+    )
+    assert [t.factor_name for t in guard.develop(next_exp).sub_tasks] == ["Volume"]
+    offered = json.loads((second / "proposal.json").read_bytes())
+    assert [item["name"] for item in offered["ideas"]] == ["Volume"]
+    assert offered["refused"][0]["reason"] == "you dropped this idea in round 0"
+    assert (tmp_path / "ledger").read_bytes() == before
+
+
+def test_worker_reports_active_steps_and_estimate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import asyncio
+    import importlib
+    from datetime import UTC, datetime, timedelta
+
+    monkeypatch.syspath_prepend(str(Path(discussion.__file__).parent))
+    entry = importlib.import_module("factor_loop_entry")
+    monkeypatch.setenv("ALPHA_FACTOR_DISCUSS", "1")
+    monkeypatch.setenv("ALPHA_FACTOR_RUN_DIR", str(tmp_path))
+    path = tmp_path / "discussion/status.json"
+    start = datetime(2026, 11, 18, tzinfo=UTC)
+    states = []
+
+    class FakeLoop:
+        step_idx = {0: 0, 1: 0}
+        steps = ["direct_exp_gen", "running", "feedback"]
+
+        async def _run_step(self, li: int) -> None:
+            states.append(json.loads(path.read_bytes())["state"])
+
+    entry.record_steps(FakeLoop, now=lambda: start + timedelta(minutes=3))
+    loop = FakeLoop()
+    asyncio.run(loop._run_step(0))
+    discussion.status(tmp_path, "building", 0, start)
+    for index in (1, 2):
+        loop.step_idx[0] = index
+        asyncio.run(loop._run_step(0))
+    asyncio.run(loop._run_step(1))
+    discussion.status(tmp_path, "waiting", 1, start + timedelta(minutes=4))
+    assert json.loads(path.read_bytes())["estimate_minutes"] == 4
+    assert states == ["proposing", "evaluating", "reviewing", "proposing"]
+
+
+def test_requested_dropped_family_requires_positive_request() -> None:
+    dropped = [{"name": "Funding", "family": "futures funding"}]
+    funding = {"futures funding"}
+    for note in ("Use funding.", "Try futures funding instead."):
+        assert not discussion.returned_dropped("Carry", funding, dropped, note, "drawdown")
+    assert discussion.returned_dropped("Carry", funding, dropped, "Do not use funding.", "drawdown")
+    # The same name is always a returned drop, whatever the note asks.
+    assert discussion.returned_dropped("Funding", set(), dropped, "Use funding.", "drawdown")
+    # Revising an idea that was already in the family brings nothing back.
+    assert not discussion.returned_dropped("Carry", funding, dropped, "Weekly.", "futures funding")
+
+
+def test_user_lifts_a_drop_by_adding_the_idea_back(tmp_path: Path) -> None:
+    def decision(number: int, record: dict[str, Any]) -> None:
+        folder = tmp_path / f"discussion/round-{number}"
+        folder.mkdir(parents=True)
+        (folder / "decision.json").write_text(json.dumps({"selected_tasks": [], **record}))
+
+    decision(0, {"reply": choose(Funding={"action": "drop"}, Volume={"action": "drop"})})
+    decision(1, {"reply": "none (timed out)"})
+    assert discussion.prior_drops(tmp_path, 2) == {"Funding": 0, "Volume": 0}
+    assert discussion.prior_drops(tmp_path, 0) == {}
+    built = [{"name": "Funding", "user_idea": "Bring back funding."}]
+    decision(2, {"reply": choose(Other={"action": "accept"}), "replacements": built})
+    assert discussion.prior_drops(tmp_path, 3) == {"Volume": 0}
+
+
+def test_prompt_block_caps_escaped_text_and_keeps_whole_json() -> None:
+    choices = [{"name": str(i), "action": "drop", "reason": "a" * 500} for i in range(10)]
+    block = discussion.choices_block(choices, "🌱" * 500)
+    assert len(block) <= 4000
+    data = json.loads(block.splitlines()[2])
+    assert data["note_to_agent"] == "🌱" * 500
+    assert len(data["choices"]) + data["omitted_choices"] == len(choices)

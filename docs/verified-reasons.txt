@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f37db52ddc451a3e on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified ccb173ae2ce3299f on 2026-11-19: Re-read after the merge: the RD-Agent discussion changes stay inside the rdagent_ and ledger modules and tests named in the routing table; routing and checks are unchanged.
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified 485c52a41070dfd5 on 2026-11-18: re-read after the merge; main's own update for the proposal pause is kept and the contents list and thirds link are accurate
+  verified a5fa61dafd837783 on 2026-11-19: Re-read after merging the README split: the discussion invariant (records who selected ideas; only tested ideas count) still matches the short README's Propose and discuss section and the worker.
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -53,7 +53,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 3c1c2343e740d22f on 2026-11-19: Worker pages were split and re-linked; every link in this page was repointed and the statements still hold
+  verified 8ba0d4e7256327df on 2026-11-19: Re-read after merging the README split: the proposal-pause entry (answer by number or name, reasons reach the next proposer, decisions record what the agent did and left out) matches the short README and CONTEXT; history now lives in CHANGE-NOTES.
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -131,7 +131,7 @@ research/tools/price-noise.md
   verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
 research/tools/rdagent-journey.md
-  verified dc85c46fe5c0a8d6 on 2026-11-18: Re-read: this branch only renamed the journey theme helper to figure_theme and named its light variant; light stays default and --theme dark still selects dark, as the card says
+  verified df8f12eea7539079 on 2026-11-19: Re-read after the merge: main only renamed the figure theme helper and named the light theme; the card's step-one, attribution and figure wording still match the code.
 
 research/tools/resampling-checks.md
   verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests

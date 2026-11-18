@@ -37,13 +37,41 @@ USER_DATA = (
 )
 
 
-def note_block(note: str) -> str:
-    """The next round's user note, delimited as data."""
-    return "\nNote from the user for this round. " + USER_DATA + "\n" + json.dumps(note)
+CAUTION = (
+    "A rule that is true on only a few days cannot rank coins. If your idea is an on/off "
+    "condition, ask for a graded version (how strongly, not yes or no)."
+)
+DISCUSSION_INSTRUCTION = (
+    "Do not propose again an idea the user dropped in this run, or a close variant of it, "
+    "unless the user asks."
+)
+
+
+def choices_block(choices: list[dict[str, Any]], note: str | None) -> str:
+    # Reserve the framing and omission count before adding whole choices.
+    header = f"\n{DISCUSSION_INSTRUCTION} "
+    end = "\nEnd of user data."
+    data: dict[str, Any] = {"note_to_agent": note, "choices": [], "omitted_choices": len(choices)}
+    for choice in choices:
+        data["choices"].append(choice)
+        data["omitted_choices"] -= 1
+        if len(header + note_block(data) + end) > 4000:
+            data["choices"].pop()
+            data["omitted_choices"] += 1
+            break
+    return header + note_block(data) + end
+
+
+def note_block(note: str | dict[str, Any]) -> str:
+    """Quote user data on a separate line after fixed instructions."""
+    encoded = json.dumps(note, ensure_ascii=False)
+    for separator in ("\u0085", "\u2028", "\u2029"):  # keep the data on one line
+        encoded = encoded.replace(separator, json.dumps(separator, ensure_ascii=True)[1:-1])
+    return USER_DATA + "\n" + encoded
 
 
 def summary_fields(raw: Any) -> dict[str, Any]:
-    result = {"plain_summary": raw}
+    result = {"plain_summary": raw, "plain_summary_status": "ok"}
     if raw is None or isinstance(raw, str) and not raw.strip():
         result["plain_summary_status"] = "missing"
     elif not isinstance(raw, str) or len(raw.split()) > 30 or set(raw) & set(r"()=_{}\/*^$"):
@@ -92,6 +120,33 @@ def validate_reply(reply: Any, names: list[str]) -> None:
         raise ValueError("Supply at most two non-empty user ideas.")
     if "note_to_agent" in reply and not text(reply["note_to_agent"]):
         raise ValueError("The note to the agent must contain text.")
+
+
+def revision_statements(item: dict[str, Any]) -> dict[str, list[str]]:
+    """Keep each list only if it holds short statements; a bad or missing list is left out."""
+    explanation = {}
+    for key in ("honoured", "not_honoured"):
+        values = item.get(key)
+        if isinstance(values, list) and all(
+            isinstance(v, str) and v.strip() and len(v) <= 200 for v in values
+        ):
+            explanation[key] = values[:5]
+    return explanation
+
+
+def validate_decision(record: Any) -> None:
+    if not isinstance(record, dict) or not isinstance(record.get("selected_tasks"), list):
+        raise ValueError("The decision must list the ideas selected to build.")
+    for key in ("selected_tasks", "dropped", "replacements"):
+        items = record.get(key, [])
+        if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+            raise ValueError(f"The decision field {key} must list ideas.")
+        for item in items:
+            if key != "dropped" and not isinstance(item.get("name"), str):
+                raise ValueError("Expected an idea name in the decision.")
+            given = {k: item[k] for k in ("honoured", "not_honoured") if k in item}
+            if revision_statements(given) != given:
+                raise ValueError("honoured and not_honoured must list up to five short statements.")
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -150,6 +205,48 @@ def remaining(now: datetime) -> dict[str, Any]:
     }
 
 
+def prior_drops(run: Path, number: int) -> dict[str, int]:
+    """Names the user dropped in earlier rounds of this run, with the latest such round.
+
+    Only a validated user reply can drop an idea. The user lifts a drop by adding the idea
+    back as their own (`--idea`): a later user idea built under that name clears it.
+    """
+    rounds = sorted(
+        int(path.parent.name[6:])
+        for path in (run / "discussion").glob("round-*/decision.json")
+        if re.fullmatch(r"round-[0-9]+", path.parent.name)
+    )
+    drops: dict[str, int] = {}
+    for previous in (r for r in rounds if r < number):
+        record = json.loads((run / f"discussion/round-{previous}/decision.json").read_bytes())
+        if isinstance(record["reply"], dict):
+            for name, choice in record["reply"]["ideas"].items():
+                if choice["action"] == "drop":
+                    drops[name] = previous
+        for item in record.get("replacements", []):
+            if "user_idea" in item:
+                drops.pop(item["name"], None)
+    return drops
+
+
+def status(run: Path, state: str, number: int, since: datetime) -> None:
+    """Record the worker's state for `alpha ledger proposal`; one atomic write under the lock."""
+    folder = run / "discussion"
+    folder.mkdir(exist_ok=True)
+    path = folder / "status.json"
+    with locked(folder):
+        old = json.loads(path.read_bytes()) if path.exists() else {}
+        if old.get("state") == state and old.get("round") == number:
+            return
+        row = {key: old[key] for key in ("estimate_minutes", "build_started") if key in old}
+        if state == "waiting" and "build_started" in row:
+            elapsed = since - datetime.fromisoformat(row.pop("build_started"))
+            row["estimate_minutes"] = max(1, round(elapsed.total_seconds() / 60))
+        if state == "building":
+            row["build_started"] = since.isoformat()
+        write_json(path, {**row, "state": state, "round": number, "since": since.isoformat()})
+
+
 def idea(task: Any, family: str, declaration: dict[str, Any]) -> dict[str, Any]:
     columns = getattr(task, "planned_columns", None)
     if not isinstance(columns, list) or not all(isinstance(c, str) and c.strip() for c in columns):
@@ -196,6 +293,7 @@ def wait_for_reply(
                     return dict(reply)
             left = deadline - clock()
             if left <= 0:
+                validate_decision(timeout_record)
                 write_json(folder / "decision.json", timeout_record)
                 return None
         sleep(min(1, left))
@@ -223,7 +321,11 @@ def proposal_step(number: int, name: str, now: Callable[[], datetime]) -> Iterat
 
 
 def request_revision(
-    loop: Any, exp: Any, requests: list[dict[str, Any]], families: str
+    loop: Any,
+    exp: Any,
+    requests: list[dict[str, Any]],
+    families: str,
+    dropped: list[dict[str, Any]],
 ) -> list[Any]:
     """One chat submission covering all edits. Bind origin by request id, never output order."""
     converter = loop.hypothesis2experiment
@@ -232,6 +334,10 @@ def request_revision(
         "Propose exactly one factor for each numbered request. Return a JSON object keyed by "
         "request id. Each value needs a distinct name, description with the required sign and "
         "clock declaration, formulation, variables, plain_summary and input_columns. "
+        "For each revision include honoured (short statements of changes made for the note) "
+        "and not_honoured (each omitted change with its reason). Both are lists of strings "
+        "of at most 200 characters each. Express an on/off user condition as a graded number "
+        "where possible and say how in honoured. Do not return a dropped idea. "
         "Use the scenario and current family rules. "
         + USER_DATA
         + "\n"
@@ -240,6 +346,8 @@ def request_revision(
         + context["scenario"]
         + "\nProposal history:\n"
         + context["hypothesis_and_feedback"]
+        + "\nDropped in this reply:\n"
+        + json.dumps(dropped)
         + "\nRequests:\n"
         + json.dumps(dict(enumerate(requests)))
     )
@@ -281,15 +389,38 @@ def request_revision(
         if not isinstance(items, dict) or set(items) != {str(i) for i in range(len(requests))}:
             raise ValueError("expected exactly one factor per request")
         by_name = {}
+        explanations = {}
         for i in range(len(requests)):
             name = items[str(i)]["name"]
             if not isinstance(name, str) or not name.strip() or name in by_name:
                 raise ValueError("factor names must be distinct and non-empty")
-            by_name[name] = items[str(i)]
+            item = dict(items[str(i)])
+            metadata = item.get("proposal_metadata", {})
+            if not isinstance(metadata, dict):
+                raise ValueError("expected an object for proposal_metadata")
+            fields = {**item, **metadata}
+            # A missing or malformed list is left out and shown as "did not say", never guessed.
+            explanations[name] = revision_statements(fields)
+            for key in ("honoured", "not_honoured"):
+                item.pop(key, None)
+                metadata.pop(key, None)
+            # The pinned converter accepts only strings and objects at the top level.
+            item["proposal_metadata"] = {
+                **metadata,
+                "plain_summary": fields.get("plain_summary"),
+                "input_columns": fields.get("input_columns"),
+            }
+            item.pop("input_columns", None)
+            by_name[name] = item
         converted = converter.convert_response(json.dumps(by_name), exp.hypothesis, loop.trace)
+        tasks = {task.factor_name: task for task in converted.sub_tasks}
+        if tasks.keys() != by_name.keys() or len(converted.sub_tasks) != len(by_name):
+            raise ValueError("converter returned different factors")
+        for name, task in tasks.items():
+            task.revision_explanation = explanations[name]
     except (ValueError, KeyError, TypeError) as error:
         raise UnusableRevision(f"{type(error).__name__}: {error}") from error
-    return list(converted.sub_tasks)
+    return [tasks[name] for name in by_name]
 
 
 def discuss(
@@ -305,6 +436,20 @@ def discuss(
     number = guard.round_index()
     folder = run / "discussion" / f"round-{number}"
     written = now()
+    dropped = prior_drops(run, number)
+    refused = [
+        {
+            **item,
+            "reason": f"you dropped this idea in round {dropped[item['name']]}",
+            "dropped_in_round": dropped[item["name"]],
+        }
+        for item in ideas
+        if item["name"] in dropped
+    ]
+    exp.sub_tasks = [task for task in exp.sub_tasks if task.factor_name not in dropped]
+    ideas = [item for item in ideas if item["name"] not in dropped]
+    panel = run / "panel/panel-receipt.json"
+    instruments = json.loads(panel.read_bytes()).get("instruments") if panel.exists() else None
     minutes = int(os.environ["ALPHA_DISCUSS_WAIT_MINUTES"])
     budget = remaining(written)
     proposal = {
@@ -315,16 +460,33 @@ def discuss(
         "deadline": (written + timedelta(minutes=minutes)).isoformat(),
         "on_timeout": os.environ["ALPHA_DISCUSS_ON_TIMEOUT"],
         "remaining": budget,
-        "ideas": [{**item, "remaining": budget} for item in ideas],
+        "ideas": [
+            {
+                **item,
+                "instrument_count": len(instruments) if instruments is not None else None,
+                "remaining": budget,
+            }
+            for item in ideas
+        ],
+        "refused": refused,
+        "caution": CAUTION,
         "families": families,
     }
+    status(run, "waiting", number, written)
     proceed = proposal["on_timeout"] == "proceed"
     timeout_record = {
         "reply": "none (timed out)",
         "policy": proposal["on_timeout"],
         "dropped": [],
+        "refused": refused,
         "selected_tasks": [
-            {"name": t.factor_name, **t.summary_fields, "origin": "agent", "author": None}
+            {
+                "name": t.factor_name,
+                **t.summary_fields,
+                "origin": "agent",
+                "author": None,
+                "answered_by": None,
+            }
             for t in exp.sub_tasks
         ]
         if proceed
@@ -336,19 +498,23 @@ def discuss(
     if reply is None:
         record = timeout_record
         if not proceed:
+            status(run, "stopped", number, now())
             write_json(run / "loop-stop.json", {"loop_reason": "awaiting-discussion"})
             record_decision(run, number, record, ideas)
             raise AwaitingDiscussion
         tasks = exp.sub_tasks
         for task in tasks:
-            task.discussion_fields = {"author": None, "origin": "agent"}
+            task.discussion_fields = {"origin": "agent", "author": None, "answered_by": None}
     else:
-        record = {"reply": reply, "dropped": []}
+        status(run, "applying", number, now())
+        record = {"reply": reply, "dropped": [], "refused": refused}
         tasks = select_tasks(guard, exp, ideas, families, reply, record, refusals, now)
         record["selected_tasks"] = [
             {"name": t.factor_name, **t.summary_fields, **t.discussion_fields} for t in tasks
         ]
+        validate_decision(record)
         write_json(folder / "decision.json", record)
+    status(run, "building" if tasks else "nothing-selected", number, now())
     exp.discussion = record
     exp.sub_tasks = tasks
     exp.sub_workspace_list = [None] * len(tasks)
@@ -370,6 +536,7 @@ def record_decision(
         "event": "discussion",
         **({"factor_names": unbuilt} if unbuilt else {"tasks": []}),
         "trial_created": False,
+        "plain_summary": {i["name"]: summary_fields(i.get("plain_summary")) for i in ideas},
         "discussion": record,
     }
     with (run / "rounds.jsonl").open("a") as stream:
@@ -390,12 +557,17 @@ def select_tasks(
     requests = []
     origins = []
     author = reply["author"]
-    if "note_to_agent" in reply:
-        guard.loop.hypothesis_gen.discussion_note = reply["note_to_agent"]
+    choices = [
+        {"name": item["name"], "family": item["family"], **reply["ideas"][item["name"]]}
+        for item in ideas
+        if reply["ideas"][item["name"]]["action"] != "accept"
+    ]
+    guard.loop.hypothesis_gen.discussion_note = reply.get("note_to_agent")
+    guard.loop.hypothesis_gen.discussion_choices = choices
     for task, proposed in zip(exp.sub_tasks, ideas, strict=True):
         choice = reply["ideas"][task.factor_name]
         if choice["action"] == "accept":
-            task.discussion_fields = {"origin": "agent", "author": author}
+            task.discussion_fields = {"origin": "agent", "author": author, "answered_by": author}
             accepted.append(task)
         elif choice["action"] == "revise":
             requests.append(
@@ -409,7 +581,9 @@ def select_tasks(
             )
             origins.append("agent-revised-by-user")
         else:
-            record["dropped"].append({"name": task.factor_name, **choice})
+            record["dropped"].append(
+                {"name": task.factor_name, "family": proposed["family"], **choice}
+            )
     for text in reply.get("user_ideas", []):
         requests.append({"user_idea": text})
         origins.append("user")
@@ -419,8 +593,9 @@ def select_tasks(
         budget = remaining(now())
         if budget["calls"] < 1:
             raise CallCapReached
+        dropped = list(record["dropped"])
         with proposal_step(guard.round_index(), "discussion_revision", now):
-            returned = request_revision(guard.loop, exp, requests, families)
+            returned = request_revision(guard.loop, exp, requests, families, dropped)
     except CallCapReached:
         record["dropped"].extend(
             {"request": item, "reason": "call cap reached"} for item in requests
@@ -433,21 +608,44 @@ def select_tasks(
         return accepted
     names = {task.factor_name for task in accepted}
     for task, origin, request in zip(returned, origins, requests, strict=True):
-        _, reasons = refusals([task])
+        proposed_families, reasons = refusals([task])
+        explanation = getattr(task, "revision_explanation", {})
+        if origin == "agent-revised-by-user" and returned_dropped(
+            task.factor_name,
+            proposed_families,
+            dropped,
+            request["note"],
+            request["proposal"]["family"],
+        ):
+            record["dropped"].append(
+                {
+                    "name": task.factor_name,
+                    "request": request,
+                    **explanation,
+                    "reason": "revision returned a dropped idea",
+                }
+            )
+            continue
         if task.factor_name in names:
             reasons.append("duplicate factor name")
         if reasons:
             record["dropped"].append(
-                {"name": task.factor_name, "request": request, "reason": "; ".join(reasons)}
+                {
+                    "name": task.factor_name,
+                    "request": request,
+                    **explanation,
+                    "reason": "; ".join(reasons),
+                }
             )
         else:
             task.summary_fields = summary_fields(getattr(task, "plain_summary", None))
-            task.discussion_fields = {"origin": origin, "author": author}
+            task.discussion_fields = {"origin": origin, "author": author, "answered_by": author}
             names.add(task.factor_name)
             accepted.append(task)
             record.setdefault("replacements", []).append(
                 {
                     "name": task.factor_name,
+                    **explanation,
                     **(
                         {"user_idea": request["user_idea"]}
                         if origin == "user"
@@ -456,3 +654,33 @@ def select_tasks(
                 }
             )
     return accepted
+
+
+def returned_dropped(
+    name: str, families: set[str], dropped: list[dict[str, Any]], note: str, own: str
+) -> bool:
+    """True when a revision brings back an idea the same reply dropped.
+
+    Same name always matches. Same family matches unless the note asks for that family or
+    the idea being revised was already in it (`own`), since then nothing is brought back.
+    """
+    definitions = importlib.import_module(
+        f"{__package__}.idea_families" if __package__ else "idea_families"
+    )
+    # Only an affirmative mention is an exception to the family veto.
+    exclusion = re.compile(
+        r"\b(?:no|not|never|without|avoid|exclude|drop|skip|instead of|rather than)\b|n['’]t\b",
+        re.I,
+    )
+    positive = " ".join(
+        exclusion.split(part, maxsplit=1)[0]
+        for part in re.split(r"[.;!?]|\bbut\b", note, flags=re.I)
+    )
+    named = set(definitions.name_matches(positive))
+    for item in dropped:
+        if name == item["name"]:
+            return True
+        common = families.intersection(item["family"].split("; ")) - set(own.split("; "))
+        if any(f not in named and not definitions.mentions_family(positive, {f}) for f in common):
+            return True
+    return False

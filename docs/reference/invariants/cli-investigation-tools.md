@@ -9,7 +9,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 6206e1d5ca27b481
+verified: 0a60d94ad1f65dfa
 ---
 
 # Investigation tools invariants
@@ -18,12 +18,13 @@ Follow-up questions on one recorded rule test; part of [command line runs](cli-r
 
 ## Rules
 
-- The three `market-context` entries (`alpha tool run-set market-context <run_id>`; eight entries are registered in all) describe one recorded rule test.
+- The three `market-context` entries (`alpha tool run-set market-context <run_id>`; fourteen entries are registered in all) describe one recorded rule test.
   They rebuild its full-sample equity through the diagnostic pass's own path
   (`spine/diagnose.py:full_sample`), fail loud with `RUN_DATA_CHANGED` when the stored bars no
   longer reproduce it, and never re-run a walk-forward. Statistics are thin glue over statsmodels
   and ruptures in `alpha_validation` (`attribution.py`, `regimes.py`, `changepoints.py`).
-- Run-level descriptions use immutable walk-forward sidecars. The cache key includes the hash of each required sidecar, and a missing file records an error.
+- Run-level tools use immutable walk-forward sidecars. The cache key includes each required file’s hash. A missing file records an error.
+- Seeded interval and path tests publish the effective simulation seed. The deflated Sharpe uses the ledger family frozen at publication.
 - New rule tests add `gross_return` and `cost_return` to `equity_curve.parquet` (both zero on the baseline row); older runs lack them.
   Cost per bar comes from the stored fills: the rounded commission, plus on a buy the gap between the fill and the opening bid. The engine
   values a long at the bid, so the whole spread of a round trip lands on its buy bar. Gross is net plus cost; the writer refuses a gap over 1e-12.

@@ -11,11 +11,8 @@ verified: 73db27530f8f2bbe
 
 ## Purpose
 
-An isolated process that discovers, fetches and extracts research literature for research cases
-and returns bounded, validated claims. It is a separate uv project with its own lock; no root
-package imports it. The CLI starts it with a minimal environment, no inherited credentials and
-resource limits; its output is advisory evidence, never research authority.
-[ADR-0024](../../docs/adr/0024-literature-acquisition-worker-and-claim-model.md)
+An isolated process that discovers, fetches and extracts research literature and returns bounded, validated claims.
+Its output is advisory evidence, never research authority. No root package imports it.
 
 ## Read first
 
@@ -26,16 +23,11 @@ resource limits; its output is advisory evidence, never research authority.
 | [command line research](../../docs/reference/invariants/cli-research.md) | Process boundaries | changing how the CLI starts the worker |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | changing what a claim can be used for |
 | [what this part is for](../../docs/reference/project/components/literature-worker.md) | — | why it exists; before you keep, shelve or remove it |
+| [worker invariants](../../docs/reference/invariants/workers.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `workers/literature/src/literature_worker/`; tests: `workers/literature/tests/`
-  (add a new unit test there, named `test_<module>.py`). The launch boundary is tested from the
-  root in `tests/integration/test_research_cli.py`.
-- From `workers/literature`: `uv lock --check`, `uv sync --locked`, `uv run ruff check .`,
-  `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
-- Or CI's job from the repository root: `uv run python scripts/gate.py component literature`.
-- Tests that touch the network carry the `network` marker and never run in CI.
+- Code, tests and checks: [code map](../../docs/reference/invariants/workers.md#code-map); run `uv run python scripts/gate.py component literature` at the root.
 
 ## Outputs
 

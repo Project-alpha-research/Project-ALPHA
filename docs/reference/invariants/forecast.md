@@ -65,6 +65,8 @@ the vendored Kronos model, forecast value types, the quantile signal rule and th
 - `FakeForecaster` keys its RNG on the seed and a content hash of the input window, so it is a pure
   function of the window: identical windows give identical paths and bars outside the window change
   nothing. Enforced by `tests/bias_guards/test_forecast_fake_causal.py`. It is a test double, not a statistic.
+- Tests use `FakeForecaster`; nothing downloads model weights. Missing offline weights must fail
+  loud before any network access.
 
 ## Settings and leakage
 
@@ -81,3 +83,18 @@ the vendored Kronos model, forecast value types, the quantile signal rule and th
 
 - `alpha_forecast` is one of the packages hashed into the v3 run `execution_fingerprint`
   (`apps/alpha-cli/src/alpha_cli/_identity.py`). [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).
+
+## Code map
+
+The facade around the Kronos foundation model: vendored pinned model code, a typed `Forecaster`
+protocol, per-sample OHLCV paths with deterministic seeding, and an offline `FakeForecaster`.
+It imports only `alpha_core` (import-linter contract "alpha_forecast depends only on core") and
+only `alpha_cli` may import it. Importing the package never imports torch; torch and pandas stay
+inside. [ADR-0008](../../adr/0008-vendored-kronos-and-alpha-forecast-layer.md)
+
+- Code: `packages/alpha-forecast/src/alpha_forecast/`; the vendored model in `_vendor/kronos/` is
+  pinned upstream code, excluded from mypy and lint. Never edit it to fix style.
+- Tests: `tests/unit/test_forecast_*.py`; bias guards `tests/bias_guards/test_forecast_*.py` and
+  `test_kronos_cache_no_lookahead.py`; integration `tests/integration/test_forecast_cli.py`.
+- Check: `uv run python scripts/gate.py check`.
+- Tests: a future-poison guard for any change to the forecast inputs or cache key.

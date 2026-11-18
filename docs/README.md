@@ -46,6 +46,9 @@ Do not edit these by hand; rerun the command and commit the result.
 
 To find a document, run `uv run python scripts/fs.py orient` or `fs.py search "<words>"`.
 
+- Generated pages are never edited by hand; their commands are listed in
+  [docs/README.md § Generated files](README.md#generated-files).
+
 ## One home per fact
 
 | Fact | Its one home |

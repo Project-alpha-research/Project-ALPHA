@@ -115,3 +115,22 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   (`apps/alpha-cli/src/alpha_cli/_identity.py`); the whole package also feeds `execution_fingerprint`
   and the RD-Agent rule profiles ([rdagent § Install and runtimes](rdagent.md#install-and-runtimes)). Any byte change
   makes new run identities. [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).
+
+## Code map
+
+Nautilus strategy classes and the pure decision functions behind them: trailing-window signals,
+volatility-target sizing, plain all-in sizing, rule specs and the shared paper-safe lifecycle. It imports only
+`alpha_core` and `alpha_patterns` (import-linter contract "alpha_strategies depends only on core
+and patterns"); only `alpha_cli` composes it. A strategy decides on the close of a bar and fills at
+the next open, never earlier.
+
+- Code: `packages/alpha-strategies/src/alpha_strategies/` (`base.py`, `signals.py`, `sizing.py`,
+  one module per strategy, `rule_strategy.py` for rule specs).
+- Tests: `tests/unit/test_*strategy*.py`, `tests/unit/test_signals*.py`, `tests/unit/test_sizing*.py`,
+  `tests/unit/test_rules_*.py`, `tests/unit/test_entry_gap_sizing.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
+  `test_signal_window_boundary.py`; integration `tests/integration/test_nautilus_engine.py`.
+- A new strategy is registered in `apps/alpha-cli/src/alpha_cli/_strategies.py`; regenerate the
+  command page if its options appear there (`uv run python scripts/commands_reference.py`).
+- Check: `uv run python scripts/gate.py check`. Strategy source bytes are part of run identity, so
+  any edit changes run ids of that strategy.
+- Tests: a future-poison bias guard for every new signal; a unit test for every sizing rule.

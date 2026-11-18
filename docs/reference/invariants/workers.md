@@ -109,3 +109,60 @@ On this page: [Shared rules](#shared-rules), [Qlib worker](#qlib-worker), [Liter
 
 ## RD-Agent worker
 Moved to [rdagent.md](rdagent.md); its rules are grouped there by heading.
+
+## Code map
+
+### AFML code map
+
+An isolated process that runs two independent implementations of methods from López de Prado's
+*Advances in Financial Machine Learning*: RiskLabAI (primary) and quantowl (second opinion).
+Today it offers sample uniqueness and weights, the sequential bootstrap, CUSUM events, triple-barrier
+labels and meta-labels, purged CV, fractional differencing, feature importance and Sharpe statistics. A number leaves only when both libraries agree (or, for
+labels on highs and lows, when ALPHA's own adapter code computed it). It is a separate uv
+project with its own lock; no ALPHA package imports it and it imports no ALPHA package.
+[ADR-0054](../../adr/0054-afml-worker.md)
+
+- Code: `workers/afml/src/alpha_afml_worker/` (`contract.py` checks input; `uniqueness.py`,
+  `labels.py`, `cv.py`, `fracdiff.py`, `importance.py`, `stats.py` are the adapter); tests: `workers/afml/tests/` (`shared_fixtures.py` holds the
+  shared inputs: hand-built bars and a seeded synthetic series). Never commit market data.
+- A new function gets a parity test first: a hand-worked value, and the two libraries equal to
+  1e-10 where both implement it. A look-ahead-sensitive one also gets a truncation test.
+- Read each library's API from the installed source in `workers/afml/.venv`, never from memory.
+- From `workers/afml`: `uv lock --check`, `uv sync --locked`, `uv run ruff check .`,
+  `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
+- Or CI's job from the repository root: `uv run python scripts/gate.py component afml`.
+- `alpha labels barrier|weights` calls this worker; its picture is `figure.py`. Real-data example:
+  `uv run python examples/owner_figure.py --help` (writes outside git).
+
+### Literature code map
+
+An isolated process that discovers, fetches and extracts research literature for research cases
+and returns bounded, validated claims. It is a separate uv project with its own lock; no root
+package imports it. The CLI starts it with a minimal environment, no inherited credentials and
+resource limits; its output is advisory evidence, never research authority.
+[ADR-0024](../../adr/0024-literature-acquisition-worker-and-claim-model.md)
+
+- Code: `workers/literature/src/literature_worker/`; tests: `workers/literature/tests/`
+  (add a new unit test there, named `test_<module>.py`). The launch boundary is tested from the
+  root in `tests/integration/test_research_cli.py`.
+- From `workers/literature`: `uv lock --check`, `uv sync --locked`, `uv run ruff check .`,
+  `uv run ruff format --check .`, `uv run mypy`, `uv run pytest -q -m "not network"`.
+- Or CI's job from the repository root: `uv run python scripts/gate.py component literature`.
+- Tests that touch the network carry the `network` marker and never run in CI.
+
+### Qlib code map
+
+An isolated process that runs the real `pyqlib` package for daily cross-sectional model training
+and returns close-stamped out-of-sample predictions. It is a separate uv project with its own lock;
+no root package imports it, and it imports no ALPHA package. It exchanges only validated JSON and
+Parquet with `alpha_cli`, and its results are advisory: ALPHA's own replay is the authority.
+[ADR-0016](../../adr/0016-isolated-qlib-worker.md)
+
+- Code: `workers/qlib/src/alpha_qlib_worker/`; tests: `workers/qlib/tests/`. Root tests that cover
+  the boundary: `tests/unit/test_qlib_isolation.py`, `tests/unit/test_ml_*.py`.
+- The worker has its own environment. From `workers/qlib`: `uv lock --check`, `uv sync --locked`,
+  `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`,
+  `uv run pytest -q -m "not network"`.
+- Or run CI's job from the repository root: `uv run python scripts/gate.py component qlib`.
+- A change to the exchange schema also needs the root check (`uv run python scripts/gate.py check`)
+  for the CLI side.

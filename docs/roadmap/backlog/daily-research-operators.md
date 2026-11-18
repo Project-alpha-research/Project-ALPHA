@@ -32,6 +32,6 @@ for D1 ([offline import](offline-data-import.md) covers only offline testing).
 
 ## Sources
 
-- [Research routing, the older staged lane](../../../research/CONTEXT.md#the-older-staged-lane)
+- [Research routing, the older staged lane](../../reference/research-method.md#the-older-staged-lane)
 - [Command line research invariants](../../reference/invariants/cli-research.md)
 - [ADR-0019](../../adr/0019-governed-research-cases-before-strategy-development.md)

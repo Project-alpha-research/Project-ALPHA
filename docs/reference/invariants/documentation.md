@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_docs_links.py
   - tests/unit/test_repo_awareness_drift.py
   - tests/unit/test_roadmap_index.py
-verified: 52546db6818984d6
+verified: 84da3b1fa2947e59
 ---
 
 # Documentation invariants
@@ -35,6 +35,16 @@ delivery states, the generated roadmap index, append-only records, and relative 
   owner's research notes stay in `docs/archive/research-notes/`, never edited (links inside are not checked,
   nor in a build's `brief.md` and `report.md`: [task folders](../../work/CONTEXT.md)).
 - Retrospectives are `docs/operations/retrospectives/YYYY-MM-DD-<slug>.md` with a `## Watch-outs` section.
+- When the code a document describes changes, re-read the document, fix it and run
+  `uv run python scripts/fs.py verify <document>` (with `--reason "<why>"` when it needed no fix);
+  `fs.py stale` lists the documents to re-check and `fs.py owners <path>` names the ones that
+  describe a file. The check fails while one is stale.
+- When work lands, any page that listed it as queued, open or not built is updated in the same pull request (search for the feature's name).
+
+The project's documentation: the file system's reference material (`docs/reference/`), decision
+records (`docs/adr/`), the architecture reference, operations runbooks, governance records and the
+roadmap. History is git log and pull requests. Documents describe the code; they never grant authority. Every fact has one home and
+other files link to it.
 
 ## Front matter
 
@@ -64,6 +74,10 @@ delivery states, the generated roadmap index, append-only records, and relative 
   re-read: the stamp is your statement that it is true of the sources as they are now.
 - Two branches that change sources of one document both rewrite its `verified` line, so the second to merge
   gets a git conflict there: take either side, re-read the document against the merged sources, verify again.
+- Reference documents (`docs/reference/**`) and every `CONTEXT.md` follow the contract in
+  `tests/unit/test_filesystem_contract.py`: front matter `owner`, `sources`, `verified`; at most 40 lines and 2,560 bytes for a
+  workspace `CONTEXT.md` (60 lines for a stage file) and 200 lines for a reference file; no line over 160 characters; no paragraph
+  repeated across files.
 
 ## Decision records
 
@@ -76,6 +90,10 @@ delivery states, the generated roadmap index, append-only records, and relative 
   `Context`, `Decision` and `Consequences` sections, and cite precise `file:symbol` or test anchors.
 - Every ADR file is linked from the index table in `docs/adr/README.md`, its one listing. Enforced by
   `tests/unit/test_repo_awareness_drift.py` through `scripts/harness_awareness.py::adr_drift`.
+- When the owner says something directional, a decision entry (date, decision, reason, what it changes) lands
+  in [the newest decisions volume](../project/owner-decisions-5.md) in the same pull request as the work it
+  changes, or in a documentation pull request the same day; an idea considered but not decided goes in
+  [ideas and things considered](../project/ideas-and-considered.md).
 
 ## Feature plans
 
@@ -95,6 +113,15 @@ delivery states, the generated roadmap index, append-only records, and relative 
 - By convention the state line sits under the title, or on line 1 when a JSON block leads the file, and
   reads `**Delivery state:** <state> — <evidence>` (the test checks only the first 12 lines).
 - The task folder is removed before its pull request merges; the pull request is the record.
+
+1. `# <title>`, then within the first 12 lines one `**Delivery state:** Planned — <note>` line
+   (vocabulary in the Feature plans rules; `In progress` once stage 03 starts), and one `**Build class:** small|standard|hard — <reason>` line.
+2. `## For the owner` — at most 10 plain-English lines: what will change for them, how they will
+   see it, what it will not do, anything they must decide.
+3. The first fenced `json` block: a `FeaturePlan` (`scripts/harness_models.py`).
+4. `## Read first` — a table `| Read | Section | When |` naming the exact files and sections the
+   builder must read for this task (workspace files, invariants, the code it changes).
+5. `## Slices`, `## Test plan`, `## Look-ahead, determinism and import impact` — short prose.
 
 ## Roadmap index
 
@@ -129,3 +156,10 @@ delivery states, the generated roadmap index, append-only records, and relative 
   reason and the test fails if an entry is no longer needed. A link to removed history points at git tag
   `pre-thin-2026-11-14` on GitHub.
 - Find documents with `uv run python scripts/fs.py search "QUERY"`; heading matches rank first.
+
+## Research playbook and tool cards
+
+- The playbook is one page (at most 120 lines); a tool card and a skill are at most 40 lines. Every command,
+  option, metric, flag and audit name in them is checked against the program by
+  `tests/unit/test_research_playbook.py`. Change the tool first, then the page that describes it.
+- A skill's text lives in `.agents/skills/<name>/SKILL.md`; `.claude/skills/<name>/SKILL.md` is a pointer.

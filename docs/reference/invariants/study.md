@@ -89,3 +89,23 @@ registry, and the blind semantic-read contract. The package is a projection laye
   stays deferred until separately approved and isolated; the Qlib worker stays outside `alpha_study`.
   [ADR-0011](../../adr/0011-evidence-gated-external-integrations.md),
   [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
+
+## Code map
+
+An additive research-plane seam: strict immutable feature, event and factor contracts, one closed
+operator registry, and derived finding and workspace projections that reference existing
+research records exactly. It may import `alpha_core`, `alpha_data`, `alpha_patterns` and
+`alpha_research` (import-linter contract "alpha_study composes only research-plane primitives").
+It owns no persistence, commands, approvals, evidence or trading authority.
+[ADR-0035](../../adr/0035-generic-study-composition-and-external-capability-adapters.md)
+
+- Code: `packages/alpha-study/src/alpha_study/`.
+- `setup/`: frozen daily idea specs, causal expressions and candidate inspection; no exits simulated.
+- Tests: `tests/unit/study/` (its own folder), `tests/unit/test_study_*.py`,
+  `tests/unit/test_setup_{spec,expr,evaluate,known_on}.py`; bias guards
+  `tests/bias_guards/test_study_double_bottom_future_poison.py`,
+  `tests/bias_guards/test_verified_semantic_read_future_poison.py`,
+  `tests/bias_guards/test_setup_future_poison.py`.
+- Check: `uv run python scripts/gate.py check`; `uv run lint-imports` keeps the seam one-way.
+- Tests: a round-trip determinism test for every new contract and a future-poison guard for any
+  projection that reads time.

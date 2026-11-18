@@ -5,7 +5,7 @@ sources:
   - packages/alpha-study/CONTEXT.md
   - research/CONTEXT.md
   - docs/reference/invariants/cli-research.md
-verified: 818b1cad996e89f7
+verified: eefef1cf97f27aae
 ---
 
 # Research cases and owner approval
@@ -50,7 +50,7 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 - Code: `packages/alpha-research/src/`, `packages/alpha-study/src/`; cases, decisions and the control
   store in `apps/alpha-cli/src/alpha_cli/` (`research_cmds.py`, `control_store.py`, `owner_auth.py`).
 - Tests: `tests/smoke/test_research_smoke.py`, and the research tests under `tests/unit/`.
-- How to run a case, phase by phase: [research routing](../../../../research/CONTEXT.md#the-older-staged-lane)
+- How to run a case, phase by phase: [research routing](../../research-method.md#the-older-staged-lane)
   and the [research method](../../research-method.md). New ideas go through the playbook instead
   ([AI assistants](ai-assistants.md)).
 - How to change it: [packages/alpha-research/CONTEXT.md](../../../../packages/alpha-research/CONTEXT.md),

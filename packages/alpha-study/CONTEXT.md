@@ -10,12 +10,8 @@ verified: 5cefafbb140111a2
 
 ## Purpose
 
-An additive research-plane seam: strict immutable feature, event and factor contracts, one closed
-operator registry, and derived finding and workspace projections that reference existing
-research records exactly. It may import `alpha_core`, `alpha_data`, `alpha_patterns` and
-`alpha_research` (import-linter contract "alpha_study composes only research-plane primitives").
+An additive research-plane seam: immutable feature, event and factor contracts, one operator registry and derived projections.
 It owns no persistence, commands, approvals, evidence or trading authority.
-[ADR-0035](../../docs/adr/0035-generic-study-composition-and-external-capability-adapters.md)
 
 ## Read first
 
@@ -25,28 +21,17 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 | [study invariants](../../docs/reference/invariants/study.md) | Projection only | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Point-in-time reads | always |
-| [study invariants](../../docs/reference/invariants/study.md) | Clocks and canonical form | changing study clocks or canonical form |
-| [study invariants](../../docs/reference/invariants/study.md) | Setup causality | changing setup causality rules |
-| [study invariants](../../docs/reference/invariants/study.md) | Operator registry | adding or changing a setup operator |
-| [study invariants](../../docs/reference/invariants/study.md) | Blind semantic read | changing the blind semantic read |
-| [study invariants](../../docs/reference/invariants/study.md) | External capabilities | changing external capabilities a study names |
+| [study invariants](../../docs/reference/invariants/study.md) | — | changing clocks, setup rules, operators or capabilities |
 | [research invariants](../../docs/reference/invariants/research.md) | Phase allocation | the change touches D0 or D1 references |
 | [command line research](../../docs/reference/invariants/cli-research.md) | Projections and dossiers | the change surfaces through `alpha research` |
 | [what this part is for](../../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |
+| [study invariants](../../docs/reference/invariants/study.md) | Code map | finding a module or its tests |
 
 ## How to change it
 
-- Code: `packages/alpha-study/src/alpha_study/`.
-- `setup/`: frozen daily idea specs, causal expressions and candidate inspection; no exits simulated.
-- Tests: `tests/unit/study/` (its own folder), `tests/unit/test_study_*.py`,
-  `tests/unit/test_setup_{spec,expr,evaluate,known_on}.py`; bias guards
-  `tests/bias_guards/test_study_double_bottom_future_poison.py`,
-  `tests/bias_guards/test_verified_semantic_read_future_poison.py`,
-  `tests/bias_guards/test_setup_future_poison.py`.
-- Check: `uv run python scripts/gate.py check`; `uv run lint-imports` keeps the seam one-way.
+- Code, tests and checks: [code map](../../docs/reference/invariants/study.md#code-map); run `uv run python scripts/gate.py check`.
 
 ## Outputs
 
-- Tests: a round-trip determinism test for every new contract and a future-poison guard for any
-  projection that reads time.
+- Tests: see the [code map](../../docs/reference/invariants/study.md#code-map).
 - The owning document: `docs/reference/invariants/study.md`.

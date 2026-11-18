@@ -94,9 +94,28 @@ errors, settings and structural protocols that every other package imports. Proj
 - `random_seed` (default 7) is a setting; research D0/D1 seeds are frozen, not derived from settings.
   [research integrity § Deterministic seeds and identity](research-integrity.md#deterministic-seeds-and-identity).
 - Forecast settings (device, revisions, pretrain cutoff) are covered in [forecast § Settings and leakage](forecast.md#settings-and-leakage).
+- A new setting must never enter a run id or manifest if it is machine-local (see core invariants).
 
 ## Source identity
 
 - `alpha_core` source bytes feed the v3 run `execution_fingerprint` (`apps/alpha-cli/src/alpha_cli/_identity.py`)
   and the RD-Agent rule profiles ([rdagent § Install and runtimes](rdagent.md#install-and-runtimes)): any byte change,
   comments included, changes those identities. [engineering § Hash-bound source bytes](engineering.md#hash-bound-source-bytes).
+
+## Code map
+
+The bottom layer: frozen domain values (`Bar`, traces, outcomes), the typed error family, the
+structural protocols, corporate-action types, the shared fee rate, atomic file publication
+(`atomic.py`, for the packages above core) and the typed settings
+(`AlphaSettings`, `ALPHA_*` environment variables). It imports nothing internal (import-linter
+contract "alpha_core imports nothing internal") and every other package imports it, so a change
+here reaches the whole repository.
+
+- Code: `packages/alpha-core/src/alpha_core/` (`types.py`, `errors.py`, `protocols.py`, `config.py`,
+  `corporate.py`, `costs.py`, `atomic.py`). The package has no tests of its own; they live in the root suite.
+- Tests: `tests/unit/test_core_types.py`, `tests/unit/test_core_atomic.py`, `tests/unit/test_bar_invariants.py`,
+  `tests/unit/test_corporate_actions.py`, `tests/unit/test_universe_store.py`,
+  `tests/bias_guards/test_universe_survivorship.py`.
+- Check: `uv run python scripts/gate.py check`. Because almost every test imports core, a change
+  here maps to a large selection; run `uv run python scripts/gate.py check --all` for the fast tier.
+- A unit test for every new value rule or error, and a bias guard if a protocol's read semantics change.

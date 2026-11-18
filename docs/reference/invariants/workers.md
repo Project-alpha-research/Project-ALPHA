@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: e8549acad8e5b333
+verified: d80d5035f60d26d1
 ---
 
 # Worker invariants
@@ -116,7 +116,7 @@ The general rule is [research integrity § Models and isolated workers](research
   `WORKER_NOT_INSTALLED` and the one setup step.
 
 ## RD-Agent worker
-- Optional funding inputs and their source-based eligibility: [funding policy](../../../workers/rdagent/README.md#futures-funding).
+- Funding inputs, source-based eligibility and fractional thirds: [funding policy](../../../workers/rdagent/README.md#futures-funding).
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.

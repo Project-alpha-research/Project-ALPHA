@@ -35,6 +35,7 @@ from alpha_cli._rdagent_judge import (
     sha,
 )
 from alpha_cli._rdagent_stability import plain_name
+from alpha_cli.rdagent_discussion import summary_fields
 from alpha_cli.toolbox.reserve import RESERVED_START
 from alpha_core import DataError
 
@@ -337,6 +338,7 @@ def new_factor_row(
         raise DataError("invalid code critic status or missing reason")
     return {
         **factor,
+        **summary_fields(factor.get("plain_summary")),
         "critic_status": status,
         **({"critic_reason": reason} if status != "reviewed" else {}),
         "schema": TRIAL_SCHEMA,

@@ -10,13 +10,12 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 457bff16680b35d6
+verified: 3c7189bc6ec2738d
 ---
 
 # Worker invariants
 
-Shared rules for Qlib ML, literature acquisition, RD-Agent loops and AFML methods under `workers/`.
-The general rule is [research integrity § Models and isolated workers](research-integrity.md#models-and-isolated-workers).
+Qlib, literature, RD-Agent and AFML workers follow the [research integrity rules for isolated workers](research-integrity.md#models-and-isolated-workers).
 ## Shared rules
 - Each worker is its own uv project with its own `pyproject.toml` and `uv.lock`, outside the root workspace
   (root members are `packages/*` and `apps/*`). Never add a worker dependency to the root `pyproject.toml`
@@ -167,6 +166,7 @@ The general rule is [research integrity § Models and isolated workers](research
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
   `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
   Closed or undeclared proposals stop before coding, with two re-asks; sign mirrors share a family and past-return reversal joins momentum.
+  [Discussion](../../../workers/rdagent/README.md#propose-and-discuss) records who selected ideas. Only tested ideas count.
   Rank twins (absolute correlation 0.98) repeat same-panel trials; missing values are disclosed. Code failures never close families.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway

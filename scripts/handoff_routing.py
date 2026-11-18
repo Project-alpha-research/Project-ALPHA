@@ -235,8 +235,10 @@ def route(
         entry["from"] = row.origin
         if routing.total + size > cap:
             routing.left_out.append(entry)
-        else:
-            routing.entries.append(entry)
+            continue
+        routing.entries.append(entry)
+        if not row.section:
+            whole.add(row.target)  # its sections, routed later, add nothing
     return routing
 
 

@@ -29,6 +29,7 @@ verified: 0000000000000000
 | [rules](../docs/rules.md) | Long part | changing the long part |
 | [guide](../docs/guide.md) | — | always |
 | [design](../docs/design.md) | — | adding a feature |
+| [guide](../docs/guide.md) | Guide | changing the guide |
 | [missing](../docs/gone.md) | — | always |
 
 ## How to change it
@@ -61,6 +62,7 @@ def test_reading_table_rows_resolve_to_repo_paths_and_sections(tmp_path: Path) -
         ("docs/rules.md", "Long part", "changing the long part"),
         ("docs/guide.md", "", "always"),
         ("docs/design.md", "", "adding a feature"),
+        ("docs/guide.md", "Guide", "changing the guide"),
         ("docs/gone.md", "", "always"),
     ]
 
@@ -115,6 +117,7 @@ def test_routed_reads_are_sized_by_section_deduplicated_and_always_first(tmp_pat
 def test_routed_reads_over_the_cap_are_left_out_and_named(tmp_path: Path) -> None:
     root = _repo(tmp_path)
     routed = routing.route(root, ["src/CONTEXT.md"], [], cap=1000)
+    # The guide is routed whole, so its section row adds nothing.
     assert [e["path"] for e in routed.entries] == [
         "docs/rules.md",
         "docs/guide.md",

@@ -90,6 +90,21 @@ def outcome(row: dict[str, Any]) -> str:
     return verdict
 
 
+def discussion_outcome(row: dict[str, Any]) -> str:
+    """One result line for the discussion, in the journey's verdict words."""
+    if row.get("status") not in STATUSES:
+        return "result not recorded."
+    status = recorded_status(row)
+    if status == "SCREEN_FAIL":
+        return outcome(row).removesuffix(".").lower() + " (the result could easily be luck)."
+    if status == "LOOKAHEAD":
+        return "used information from the future, so the result is void."
+    if status == "CANDIDATE":
+        return "passed the quick test; it goes on to the stricter checks."
+    text = outcome(row)
+    return text[0].lower() + text[1:]
+
+
 def lead_sentence(value: str) -> str:
     """The first sentence, cut at 200 characters on a word boundary."""
     first = re.split(r"\.(?:\s|$)", value.strip(), maxsplit=1)[0].strip()

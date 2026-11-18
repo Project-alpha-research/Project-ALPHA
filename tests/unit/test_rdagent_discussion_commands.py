@@ -88,11 +88,11 @@ You have until 05:30 UTC (30 minutes). If you do not answer, the run builds ever
    Holding period: not recorded.
    Coins ranked each period: not recorded.
    How often positions change: not recorded.
-   Idea type: not classified.
+   Idea type: new (not one of the known types).
    The agent's reason: not recorded.
    Data it plans to read: not recorded.
 
-Model budget left in this run: 6 calls, $10.00.
+Model budget left in this run: 6 chat calls, $10.00.
 Idea types closed after repeated failed tries: ease of trading.
 {caution}
 
@@ -102,7 +102,7 @@ Then add what you want to change. Name an idea by its number or its name:
   --drop 1                      do not build idea 1 (add =reason to say why)
   --revise "1=what to change"   ask the agent to change idea 1
   --idea "your idea"            add your own idea (two at most)
-  --note "text"                 tell the agent something for the next round
+  --note "text"                 tell the agent something for this run
 Ideas you do not name are built as proposed.
 A stand-in user answers with --as stand-in instead of --as owner.
 """
@@ -266,6 +266,11 @@ def test_new_ledger_rows_normalize_summary_and_keep_attribution() -> None:
     assert result["plain_summary"] == "Cheaper coins may rise."
     assert result["answered_by"] == "owner" and result["plain_summary_status"] == "ok"
     assert result["origin"] == "user" and result["author"] == "owner"
+    from alpha_core import DataError
+
+    assert row(origin="user", agent_choices=["Used one day."])["agent_choices"] == ["Used one day."]
+    with pytest.raises(DataError, match="agent_choices"):
+        row(origin="user", agent_choices=["x" * 201])
     canonical = row(origin="user", answered_by="owner")
     assert canonical["answered_by"] == canonical["author"] == "owner"
 
@@ -324,7 +329,8 @@ def test_numbered_drop_and_decision(tmp_path: Path) -> None:
                 "state": "building",
                 "round": 10,
                 "since": "2026-11-18T05:18:00+00:00",
-                "estimate_minutes": 4,
+                "reply_to_proposal_seconds": [240],
+                "rounds_total": 12,
             }
         )
     )
@@ -353,6 +359,7 @@ def test_full_families_only_in_details(tmp_path: Path) -> None:
     args = ["proposal", "--run-dir", str(tmp_path)]
     result = CliRunner().invoke(ledger_app, [*args, "--details"])
     assert result.exit_code == 0 and "open families: drawdown" in result.output
+    assert "How much the price moves for a given amount traded." in result.output
 
 
 def test_degenerate_verdict_names_tied_day_share() -> None:
@@ -413,7 +420,7 @@ def test_family_limit_and_old_decision_while_waiting(tmp_path: Path) -> None:
     value = json.loads(path.read_bytes())
     value["families"] = (
         "Closed families: "
-        + "; ".join(list(rdagent_discussion.FAMILY_NAMES)[:7])
+        + "; ".join(list(rdagent_discussion.FAMILY_WORDS)[:7])
         + ". open families: none."
     )
     value["caution"] = discussion.CAUTION
@@ -460,7 +467,7 @@ def test_printed_proposal_has_no_internal_keys(tmp_path: Path) -> None:
     assert lines[1].startswith("You have until 05:30 UTC (30 minutes). If you do not answer,")
     assert "   The agent's reason: Uses funding rate and open interest." in lines
     assert "   Data it plans to read: open interest, close." in lines
-    assert "   Idea type: not classified, futures funding." in lines
+    assert "   Idea type: new (not one of the known types), futures funding." in lines
     assert "Not offered again: Old. You dropped this idea in round 2." in text
     scanned = [line for line in lines if "--run-dir" not in line]
     assert [line for line in scanned if LEAKS.search(line)] == []
@@ -506,3 +513,180 @@ def test_new_historical_factor_row_records_missing_sentence(
     import_command(ledger, source, monkeypatch)
     row = json.loads(ledger.read_bytes())
     assert row["plain_summary"] is None and row["plain_summary_status"] == "missing"
+
+
+def test_results_follow_built_round_even_after_skipped_round(tmp_path: Path) -> None:
+    folder = tmp_path / "discussion/round-2"
+    example(folder)
+    names = ["Old", "Leak", "Pass"]
+    record = {
+        "selected_tasks": [{"name": n} for n in names],
+        "replacements": [
+            {"name": "Pass", "user_idea": "Use carry.", "agent_choices": ["Used one day."]}
+        ],
+    }
+    (folder / "decision.json").write_text(json.dumps(record))
+    text = rdagent_discussion.proposal_text(tmp_path, last_decision=True)
+    assert "Results are not ready." in text
+    assert "Choices the agent made for you: Used one day." in text
+    factors = [
+        {"name": n, "discussion_round": 2, "status": v}
+        for n, v in zip(names, ["SCREEN_FAIL", "LOOKAHEAD", "CANDIDATE"], strict=True)
+    ]
+    (tmp_path / "evaluations.jsonl").write_text(
+        json.dumps({"iteration": 0, "factors": factors}) + "\n"
+    )
+    for pending in (False, True):
+        if pending:
+            example(tmp_path / "discussion/round-3")
+        for last in (False, True):
+            text = rdagent_discussion.proposal_text(tmp_path, last_decision=last)
+            for line in (
+                "Old: failed the quick test (the result could easily be luck).",
+                "Leak: used information from the future, so the result is void.",
+                "Pass: passed the quick test; it goes on to the stricter checks.",
+            ):
+                assert line in text
+
+
+@pytest.mark.parametrize("state", ["building", "applying", "evaluating"])
+def test_final_round_estimate_uses_median_build_time(tmp_path: Path, state: str) -> None:
+    folder = tmp_path / "discussion/round-2"
+    example(folder)
+    (folder / "decision.json").write_text(json.dumps({"selected_tasks": [{"name": "Funding"}]}))
+    path = folder.parent / "status.json"
+    for durations, estimate in (([], "several minutes"), ([720, 960], "about 14 minutes")):
+        path.write_text(
+            json.dumps(
+                {
+                    "state": state,
+                    "round": 2,
+                    "rounds_total": 3,
+                    "build_seconds": durations,
+                    "reply_to_proposal_seconds": [60],
+                }
+            )
+        )
+        assert (
+            f"This is the last round. Results usually appear in {estimate}."
+            in rdagent_discussion.proposal_text(tmp_path)
+        )
+
+
+def test_usage_uses_run_counters_instead_of_step_labels(tmp_path: Path) -> None:
+    folder = tmp_path / "discussion/round-0"
+    example(folder)
+    path = folder / "proposal.json"
+    value = json.loads(path.read_bytes())
+    value["remaining"].update(chat_used=31, chat_cap=60, embedding_used=253, embedding_cap=2000)
+    value["refused_proposals"] = [{"names": ["Noisy"], "reasons": ["the idea type is closed"]}]
+    value["reask_calls"] = 2
+    path.write_text(json.dumps(value))
+    text = rdagent_discussion.proposal_text(tmp_path)
+    assert "31 of 60 chat calls" in text and "253 of 2000 embedding calls" in text
+    assert (
+        "ALPHA refused the agent's first proposal for this round (the idea type is closed). "
+        "The agent asked again; this used 2 of the run's chat calls."
+    ) in text
+
+
+def test_family_meanings_match_worker_and_glossary() -> None:
+    glossary = (Path(__file__).resolve().parents[2] / "docs/reference/glossary.md").read_text()
+    for key, words in rdagent_discussion.FAMILY_WORDS.items():
+        assert discussion.family_words(key) == words
+        assert f"| {key} | {words[0]} | {words[1]} |" in glossary
+    for key in ("other: lower_shadow", "unknown"):
+        assert discussion.family_words(key) == rdagent_discussion.family_words(key)
+    assert discussion.NAMED_TYPE in glossary and " | ".join(discussion.UNKNOWN_TYPE) in glossary
+    # Run 8 stored these families; an open unmatched name reads as new, a closed one by its name.
+    assert rdagent_discussion.plain_family("other: first") == "new (not one of the known types)"
+    assert rdagent_discussion.plain_family("other: lower_shadow", closed=True) == (
+        'ideas named "lower shadow"'
+    )
+    assert rdagent_discussion.plain_family("unknown", closed=True) == "ideas of no known type"
+    assert rdagent_discussion.plain_family("drawdown") == "fall from a previous high"
+
+
+def test_final_usage_counts_only_charged_attempts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from tests.unit.test_rdagent_factor_launch import args, launch
+
+    job = launch.Launch(
+        args(tmp_path, "--discuss"),
+        {"ALPHA_RDAGENT_SOURCE": tmp_path, "ALPHA_FACTOR_PYTHON": tmp_path / "a/b/c/python"},
+    )
+    job.run.mkdir()
+    counter = {"counted_calls": 31, "local_embedding_calls": 251, "provider_embedding_calls": 2}
+    monkeypatch.setattr(job, "gateway_status", lambda: {"this_run": counter})
+    job.finish(0, "completed")
+    text = f"31 of {job.args.run_max_calls} chat calls, 253 of 2000 embedding calls."
+    assert text in capsys.readouterr().out
+    assert text in rdagent_discussion.proposal_text(job.run)
+
+
+def test_old_identical_decisions_do_not_borrow_a_previous_verdict(tmp_path: Path) -> None:
+    record = {
+        "selected_tasks": [{"name": "Carry"}],
+        "reply": "none (timed out)",
+        "policy": "proceed",
+    }
+    for n in (0, 1):
+        folder = tmp_path / f"discussion/round-{n}"
+        example(folder)
+        (folder / "decision.json").write_text(json.dumps(record))
+    (tmp_path / "rounds.jsonl").write_text(
+        json.dumps({"iteration": 0, "feedback": {}, "discussion": record}) + "\n"
+    )
+    (tmp_path / "evaluations.jsonl").write_text(
+        json.dumps({"iteration": 0, "factors": [{"name": "Carry", "status": "LOOKAHEAD"}]}) + "\n"
+    )
+    text = rdagent_discussion.proposal_text(tmp_path, last_decision=True)
+    assert "Results are not ready." in text and "result is void" not in text
+
+
+def test_stricter_check_failure_is_reported(tmp_path: Path) -> None:
+    folder = tmp_path / "discussion/round-0"
+    example(folder)
+    (folder / "decision.json").write_text(json.dumps({"selected_tasks": [{"name": "Carry"}]}))
+    (tmp_path / "evaluations.jsonl").write_text(
+        json.dumps(
+            {
+                "iteration": 0,
+                "factors": [{"name": "Carry", "discussion_round": 0, "status": "REPLAY_FAIL"}],
+            }
+        )
+        + "\n"
+    )
+    text = rdagent_discussion.proposal_text(tmp_path, last_decision=True)
+    assert "failed the trading test with costs" in text.lower()
+
+
+def test_active_evaluation_waits_for_publication(tmp_path: Path) -> None:
+    folder = tmp_path / "discussion/round-2"
+    example(folder)
+    (folder / "decision.json").write_text(json.dumps({"selected_tasks": [{"name": "Carry"}]}))
+    (folder.parent / "status.json").write_text(
+        json.dumps({"state": "evaluating", "round": 2, "rounds_total": 3})
+    )
+    path = tmp_path / "evaluations/iter-1/result.json"
+    path.parent.mkdir(parents=True)
+    path.write_text('{"iteration":1')
+    assert "Results are not ready." in rdagent_discussion.proposal_text(
+        tmp_path, last_decision=True
+    )
+
+
+def test_every_ledger_verdict_has_one_plain_result_line() -> None:
+    from alpha_cli._rdagent_judge import STATUSES
+    from alpha_cli.rdagent_journey_words import discussion_outcome
+
+    for status in sorted(STATUSES):
+        line = discussion_outcome({"status": status, "screen": {}})
+        assert line[0].islower() and line.endswith(".") and "profit" not in line
+    assert discussion_outcome({"status": "CANDIDATE"}) == (
+        "passed the quick test; it goes on to the stricter checks."
+    )
+    assert discussion_outcome({"status": "LOOKAHEAD"}).endswith("so the result is void.")
+    assert discussion_outcome({"status": "NEW_VALUE"}) == "result not recorded."
+    assert discussion_outcome({}) == "result not recorded."

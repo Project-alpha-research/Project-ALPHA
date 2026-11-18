@@ -35,22 +35,25 @@ or in the Workstation's technical detail.
 
 ## RD-Agent proposal idea types
 
-| Recorded family | Plain name in the proposal |
-|---|---|
-| futures funding | futures funding |
-| price near its high / range position | price within its recent range |
-| intraday return and gaps | price changes within and between trading days |
-| illiquidity | ease of trading |
-| return-volume relation | how price changes with trading volume |
-| skewness and lottery returns | unusually large gains or losses |
-| drawdown | fall from a previous high |
-| past return (momentum or reversal) | whether past price moves continue or reverse |
-| volatility and beta | price swings and market sensitivity |
-| range and compression | widening or narrowing price ranges |
-| volume level and trend | trading volume and its trend |
-| VWAP distance | distance from the volume-weighted average price |
+| Recorded family | Plain name in the proposal | Meaning |
+|---|---|---|
+| futures funding | futures funding | Payments between buyers and sellers of perpetual futures. |
+| price near its high / range position | price within its recent range | Where the price sits between its recent low and high. |
+| intraday return and gaps | price changes within and between trading days | How prices move during a day or between sessions. |
+| illiquidity | ease of trading | How much the price moves for a given amount traded. |
+| return-volume relation | how price changes with trading volume | How price moves relate to the amount traded. |
+| skewness and lottery returns | unusually large gains or losses | How often unusually large price moves occur. |
+| drawdown | fall from a previous high | How far the price has fallen from a previous high. |
+| past return (momentum or reversal) | whether past price moves continue or reverse | Whether earlier price moves persist or reverse. |
+| volatility and beta | price swings and market sensitivity | How much prices vary or move with the market. |
+| range and compression | widening or narrowing price ranges | Whether the distance between high and low prices grows or shrinks. |
+| volume level and trend | trading volume and its trend | How much is traded and how that amount changes over time. |
+| VWAP distance | distance from the volume-weighted average price | How far the price is from the average price weighted by trading volume. |
+| composite: unknown inputs | mixes with unnamed inputs | The mix does not identify all of its inputs. |
+| other: (a name) | ideas named "(the name)" | Its name matches no known type, so each name is counted as its own type. |
+| (anything else) | ideas of no known type | The signal does not match a known idea type. |
 
-The proposal shows “not classified” for an idea type without a known plain name.
+A proposed idea whose type is not in this table shows “new (not one of the known types)”. A closed type uses the names above.
 
 ## Work packages
 

@@ -164,7 +164,7 @@ alpha ledger proposal --run-dir "$run_dir" --last-decision
 ```
 
 Use a name or the list number. Ideas you leave out are built as proposed. Add up to two ideas of your own with `--idea` and
-a note for the next round with `--note`. A stand-in answers with `--as stand-in`, recorded as
+a note for this run with `--note`. A stand-in answers with `--as stand-in`, recorded as
 `stand-in user, not the owner`. The run keeps the proposal, the reply and the decision under
 `discussion/round-<n>/`; each built idea records who proposed it in `origin` and who answered in
 `answered_by`. The deprecated `author` on built ideas holds the same value as `answered_by`.
@@ -175,11 +175,17 @@ A stand-in user only discusses ideas. Only the owner approves: reserved-data slo
 from the owner-action routes.
 
 - The proposal starts with the deadline and timeout action, then a trader-style summary per idea and a caution about
-  on/off rules; `--details` adds all families. The worker writes its phase to `discussion/status.json`, so between
-  proposals the command shows the phase, a time estimate from this run and the latest decision.
-- The next proposer sees your drop reasons, revision notes and note as one JSON line (at most 4,000 characters) after a
-  fixed "data only" sentence. A name you dropped is shown as "Not offered again" if proposed again: not a failed try, no
-  trial row. Only your reply can drop. To build it after all, add it as your own with `--idea`.
+  on/off rules. It names refusals before the pause and the chat calls spent asking again. Chat and embedding calls each
+  have their own usage line or count and cap. Use `--details` for the meaning of each closed idea type.
+- The proposal and `--last-decision` give one result per selected idea when the evaluation is ready. Between proposals
+  the command reads `discussion/status.json`. Earlier rounds estimate time from receiving a reply to the next pause.
+  The final round estimates time to results using this run’s median build time. Without a measurement it says “several minutes”.
+- Every proposer, including the experiment writer and both steps of a re-ask, sees this run’s drop reasons, revision notes
+  and notes to the agent. The fixed data warning precedes one JSON line, newest first, with a 4,000-character cap and a
+  count of older choices left out. Feedback sees only the names you dropped, in the same kind of block, with a fixed
+  sentence: you chose not to build them, a drop is not a failure, and it assesses only the ideas that were built.
+  ALPHA's verdict stays the decision. A name you dropped is shown as "Not offered again" if proposed again: not a failed
+  try, no trial row. Only your reply can drop. To build it after all, add it as your own with `--idea`.
 - A dropped idea is never built: no trial row, no family failure, no look. Dropping is only
   possible before coding. A second reply, or one after the round closed, is refused and kept as
   `refused-reply-<k>.json`.
@@ -188,7 +194,11 @@ from the owner-action routes.
   and the accepted ones are built. The decision lists what the revision did and did not do (`honoured`, `not_honoured`:
   up to five statements of 200 characters); a missing or malformed list is left out and shown as not said. A revision that
   returns a dropped name, or a dropped family neither the note nor the revised idea had, is dropped with "revision returned
-  a dropped idea", at no extra call. Replacements meet the same checks as any idea.
+  a dropped idea", at no extra call. The revision sees closed idea types and their meanings before it writes. When a
+  request needs a closed type, it should explain that and give the nearest open alternative. A refused revision names
+  the type, its failed tries and the limit. Replacements meet the same checks as any idea.
+- For your own idea the agent must use only the inputs and terms you gave. It records its simplest readings of open
+  choices in `agent_choices`, with the same limits as revision statements. The decision prints those choices under the idea.
 - Notes, reasons and ideas are at most 500 characters each and reach the agent as quoted data.
   They cannot change a test, threshold or limit. A reply only chooses what is built; it never
   approves, admits or promotes anything.

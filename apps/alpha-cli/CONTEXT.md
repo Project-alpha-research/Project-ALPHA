@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: ccb173ae2ce3299f
+verified: b27b7887cc849c1a
 ---
 
 # alpha-cli workspace

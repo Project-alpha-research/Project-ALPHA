@@ -5,7 +5,7 @@ sources:
   - scripts/roadmap_index.py
   - scripts/handoff.py
   - tests/unit/test_filesystem_contract.py
-verified: 68424cb9c2a7f9a5
+verified: f1e716b9feddf042
 ---
 
 # Delivery pipeline — how a change gets made
@@ -39,13 +39,13 @@ all `done`: 03. Slices done but no `04-verify.md`: 04. Otherwise: 05.
 
 ## The task folder
 
-- **Today (known gap):** the pull-request description is the handoff record. Build briefs are not yet kept in
-  git: they are written outside the repository, and `docs/work/` no longer exists on `main`. Read a stage file's
-  `docs/work/<task>/` paths below as the optional route, not as something to expect.
-- The optional route: one folder per task, `docs/work/<yyyy-mm-dd>-<slug>/`, only on the task's branch while its
-  pull request is open (`main` never holds one). It holds the stage files `01-brief.md`, `02-plan.md`,
-  `03-build.json`, `04-verify.md` and `05-handoff.md`; one is committed only once it has a `02-plan.md`
-  (the contract test checks this). The owner may edit any stage file between stages.
+- **Today:** a build from a brief leaves `brief.md` and the builder's `report.md` in
+  `docs/work/<yyyy-mm-dd>-<slug>/` ([task folders](../docs/work/CONTEXT.md)); they merge with the work and the
+  pull-request description links both. Read a stage file's other `docs/work/<task>/` paths as the optional route.
+- The optional route: one folder per planned task, on the task's branch while its pull request is open (stage
+  05 removes it). It holds the stage files `01-brief.md`, `02-plan.md`, `03-build.json`, `04-verify.md` and
+  `05-handoff.md`; one is committed only once it has a `02-plan.md` (the contract test checks this). The owner
+  may edit any stage file between stages.
 - The small route skips the folder: a fix confined to one module and its tests, with an obvious
   test, or a documentation-only change. It runs stages 03–05 on a branch: 03 builds from a
   short brief (stage 03 names its headings) and the code area's `CONTEXT.md` in place of a plan,

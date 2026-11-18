@@ -5,7 +5,7 @@ sources:
   - scripts/roadmap_index.py
   - scripts/fs_stale.py
   - tests/unit/test_docs_links.py
-verified: 102388349e2b3243
+verified: 9fa7d28629ce6172
 ---
 
 # docs workspace

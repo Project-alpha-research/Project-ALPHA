@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.figures import rule_periods
 from alpha_cli.figures._builders import BUILDERS, BuildContext
 from alpha_cli.run_store import find_run_dir, read_manifest, valid_run_id
 from alpha_core import DataError
@@ -44,7 +45,7 @@ def resolve_run(run_id: str, *, data_dir: Path) -> tuple[Path, dict[str, Any]]:
 
 def _reason(definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]) -> str | None:
     """A specific reason beats a blank slot: the UI shows this text verbatim."""
-    if definition.figure_id not in BUILDERS:
+    if definition.figure_id not in BUILDERS and definition.figure_id not in rule_periods.TRADABLE:
         return "builder_not_implemented"
     version = manifest.get("artifact_contract_version")
     if not isinstance(version, int) or version < 3:
@@ -88,21 +89,28 @@ def available_figures(rdir: Path, manifest: dict[str, Any]) -> tuple[FigureAvail
     command = manifest.get("command")
     if not isinstance(command, str):
         return ()
+    definitions = figures_for_command(command)
+    if manifest.get("spine", {}).get("periods"):
+        definitions += tuple(rule_periods.definition(name) for name in rule_periods.TRADABLE)
     return tuple(
         FigureAvailability(
             definition=definition,
             available=(reason := _reason(definition, rdir, manifest)) is None,
             unavailable_reason=reason,
         )
-        for definition in figures_for_command(command)
+        for definition in definitions
     )
 
 
 def build_figure_spec(
     figure_id: str, *, run_id: str, rdir: Path, manifest: dict[str, Any], data_dir: Path
 ) -> FigureSpec:
+    context = BuildContext(run_id=run_id, rdir=rdir, manifest=manifest, data_dir=data_dir)
+    periods = manifest.get("spine", {}).get("periods")
+    if periods and figure_id in (*rule_periods.CHARTS, *rule_periods.TRADABLE):
+        period = "tradable" if figure_id in rule_periods.TRADABLE else "scored"
+        return rule_periods.build(context, figure_id, periods[period])
     builder = BUILDERS.get(figure_id)
     if builder is None:
         raise DataError(f"no builder implemented for figure {figure_id!r}")
-    context = BuildContext(run_id=run_id, rdir=rdir, manifest=manifest, data_dir=data_dir)
     return builder(context)

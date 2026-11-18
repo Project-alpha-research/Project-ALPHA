@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 32ec4c0a01254f65
+verified: c758286afa436133
 ---
 
 # Research playbook: how to work any idea
@@ -99,7 +99,7 @@ $ uv run alpha results cite <run id> oos_sharpe
 
 Report: the system could not find BTC/USDT (system finding, with the `next` line of the error);
 SPY ran as trial `<N>`; labels in words; then `<value> [<run id>:oos_sharpe]` beside the
-benchmark figure `[<run id>:benchmark_sharpe]`. BTC is "not tested", not guessed.
+scored buy-and-hold figure `[<run id>:scored_benchmark_sharpe]`. BTC is "not tested", not guessed.
 
 **A surprise.** `alpha diagnose` shows the flag `drawdown-with-market`: "During the worst drawdown
 (<depth>), buy and hold fell <percent> less or more than the rule over the same dates (<fall>)."

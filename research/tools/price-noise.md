@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/price_noise.py
   - apps/alpha-cli/src/alpha_cli/spine/diagnose.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 2d246ef32d159663
+verified: fa794e226a7170df
 ---
 
 # Price-noise robustness

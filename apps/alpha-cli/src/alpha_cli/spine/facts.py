@@ -141,8 +141,6 @@ TRADE_METRICS = {
 METRICS.update({k: v[0] for k, v in TRADE_METRICS.items()})
 METRIC_UNITS.update({k: v[1] for k, v in TRADE_METRICS.items()})
 
-# Metrics stored negative by convention: a positive magnitude needs a word such as "drawdown of".
-NEGATIVE_BY_CONVENTION = frozenset({"full_sample_max_drawdown", "benchmark_max_drawdown"})
 _CONTROL_BASIS = "opposite-direction full-sample engine run; research control only"
 _WFE_BASIS = "annualised OOS / IS return; a practitioner rule of thumb, not a statistical test"
 _FIELDS = {
@@ -207,6 +205,37 @@ _FIELDS = {
 }
 
 
+# Periods are quoted only when recorded. Legacy runs keep their original metric names.
+_FACT_PERIOD = {
+    **dict.fromkeys(("data_period", "trades", "exposure"), "full_history"),
+    **dict.fromkeys(
+        ("traded_period", "oos_sharpe", "dsr", "psr", "verdict", "resized_entries"), "scored"
+    ),
+    **dict.fromkeys(
+        (name for name in _FIELDS if name.startswith(("full_sample_", "benchmark_"))),
+        "full_history",
+    ),
+}
+for _period in ("tradable", "scored"):
+    for _kind, _prefix, _metrics in (
+        ("strategy", "", ("total_return", "cagr", "max_drawdown", "sharpe", "trades")),
+        ("benchmark", "benchmark_", ("total_return", "cagr", "max_drawdown", "sharpe")),
+    ):
+        for _metric in _metrics:
+            _name = f"{_period}_{_prefix}{_metric}"
+            _field = f"spine.periods.{_period}.{_kind}.{_metric}"
+            _FIELDS[_name] = ("manifest.json", _field, f"{_period} {_kind}")
+            _FACT_PERIOD[_name] = _period
+            METRICS[_name] = f"{_period.capitalize()} {_kind} {_metric.replace('_', ' ')}."
+            METRIC_UNITS[_name] = METRIC_UNITS[
+                "trades" if _metric == "trades" else f"benchmark_{_metric}"
+            ]
+
+
+# A positive drawdown magnitude in prose needs a word such as "drawdown of".
+NEGATIVE_BY_CONVENTION = frozenset(name for name in _FIELDS if name.endswith("max_drawdown"))
+
+
 def read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -224,7 +253,20 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
         facts: list[dict[str, Any]] = read_study(rdir)["facts"]
         return facts
     documents = {name: read_json(rdir / name) for name in ("manifest.json", "diagnostics.json")}
-    labels = documents["manifest.json"].get("spine", {}).get("labels", [])
+    spine = documents["manifest.json"].get("spine", {})
+    labels = spine.get("labels", [])
+    periods = spine.get("periods", {})
+    fields = _FIELDS.copy()
+    if periods.get("full_history"):
+        for metric, (filename, field, basis) in _FIELDS.items():
+            group, _, key = field.partition(".")
+            if (
+                filename == "diagnostics.json"
+                and group in {"full_sample", "benchmark"}
+                and key != "exposure"
+            ):
+                leg = "strategy" if group == "full_sample" else "benchmark"
+                fields[metric] = ("manifest.json", f"spine.periods.full_history.{leg}.{key}", basis)
     facts = [
         dict(
             metric=metric,
@@ -237,7 +279,7 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
         )
         for metric in (*SETUP_METRICS, *TRADE_METRICS)
     ]
-    for metric, (filename, field, basis) in _FIELDS.items():
+    for metric, (filename, field, basis) in fields.items():
         parent: Any = documents[filename]
         parts = field.split(".")
         for part in parts[:-1]:
@@ -251,13 +293,25 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
         )
         if metric == "family_trials" and value is None:
             reason = "recorded before family counts were used"
+        period = periods.get(_FACT_PERIOD.get(metric))
+        basis = basis if metric == "total_trials" else parent.get("basis", basis)
+        if period:
+            basis = f"{period['period'].replace('_', ' ')}, {basis}, {period['price_basis']}"
         facts.append(
             {
                 "metric": metric,
                 "value": value,
                 "run_id": rdir.name,
-                "basis": basis if metric == "total_trials" else parent.get("basis", basis),
+                "basis": basis,
                 "source": f"{filename}:{field}",
+                **(
+                    {
+                        key: (period or {}).get(key)
+                        for key in ("period", "first_ts", "last_ts", "price_basis")
+                    }
+                    if metric in _FACT_PERIOD
+                    else {}
+                ),
                 "labels": list(dict.fromkeys([*labels, *parent.get("labels", [])])),
                 "unit": METRIC_UNITS[metric],
                 "reason": reason if value is None else None,

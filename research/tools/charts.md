@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/figures_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
-verified: 62f88a37b290fb63
+verified: 0fad7a4d0cc073b9
 ---
 
 # Charts
@@ -12,7 +12,6 @@ verified: 62f88a37b290fb63
 charts the run can render.
 
 **Commands**
-
 ```text
 uv run alpha results show <run_id> --json
 uv run alpha figures list --run <run_id>
@@ -29,6 +28,7 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --json
   `drawdown_episodes` (falls), `monthly_heatmap` (when the profit came), `trade_pnl` (each trade),
   `fold_sharpe` (walk-forward slices), `null_distribution` (random-price comparison),
   `confidence_intervals`, `exposure_turnover`, `return_distribution`.
+- New rule tests save both Summary figures for each period in the light theme. Use `--dark` on render for a separate dark copy.
 - Every rule test also writes a tear sheet (`tearsheet.html`) in its run folder; `alpha report` prints the path.
 
 **What it cannot tell you**

@@ -305,4 +305,5 @@ def write_validation_run(
     )
     _artifacts.write_manifest(rdir, manifest)
 
-    return rdir, manifest
+    # Figure cache keys use the published artifact hashes and contract version.
+    return rdir, _artifacts.read_manifest(rdir)

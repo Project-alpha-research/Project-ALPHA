@@ -50,7 +50,8 @@ def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
     )
     dates = run.dates(frame, "stored_benchmark")
     if not all(frame["available"]) or any(
-        k != "passive_open_to_open_price_only" for k in frame["benchmark_kind"]
+        k not in {"passive_open_to_open_price_only", "passive_open_to_open_with_dividends"}
+        for k in frame["benchmark_kind"]
     ):
         raise ValueError(
             "benchmark_comparison.parquet requires a stored buy-and-hold value at every date"

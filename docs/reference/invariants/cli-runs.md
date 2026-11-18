@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 7c22bd309638dc89
+verified: 1a3fcef2bfdba3bb
 ---
 
 # Command line runs invariants
@@ -120,7 +120,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figures and [`alpha
   tool`](cli-investigation-tools.md) outputs (for a test id, failed or unreadable assets under `failed` with a reason); `cite` quotes a stored field; `alpha
   diagnose` never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`; facts carry run id, basis, source file/field, labels and a reason exactly
-  when the value is null.
+  when the value is null. Dated rows and price basis live in `spine.periods` ([benchmark card](../../../research/tools/benchmark-and-drawdowns.md)).
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known`, imperative `next`; JSON under `--json`), even when every asset
   fails. Ledger schema stays `AlphaTrialV1`; optional `variants_evaluated` counts sensitivity re-runs apart from the append-only row index.
 ## Draft checks, lookalikes and novelty

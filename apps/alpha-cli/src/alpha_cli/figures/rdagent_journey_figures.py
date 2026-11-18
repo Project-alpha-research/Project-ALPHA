@@ -193,12 +193,13 @@ def looks_data(row: Data, ledger: list[Data]) -> Data | None:
     )
 
 
-def _theme(dark: bool) -> Theme:
+def figure_theme(dark: bool) -> Theme:
     theme = load_theme("alpha-dark")
     if dark:
         return theme
     return replace(
         theme,
+        theme_id="alpha-light",
         bg="#ffffff",
         panel="#ffffff",
         ink="#1b2230",
@@ -609,7 +610,7 @@ def draw(name: str, data: Data, dark: bool) -> bytes:
     from matplotlib.figure import Figure
     from matplotlib.layout_engine import ConstrainedLayoutEngine
 
-    theme = _theme(dark)
+    theme = figure_theme(dark)
     painters = {
         "signal": _signal,
         "quick-test": _quick,

@@ -6,7 +6,7 @@ sources:
   - docs/reference/project/owner-decisions-3.md
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 5e966fce78c4e889
+verified: a5103f2cf42f6702
 ---
 
 # Owner decisions by topic
@@ -93,6 +93,7 @@ Find a decision by its topic, then open the entry. Five volumes hold the log: [v
 | Documents can never be stale | [volume 3: Documents can never be stale: enforced by the system, not by an AI's memory][e47] |
 | A directional statement lands in the log | [volume 5: Rule: a directional statement lands in this log in the same change][e48] |
 | Open owner decisions in one place (N1 to N6) | [volume 4: Open owner decisions, listed in one place][e49] |
+| Writing style for text the owner reads | [volume 5: Text the owner reads follows Simplified Technical English][e50] |
 
 [e1]: owner-decisions-4.md#2026-11-18-what-the-owner-said-about-the-purpose-of-alpha
 [e2]: owner-decisions.md#2026-11-14-private-means-personal
@@ -143,3 +144,4 @@ Find a decision by its topic, then open the entry. Five volumes hold the log: [v
 [e47]: owner-decisions-3.md#2026-11-15-documents-can-never-be-stale-enforced-by-the-system-not-by-an-ais-memory
 [e48]: owner-decisions-5.md#2026-11-18-rule-a-directional-statement-lands-in-this-log-in-the-same-change
 [e49]: owner-decisions-4.md#2026-11-18-open-owner-decisions-listed-in-one-place
+[e50]: owner-decisions-5.md#2026-11-18-text-the-owner-reads-follows-simplified-technical-english

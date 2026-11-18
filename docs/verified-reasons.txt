@@ -25,6 +25,9 @@ docs/reference/model-routing.md
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
+docs/reference/project/components/ai-assistants.md
+  verified 5ab7578017d88c1e on 2026-11-18: The skill's writing-style section was only shortened to fit its 40-line limit; the page's sentence about it still holds
+
 docs/reference/project/components/command-line.md
   verified c9ae31e4eb22b52b on 2026-11-18: re-read; it names no RD-Agent module so the CLI workspace wording fix changes nothing here
 
@@ -68,7 +71,7 @@ docs/reference/project/decisions-by-topic.md
   verified 5e966fce78c4e889 on 2026-11-18: re-read; the log only gained a Status line so every topic row still points at its entry
 
 docs/reference/project/ideas-and-considered.md
-  verified 0750f4f677e5db9d on 2026-11-18: re-read; the log only gained a Status line and the idea rows still agree with it
+  verified f2fdcf90fb970643 on 2026-11-18: re-read after the merge; the new log entry is a writing rule, not an idea, so no row changes
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right

@@ -179,3 +179,12 @@ part that owns it can link to one clear entry.
   the date, the decision, the reason and what it changes in practice. An idea considered but not
   decided goes into [ideas and things considered](ideas-and-considered.md).
 - **Governs:** [docs workspace](../../CONTEXT.md); [delivery and agent tooling](components/delivery-and-agent-tooling.md).
+
+### 2026-11-18 Text the owner reads follows Simplified Technical English
+
+- **Said:** the owner shared a tip to write "80% of the way to ASD-STE100", described the problem as
+  text fatigue from long answers, asked "should we add this to our project?", and approved it.
+- **Decided:** replies, reports, screen labels and pull-request summaries put the answer first, use
+  short sentences with one idea in each, and keep one name for one thing. The style does not shorten
+  an answer by itself: write less as well.
+- **Governs:** `CLAUDE.md` (Check and land); the report-to-owner skill; [AI assistants](components/ai-assistants.md).

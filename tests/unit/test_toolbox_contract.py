@@ -1,7 +1,6 @@
 """Every entry advertises checkable outputs and an independent reference."""
 
 import ast
-import hashlib
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -19,12 +18,36 @@ from alpha_cli.toolbox.registry import SPECS
 from alpha_cli.toolbox.runner import run
 from tests.unit.test_spine_tools import RUN, _series
 
-# SHA-256 of the complete result objects from spine.tools on the same fixture.
+# The complete result objects printed by origin/main's spine/tools.py (commit 705ab13b) on the same
+# fixture, kept as JSON (their SHA-256 digests matched the previously pinned ones). Floats are
+# compared to 1e-9 relative, not bit for bit: the regime and regression fits are iterative and
+# end in different last digits on different CPUs. Everything else is compared exactly.
+REFERENCE: dict[str, Any] = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "toolbox_results.json").read_text()
+)
+REL, ABS = 1e-9, 1e-12
+# Tools the registry-entry test checks against the reference, by their default-case key.
 BASELINE = {
-    "market.attribution": "a3ea82ed65e6b0fabad2ecf0ae381abcd95f1a382376a297ab610c2c282009c7",
-    "market.vol_regimes": "93a13b7caab05b950340b5aa64fa6fc60f6f9a441255726707fa0b3282e79eec",
-    "market.changepoints": "7fc06246b93857dde04b212435d7ce19b0467ea8218e629778f5975fb4c9638a",
+    tool: f"{tool}|False|"
+    for tool in ("market.attribution", "market.vol_regimes", "market.changepoints")
 }
+
+
+def _assert_close(actual: Any, expected: Any, where: str = "result") -> None:
+    """Same shape, same ints, strings and None; floats equal within REL and ABS."""
+    if isinstance(expected, float):
+        assert isinstance(actual, float), where
+        assert actual == pytest.approx(expected, rel=REL, abs=ABS, nan_ok=True), where
+    elif isinstance(expected, dict):
+        assert isinstance(actual, dict) and actual.keys() == expected.keys(), where
+        for key, value in expected.items():
+            _assert_close(actual[key], value, f"{where}.{key}")
+    elif isinstance(expected, list):
+        assert isinstance(actual, list) and len(actual) == len(expected), where
+        for index, value in enumerate(expected):
+            _assert_close(actual[index], value, f"{where}[{index}]")
+    else:
+        assert type(actual) is type(expected) and actual == expected, where
 
 
 def _test_exists(reference: str) -> bool:
@@ -58,7 +81,7 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         assert spec.poison_test and _test_exists(spec.poison_test)
     if spec.look == "search":
         assert spec.evaluations is not None
-    digests = []
+    results = []
     for home in (tmp_path / "first", tmp_path / "second"):
         series = _series(home)
         series = replace(
@@ -69,14 +92,14 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         assert doc["reading"] == spec.render(doc["values"])
         assert set(doc["values"]) == {output.key for output in spec.outputs}
         assert doc["elapsed_seconds"] < {"instant": 5, "seconds": 60, "minutes": 900}[spec.cost]
-        digest = hashlib.sha256(json.dumps(doc["result"], sort_keys=True).encode()).hexdigest()
-        digests.append(digest)
+        results.append(doc["result"])
         if spec.id in BASELINE:
-            assert digest == BASELINE[spec.id]
+            _assert_close(doc["result"], REFERENCE[BASELINE[spec.id]], spec.id)
         _check_reading(spec, doc, home)
         if not spec.seeded:
             break
-    assert len(set(digests)) == 1
+    for later in results[1:]:
+        _assert_close(later, results[0])
 
 
 def test_gate_freeze_and_contract_guards() -> None:
@@ -104,10 +127,10 @@ def test_describe_prints_a_readable_card() -> None:
 
 
 # Values printed by origin/main's spine/tools.py (commit 705ab13b) on the same synthetic runs:
-# (tool, always long, params) -> (SHA-256 of the result object, every fact by its old name).
-LEGACY = {
+# (tool, always long, params) -> (reference key, every fact by its old name).
+LEGACY: dict[tuple[str, bool, tuple[str, ...]], tuple[str, dict[str, float | None]]] = {
     ("market.attribution", False, ()): (
-        BASELINE["market.attribution"],
+        "market.attribution|False|",
         {
             "market_beta": 0.48724361298425856,
             "market_alpha_annual": -0.10151191452002381,
@@ -116,19 +139,19 @@ LEGACY = {
         },
     ),
     ("market.vol_regimes", False, ()): (
-        BASELINE["market.vol_regimes"],
+        "market.vol_regimes|False|",
         {
             "regime_turbulent_share_of_return": None,
             "regime_turbulent_share_of_time": 0.49642346208869814,
         },
     ),
-    ("market.changepoints", False, ()): (BASELINE["market.changepoints"], {"changepoint_count": 0}),
+    ("market.changepoints", False, ()): ("market.changepoints|False|", {"changepoint_count": 0}),
     ("market.changepoints", False, ("on=equity",)): (
-        "70d42ca85d4870ac60ae045f26abf28ecdd5701a3f4b987a5d2d56e0be760f15",
+        "market.changepoints|False|on=equity",
         {"changepoint_count": 7},
     ),
     ("market.attribution", True, ()): (
-        "6d1ca4a98ba14c4b0dde1486969689dd56465ef937bb024089fbf5aaf2c11fde",
+        "market.attribution|True|",
         {
             "market_beta": 1.0,
             "market_alpha_annual": -7.716808962665578e-16,
@@ -137,18 +160,18 @@ LEGACY = {
         },
     ),
     ("market.vol_regimes", True, ()): (
-        "16adb39da2d368b4456a14a6dd5be6dd1db5d9f5aafac626f8e13a6c5863e88b",
+        "market.vol_regimes|True|",
         {
             "regime_turbulent_share_of_return": -0.3868048089390445,
             "regime_turbulent_share_of_time": 0.49642346208869814,
         },
     ),
     ("market.changepoints", True, ()): (
-        "aa1db5ab6663432aea865c87d677f6d9a865d36abcfb666abff19bb0a3d0b0c5",
+        "market.changepoints|True|",
         {"changepoint_count": 1},
     ),
     ("market.changepoints", True, ("on=equity",)): (
-        "be3cacd479d9989bce4af3f6ccdab28c7a425310b3803ba05031ab0e8a182909",
+        "market.changepoints|True|on=equity",
         {"changepoint_count": 8},
     ),
 }
@@ -159,17 +182,20 @@ def test_numbers_match_the_pre_registry_code(
     case: tuple[str, bool, tuple[str, ...]], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     tool, always_long, params = case
-    digest, facts = LEGACY[case]
+    key, facts = LEGACY[case]
     series = _series(tmp_path, always_long=always_long)
     positions = tuple(always_long or i // 25 % 2 == 0 for i in range(len(series.dates)))
     series = replace(series, positions=positions)
     monkeypatch.setattr(inputs, "load_run", lambda home, run_id: series)
     doc = run(tmp_path, tool, RUN, list(params))
-    assert hashlib.sha256(json.dumps(doc["result"], sort_keys=True).encode()).hexdigest() == digest
+    _assert_close(doc["result"], REFERENCE[key], key)
     by_old_name = {
         output.legacy_metric: doc["values"][output.key]
         for spec in SPECS
         if spec.id == tool
         for output in spec.outputs
     }
-    assert by_old_name == facts  # exact equality, no tolerance
+    assert by_old_name == {
+        name: None if fact is None else pytest.approx(fact, rel=REL, abs=ABS)
+        for name, fact in facts.items()
+    }

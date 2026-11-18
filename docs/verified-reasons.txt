@@ -59,7 +59,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
-  verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified dc347a428583f6a7 on 2026-11-19: Re-read after the peak-memory test moved to the entry's default 10,000 paths: the page names no path count or memory figure; the attribution basis sentence still matches market.py
 
 docs/reference/project/components/validation-and-evidence.md
   verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -134,7 +134,7 @@ research/tools/rdagent-journey.md
   verified df8f12eea7539079 on 2026-11-19: Re-read after the merge: main only renamed the figure theme helper and named the light theme; the card's step-one, attribution and figure wording still match the code.
 
 research/tools/resampling-checks.md
-  verified 67ad09dabb6a5d33 on 2026-11-19: Chunking reproduces the same seeded IID paths and default quantiles.
+  verified c37da61556254595 on 2026-11-19: Re-read after the peak-memory test change: chunked drawdown paths equal one seeded draw (checked at chunk sizes 1, 7, 31 and default), so the card's IID-parity sentence holds unchanged
 
 research/tools/rule-test.md
   verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one

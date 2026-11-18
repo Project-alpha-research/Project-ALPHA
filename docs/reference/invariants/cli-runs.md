@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 53c37cd48307ec7f
+verified: c01fe819c4495339
 ---
 
 # Command line runs invariants
@@ -103,7 +103,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - Minimum warm-up, the validation default five-bar embargo and anchored near-annual folds score almost all remaining history. These exploratory results and
   trial counts grant no research or owner authority.
 ## Stored facts and diagnostics
-- Rule tests store cost/parameter engine re-runs and an approximate returns-level delay; `--no-diagnose` skips and labels the pass.
+- Rule tests store cost/parameter re-runs and a returns-level delay; `--no-diagnose` skips them (labelled) but keeps the dated `spine.periods` facts.
 - Diagnostics and the manifest are staged together and the completed run directory is renamed into place. `diagnostics.json` stores benchmark comparisons,
   drawdowns, calendar returns, trade concentration, variants, family-counted Sharpe and verdict ([counting](cli-trial-ledger.md)), flags and a macro window
   (stored FRED at the worst drawdown start/trough, as known at the trough; `spine/macro.py`). Flags are observations, never a verdict; unavailable numbers are
@@ -120,7 +120,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - `alpha results` lists the ledger ([all trials](cli-trial-ledger.md)); `show` reads facts, flags, audit, figures and [`alpha
   tool`](cli-investigation-tools.md) outputs (for a test id, failed or unreadable assets under `failed` with a reason); `cite` quotes a stored field; `alpha
   diagnose` never re-runs a strategy. Metric vocabulary: `spine/facts.py:METRICS`; facts carry run id, basis, source file/field, labels and a reason exactly
-  when the value is null.
+  when the value is null. Dated rows and price basis live in `spine.periods` ([benchmark card](../../../research/tools/benchmark-and-drawdowns.md)).
 - These commands and `alpha test` exit 1 with a structured error (`code`, `message`, `known`, imperative `next`; JSON under `--json`), even when every asset
   fails. Ledger schema stays `AlphaTrialV1`; optional `variants_evaluated` counts sensitivity re-runs apart from the append-only row index.
 ## Draft checks, lookalikes and novelty

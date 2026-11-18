@@ -60,6 +60,9 @@ STORED_FILES = {
     "stored_benchmark": "benchmark_comparison.parquet",
     "run_trades": "trades.parquet",
 }
+# Stored buy-and-hold kinds a tool may read: the engine's price-only line, or the rule test's
+# line on the strategy's own dividend rule (entitled before the ex-date open, paid on pay date).
+HOLD_KINDS = frozenset(("passive_open_to_open_price_only", "passive_open_to_open_with_dividends"))
 
 
 @dataclass(frozen=True)

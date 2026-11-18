@@ -684,6 +684,14 @@ def write_run(
     write_manifest(rdir, manifest)
 
 
+def write_tradable_comparison(
+    rdir: Path, dates: Sequence[datetime], equity: Sequence[float], market: Sequence[float]
+) -> None:
+    """Keep the exact post-warm-up samples for both tradable-period figures."""
+    frame = pl.DataFrame({"ts": dates, "strategy_equity": equity, "benchmark_equity": market})
+    publish_artifact(rdir / "tradable_comparison.parquet", frame.write_parquet)
+
+
 def write_run_sidecars(
     rdir: Path,
     *,

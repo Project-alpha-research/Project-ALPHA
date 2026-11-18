@@ -55,16 +55,19 @@ capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find]
 
 - Files: the panel `apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx` and its model `setupLabModel.ts` (registered in `shell/documents.ts`); the
   backend `apps/alpha-web/src/alpha_web/api/setup_runs.py` with `_setup_runs.py`.
-- The routes read stored files directly through `_setup_runs` (bounded, allowlisted, no `alpha` subprocess, unlike most routes); missing parts read
-  "not recorded". Rules: [web API reads and writes](../../invariants/web-api.md#reads-and-writes).
-- After a route change, regenerate the OpenAPI file, the operation classification and the client, then run the gate; the exact commands are in
-  [apps/alpha-web/CONTEXT.md](../../../../apps/alpha-web/CONTEXT.md).
-- Tests owed: a backend test for every route (`tests/unit/test_web_setup_runs.py`), a vitest test for new model logic (`setupLabModel.test.ts`) and a
-  browser spec when behaviour changes (`frontend/e2e/setup-lab.spec.ts`). Colours follow the
+- The routes (`GET /api/setup/runs` and `/{find_id}`) read stored files directly through `_setup_runs` (bounded, allowlisted, no `alpha` subprocess, unlike most
+  routes). The screen starts nothing, and missing parts read "not recorded". Rules: [web API reads and writes](../../invariants/web-api.md#reads-and-writes).
+- After a backend route change, from the repository root: `uv run python scripts/generate_web_openapi.py`, then `uv run python
+  scripts/check_openapi_operations.py --write`, then `uv run python scripts/gate.py check`.
+- Frontend loop, in `apps/alpha-web/frontend`: `npm ci`; `npm run generate:api`; `npm run lint -- --deny-warnings`; `npm run build`; `npm run test:coverage`;
+  `npm run test:e2e:built`. Commit `src/api/generated.ts`. Never edit or commit the built bundle `src/alpha_web/static/app`.
+- Tests owed: a backend test for every route, including the failure path (`tests/unit/test_web_setup_runs.py`), a vitest test for new model logic
+  (`setupLabModel.test.ts`) and a browser spec when behaviour changes (`frontend/e2e/setup-lab.spec.ts`). Colours follow the
   [theme contract](../../invariants/web-frontend.md#workstation-themes-and-readability).
-- Screenshots: one baseline per platform; re-take Linux ones in the Playwright container, never copy macOS images. Container, 2% tolerance and the test
-  backend's port (8802) are in [frontend/README.md](../../../../apps/alpha-web/frontend/README.md).
-- Never edit or commit the built bundle `src/alpha_web/static/app`.
+- Screenshots (owner decision 2026-10-07): one baseline per platform, `*-darwin.png` and `*-linux.png`, both at a 2% pixel tolerance. Re-take the Linux ones in
+  the `mcr.microsoft.com/playwright:v<version>-noble` container (`--platform linux/amd64`) against a locally started backend, never by copying macOS images.
+- The default browser lane starts its own backend on port 8802 (set `ALPHA_PLAYWRIGHT_PORT` for another; never 8801). Its SPY and BTC/USDT bars are synthetic
+  fixtures, labelled as such, not market evidence ([web invariants](../../invariants/web-frontend.md#tests)).
 
 ## Where it lives
 

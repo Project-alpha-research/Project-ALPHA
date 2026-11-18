@@ -6,94 +6,95 @@ sources:
   - docs/reference/project/owner-decisions-3.md
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: a5103f2cf42f6702
+verified: f29db2a4da888c65
 ---
 
 # Owner decisions by topic
 
-Find a decision by its topic, then open the entry. Five volumes hold the log: [volume 1](owner-decisions.md),
+Find a decision by its topic. The middle column is the gist; the entry has the owner's words, the reason and what it governs.
+Five volumes hold the log: [volume 1](owner-decisions.md),
 [volume 2](owner-decisions-2.md), [volume 3](owner-decisions-3.md), [volume 4](owner-decisions-4.md) and
 [volume 5](owner-decisions-5.md) (the newest; new entries go there). When an entry is added, add its row here.
 
 ## The project and its purpose
 
-| Topic | Entry |
-|---|---|
-| What ALPHA is for, in the owner's words | [volume 4: What the owner said about the purpose of ALPHA][e1] |
-| Private means personal | [volume 1: Private means personal][e2] |
-| Licences are never a criterion | [volume 3: Licences are never a criterion for outside projects][e3] |
-| Precision and live capital | [volume 1: Precision and live capital][e4] |
-| Live trading deferred | [volume 1: Live trading is deferred][e5] |
-| Never high-frequency trading | [volume 2: Never high-frequency trading][e6] |
-| The retail trader's fit is the design brief | [volume 2: The retail trader's fit is the design brief][e7] |
-| What production grade means | [volume 3: What production grade means][e8] |
-| Test ideas are system tests | [volume 3: Test ideas are system tests until ALPHA is production grade][e9] |
-| The agent is a collaborator, never a black box | [volume 5: The agent is a collaborator, never a black box][e10] |
-| The AI is a research partner | [volume 3: The AI must be a research partner, not an instruction follower][e11] |
-| Fewer strict rules, no daily-only rule | [volume 3: No daily-only rule; fewer strict rules][e12] |
+| Topic | Decided | Entry |
+|---|---|---|
+| What ALPHA is for, in the owner's words | ALPHA is a general tool; test ideas are throwaway proofs that the system works | [vol. 4][e1] |
+| Private means personal | Private means for the owner alone, not to sell | [vol. 1][e2] |
+| Licences are never a criterion | Never judge a library, model or data source on its licence | [vol. 3][e3] |
+| Precision and live capital | Strategies will one day hold live capital, so precision is the bar | [vol. 1][e4] |
+| Live trading deferred | Live trading waits until the whole system is built and proven | [vol. 1][e5] |
+| Never high-frequency trading | A standing rule: swing trading mostly, some intraday, never high-frequency | [vol. 2][e6] |
+| The retail trader's fit is the design brief | Design for a retail swing trader: long holds, small size, products funds cannot trade | [vol. 2][e7] |
+| What production grade means | Prompt an AI and the whole pipeline works; a UI to see it; every overfit test available | [vol. 3][e8] |
+| Test ideas are system tests | Until production grade, a run is judged by what it shows about the system, not the idea | [vol. 3][e9] |
+| The agent is a collaborator, never a black box | Agent proposes and discusses with the user; steps and reasons shown; labels over refusals | [vol. 5][e10] |
+| The AI is a research partner | The AI suggests tests, data and how to read results, not just follow instructions | [vol. 3][e11] |
+| Fewer strict rules, no daily-only rule | Any idea at any timeframe goes through the pipeline; prefer labels and warnings to refusals | [vol. 3][e12] |
 
 ## RD-Agent
 
-| Topic | Entry |
-|---|---|
-| RD-Agent is a key component | [volume 1: RD-Agent is a key component][e13] |
-| First goal: one real loop | [volume 2: First goal: one real RD-Agent loop][e14] |
-| Models, spending limit, DeepSeek | [volume 1: API spending limit for RD-Agent's models][e15] |
-| DeepSeek through OpenRouter | [volume 2: DeepSeek through OpenRouter for RD-Agent][e16] |
-| Adopt everything RD-Agent has, memory first | [volume 3: Adopt everything RD-Agent has, memory first][e17] |
-| Judge: spread check, families, universe | [volume 4: RD-Agent judge: spread check, idea families, universe file, call time limit][e18] |
-| Stand-in user while ideas are throwaway tests | [volume 5: Stand-in user while ideas are throwaway tests][e19] |
-| One-shot confirmation on reserved data (ten slots) | [volume 5: One-shot confirmation of shortlisted factors on reserved data: approved, not built][e20] |
-| Confirmation, build sandbox, subject matter | [volume 4: Owner decisions on confirmation, the build sandbox and RD-Agent subject matter][e21] |
-| RD-Agent chooses tests but does not write them | [volume 5: RD-Agent may choose tests but not write them (recommendation, not yet confirmed)][e22] |
-| The orchestrator's plan: discussable RD-Agent | [volume 4: Orchestrator's plan: the paths are ways of working, and RD-Agent becomes discussable][e23] |
+| Topic | Decided | Entry |
+|---|---|---|
+| RD-Agent is a key component | RD-Agent is core; never shelve it because it is not installed | [vol. 1][e13] |
+| First goal: one real loop | First goal after the clean-up: one real RD-Agent loop, propose to judge | [vol. 2][e14] |
+| Models, spending limit, DeepSeek | About USD 50 a month for API credits, only if Codex cannot serve RD-Agent | [vol. 1][e15] |
+| DeepSeek through OpenRouter | DeepSeek flash via OpenRouter; caps USD 10 a run, 50 a month; Codex is the fallback | [vol. 2][e16] |
+| Adopt everything RD-Agent has, memory first | Use everything RD-Agent has, memory of past runs first; it stays an engine | [vol. 3][e17] |
+| Judge: spread check, families, universe | Top third must beat bottom third before costs; 3 failures close a family; universe file | [vol. 4][e18] |
+| Stand-in user while ideas are throwaway tests | A stand-in may answer RD-Agent's proposals, labelled, and never for a real approval | [vol. 5][e19] |
+| One-shot confirmation on reserved data | One confirmation each on reserved data; ten slots, each needs the owner's yes; not built | [vol. 5][e20] |
+| Confirmation, build sandbox, subject matter | One-shot confirmation (not built); a limited Codex sandbox widening; named Codex models | [vol. 4][e21] |
+| RD-Agent chooses tests but does not write them | Recommended, not confirmed: RD-Agent picks tests, never writes them | [vol. 5][e22] |
+| The orchestrator's plan: discussable RD-Agent | Paths are ways of working; later RD-Agent shows each refusal's reason and discusses ideas | [vol. 4][e23] |
 
 ## Tools, Kronos, Monte Carlo
 
-| Topic | Entry |
-|---|---|
-| What Kronos is for | [volume 1: What Kronos is for][e24] |
-| Kronos, Monte Carlos, lookalike and pattern tools | [volume 5: Kronos, the four Monte Carlos, lookalike and pattern tools are RD-Agent's toolbox][e25] |
-| The toolbox is an open catalogue | [volume 5: The toolbox is an open catalogue meant to grow to hundreds of tests][e26] |
-| Keep ALPHA slim continuously | [volume 5: Keep ALPHA slim continuously][e27] |
-| Thin ALPHA dramatically | [volume 2: Thin ALPHA dramatically; RD-Agent and Qlib are the proven core][e28] |
-| Always slimmer | [volume 3: Always slimmer][e29] |
-| Glue in more outside projects | [volume 3: Glue in more proven open-source projects][e30] |
+| Topic | Decided | Entry |
+|---|---|---|
+| What Kronos is for | A flexible research tool; powers one Monte Carlo family; not yet tied to signals or risk; needs validation | [vol. 1][e24] |
+| Kronos, Monte Carlos, lookalike and pattern tools | Never slimming targets; a tool not yet wired in is owed wiring, not deletion | [vol. 5][e25] |
+| The toolbox is an open catalogue | One registry to describe, find and run a test; grows to hundreds; every run recorded | [vol. 5][e26] |
+| Keep ALPHA slim continuously | Each change deletes what it replaces; regular slimming audits; report the line-count trend | [vol. 5][e27] |
+| Thin ALPHA dramatically | Cut bloat: free exploration, owner approval only before paper or live; RD-Agent and Qlib are the proven core | [vol. 2][e28] |
+| Always slimmer | Always refactor and thin out; replace a removed tool with something slimmer | [vol. 3][e29] |
+| Glue in more outside projects | Glue in proven outside projects the way Qlib and RD-Agent are used; judge fit, upkeep and code deleted | [vol. 3][e30] |
 
 ## The screen
 
-| Topic | Entry |
-|---|---|
-| Keep the user interface | [volume 2: Keep the user interface][e31] |
-| Charts with text, quant style, finished later | [volume 2: The interface shows charts with text, in a quant style, and is finished later][e32] |
-| Not all black; UI design waits | [volume 5: The Workstation must not be all black; UI design waits][e33] |
-| The idea-journey layout is approved | [volume 5: The idea-journey layout is approved][e34] |
-| Working order: golden paths 1 and 2 first | [volume 4: Working order: golden paths 1 and 2 reach the screen first][e35] |
+| Topic | Decided | Entry |
+|---|---|---|
+| Keep the user interface | Keep the UI: the owner is not a coder and understands the project through it | [vol. 2][e31] |
+| Charts with text, quant style, finished later | Charts with text, in a quant style, finished later | [vol. 2][e32] |
+| Not all black; UI design waits | Light default, charts may be dark, theme switch; UI design deferred; journey layout reused | [vol. 5][e33] |
+| The idea-journey layout is approved | Numbered steps, who acted, one paragraph, three numbers, one chart; reused for other result views | [vol. 5][e34] |
+| Working order: golden paths 1 and 2 first | Setup Lab, then the rule-test report screen first; RD-Agent work limited meanwhile | [vol. 4][e35] |
 
 ## Data and health
 
-| Topic | Entry |
-|---|---|
-| Free real data on the Dell | [volume 2: Free real data on the Dell now][e36] |
-| Free stock prices until the Mac | [volume 2: Free stock prices from a free service until the Mac][e37] |
-| One data health report | [volume 5: Request: one data health report][e38] |
-| A weekly automatic health check | [volume 2: A weekly automatic health check][e39] |
+| Topic | Decided | Entry |
+|---|---|---|
+| Free real data on the Dell | Download free real data on the Dell now (Yahoo, Stooq, crypto); paid providers wait for the Mac | [vol. 2][e36] |
+| Free stock prices until the Mac | Free stock prices from Alpaca's free plan until the Mac | [vol. 2][e37] |
+| One data health report | Queued, not built when asked; step 1 (`alpha data health`) is now built; attaching to runs is not | [vol. 5][e38] |
+| A weekly automatic health check | Weekly check: refresh status, list stale documents, open small clean-ups; never merges | [vol. 2][e39] |
 
 ## How work is done
 
-| Topic | Entry |
-|---|---|
-| Codex builds, Claude plans | [volume 1: Codex builds, Claude plans][e40] |
-| Codex builds with the 6.2 models | [volume 5: Codex builds with the 6.2 models; Claude orchestrates and reviews][e41] |
-| Agents merge and decide routine matters (who merges) | [volume 1: Agents merge and decide routine matters][e42] |
-| The orchestrating session delegates | [volume 3: The orchestrating session delegates; every agent names its model][e43] |
-| Approvals follow code structure | [volume 2: Approvals follow code structure, not exact bytes][e44] |
-| What the file system is for | [volume 1: What the file system is for][e45] |
-| The file system is kept up to date | [volume 3: The file system is always kept up to date][e46] |
-| Documents can never be stale | [volume 3: Documents can never be stale: enforced by the system, not by an AI's memory][e47] |
-| A directional statement lands in the log | [volume 5: Rule: a directional statement lands in this log in the same change][e48] |
-| Open owner decisions in one place (N1 to N6) | [volume 4: Open owner decisions, listed in one place][e49] |
-| Writing style for text the owner reads | [volume 5: Text the owner reads follows Simplified Technical English][e50] |
+| Topic | Decided | Entry |
+|---|---|---|
+| Codex builds, Claude plans | Codex implements; Claude plans and decides | [vol. 1][e40] |
+| Codex builds with the 6.2 models | Codex builds with the 6.2 models; Claude plans, orchestrates, reviews | [vol. 5][e41] |
+| Who merges; agents decide routine matters | Agents merge routine pull requests; approvals, branch protection, credentials stay with owner | [vol. 1][e42] |
+| The orchestrating session delegates | The session the owner talks to delegates; every agent names its model; Codex first | [vol. 3][e43] |
+| Approvals follow code structure | An approval survives comments and formatting and dies on any behaviour change | [vol. 2][e44] |
+| What the file system is for | A reader starting at CLAUDE.md can learn each part's purpose, reason, plan, place and limits | [vol. 1][e45] |
+| The file system is kept up to date | Every change updates the file system in the same piece of work | [vol. 3][e46] |
+| Documents can never be stale | Staleness is detected by fingerprints and the gate refuses work; an AI still re-reads and fixes | [vol. 3][e47] |
+| A directional statement lands in the log | A directional statement lands in the log in the same change | [vol. 5][e48] |
+| Open owner decisions in one place (N1 to N6) | Open owner decisions N1 to N6 are listed in one place | [vol. 4][e49] |
+| Writing style for text the owner reads | Answer first, short sentences, one name for one thing; write less too | [vol. 5][e50] |
 
 [e1]: owner-decisions-4.md#2026-11-18-what-the-owner-said-about-the-purpose-of-alpha
 [e2]: owner-decisions.md#2026-11-14-private-means-personal

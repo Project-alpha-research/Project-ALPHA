@@ -76,6 +76,9 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 ## Workstation themes and readability
 
 - Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.
+- Owner decision, 2026-11-18 (later that day): UI design is deferred again. No restructure of the Workstation and no unprompted design proposals; only
+  the RD-Agent view is reshaped, to the journey layout, which later result views reuse. When UI work resumes, ask the owner for reference screenshots
+  ([log](../project/owner-decisions-5.md#2026-11-18-the-workstation-must-not-be-all-black-ui-design-waits)).
 - Colours come from three palettes in `index.css`; type at least 14 px, prose line height 1.45, tabular monospace numbers. Body ink 7:1, other text 4.5:1.
 - Browser charts read scoped chart tokens (`util/tokens.ts`): light in Light and Dim, each with a remembered **Dark chart** box. Stored images keep their
   recorded colours.

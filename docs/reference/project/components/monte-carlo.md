@@ -12,6 +12,7 @@ verified: bc7ce6c6f07fede3
 "How bad could it get?" ALPHA answers it with four Monte Carlo methods (families). Each makes many new
 possible histories for one strategy and reports the spread of final return, worst drawdown, loss and ruin.
 The owner counts the four as tools for RD-Agent and the assistant to use, never to be slimmed away.
+**A Monte Carlo warning pauses progression until the owner records a decision.** Each family is graded on its own and never majority-voted.
 Three resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
 new price bars and has run only with a stand-in model.
 

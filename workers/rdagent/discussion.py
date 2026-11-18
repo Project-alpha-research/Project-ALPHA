@@ -17,10 +17,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-hypotheses = importlib.import_module(
-    f"{__package__}.alpha_factor_hypothesis" if __package__ else "alpha_factor_hypothesis"
-)
-
 
 class AwaitingDiscussion(Exception):
     """Intentional clean stop before coding."""
@@ -811,16 +807,9 @@ def select_tasks(
         if budget["calls"] < 1:
             raise CallCapReached
         dropped = list(record["dropped"])
-        hypothesis = exp.hypothesis
-        if hypotheses.discussion_excluded_ideas({**record, "reply": reply}):
-            names_dropped = {item["name"] for item in dropped}
-            hypothesis = hypotheses.built_hypothesis(
-                hypothesis,
-                [task for task in exp.sub_tasks if task.factor_name not in names_dropped],
-            )
         with proposal_step(guard.round_index(), "discussion_revision", now):
             returned = request_revision(
-                guard.loop, hypothesis, requests, guard.revision_guidance(exp), dropped
+                guard.loop, exp.hypothesis, requests, guard.revision_guidance(exp), dropped
             )
     except CallCapReached:
         record["dropped"].extend(

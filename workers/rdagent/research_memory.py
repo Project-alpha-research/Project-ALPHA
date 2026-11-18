@@ -133,12 +133,6 @@ class ProposalHistory:
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         trace = kwargs["trace"] if "trace" in kwargs else args[-1]
-        discussion = None
-        if self.component == "experiment" and os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
-            discussion = importlib.import_module(
-                f"{__package__}.discussion" if __package__ else "discussion"
-            )
-            trace = discussion.hypotheses.discussion_history(trace)
         families = _families()
         source = families.universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
         hidden, closed = families.hidden_families(source), self.closed_families()
@@ -195,7 +189,10 @@ class ProposalHistory:
                 omitted += 1
 
         context.update(fields)
-        if discussion is not None:
+        if self.component == "experiment" and os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            discussion = importlib.import_module(
+                f"{__package__}.discussion" if __package__ else "discussion"
+            )
             context["hypothesis_and_feedback"] += discussion.run_choices(
                 Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
             )

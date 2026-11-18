@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: ea10e01f6c40b705
+verified: 7fe2d94f676502aa
 ---
 
 # Worker invariants

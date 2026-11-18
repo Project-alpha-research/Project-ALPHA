@@ -51,13 +51,13 @@ gate, before paper or live trading ([decision][thin]).
 
 ## Where things stand
 
-223 capabilities: 50 working, 66 built but unproven, 105 missing, 1 to rebuild,
+224 capabilities: 50 working, 67 built but unproven, 105 missing, 1 to rebuild,
 1 dropped by decision (recounted from the rows themselves on 2026-11-18: the 2026-11-17 header said 45 working and the
 table said 44, while the rows held 49; nine rows were then added and two were corrected, below).
 
 | Stage | Working | Unproven | Missing | Rebuild | Dropped |
 |---|---|---|---|---|---|
-| 1. Idea | 2 | 5 | 9 | 0 | 0 |
+| 1. Idea | 2 | 6 | 9 | 0 | 0 |
 | 2. Data and context | 3 | 12 | 10 | 0 | 0 |
 | 3. Look before testing | 5 | 5 | 6 | 0 | 0 |
 | 4. Backtest | 3 | 3 | 10 | 0 | 0 |
@@ -69,7 +69,7 @@ table said 44, while the rows held 49; nine rows were then added and two were co
 | 10. Screens | 1 | 3 | 15 | 0 | 0 |
 | 11. Paper and live | 0 | 3 | 4 | 0 | 0 |
 | 12. Health and hygiene | 7 | 0 | 7 | 0 | 0 |
-| **All** | **50** | **66** | **105** | **1** | **1** |
+| **All** | **50** | **67** | **105** | **1** | **1** |
 
 ## 1. Idea
 
@@ -86,6 +86,7 @@ How a question, a chart observation or a paper becomes something testable.
 | Source card and translation card: the original paper beside the adapted rule | Missing | idea folder | Path 1 | private |
 | Find papers, screen their claims, tie a claim to its test, keep the PDF | Unproven | `workers/literature` | Later | [papers] |
 | Papers feed RD-Agent's proposal step through a thin feeder (its own reader tried first) | Missing | `workers/rdagent` | Path 3 | [papers] |
+| One judged factor idea in seven steps with its stored evidence pictures | Unproven | `alpha rdagent journey`, [screen design](backlog/research-loop-screen.md) | Path 3 | private |
 | Quick recorded first look at many ideas | Working | `alpha scan hypotheses` | Now | [status] |
 | Dated log of expectations and catalysts: rumour, fact, interpretation, action kept apart | Missing | new | Later | private |
 | The owner's market views logged as dated hypotheses with rival explanations | Missing | idea trail | Path 1 | private |

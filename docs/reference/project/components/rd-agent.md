@@ -89,7 +89,7 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
 
 - **Workspaces:** `workers/rdagent`
 - **Capabilities:** `ai-stock-research`, `native-job-result`, `daily-rule-study`, `ai-research-team`,
-  `rdagent-run-viewer`, `rdagent-workstation-panel`
+  `rdagent-run-viewer`, `rdagent-workstation-panel`, `rdagent-idea-journey`
 - Code: [`workers/rdagent/`](../../../../workers/rdagent/README.md) (the model gateway is
   `workers/rdagent/model_gateway.py`); the job supervisor in
   `apps/alpha-cli/src/alpha_cli/native_supervisor.py`. Setup: `scripts/setup_rdagent.sh`.

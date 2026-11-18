@@ -128,13 +128,14 @@ def _cache_entry(run_id: str, figure_id: str, fmt: str, data_dir: Path) -> tuple
         definition.get("optional_artifacts") or ()
     )
     digest, kind = input_digest(manifest, rdir, artifacts)
+    theme = "rule_theme" if manifest.get("spine", {}).get("periods") else "theme"
     key = CacheKeyInputs(
         run_id=run_id,
         figure_id=figure_id,
         renderer_version=int(environment["renderer_version"]),
         matplotlib_version=str(environment["matplotlib_version"]),
-        theme_id=str(environment["theme_id"]),
-        theme_digest=str(environment["theme_digest"]),
+        theme_id=str(environment[f"{theme}_id"]),
+        theme_digest=str(environment[f"{theme}_digest"]),
         width_in=float(definition["width_in"]),
         height_in=float(definition["height_in"]),
         dpi=int(definition["dpi"]),

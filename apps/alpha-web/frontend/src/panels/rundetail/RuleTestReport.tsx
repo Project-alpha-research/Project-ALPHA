@@ -1,10 +1,9 @@
 import type { FigureCatalogueItem, RuleTest } from '../../api/types'
 import { FigureCard } from '../../components/FigureCard'
 import { GLOSSARY } from '../../explain/glossary'
-import type { RecordedManifest } from '../../explain/verdictStory'
 import {
-  auditRows, labelChips, NOT_RECORDED, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
-  testedRows, variantRows, type Cell,
+  auditRows, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
+  testedRows, variantRows, type Cell, type RuleManifest,
 } from '../ruleTestModel'
 
 /** A stored basis note shown as a sentence: first letter upper-case; the words are unchanged. */
@@ -35,7 +34,7 @@ const FLAG_LABELS: Record<string, string> = {
 
 interface Props {
   test: RuleTest
-  manifest: RecordedManifest
+  manifest: RuleManifest
   runId: string
   runName?: string
   figures: FigureCatalogueItem[] | null
@@ -48,39 +47,43 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
   const flags = diagnostics?.flags ?? []
   const audit = auditRows(test)
   const variants = variantRows(test)
-  const charts = summaryFigures(figures ?? [])
-  const ruleSharpe = ratio(diagnostics?.full_sample?.sharpe, diagnostics?.full_sample?.reasons.sharpe)
-  const holdSharpe = ratio(diagnostics?.benchmark?.sharpe, diagnostics?.benchmark?.reasons.sharpe)
   const quick = quickCaveat(test)
   return (
     <section className="rule-test" aria-label="Rule test">
-      <h2>{summaryHeadline(test)}</h2>
-      <div className="metric-grid" role="group" aria-label="Results over the full history">
-        {summaryNumbers(test, manifest, watermark).map(row => (
-          <div className="metric" key={row.label}>
-            <span title={row.gloss}>{row.label}</span>
-            <strong className="metric-val mono">{row.value.text}</strong>
-            {row.value.reason && <small className="muted">{row.value.reason}</small>}
-            {row.caveats.map(note => note && <small key={note} className="muted">{note}</small>)}
+      <h2>{summaryHeadline(test, manifest.spine?.periods?.tradable)}</h2>
+      <small>data from {dateRange(test.first_ts, test.last_ts)}</small>
+      {(['tradable', 'scored'] as const).map(period => {
+        const row = manifest.spine?.periods?.[period]
+        const charts = summaryFigures(figures ?? [], period)
+        const title = period === 'tradable' ? 'Tradable period' : 'Scored test periods only'
+        return <section key={period} aria-label={title}>
+          <h3>{title}</h3>
+          <p>{dateRange(row?.first_ts, row?.last_ts)}</p>
+          <div className="metric-grid" role="group" aria-label={title + ' results'}>
+            {summaryNumbers(test, manifest, watermark, period).map(row => (
+              <div className="metric" key={row.label}>
+                <span title={row.gloss}>{row.label}</span>
+                <strong className="metric-val mono">{row.value.text}</strong>
+                {row.value.reason && <small className="muted">{row.value.reason}</small>}
+                {row.caveats.map(note => note && <small key={note} className="muted">{note}</small>)}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div>
-        <p><strong>Risk-adjusted score (Sharpe)</strong> over the full history · Rule{' '}
-          <span className="mono" title={ruleSharpe.reason ?? undefined}>{ruleSharpe.text}</span>
-          {' · '}Buy and hold <span className="mono" title={holdSharpe.reason ?? undefined}>{holdSharpe.text}</span></p>
-        <small>{GLOSSARY.sharpe.short}</small>
-        {quick && <p className="muted">{quick}</p>}
-      </div>
-      {figureError ? <p role="alert">Could not load the chart list. {figureError}</p>
-        : figures === null ? <p role="status">Loading charts…</p>
-        : charts.length ? <div>
-          <p>Charts cover the scored test period. The numbers above cover the full history.</p>
-          {charts.map(item => (
-            <FigureCard key={item.figure_id} item={item} runId={runId} runName={runName} />
-          ))}
-        </div> : <p className="muted">no chart stored for this run</p>}
-
+          <div>
+            <p title={GLOSSARY.sharpe.short}><strong>Risk-adjusted score (Sharpe)</strong> · Rule{' '}
+              {ratio(row?.strategy?.sharpe, row?.strategy?.reasons?.sharpe).text}
+              {' · '}Buy and hold {ratio(row?.benchmark?.sharpe, row?.benchmark?.reasons?.sharpe).text}</p>
+          </div>
+          {figureError ? <p role="alert">Could not load the chart list. {figureError}</p>
+            : figures === null ? <p role="status">Loading charts…</p>
+            : charts.length ? <div>
+              {charts.map(item => (
+                <FigureCard key={item.figure_id} item={item} runId={runId} runName={runName} />
+              ))}
+            </div> : <p className="muted">Charts: not recorded</p>}
+        </section>
+      })}
+      {quick && <p className="muted">{quick}</p>}
       <table className="blotter summary-table">
         <caption>Worth a look</caption>
         <tbody>
@@ -111,6 +114,14 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
         </td></tr></tfoot>}
       </table>
 
+      {!manifest.spine?.periods && diagnostics && <details>
+        <summary>Recorded full history</summary>
+        <p>Rule return after costs {pct(diagnostics.full_sample?.total_return).text}
+          {' · '}Buy and hold {pct(diagnostics.benchmark?.total_return).text}</p>
+        <p>Return per year {pct(diagnostics.full_sample?.cagr).text}
+          {' · '}Worst drop {pct(diagnostics.full_sample?.max_drawdown).text}
+          {' · '}Closed trades {diagnostics.full_sample?.trades ?? NOT_RECORDED}</p>
+      </details>}
       <details><summary>What was tested</summary>
         <table className="blotter summary-table rule-test-tested"><tbody>
           {testedRows(test).map(row => (

@@ -105,6 +105,13 @@ const test: RuleTest = {
   },
 }
 
+// Supply explicitly recorded period facts to the period-specific presentation tests.
+const period = (run: RuleTest) => ({
+  first_ts: '2017-02-01', last_ts: '2019-07-01', price_basis: 'with dividends',
+  strategy: run.diagnostics?.full_sample, benchmark: run.diagnostics?.benchmark,
+  relative_return: run.diagnostics?.benchmark?.strategy_minus_benchmark?.total_return,
+})
+
 describe('rule-test report model', () => {
   it('formats stored values and keeps the stored reason for a missing one', () => {
     expect(pct(1.5789)).toEqual({ text: '157.9%', reason: null, tone: null })
@@ -168,18 +175,18 @@ describe('rule-test report model', () => {
       benchmark: { ...benchmark, total_return: 0.2,
         strategy_minus_benchmark: { ...benchmark.strategy_minus_benchmark!, total_return: difference } },
     } }
-    expect(summaryHeadline(run)).toContain(`${wording} 20.0% for simply holding the market`)
+    expect(summaryHeadline(run, period(run))).toContain(`${wording} 20.0% for simply holding the market`)
   })
 
   it('uses only the available side of a comparison, including a zero', () => {
     const diagnostics = test.diagnostics!
     const ruleOnly = { ...test, diagnostics: { ...diagnostics, benchmark: null,
       full_sample: { ...diagnostics.full_sample!, total_return: 0 } } }
-    expect(summaryHeadline(ruleOnly)).toContain('returned 0.0% after costs')
-    expect(summaryHeadline(ruleOnly)).toContain('buy-and-hold return is unavailable')
+    expect(summaryHeadline(ruleOnly, period(ruleOnly))).toContain('returned 0.0% after costs')
+    expect(summaryHeadline(ruleOnly, period(ruleOnly))).toContain('buy-and-hold return is unavailable')
     const holdOnly = { ...test, diagnostics: { ...diagnostics, full_sample: null } }
-    expect(summaryHeadline(holdOnly)).toContain('holding the market returned 275.3%')
-    expect(summaryHeadline(holdOnly)).not.toContain('157.9%')
+    expect(summaryHeadline(holdOnly, period(holdOnly))).toContain('holding the market returned 275.3%')
+    expect(summaryHeadline(holdOnly, period(holdOnly))).not.toContain('157.9%')
   })
 
   it('keeps a recorded exploratory watermark with the rule return', () => {
@@ -202,7 +209,7 @@ describe('rule-test report model', () => {
     const sparse = { ...test, diagnostics: { ...diagnostics, full_sample: {
       ...diagnostics.full_sample!, cagr: null, reasons: { cagr: 'too short to annualize' },
     } } }
-    expect(summaryNumbers(sparse, {})[1].value).toEqual({
+    expect(summaryNumbers(sparse, { spine: { periods: { tradable: period(sparse) } } })[1].value).toEqual({
       text: NOT_RECORDED, reason: 'too short to annualize', tone: null,
     })
   })
@@ -225,4 +232,18 @@ describe('rule-test report section', () => {
     expect(html).toContain('this run recorded no diagnostics.json')
     expect(html).not.toContain('<caption>Audit</caption>')
   })
+})
+
+it('keeps legacy data dates separate from the unrecorded tradable and scored rows', () => {
+  const html = renderToStaticMarkup(createElement(RuleTestReport, { test, manifest: {}, runId: 'old', figures: [] }))
+  expect(html).toContain('could trade from not recorded')
+  expect(html).toContain('data from 2016-01-04 to 2026-11-13')
+  expect(html).toContain('Scored test periods only')
+})
+
+it('keeps the original recorded full-history comparison accessible on an older run', () => {
+  const html = renderToStaticMarkup(createElement(RuleTestReport, { test, manifest: {}, runId: 'older', figures: [] }))
+  const legacy = html.split('<summary>Recorded full history</summary>')[1]
+  expect(legacy).toContain('157.9%')
+  expect(legacy).toContain('275.3%')
 })

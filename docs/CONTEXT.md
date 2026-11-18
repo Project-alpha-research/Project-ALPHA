@@ -29,6 +29,7 @@ other files link to it.
 | [outside projects register](reference/project/outside-projects.md) | — | adding, upgrading or judging a library or outside project |
 | [command reference](reference/commands.md) | — | documenting a command (link here; never copy it) |
 | [what this part is for](reference/project/components/delivery-and-agent-tooling.md) | — | why it exists; before you keep, shelve or remove it |
+| [ideas and things considered](reference/project/ideas-and-considered.md) | — | before proposing an idea; one line each, with its status |
 
 ## How to change it
 

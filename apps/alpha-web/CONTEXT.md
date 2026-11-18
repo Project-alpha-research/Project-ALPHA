@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 25bf8ebf68b22c52
+verified: ff50163700e6defb
 ---
 
 # alpha-web workspace
@@ -64,11 +64,11 @@ grants authority.
   `profiles.ts` and `workflowModel.ts`; the registry supplies View and the command palette.
   Run and step times use `util/formatTime.ts` (UTC text, original ISO on hover).
   Its two GET routes use `_rdagent_runs.py` and `api/rdagent_models.py`, without importing the worker.
-  Old failed-deflation candidates have derived status; shortlist and lineage stay recorded facts, with missing flags unknown.
-  The funnel counts provider-lost factors as proposed and as its own panel stage, stopped by the model provider.
-  Internal coding failures have a separate sentence describing partial judging and the consecutive-failure stop.
-  Recorded-file sources and unavailable fields: [RD-Agent component](../../docs/reference/project/components/rd-agent.md#workstation-recorded-fields).
-  Vitest discovers `.test.tsx` too, so its Node rendering test runs with the rest.
+  Its story joins tasks/trials on stored evaluation number, name and code hash; loop counters are never evaluation counters.
+  `explain/rdagentStory.ts` owns story wording; writer-vocabulary and rendering tests guard it, with browser interaction
+  coverage in `e2e/rdagent-story.spec.ts`. Missing links and counts remain unknown; all journey counts use idea cards.
+  Field sources and limits: [API](../../docs/reference/invariants/web-api.md#reads-and-writes),
+  [story view](../../docs/reference/invariants/web-frontend.md#run-detail-binding).
 
 ## Outputs
 

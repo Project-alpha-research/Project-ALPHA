@@ -35,9 +35,14 @@ open(counter, "w").write(str(n + 1))
 steps = json.load(open(os.path.join(here, "scenario.json")))
 step = steps[min(n, len(steps) - 1)]
 cwd = args[args.index("-C") + 1] if "-C" in args else os.getcwd()
+seen = {p: [os.path.lexists(os.path.join(cwd, p)), os.path.islink(os.path.join(cwd, p))]
+        for p in step.get("look", [])}
 with open(os.path.join(here, "calls.jsonl"), "a") as log:
     log.write(json.dumps({"argv": args, "env": dict(os.environ), "cwd": os.getcwd(),
-                          "prompt": prompt}) + "\n")
+                          "prompt": prompt, "seen": seen}) + "\n")
+for rel in step.get("replace", []):
+    os.unlink(os.path.join(cwd, rel))
+    os.makedirs(os.path.join(cwd, rel))
 time.sleep(step.get("sleep", 0))
 for rel, body in step.get("write", {}).items():
     path = os.path.join(cwd, rel)
@@ -66,9 +71,16 @@ sys.exit(step.get("exit", 0))
 _FAKE_UV = r"""#!/usr/bin/env python3
 import json, os, sys
 here = os.path.dirname(os.path.abspath(__file__))
+counter = os.path.join(here, "counter")
+codex_calls = int(open(counter).read()) if os.path.exists(counter) else 0
+links = [p for p in ("apps/alpha-web/src/alpha_web/static/app",
+                    "apps/alpha-web/frontend/node_modules") if os.path.lexists(p)]
 with open(os.path.join(here, "uv-calls.jsonl"), "a") as log:
-    log.write(json.dumps({"argv": sys.argv[1:], "cwd": os.getcwd()}) + "\n")
-sys.exit(0)
+    log.write(json.dumps({"argv": sys.argv[1:], "cwd": os.getcwd(), "codex_calls": codex_calls,
+                          "cache": os.environ.get("UV_CACHE_DIR"),
+                          "offline": os.environ.get("UV_OFFLINE"), "links": links}) + "\n")
+offline_fails = os.path.exists(os.path.join(here, "offline-fails"))
+sys.exit(1 if offline_fails and os.environ.get("UV_OFFLINE") else 0)
 """
 
 _PLAN = """# Demo task
@@ -154,6 +166,8 @@ def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
     monkeypatch.setenv(handoff.HOME_ENV, str(tmp_path / "home"))
+    for name in ("UV_CACHE_DIR", "UV_OFFLINE"):  # CI sets its own; the tool must add none
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(handoff, "plan_check", lambda path: (True, "ok"))
     return {"bin": bin_dir, "repo": repo, "home": tmp_path / "home", "tmp": tmp_path}
 
@@ -191,7 +205,7 @@ def test_happy_path_builds_verifies_and_records(
     assert out.splitlines()[0].endswith("PASSED")
     rec = _record(env)
     assert rec["verdict"] == "passed" and rec["fallback"] is None
-    assert rec["built_by"] == {"tool": "codex", "model": "gpt-6.1-sol", "effort": "medium"}
+    assert rec["built_by"] == {"tool": "codex", "model": "gpt-6.2-sol", "effort": "medium"}
     assert rec["tokens"]["input_tokens"] == 1000 and rec["fix_rounds"] == 0
     assert [c["name"] for c in rec["checks"]] == ["uv sync", "gate check", "check 1", "check 2"]
     assert all(c["passed"] for c in rec["checks"])
@@ -210,8 +224,18 @@ def test_happy_path_builds_verifies_and_records(
     prompt = _calls(env)[0]["prompt"]
     assert "`src/CONTEXT.md`" in prompt and "UNVERIFIED" in prompt and "git commit" in prompt
     uv = _calls(env, "uv-calls.jsonl")
-    assert uv[0]["argv"] == ["sync", "--locked"]
-    assert uv[1]["argv"][:4] == ["run", "python", "scripts/gate.py", "check"]
+    assert uv[0]["argv"] == ["sync", "--locked"] and uv[0]["cache"] is None
+    cache = env["home"] / "cache" / "uv" / rec["run_id"]
+    assert [(c["argv"], c["cache"], c["offline"]) for c in uv[1:3]] == [
+        (["run", "--locked", "python", "-c", ""], str(cache), None),
+        (["run", "--locked", "python", "-c", ""], str(cache), "1"),
+    ]
+    assert uv[3]["argv"][:4] == ["run", "python", "scripts/gate.py", "check"]
+    assert f'sandbox_workspace_write.writable_roots=["{cache}"]' in argv
+    assert f'shell_environment_policy.set={{UV_CACHE_DIR="{cache}", UV_OFFLINE="1"}}' in argv
+    assert 'shell_environment_policy.inherit="core"' in argv
+    assert "uv run" in prompt and "UV_OFFLINE=1" in prompt
+    assert not cache.exists(), "the build's package cache is deleted when the build ends"
 
 
 def test_codex_gets_a_scrubbed_environment(
@@ -264,7 +288,7 @@ def test_usage_limit_returns_the_limit_status(env: dict[str, Path]) -> None:
 def test_timeout_stops_codex_and_returns_the_timeout_status(
     env: dict[str, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    fast = handoff.Profile("gpt-6.1-sol", "medium", 0.5, 0.5, "sonnet")
+    fast = handoff.Profile("gpt-6.2-sol", "medium", 0.5, 0.5, "sonnet")
     monkeypatch.setitem(handoff.PROFILES, "small", fast)
     _scenario(env, {"sleep": 20, **GOOD})
     assert _build(env) == handoff.EXIT["codex_timeout"]
@@ -349,7 +373,7 @@ def test_brief_route_validates_headings_and_keeps_the_record_out_of_the_tree(
     rec = _record(env)
     assert rec["work_order"] == {"kind": "brief", "name": "fix"}
     assert not list(Path(rec["worktree"]).rglob(handoff.RECORD_NAME))
-    assert ".venv/bin/pytest -q tests/test_mod.py" in _calls(env)[0]["prompt"]
+    assert "- `uv run pytest -q tests/test_mod.py`" in _calls(env)[0]["prompt"]
 
 
 def test_class_is_never_below_the_objective_criteria() -> None:
@@ -429,12 +453,6 @@ def test_real_plan_check_rejects_a_plan_without_a_front_block(tmp_path: Path) ->
     assert not ok and "front block" in message
 
 
-def test_sandbox_command_rewrites_uv_run() -> None:
-    assert handoff.sandbox_command("uv run pytest -q a") == ".venv/bin/pytest -q a"
-    assert handoff.sandbox_command("uv run python -m x") == ".venv/bin/python -m x"
-    assert handoff.sandbox_command("test -f a") == "test -f a"
-
-
 def test_ignored_credential_file_is_a_policy_violation(env: dict[str, Path]) -> None:
     (env["repo"] / ".gitignore").write_text(".secrets/\n*.local\n")
     _git(env["repo"], "add", ".gitignore")
@@ -463,3 +481,95 @@ def test_fallback_verify_keeps_the_codex_attempt_in_the_record(env: dict[str, Pa
     assert in_tree["built_by"]["tool"] == "claude"
     assert in_tree["previous_attempts"][0]["verdict"] == "codex_unavailable"
     assert in_tree["previous_attempts"][0]["fallback"]["model"] == "sonnet"
+
+
+def _network_settings(argv: list[str]) -> list[str]:
+    return [a for a in argv if "network_access" in a or a in ("--add-dir", "--search")]
+
+
+def test_codex_network_stays_off_in_every_round(env: dict[str, Path]) -> None:
+    """Fails if any Codex round is ever given network access or another way to widen the sandbox."""
+    _scenario(env, {"write": {"src/mod.py": "BAD\n"}}, GOOD)
+    assert _build(env) == 0
+    calls = _calls(env)
+    assert len(calls) == 2 and calls[1]["argv"][:2] == ["exec", "resume"]
+    for call in calls:
+        argv = call["argv"]
+        assert _network_settings(argv) == ["sandbox_workspace_write.network_access=false"]
+        roots = [a for a in argv if a.startswith("sandbox_workspace_write.writable_roots=")]
+        assert len(roots) == 1 and str(env["home"] / "cache" / "uv") in roots[0]
+        assert not any("danger" in a or "bypass" in a or "full-access" in a for a in argv)
+        assert 'approval_policy="never"' in argv and 'web_search="disabled"' in argv
+        assert "--ignore-user-config" in argv
+        assert ("workspace-write" in argv) or ('sandbox_mode="workspace-write"' in argv)
+
+
+def test_checks_outside_the_sandbox_never_use_the_build_cache(env: dict[str, Path]) -> None:
+    _scenario(env, {"write": {"src/mod.py": "BAD\n"}}, GOOD)
+    assert _build(env) == 0
+    uv = _calls(env, "uv-calls.jsonl")
+    cache = str(env["home"] / "cache")
+    with_cache = [c for c in uv if c["cache"] and c["cache"].startswith(cache)]
+    assert len(with_cache) == 2, "only the warm step and its offline proof use the cache"
+    assert all(c["codex_calls"] == 0 for c in with_cache), "and only before Codex first ran"
+    after = [c for c in uv if c["codex_calls"] > 0]
+    assert len(after) == 2 and not any(c["cache"] or c["offline"] for c in after)
+
+
+def _main_built_files(env: dict[str, Path]) -> None:
+    repo = env["repo"]
+    (repo / "apps/alpha-web/frontend").mkdir(parents=True)
+    (repo / "apps/alpha-web/frontend/package.json").write_text("{}\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "frontend")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    (repo / "apps/alpha-web/src/alpha_web/static/app").mkdir(parents=True)
+    (repo / "apps/alpha-web/src/alpha_web/static/app/index.html").write_text("<html>\n")
+    for entry in ("react", ".bin", ".tmp"):
+        (repo / "apps/alpha-web/frontend/node_modules" / entry).mkdir(parents=True)
+
+
+ASSETS = "apps/alpha-web/src/alpha_web/static/app"
+NODES = "apps/alpha-web/frontend/node_modules"
+
+
+def test_built_files_are_linked_for_codex_and_gone_before_verification(
+    env: dict[str, Path],
+) -> None:
+    _main_built_files(env)
+    look = [ASSETS, NODES, f"{NODES}/react", f"{NODES}/.bin", f"{NODES}/.tmp"]
+    _scenario(env, {**GOOD, "look": look})
+    assert _build(env) == 0
+    seen = _calls(env)[0]["seen"]
+    assert seen[ASSETS] == [True, True] and seen[NODES] == [True, False]
+    assert seen[f"{NODES}/react"] == [True, True] and seen[f"{NODES}/.bin"] == [True, True]
+    assert seen[f"{NODES}/.tmp"] == [False, False], "tool scratch folders are not linked"
+    rec = _record(env)
+    wt = Path(rec["worktree"])
+    assert not (wt / "apps/alpha-web/src/alpha_web").exists() and not (wt / NODES).exists()
+    assert rec["files_changed"] == [{"status": "M", "path": "src/mod.py"}]
+    assert all(c["links"] == [] for c in _calls(env, "uv-calls.jsonl"))
+    status = _git(wt, "status", "--porcelain", "--ignored")
+    assert "M src/mod.py" in status and "alpha-web" not in status
+    assert (env["repo"] / ASSETS / "index.html").is_file(), "the main checkout keeps its files"
+
+
+def test_a_replaced_link_is_a_policy_violation(env: dict[str, Path]) -> None:
+    _main_built_files(env)
+    _scenario(env, {**GOOD, "replace": [ASSETS]})
+    assert _build(env) == handoff.EXIT["policy_violation"]
+    assert any("replaced a path this tool linked" in p for p in _record(env)["policy_violations"])
+    assert not (Path(_record(env)["worktree"]) / ASSETS).exists()
+
+
+def test_without_a_working_cache_codex_gets_the_old_sandbox_form(env: dict[str, Path]) -> None:
+    (env["bin"] / "offline-fails").write_text("")
+    _scenario(env, GOOD)
+    assert _build(env) == 0
+    argv = _calls(env)[0]["argv"]
+    assert _network_settings(argv) == ["sandbox_workspace_write.network_access=false"]
+    assert not any("writable_roots" in a or "UV_CACHE_DIR" in a for a in argv)
+    prompt = _calls(env)[0]["prompt"]
+    assert "`.venv/bin/...`" in prompt and "UV_OFFLINE" not in prompt
+    assert any("package cache not provided" in n for n in _record(env)["notes"])
+    assert not list((env["home"] / "cache" / "uv").iterdir())

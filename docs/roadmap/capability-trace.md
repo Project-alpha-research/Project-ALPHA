@@ -29,6 +29,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `price-lookalikes` | "Has this happened before?": every earlier stretch shaped like the latest bars, and what followed, on one figure |
 | `price-novelty` | "What is unusual right now?": the latest bars scored against every earlier stretch, known on the day |
 | `afml-labels-and-weights` | Textbook labels and overlap weights from two pinned libraries that must agree |
+| `afml-labels-and-weights` | Labels with a target, a stop and a time limit |
 | `afml-factor-importance` | Factor importance on purged folds (MDI, MDA, SFI), a report for RD-Agent's factors |
 | `afml-purged-cv` | Purged splits by label end time, with embargo, backtest paths and a leak checker |
 | `afml-fracdiff` | Fractional differencing with d chosen on training data only |

@@ -2,11 +2,12 @@
 owner: delivery pipeline
 sources:
   - scripts/handoff.py
+  - scripts/handoff_sandbox.py
   - scripts/codex_bridge.py
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 808278a8ca018e14
+verified: 1f73b2fc3159811f
 ---
 
 # Model routing: who builds, who reviews, what happens at a limit
@@ -43,64 +44,44 @@ goes back to stage 02.
 
 | Class | Objective criteria | Codex model, effort | Time cap (fix round) | Claude fallback |
 |---|---|---|---|---|
-| `small` | ≤ 3 files in scope, no tier other than `none` | `gpt-6.1-sol`, `medium` | 15 min (10) | Sonnet |
-| `standard` | 4–8 files, or tier `dag`, `bias` or `determinism` | `gpt-6.1-sol`, `high` | 30 min (15) | Opus |
-| `hard` | > 8 files, or tier `quant`, `risk` or `protected`, or a guarded path in scope | `gpt-6-astra`, `high` | 60 min (20) | Opus |
+| `small` | ≤ 3 files in scope, no tier other than `none` | `gpt-6.2-sol`, `medium` | 15 min (10) | Sonnet |
+| `standard` | 4–8 files, or tier `dag`, `bias` or `determinism` | `gpt-6.2-sol`, `high` | 30 min (15) | Opus |
+| `hard` | > 8 files, or tier `quant`, `risk` or `protected`, or a guarded path in scope | `gpt-6.2-astra`, `high` | 60 min (20) | Opus |
 
 Why, one line each:
 
-- `gpt-6.1-sol` is the newest workhorse coding model on this login; `gpt-6-astra` is listed as the
-  frontier model "for the most demanding work" (`~/.codex/models_cache.json`, 2026-11-14).
-- `medium` for small tasks: both calibration tasks (below) came out correct and clean first time
+- `gpt-6.2-sol` is the workhorse coding model and `gpt-6.2-astra` the frontier model for the most
+  demanding work (`~/.codex/models_cache.json`); both are used at the owner's request.
+- 2026-11-18: the switch to the 6.2 models was made at the owner's request. They are not yet
+  calibrated on this project; every figure below was measured on `gpt-6.1-sol` or `gpt-6-astra`.
+- `medium` for small tasks: calibration tasks A and B (below) came out correct and clean first time
   at `medium`; the earlier hand-run trial at `high` took 8 minutes for a task of similar size.
-- `high` for standard and `gpt-6-astra` for hard: first measured 2026-11-14 (tasks F and G below),
+- `high` for standard and astra for hard: first measured 2026-11-14 (tasks F and G below),
   one build each, so still provisional.
 - Lighter models (`gpt-6-luna`, "fast and affordable") are not used for building: a quiet quality
   loss costs more than the allowance saved. No evidence yet says otherwise.
 - Higher efforts (`xhigh`, `max`, `ultra`) are not used by default: unmeasured, and they spend the
   weekly allowance fastest.
 
-Calibration, 2026-11-14, both small route, `gpt-6.1-sol` `medium`, no fix round needed:
+Calibration builds, 2026-11-14, all reviewed by Claude; model `gpt-6.1-sol` unless named, small at `medium`:
 
-| Task | Wall time | Input tokens (cached) | Output | Result |
-|---|---|---|---|---|
-| A: redact paths in the rules-evaluate relay error (3 files) | 3m57s | 496,656 (468,736) | 3,749 | correct; one unrequested doc re-wrap, caused by the brief |
-| B: aggregate the per-plan tests in `test_plan_schema.py` (1 file) | 2m57s | 188,778 (150,656) | 2,822 | correct, strictness kept; 314 cases to 6 |
-
-Test clean-up stream, 2026-11-14, all small route, `gpt-6.1-sol` `medium`, no fix round needed,
-reviewed by Claude (Opus) before merge:
-
-| Task | Wall time | Input tokens (cached) | Output | Result |
-|---|---|---|---|---|
-| C: run the v2 Qlib-isolation test in a fresh process (1 file) | 5m03s | 156,373 (126,336) | 1,777 | correct, every assertion kept |
-| D: aggregate the theme drift tests, drop a permanent skip (2 files) | 3m55s | 187,865 (164,864) | 3,199 | correct; 54 cases to 8 |
-| E: barrier for the investigation watchdog deadline test (1 file) | 2m52s | 351,724 (314,112) | 2,161 | correct, test-only, assertions kept |
-
-The mutation-gate change in the same stream touched guarded harness files (`scripts/gate*`,
-`scripts/harness_*`), which a brief cannot declare, so Claude built it and Codex reviewed it
-(`handoff.py review`: 0 findings) alongside an Opus reviewer (one medium finding, fixed).
-
-First standard and hard builds, 2026-11-14, standard and hard briefs, triage clean-up, reviewed by Claude:
-
-| Task | Class, model, effort | Wall time | Input tokens (cached) | Output | Fix rounds | Result |
+| Task | Class | Wall time | Input tokens (cached) | Output | Fix rounds | Result |
 |---|---|---|---|---|---|---|
-| F: one copy of literature acquisition code (6 files) | standard, `gpt-6.1-sol`, `high` | 7m30s | 1,328,298 (1,244,160) | 19,234 | 2, empty | correct; note 1 |
+| A: redact paths in the rules-evaluate error (3 files) | small | 3m57s | 496,656 (468,736) | 3,749 | 0 | correct; an unrequested doc re-wrap (brief's fault) |
+| B: aggregate the per-plan tests in `test_plan_schema.py` (1 file) | small | 2m57s | 188,778 (150,656) | 2,822 | 0 | correct, strictness kept; 314 cases to 6 |
+| C: run the v2 Qlib-isolation test in a fresh process (1 file) | small | 5m03s | 156,373 (126,336) | 1,777 | 0 | correct, every assertion kept |
+| D: aggregate the theme drift tests, drop a permanent skip (2 files) | small | 3m55s | 187,865 (164,864) | 3,199 | 0 | correct; 54 cases to 8 |
+| E: barrier for the investigation watchdog deadline test (1 file) | small | 2m52s | 351,724 (314,112) | 2,161 | 0 | correct, test-only, assertions kept |
+| F: one copy of literature acquisition code (6 files) | standard, `high` | 7m30s | 1,328,298 (1,244,160) | 19,234 | 2, empty | correct; note 1 |
 | G: remove QuantPad code (28 files) | hard, `gpt-6-astra`, `high` | 20m51s | 2,796,814 (2,715,648) | 9,859 | 0 | correct; note 2 |
+| H: RD-Agent model gateway and tests (3 files, `--class standard`) | standard, `high` | 19m27s | 3,228,369 (3,052,928) | 73,983 | 1 (gate) | correct; note 3 |
 
 1. Task F's build round alone was 401,809 in and 6,010 out. Both fix rounds were spent on a brief
    check that also searched documents the builder was told not to touch (a brief error).
 2. Task G was approved unchanged; the orchestrator rebuilt the SPA bundle, which needs the network.
+3. The first live call found a setting 0.167.0 lacks and a CLI notice mistaken for tool use; fixed by hand.
 
-RD-Agent model gateway, 2026-11-14, from a brief (three code files, raised to standard with
-`--class standard`), reviewed by Claude (Opus):
-
-| Task | Class, model, effort | Wall time | Input tokens (cached) | Output | Fix rounds | Result |
-|---|---|---|---|---|---|---|
-| H: RD-Agent model gateway and tests (3 files) | standard, `gpt-6.1-sol`, `high` | 19m27s | 3,228,369 (3,052,928) | 73,983 | 1 (gate) | correct; note 3 |
-
-3. The first live Codex call found two things no offline test could: a setting 0.167.0 does not
-   recognise and a CLI notice item mistaken for tool use. Claude fixed both by hand (small edits
-   plus one test), reviewed by Codex. A long brief with exact flags was worth its context.
+Guarded harness files (the mutation-gate change): Claude built, Codex (0 findings) and Opus reviewed.
 
 A fix round resumes the whole thread, so even an empty round costs about the full context again
 (about 40k more input each in task F). A brief's checks must only cover files the builder may change.
@@ -110,16 +91,38 @@ model call (inferred: 497k input for one turn of 32 commands, 94% cached), so ev
 early costs again on each later step; a short read list saves more than a lower effort. Re-calibrate
 when a model is added, or when a class looks wrong in three builds running.
 
+## What the build sandbox allows
+
+Set 2026-11-18 at the owner's request (extra cache folder and pre-linked files, internet stays
+off), so Codex can check more of its own work. Every round keeps `-s workspace-write`,
+`approval_policy="never"`, `--ignore-user-config`, web search and the listed features off and MCP
+servers stubbed; `handoff_sandbox.py` adds only:
+
+- `sandbox_workspace_write.network_access=false`, stated (a test fails if it is ever on).
+- One extra writable root (`sandbox_workspace_write.writable_roots`): a fresh uv cache per build,
+  `<home>/cache/uv/<run id>`, warmed outside the sandbox before Codex starts (about 30 kB, as the
+  `.venv` is already synced) and deleted when the build ends. `shell_environment_policy.set` passes
+  `UV_CACHE_DIR` and `UV_OFFLINE=1`, so `uv run` works offline; if warming fails, `.venv/bin/...`.
+- Read-only links to the main checkout's built web assets and frontend packages (each
+  `node_modules` entry, in a real folder for tools' scratch files). Writing through a link fails
+  (`EROFS`). Links go after every round, before any check or diff; a replaced link is a violation.
+
+Codex can now run `uv run` checks (pytest, ruff, mypy, `fs.py`, `gate.py check`) and the frontend's
+`node_modules/.bin` tools. It still cannot reach the network, open any socket (`TestClient` tests
+hang; no localhost servers), run browsers or `tests/smoke/`, or write outside the worktree, `/tmp`
+and its cache. Checks outside use the normal uv cache, never the build's.
+Rejected: bypassing the sandbox (Codex reads the whole disk; with network it could send key files
+away). Open gap, older than this: the worktree `.venv` is hard-linked to the user's uv cache, and
+the sandbox does not stop a write through a hard link.
+
 ## What stays with Claude or the machine
 
 - Anything needing the network: `uv sync`, GitHub, CI, web research for a decision.
   `handoff.py` runs `uv sync --locked` before Codex starts.
 - Commits, pushes, pull requests, merges. Codex's sandbox cannot write the git directory, and
   `handoff.py` refuses a build whose HEAD moved.
-- Checks Codex's sandbox cannot run (verified 2026-11-14 with `codex sandbox`): tests using FastAPI
-  `TestClient` (they hang), anything binding or connecting a localhost TCP socket (`EPERM`),
-  `tests/smoke/` (starts the installed programs and a web server), browser tests, `uv run` (the uv
-  cache is outside the worktree), any network call. `handoff.py` runs all checks again outside.
+- Checks Codex's sandbox cannot run ([below](#what-the-build-sandbox-allows)); `handoff.py` runs
+  every check again outside the sandbox.
 - Decisions not written in the plan or brief; owner actions of any kind.
 - Changes to the never paths (`tests/holdout/`, `scripts/codex_bridge.py`, `scripts/claude_hooks.py`,
   `.claude/settings*.json`, credential-shaped files) — refused whatever the plan says.

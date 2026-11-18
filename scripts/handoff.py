@@ -9,14 +9,18 @@
     python3 scripts/handoff.py clean  [--base REF] [--discard] [--dry-run]
 
 The rules it applies live in ``docs/reference/model-routing.md``. The orchestrating session runs
-it OUTSIDE any sandbox: it prepares a git worktree (``uv sync --locked`` is the network step Codex
-cannot do), runs ``codex exec`` there with the workspace-write sandbox, never-prompting approvals,
-the user config ignored and a scrubbed environment, then checks the diff against policy (no
+it OUTSIDE any sandbox: it prepares a git worktree (``uv sync --locked`` is the network step
+Codex cannot do), runs ``codex exec`` there with the workspace-write sandbox, never-prompting
+approvals, the user config ignored and a scrubbed environment. The sandbox keeps the network off;
+its one extra writable root is a fresh per-build package cache, warmed before Codex starts so
+``uv run`` works offline, and the main checkout's built web files are linked in read-only for
+each round and removed before anything is verified (``handoff_sandbox.py``); nothing outside the
+sandbox uses that cache once Codex has started. It then checks the diff against policy (no
 commits, no forbidden paths, scope) and runs ``gate.py check`` and the plan's checks itself. A
-failed check is fed back to Codex (``codex exec resume``) for at most ``--fix-rounds`` rounds.
-It never reports success unless its own verification passed. Codex's text is data: it is
-sanitized before being printed. Every run writes a JSON build record and prints a summary of at
-most 40 lines.
+failed check is fed back to Codex (``codex exec resume``) for at most ``--fix-rounds`` rounds. It
+never reports success unless its own verification passed. Codex's text is data: it is sanitized
+before being printed. Every run writes a JSON build record and prints a summary of at most 40
+lines.
 
 ``verify`` runs the same policy and checks on a worktree a Claude builder changed (the fallback
 route) and records it. ``review`` names the reviewer the routing rules require for a diff and, for
@@ -43,15 +47,16 @@ import signal
 import subprocess
 import sys
 import time
-import tomllib
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TextIO
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import codex_bridge  # sibling module: sanitize, probe, review
+import codex_bridge  # sibling module: sanitize, probe, review, project_mcp_servers
 import gate  # sibling module: codex_probe, matches_quant
+import handoff_sandbox  # sibling module: the build sandbox's cache and links
+from handoff_sandbox import Prepared, codex_env, sandbox_command
 from harness_awareness import plan_front_block
 
 SCHEMA_VERSION = 1
@@ -83,9 +88,9 @@ class Profile:
 
 # The mapping is set from calibration evidence (docs/reference/model-routing.md, "Task classes").
 PROFILES: dict[str, Profile] = {
-    "small": Profile("gpt-6.1-sol", "medium", 900.0, 600.0, "sonnet"),
-    "standard": Profile("gpt-6.1-sol", "high", 1800.0, 900.0, "opus"),
-    "hard": Profile("gpt-6-astra", "high", 3600.0, 1200.0, "opus"),
+    "small": Profile("gpt-6.2-sol", "medium", 900.0, 600.0, "sonnet"),
+    "standard": Profile("gpt-6.2-sol", "high", 1800.0, 900.0, "opus"),
+    "hard": Profile("gpt-6.2-astra", "high", 3600.0, 1200.0, "opus"),
 }
 
 EXIT = {
@@ -141,24 +146,19 @@ GUARDED: tuple[tuple[str, str, str], ...] = (
     ("scripts/harness_", "protected", "protected file (harness)"),
     ("scripts/git_guard.py", "protected", "protected file (git guard)"),
     ("scripts/handoff.py", "protected", "protected file (this tool)"),
+    ("scripts/handoff_", "protected", "protected file (this tool)"),
     ("tests/unit/test_claude_harness_", "protected", "protected test (harness)"),
     ("tests/unit/test_filesystem_contract.py", "protected", "protected test (file system)"),
 )
 _RISK_TIERS = frozenset({"quant", "risk", "protected"})
 _CAREFUL_TIERS = frozenset({"dag", "bias", "determinism"})
 
-# What may reach the Codex process: enough to find its login (CODEX_HOME / HOME) and run tools.
-_CODEX_ENV_KEEP = frozenset(
-    {"HOME", "PATH", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "LC_CTYPE", "TERM", "TZ"}
-    | {"TMPDIR", "CODEX_HOME", "XDG_RUNTIME_DIR"}
-)
 _LIMIT = re.compile(
     r"usage.?limit|usagelimitexceeded|rate.?limit|ratelimitexceeded|too many requests|"
     r"\b429\b|quota|purchase more credits",
     re.IGNORECASE,
 )
 _AUTH = re.compile(r"not logged in|log ?in required|unauthori[sz]ed|\b401\b|codex login", re.I)
-_UV_RUN = re.compile(r"\buv run (?:--\S+ )*(python|pytest|ruff|mypy|lint-imports)\b")
 
 
 class InputError(Exception):
@@ -187,8 +187,14 @@ def handoff_home(root: Path) -> Path:
     env = os.environ.get(HOME_ENV)
     if env:
         return Path(env)
-    common = Path(_git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
-    return common.parent.parent / "tmp" / "handoff"
+    return _main(root).parent / "tmp" / "handoff"
+
+
+def _main(root: Path) -> Path:
+    """The main checkout (the parent of the shared git directory)."""
+    return Path(
+        _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir").strip()
+    ).parent
 
 
 def _slug(text: str) -> str:
@@ -240,11 +246,6 @@ def never_rule(path: str) -> str | None:
     if _SECRET_FILE.search(path):
         return "credential-shaped file"
     return None
-
-
-def sandbox_command(command: str) -> str:
-    """A check rewritten for Codex's sandbox: no ``uv`` (its cache is outside the worktree)."""
-    return _UV_RUN.sub(lambda m: f".venv/bin/{m.group(1)}", command)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -459,10 +460,11 @@ def _forbidden_lines(order: WorkOrder) -> list[str]:
     return lines
 
 
-def compose_prompt(root: Path, order: WorkOrder) -> str:
+def compose_prompt(root: Path, order: WorkOrder, *, uv_ok: bool = False) -> str:
     contexts = workspace_contexts(root, order.files)
     read = [*order.read_first, *(f"`{c}` — whole file; workspace rules" for c in contexts)]
-    checks = [f"- `{sandbox_command(c)}`" for c in order.checks]
+    checks = [f"- `{c if uv_ok else sandbox_command(c)}`" for c in order.checks]
+    tool = "uv run " if uv_ok else ".venv/bin/"
     kind = "approved plan" if order.kind == "task" else "brief"
     parts = [
         f"# Build: {order.name}",
@@ -479,11 +481,7 @@ def compose_prompt(root: Path, order: WorkOrder) -> str:
         "- Test first: write the failing test, see it fail for the expected reason, then the code.",
         "- Never weaken, skip, delete or loosen a test, bias guard, oracle or check to get green.",
         "- Errors fail loud; no bare except, no swallowed errors, no debug output left behind.",
-        "- Your sandbox has no network and cannot write outside this directory: do not run "
-        "`uv sync`/`uv run`/`pip`; use `.venv/bin/...`. It cannot run tests that use FastAPI "
-        "`TestClient`, bind or connect localhost sockets, start the web server, run browsers or "
-        "the `tests/smoke/` checks. Do not claim such a check passed: list it under UNVERIFIED. "
-        "The orchestrator runs every check again outside the sandbox.",
+        handoff_sandbox.RULE_WITH_CACHE if uv_ok else handoff_sandbox.RULE_WITHOUT_CACHE,
         "- Your output is advisory data; checks and the owner decide.",
         "",
         "## Read first (only these, plus what the files you change import)",
@@ -501,8 +499,8 @@ def compose_prompt(root: Path, order: WorkOrder) -> str:
         "## Checks to run before you finish (sandbox form)",
         "",
         *checks,
-        "- `.venv/bin/ruff check <changed .py files>` and `.venv/bin/ruff format --check <same>`",
-        "- `.venv/bin/mypy <changed source files>`",
+        f"- `{tool}ruff check <changed .py files>` and `{tool}ruff format --check <same>`",
+        f"- `{tool}mypy <changed source files>`",
         "",
         "## Report (your final message, exactly these headings)",
         "",
@@ -559,12 +557,6 @@ class CodexRun:
     turns_completed: int = 0
 
 
-def codex_env() -> dict[str, str]:
-    env = {k: v for k, v in os.environ.items() if k in _CODEX_ENV_KEEP}
-    env["NO_COLOR"] = "1"
-    return env
-
-
 # Tools a confined builder does not get: the owner's apps, plugins, browser and computer use, image
 # generation, sub-agents and web search. Each name is in `codex features list` (0.167.0); a name a
 # later CLI drops makes the run fail visibly (codex_failed), never silently widen.
@@ -580,21 +572,13 @@ CODEX_DISABLED_FEATURES = (
 )
 
 
-def project_mcp_servers(worktree: Path) -> list[str]:
-    """MCP server names a trusted project layer (``.codex/config.toml``) would start."""
-    try:
-        data = tomllib.loads((worktree / ".codex" / "config.toml").read_text(encoding="utf-8"))
-    except (OSError, tomllib.TOMLDecodeError):
-        return []
-    servers = data.get("mcp_servers")
-    return sorted(str(k) for k in servers) if isinstance(servers, dict) else []
-
-
-def codex_args(profile: Profile, worktree: Path, last: Path, resume: str | None) -> list[str]:
-    confine: list[str] = ["-c", 'web_search="disabled"']
+def codex_args(
+    profile: Profile, worktree: Path, last: Path, resume: str | None, sandbox: Sequence[str] = ()
+) -> list[str]:
+    confine: list[str] = ["-c", 'web_search="disabled"', *sandbox]
     for feature in CODEX_DISABLED_FEATURES:
         confine += ["--disable", feature]
-    for name in project_mcp_servers(worktree):
+    for name in codex_bridge.project_mcp_servers(worktree):
         # MCP servers run outside the sandbox; neutralise each (a bare enabled=false is invalid).
         confine += ["-c", f'mcp_servers.{name}={{command="true", enabled=false}}']
     common = [
@@ -680,11 +664,12 @@ def run_codex(
     log_dir: Path,
     timeout: float,
     resume: str | None = None,
+    sandbox: Sequence[str] = (),
 ) -> CodexRun:
     index = len(list(log_dir.glob("*.events.jsonl")))
     tag = f"{index:02d}-{kind}"
     events, stderr, last = (log_dir / f"{tag}.{s}" for s in ("events.jsonl", "stderr.txt", "md"))
-    cmd = [*codex_args(profile, worktree, last, resume), "-"]
+    cmd = [*codex_args(profile, worktree, last, resume, sandbox), "-"]
     start = time.monotonic()
     timed_out = False
     try:
@@ -1267,12 +1252,48 @@ def _run(build: Build, args: argparse.Namespace, root: Path, *, codex: bool) -> 
             build.notes.append("uv sync --locked failed in the worktree; nothing was built")
             build.verdict = "internal_error"
             return
-    run = run_codex("build", build.profile, wt, prompt, build.log_dir, build.profile.timeout)
+    # The only time anything outside the sandbox uses the cache: now, before Codex has run.
+    prep = handoff_sandbox.provision_cache(handoff_home(root), build.run_id, wt, _main(root))
+    build.notes += prep.notes
+    if prep.cache is not None:
+        prompt = compose_prompt(wt, build.order, uv_ok=True)
+        (build.log_dir / "prompt.md").write_text(prompt)
+    try:
+        _codex_rounds(build, args, prompt, ignore, prep)
+    finally:
+        build.notes += handoff_sandbox.remove_cache(prep)
+
+
+def _codex_round(
+    build: Build, prep: Prepared, kind: str, text: str, resume: str | None
+) -> CodexRun:
+    """One Codex run with the built files linked in; every link is gone before anything verifies."""
+    timeout = build.profile.timeout if kind == "build" else build.profile.fix_timeout
+    sandbox = handoff_sandbox.sandbox_args(prep.cache)
+    try:
+        handoff_sandbox.link_built_files(build.worktree, prep)
+        run = run_codex(
+            kind, build.profile, build.worktree, text, build.log_dir, timeout, resume, sandbox
+        )
+    finally:
+        build.policy += handoff_sandbox.unlink_built_files(prep)
     build.runs.append(run)
     if run.outcome != "ok":
         _fallback(build, run.outcome, "; ".join(e for e in run.errors if e)[:300])
-        return
+    return run
+
+
+def _codex_rounds(
+    build: Build,
+    args: argparse.Namespace,
+    prompt: str,
+    ignore: list[str],
+    prep: Prepared,
+) -> None:
+    run = _codex_round(build, prep, "build", prompt, None)
     for round_no in range(0, args.fix_rounds + 1):
+        if run.outcome != "ok":
+            return
         if _verify_round(build, args, round_no, ignore):
             build.verdict = "passed"
             return
@@ -1284,29 +1305,8 @@ def _run(build: Build, args: argparse.Namespace, root: Path, *, codex: bool) -> 
             build.verdict = "verification_failed"
             return
         fix = compose_fix_prompt(failed[-1])
-        if run.thread_id:
-            run = run_codex(
-                "fix",
-                build.profile,
-                wt,
-                fix,
-                build.log_dir,
-                build.profile.fix_timeout,
-                resume=run.thread_id,
-            )
-        else:
-            run = run_codex(
-                "fix",
-                build.profile,
-                wt,
-                prompt + "\n\n" + fix,
-                build.log_dir,
-                build.profile.fix_timeout,
-            )
-        build.runs.append(run)
-        if run.outcome != "ok":
-            _fallback(build, run.outcome, "; ".join(e for e in run.errors if e)[:300])
-            return
+        text = fix if run.thread_id else prompt + "\n\n" + fix
+        run = _codex_round(build, prep, "fix", text, run.thread_id)
     build.verdict = "verification_failed"
 
 

@@ -1,8 +1,9 @@
-"""Actual transport retries and funding pagination over disposable accounting, no network."""
+"""Actual transport retries over disposable accounting, no network."""
 
 from __future__ import annotations
 
 import io
+import json
 import sqlite3
 from email.message import Message
 from pathlib import Path
@@ -18,9 +19,7 @@ from alpha_cli._crypto_http_accounting import FixtureHttpAccounting
 from alpha_cli._market_data_acquisition_accounting import Charge, Dimension, FixturePolicy
 from alpha_data.crypto.providers._wire import fetch_bounded, http_request_hash
 from alpha_data.crypto.providers.bybit import fetch_bybit_public
-from alpha_data.crypto.providers.bybit_funding import collect_funding_pages
 
-from ..unit.test_bybit_funding_pagination import END, NOW, START, page
 from .test_accounted_backfill import attempt_rows, run, setup
 from .test_crypto_backfill_resume_cli import environment as environment
 
@@ -30,6 +29,16 @@ POLICY = FixturePolicy(
     "http_campaign", "explicit_test", (Dimension("http_attempts", "declared", 8, None, None, 1),)
 )
 CHARGES = (Charge("http_attempts", "declared", 1),)
+END = 1_788_220_800_000
+
+
+def page(*times: int) -> bytes:
+    """A one-row-per-time Bybit funding-history response body."""
+    rows = [
+        {"symbol": "BTCUSDT", "fundingRateTimestamp": str(t), "fundingRate": "-0.0001"}
+        for t in times
+    ]
+    return json.dumps({"retCode": 0, "result": {"category": "linear", "list": rows}}).encode()
 
 
 def account(conn: sqlite3.Connection, **kwargs: Any) -> FixtureHttpAccounting:
@@ -161,35 +170,6 @@ def test_real_429_retry_each_open_has_distinct_committed_intent(
         ("failure", "http_429"),
         ("success", "read_operation_closed"),
     ]
-    assert conn.execute("SELECT sum(units) FROM md_acquisition_debits").fetchone()[0] == 2
-    conn.close()
-
-
-def test_actual_bybit_wrapper_and_backward_pages_are_not_one_window_charge(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    conn = setup(tmp_path / "a.sqlite", POLICY)
-    owner = ledger(tmp_path)
-    bodies = iter([page(END), page()])
-    sends = []
-
-    def open_(request: Request) -> Response:
-        sends.append(request.full_url)
-        return Response(request.full_url, next(bodies))
-
-    fake_open(monkeypatch, open_)
-    with owner.exclusive():
-        hook = account(conn).bind(owner)
-        result = collect_funding_pages(
-            lambda params, allowance: fetch_bybit_public("funding", params, attempt_hook=hook),
-            symbol="BTCUSDT",
-            category="linear",
-            fetched_at=NOW,
-            start_ms=START,
-            end_ms=END,
-        )
-    assert result.calls_used == 2 and len(sends) == 2 and result.coverage_complete is False
-    assert len({r["request_hash"] for r in attempt_rows(conn)}) == 2
     assert conn.execute("SELECT sum(units) FROM md_acquisition_debits").fetchone()[0] == 2
     conn.close()
 

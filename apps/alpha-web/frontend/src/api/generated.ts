@@ -10071,6 +10071,7 @@ export interface components {
                 [key: string]: components["schemas"]["RecordedFact"];
             }[];
             run: components["schemas"]["RdAgentRun"];
+            story?: components["schemas"]["RdAgentStory"] | null;
             /** Timing */
             timing: {
                 [key: string]: components["schemas"]["RecordedFact"];
@@ -10100,6 +10101,41 @@ export interface components {
             sentence: string;
             /** Status */
             status: string;
+        };
+        /** RdAgentIdea */
+        RdAgentIdea: {
+            clock: components["schemas"]["RecordedFact"];
+            code_file: components["schemas"]["RecordedFact"];
+            description: components["schemas"]["RecordedFact"];
+            direction: components["schemas"]["RecordedFact"];
+            feedback: components["schemas"]["RecordedFact"];
+            /**
+             * Feedback Scope
+             * @enum {string}
+             */
+            feedback_scope: "round" | "unknown";
+            /** Id */
+            id: string;
+            /** Labels */
+            labels: string[];
+            name: components["schemas"]["RecordedFact"];
+            /** Raw */
+            raw: string;
+            reason: components["schemas"]["RecordedFact"];
+            refusal: components["schemas"]["RecordedFact"];
+            round: components["schemas"]["RecordedFact"];
+            /**
+             * Round Kind
+             * @enum {string}
+             */
+            round_kind: "evaluation" | "loop" | "unknown";
+            /** Stages */
+            stages: {
+                [key: string]: boolean | null;
+            };
+            /** System Statuses */
+            system_statuses: string[];
+            trial: components["schemas"]["RdAgentFactor"] | null;
         };
         /** RdAgentRun */
         RdAgentRun: {
@@ -10131,6 +10167,23 @@ export interface components {
             ledger_reason?: string | null;
             /** Reason */
             reason?: string | null;
+        };
+        /** RdAgentStory */
+        RdAgentStory: {
+            /** Ending */
+            ending: string;
+            ending_reason: components["schemas"]["RecordedFact"];
+            /** Events */
+            events?: string[];
+            /** Ideas */
+            ideas: components["schemas"]["RdAgentIdea"][];
+            /** Journey */
+            journey: {
+                [key: string]: components["schemas"]["RecordedFact"];
+            };
+            minutes: components["schemas"]["RecordedFact"];
+            /** Missing Links */
+            missing_links: string[];
         };
         /** RecordedFact */
         RecordedFact: {

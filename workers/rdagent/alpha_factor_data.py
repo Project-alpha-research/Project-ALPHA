@@ -17,6 +17,8 @@ from typing import Any
 
 import pandas as pd
 
+RESERVED_START = "2024-01-01"
+
 CUTS = (
     ("2020-12-31",)
     + tuple(
@@ -27,11 +29,11 @@ CUTS = (
     )
     + ("2023-12-24",)
 )
-README = """# Daily price and volume data
+README = f"""# Daily price and volume data
 
 The frozen universe of Binance USDT spot coins, daily bars.
 Row d is the bar that opened at 00:00 UTC
-on day d and is known at its close. Data ends 2023-12-31; 2024 onward is reserved.
+on day d and is known at its close. Data ends 2023-12-31; {RESERVED_START[:4]} onward is reserved.
 
 Read with `pd.read_hdf('daily_pv.h5', key='data')`.
 
@@ -81,7 +83,7 @@ def _funding_frame(path: Path) -> tuple[pd.DataFrame, str]:
     if (
         dates.isna().any()
         or not dates.eq(dates.dt.normalize()).all()
-        or dates.ge(pd.Timestamp("2024-01-01", tz="UTC")).any()
+        or dates.ge(pd.Timestamp(RESERVED_START, tz="UTC")).any()
     ):
         raise ValueError("funding dates must be midnight before the reserved window")
     frame["datetime"] = dates.dt.tz_localize(None)
@@ -98,7 +100,7 @@ def prepare(panel: Path, out: Path) -> dict[str, Any]:
     if (
         dates.isna().any()
         or not dates.eq(dates.dt.normalize()).all()
-        or dates.ge(pd.Timestamp("2024-01-01", tz="UTC")).any()
+        or dates.ge(pd.Timestamp(RESERVED_START, tz="UTC")).any()
     ):
         raise ValueError("panel must contain midnight dates before the reserved window")
     frame["datetime"] = dates.dt.tz_localize(None)
@@ -279,7 +281,19 @@ def check_prefix_invariance(
     return {"status": "PASS", "cuts": checked, "first_mismatch": None}
 
 
-def current_universe() -> str:
+def current_universe(*, include_panel_dates: bool = False) -> str:
+    """Describe the current universe and optionally its panel dates."""
+    universe = _current_universe()
+    if not include_panel_dates:
+        return universe
+    return (
+        f"{universe}. History only: "
+        "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
+        f"2023-12-31. {RESERVED_START} onward is reserved and never available to this loop."
+    )
+
+
+def _current_universe() -> str:
     """Use this run's frozen receipt, never restored scenario text or launcher fallback."""
     run = os.environ.get("ALPHA_FACTOR_RUN_DIR")
     if not run:

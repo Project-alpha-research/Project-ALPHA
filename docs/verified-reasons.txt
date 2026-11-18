@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 6b1ca25b6ef49a5f on 2026-11-19: Re-read after merging main (RD-Agent discussion fixes): body text equals main's plus nothing from this branch; it already links the data health card on runs, and the discussion and ledger changes need no routing change here
+  verified 54c1b63f2ee81bcf on 2026-11-19: Re-read after merging main (reserved date given one home): only the stamp conflicted; the body is main's and still links the data health card on runs; the reserved-date move needs no routing change from this branch
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
@@ -17,7 +17,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/workers.md
-  verified a5fa61dafd837783 on 2026-11-19: Re-read after merging the README split: the discussion invariant (records who selected ideas; only tested ideas count) still matches the short README's Propose and discuss section and the worker.
+  verified 3cc9c22191e6ab00 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -92,7 +92,7 @@ docs/reference/project/owner-decisions.md
   verified 04f30e82b92b3098 on 2026-11-18: re-read; the log entries are unchanged and model routing only gained a contents list
 
 docs/reference/project/reserved-period.md
-  verified 8d128cd089812ca0 on 2026-11-19: This branch adds a scored-return reader to toolbox/inputs.py; reserved-period labelling is unchanged and the new entries carry reserved-period-seen
+  verified 383d46efc5e63521 on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -149,7 +149,7 @@ research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
 workers/rdagent/CONTEXT.md
-  verified fd5ee42a2617426a on 2026-11-18: Re-read after the review fixes: the pause still lives in discussion.py after the family guard, the summary is kept by alpha_factor_hypothesis.py, and the named tests are right
+  verified 476fc9d11f2f987e on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
 
 workflow/CONTEXT.md
   verified 0cfb4307335d7cd5 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

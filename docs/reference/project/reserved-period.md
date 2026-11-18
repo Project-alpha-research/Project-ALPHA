@@ -1,11 +1,13 @@
 ---
 owner: project layer
 sources:
+  - packages/alpha-core/src/alpha_core/*.py
   - apps/alpha-cli/src/alpha_cli/toolbox/reserve.py
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
-verified: 8d128cd089812ca0
+  - workers/rdagent/alpha_factor_judge.py
+verified: 383d46efc5e63521
 ---
 
 # The reserved period
@@ -15,12 +17,11 @@ RD-Agent's factor loop truly locks it. Other commands label it or ignore it.
 
 ## Where the code defines the date
 
-- `apps/alpha-cli/src/alpha_cli/toolbox/reserve.py`: `RESERVED_DAY` (a date) and `RESERVED_START` (the same day as text). The RD-Agent judge,
-  evaluator, ledger, journeys and the toolbox import it.
-- `packages/alpha-data/src/alpha_data/context/daily_funding.py`: a second `RESERVED_DAY`, used to refuse funding tables that reach it.
-- `workers/rdagent/alpha_factor_data.py`: the date written as text in two checks (funding and panel). The worker cannot import `alpha_cli`.
-- Wording only: `workers/rdagent/alpha_factor_judge.py` names the date in the text it shows the proposer.
-- One date with three homes is a known defect. The fix is in code (one shared definition, and a test that the worker's copy matches). Not done.
+- `alpha_core.reserve` defines `RESERVED_DAY` and derives the ISO text `RESERVED_START`. Daily funding imports the date from core.
+  `alpha_cli.toolbox.reserve` re-exports both names for existing CLI callers.
+- The isolated RD-Agent factor runtime has no ALPHA packages. `alpha_factor_data.py` uses its `RESERVED_START` for funding checks,
+  panel checks, and panel dates in the proposer prompt. A [root unit test](../../../tests/unit/test_reserved_date_one_home.py)
+  checks that assignment against core and scans source for other date literals.
 
 ## What locks it, what labels it, what holds nothing back
 

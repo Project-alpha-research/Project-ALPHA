@@ -542,13 +542,11 @@ class AlphaFactorScenario(QlibFactorScenario):
 
     @property
     def experiment_setting(self) -> str:
-        universe_text: str = current_universe()
+        panel_context = current_universe(include_panel_dates=True)
         if self._funding_text is None:
             self._funding_text = current_funding_setting()
         return (
-            "Binance USDT spot coins, daily bars: " + universe_text + ". History only: "
-            "2017-08-17..2020-12-31; exploration decisions: 2021-01-01..2023-12-24; panel ends "
-            "2023-12-31. 2024-01-01 onward is reserved and never available to this loop. "
+            f"Binance USDT spot coins, daily bars: {panel_context} "
             "Prefix-invariance checks at quarter ends and 2023-12-24 detect some look-ahead, "
             "not all. Daily, weekly (7-day) and monthly (28-day) holding/rebalance clocks are "
             "fixed in advance; only a weekly or monthly pass can become a candidate. "

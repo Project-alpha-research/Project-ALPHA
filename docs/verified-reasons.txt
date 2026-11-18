@@ -1,6 +1,9 @@
 # Why each document was re-stamped without an edit: written by `scripts/fs.py verify
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
+apps/alpha-cli/CONTEXT.md
+  verified 612c1c61723deaf6 on 2026-11-18: merged main: its journey wording change and the health helper row are both described correctly
+
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
 
@@ -11,7 +14,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/command-line.md
-  verified 85e32c60c5aa06da on 2026-11-18: the CONTEXT change only adds the health helper to the market data row; this page names no module rows
+  verified bde44779c5eed8bd on 2026-11-18: merged main: the CONTEXT row additions do not change this component summary
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -44,7 +47,7 @@ docs/reference/project/components/validation-and-evidence.md
   verified e1c214a6d07651bb on 2026-11-18: re-read: its routing file only gained the Monte Carlo row; this page already links the Monte Carlo component
 
 docs/reference/project/components/web-workstation.md
-  verified 4f68f3b5b493b152 on 2026-11-18: re-read: the routing file swapped the story-view module notes for the journey view; this page names no modules and already records the approved idea-journey layout
+  verified fa9eff1e1562cc65 on 2026-11-18: journey wording change leaves this component summary correct
 
 docs/reference/project/ideas-and-considered.md
   verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271

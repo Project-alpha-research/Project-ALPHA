@@ -300,7 +300,7 @@ def _story(
         words.peek_step(row, sources),
         words.quick_step(row, trial, sources),
         words.trading_step(row, trial, sources),
-        words.feedback_step(rnd.get("feedback", {}), round_sources),
+        words.feedback_step(row, rnd.get("feedback", {}), round_sources),
         words.limits_step(row, trial, sources),
     ]
     for n, names in (

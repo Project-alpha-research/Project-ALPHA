@@ -120,8 +120,11 @@ def test_journeys_from_stored_evidence(tmp_path: Path) -> None:
         ]
         assert "0.617%" in quick["text"]
         assert feedback["own_words"] == FEEDBACK
-        assert "Orders were expensive. Fewer trades might help." in feedback["text"]
-        assert "Check the slow" not in feedback["text"]
+        assert feedback["text"] == (
+            "It failed the weekly quick test."
+            if row["stage"] == "screen"
+            else "It passed the weekly quick test."
+        )
         assert limits["numbers"][0]["value"] == row["screen_m"]
         assert all(
             story["figures"][name]["reason"]
@@ -151,6 +154,187 @@ def test_status_wording_covers_judge() -> None:
         outcome({"status": "NEW_UNEXPLAINED_STATE"})
 
 
+def _read_steps(run: Path, row: dict[str, Any]) -> list[dict[str, Any]]:
+    folder = f"{row['iteration']}-{row['name']}-{row['code_sha256'][:8]}"
+    result = CliRunner().invoke(app, ["ledger", "journey", "--run-dir", str(run)])
+    assert result.exit_code == 0, repr(result.exception)
+    steps: list[dict[str, Any]] = json.loads(
+        (run / "journey" / folder / "journey.json").read_text()
+    )["steps"]
+    return steps
+
+
+def test_journey_keeps_the_full_recorded_idea_in_its_own_words(tmp_path: Path) -> None:
+    run, rows = make_run(tmp_path)
+    rounds_path = run / "rounds.jsonl"
+    rounds = [json.loads(line) for line in rounds_path.read_text().splitlines()]
+    description = (
+        "[Long-Term Reversal Factor] The number measures earlier losses. "
+        "This detail explains how. This sentence explains why."
+    )
+    rounds[0]["tasks"][0]["description"] = description
+    rounds_path.write_text("".join(json.dumps(entry) + "\n" for entry in rounds))
+    assert _read_steps(run, rows[0])[0]["own_words"] == description
+
+
+def _set_description(run: Path, description: str) -> None:
+    rounds_path = run / "rounds.jsonl"
+    rounds = [json.loads(line) for line in rounds_path.read_text().splitlines()]
+    rounds[0]["tasks"][0]["description"] = description
+    rounds_path.write_text("".join(json.dumps(entry) + "\n" for entry in rounds))
+
+
+def test_idea_step_shows_type_summary_direction_and_chosen_after_sentences(
+    tmp_path: Path,
+) -> None:
+    run, rows = make_run(tmp_path)
+    rows[0]["declared_direction"] = None
+    rows[0]["clocks"]["weekly"]["screen"]["direction"] = -1
+    (run / "evaluations/iter-0/result.json").write_text(
+        json.dumps({"iteration": 0, "factors": [rows[0]]})
+    )
+    _set_description(
+        run,
+        "[Long-Term Reversal Factor] The number measures earlier losses. "
+        "This detail explains how.\ndeclared_direction: -1",
+    )
+    assert _read_steps(run, rows[0])[0]["text"] == (
+        "Idea type: long-term reversal. The number measures earlier losses. "
+        "It expected coins with lower numbers to earn more over the following 7 days. "
+        "That direction was chosen after seeing these years, so it is not a prediction."
+    )
+
+
+def test_idea_step_without_a_tag_or_description_keeps_only_stored_sentences(
+    tmp_path: Path,
+) -> None:
+    run, rows = make_run(tmp_path)
+    _set_description(run, "")
+    rows[0]["description"] = ""
+    (run / "evaluations/iter-0/result.json").write_text(
+        json.dumps({"iteration": 0, "factors": [rows[0]]})
+    )
+    assert _read_steps(run, rows[0])[0]["text"] == (
+        "It expected coins with lower numbers to earn more over the following 7 days."
+    )
+
+
+def test_idea_step_cuts_a_long_first_sentence_at_a_word_boundary(tmp_path: Path) -> None:
+    run, rows = make_run(tmp_path)
+    _set_description(run, " ".join(["word"] * 80) + ". Second sentence.")
+    text = _read_steps(run, rows[0])[0]["text"]
+    summary = text.split(" It expected")[0]
+    assert summary.endswith("word…") and len(summary) <= 201
+    assert "Second sentence" not in text
+
+
+def test_no_step_shows_internal_codes(tmp_path: Path) -> None:
+    run, rows = make_run(tmp_path)
+    rows[0].update(
+        status="FAST_ONLY",
+        reason="FAST_ONLY q=0.2335",
+        clocks={
+            "daily": {"status": "PASS"},
+            "weekly": {"status": "SCREEN_FAIL", "q": 0.2335},
+            "monthly": {"status": "SCREEN_FAIL"},
+        },
+    )
+    (run / "evaluations/iter-0/result.json").write_text(
+        json.dumps({"iteration": 0, "factors": [rows[0]]})
+    )
+    for row in rows:
+        for step in _read_steps(run, row):
+            fields = [step["text"], step["what_this_means"]]
+            for item in step["numbers"]:
+                fields += [item["label"], item["gloss"]]
+            for field in fields:
+                assert not any(code in field for code in (*STATUSES, "q=", "rank IC")), field
+
+
+@pytest.mark.parametrize(
+    ("next_idea", "next_sentence"),
+    [
+        (None, ""),
+        ("Try fewer trades. Review costs first.", " RD-Agent proposed “Try fewer trades.”"),
+        ("Retry after ERROR.", " RD-Agent recorded a follow-up idea."),
+    ],
+)
+def test_journey_reports_quick_test_verdicts_and_recorded_next_idea(
+    tmp_path: Path, next_idea: str | None, next_sentence: str
+) -> None:
+    run, rows = make_run(tmp_path)
+    row = rows[0]
+    row.update(
+        status="FAST_ONLY",
+        reason="FAST_ONLY q=0.2335",
+        clocks={
+            "daily": {"status": "PASS"},
+            "weekly": {"status": "SCREEN_FAIL", "q": 0.2335},
+            "monthly": {"status": "SCREEN_FAIL"},
+        },
+    )
+    (run / "evaluations/iter-0/result.json").write_text(
+        json.dumps({"iteration": 0, "factors": [row]})
+    )
+    rounds_path = run / "rounds.jsonl"
+    rounds = [json.loads(line) for line in rounds_path.read_text().splitlines()]
+    raw = "FAST_ONLY. Weekly q=0.2335 and mean rank IC -0.0123."
+    rounds[0]["feedback"] = {"observations": raw}
+    if next_idea:
+        rounds[0]["feedback"]["new_hypothesis"] = next_idea
+    rounds_path.write_text("".join(json.dumps(entry) + "\n" for entry in rounds))
+    steps = _read_steps(run, row)
+    expected = "It passed the daily quick test. It failed the weekly and monthly quick tests."
+    assert steps[5]["text"] == expected + next_sentence
+    assert steps[5]["own_words"] == " ".join(filter(None, (raw, next_idea)))
+    assert steps[4]["what_this_means"] == (
+        "Only the daily quick test, spread check and trading test with costs passed as a group."
+    )
+    for step in steps:
+        assert not any(code in step["text"] for code in (*STATUSES, "q=", "rank IC"))
+        assert "q=" not in step["what_this_means"]
+
+
+@pytest.mark.parametrize("failed", [False, True])
+def test_journey_describes_the_dates_checked_for_future_data(tmp_path: Path, failed: bool) -> None:
+    run, rows = make_run(tmp_path)
+    row = rows[0]
+    row["lookahead"] = {
+        "status": "LOOKAHEAD" if failed else "PASS",
+        "cuts": [
+            {"cut": "2022-04-04", "status": "PASS"},
+            {"cut": "2022-07-04", "status": "LOOKAHEAD" if failed else "PASS"},
+        ],
+    }
+    (run / "evaluations/iter-0/result.json").write_text(
+        json.dumps({"iteration": 0, "factors": [row]})
+    )
+    expected = (
+        "The earlier numbers changed at 1 date, so the code used future data."
+        if failed
+        else "The earlier numbers did not change, so the code did not use future data."
+    )
+    assert _read_steps(run, row)[2]["text"] == (
+        "ALPHA re-ran the idea's code with later data hidden, at 2 dates. " + expected
+    )
+
+
+def test_journey_limits_use_plain_labels_and_keep_stored_values(tmp_path: Path) -> None:
+    run, rows = make_run(tmp_path)
+    count, coverage = _read_steps(run, rows[0])[6]["numbers"]
+    assert (count["label"], count["value"], count["gloss"]) == (
+        "Ideas tested so far",
+        rows[0]["screen_m"],
+        "Every idea tested makes a lucky result more likely, "
+        "so the pass line rises with this count.",
+    )
+    assert (coverage["label"], coverage["value"], coverage["gloss"]) == (
+        "Coins with a usable number",
+        rows[0]["clocks"]["weekly"]["screen"]["coverage"],
+        "This is the share of eligible coin observations with a usable number.",
+    )
+
+
 def test_output_cannot_follow_a_journey_symlink(tmp_path: Path) -> None:
     run, _ = make_run(tmp_path)
     elsewhere = tmp_path / "elsewhere"
@@ -173,9 +357,16 @@ def test_limits_and_prefix_wording() -> None:
         }
         facts = " ".join(words.limits_step(row, {}, [])["facts"])
         assert words.EXPOSURE[state] in facts and "funding" in facts
-    for kind in ("NOT_RUN", "PASS", "LOOKAHEAD", "UNSTABLE", "ERROR"):
+    for kind, verdict in (
+        ("NOT_RUN", "The future-data check did not run."),
+        ("PASS", "The earlier numbers did not change."),
+        ("LOOKAHEAD", "The earlier numbers changed when later data was hidden."),
+        ("UNSTABLE", "The code gave different numbers on identical inputs."),
+        ("ERROR", "The future-data check encountered an error."),
+    ):
         message = words.peek_step({"lookahead": {"status": kind}}, [])["text"]
-        assert words.PEEK[kind] in message and "not recorded" in message
+        assert message.startswith(verdict)
+        assert "not recorded" in message
     assert "includes coins that later stopped trading" in " ".join(
         words.limits_step({"status": "REPLAY_FAIL", "universe_includes_delisted": True}, {}, [])[
             "facts"
@@ -254,3 +445,16 @@ def test_older_records_fall_back_to_the_lead_clock_and_screen_direction() -> Non
     text = words.idea_step(row, {}, [])["text"]
     assert "chosen after seeing these years" in text
     assert words.NO_TRADING_TEST in words.trading_step(row, {}, [])["text"]
+
+
+def test_older_records_without_clock_or_coins_read_as_plain_sentences() -> None:
+    from alpha_cli import rdagent_journey_words as words
+
+    row: dict[str, Any] = {"status": "SCREEN_FAIL"}
+    quick = words.quick_step(row, {}, [])["text"]
+    assert "over the next not recorded" not in quick and "next period were checked" in quick
+    limits = words.limits_step(row, {}, [])["text"]
+    assert "coin count not recorded" in limits and "covered coin count" not in limits
+    long_idea = "Try " + " ".join(["slower"] * 80) + ". Then more."
+    feedback = words.feedback_step(row, {"new_hypothesis": long_idea}, [])["text"]
+    assert "slower…”" in feedback and "Then more" not in feedback

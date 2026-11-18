@@ -18,7 +18,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `crypto-data` | Daily crypto bars: download, resume, freeze into a snapshot, verify |
 | `crypto-backfill` | Daily crypto bars: download, resume, freeze into a snapshot, verify |
 | `download-bookkeeping` | Download receipts and quota bookkeeping |
-| `funding-download` | Crypto context: funding rates, open interest, listings |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
 | `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |

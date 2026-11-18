@@ -1,5 +1,9 @@
 # Integrated offline Bybit funding candidate
 
+Historical record. The offline collector, retention and transport modules this page describes were
+deleted on 2026-11-18 (they were reached only by their own tests); funding-rate context now comes from
+`alpha context pull-binance` and the Bybit context import. `parse_funding_page` stays in `bybit.py`.
+
 Status: bounded offline implementation; software qualification/publication receipts are
 separate from live-provider/data admission, which is not established here.
 Integration base: `7824bebf2e9d10077e8ffdb92b9b6871ea482287` (merged PR #116).

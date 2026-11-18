@@ -3,9 +3,8 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
-  - tests/unit/test_toolbox_contract.py
-  - tests/unit/test_toolbox_runner.py
-verified: 9647cc91b10abceb
+  - tests/unit/test_toolbox_*.py
+verified: 3c289156b1e5227b
 ---
 
 # The toolbox
@@ -14,6 +13,20 @@ The toolbox helps the owner or assistant choose a question to ask of a recorded 
 One explicit tuple lists them. A named set fixes which questions to ask together.
 The first set, `market-context`, describes market exposure, volatility regimes and changes in behaviour on one rule-test run.
 See the [market family card](../../../research/tools/attribution-regimes-changepoints.md) for examples.
+
+## Run-level descriptions
+
+Each command takes a recorded rule-test id as its second positional argument, for example `alpha tool run performance.downside_ratios <run_id>`.
+
+| Entry | Stored input | Reading |
+|---|---|---|
+| `performance.downside_ratios` | Walk-forward equity and manifest Sharpe | Return relative to downside deviation, drawdown, losses and tail losses. |
+| `robustness.start_end_dates` | Aligned strategy and benchmark equity | Ranges across 25 date windows and shares that gained or beat buy and hold. |
+| `trades.side_contribution` | Closed trades | Long and short counts, win rates, average net profits and contributions to total profit. |
+| `trades.concentration` | Closed trades | Net profit after dropping the best one, three or five trades, and the top tenth’s profit share. |
+
+The [run-level tool card](../../../research/tools/run-level-checks.md) explains units, unavailable values and date settings.
+The runner hashes each required Parquet file before cache lookup. These entries read the stored out-of-sample results directly.
 
 ## Adding an entry
 

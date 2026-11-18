@@ -9,11 +9,13 @@ import io
 import json
 import math
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.deflation import (
     TrialFamily,
     count_snapshot,
@@ -111,14 +113,28 @@ class Prepared:
 
 
 def _prepare(
-    idea: IdeaSpec, asset: str, home: Path, knobs: _gauntlet.GauntletParams, result: dict[str, Any]
+    idea: IdeaSpec,
+    asset: str,
+    home: Path,
+    knobs: _gauntlet.GauntletParams,
+    result: dict[str, Any],
+    *,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
 ) -> Prepared:
     resolved = resolve_asset(asset, data_dir=home)
+    record = run_health_record(
+        [resolved], check_data=check_data, accept_bad_data=accept_bad_data, report_time=report_time
+    )
+    result["data_health"] = record
+    result["labels"].extend(health_labels(record))
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
     bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
     dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir)
+    verify_inputs([resolved], record)
     result.update(
         first_ts=bars[0].ts.isoformat(), last_ts=bars[-1].ts.isoformat(), n_bars=len(bars)
     )
@@ -140,6 +156,7 @@ def _prepare(
             "source": resolved.source,
             "store": resolved.store_name,
             "labels": result["labels"],
+            "data_health": record,
         },
         source_fingerprint=_runner.source_fingerprint(bars, dividends=dividends),
     )
@@ -265,6 +282,7 @@ def _write_run(
         prepared.identity,
         extra_manifest={
             **headline_manifest(out, result),
+            "data_health": result["data_health"],
             "idea_id": idea_id(idea.spec_sha256, prepared.identity.source_fingerprint),
             "source": result["source"],
             "resized_entries": out.result.resized_entries,
@@ -302,7 +320,15 @@ def _write_run(
 
 
 def run_idea(
-    idea: IdeaSpec, *, home: Path, seed: int = 7, quick: bool = False, no_diagnose: bool = False
+    idea: IdeaSpec,
+    *,
+    home: Path,
+    seed: int = 7,
+    quick: bool = False,
+    no_diagnose: bool = False,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    report_time: datetime | None = None,
 ) -> dict[str, Any]:
     """Run assets independently; ledger failures remain fatal rather than losing trial history."""
     knobs = _gauntlet.GauntletParams(seed=seed)
@@ -344,7 +370,20 @@ def run_idea(
             variants_evaluated=0,
         )
         try:
-            prepared.append(_prepare(idea, asset, home, knobs, result))
+            prepared.append(
+                _prepare(
+                    idea,
+                    asset,
+                    home,
+                    knobs,
+                    result,
+                    check_data=check_data,
+                    accept_bad_data=accept_bad_data,
+                    report_time=report_time,
+                )
+            )
+        except SpineError:
+            raise
         except (
             Exception
         ) as exc:  # Each asset failure is reported explicitly; other assets continue.

@@ -16,6 +16,9 @@ FlagLookup = Callable[[str], list[dict[str, str]]]
 # Required plain phrases (case insensitive; a hyphen also counts as a space).
 LABEL_PHRASES = {
     "quick": "quick",
+    "data-health-fail": "data health fail",
+    "data-health-overridden": "data health overridden",
+    "data-health-unchecked": "data health unchecked",
     "source-defaulted": "source defaulted",
     "short-history": "short history",
     "no-diagnostics": "no diagnostics",
@@ -184,6 +187,9 @@ def check_text(
         )
         (warnings if len(warnings) < allow_untagged else problems).append(problem)
     phrases = _TAG.sub(_blank, visible).lower().replace("-", " ")
+    # The printed verdict uses a colon and distinguishes a stale report from an absent one.
+    health_phrases = re.sub(r"\bdata health:\s*", "data health ", phrases)
+    health_phrases = re.sub(r"\bdata health out of date\b", "data health unchecked", health_phrases)
     for run_id, (fact, offset) in cited.items():
         if flags is not None:
             others = [other for other in cited if other != run_id]
@@ -200,7 +206,8 @@ def check_text(
                 )
         for label in fact.get("labels", []):
             phrase = LABEL_PHRASES.get(label)
-            if phrase and not re.search(r"\b" + re.escape(phrase) + r"\b", phrases):
+            words = health_phrases if label.startswith("data-health-") else phrases
+            if phrase and not re.search(r"\b" + re.escape(phrase) + r"\b", words):
                 problems.append(
                     _problem(
                         text,

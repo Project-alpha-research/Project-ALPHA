@@ -4,9 +4,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: e5798689e225fca6
+verified: eaa0976cee0b9537
 ---
-
 # Setup find
 
 **Reach for it when** the owner describes a chart setup ("a double bottom", "a pullback in an
@@ -30,6 +29,7 @@ uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
 - The default context is 60 bars. Repeats redraw nothing; `outcomes-viewed` replaces
   `outcomes-not-viewed` when a sibling study or trade manifest exists.
 
+The find uses the worst verdict across the selected series. A failed report requires a reason on this invocation. [Data health](data-health.md)
 **What it cannot tell you**
 
 - Nothing about what happened after entry: no return, exit or control is computed. A match count is not

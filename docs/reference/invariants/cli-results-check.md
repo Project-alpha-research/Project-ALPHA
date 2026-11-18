@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: a1bdd5d151065d18
+verified: 7e29058fe5d0f0ec
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -55,7 +55,8 @@ drafted answer against stored run facts, and the computed differences between ru
   case insensitive), or the next word is `trade(s)`, `percent`, `per cent`, `bps` or `basis points`. `trial` and `ALPHA` do not trigger checking.
   Every other numeric token needs its own immediately following tag. Null facts retain their reasons.
 - Cited runs require visible label phrases from `spine/check.py:LABEL_PHRASES`: quick, source defaulted,
-  short history, no diagnostics, too few trades (case insensitive; hyphens also work). A matched, tagged `total_trials`
+  short history, no diagnostics, too few trades, data health fail, data health overridden, data health unchecked (case insensitive; hyphens also work).
+  The printed “Data health:” wording also counts, including “out-of-date” for an unchecked label. A matched, tagged `total_trials`
   value is required; this is the stored diagnostic-time count, not a fresh count of ledger rows.
 - Problems include line, excerpt, kind, stored value, known choices and next action. JSON adds a
   `warnings` list: `--allow-untagged N` tolerates the first N untagged numbers; excess numbers fail.

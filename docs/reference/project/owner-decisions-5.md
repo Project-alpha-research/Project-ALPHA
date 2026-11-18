@@ -169,6 +169,7 @@ part that owns it can link to one clear entry.
 - **Governs:** [data layer](components/data-layer.md).
 - **Status (2026-11-18):** step 1 is built (PR #278): `alpha data health` and its saved report. Attaching the verdict to runs
   is not built. The decision above is left as recorded.
+- **Status (2026-11-19):** rule tests and setup runs now carry the verdict (PR #286). RD-Agent panels remain queued.
 
 ### 2026-11-18 Rule: a directional statement lands in this log in the same change
 

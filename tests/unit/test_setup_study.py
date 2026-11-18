@@ -149,7 +149,7 @@ def test_command_cite_check_and_ledger(tmp_path: Path, monkeypatch: pytest.Monke
     count = results_cmds.fact_lookup(tmp_path)(study_id, "total_trials")
     draft = tmp_path / "draft.md"
     draft.write_text(
-        f"Exploratory, short history. Return {fact['value']:.2%} "
+        f"Exploratory, short history, data health unchecked. Return {fact['value']:.2%} "
         f"[{study_id}:setup_mean_net_return]. "
         f"Trials {count['value']} [{study_id}:total_trials]."
     )

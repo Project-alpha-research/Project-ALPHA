@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: b1b516edc8f45a2d
+verified: ace952b390858ffe
 ---
 
 # Setup Lab
@@ -41,7 +41,7 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
   after per-asset costs, in percent and in risk units of the initial stop (R). The opposite direction on the
   same entries is an uncounted control.
 - The Workstation screen (Research → Setup Lab) only reads stored results through
-  `GET /api/setup/runs`; it starts nothing. Missing values read as not recorded.
+  `GET /api/setup/runs`. It shows the data health finding beside each non-pass result. Older runs read “Data health: not recorded.”
 
 ## What is real today
 

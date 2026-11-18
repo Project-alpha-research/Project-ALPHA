@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b27b7887cc849c1a on 2026-11-19: Re-read after merging main: this branch only moves the reserved date to one shared home and builds the proposer's panel-date wording from the worker's one constant; main's other changes do not touch what this page says
+  verified 54c1b63f2ee81bcf on 2026-11-19: Re-read after merging main (reserved date given one home): only the stamp conflicted; the body is main's and still links the data health card on runs; the reserved-date move needs no routing change from this branch
 
 docs/CONTEXT.md
   verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold

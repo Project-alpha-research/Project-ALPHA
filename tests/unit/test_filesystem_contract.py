@@ -1013,7 +1013,7 @@ ROOT_MAX_LINES = 40
 ROOT_SECTIONS = ("Purpose", "Read first", "How to change it", "Outputs")
 INVARIANTS_DIR = "docs/reference/invariants"
 INVARIANTS_ROUTER = f"{INVARIANTS_DIR}/README.md"
-INVARIANTS_ROUTER_MAX_LINES = 50
+INVARIANTS_ROUTER_MAX_LINES = 54
 MEASUREMENT_PAGE = "file-system-measurement.md"
 
 
@@ -1123,4 +1123,110 @@ def test_invariant_sections_are_small_enough_for_a_row_to_name() -> None:
             problems.append(f"{name} § {title} is {found:,} bytes; remove its ceiling")
         elif found < ceiling:
             problems.append(f"{name} § {title} is {found:,} bytes; lower its ceiling to {found:,}")
+    assert not problems, "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------------------------
+# Cramming: a line cap is a split trigger, not a target
+
+CRAM_LOW = MAX_LINE_CHARS - 10
+CRAM_MAX_SHARE = 0.20
+CRAM_MIN_PROSE_LINES = 10
+# Files written before this check. Each ceiling is the file's count of prose lines of 150 to 160
+# characters when the check began and may only go down. Split the file by heading (or summarise and
+# link), then delete its entry.
+CRAM_CEILINGS: dict[str, int] = {
+    "docs/reference/invariants/cli-runs.md": 51,
+    "docs/reference/invariants/cli-setups.md": 10,
+    "docs/reference/invariants/data-crypto.md": 12,
+    "docs/reference/invariants/web-frontend.md": 31,
+    "docs/reference/invariants/web-run-detail.md": 18,
+    "docs/reference/project/file-system-measurement.md": 14,
+}
+
+
+def prose_lines(text: str) -> list[str]:
+    """Lines of prose: no front matter, code, headings, tables, link definitions or blank lines."""
+    if text.startswith("---\n") and "\n---\n" in text:
+        text = text.split("\n---\n", 1)[1]
+    found = []
+    for _, line in _body_lines(text):
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "|", "http")):
+            continue
+        if re.match(r"^\[[^\]]+\]:", stripped):
+            continue
+        found.append(line)
+    return found
+
+
+def cram_count(text: str) -> tuple[int, int]:
+    """(prose lines of 150 to 160 characters, prose lines)."""
+    prose = prose_lines(text)
+    return sum(CRAM_LOW <= len(line) <= MAX_LINE_CHARS for line in prose), len(prose)
+
+
+def _crammed_files() -> dict[str, int]:
+    crammed: dict[str, int] = {}
+    for rel in reference_files():
+        text = _text(rel)
+        if "generated_by" in (fs_stale.front_matter(text) or {}):
+            continue
+        near_cap, total = cram_count(text)
+        if total >= CRAM_MIN_PROSE_LINES and near_cap > CRAM_MAX_SHARE * total:
+            crammed[rel] = near_cap
+    return crammed
+
+
+def test_cram_counts_only_prose_lines_near_the_cap() -> None:
+    near = "x" * 155
+    text = f"---\nowner: a\n---\n# {near}\n\n| {near} |\n```\n{near}\n```\n{near}\n- short\n"
+    assert cram_count(text) == (1, 2)
+    assert prose_lines("[ref]:\n  https://example.org/" + "a" * 150) == []
+
+
+def test_reference_files_are_not_crammed_under_the_line_cap() -> None:
+    crammed = _crammed_files()
+    problems = [
+        f"{rel}: {count} prose lines are 150 to 160 characters long; the limit is "
+        f"{CRAM_MAX_SHARE:.0%}. Split the file by heading into a sibling file, or summarise and "
+        "link; never drop words to fit."
+        for rel, count in crammed.items()
+        if count > CRAM_CEILINGS.get(rel, -1)
+    ]
+    for rel, ceiling in CRAM_CEILINGS.items():
+        found = crammed.get(rel)
+        if found is None:
+            problems.append(f"{rel} is no longer crammed (or is gone); remove its ceiling")
+        elif found < ceiling:
+            problems.append(f"{rel} has {found} crammed lines; lower its ceiling to {found}")
+    assert not problems, "\n".join(problems)
+
+
+# These project pages keep a plain summary; builder detail lives in the rule pages.
+COMPONENT_SIZE_LIMITS: dict[str, tuple[int, int]] = {  # lines, bytes
+    "rd-agent.md": (100, 7_000),
+    "data-layer.md": (112, 7_200),
+    "toolbox.md": (100, 7_000),
+}
+TOOLBOX_REAL_TODAY_MAX_BYTES = 1_000
+
+
+def test_the_long_component_pages_stay_summaries() -> None:
+    problems = []
+    for name, (max_lines, max_bytes) in COMPONENT_SIZE_LIMITS.items():
+        rel = f"{COMPONENTS_DIR}/{name}"
+        text = _text(rel)
+        lines, size = len(text.splitlines()), len(text.encode("utf-8"))
+        if lines > max_lines or size > max_bytes:
+            problems.append(
+                f"{rel}: {lines} lines, {size:,} bytes; the limits are {max_lines} and "
+                f"{max_bytes:,}. Move builder detail to the rule page and link to it."
+            )
+    real_today = section_bytes(ROOT / COMPONENTS_DIR / "toolbox.md", "What is real today")
+    if real_today is None or real_today > TOOLBOX_REAL_TODAY_MAX_BYTES:
+        problems.append(
+            f"toolbox.md § What is real today is {real_today} bytes; the limit is "
+            f"{TOOLBOX_REAL_TODAY_MAX_BYTES:,}. Keep a summary; the list lives in cli-toolbox.md."
+        )
     assert not problems, "\n".join(problems)

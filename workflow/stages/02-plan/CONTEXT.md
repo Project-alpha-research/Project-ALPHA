@@ -25,6 +25,7 @@ check, and the exact files and sections to read first.
 | [root routing](../../../CONTEXT.md) | Read first | always: find the workspace each change lands in |
 | [component files](../../../docs/reference/project/overview.md) | Components | always: read the file of each part the plan changes |
 | [capability map](../../../docs/roadmap/capabilities.toml) | — | the plan changes what a capability can do |
+| [brief template](../../../docs/reference/model-routing.md) | Brief template | handing the work to a builder: write the brief in this shape |
 | [engineering rules](../../../docs/reference/invariants/engineering.md) | Quant tier | a file in the quant tier changes |
 | [engineering rules](../../../docs/reference/invariants/engineering.md) | Hash-bound source bytes | `packages/alpha-research/src` would change |
 

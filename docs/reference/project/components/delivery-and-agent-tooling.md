@@ -6,7 +6,7 @@ sources:
   - tests/CONTEXT.md
   - docs/CONTEXT.md
   - docs/reference/model-routing.md
-verified: cb008ea1f9afb68f
+verified: 1c31cac3dd16760e
 ---
 
 # Delivery and agent tooling
@@ -34,9 +34,10 @@ file system makes sure an agent knows what each part is for before changing it.
   [`docs/work/`](../../../work/CONTEXT.md), linked from its pull request.
   CI on the pull request is the merge gate ([ADR-0039](../../../adr/0039-ci-is-the-merge-gate.md)).
   The whole path, step by step: [from an idea to a merged change](../../../../workflow/README.md#from-an-idea-to-a-merged-change).
-- Codex builds, Claude plans, decides and reviews
-  ([owner decisions](../owner-decisions.md#2026-11-14-codex-builds-claude-plans); details in
-  [model routing](../../model-routing.md)).
+- Claude plans, decides and reviews; Codex builds when it is in use, and Claude Sonnet builds while it is not (since 2026-11-19)
+  ([owner decisions](../owner-decisions.md#2026-11-14-codex-builds-claude-plans),
+  [2026-11-19](../owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first);
+  details in [model routing](../../model-routing.md)).
 - The file system follows the Interpretable Context Methodology adapted to a codebase
   ([ADR-0040](../../../adr/0040-one-file-system-atlas-retired.md)). This project layer is its
   stable reference about purpose; the routing files and invariants say how to change code.

@@ -6,7 +6,7 @@ sources:
   - tests/CONTEXT.md
   - docs/CONTEXT.md
   - docs/reference/model-routing.md
-verified: e3b0c44298fc1c14
+verified: 1ed063381c793185
 ---
 
 # Delivery and agent tooling
@@ -29,8 +29,10 @@ file system makes sure an agent knows what each part is for before changing it.
 
 ## Intended design
 
-- Every change walks the [delivery pipeline](../../../../workflow/CONTEXT.md): shape, plan, build,
-  verify, land. CI on the pull request is the merge gate ([ADR-0039](../../../adr/0039-ci-is-the-merge-gate.md)).
+- Changes follow the [delivery pipeline](../../../../workflow/CONTEXT.md): shape, plan, build,
+  verify, land; the stage files are optional today, and each build's brief and report are kept in
+  [`docs/work/`](../../../work/CONTEXT.md), linked from its pull request.
+  CI on the pull request is the merge gate ([ADR-0039](../../../adr/0039-ci-is-the-merge-gate.md)).
 - Codex builds, Claude plans, decides and reviews
   ([owner decisions](../owner-decisions.md#2026-11-14-codex-builds-claude-plans); details in
   [model routing](../../model-routing.md)).

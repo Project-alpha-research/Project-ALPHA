@@ -4,7 +4,7 @@ sources:
   - workers/afml/CONTEXT.md
   - workers/afml/README.md
   - docs/adr/0054-afml-worker.md
-verified: f513c8dd27122108
+verified: 9f89aa701b270578
 ---
 
 # AFML worker

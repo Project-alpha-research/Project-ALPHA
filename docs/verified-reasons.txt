@@ -1,0 +1,74 @@
+# Why each document was re-stamped without an edit: written by `scripts/fs.py verify
+# --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
+
+docs/CONTEXT.md
+  verified ed8f02cd3d4ed6b5 on 2026-11-18: re-read: docs/README.md now routes work/ to the task folders and the link test skips copied briefs and reports; this file's rules and checks still hold
+
+docs/reference/model-routing.md
+  verified 4195a29f4db518b3 on 2026-11-18: re-read after merging main: this PR already rewrote its routed-reading, owned-check and task-folder lines; the AGENTS.md change matches them
+
+docs/reference/project/components/afml-worker.md
+  verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/command-line.md
+  verified 0c8fe3137226d0ae on 2026-11-18: re-read: apps/alpha-cli/CONTEXT.md re-wrapped a line and added the registered tools note; this page already links the toolbox page and states no tool list
+
+docs/reference/project/components/data-layer.md
+  verified 369e81e1d78f93b3 on 2026-11-18: re-read after PR 271 corrected it: the routing file's new SEC, Binance and Bybit context is described here; the funding line is now right
+
+docs/reference/project/components/delivery-and-agent-tooling.md
+  verified 23415737b5311b2f on 2026-11-18: re-read: the named routing files changed model names, the build sandbox section, verify --reason and test naming; this page states none of these and links model routing
+
+docs/reference/project/components/forecasting.md
+  verified d5d10808e863ee03 on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
+
+docs/reference/project/components/literature-worker.md
+  verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/nautilus.md
+  verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
+
+docs/reference/project/components/paper-and-live.md
+  verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/qlib.md
+  verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
+
+docs/reference/project/components/rd-agent.md
+  verified 33e0f3ad54f5e204 on 2026-11-18: re-read: PR 271 moved change notes into workers/rdagent/README.md and edited this page in the same change; its links resolve and it matches
+
+docs/reference/project/components/strategies-and-signals.md
+  verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
+
+docs/reference/project/components/validation-and-evidence.md
+  verified e1c214a6d07651bb on 2026-11-18: re-read: its routing file only gained the Monte Carlo row; this page already links the Monte Carlo component
+
+docs/reference/project/components/web-workstation.md
+  verified 4f68f3b5b493b152 on 2026-11-18: re-read: the routing file swapped the story-view module notes for the journey view; this page names no modules and already records the approved idea-journey layout
+
+docs/reference/project/ideas-and-considered.md
+  verified e0bec86252a83216 on 2026-11-18: re-read: volume 4 now points to volume 5 and volume 5 is new; this page's rows and links were written against both in PR 271
+
+docs/reference/project/owner-decisions-2.md
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
+
+docs/reference/project/owner-decisions-3.md
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
+
+docs/reference/project/owner-decisions-4.md
+  verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5, as this volume's own header says
+
+docs/reference/project/owner-decisions-5.md
+  verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
+
+docs/reference/project/owner-decisions.md
+  verified f4dc8c442ce71ab2 on 2026-11-18: re-read: model routing gained routed reading, owned checks and task folders; this volume's entries link it and state none of these
+
+docs/roadmap/production-scope-2.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+docs/roadmap/production-scope-3.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
+
+docs/roadmap/production-scope.md
+  verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them

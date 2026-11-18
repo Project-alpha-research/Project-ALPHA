@@ -3,9 +3,8 @@ owner: project layer
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/**/*.py
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
-  - tests/unit/test_toolbox_contract.py
-  - tests/unit/test_toolbox_runner.py
-verified: 9647cc91b10abceb
+  - tests/unit/test_toolbox_*.py
+verified: cdc58b6f6294e4cf
 ---
 
 # Toolbox
@@ -59,7 +58,12 @@ meant to become entries too, and are never slimming targets
 
 Three entries, all describing one recorded rule test: `market.attribution` (how much return is market
 exposure), `market.vol_regimes` (calm versus turbulent markets) and `market.changepoints` (when behaviour
-shifted); named set `market-context` runs them together. Commands: `alpha tool list` (filter by
+shifted); named set `market-context` runs them together. Four more read the run's stored walk-forward files
+instead of replaying it: `performance.downside_ratios` (Sortino, Calmar, Omega, tail ratio beside the stored
+Sharpe), `robustness.start_end_dates` (25 windows with moved first and last dates, against buy and hold),
+`trades.side_contribution` (long versus short) and `trades.concentration` (profit without the best trades);
+their [card](../../../../research/tools/run-level-checks.md) gives the definitions. Each stored file's hash
+is part of the result's key, and a value that cannot be measured is "unavailable" with a reason. Commands: `alpha tool list` (filter by
 `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`, `run-set` and `history`. The only
 target is a run id. The date 2024-01-01 lives in one module, `toolbox/reserve.py`, shared with the RD-Agent
 judge. Results are stored under the data directory's `diagnostics/<run>/`. See the capability on
@@ -68,19 +72,20 @@ judge. Results are stored under the data directory's `diagnostics/<run>/`. See t
 **Not built:** targets other than a run; a cut-off that hides the reserved period from tool inputs (today
 it only labels, and a run made on all data has already seen it); listing in the Workstation, MCP and a
 generated catalogue; counting sweep variants in the deflation; RD-Agent access (an evidence file, a fixed
-set after judging, a budget, exporting causal tools as factor inputs); the other 19 first-batch entries; and
+set after judging, a budget, exporting causal tools as factor inputs); the other 15 first-batch entries
+(break-even cost waits for the run to store gross returns and per-period costs; minimum track record length
+waits for a function in `alpha_validation`); and
 the growth plan. The 480-entry catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is
-not yet in the repository; the 25 highest-value gaps start with break-even cost, start-date sensitivity and
-random-exit control.
+not yet in the repository; the 25 highest-value gaps start with break-even cost and random-exit control.
 
 ## Where it lives
 
 - **Workspaces:** none (inside the command-line workspace `apps/alpha-cli`, owned by [command line](command-line.md)).
 - **Capabilities:** `investigation-tools`
 - Code: `apps/alpha-cli/src/alpha_cli/toolbox/` (contract, inputs, runner, store, registry, sets, gates,
-  reserve, `families/market.py`) and `apps/alpha-cli/src/alpha_cli/tool_cmds.py`.
+  reserve, `families/market.py`, `families/performance.py`, `families/robustness.py`) and `apps/alpha-cli/src/alpha_cli/tool_cmds.py`.
 - Tests: `tests/unit/test_toolbox_contract.py`, `tests/unit/test_toolbox_runner.py`,
-  `tests/smoke/test_rule_tools_smoke.py`.
+  `tests/unit/test_toolbox_run_level_checks.py`, `tests/smoke/test_rule_tools_smoke.py`.
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md); rules in
   [investigation tools](../../invariants/cli-investigation-tools.md). Tool cards: `research/tools/`.
 - **Plan:** the toolbox rows of the [AI partner stage](../../../roadmap/production-scope-2.md#8-ai-partner) of the checklist.

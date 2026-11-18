@@ -508,7 +508,7 @@ Spread check, idea families, universe file and call limit
 
 - Before a screened clock (q < 0.10) is replayed, the evaluator checks on the same decision days that
   the top third the factor would hold beat its bottom third before costs (mean over decision days,
-  positive under both tie orders). If not, the clock is `SPREAD_FAIL`
+  positive with equal fractional weights at tied boundaries). If not, the clock is `SPREAD_FAIL`
   (`top-third-does-not-beat-bottom-third`) whatever its replay shows. Each screened clock records a
   `spread` object: top- and bottom-third mean returns, spread per hold and per year, t-statistic
   (autocorrelation-adjusted), bootstrap interval, decision days, the share of the top third replaced
@@ -525,7 +525,10 @@ Spread check, idea families, universe file and call limit
 - The proposer's context starts with every idea family in the ledger (name-keyword groups: tries,
   best result, failures by status), names the families with `--family-switch-after` (3) or more
   failed tries and no candidate, and tells it to move to a different family. Ledger lines add the
-  spread numbers for every clock that reached the check.
+  spread numbers for every clock that reached the check. Feedback and rendered ledger rows name
+  ledger-wide `family_size` / `screen_m` as "looks so far across all ideas: N (sets the screen cutoff)";
+  idea-family failures are separately "failed tries in this idea family (<name>): k of the limit L".
+  The stored count fields, closure statuses and failure limit are unchanged.
 - `--universe /abs/file.json` freezes the panel with a universe file (`AlphaRdagentUniverseV1`,
   examples in `universes/`): source, instruments, a point-in-time liquidity rule, calendar (which
   fixes the year length and clocks) and minimum universe. The file and its hash are bound into the
@@ -631,13 +634,26 @@ day's funding rows. Comments and standalone strings do not count. This is syntax
 analysis: dynamic column names can be missed, and an unused selector or a selector on a different
 object can count. Output values never choose the mask. Funding-enabled successful factors require
 archived source. Trial rows (also in evaluation records) include `eligibility: "perp-funding"`,
-`mean_eligible_names` over exploration days, funding hash and available funding input columns.
+`mean_eligible_names` over exploration days and funding hash. `input_columns` lists only literal
+`$` selectors read by the source, including price columns, with `input_columns_method: source-selectors`.
+If source is missing, the factor failed, or no literal selector is detected, no columns are listed
+(as before) and `input_columns_method` says `fallback` and why. This does not change eligibility.
 
 The unchanged coverage threshold is 80%; half of funded names is still DEGENERATE. At least five
 finite names are needed on a decision day (the existing gap policy skips thin days). Thirds use
-`max(1, round(n/3))` among finite ranks, with instrument-name tie orders checked both ways. About
+`k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
+`s/g` membership per name (s remaining slots, g tied names); portfolio weights are `(s/g)/k`.
+The spread, both replay paths and bucket reports share `_rdagent_membership.third_weights`.
+Spread returns use these membership units divided by k; replacement turnover sums positive changes
+in membership units divided by the new k, and estimated costs use that turnover. Replay targets
+use the same weights for actual fills, fees, slippage and turnover. Without ties, membership is
+exactly 0 or 1 and the old arithmetic is preserved. The legacy alternate-tie spread field equals
+`mean_spread`; displayed figures and the sign check use this same spread.
+`tie_share` is the daily mean fraction of finite names sharing a value. `boundary_tie_share` counts
+names in a tie crossing either third boundary, once per name; empty days contribute zero.
+`all_tied_day_share` retains the old fully tied-day fraction and its unchanged 5% screen guard. About
 85 funded names can be screened and give 28 names per third if all have values; breadth alone
-never grants a pass. Outcomes remain panel spot returns; clocks, costs, spread, replay, deflation,
+never grants a pass. Outcomes remain panel spot returns; clocks, cost rates, pass thresholds, deflation,
 counting and twin rules are unchanged. Price-only evaluations retain the original eligibility.
 
 Synthetic checks: `test_context_daily_funding.py` (poison, prefixes, intervals, absent days,
@@ -755,7 +771,11 @@ Only evaluated screen, spread, replay and deflation failures (including daily-on
 closing a family; code failures remain trials but do not close families. Before coding,
 `research_memory` wraps the coder with `FamilyGuard`. A refusal reads no data and creates no trial.
 Both proposer and feedback writer receive the closed families, open table and recorded `other:` families, and the rule
-that a mechanism belonging to none of the closed families is allowed.
+that a mechanism belonging to none of the closed families is allowed. On a frozen `binance-spot`
+universe, open suggestions omit `other: overnight_drift`, `other: intraday_drift` and
+`other: overnight_minus_intraday`: 24/7 midnight-to-midnight bars have no overnight trading break.
+They keep their definitions and counts and remain offered for stock universes; this filters
+suggestions only and does not change the family guard.
 
 `rounds.jsonl` records the round `iteration`, `attempt`, refused `factor_names`,
 `refused_families` and `all_closed_families`, with `trial_created: false`. Readers still accept

@@ -148,16 +148,37 @@ def spread_line(clock: str, result: Any) -> str:
     )
 
 
-def family_permissions(closed: set[str], proposed: set[str] | None = None) -> str:
+def family_permissions(
+    closed: set[str], proposed: set[str] | None = None, *, include_counts: bool = False
+) -> str:
     opened = (
         {name for name, _ in FAMILY_KEYWORDS} | known_families() | (proposed or set())
     ) - closed
+    source = family_definitions().universe_source(os.environ.get("ALPHA_FACTOR_RUN_DIR"))
+    count_text = ""
+    path = os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER")
+    if include_counts and path and Path(path).exists():
+        raw = Path(path).read_bytes()
+        rows = [json.loads(line) for line in raw[: raw.rfind(b"\n") + 1].splitlines()]
+        limit = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
+        count_text = "".join(
+            f"\nfailed tries in this idea family ({family}): {count} of the limit {limit}"
+            for family, count in sorted(family_definitions().family_failure_counts(rows).items())
+        )
+    opened = family_definitions().offered_families(opened, source)
     return (
         "Closed families: "
         + ("; ".join(sorted(closed)) or "none")
         + ". open families: "
         + "; ".join(sorted(opened))
         + ". A mechanism that belongs to none of the closed families is allowed."
+        + (
+            " Session drift families are not offered because this 24/7 crypto venue's daily "
+            "bars run from midnight to midnight, without an overnight trading break."
+            if source == "binance-spot"
+            else ""
+        )
+        + count_text
     )
 
 
@@ -209,7 +230,9 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
         failed = ", ".join(f"{n} {status}" for status, n in sorted(counts.items()))
         lines.append(
             f"- {family}: {len(members)} {'try' if len(members) == 1 else 'tries'}; "
-            f"best {best['name']} ({best['status']}); {failed}"
+            f"best {best['name']} ({best['status']}); {failed}; "
+            f"failed tries in this idea family ({family}): "
+            f"{sum(m['status'] != 'CANDIDATE' for m in members)} of the limit {switch_after}"
         )
         if len(members) >= switch_after and not any(m["status"] == "CANDIDATE" for m in members):
             closed.append(family)
@@ -227,7 +250,9 @@ def family_summary(rows: list[dict[str, Any]], switch_after: int) -> str:
     return text + "\n" + family_permissions(set(closed), set(families))
 
 
-def ledger_summary(row: dict[str, Any]) -> str:
+def ledger_summary(
+    row: dict[str, Any], failures: dict[str, int] | None = None, limit: int | None = None
+) -> str:
     effective = family_definitions().recorded_status(row)
     derived = effective != row["status"]
     row = {**row, "status": effective}
@@ -237,13 +262,28 @@ def ledger_summary(row: dict[str, Any]) -> str:
         "AlphaRdagentFactorTrialV3",
     }:
         raise ValueError("invalid ALPHA trial ledger schema")
+    count_text = ""
+    looks = row.get("screen_m", row.get("family_size"))
+    if looks is not None:
+        count_text += f"; looks so far across all ideas: {looks} (sets the screen cutoff)"
+    if failures is not None and row["status"] != "IMPORTED":
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            count_text += (
+                f"; failed tries in this idea family ({family}): "
+                f"{failures.get(family, 0)} of the limit {limit}"
+            )
     if row["schema"] == "AlphaRdagentFactorTrialV3":
         clocks = row["clocks"]
         statuses = ", ".join(f"{c} {clocks[c]['status']}" for c in ("daily", "weekly", "monthly"))
         lead = clocks[row["lead_clock"]]
         line = (
             f"{row['name']}: {row['status']} ({statuses}); lead {row['lead_clock']} "
-            f"IC {_rounded(lead['screen'].get('mean_ic'))}; q {_rounded(lead['q'])}"
+            f"IC {_rounded(lead['screen'].get('mean_ic'))}; q {_rounded(lead['q'])}{count_text}"
         )
         for clock in ("daily", "weekly", "monthly"):
             if clocks[clock]["status"] in ("SPREAD_FAIL", "REPLAY_FAIL", "PASS"):
@@ -253,7 +293,7 @@ def ledger_summary(row: dict[str, Any]) -> str:
         line = (
             f"{row['name']}: {row['status']}; "
             f"mean rank IC {_rounded(row['screen'].get('mean_ic'))}; "
-            f"q {_rounded(row['q'])}; run {row['run_id']}"
+            f"q {_rounded(row['q'])}; run {row['run_id']}{count_text}"
         )
     if derived:
         line += "; DEFLATION_FAIL derived from recorded CANDIDATE"
@@ -309,8 +349,10 @@ def append_ledger_context(
     # Newest first, whole lines only, within 4000 characters; the count of the rest is stated so
     # the proposer knows the list is partial instead of reading a line cut in half.
     used, omitted = len(heading) + reserved_chars, 0
+    failures = family_definitions().family_failure_counts(rows)
+    switch_after = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
     for row in (r for r in reversed(rows) if r["schema"] in known):
-        line = ledger_summary(row)
+        line = ledger_summary(row, failures, switch_after)
         if row["code_sha256"] in seen or row["status"] == "REPEAT":
             continue
         seen.add(row["code_sha256"])
@@ -325,7 +367,6 @@ def append_ledger_context(
     for row in rows:
         if row["schema"] in known and row["status"] not in ("REPEAT", "IMPORTED"):
             distinct.setdefault(row["code_sha256"], row)
-    switch_after = int(os.environ.get("ALPHA_FACTOR_FAMILY_SWITCH_AFTER", "3"))
     context["hypothesis_and_feedback"] += family_summary(list(distinct.values()), switch_after)
     context["hypothesis_and_feedback"] += heading + "\n".join(lines)
     if unknown:
@@ -727,7 +768,7 @@ class AlphaFactorFeedback(Experiment2Feedback):
             f"\nCurrent universe: {current_universe()}; "
             "earlier text saying otherwise is out of date"
         )
-        scenario += "\n" + family_permissions(closed_families())
+        scenario += "\n" + family_permissions(closed_families(), include_counts=True)
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
             hypothesis_text=exp.hypothesis.hypothesis,

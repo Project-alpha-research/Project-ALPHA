@@ -107,8 +107,8 @@ def test_proposer_counts_have_plain_labels(tmp_path: Path) -> None:
     request_path.write_text(json.dumps(request))
     result = ev.evaluate(run, request_path, run / "result.json", tmp_path / "ledger")
     assert (
-        "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included): 1"
-        in result["feedback_text"]
-    )
+        "looks so far across all ideas: 1 (sets the screen cutoff); "
+        "primary clocks now; legacy clocks and unreadable rows included;"
+    ) in result["feedback_text"]
     assert "Ledger rows, all families (rules, repeats too): 1" in result["feedback_text"]
     assert "ledger_trials_all_families:" not in result["feedback_text"]

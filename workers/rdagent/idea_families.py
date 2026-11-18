@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+from pathlib import Path
 from typing import Any
 
 # Construct names only (ADR-0055). Estimator words say how an idea is fitted, not its
@@ -59,6 +62,41 @@ FAMILY_KEYWORDS = (
 # Short or generic abbreviations classify only with a window (m20, hp126, ret_60d), so math
 # symbols in a variable list (m(t) a month start, m_s the market return, ret_{i,t}) never do.
 WINDOW_ONLY = frozenset({"m", "hp", "vt", "ac", "rv", "ldv", "ret", "return", "roc"})
+# Keep these existing unknown-construct identities and their ledger counts intact.
+SESSION_FAMILIES = frozenset(
+    {"other: overnight_drift", "other: intraday_drift", "other: overnight_minus_intraday"}
+)
+
+
+def offered_families(families: set[str], source: str | None) -> set[str]:
+    """Session splits are not useful open suggestions for midnight-to-midnight crypto bars."""
+    return families - SESSION_FAMILIES if source == "binance-spot" else families
+
+
+def universe_source(run: str | None) -> str | None:
+    """Read available frozen source metadata; a missing binding or a changed file fails loud.
+
+    Family refusal can run before panel setup. No source metadata means no market filter;
+    old frozen receipts without a universe file used Binance spot.
+    """
+    if run is None:
+        return None
+    root = Path(run) / "panel"
+    path, receipt_path = root / "universe.json", root / "panel-receipt.json"
+    if not path.exists() and not receipt_path.exists():
+        return None
+    receipt = json.loads(receipt_path.read_bytes())
+    spec = json.loads(path.read_bytes()) if path.exists() else None
+    if "universe_sha256" in receipt:
+        canonical = (json.dumps(spec, sort_keys=True, separators=(",", ":")) + "\n").encode()
+        if spec is None or hashlib.sha256(canonical).hexdigest() != receipt["universe_sha256"]:
+            raise ValueError("universe file differs from the frozen receipt")
+    source = spec.get("source") if spec is not None else "binance-spot"
+    if source is not None and not isinstance(source, str):
+        raise ValueError("universe source must be a string")
+    return source
+
+
 # A mix or learned model over several features. Prose may identify a mix; it never classifies.
 COMPOSITE = re.compile(
     r"\b(?:composite|ensemble|ml|machine learning|ridge|lasso|elastic net|gradient boost\w*|"
@@ -276,6 +314,36 @@ def recorded_status(row: dict[str, Any]) -> str:
     ):
         return "DEFLATION_FAIL"
     return str(row["status"])
+
+
+def family_failure_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """Use the closure's statuses and first distinct factor rows, excluding candidates."""
+    distinct: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row.get("schema") in {
+            "AlphaRdagentFactorTrialV1",
+            "AlphaRdagentFactorTrialV2",
+            "AlphaRdagentFactorTrialV3",
+        } and row["status"] not in {"REPEAT", "IMPORTED"}:
+            distinct.setdefault(row["code_sha256"], row)
+    counts: dict[str, int] = {}
+    for row in distinct.values():
+        if recorded_status(row) not in {
+            "SCREEN_FAIL",
+            "SPREAD_FAIL",
+            "REPLAY_FAIL",
+            "FAST_ONLY",
+            "DEFLATION_FAIL",
+        }:
+            continue
+        for family in idea_family(
+            row["name"],
+            row.get("description") or "",
+            row.get("formulation") or "",
+            row.get("variables"),
+        ).split("; "):
+            counts[family] = counts.get(family, 0) + 1
+    return counts
 
 
 DECLARATION_MESSAGE = (

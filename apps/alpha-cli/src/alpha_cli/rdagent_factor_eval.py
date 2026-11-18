@@ -457,8 +457,8 @@ def _report(
     decision = any(row["status"] == "CANDIDATE" for row in rows)
     feedback = (
         f"{LABEL}. {survivorship}. "
-        "Factor-family trials (primary clocks now; legacy clocks and unreadable rows included): "
-        f"{len(family)}; "
+        f"looks so far across all ideas: {len(family)} (sets the screen cutoff); "
+        "primary clocks now; legacy clocks and unreadable rows included; "
         f"distinct factors: {len({key[0] for key in family if key[1] != 'unknown'})}; "
         f"replayed trials: {len(trials)}. Screening only, adaptive family, no "
         "error rate claimed. Direction and primary clock declared before evaluation. Exploration "
@@ -488,24 +488,26 @@ def _bucket_frames(
     signal: np.ndarray, outcome: np.ndarray, days: list[date], symbols: list[str], direction: int
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     observations: dict[int, list[float]] = {bucket: [] for bucket in (1, 2, 3)}
+    masses: dict[int, list[float]] = {bucket: [] for bucket in (1, 2, 3)}
     daily = []
     for day, scores, returns in zip(days, signal, outcome, strict=True):
-        available = [i for i, score in enumerate(scores) if math.isfinite(score)]
-        ranked = sorted(available, key=lambda i: (-direction * scores[i], symbols[i]))
-        k = max(1, round(TOP_FRACTION * len(available)))
-        groups: dict[int, list[float]] = {bucket: [] for bucket in (1, 2, 3)}
-        for rank, i in enumerate(ranked):
-            if math.isfinite(returns[i]):
-                bucket = 3 if rank < k else 1 if rank >= len(ranked) - k else 2
-                groups[bucket].append(float(returns[i]))
-        for bucket, outcomes in groups.items():
+        top = membership.third_weights(scores, direction, TOP_FRACTION)
+        bottom = membership.third_weights(scores, -direction, TOP_FRACTION)
+        if np.isfinite(scores).sum() == 1:
+            bottom[:] = 0.0  # One name: both thirds are that name; the top bucket keeps it.
+        middle = np.maximum(0.0, np.isfinite(scores).astype(float) - top - bottom)
+        for bucket, weights in ((1, bottom), (2, middle), (3, top)):
+            held = (weights > 0) & np.isfinite(returns)
+            outcomes = (returns[held] * weights[held]).tolist()
+            mass = weights[held].tolist()
             observations[bucket].extend(outcomes)
+            masses[bucket].extend(mass)
             daily.append(
                 {
                     "clock": "daily",
                     "date": day,
                     "bucket": bucket,
-                    "mean_outcome": math.fsum(outcomes) / len(outcomes) if outcomes else None,
+                    "mean_outcome": math.fsum(outcomes) / math.fsum(mass) if mass else None,
                 }
             )
     # Explicit ordered sums avoid floating-point reductions depending on worker scheduling.
@@ -513,8 +515,10 @@ def _bucket_frames(
         {
             "clock": "daily",
             "bucket": bucket,
-            "mean_outcome": math.fsum(outcomes) / len(outcomes) if outcomes else None,
-            "observations": len(outcomes),
+            "mean_outcome": math.fsum(outcomes) / math.fsum(masses[bucket]) if outcomes else None,
+            "observations": (
+                int(count) if (count := math.fsum(masses[bucket])).is_integer() else count
+            ),
         }
         for bucket, outcomes in observations.items()
     ]
@@ -687,7 +691,7 @@ def _record_series(
     return None
 
 
-def reads_funding(code: bytes) -> bool:
+def source_columns(code: bytes) -> list[str]:
     """Literal column selectors in Python syntax; comments and standalone strings do not count.
 
     This is syntax detection, not data-flow proof: dynamic column construction is not detected,
@@ -703,13 +707,21 @@ def reads_funding(code: bytes) -> bool:
         and node.func.attr in {"get", "filter", "__getitem__"}
         for argument in [*node.args, *(kw.value for kw in node.keywords)]
     )
-    return any(
-        isinstance(node, ast.Constant)
-        and isinstance(node.value, str)
-        and node.value.startswith("$funding_")
-        for selector in selectors
-        for node in ast.walk(selector)
+    return sorted(
+        {
+            node.value
+            for selector in selectors
+            for node in ast.walk(selector)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.value.startswith("$")
+        }
     )
+
+
+def reads_funding(code: bytes) -> bool:
+    """Keep the eligibility rule tied to the same literal selector analysis."""
+    return any(column.startswith("$funding_") for column in source_columns(code))
 
 
 def funding_eligibility(
@@ -739,6 +751,9 @@ def _factor_eligibility(
     eligible: np.ndarray | None,
 ) -> np.ndarray | None:
     path = run / "code" / f"{factor['code_sha256']}.py"
+    row["input_columns_method"] = (
+        "fallback: archived source unavailable; columns not listed, as before"
+    )
     if not path.exists():
         if (run / "panel/funding.parquet").exists() and factor["status"] == "OK":
             raise DataError("funding-enabled evaluation requires archived factor source")
@@ -746,12 +761,22 @@ def _factor_eligibility(
     code = path.read_bytes()
     if sha(code) != factor["code_sha256"]:
         raise DataError("factor source sha256 differs from request")
-    if factor["status"] != "OK" or not reads_funding(code):
+    if factor["status"] != "OK":
+        row["input_columns_method"] = "fallback: unsuccessful factor; columns not listed, as before"
+        return eligible
+    columns = source_columns(code)
+    row["input_columns_method"] = (
+        "source-selectors"
+        if columns
+        else "fallback: no literal selectors; columns not listed, as before"
+    )
+    if columns:
+        row["input_columns"] = columns
+    if not reads_funding(code):
         return eligible
     mask = funding_eligibility(run, days, symbols, eligible)
     row.update(eligibility="perp-funding", mean_eligible_names=float(mask.sum(axis=1).mean()))
     row["funding_sha256"] = sha((run / "panel/funding.parquet").read_bytes())
-    row["input_columns"] = ["$funding_sum", "$funding_last", "$funding_count"]
     return mask
 
 

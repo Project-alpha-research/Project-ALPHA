@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 25122fab313b912f
+verified: 36a66d3a672d907f
 ---
 
 # RD-Agent worker workspace
@@ -66,6 +66,9 @@ no market, inference or evidence authority.
   [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
 - The evaluator appends shortlist and lineage diagnostics; the worker preserves that record.
   Policy and regression convention: [README](README.md#shortlist-bookkeeping); no judging rule changes.
+- Fractional thirds, tie diagnostics and source input columns: [README](README.md#futures-funding).
+  Feedback separates global looks from family failures; session drift suggestions follow the frozen source.
+  Regression tests: `tests/unit/test_rdagent_judge_fixups_8.py`.
 
 ## Outputs
 

@@ -17,11 +17,11 @@
 .native-nautilus-demo .miniline-tick,
 .native-nautilus-demo .miniline-axis {
   fill: currentColor;
-  font-size: 9px;
+  font-size: var(--font-size);
 }
 .native-nautilus-balance .miniline-axis[transform] {
   display: none;
 }
 .native-nautilus-demo .miniline-legend {
-  font-size: 11px;
+  font-size: var(--font-size);
 }

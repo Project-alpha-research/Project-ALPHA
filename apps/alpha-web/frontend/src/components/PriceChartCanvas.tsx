@@ -5,7 +5,6 @@ import { formatTime } from '../util/formatTime'
 import {
   BarSeries,
   CandlestickSeries,
-  ColorType,
   CrosshairMode,
   HistogramSeries,
   LineSeries,
@@ -28,7 +27,9 @@ import type { Candle, ChartAnnotation, ChartOverlays, ChartTraceEvent } from '..
 import { drawableAnnotations, lineData, splitPanes, swingMarkers } from '../panels/chartOverlaysModel'
 import type { EvidenceMarker } from '../panels/v3Models'
 import { logicalRangeForUTC, type ChartLinkRegistry } from '../shell/chartLinkRegistry'
-import { CHART } from '../util/chartTheme'
+import { useChartPalette } from '../theme/themeState'
+import { marketChartTheme } from './marketChartTheme'
+import type { ChartPalette } from '../theme/themes'
 import { createChartAnnotationPrimitive } from './ChartAnnotationPrimitive'
 
 interface Props {
@@ -46,18 +47,17 @@ interface Props {
   overlays?: ChartOverlays | null
 }
 
-const OVERLAY_COLORS = [CHART.accent, CHART.gold, CHART.up, CHART.down, CHART.muted]
 const SUB_PANE_HEIGHT = 90
 const EMPTY: never[] = []
 
-function markerColor(marker: EvidenceMarker): string {
-  if (marker.tone === 'selection') return CHART.accent
-  if (marker.tone === 'positive') return CHART.up
-  if (marker.tone === 'negative') return CHART.down
-  return CHART.muted
+function markerColor(marker: EvidenceMarker, colors: ChartPalette): string {
+  if (marker.tone === 'selection') return colors.accent
+  if (marker.tone === 'positive') return colors.up
+  if (marker.tone === 'negative') return colors.down
+  return colors.muted
 }
 
-function seriesMarker(marker: EvidenceMarker, selected: boolean): SeriesMarker<UTCTimestamp> {
+function seriesMarker(marker: EvidenceMarker, selected: boolean, colors: ChartPalette): SeriesMarker<UTCTimestamp> {
   const isBelow = marker.kind === 'fill' || marker.kind === 'entry'
   return {
     id: marker.id,
@@ -71,7 +71,7 @@ function seriesMarker(marker: EvidenceMarker, selected: boolean): SeriesMarker<U
             ? 'arrowDown'
             : 'arrowUp'
           : 'square',
-    color: markerColor(marker),
+    color: markerColor(marker, colors),
     size: selected ? 1.8 : 1.1,
     ...(selected || marker.id.startsWith('paper:') ? { text: marker.label } : {}),
   }
@@ -87,6 +87,7 @@ export function PriceChartCanvas({
   onSelectEvidence,
   overlays = null,
 }: Props) {
+  const colors = useChartPalette()
   const hostRef = useRef<HTMLDivElement>(null)
   const crosshairRef = useRef<HTMLDivElement>(null)
   const sharedControls = useChartControls()
@@ -112,19 +113,6 @@ export function PriceChartCanvas({
     const chart = createChart(host, {
       width: renderedWidth,
       height: renderedHeight,
-      layout: {
-        background: { type: ColorType.Solid, color: CHART.bg },
-        textColor: CHART.muted,
-        fontFamily: 'JetBrains Mono Variable, JetBrains Mono, ui-monospace, monospace',
-        fontSize: 11,
-      },
-      grid: {
-        vertLines: { color: CHART.grid, visible: true },
-        horzLines: { color: CHART.grid, visible: true },
-      },
-      rightPriceScale: { borderColor: CHART.line },
-      timeScale: { borderColor: CHART.line },
-      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } },
     })
     chartRef.current = chart
     zoomRef.current = 0
@@ -173,6 +161,8 @@ export function PriceChartCanvas({
     return () => { unregister?.(); host.removeEventListener('pointerdown', localGesture, true); host.removeEventListener('wheel', localGesture, true); host.removeEventListener('keydown', localGesture, true); clearTimeout(resizeTimer); cancelChartResize(resize); ro.disconnect(); chart.remove(); chartRef.current = null }
   }, [panelId, registry])
 
+  useEffect(() => { chartRef.current?.applyOptions(marketChartTheme(colors)) }, [colors, panelId, registry])
+
   useEffect(() => {
     const chart = chartRef.current
     if (!chart) return
@@ -191,15 +181,15 @@ export function PriceChartCanvas({
     const ohlc = bars.map((b) => ({ time: b.t as UTCTimestamp, open: b.o, high: b.h, low: b.l, close: b.c }))
     const series =
       controls.type === 'line'
-        ? chart.addSeries(LineSeries, { color: CHART.accent, lineWidth: 2, priceLineVisible: false })
+        ? chart.addSeries(LineSeries, { color: colors.accent, lineWidth: 2, priceLineVisible: false })
         : controls.type === 'bars'
-          ? chart.addSeries(BarSeries, { upColor: CHART.up, downColor: CHART.down, thinBars: false })
+          ? chart.addSeries(BarSeries, { upColor: colors.up, downColor: colors.down, thinBars: false })
           : chart.addSeries(CandlestickSeries, {
-              upColor: CHART.up,
-              downColor: CHART.down,
+              upColor: colors.up,
+              downColor: colors.down,
               borderVisible: false,
-              wickUpColor: CHART.up,
-              wickDownColor: CHART.down,
+              wickUpColor: colors.up,
+              wickDownColor: colors.down,
             })
     if (controls.type === 'line') series.setData(ohlc.map((b) => ({ time: b.time, value: b.close })))
     else series.setData(ohlc)
@@ -215,7 +205,7 @@ export function PriceChartCanvas({
       bars.map((b) => ({
         time: b.t as UTCTimestamp,
         value: b.v,
-        color: b.c >= b.o ? withAlpha(CHART.up, 0.35) : withAlpha(CHART.down, 0.35),
+        color: b.c >= b.o ? withAlpha(colors.up, 0.35) : withAlpha(colors.down, 0.35),
       })),
     )
     // Overlays: price-pane lines share the candle scale; each oscillator gets its own pane below.
@@ -226,12 +216,14 @@ export function PriceChartCanvas({
       lineData(overlays?.t ?? [], values)
         .filter((point) => point.time >= firstBar)
         .map((point) => ({ ...point, time: point.time as UTCTimestamp }))
+    const overlayColors = [colors.link, colors.gold, colors.up, colors.negative, colors.purple, colors.teal]
     if (overlays) {
       const { price, panes } = splitPanes(overlays.indicators)
       price.forEach((row, index) => {
         const line = chart.addSeries(LineSeries, {
-          color: OVERLAY_COLORS[index % OVERLAY_COLORS.length],
+          color: overlayColors[index % overlayColors.length],
           lineWidth: 1,
+          lineStyle: index % 3,
           priceLineVisible: false,
           lastValueVisible: false,
           title: row.name,
@@ -241,11 +233,11 @@ export function PriceChartCanvas({
       panes.forEach((group, paneOffset) => {
         const paneIndex = paneOffset + 1
         group.series.forEach((row, index) => {
-          const color = OVERLAY_COLORS[index % OVERLAY_COLORS.length]
+          const color = overlayColors[index % overlayColors.length]
           const sub =
             row.style === 'histogram'
               ? chart.addSeries(HistogramSeries, { color, priceLineVisible: false, lastValueVisible: false, title: row.name }, paneIndex)
-              : chart.addSeries(LineSeries, { color, lineWidth: 1, priceLineVisible: false, lastValueVisible: true, title: row.name }, paneIndex)
+              : chart.addSeries(LineSeries, { color, lineWidth: 1, lineStyle: index % 3, priceLineVisible: false, lastValueVisible: true, title: row.name }, paneIndex)
           sub.setData(overlayPoints(row.values))
         })
         chart.panes()[paneIndex]?.setHeight(SUB_PANE_HEIGHT)
@@ -254,7 +246,7 @@ export function PriceChartCanvas({
     const annotationPrimitive = createChartAnnotationPrimitive([
       ...annotations,
       ...drawableAnnotations(overlays?.annotations ?? []),
-    ])
+    ], colors)
     series.attachPrimitive(annotationPrimitive)
     seriesRef.current = series
     const markerPlugin = createSeriesMarkers(series, [], { zOrder: 'top' })
@@ -269,21 +261,21 @@ export function PriceChartCanvas({
       series.detachPrimitive(annotationPrimitive)
       for (const item of composition) chart.removeSeries(item)
     }
-  }, [bars, overlays, annotations, controls.type])
+  }, [colors, bars, overlays, annotations, controls.type])
 
   useEffect(() => {
     const firstBar = bars[0]?.t ?? -Infinity
-    const swings: SeriesMarker<UTCTimestamp>[] = swingMarkers(overlays?.annotations ?? []).filter(m => m.time >= firstBar).map(m => ({ id: m.id, time: m.time as UTCTimestamp, position: m.position, shape: m.shape, color: CHART.gold, size: 0.6, text: m.text }))
-    markersRef.current?.setMarkers([...swings, ...evidence.map(m => seriesMarker(m, m.sequenceId === selectedSequenceId))].sort((a, b) => Number(a.time) - Number(b.time)))
-  }, [bars, overlays, annotations, controls.type, evidence, selectedSequenceId])
+    const swings: SeriesMarker<UTCTimestamp>[] = swingMarkers(overlays?.annotations ?? []).filter(m => m.time >= firstBar).map(m => ({ id: m.id, time: m.time as UTCTimestamp, position: m.position, shape: m.shape, color: colors.gold, size: 0.6, text: m.text }))
+    markersRef.current?.setMarkers([...swings, ...evidence.map(m => seriesMarker(m, m.sequenceId === selectedSequenceId, colors))].sort((a, b) => Number(a.time) - Number(b.time)))
+  }, [colors, bars, overlays, annotations, controls.type, evidence, selectedSequenceId])
 
   useEffect(() => {
     const chart = chartRef.current
     if (!chart || !selectedTrade || selectedTrade.entry_ts === null || selectedTrade.exit_ts === null || selectedTrade.entry_price === null || selectedTrade.exit_price === null || selectedTrade.entry_ts >= selectedTrade.exit_ts) return
-    const holding = chart.addSeries(LineSeries, { color: (selectedTrade.realized_return ?? 0) < 0 ? CHART.down : CHART.up, lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false, title: 'HOLDING' })
+    const holding = chart.addSeries(LineSeries, { color: (selectedTrade.realized_return ?? 0) < 0 ? colors.down : colors.up, lineWidth: 2, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false, title: 'HOLDING' })
     holding.setData([{ time: selectedTrade.entry_ts as UTCTimestamp, value: selectedTrade.entry_price }, { time: selectedTrade.exit_ts as UTCTimestamp, value: selectedTrade.exit_price }])
     return () => { if (chartRef.current === chart) chart.removeSeries(holding) }
-  }, [selectedTrade, bars, overlays, annotations, controls.type])
+  }, [colors, selectedTrade, bars, overlays, annotations, controls.type])
 
   return (
     <>

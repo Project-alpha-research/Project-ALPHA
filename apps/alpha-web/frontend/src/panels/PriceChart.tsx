@@ -13,7 +13,7 @@ import { ArchiveChartSelect } from '../components/ArchiveChartSelect'
 import type { Candle, CandleProvenance, ChartBundle, ChartOverlays, PaperCandleMarker } from '../api/types'
 import { Placeholder } from '../components/Placeholder'
 import { TechnicalChart } from '../components/technical/TechnicalChart'
-import { cssVars, technicalStyle } from '../components/technical/technicalTokens'
+import { ChartSurface } from '../theme/ChartSurface'
 import type { PlotRenderer } from '../shell/chartWorkspaceModel'
 import { PriceChartCanvas } from '../components/PriceChartCanvas'
 import { usePanelLinked } from '../context/usePanelLinked'
@@ -295,7 +295,7 @@ export function PriceChart(props: PanelHandleProps) {
         ) : bars.length === 0 ? (
           <Placeholder>{linked.runId ? bundle?.bars_status === 'not_applicable' ? "Price is not applicable to this recorded run." : `Frozen price snapshot unavailable or no recorded bars in this window (${bundle?.bars_status ?? 'unavailable'}). Current market data is never substituted.` : "no bars in window"}</Placeholder>
         ) : (
-          <div className="price-chart-frame" style={workspace?.renderer === 'market' ? undefined : cssVars(technicalStyle(chartStyle)) as React.CSSProperties}>
+          <ChartSurface className="price-chart-frame" id={`price.${workspace?.panelId ?? 'primary'}`}>
             <div className="price-chart-canvas-wrap" hidden={workspace?.table}>
               {workspace?.renderer === 'market' ? <PriceChartCanvas
                 bars={bars}
@@ -328,7 +328,7 @@ export function PriceChart(props: PanelHandleProps) {
               <span>D decision · F fill · P paper journal event</span>
               {overlays ? <span className="overlay-legend">{overlayLegend(overlays.indicators, overlays.annotations)}</span> : null}
             </div>
-          </div>
+          </ChartSurface>
         )}
         {bars && bundle?.trace_status === 'trace_unavailable' ? (
           <div className="trace-unavailable">

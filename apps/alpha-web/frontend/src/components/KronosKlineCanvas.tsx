@@ -2,8 +2,7 @@ import { withAlpha } from '../util/tokens'
 import { formatTime } from '../util/formatTime'
 import {
   CandlestickSeries,
-  ColorType,
-  CrosshairMode,
+  type LogicalRange,
   HistogramSeries,
   createChart,
   type MouseEventParams,
@@ -12,7 +11,9 @@ import {
 import { useEffect, useRef } from 'react'
 
 import type { Candle, ForecastPath } from '../api/types'
-import { CHART } from '../util/chartTheme'
+import { ChartSurface } from '../theme/ChartSurface'
+import { useChartPalette } from '../theme/themeState'
+import { marketChartTheme } from './marketChartTheme'
 
 interface Props {
   history: Candle[]
@@ -21,7 +22,13 @@ interface Props {
   originTs: number
 }
 
-export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Props) {
+export function KronosKlineCanvas(props: Props) {
+  return <ChartSurface id="kronos.forecast"><Kline {...props}/></ChartSurface>
+}
+
+function Kline({ history, sample, forecastTs, originTs }: Props) {
+  const colors = useChartPalette()
+  const viewport = useRef<{ history: Candle[]; range: LogicalRange } | null>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const boundaryRef = useRef<HTMLDivElement>(null)
   const crosshairRef = useRef<HTMLDivElement>(null)
@@ -34,23 +41,15 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
     const chart = createChart(host, {
       width: host.clientWidth,
       height: host.clientHeight,
-      layout: {
-        background: { type: ColorType.Solid, color: CHART.bg },
-        textColor: CHART.muted,
-        fontFamily: 'JetBrains Mono Variable, JetBrains Mono, ui-monospace, monospace',
-        fontSize: 11,
-      },
-      grid: { vertLines: { color: CHART.grid }, horzLines: { color: CHART.grid } },
-      rightPriceScale: { borderColor: CHART.line },
-      timeScale: { borderColor: CHART.line, timeVisible: true },
-      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: CHART.muted, labelBackgroundColor: CHART.grid }, horzLine: { color: CHART.muted, labelBackgroundColor: CHART.grid } },
+      ...marketChartTheme(colors),
+      timeScale: { borderColor: colors.line, timeVisible: true },
     })
     const actual = chart.addSeries(CandlestickSeries, {
-      upColor: CHART.up,
-      downColor: CHART.down,
+      upColor: colors.up,
+      downColor: colors.down,
       borderVisible: false,
-      wickUpColor: CHART.up,
-      wickDownColor: CHART.down,
+      wickUpColor: colors.up,
+      wickDownColor: colors.down,
       priceLineVisible: false,
     })
     actual.setData(
@@ -63,12 +62,12 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       })),
     )
     const projected = chart.addSeries(CandlestickSeries, {
-      upColor: withAlpha(CHART.accent, 0.72),
-      downColor: withAlpha(CHART.gold, 0.72),
-      borderUpColor: CHART.accent,
-      borderDownColor: CHART.gold,
-      wickUpColor: CHART.accent,
-      wickDownColor: CHART.gold,
+      upColor: withAlpha(colors.accent, 0.72),
+      downColor: withAlpha(colors.gold, 0.72),
+      borderUpColor: colors.accent,
+      borderDownColor: colors.gold,
+      wickUpColor: colors.accent,
+      wickDownColor: colors.gold,
       priceLineVisible: false,
     })
     projected.setData(
@@ -91,12 +90,12 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       ...history.map((bar) => ({
         time: bar.t as UTCTimestamp,
         value: bar.v,
-        color: bar.c >= bar.o ? withAlpha(CHART.up, 0.25) : withAlpha(CHART.down, 0.25),
+        color: bar.c >= bar.o ? withAlpha(colors.up, 0.25) : withAlpha(colors.down, 0.25),
       })),
       ...forecastTs.map((time, index) => ({
         time: time as UTCTimestamp,
         value: sample.volumes[index],
-        color: withAlpha(CHART.accent, 0.26),
+        color: withAlpha(colors.accent, 0.26),
       })),
     ])
 
@@ -109,7 +108,8 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       boundary.hidden = false
       boundary.style.left = `${Math.round(x)}px`
     }
-    chart.timeScale().fitContent()
+    if (viewport.current?.history === history) chart.timeScale().setVisibleLogicalRange(viewport.current.range)
+    else chart.timeScale().fitContent()
     positionBoundary()
     chart.timeScale().subscribeVisibleTimeRangeChange(positionBoundary)
     const handleCrosshair = (param: MouseEventParams) => {
@@ -145,9 +145,11 @@ export function KronosKlineCanvas({ history, sample, forecastTs, originTs }: Pro
       ro.disconnect()
       chart.timeScale().unsubscribeVisibleTimeRangeChange(positionBoundary)
       chart.unsubscribeCrosshairMove(handleCrosshair)
+      const range = chart.timeScale().getVisibleLogicalRange()
+      viewport.current = range ? { history, range } : null
       chart.remove()
     }
-  }, [forecastTs, history, originTs, sample])
+  }, [colors, forecastTs, history, originTs, sample])
 
   return (
     <div className="kronos-kline-wrap">

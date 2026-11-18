@@ -1,3 +1,4 @@
+import { useChartPalette } from '../theme/themeState'
 import { useEffect, useRef, useState } from 'react'
 import type { ChartControls } from '../context/chartControls'
 import type { ChartLinkRegistry } from '../shell/chartLinkRegistry'
@@ -6,6 +7,8 @@ import type { ScientificPoint } from './scientificPlotModel'
 import type { mountBokehPlot } from './bokehPlot'
 import { ScientificRangeControls } from './ScientificRangeControls'
 export function ScientificSeriesCanvas({ points, unit, panelId, registry, area = false, controls, reset = 0 }: { points: readonly ScientificPoint[]; unit: string; panelId: string; registry?: ChartLinkRegistry; area?: boolean; controls?: ChartControls; reset?: number }) {
+  const colors = useChartPalette()
+  const palette = useRef(colors); palette.current = colors
   const host = useRef<HTMLDivElement>(null), readout = useRef<HTMLSpanElement>(null), cursorData = useRef<HTMLSpanElement>(null)
   const cursorExpanded = useRef(false)
   const cursorText = useRef('Cursor —')
@@ -22,12 +25,21 @@ export function ScientificSeriesCanvas({ points, unit, panelId, registry, area =
     setError(null); setReady(false)
     import('./bokehPlot').then(async ({ mountBokehPlot }) => {
       if (!live) return
-      const plot = await mountBokehPlot(node, unit, panelId, registry, (text, iso = '') => { cursorIso.current = iso; if (readout.current) readout.current.title = iso; if (cursorText.current === text) return; cursorText.current = text; if (readout.current?.firstChild) readout.current.firstChild.nodeValue = text; if (cursorExpanded.current) updateCursorData() }, area, chartStyle)
+      const plot = await mountBokehPlot(node, unit, panelId, registry, (text, iso = '') => { cursorIso.current = iso; if (readout.current) readout.current.title = iso; if (cursorText.current === text) return; cursorText.current = text; if (readout.current?.firstChild) readout.current.firstChild.nodeValue = text; if (cursorExpanded.current) updateCursorData() }, area, chartStyle, palette.current)
       if (!live) { plot.destroy(); return }
-      plot.activate(); controller.current = plot; plot.data(latest.current.points); if (latest.current.controls) plot.controls(latest.current.controls); setReady(true)
+      plot.activate(); controller.current = plot; plot.data(latest.current.points); if (latest.current.controls) plot.controls(latest.current.controls)
+      plot.recolor(palette.current)
+      setReady(true)
     }).catch(reason => { if (live) setError(String(reason)) })
-    return () => { live = false; controller.current?.destroy(); controller.current = null }
+    return () => {
+      live = false
+      if (controller.current) {
+        controller.current.destroy()
+        controller.current = null
+      }
+    }
   }, [unit, panelId, registry, area, chartStyle])
+  useEffect(() => { controller.current?.recolor(colors) }, [colors])
   useEffect(() => { controller.current?.data(points) }, [points])
   useEffect(() => { if (controls) controller.current?.controls(controls) }, [controls])
   useEffect(() => { if (reset) controller.current?.fit() }, [reset])

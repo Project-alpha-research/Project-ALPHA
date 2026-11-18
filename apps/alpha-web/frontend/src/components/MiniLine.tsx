@@ -1,3 +1,4 @@
+import { ChartSurface } from '../theme/ChartSurface'
 /**
  * A small line chart for *live* data — values computed on the fly, not read from a run.
  *
@@ -21,6 +22,7 @@ export interface MiniSeries {
 }
 
 interface Props {
+  chartId: string
   series: MiniSeries[]
   xLabel: string
   yLabel: string
@@ -30,9 +32,14 @@ interface Props {
   formatY?: (value: number) => string
 }
 
+function dashPattern(item: MiniSeries, index: number) {
+  return item.dashed ? '4 3' : [undefined, '7 3', '2 3', '8 3 2 3'][index % 4]
+}
+
 const PAD = { top: 10, right: 14, bottom: 30, left: 54 }
 
 export function MiniLine({
+  chartId,
   series,
   xLabel,
   yLabel,
@@ -73,7 +80,7 @@ export function MiniLine({
   // The viewBox scales uniformly ("meet"): stretching x and y independently would shear the
   // tick text and make stroke weights depend on how wide the column happens to be.
   return (
-    <figure className="miniline">
+    <ChartSurface id={chartId}><figure className="miniline">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
@@ -121,24 +128,24 @@ export function MiniLine({
         >
           {yLabel}
         </text>
-        {series.map((item) => (
+        {series.map((item, index) => (
           <polyline
             key={item.label}
             className="miniline-series"
             points={item.points.map(([x, y]) => `${sx(x)},${sy(y)}`).join(' ')}
             stroke={item.colour}
-            strokeDasharray={item.dashed ? '4 3' : undefined}
+            strokeDasharray={dashPattern(item, index)}
           />
         ))}
       </svg>
       <figcaption className="miniline-legend">
-        {series.map((item) => (
+        {series.map((item, index) => (
           <span key={item.label}>
-            <span className="miniline-swatch" style={{ background: item.colour }} />
+            <svg className="miniline-swatch" viewBox="0 0 20 4" aria-hidden="true"><line x2="20" y1="2" y2="2" stroke={item.colour} strokeWidth="2" strokeDasharray={dashPattern(item, index)}/></svg>
             {item.label}
           </span>
         ))}
       </figcaption>
-    </figure>
+    </figure></ChartSurface>
   )
 }

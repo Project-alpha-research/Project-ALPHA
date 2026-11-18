@@ -1,3 +1,4 @@
+import { ChartSurface } from '../theme/ChartSurface'
 import { Timestamp } from '../util/formatTime'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -6,7 +7,7 @@ import type { MlExperimentPage } from '../api/types'
 import { Placeholder } from '../components/Placeholder'
 import { MiniLine, type MiniSeries } from '../components/MiniLine'
 import { useLinked } from '../context/linked'
-import { CHART, withAlpha } from '../util/chartTheme'
+import { CHART } from '../util/chartTheme'
 import { fmtNum, fmtPct, shortId } from '../util/format'
 import {
   buildFoldTimeline,
@@ -37,6 +38,7 @@ function ScoreDistribution({ sheet }: { sheet: MlTearSheetProjection }) {
   const x = (position: number): number => 50 + position * 6
   return (
     <div className="ml-score-block">
+      <ChartSurface id="ml.score">
       <svg viewBox="0 0 700 112" role="img" aria-label="Model score quantile distribution">
         <line x1="50" x2="650" y1="57" y2="57" stroke={CHART.line} />
         <line x1={x(model.positions.q05)} x2={x(model.positions.q95)} y1="57" y2="57" stroke={CHART.dim} strokeWidth="2" />
@@ -47,7 +49,7 @@ function ScoreDistribution({ sheet }: { sheet: MlTearSheetProjection }) {
           y="39"
           width={Math.max(1, x(model.positions.q75) - x(model.positions.q25))}
           height="36"
-          fill={withAlpha(CHART.accent, 0.18)}
+          fill={CHART.accent} fillOpacity={0.18}
           stroke={CHART.accent}
         />
         <line x1={x(model.positions.q50)} x2={x(model.positions.q50)} y1="37" y2="77" stroke={CHART.ink} strokeWidth="2" />
@@ -57,6 +59,7 @@ function ScoreDistribution({ sheet }: { sheet: MlTearSheetProjection }) {
         <text x="350" y="108" textAnchor="middle" className="svg-axis-label">MODEL SCORE</text>
         <text x={x(model.positions.mean)} y="18" textAnchor="middle" className="svg-num">MEAN {fmtNum(score.mean, 4)}</text>
       </svg>
+      </ChartSurface>
       <div className="ml-score-stats mono" role="table" aria-label="Model score distribution values">
         {(['min', 'q05', 'q25', 'q50', 'q75', 'q95', 'max', 'mean', 'std'] as const).map((key) => (
           <div role="row" key={key}><span role="cell">{key.toUpperCase()}</span><b role="cell">{fmtNum(score[key], 5)}</b></div>
@@ -84,7 +87,7 @@ function IcTimeline({ sheet }: { sheet: MlTearSheetProjection }) {
         <span>MEAN RANKIC <b>{fmtNum(sheet.ic.rank_mean, 4)}</b></span>
         <span>TARGETS <b>{sheet.timeline_total}</b></span>
       </div>
-      <MiniLine
+      <MiniLine chartId="ml.ic"
         series={icSeries}
         xLabel="Target session (UTC)"
         yLabel="IC / RankIC"
@@ -109,6 +112,7 @@ function QuantileReturns({ sheet }: { sheet: MlTearSheetProjection }) {
   const baseline = 75
   return (
     <div>
+      <ChartSurface id="ml.quantile">
       <svg className="ml-quantile-chart" viewBox="0 0 700 130" role="img" aria-label="Mean OOS return by model score quantile">
         <line x1="48" x2="678" y1={baseline} y2={baseline} stroke={CHART.line} />
         {rows.map((row, index) => {
@@ -128,6 +132,7 @@ function QuantileReturns({ sheet }: { sheet: MlTearSheetProjection }) {
         <text x="12" y="20" className="svg-axis-label">MEAN RETURN</text>
         <text x="362" y="129" textAnchor="middle" className="svg-axis-label">MODEL SCORE QUANTILE</text>
       </svg>
+      </ChartSurface>
       <table className="blotter compact" aria-label="Quantile return table"><thead><tr><th>quantile</th><th className="r">mean OOS return</th><th className="r">observations</th></tr></thead><tbody>
         {rows.map((row) => <tr key={row.quantile}><td className="mono">Q{row.quantile}</td><td className={`num ${signedClass(row.mean_return)}`}>{fmtPct(row.mean_return, 4)}</td><td className="num">{row.observations}</td></tr>)}
       </tbody></table>
@@ -172,12 +177,12 @@ function FeatureImportance({ sheet }: { sheet: MlTearSheetProjection }) {
   if (sheet.feature_importance.length === 0) return <ArtifactUnavailable label="FEATURE IMPORTANCE NOT EMITTED" />
   const maxGain = Math.max(0.000001, ...sheet.feature_importance.map((row) => row.mean_gain))
   return (
-    <div>
+    <ChartSurface id="ml.feature-importance">
       <table className="blotter compact ml-feature-table" aria-label="Qlib feature importance"><thead><tr><th>rank</th><th>feature</th><th>relative gain</th><th className="r">mean gain</th><th className="r">mean splits</th></tr></thead><tbody>
         {sheet.feature_importance.map((row, index) => <tr key={row.feature}><td className="mono">{index + 1}</td><td className="mono">{row.feature}</td><td><span className="ml-feature-track"><i style={{ width: `${Math.max(0, row.mean_gain / maxGain) * 100}%` }} /></span></td><td className="num">{fmtNum(row.mean_gain, 5)}</td><td className="num">{fmtNum(row.mean_split_count, 2)}</td></tr>)}
       </tbody></table>
       {sheet.feature_importance_truncated ? <div className="ml-bounded-note mono">BOUNDED PROJECTION · ADDITIONAL FEATURES OMITTED BY feature_limit</div> : null}
-    </div>
+    </ChartSurface>
   )
 }
 
@@ -189,15 +194,17 @@ function FoldBoundaries({ folds }: { folds: MlFoldDiagnosticProjection[] }) {
   const height = 38 + model.segments.length * 28
   return (
     <div>
+      <ChartSurface id="ml.folds">
       <svg className="ml-fold-timeline" viewBox={`0 0 900 ${height}`} role="img" aria-label="Train validation and test boundaries by fold">
         {model.segments.map((segment, index) => {
           const y = 18 + index * 28
-          return <g key={segment.fold}><text x="8" y={y + 10} className="svg-num">F{segment.fold}</text><rect x={x(segment.train[0])} y={y} width={Math.max(1, x(segment.train[1]) - x(segment.train[0]))} height="12" fill={withAlpha(CHART.muted, 0.48)} /><rect x={x(segment.validation[0])} y={y} width={Math.max(1, x(segment.validation[1]) - x(segment.validation[0]))} height="12" fill={withAlpha(CHART.gold, 0.7)} /><rect x={x(segment.test[0])} y={y} width={Math.max(1, x(segment.test[1]) - x(segment.test[0]))} height="12" fill={withAlpha(CHART.accent, 0.78)} /></g>
+          return <g key={segment.fold}><text x="8" y={y + 10} className="svg-num">F{segment.fold}</text><rect x={x(segment.train[0])} y={y} width={Math.max(1, x(segment.train[1]) - x(segment.train[0]))} height="12" fill={CHART.muted} fillOpacity={0.48} /><rect x={x(segment.validation[0])} y={y} width={Math.max(1, x(segment.validation[1]) - x(segment.validation[0]))} height="12" fill={CHART.gold} fillOpacity={0.7} /><rect x={x(segment.test[0])} y={y} width={Math.max(1, x(segment.test[1]) - x(segment.test[0]))} height="12" fill={CHART.accent} fillOpacity={0.78} /></g>
         })}
         <text x="80" y={height - 3} className="svg-num">{new Date(model.start * 1_000).toISOString().slice(0, 10)}</text>
         <text x="870" y={height - 3} textAnchor="end" className="svg-num">{new Date(model.end * 1_000).toISOString().slice(0, 10)}</text>
       </svg>
       <div className="ml-fold-legend mono"><span><i className="train" />TRAIN</span><span><i className="validation" />VALIDATION</span><span><i className="test" />TEST</span><span>UTC SESSION BOUNDARIES</span></div>
+      </ChartSurface>
       <table className="blotter compact" aria-label="ML fold boundary and fit details"><thead><tr><th>fold</th><th>train</th><th>validation</th><th>test</th><th className="r">rows T/V/T</th><th className="r">best iter</th><th>model / normalization</th></tr></thead><tbody>
         {folds.map((fold) => <tr key={fold.fold}><td className="mono">F{fold.fold}</td><td className="mono">{fold.boundaries.train_start.slice(0, 10)} → {fold.boundaries.train_end.slice(0, 10)}</td><td className="mono">{fold.boundaries.validation_start.slice(0, 10)} → {fold.boundaries.validation_end.slice(0, 10)}</td><td className="mono">{fold.boundaries.test_start.slice(0, 10)} → {fold.boundaries.test_end.slice(0, 10)}</td><td className="num">{fold.train_rows.toLocaleString()} / {fold.validation_rows.toLocaleString()} / {fold.test_rows.toLocaleString()}</td><td className="num">{fold.best_iteration}</td><td className="mono ml-hash-cell" title={`${fold.model_hash} · ${fold.normalization.statistics_hash}`}>{shortId(fold.model_hash)} · {shortId(fold.normalization.statistics_hash)} · FIT {fold.fit_count}{fold.model_backend ? <span> · {fold.model_backend}</span> : null}{fold.resolved_parameters ? <details><summary>Resolved parameters</summary><code>{JSON.stringify(fold.resolved_parameters)}</code></details> : null}</td></tr>)}
       </tbody></table>
@@ -222,7 +229,7 @@ function TrainingHistoryChart({ fold }: { fold: MlFoldDiagnosticProjection }) {
     <div className="ml-training-fold">
       <div className="ml-training-head mono"><span>FOLD {fold.fold}</span><span>BEST ITER {fold.best_iteration}</span><span>{model.iterations.length} HISTORY POINTS</span></div>
       {curves.length ? (
-        <MiniLine series={curves} xLabel="Boosting iteration" yLabel="Objective" height={175} />
+        <MiniLine chartId={`ml.training.${fold.fold}`} series={curves} xLabel="Boosting iteration" yLabel="Objective" height={175} />
       ) : (
         <ArtifactUnavailable label="TRAINING HISTORY EMPTY" />
       )}

@@ -9,16 +9,19 @@ import type {
 } from 'lightweight-charts'
 
 import type { ChartAnnotation } from '../api/types'
-import { CHART } from '../util/chartTheme'
+import type { ChartPalette } from '../theme/themes'
 
 class AnnotationRenderer implements IPrimitivePaneRenderer {
+  private readonly colors: ChartPalette
   private readonly annotations: readonly ChartAnnotation[]
   private readonly getAttached: () => SeriesAttachedParameter<Time> | null
 
   constructor(
     annotations: readonly ChartAnnotation[],
+    colors: ChartPalette,
     attached: () => SeriesAttachedParameter<Time> | null,
   ) {
+    this.colors = colors
     this.annotations = annotations
     this.getAttached = attached
   }
@@ -38,7 +41,7 @@ class AnnotationRenderer implements IPrimitivePaneRenderer {
       for (const annotation of this.annotations) {
         if (annotation.unit !== 'price' || annotation.kind === 'marker' || annotation.anchors.length < 2) continue
         context.beginPath()
-        context.strokeStyle = annotation.kind === 'zone' ? CHART.gold : CHART.accent
+        context.strokeStyle = annotation.kind === 'zone' ? this.colors.gold : this.colors.accent
         context.setLineDash(annotation.kind === 'zone' ? [6, 4] : annotation.kind === 'polyline' ? [2, 3] : [])
         let started = false
         for (const anchor of annotation.anchors) {
@@ -80,8 +83,8 @@ class ChartAnnotationPrimitive implements ISeriesPrimitive<Time> {
   private readonly views: readonly IPrimitivePaneView[]
   private readonly priceRange: AutoscaleInfo | null
 
-  constructor(annotations: readonly ChartAnnotation[]) {
-    this.views = [new AnnotationPaneView(new AnnotationRenderer(annotations, () => this.attachment))]
+  constructor(annotations: readonly ChartAnnotation[], colors: ChartPalette) {
+    this.views = [new AnnotationPaneView(new AnnotationRenderer(annotations, colors, () => this.attachment))]
     const values = annotations
       .filter((annotation) => annotation.unit === 'price')
       .flatMap((annotation) => annotation.anchors.map((anchor) => anchor.value))
@@ -110,6 +113,7 @@ class ChartAnnotationPrimitive implements ISeriesPrimitive<Time> {
 
 export function createChartAnnotationPrimitive(
   annotations: readonly ChartAnnotation[],
+  colors: ChartPalette,
 ): ISeriesPrimitive<Time> {
-  return new ChartAnnotationPrimitive(annotations)
+  return new ChartAnnotationPrimitive(annotations, colors)
 }

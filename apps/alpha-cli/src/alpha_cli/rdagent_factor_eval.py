@@ -49,6 +49,7 @@ from alpha_cli._rdagent_judge import (
 from alpha_cli._rdagent_judge import (
     LEDGER_SCHEMAS as LEDGER_SCHEMAS,
 )
+from alpha_cli._rdagent_judge import LINEAGE_CONVENTION, lineage, panel_membership
 from alpha_cli._rdagent_judge import (
     LOOP_UNIVERSE as LOOP_UNIVERSE,
 )
@@ -103,7 +104,6 @@ from alpha_cli._rdagent_judge import (
 from alpha_cli._rdagent_judge import (
     outside_git as outside_git,
 )
-from alpha_cli._rdagent_judge import panel_membership
 from alpha_cli._rdagent_judge import (
     replay as replay,
 )
@@ -337,6 +337,49 @@ def shown(trial: dict[str, Any]) -> dict[str, Any]:
     """A trial's replay as a result; a counted-only replay (ADR-0055) shows nothing."""
     replay: dict[str, Any] = trial["replay"]
     return {} if "counted_only" in replay else replay_output(replay)
+
+
+def record_shortlist(
+    rows: list[dict[str, Any]],
+    history: list[dict[str, Any]],
+    values: pl.DataFrame,
+    inputs: dict[str, str],
+    days: list[date],
+    symbols: list[str],
+) -> None:
+    """Append bookkeeping after every gate; never feed it back into trial accounting."""
+    earlier = list(history)
+    for row in rows:
+        row["shortlist"] = row["status"] in {"CANDIDATE", "DEFLATION_FAIL"}
+        if row["shortlist"]:
+            try:
+                figures = lineage(
+                    matrix(values, row["name"], days, symbols),
+                    earlier,
+                    inputs["panel_sha256"],
+                    days,
+                    symbols,
+                )
+            except (
+                DataError,
+                ValueError,
+                KeyError,
+                OSError,
+                MemoryError,
+                FloatingPointError,
+                np.linalg.LinAlgError,
+                pl.exceptions.PolarsError,
+            ) as error:
+                # A diagnostic never decides or loses a verdict: record why it is missing.
+                figures = {
+                    "lineage_r2": None,
+                    "lineage_regressors": 0,
+                    "lineage_convention": LINEAGE_CONVENTION,
+                    "lineage_reason": f"not computed: {type(error).__name__}: {error}",
+                    "composite_suspect": None,
+                }
+            row.update(figures)
+        earlier.append(row)
 
 
 def _report(
@@ -1137,6 +1180,7 @@ def _evaluate_locked(
     trials = _deflate(rows, history, family, replay_returns)
     _chance_disclosure(rows, history)
     finalize_rows(rows)
+    record_shortlist(rows, history, values, inputs, days, symbols)
     lead, legacy, disclosures, decision, feedback = _report(
         rows, history, family, trials, spec, universe_info["universe_text"]
     )

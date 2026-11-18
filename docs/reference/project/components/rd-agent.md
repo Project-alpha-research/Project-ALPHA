@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/CONTEXT.md
   - workers/rdagent/README.md
-verified: 092d0471868e9e10
+verified: 9038f4943d9b0133
 ---
 
 # RD-Agent
@@ -50,9 +50,8 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   from the loop ([ADR-0049](../../../adr/0049-alpha-judges-rdagent-factors.md)).
   Factors declare sign, primary clock and economic reason. CANDIDATE passed screen, spread, replay and deflation:
   a lead for one owner-approved reserved-data check, never evidence by itself. Other signs/clocks are diagnostic only.
-  A screened factor passes only if the top third it would hold beat its bottom third before
-  costs (a factor it stops still counts as a trial); the proposer is shown every idea family and told to leave one that keeps failing;
-  the universe is a frozen file; each paid model call has a time limit
+  The held top third must beat the bottom third before costs; failures still count. The proposer sees every family and is told to leave repeated failures.
+  The universe is a frozen file; each paid model call has a time limit
   ([ADR-0055](../../../adr/0055-spread-check-family-brief-and-universe-file.md)).
 - New frozen panels allow missing days and delisted names with causal membership and explicit losses;
   [missing-bar policy](../../../../workers/rdagent/README.md#missing-bars-and-causal-membership).
@@ -62,14 +61,14 @@ what counts as evidence; [the owner does](research-cases-and-approval.md).
   The owner supplies the break list: [identity policy](../../../../workers/rdagent/README.md#identity-breaks-across-a-gap).
   Optional [futures funding](../../../../workers/rdagent/README.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
-  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run.
-  Code failures stay counted trials but do not close idea families; the wrapper refuses closed-family proposals before coding
-  and asks the proposer again, at most twice per round. Construct names alone classify families; unfamiliar mechanisms stay open.
-  Missing declarations use the same refusal limit; proposal provider failures close rounds without trials or empty history.
-  Critic failures retain execution/value feedback. Internal coding errors preserve completed factors; two successive failures stop the run.
-  Memory repairs mixed vector sizes; restored panel identity falls back to run receipts. A failed deflation is `DEFLATION_FAIL`.
-  Current-universe corrections and write-offs reach proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead.
-  Exact recording and budget rules: [worker invariants](../../invariants/workers.md#rd-agent-worker).
+  never invented trials. Composite ideas inherit every identified input family; cap refusals end the run. Code failures stay counted trials but do not close
+  idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone
+  classify families; unfamiliar mechanisms stay open. Missing declarations use the same refusal limit; proposal provider failures close rounds without trials
+  or empty history. Critic failures retain execution/value feedback; later critics in that round are skipped. Internal coding errors preserve completed
+  factors; two successive failures stop the run. Restored prompts keep four full same-panel rounds. Memory repairs mixed vector sizes; restored panel identity
+  falls back to run receipts. A failed deflation is `DEFLATION_FAIL`; refusals and spend are explicit. Current-universe corrections and write-offs reach
+  proposer feedback; identical-input mismatches are `UNSTABLE`, not look-ahead. Exact recording and budget rules: [worker
+  invariants](../../invariants/workers.md#rd-agent-worker).
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker README's
   [research memory](../../../../workers/rdagent/README.md#research-memory-2026-11-15).
 - Human-authored rule families (written by a person, frozen and hash-checked before the run) are
@@ -132,7 +131,11 @@ child folders of `<data dir>/../runs` (override: `ALPHA_RDAGENT_RUNS_DIR`); the 
 | Refusals and timing | `rounds.jsonl`: refusal status and families; `steps.jsonl`: step start and end times; minutes = end minus start, labelled |
 | ALPHA notes | Receipt cap/cache/memory notes, panel disclosure, `evaluations.jsonl` → `feedback_text` |
 
-New rows show declared choices, cutoff/counts, diagnostic BH q, clustered/plain p, deflation rule/variance, twins and expected chance passes.
+New rows show declared choices, cutoff/counts, diagnostic p/q, deflation, twins and expected chance passes.
+The funnel adds "shortlisted (passed all but the many-tries correction)" before the deflation stage.
+Shortlisted is not a pass, not a candidate, and not evidence of profit; missing flags mean "not recorded".
+Lineage R², regressor count and convention are recorded diagnostics; suspects say "looks like a blend of earlier tries".
+The [shortlist policy](../../../../workers/rdagent/README.md#shortlist-bookkeeping) leaves every gate and count unchanged.
 Old failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks counted)".
 Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two timestamps.
 Idea-family labels remain unknown unless stored. The panel was opened headless on real runs; owner acceptance remains pending.
@@ -157,10 +160,8 @@ Idea-family labels remain unknown unless stored. The panel was opened headless o
   [worker README](../../../../workers/rdagent/README.md#alpha-judged-factor-loop-2026-11-14).
   First run 2026-11-14 (3 rounds, 54 calls of 60, about USD 0.04): nine factors tried, no candidate;
   one run per route is not a quality comparison (numbers in the worker README).
-- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors judged across all runs, no
-  candidate; 15 of 18 replayed swing-judge screen passes lost money before costs, so the rank screen
-  and the held top third disagree on 15 coins. Runs sharing one gateway can now start together,
-  and RD-Agent is told why each replay lost. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
+- Measured 2026-11-16 (system tests, about USD 0.66): 66 factors, no candidate; 15 of 18 replayed swing screen passes lost money before costs (15 coins).
+  Runs sharing a gateway can start together; feedback explains losses. Owner charts: `owner/rdagent-status/` beside the checkout, outside git.
 - Measured 2026-11-16 with the spread check (ADR-0055): offline it rejects 16 of those 18 trials;
   two fresh runs (about USD 0.22) judged 11 factors, moved to new idea families, found no
   candidate. Embeddings were 21 of 60 and 16 of 47 counted calls in those runs. Decided by the owner
@@ -170,8 +171,7 @@ Idea-family labels remain unknown unless stored. The panel was opened headless o
 - Decided: the first goal after the clean-up is one real RD-Agent loop, connected to a model through Codex
   ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)). First run,
   2026-11-14: every step ran on real crypto bars, but RD-Agent's built-in Qlib backtest learned
-  nothing on 15 coins, so the loop is not yet meaningful
-  ([verification][loop-verify]).
+  nothing on 15 coins, so the loop is not yet meaningful ([verification][loop-verify]).
 - Open, for the owner: how RD-Agent's ideas get a backtest that can see them (a wider universe,
   ALPHA's own Nautilus and statistical checks, or a calibration run on Qlib's public data)
   ([roadmap item 2b](../../../roadmap/rd-agent-in-alpha.md#what-stands-between-today-and-rd-agent-researching-real-ideas)).

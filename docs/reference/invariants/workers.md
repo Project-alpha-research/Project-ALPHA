@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_qlib_isolation.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
-verified: 6edf74606c50825c
+verified: 6bafe8abf9f8a19a
 ---
 
 # Worker invariants
@@ -171,9 +171,9 @@ The general rule is [research integrity § Models and isolated workers](research
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway
   address or token, but runs as the same user: it is not isolated from the run folder, the ledger or other processes (trusted-mistake guard only). A failed
-  loop names its exit. Proposal failures close rounds without empty trace entries; critic failures retain execution/value feedback.
-  Internal coding errors retain completed factors for judging; two consecutive failures stop the run. Memory resume (no
-  invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
+  loop names its exit. Proposal failures close rounds without empty trace entries; critic failures retain execution/value feedback and skip later critics in
+  that round; budgets still end the run. Internal coding errors retain completed factors for judging; two consecutive failures stop the run. Restored prompts
+  keep four full same-panel rounds. Memory resume (no invented trials), failure reasons, composite idea families, budget stops and the call split: [worker
   README](../../../workers/rdagent/README.md#research-memory-2026-11-15). Tests: `tests/unit/test_rdagent_factor_{eval,judge,launch}.py`,
   `test_rdagent_research_memory.py`, `test_rdagent_loop_fixups_2.py`.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,

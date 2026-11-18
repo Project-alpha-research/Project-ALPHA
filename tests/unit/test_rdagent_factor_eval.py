@@ -250,6 +250,8 @@ def test_known_only_evaluation_bytes_match_declared_primary_baseline(
         for field in ("mean rank IC", "net annual excess", "turnover per day"):
             assert f"{field} not available" in container[key]
             container[key] = container[key].replace(f"{field} not available", f"{field} None")
+    # Shortlist bookkeeping is add-only: removing it must leave the pinned bytes unchanged.
+    assert record["factors"][0].pop("shortlist") is False
     # Clock-labelled presentation is tested separately; pin all new counting fields.
     for row in record["factors"]:
         for key in ("reason", "figures_clock", "mean_ic", "spread"):

@@ -109,6 +109,7 @@ FUNNEL = (
     "code_ran",
     "passed_rank_screen",
     "passed_spread_check",
+    "shortlisted",
     "passed_deflation",
 )
 SCREEN = (
@@ -464,6 +465,11 @@ def _funnel(
         derived["passed_deflation"] = counted(
             sum(1 for row in own if _passed_deflation(row)), basis_rows
         )
+        derived["shortlisted"] = (
+            counted(sum(row["shortlist"] is True for row in own), basis_rows)
+            if all(type(row.get("shortlist")) is bool for row in own)
+            else RecordedFact(value=None, reason="shortlist not recorded for every factor trial")
+        )
         if refused is not None:
             derived["proposed"] = counted(
                 len(own) + refused + stopped,
@@ -558,6 +564,13 @@ def _honesty_sentence(row: dict[str, Any]) -> str:
     trial = row.get("clocks", {}).get(row.get("lead_clock", "daily"), row)
     result = trial.get("replay", {}).get("deflated_sharpe", {})
     parts = []
+    if row.get("shortlist") is True:
+        parts.append(
+            "Shortlisted: passed the declared primary screen, spread check and replay. "
+            "Shortlisted is not a pass, not a candidate, and not evidence of profit."
+        )
+    if row.get("composite_suspect") is True:
+        parts.append("This factor looks like a blend of earlier tries; diagnostic only.")
     if result and result.get("deflation_rule") != "family-looks-x2-floor-1":
         parts.append("Stored deflated Sharpe: old rule (fewer looks counted).")
     if row.get("screen_rule"):
@@ -618,6 +631,12 @@ def _factor(row: dict[str, Any]) -> RdAgentFactor:
                 "diagnostics",
                 "twin",
                 "twin_check",
+                "shortlist",
+                "lineage_r2",
+                "lineage_regressors",
+                "lineage_convention",
+                "lineage_reason",
+                "composite_suspect",
                 "evaluable_factors",
                 "chance_pass_message",
                 "expected_chance_passes",

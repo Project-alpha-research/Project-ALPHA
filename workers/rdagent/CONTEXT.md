@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/*.py
   - workers/rdagent/pyproject.toml
   - workers/rdagent/uv.lock
-verified: 492225cc5ef71218
+verified: 25122fab313b912f
 ---
 
 # RD-Agent worker workspace
@@ -48,6 +48,7 @@ no market, inference or evidence authority.
   Descriptions declare sign, primary clock and economic reason; past-return sign variants share closure.
   The code-critic guard preserves execution/value feedback and skips later critics in the failed round.
   Internal coding errors preserve completed factors for judging; two consecutive failures stop the run.
+  Restored prompts retain four full same-panel rounds; the other rounds stay as summaries.
   Memory search tables use one vector dimension; restored panel provenance includes run receipts.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and
   factor-specific eligibility: [README](README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
@@ -65,6 +66,8 @@ no market, inference or evidence authority.
 - The Workstation's RD-Agent panel reads existing records only; it cannot start the worker.
   Its projection, status wording and record limitations belong to the
   [web workspace](../../apps/alpha-web/CONTEXT.md), not to the loop or its trial-count rules.
+- The evaluator appends shortlist and lineage diagnostics; the worker preserves that record.
+  Policy and regression convention: [README](README.md#shortlist-bookkeeping); no judging rule changes.
 
 ## Outputs
 

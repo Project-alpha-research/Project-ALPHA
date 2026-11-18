@@ -137,3 +137,12 @@ stored in the manifest (and `alpha results cite <run> trial_dsr`) to every print
 
 The drop check keeps the documented 10,000-path default for parity with `alpha monte-carlo classical`; its memory
 is the open item. The new test file runs in about 2.5 seconds.
+
+### Merges of main
+
+- Main's RD-Agent discussion change and the rule-test numbers change (#280) were merged. #280's `HOLD_KINDS`
+  and dividend-inclusive buy-and-hold touch only the benchmark-reading tools; the six new entries read scored
+  equity and trades only, so no code reconciliation was needed.
+- `results-and-cite.md` had to list main's new period metrics and this branch's twenty tool metrics in 40 lines.
+  Labels and three in-line links were dropped and the reading lines were merged to fit; every metric name stays.
+- The CLI context's tool line was kept under 160 characters by naming "intervals" instead of "dates".

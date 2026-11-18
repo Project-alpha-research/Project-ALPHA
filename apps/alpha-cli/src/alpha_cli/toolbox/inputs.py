@@ -94,7 +94,9 @@ class Target:
 
         name = STORED_FILES[kind]
         try:
-            return pl.read_parquet(self.directory / name, columns=list(columns))
+            return pl.read_parquet(
+                self.directory / name, columns=list(columns) if columns else None
+            )
         except pl.exceptions.PolarsError as exc:
             raise ValueError(f"Cannot read {name}: {exc}") from exc
 

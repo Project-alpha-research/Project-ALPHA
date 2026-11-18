@@ -1,4 +1,31 @@
 {
+  "costs.break_even": {
+    "basis": "Scored walk-forward returns, with the stored fill costs scaled on each bar.",
+    "caveats": [
+      "Scaling costs cannot tell you how wider spreads in stressed markets, partial fills or whole-share rounding would affect the result."
+    ],
+    "figure": null,
+    "labels": [
+      "ad-hoc",
+      "reserved-period-seen"
+    ],
+    "params": {},
+    "reading": "The result breaks even at 5 times today's costs. It matches buy and hold at 3 times today's costs.",
+    "reasons": {},
+    "reserve_start": "2024-01-01",
+    "result": {},
+    "settings_tried": [
+      {}
+    ],
+    "tool": "costs.break_even",
+    "values": {
+      "cost_share": 0.2,
+      "hold_multiple": 3.0,
+      "sentence": "The result breaks even at 5 times today's costs. It matches buy and hold at 3 times today's costs.",
+      "zero_multiple": 5.0
+    },
+    "version": 1
+  },
   "performance.downside_ratios": {
     "basis": "Stored walk-forward equity, one return per bar, and the manifest's out-of-sample Sharpe.",
     "caveats": [

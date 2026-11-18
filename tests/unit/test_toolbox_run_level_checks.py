@@ -16,6 +16,7 @@ from alpha_cli.tool_cmds import tool_app
 from alpha_cli.toolbox.runner import run
 from tests.unit.test_spine_tools import RUN
 
+COSTS = "costs.break_even"
 DOWNSIDE = "performance.downside_ratios"
 DATES = "robustness.start_end_dates"
 SIDE = "trades.side_contribution"
@@ -74,6 +75,8 @@ def stored_run(home: Path, tool: str) -> Path:
         }
     ).write_parquet(folder / "benchmark_comparison.parquet")
     write_trades(folder, PNL, SIDES)
+    if tool == COSTS:
+        write_costs(folder, [0.1], [0.02], 0.04)
     return folder
 
 
@@ -223,7 +226,13 @@ def test_missing_file_after_cached_success(tmp_path: Path, tool: str, file: str)
 
 
 @pytest.mark.parametrize(
-    ("tool", "file"), [(DOWNSIDE, "equity_curve.parquet"), (DATES, "benchmark_comparison.parquet")]
+    ("tool", "file"),
+    [
+        (DOWNSIDE, "equity_curve.parquet"),
+        (DATES, "benchmark_comparison.parquet"),
+        (COSTS, "equity_curve.parquet"),
+        (COSTS, "benchmark_comparison.parquet"),
+    ],
 )
 def test_future_observation_is_rejected(tmp_path: Path, tool: str, file: str) -> None:
     folder = stored_run(tmp_path, tool)
@@ -235,7 +244,7 @@ def test_future_observation_is_rejected(tmp_path: Path, tool: str, file: str) ->
         run(tmp_path, tool, RUN)
 
 
-@pytest.mark.parametrize("tool", [DOWNSIDE, DATES, SIDE, CONCENTRATION])
+@pytest.mark.parametrize("tool", [DOWNSIDE, DATES, SIDE, CONCENTRATION, COSTS])
 def test_full_result(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, tool: str) -> None:
     from tests.unit.test_toolbox_contract import _assert_close
 
@@ -280,3 +289,217 @@ def test_annualisation_from_original_run_metadata(tmp_path: Path) -> None:
     path.write_text(json.dumps(manifest))
     values = run(tmp_path, DOWNSIDE, RUN)["values"]
     assert values["sortino"] == pytest.approx(math.sqrt(252) / 2)
+
+
+def write_costs(folder: Path, gross: list[float], cost: list[float], hold: float) -> None:
+    dates = [END - timedelta(days=i) for i in reversed(range(len(gross) + 1))]
+    equity = [1.0]
+    for g, c in zip(gross, cost, strict=True):
+        equity.append(equity[-1] * (1 + g - c))
+    pl.DataFrame(
+        {
+            "ts": dates,
+            "equity": equity,
+            "gross_return": [0.0, *gross],
+            "cost_return": [0.0, *cost],
+        }
+    ).write_parquet(folder / "equity_curve.parquet")
+    pl.DataFrame(
+        {
+            "ts": dates,
+            "strategy_equity": equity,
+            "available": [True] * len(dates),
+            "benchmark_equity": [1.0] * len(gross) + [1 + hold],
+            "benchmark_kind": ["passive_open_to_open_price_only"] * len(dates),
+        }
+    ).write_parquet(folder / "benchmark_comparison.parquet")
+
+
+def test_break_even(tmp_path: Path) -> None:
+    folder = stored_run(tmp_path, COSTS)
+    # Two identical bars: (1.1 - .02k)^2 = 1 at k=5, and = 1.04^2 at k=3.
+    # At 100x both factors are negative. Their product cannot revive a bankrupt account.
+    write_costs(folder, [0.1, 0.1], [0.02, 0.02], 1.04**2 - 1)
+    values = run(tmp_path, COSTS, RUN)["values"]
+    assert [values[k] for k in ("zero_multiple", "hold_multiple", "cost_share")] == pytest.approx(
+        [5, 3, 0.2], rel=1e-9, abs=1e-12
+    )
+
+
+@pytest.mark.parametrize(
+    ("gross", "cost", "multiple", "phrase"),
+    [
+        (0.01, 0.02, 0.5, "not positive at today's costs"),
+        (0.02, 0.02, 1.0, "not positive at today's costs"),
+        (-0.01, 0.02, None, "not positive even with no costs"),
+        (0.0, 0.02, 0.0, "not positive even with no costs"),
+        (0.11, 0.001, None, "still positive at 100 times today's costs"),
+        (0.1, 0.001, 100.0, "100"),
+        (0.1, 0.0, None, "this run charged no costs"),
+    ],
+)
+def test_cost_limits(
+    tmp_path: Path, gross: float, cost: float, multiple: float | None, phrase: str
+) -> None:
+    folder = stored_run(tmp_path, COSTS)
+    write_costs(folder, [gross], [cost], 0.04)
+    doc = run(tmp_path, COSTS, RUN)
+    assert phrase in doc["reading"].lower()
+    if multiple is None:
+        assert doc["values"]["zero_multiple"] is None and doc["reasons"]["zero_multiple"]
+    else:
+        assert doc["values"]["zero_multiple"] == pytest.approx(multiple, rel=1e-9, abs=1e-12)
+    if gross <= 0:
+        assert doc["values"]["cost_share"] is None and doc["reasons"]["cost_share"]
+    if cost == 0:
+        assert doc["values"]["hold_multiple"] is None and doc["values"]["cost_share"] == 0
+
+
+def test_old_cost_layout(tmp_path: Path) -> None:
+    folder = stored_run(tmp_path, DOWNSIDE)
+    path = folder / "equity_curve.parquet"
+    original = path.read_bytes()
+    doc = run(tmp_path, COSTS, RUN)
+    assert "this run was made before costs were stored per bar" in doc["reading"].lower()
+    assert "run the rule test again" in doc["reading"].lower()
+    assert all(doc["values"][k] is None for k in ("zero_multiple", "hold_multiple", "cost_share"))
+    assert run(tmp_path, DOWNSIDE, RUN)["values"]["sharpe"] == 1.75
+    assert path.read_bytes() == original
+
+
+def test_cost_writer_reconciles_scored_fills(tmp_path: Path) -> None:
+    from dataclasses import replace
+
+    import numpy as np
+
+    from alpha_cli import _artifacts, _runner
+    from alpha_cli.spine.run import assemble_run_spec
+    from alpha_cli.spine.spec import load_spec
+    from alpha_cli.validate_cmds import scored_bar_returns
+    from alpha_core import DataError
+    from tests.unit.test_spine_controls import _bars
+
+    idea = load_spec(
+        None,
+        rule="ma_cross",
+        param=["fast=1", "slow=2"],
+        asset=["SPY"],
+        fee_bps=10,
+        slippage_bps=10,
+    )
+    spec = replace(assemble_run_spec(idea, "SPY", 252, 100), starting_cash=11000)
+    bars = _bars()
+    result = _runner.fresh_scored_execution(
+        bars, spec, first_scored_index=3, final_scored_index=5, normalize_equity=True
+    )
+    equity = result.equity_curve
+    net = np.diff([v for _, v in equity]) / np.array([v for _, v in equity[:-1]])
+    gross, costs = scored_bar_returns(bars, spec, result, net)
+    _artifacts.write_run_sidecars(
+        tmp_path, equity=equity, trades=result.trades, bar_returns=(gross, costs)
+    )
+    frame = pl.read_parquet(tmp_path / "equity_curve.parquet")
+    # 99 shares on each fill. Buy at the ask 110.11, sell at the bid 119.88, buy at the ask 90.09.
+    # The engine values a long at the bid, so a buy costs the whole gap to the bid (109.89, 89.91)
+    # in its own bar and the sell costs only its fee. Fees round per fill in quote currency.
+    # The terminal sample settles the last TWO fills.
+    cash_costs = [0, 99 * 0.22 + 10.90, 11.87 + 99 * 0.18 + 8.92]
+    assert frame["cost_return"].to_list() == pytest.approx(
+        [0, cash_costs[1] / 11000, cash_costs[2] / 11956.33], rel=1e-9, abs=1e-12
+    )
+    assert frame["ts"].to_list() == [ts for ts, _ in equity]
+    assert (frame["gross_return"] - frame["cost_return"]).to_list() == pytest.approx(
+        [0, *net], rel=0, abs=1e-12
+    )
+    old = tmp_path / "old"
+    _artifacts.write_run_sidecars(old, equity=equity, trades=result.trades)
+    projected = tmp_path / "projected.parquet"
+    frame.drop("gross_return", "cost_return").write_parquet(projected)
+    assert projected.read_bytes() == (old / "equity_curve.parquet").read_bytes()
+    with pytest.raises(DataError, match="gross_return"):
+        _artifacts.write_run_sidecars(
+            tmp_path / "bad", equity=equity, trades=[], bar_returns=(gross + 0.01, costs)
+        )
+
+
+def test_cost_timing_matches_engine_equity_over_several_trades() -> None:
+    from dataclasses import replace
+
+    import numpy as np
+    from nautilus_trader.model.objects import Price
+
+    from alpha_cli import _runner
+    from alpha_cli.spine.run import assemble_run_spec
+    from alpha_cli.spine.spec import load_spec
+    from alpha_cli.validate_cmds import scored_bar_returns
+    from alpha_core import Bar
+
+    prices = [100, 100, 110, 115, 120, 90, 95, 100, 105, 101, 97, 104, 108, 99, 103]
+    bars = [
+        Bar(
+            symbol="SPY",
+            ts=datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i),
+            open=p,
+            high=p,
+            low=p,
+            close=p,
+            volume=1000000,
+        )
+        for i, p in enumerate(prices)
+    ]
+    idea = load_spec(
+        None,
+        rule="ma_cross",
+        param=["fast=1", "slow=2"],
+        asset=["SPY"],
+        fee_bps=10,
+        slippage_bps=10,
+    )
+    spec = replace(assemble_run_spec(idea, "SPY", 252, 100), starting_cash=11000)
+    result = _runner.fresh_scored_execution(
+        bars, spec, first_scored_index=3, final_scored_index=14, normalize_equity=True
+    )
+    # Three round trips, positions held across several bars, the last sell on the terminal bar.
+    assert [f.side for f in result.fill_trace] == ["BUY", "SELL"] * 3
+    assert result.fill_trace[-1].ts == result.equity_curve[-1][0]
+    dollars = np.array([v for _, v in result.equity_curve]) * spec.starting_cash
+    net = np.diff(dollars) / dollars[:-1]
+    gross, costs = scored_bar_returns(bars, spec, result, net)
+    # Independent of the fills split: before-cost profit is the units held after each open
+    # times the move in the bid the engine values them at. The final sell settles in the last bar.
+    opens = {bar.ts: bar.open for bar in bars}
+    bid = np.array([float(Price(opens[ts] * 0.999, 2)) for ts, _ in result.equity_curve])
+    held, units = [], 0.0
+    fills = {f.ts: f for f in result.fill_trace}
+    for ts, _ in result.equity_curve[:-1]:
+        if ts in fills:
+            units += fills[ts].quantity if fills[ts].side == "BUY" else -fills[ts].quantity
+        held.append(units)
+    expected = np.array(held) * np.diff(bid) / dollars[:-1]
+    assert gross.tolist() == pytest.approx(expected.tolist(), rel=1e-9, abs=1e-12)
+    assert (gross - costs).tolist() == pytest.approx(net.tolist(), rel=0, abs=1e-12)
+    assert float(np.prod(1 + gross - costs)) == pytest.approx(dollars[-1] / dollars[0], rel=1e-12)
+    # First bar: buy 95 at 115.11 against a bid of 114.89, fee 10.94.
+    assert costs[0] == pytest.approx((95 * 0.22 + 10.94) / 11000, rel=1e-9, abs=1e-12)
+    assert np.all(costs >= 0) and np.count_nonzero(costs) == 6
+
+
+def test_hold_matches_gross_at_zero_cost_and_share_uses_capital(tmp_path: Path) -> None:
+    folder = stored_run(tmp_path, COSTS)
+    write_costs(folder, [0.1, 0.0], [0.0, 0.02], 0.1)
+    doc = run(tmp_path, COSTS, RUN)
+    assert doc["values"]["hold_multiple"] == pytest.approx(0, rel=1e-9, abs=1e-12)
+    # Costs on the second bar use 1.10 of capital. The first bar earned 0.10.
+    assert doc["values"]["cost_share"] == pytest.approx(1.10 * 0.02 / 0.10, rel=1e-9, abs=1e-12)
+
+
+def test_hold_threshold_below_today(tmp_path: Path) -> None:
+    folder = stored_run(tmp_path, COSTS)
+    # 1.10 - 0.02k = 1.09 at k = 0.5; 1.10 - 0.02k = 1 at k = 5.
+    write_costs(folder, [0.1], [0.02], 0.09)
+    doc = run(tmp_path, COSTS, RUN)
+    assert doc["values"]["hold_multiple"] == pytest.approx(0.5, rel=1e-9, abs=1e-12)
+    assert doc["values"]["sentence"] == (
+        "The result breaks even at 5 times today's costs. The result does not beat buy and hold"
+        " at today's costs. It matches buy and hold at 0.5 times today's costs."
+    )

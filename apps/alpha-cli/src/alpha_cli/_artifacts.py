@@ -43,7 +43,7 @@ from alpha_cli.run_store import (
     find_run_dir as find_run_dir,
 )
 from alpha_core import DataError
-from alpha_validation import FloatArray
+from alpha_validation import FloatArray, to_returns
 from alpha_validation.native_tearsheet import TradeObservation
 
 
@@ -691,6 +691,7 @@ def write_run_sidecars(
     trades: Sequence[Trade],
     trace_result: BacktestResult | None = None,
     periods_per_year: int = 252,
+    bar_returns: tuple[FloatArray, FloatArray] | None = None,
 ) -> None:
     """Atomically publish the standard Parquet sidecars without a completion marker."""
     rdir.mkdir(parents=True, exist_ok=True)
@@ -698,6 +699,24 @@ def write_run_sidecars(
         {"ts": [ts for ts, _ in equity], "equity": [v for _, v in equity]},
         schema={"ts": pl.Datetime(time_unit="us", time_zone="UTC"), "equity": pl.Float64()},
     )
+    if bar_returns is not None:
+        gross, costs = bar_returns
+        net = to_returns(equity_frame["equity"].to_numpy())
+        if (
+            gross.shape != net.shape
+            or costs.shape != net.shape
+            or not np.isfinite(gross).all()
+            or not np.isfinite(costs).all()
+            or np.any(costs < 0)
+            or not np.allclose(net, gross - costs, rtol=0, atol=1e-12)
+        ):
+            raise DataError(
+                "Scored equity requires net_return = gross_return - cost_return per bar"
+            )
+        equity_frame = equity_frame.with_columns(
+            pl.Series("gross_return", np.r_[0.0, gross]),
+            pl.Series("cost_return", np.r_[0.0, costs]),
+        )
     publish_artifact(rdir / "equity_curve.parquet", equity_frame.write_parquet)
     rows = [dataclasses.asdict(t) for t in trades]
     frame = (

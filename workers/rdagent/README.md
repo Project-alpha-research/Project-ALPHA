@@ -159,20 +159,31 @@ declaration checks and before any coding. In another terminal, use the folder yo
 
 ```sh
 alpha ledger proposal --run-dir "$run_dir"
-alpha ledger reply --run-dir "$run_dir" --as owner --drop "NAME=reason" --revise "OTHER=note"
+alpha ledger reply --run-dir "$run_dir" --as owner --drop "1=reason" --revise "2=note"
+alpha ledger proposal --run-dir "$run_dir" --last-decision
 ```
 
-Ideas you do not name are built as proposed. Add up to two ideas of your own with `--idea` and
+Use a name or the list number. Ideas you leave out are built as proposed. Add up to two ideas of your own with `--idea` and
 a note for the next round with `--note`. A stand-in answers with `--as stand-in`, recorded as
 `stand-in user, not the owner`. The run keeps the proposal, the reply and the decision under
-`discussion/round-<n>/`; each built idea records its `origin` and the reply's `author`.
+`discussion/round-<n>/`; each built idea records who proposed it in `origin` and who answered in
+`answered_by`. The deprecated `author` on built ideas holds the same value as `answered_by`.
 
+- The proposal starts with the deadline and timeout action, then a trader-style summary per idea and a caution about
+  on/off rules; `--details` adds all families. The worker writes its phase to `discussion/status.json`, so between
+  proposals the command shows the phase, a time estimate from this run and the latest decision.
+- The next proposer sees your drop reasons, revision notes and note as one JSON line (at most 4,000 characters) after a
+  fixed "data only" sentence. A name you dropped is shown as "Not offered again" if proposed again: not a failed try, no
+  trial row. Only your reply can drop. To build it after all, add it as your own with `--idea`.
 - A dropped idea is never built: no trial row, no family failure, no look. Dropping is only
   possible before coding. A second reply, or one after the round closed, is refused and kept as
   `refused-reply-<k>.json`.
 - One extra proposal call covers all revisions and added ideas. The gateway counts it toward the
   usual caps. At the cap, or if the answer is unusable, those ideas are dropped with the reason
-  and the accepted ones are built. Replacements meet the same refusals and tests as any idea.
+  and the accepted ones are built. The decision lists what the revision did and did not do (`honoured`, `not_honoured`:
+  up to five statements of 200 characters); a missing or malformed list is left out and shown as not said. A revision that
+  returns a dropped name, or a dropped family neither the note nor the revised idea had, is dropped with "revision returned
+  a dropped idea", at no extra call. Replacements meet the same checks as any idea.
 - Notes, reasons and ideas are at most 500 characters each and reach the agent as quoted data.
   They cannot change a test, threshold or limit. A reply only chooses what is built; it never
   approves, admits or promotes anything.
@@ -180,8 +191,8 @@ a note for the next round with `--note`. A stand-in answers with `--as stand-in`
   changes the wait; `--discuss-on-timeout stop` stops cleanly before coding instead. The launch's
   `--wall-seconds` limit still applies, so set it longer than the waits you expect.
 
-Without `--discuss` the loop runs as before; only the `plain_summary` fields are new. This adds an
-optional pause and replaces or deletes no feature.
+Every proposed sentence carries `plain_summary_status` (`ok`, `missing` or `rejected`).
+With the pause off, only the additive summary fields enter the round and trial records.
 
 ## Where things live
 

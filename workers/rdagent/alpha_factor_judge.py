@@ -843,6 +843,7 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         return families
 
     bounded_history: Any = None
+    discussion_choices: list[dict[str, Any]]
 
     @property
     def upstream_history(self) -> Any:
@@ -852,8 +853,13 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
         prepare = self.bounded_history or self.upstream_history
         context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-        if note := getattr(self, "discussion_note", None):
-            context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().note_block(note)
+        note = getattr(self, "discussion_note", None)
+        choices = getattr(self, "discussion_choices", [])
+        if choices or note:
+            context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().choices_block(
+                choices, note
+            )
+            self.discussion_choices = []
             self.discussion_note = None
         return context, flag
 

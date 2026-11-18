@@ -370,12 +370,20 @@ RunFolder = Annotated[Path, typer.Option(exists=True, file_okay=False, help="RD-
 
 
 @ledger_app.command("proposal")
-def proposal(run_dir: RunFolder) -> None:
+def proposal(
+    run_dir: RunFolder,
+    details: Annotated[
+        bool, typer.Option(help="Show the full open and closed idea types.")
+    ] = False,
+    last_decision: Annotated[
+        bool, typer.Option("--last-decision", help="Show only the latest decision.")
+    ] = False,
+) -> None:
     """Show the ideas RD-Agent proposes and waits on before it builds anything."""
     from alpha_cli.rdagent_discussion import proposal_text
 
     try:
-        typer.echo(proposal_text(run_dir))
+        typer.echo(proposal_text(run_dir, details=details, last_decision=last_decision))
     except ValueError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
@@ -387,10 +395,14 @@ def discussion_reply(
     author: Annotated[
         ReplyAuthor, typer.Option("--as", help="Who answers: owner, or stand-in (not the owner).")
     ],
-    accept: Annotated[list[str] | None, typer.Option(help="Build NAME as proposed.")] = None,
-    drop: Annotated[list[str] | None, typer.Option(help="Skip NAME, or NAME=reason.")] = None,
+    accept: Annotated[list[str] | None, typer.Option(help="Build by name or list number.")] = None,
+    drop: Annotated[
+        list[str] | None,
+        typer.Option(help="Skip by name or list number, with an optional =reason."),
+    ] = None,
     revise: Annotated[
-        list[str] | None, typer.Option(help="Ask for a change: NAME=what to change.")
+        list[str] | None,
+        typer.Option(help="Ask for a change by name or list number, followed by =note."),
     ] = None,
     idea: Annotated[list[str] | None, typer.Option(help="Add your own idea (two at most).")] = None,
     note: Annotated[str | None, typer.Option(help="A note the agent reads next round.")] = None,

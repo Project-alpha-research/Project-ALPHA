@@ -6,7 +6,8 @@ import asyncio
 import json
 import os
 import sys
-from datetime import UTC, datetime
+from collections.abc import Callable
+from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -18,13 +19,15 @@ if str(WORKER) not in sys.path:
 
 if TYPE_CHECKING:
     from .alpha_factor_hypothesis import ProposalResponse
-    from .discussion import AwaitingDiscussion
+    from .discussion import AwaitingDiscussion, utc_now
+    from .discussion import status as discussion_status
     from .research_memory import ProposalHistory, limit_restored_history, open_factor_loop
     from .source_pin import verify_source
     from .stock_fixture_entry import SourceFinder
 else:
     from alpha_factor_hypothesis import ProposalResponse
-    from discussion import AwaitingDiscussion
+    from discussion import AwaitingDiscussion, utc_now
+    from discussion import status as discussion_status
     from research_memory import ProposalHistory, limit_restored_history, open_factor_loop
     from source_pin import verify_source
     from stock_fixture_entry import SourceFinder
@@ -43,7 +46,7 @@ def _step_exception(loop: Any, li: int) -> Any:
         return None
 
 
-def record_steps(loop_class: Any) -> None:
+def record_steps(loop_class: Any, *, now: Callable[[], datetime] = utc_now) -> None:
     """Wrap the step runner with start/end lines (status ok, skipped or error).
 
     The start line is written before RD-Agent takes the step's semaphore, so with more than one
@@ -58,15 +61,21 @@ def record_steps(loop_class: Any) -> None:
 
     def append(row: dict[str, Any]) -> None:
         with path.open("a") as stream:
-            stream.write(
-                json.dumps({**row, "ts": datetime.now(UTC).isoformat()}, sort_keys=True) + "\n"
-            )
+            stream.write(json.dumps({**row, "ts": now().isoformat()}, sort_keys=True) + "\n")
 
     @wraps(original)
     async def wrapped(self: Any, li: int, *args: Any, **kwargs: Any) -> Any:
         si = self.step_idx[li]
         row = {"schema": "AlphaRdagentStepV1", "loop": li, "step_index": si, "step": self.steps[si]}
         append({**row, "event": "start"})
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            phase = {
+                "direct_exp_gen": "proposing",
+                "running": "evaluating",
+                "feedback": "reviewing",
+            }.get(row["step"])
+            if phase:
+                discussion_status(path.parent, phase, li, now())
         error_type, status = None, "ok"
         before = _step_exception(self, li)
         try:

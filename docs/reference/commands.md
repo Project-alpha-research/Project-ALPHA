@@ -174,7 +174,7 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger families` — Show family counts and the conservative all-trials total. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger journey` — Write seven-step journeys, annotated pictures and their plotted data. Options: `--run-dir (required)`, `--factor`, `--out`, `--theme`
 - `alpha ledger list` — List matching trials newest first, retaining source provenance. Options: `--kind`, `--family`, `--asset`, `--outcome`, +4 more
-- `alpha ledger proposal` — Show the ideas RD-Agent proposes and waits on before it builds anything. Options: `--run-dir (required)`
+- `alpha ledger proposal` — Show the ideas RD-Agent proposes and waits on before it builds anything. Options: `--run-dir (required)`, `--details`, +1 more
 - `alpha ledger query <QUESTION>` — Run a named question with bound parameters; arbitrary SQL is unavailable. Options: `--asset`, `--family`, +4 more
 - `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`

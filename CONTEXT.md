@@ -10,7 +10,7 @@ Stop when you have what you need: the always rows, then only rows your task matc
 ## Read first
 | Read | Section | When |
 |---|---|---|
-| [project layer](docs/reference/project/overview.md) | — | what a part is for; keep or cut |
+| [project layer](docs/reference/project/overview.md) | — | what a part is for; owner decisions; reserved period |
 | [alpha-core](packages/alpha-core/CONTEXT.md) | — | domain types, errors, settings |
 | [alpha-data](packages/alpha-data/CONTEXT.md) | — | point-in-time store, snapshots, crypto |
 | [alpha-patterns](packages/alpha-patterns/CONTEXT.md) | — | chart patterns, lookalikes |

@@ -39,7 +39,7 @@ grants authority.
   Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
-- Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
+- Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.
 
@@ -60,11 +60,8 @@ grants authority.
   classification, as above.
 
 ## Also read
-
 | Read | Section | When |
 |---|---|---|
-
 | [command reference](../../docs/reference/commands.md) | — | finding the `alpha` command a route should call |
-
 | [Setup Lab](../../docs/reference/project/components/setup-lab.md) | To change this screen | any Setup Lab screen work: files, loop, tests, screenshots |
 | [frontend README](frontend/README.md) | — | taking or checking screenshots of any other screen (2% tolerance, Linux container, test backend port 8802) |

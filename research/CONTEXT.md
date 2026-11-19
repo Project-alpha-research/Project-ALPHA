@@ -9,21 +9,19 @@ verified: 8bf98ca2fe34937d
 ---
 
 # Research: how any idea is tested
-
 ## Purpose
-
 Any idea goes through one route: read [the playbook](PLAYBOOK.md), then run `uv run alpha test`. No idea is stopped
 for being of an unknown kind, and no research run needs an approval; integrity shows as labels and flags. The only
 approval gate is before paper or live trading. Changing the research code is a delivery task ([`workflow/`](../workflow/CONTEXT.md)).
 
 ## Read first
-
 | Read | Section | When |
 |---|---|---|
 | [research playbook](PLAYBOOK.md) | The method | always |
 | [research playbook](PLAYBOOK.md) | The numbers rule | always |
 | [research playbook](PLAYBOOK.md) | What needs the owner | always |
 | [tool cards](tools/README.md) | — | choosing the next test, by symptom |
+| [data health card](tools/data-health.md) | — | checking stored bars before a test |
 | [lessons](lessons/README.md) | — | before proposing a test |
 | [research integrity](../docs/reference/invariants/research-integrity.md) | Owner authority | before paper or live trading, or any owner act |
 | [what this part is for](../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |
@@ -32,9 +30,7 @@ approval gate is before paper or live trading. Changing the research code is a d
 | [research README](README.md) | Skills by trigger | the owner's words say which skill to use |
 
 ## How to change it
-
 - Playbook, tool card and skill rules: [documentation invariants](../docs/reference/invariants/documentation.md#research-playbook-and-tool-cards).
 
 ## Outputs
-
 - Per idea: run folders and ledger rows under `ALPHA_DATA_DIR`, and a plain-English report to the owner.

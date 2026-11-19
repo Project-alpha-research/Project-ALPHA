@@ -1230,3 +1230,39 @@ def test_the_long_component_pages_stay_summaries() -> None:
             f"{TOOLBOX_REAL_TODAY_MAX_BYTES:,}. Keep a summary; the list lives in cli-toolbox.md."
         )
     assert not problems, "\n".join(problems)
+
+
+ROUTED_PAGES = (
+    "docs/reference/project/reserved-period.md",
+    "docs/reference/project/decisions-by-topic.md",
+    "docs/reference/project/components/setup-lab.md",
+    "docs/reference/project/components/toolbox.md",
+    "docs/reference/project/components/monte-carlo.md",
+    "research/tools/data-health.md",
+)
+
+
+def _two_hop_targets() -> set[str]:
+    """Pages a root row names, and the pages those link to."""
+    seen = {r.target for r in read_first_rows(CONTEXT) if r.target}
+    found = set(seen)
+    for page in seen:
+        try:
+            links = [r.target for r in read_first_rows(page) if r.target]
+        except StopIteration:
+            links = [
+                (ROOT / page)
+                .parent.joinpath(t.split("#", 1)[0])
+                .resolve()
+                .relative_to(ROOT)
+                .as_posix()
+                for t in _links(page)
+                if not t.startswith(("http", "#"))
+            ]
+        found.update(links)
+    return found
+
+
+@pytest.mark.parametrize("rel", ROUTED_PAGES)
+def test_each_routed_page_is_two_hops_from_the_root(rel: str) -> None:
+    assert rel in _two_hop_targets(), f"{rel}: link it from a root row's page (at most two hops)"

@@ -64,9 +64,10 @@ Fourteen checks are registered: three market descriptions, five that read a rule
 that stored history (resampling, trade order and the deflated Sharpe). `alpha tool` lists, describes and runs them.
 Every attempt is recorded and a stored answer is reused. Each judged RD-Agent idea with a shown trading replay gets
 two fixed checks after the verdict, pass or fail. They never change the verdict. Not built: two named tests,
-agent-chosen checks in the proposal, and most of the 480-entry catalogue. See the capability on
-[STATUS.md](../../../../STATUS.md). The list, the five honesty rules and how to add a check: [toolbox
-rules](../../invariants/cli-toolbox.md).
+agent-chosen checks in the proposal, and most of the 480-entry catalogue. See [STATUS.md](../../../../STATUS.md). The list and how to add a check: [toolbox
+rules](../../invariants/cli-toolbox.md). The five honesty rules cover only RD-Agent's post-verdict checks
+([rules](../../invariants/cli-toolbox.md#honesty-rules)); every `alpha tool` run follows the
+[runner rules](../../invariants/cli-investigation-tools.md) (attempts logged, stored answers reused).
 
 ## Where it lives
 

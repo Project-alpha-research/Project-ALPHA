@@ -79,6 +79,21 @@ _EXPECTED_MCP_TOOLS = frozenset(
         "search_asset_evidence",
         "search_evidence",
         "validate",
+        "rule_test",
+        "tool_list",
+        "tool_describe",
+        "tool_run",
+        "tool_run_set",
+        "results_show",
+        "results_cite",
+        "results_check",
+        "ledger_summary",
+        "ledger_history",
+        "diagnose_run",
+        "data_health",
+        "setup_find",
+        "setup_study",
+        "setup_trade",
     }
 )
 
@@ -90,8 +105,8 @@ def test_research_mcp_surface_is_pinned_without_owner_authority(
     names = {tool.name for tool in anyio.run(server.mcp.list_tools)}
 
     assert names == _EXPECTED_MCP_TOOLS
-    # ADR-0022 budget: 48 + 6 Codex-seam (R2) + 5 data-inventory (R3) + 3 source-plane (R4).
-    assert len(names) == 62
+    # ADR-0022 budget: 48 + 6 Codex-seam + 5 data-inventory + 3 source-plane + 15 spine.
+    assert len(names) == 77
     assert "semantic_projection" not in names
     assert "research_semantic_projection" not in names
     assert {name for name in names if name.startswith("research_")} == {

@@ -28,8 +28,7 @@ runs a small gauntlet and labels the result `quick`. An optional `idea_card` lin
 - Each asset has `run_id`, `reading`, `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`.
   `resized_entries` counts reduced scored entries; `trials_total` counts ledger trials; `test_id` names the test.
 - Quote the `reading`, never a grade: `clear of chance`, `some evidence`, `not clear of chance` or `too little to read`,
-  and the aim: above, below or within the uncertainty of buy-and-hold (its Sharpe against the 95% Sharpe interval).
-  `Fault:` means no reading. `verdict` is the old letter, for machines; old rows say "graded C under the old rules".
+  and above, below or within the uncertainty of buy-and-hold. `Fault:` means no reading. `verdict` is the old letter; old rows: "graded C under the old rules".
 - A failed asset keeps its row with `error` set and counts as a trial. If every asset fails, read `known` and `next` in the `error` object.
 - Bars per year follow each market's calendar, so crypto is not treated as stocks. Bars from 2024-01-01 on are held back (`reserved-period-held-back`).
 **What it cannot tell you**

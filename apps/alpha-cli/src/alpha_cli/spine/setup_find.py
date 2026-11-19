@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine import reserve
 from alpha_cli.spine.contact_sheet import Panel
 from alpha_cli.spine.data_health import run_health_record, verify_inputs
 from alpha_cli.spine.errors import SpineError, setup_error
@@ -150,7 +151,11 @@ def _asset(
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
-    bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
+    held_back = reserve.held_back_count(resolved)
+    if held_back:
+        result["labels"].append(reserve.HELD_BACK)
+        result["held_back_bars"] = held_back
+    bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF)
     if periods_per_year([b.ts for b in bars]) not in {252, 365}:
         raise SpineError("NOT_DAILY_BARS", f"{asset}: bars are not daily", "Use stored daily bars.")
     result.update(
@@ -275,6 +280,7 @@ def study_inputs(
     from alpha_cli import _runner
     from alpha_study.setup.expr import compile_expr
 
+    reserve.refuse_find_that_saw_period(manifest)
     texts = [spec.setup.event, *spec.filters.values(), *spec.reference.values()]
     if spec.trigger:
         texts.append(spec.trigger.when)
@@ -288,7 +294,9 @@ def study_inputs(
             if sources is not None
             else resolve_asset(asset["asset"], data_dir=home)
         )
-        bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
+        bars, _ = _runner.load_bars(
+            resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
+        )
         if (
             _runner.source_fingerprint(bars) != asset["source_fingerprint"]
             or resolved.store_name != asset["store"]
@@ -310,6 +318,7 @@ def checked_study_inputs(
     accept_bad_data: str | None,
     report_time: datetime | None,
 ) -> tuple[dict[str, Any], int, dict[str, Any]]:
+    reserve.refuse_find_that_saw_period(manifest)
     sources = {
         a["asset"]: resolve_asset(a["asset"], data_dir=home)
         for a in manifest["assets"]

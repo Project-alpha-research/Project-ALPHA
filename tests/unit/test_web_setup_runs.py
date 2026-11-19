@@ -286,3 +286,13 @@ def test_trade_fields_round_trip_and_old_rows_stay_unknown(tmp_path: Path) -> No
     assert rows and {k: rows[0][k] for k in fields} == fields
     for label in ("short-costs-assumed", "short-needs-perpetual"):
         assert detail.label_explanations[label]
+
+
+def test_reserved_period_labels_are_explained() -> None:
+    assert _setup_runs.LABELS["reserved-period-held-back"] == (
+        "Data from 2024-01-01 on was held back for the owner's confirmation."
+    )
+    assert _setup_runs.LABELS["reserved-period-seen"] == (
+        "This run used data from 2024-01-01 on, before that data was held back. "
+        "It is not a fresh test on that period."
+    )

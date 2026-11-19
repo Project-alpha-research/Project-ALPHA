@@ -1060,7 +1060,7 @@ INVARIANT_SECTION_MAX_BYTES = 4_096
 # Sections written before the limit. Each ceiling is the section's size when the limit began and may
 # only go down. Split the section by sub-headings, then delete its entry.
 INVARIANT_SECTION_CEILINGS: dict[tuple[str, str], int] = {
-    ("cli-results-check.md", "Draft checks and run comparisons"): 5_656,
+    ("cli-results-check.md", "Draft checks and run comparisons"): 5_156,
     ("cli-trial-ledger.md", "Families and queries"): 6_834,
     ("cli-investigation-tools.md", "Rules"): 4_103,
 }

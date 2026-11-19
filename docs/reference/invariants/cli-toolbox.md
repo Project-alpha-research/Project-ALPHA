@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: 32f6468156299ec6
+verified: 7fe49bd4ab2f725f
 ---
 
 # Command line toolbox
@@ -89,8 +89,7 @@ lines in `alpha report`, the IID drawdown summary in `alpha monte-carlo classica
 figures render` and the family DSR reported by `alpha results cite`. Each command also serves other uses.
 
 **Other work outstanding:** letting the agent name checks in its proposal before judging, showing checks in the
-proposal discussion, and more input adapters. Other gaps include a reserved-period cut-off for rule-test inputs (today
-they carry exposure labels), a Workstation and MCP listing, a generated catalogue, counting sweep variants in
+proposal discussion, and more input adapters. Other gaps include a Workstation and MCP listing, a generated catalogue, counting sweep variants in
 deflation, a budget for agent-selected checks, exporting causal tools as factor inputs, and remaining first-batch
 entries (minimum track record length waits for a function in `alpha_validation`); and the growth plan. The 480-entry
 catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is not yet in the repository; random-exit

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: eaa0976cee0b9537
+verified: 99ada1ee52a57e7e
 ---
 # Setup find
 
@@ -26,7 +26,7 @@ uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
   occurrence (`accepted_clusters` against `accepted` in `totals`).
 - `sheets` lists contact sheets: accepted matches (the first day of each occurrence), and one greyed sheet
   of rejected samples with the reason in each panel title. Every panel stops at the entry open.
-- The default context is 60 bars. Repeats redraw nothing; `outcomes-viewed` replaces
+- Bars from 2024-01-01 on are held back (`reserved-period-held-back`). Context is 60 bars. Repeats redraw nothing; `outcomes-viewed` replaces
   `outcomes-not-viewed` when a sibling study or trade manifest exists.
 
 The find uses the worst verdict across the selected series. A failed report requires a reason on this invocation. [Data health](data-health.md)

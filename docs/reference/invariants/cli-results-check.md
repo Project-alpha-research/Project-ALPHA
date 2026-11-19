@@ -18,7 +18,7 @@ sources:
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
   - tests/unit/test_spine_results_cmds.py
-verified: 8aa10ddaff88d166
+verified: 3da01ba5124a1611
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -55,7 +55,8 @@ drafted answer against stored run facts, and the computed differences between ru
   case insensitive), or the next word is `trade(s)`, `percent`, `per cent`, `bps` or `basis points`. `trial` and `ALPHA` do not trigger checking.
   Every other numeric token needs its own immediately following tag. Null facts retain their reasons.
 - Cited runs require visible label phrases from `spine/check.py:LABEL_PHRASES`: quick, source defaulted,
-  short history, no diagnostics, too few trades, data health fail, data health overridden, data health unchecked (case insensitive; hyphens also work).
+  short history, no diagnostics, too few trades, data health fail, data health overridden, data health unchecked, held back,
+  reserved period seen (case insensitive; hyphens also work). `reserved-period-seen` is derived when an older run is read.
   The printed “Data health:” wording also counts, including “out-of-date” for an unchecked label. A matched, tagged `total_trials`
   value is required; this is the stored diagnostic-time count, not a fresh count of ledger rows.
 - Problems include line, excerpt, kind, stored value, known choices and next action. JSON adds a
@@ -76,6 +77,8 @@ drafted answer against stored run facts, and the computed differences between ru
   a fact from a non-default setting must be followed by `(1 of N settings tried)` with the current count, else `SETTINGS_OMITTED`.
 - A registered metric absent from a run's built facts raises `METRIC_NOT_STORED`, with a next step to cite
   tool output. It never crashes with `KeyError`; a present fact with a null value is still `VALUE_NOT_COMPUTED`.
+## Run comparisons
+
 - `alpha results compare` accepts two to eight runs, lists labels and flags differing metric bases.
   Each metric has per-run `value`, `diff` and `ratio` facts. Difference means run minus first run;
   ratio means run divided by first run. Unavailable/non-finite arithmetic is null with a reason;

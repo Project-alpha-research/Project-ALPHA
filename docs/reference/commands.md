@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-289 commands in 40 groups. Options marked (required) are
+293 commands in 41 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -109,6 +109,7 @@ Data ingestion, snapshots, and integrity.
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data health <ASSET>` — Check daily bars for adjustment, timestamp, gap and survivorship faults. Options: `--universe`, `--stored`, `--json`
+- `alpha data market-overview` — Read-only market overview of stored bars. Options: `--store`, `--window`, `--limit`, `--json`
 - `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more
 - `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`, +1 more
 - `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`, `--timeframe`
@@ -191,6 +192,14 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
+
+## alpha library
+
+Browse published ideas and turn one into an idea card.
+
+- `alpha library card <RECORD_ID>` — Make an idea card from a record. Options: `--json`
+- `alpha library list` — List the records. Options: `--market`, `--json`
+- `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike
 

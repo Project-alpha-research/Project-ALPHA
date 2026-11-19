@@ -1,0 +1,19 @@
+id = "cross-sectional-momentum"
+name = "Cross-sectional momentum"
+year_published = 1993
+market = "us-equities"
+idea = "Stocks that did best over the past three to twelve months tend to beat the worst ones over the next few months."
+mechanism_claimed = "The authors point to slow reaction to news, so prices keep moving the same way for a while."
+data_needed = ["daily prices for a wide stock universe, with delisted names"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "Daniel and Moskowitz (2016, Journal of Financial Economics 122(2), doi 10.1016/j.jfineco.2015.12.002) show large losses in market rebounds after falls. McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots). The universe size and delisted names matter."
+notes = ""
+
+[source]
+authors = "Jegadeesh and Titman"
+year = 1993
+title = "Returns to buying winners and selling losers: implications for stock market efficiency"
+venue = "Journal of Finance 48(1)"
+url = "https://doi.org/10.1111/j.1540-6261.1993.tb04702.x"

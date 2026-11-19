@@ -19,6 +19,7 @@ research_cases: research cases, proposals and study status.
 research_hub: research reports and evidence hub.
 research_gates: research gate packets and decisions.
 figures: figure catalogue and metadata.
+market: the stored-bars Market overview.
 """
 
 from __future__ import annotations
@@ -151,6 +152,10 @@ from .figures import FigureCatalogue as FigureCatalogue
 from .figures import FigureCatalogueItem as FigureCatalogueItem
 from .figures import FigureMetadata as FigureMetadata
 from .figures import FigurePanelMeta as FigurePanelMeta
+from .market import MarketAsset as MarketAsset
+from .market import MarketOverview as MarketOverview
+from .market import MarketTooFewBars as MarketTooFewBars
+from .market import MarketUnreadable as MarketUnreadable
 from .paper import PaperCandleMarker as PaperCandleMarker
 from .paper import PaperEvent as PaperEvent
 from .paper import PaperReadinessBlocker as PaperReadinessBlocker

@@ -1,0 +1,19 @@
+id = "moving-average-trend"
+name = "Moving-average trend rules"
+year_published = 1992
+market = "us-equities"
+idea = "Buy when the price is above its long moving average and stay out or sell when it is below, using one century of index data."
+mechanism_claimed = "The authors do not give a cause. They show that simple rules beat what common random-walk models would give."
+data_needed = ["daily index prices"]
+direction = "long"
+holding_clock = "weeks to months"
+decay_evidence = "Sullivan, Timmermann and White (1999, Journal of Finance 54(5), doi 10.1111/0022-1082.00163) re-test with the whole search of rules counted and find the result does not hold on later data."
+can_test_today = "yes - daily bars are held. Count every rule you try."
+notes = ""
+
+[source]
+authors = "Brock, Lakonishok and LeBaron"
+year = 1992
+title = "Simple technical trading rules and the stochastic properties of stock returns"
+venue = "Journal of Finance 47(5)"
+url = "https://doi.org/10.1111/j.1540-6261.1992.tb04681.x"

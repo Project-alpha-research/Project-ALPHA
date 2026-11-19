@@ -12,9 +12,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.nightly_steps import BLOCKING, MINOR, NOT_RUN, PASS
+from alpha_cli.nightly_steps import BLOCKING, COMPUTED, MINOR, NOT_RUN, PASS, REUSED
 
 SCENARIOS = {"N1": "rule path", "N2": "setup path", "N3": "RD-Agent path"}
+ALL = tuple(SCENARIOS)
+THREE = {1: "one", 2: "two", 3: "all three"}
 N3_STUB = (
     "not run: needs the owner's key file and a spend cap; enabled by `rdagent_config = <file>`."
 )
@@ -46,14 +48,32 @@ def _paths(steps: list[dict[str, Any]], wanted: tuple[str, ...]) -> tuple[int, i
     return worked, total
 
 
-def summary_line(steps: list[dict[str, Any]], wanted: tuple[str, ...], full: bool) -> str:
+def paths_run(steps: list[dict[str, Any]]) -> list[str]:
+    """The paths that really ran: at least one step not marked not-run. The N3 stub is not run."""
+    return [n for n in ALL if any(s["scenario"] == n and s["state"] != NOT_RUN for s in steps)]
+
+
+def completeness(wanted: tuple[str, ...], ran: list[str]) -> str:
+    if wanted != ALL:
+        return f"partial run ({', '.join(wanted)} only)"
+    if len(ran) == len(ALL):
+        return "all three paths"
+    off = ", ".join(f"{SCENARIOS[n]} off" for n in ALL if n not in ran)
+    return f"{THREE.get(len(ran), 'no')} of three paths ({off})"
+
+
+def summary_line(steps: list[dict[str, Any]], wanted: tuple[str, ...]) -> str:
     worked, total = _paths(steps, wanted)
     line = f"Last night: {worked} of {total} paths worked"
-    return line + ("." if full else f" (partial run: {', '.join(wanted)} only).")
+    return line + ("." if wanted == ALL else f" (partial run: {', '.join(wanted)} only).")
 
 
 def build_record(
-    steps: list[dict[str, Any]], wanted: tuple[str, ...], day: date, number: int, full: bool
+    steps: list[dict[str, Any]],
+    wanted: tuple[str, ...],
+    day: date,
+    number: int,
+    config_path: Path | None = None,
 ) -> dict[str, Any]:
     defects = [
         {
@@ -65,13 +85,17 @@ def build_record(
         for s in steps
         if s["state"] in (BLOCKING, MINOR)
     ]
+    ran = paths_run(steps)
     return {
-        "schema": 1,
+        "schema": 2,
         "date": day.isoformat(),
         "run_number": number,
-        "full": full,
+        "full": wanted == ALL and len(ran) == len(ALL),
+        "complete": completeness(wanted, ran),
+        "paths_run": ran,
+        "config_path": str(config_path) if config_path else None,
         "scenarios": list(wanted),
-        "summary_line": summary_line(steps, wanted, full),
+        "summary_line": summary_line(steps, wanted),
         "blocking": sum(d["severity"] == "blocking" for d in defects),
         "minor": sum(d["severity"] == "minor" for d in defects),
         "steps": steps,
@@ -84,14 +108,15 @@ def _step_line(step: dict[str, Any]) -> str:
         return f"  {step['id']}: {step['note']}"
     word = {PASS: "worked", MINOR: "worked with a warning", BLOCKING: "FAILED"}[step["state"]]
     verdict = f" Verdict word: {step['verdict']}." if step["verdict"] else ""
-    return f"  {step['id']}: {word} ({step['seconds']} s).{verdict}"
+    how = {COMPUTED: ", computed", REUSED: ", reused the stored result (repeat)"}
+    mode = how.get(str(step.get("evidence")), "")
+    return f"  {step['id']}: {word}{mode} ({step['seconds']} s).{verdict}"
 
 
 def summary_text(record: dict[str, Any]) -> str:
     lines = [record["summary_line"]]
-    kind = "full" if record["full"] else "partial"
     lines.append(
-        f"Run {record['date']}-{record['run_number']} was a {kind} run. "
+        f"Run {record['date']}-{record['run_number']}: {record['complete']}. "
         f"Blocking defects: {record['blocking']}. Minor defects: {record['minor']}."
     )
     for scenario in record["scenarios"]:

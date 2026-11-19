@@ -14,13 +14,14 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.nightly_config import NightlyConfig
-from alpha_cli.nightly_record import N3_STUB, build_record, new_folder, write_record
+from alpha_cli.nightly_record import ALL, N3_STUB, build_record, new_folder, write_record
 from alpha_cli.nightly_steps import (
     BLOCKING,
     MINOR,
     PASS,
     Runner,
     alpha_argv,
+    evidence_of,
     mark,
     new_step,
     not_run,
@@ -28,8 +29,6 @@ from alpha_cli.nightly_steps import (
     stderr_tail,
 )
 from alpha_cli.spine.reading import old_grade_text, reading_word
-
-ALL = ("N1", "N2", "N3")
 
 
 def _ok(step: dict[str, Any]) -> bool:
@@ -80,6 +79,7 @@ def _rule_test(
         listed = payload["results"]
         results = [r for r in listed if isinstance(r, dict)] if isinstance(listed, list) else []
         step["ids"] = {"test_id": payload["test_id"]}
+        step["evidence"] = evidence_of([r.get("labels") for r in results])
         step["verdict"] = _grades(results)
         if not results:
             mark(step, BLOCKING, f"`{step['command']}` returned no result rows.")
@@ -209,11 +209,12 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
             not_run(f"N2.{key}", "N2", name, [name], wait.format("N2.find")) for key, name in names
         ]
     find_id = str(found["find_id"])
-    find["ids"] = {"find_id": find_id}
+    find["ids"], find["evidence"] = {"find_id": find_id}, evidence_of([found.get("labels")])
     study = new_step("N2.study", "N2", "setup study", (t := ["setup", "study", find_id, "--json"]))
     studied = run_step(runner, study, t, config.step_timeout, required=("study_id", "outcome"))
     if studied and _ok(study):
         study["ids"], study["verdict"] = {"study_id": studied["study_id"]}, str(studied["outcome"])
+        study["evidence"] = evidence_of([studied.get("labels")])
     trade = new_step("N2.trade", "N2", "setup trade", (t := ["setup", "trade", find_id, "--json"]))
     traded = run_step(runner, trade, t, config.step_timeout, required=("trade_id", "outcome"))
     steps += [study, trade]
@@ -225,6 +226,7 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
             ),
         ]
     trade["ids"], trade["verdict"] = {"trade_id": traded["trade_id"]}, str(traded["outcome"])
+    trade["evidence"] = evidence_of([traded.get("labels")])
     tail = ["results", "show", str(traded["trade_id"]), "--json"]
     back = new_step("N2.readback", "N2", "results show", tail)
     shown = run_step(runner, back, tail, config.step_timeout, required=("runs", "failed"))
@@ -270,6 +272,6 @@ def run_nightly(
     folder, number = new_folder(home, day)
     paths = {"N1": rule_path, "N2": setup_path, "N3": rdagent_path}
     steps = [step for name in wanted for step in paths[name](config, runner)]
-    record = build_record(steps, wanted, day, number, full=only is None)
+    record = build_record(steps, wanted, day, number, config.source)
     write_record(folder, record)
     return record

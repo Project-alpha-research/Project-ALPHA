@@ -8,7 +8,7 @@ apps/alpha-cli/README.md
   verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
 
 docs/CONTEXT.md
-  verified e103bd3fe72f15be on 2026-11-19: source README only re-pointed one link; page unchanged and correct
+  verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
@@ -23,13 +23,13 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/documentation.md
-  verified 0030464104c76524 on 2026-11-19: source README only re-pointed one link; page unchanged and correct
+  verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/rdagent.md
-  verified 244b682865166137 on 2026-11-19: source only reworded or re-pointed; page still correct
+  verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
 
 docs/reference/invariants/workers.md
-  verified 66a92333a3a79391 on 2026-11-19: source only reworded or re-pointed; page still correct
+  verified 93a1a6a1a66f426c on 2026-11-19: Re-read after merging main: restoring the full reflection in discussion prompts changes no worker boundary
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
@@ -68,7 +68,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified 5f770e5304808c21 on 2026-11-19: source only reworded or re-pointed; page still correct
+  verified e90f700e6a3bf954 on 2026-11-19: Re-read after merging main: page text holds; the discussion detail moved to the worker README, which now says the reflection passes on in full
 
 docs/reference/project/components/research-cases-and-approval.md
   verified e128568bea1bbca0 on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
@@ -86,13 +86,13 @@ docs/reference/project/components/web-workstation.md
   verified a1a96a624976d513 on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 docs/reference/project/decisions-by-topic.md
-  verified fb3a778060524daf on 2026-11-19: source only reworded or re-pointed; page still correct
+  verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
 
 docs/reference/project/ideas-and-considered.md
-  verified de2b413e17ec60ef on 2026-11-19: source only reworded or re-pointed; page still correct
+  verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right
@@ -105,9 +105,6 @@ docs/reference/project/owner-decisions-4.md
 
 docs/reference/project/owner-decisions-5.md
   verified 9def06fde73f407c on 2026-11-18: new volume from PR 271; the volume it names (owner-decisions.md) has the same text as then and points new entries here
-
-docs/reference/project/owner-decisions-6.md
-  verified 1757d88ca7f87a5c on 2026-11-19: source only reworded or re-pointed; page still correct
 
 docs/reference/project/owner-decisions.md
   verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
@@ -169,11 +166,14 @@ research/tools/sensitivity.md
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
 
+scripts/CONTEXT.md
+  verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says
+
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
-  verified d71a2b1d4322b405 on 2026-11-19: source README only re-pointed one link; page unchanged and correct
+  verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 workflow/README.md
   verified eb366577c36de56b on 2026-11-19: re-read; only routing rows and a new test were added

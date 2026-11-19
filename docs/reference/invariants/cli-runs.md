@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 60bef3d004206d9c
+verified: 7faf900ddc45ca56
 ---
 
 # Command line runs invariants
@@ -94,6 +94,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
   trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+- `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)). With held-back bars it adds the label
+  `reserved-period-held-back`, prints one sentence, records `spine.reserve` and puts `research_cutoff` 2023-12-31 into the run identity. Without them
+  nothing changes. `alpha results show` derives `reserved-period-seen` for an older run whose last bar is on or after 2024-01-01; stored runs are never rewritten.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1` (lock file, strict JSON, fsync); `trial_index` and `total_trials` equal the 1-based line number and
   corruption fails loud. Errors count as trials with an `error` label and null unavailable metrics; the command output explains them.
 - `quick` = 20/4/4 null paths, 50 resamples. Every run carries `all-in`, `dev-machine-data`, a data-health label; defaulted sources and short history too.

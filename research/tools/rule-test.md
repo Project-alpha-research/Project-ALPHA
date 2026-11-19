@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: c44b9665ce3d68fb
+verified: 01cec1774fe9fb34
 ---
 
 # Rule test
@@ -30,7 +30,7 @@ runs a small gauntlet and labels the result `quick`.
   `resized_entries` counts reduced scored entries; `trials_total` counts ledger trials; `test_id` names the test.
 - A failed asset keeps its row with `error` set and still counts as a trial. If every asset fails, the output
   is an `error` object: read `known` and `next`, and do what `next` says.
-- Bars per year come from the calendar of the bars (`periods_per_year`), so crypto is not treated as stocks.
+- Bars per year follow each market's calendar, so crypto is not treated as stocks. Bars from 2024-01-01 on are held back (`reserved-period-held-back`).
 **What it cannot tell you**
 - Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): three rule kinds,
   daily bars, long only, all-in sizing. Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`

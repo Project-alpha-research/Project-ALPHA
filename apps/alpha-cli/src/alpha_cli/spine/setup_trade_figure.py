@@ -251,6 +251,7 @@ def trade_text(output: dict[str, Any]) -> str:
         [
             "by reason\t" + ", ".join(f"{k}: {v}" for k, v in row["by_reason"].items()),
             "Labels: " + ", ".join(label.replace("-", " ") for label in output["labels"]),
+            *([output["reserve_sentence"]] if output.get("reserve_sentence") else []),
             output["folder"],
             f"Next: alpha results cite {output['trade_id']} setup_trade_mean_net_return",
         ]
@@ -286,6 +287,7 @@ def study_text(output: dict[str, Any]) -> str:
     lines.extend(
         [
             "Labels: " + ", ".join(label.replace("-", " ") for label in output["labels"]),
+            *([output["reserve_sentence"]] if output.get("reserve_sentence") else []),
             output["folder"],
             f"Next: alpha results cite {output['study_id']} setup_mean_net_return",
         ]

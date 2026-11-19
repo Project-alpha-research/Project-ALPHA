@@ -2,10 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f9e49df15e422661 on 2026-11-19: Re-read after merging main: the body is main's; this branch only changes source_fingerprint ordering and toolbox inputs, which add no command, route or package boundary
+  verified 51b445eddf8d1790 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 apps/alpha-cli/README.md
-  verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 51b445eddf8d1790 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
+
+apps/alpha-web/CONTEXT.md
+  verified 386b3fc7401188a6 on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
+
+apps/alpha-web/README.md
+  verified 386b3fc7401188a6 on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -16,8 +22,14 @@ docs/reference/invariants/README.md
 docs/reference/invariants/cli-investigation-tools.md
   verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
+docs/reference/invariants/cli-results-check.md
+  verified deded9c2162dff6d on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
+
 docs/reference/invariants/cli-runs.md
-  verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 7faf900ddc45ca56 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
+
+docs/reference/invariants/cli-toolbox.md
+  verified 2811488286ec53ef on 2026-11-19: Only the toolbox contract test draft gained the reserved period phrase; the page still holds.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
@@ -27,6 +39,12 @@ docs/reference/invariants/documentation.md
 
 docs/reference/invariants/rdagent.md
   verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
+
+docs/reference/invariants/web-api-reads.md
+  verified 37a43801954c500e on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
+
+docs/reference/invariants/web-api.md
+  verified ead3bfe820e7226f on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
 
 docs/reference/invariants/workers.md
   verified 93a1a6a1a66f426c on 2026-11-19: Re-read after merging main: restoring the full reflection in discussion prompts changes no worker boundary
@@ -73,14 +91,17 @@ docs/reference/project/components/rd-agent.md
 docs/reference/project/components/research-cases-and-approval.md
   verified e128568bea1bbca0 on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
+docs/reference/project/components/setup-lab.md
+  verified 757f3af13ba2047b on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
+
 docs/reference/project/components/strategies-and-signals.md
-  verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
+  verified 9c4b254dffe386e8 on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
 
 docs/reference/project/components/toolbox.md
-  verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 2811488286ec53ef on 2026-11-19: Only the toolbox contract test draft gained the reserved period phrase; the page still holds.
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 7eafac4908061574 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 42ca859f8a14ba0b on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -125,22 +146,28 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified a7e7c2cc5ee66b1c on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified b4e12652f0f31bf9 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/PLAYBOOK.md
-  verified 383a1502ea8f14be on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 7836eac4e1b68119 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
+
+research/README.md
+  verified 32f4d6bcc007ccea on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
 
 research/tools/README.md
-  verified 2aface65c59fa829 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 037ef08fb5d83454 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/tools/benchmark-and-drawdowns.md
-  verified f241475c184eea0f on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 6792901c13c7b424 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
+
+research/tools/charts.md
+  verified 39598369079e8d57 on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 6e7278a5e33a4107 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/tools/diagnose-and-audit.md
-  verified 3b71a6fca5ba8d7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 2025ca4f82db2dfb on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -154,14 +181,17 @@ research/tools/rdagent-journey.md
 research/tools/resampling-checks.md
   verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
 
+research/tools/results-and-cite.md
+  verified 28e0ab3cd8d5e9ee on 2026-11-19: Build only added the 2023-12-31 hold-back cut-off to rule tests and setups; this page's statements still hold.
+
 research/tools/rule-test.md
-  verified 52a764bf55adf539 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 01cec1774fe9fb34 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/tools/run-level-checks.md
   verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 research/tools/sensitivity.md
-  verified 34576f849dfdeff3 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+  verified 6e7278a5e33a4107 on 2026-11-19: A typing-only refactor of one call in run.py; the page's statements still hold.
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged

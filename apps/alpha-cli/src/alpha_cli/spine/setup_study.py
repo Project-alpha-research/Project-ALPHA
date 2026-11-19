@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine import reserve
 from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError, study_error
 from alpha_cli.spine.event_study_figure import draw_event_study
@@ -294,6 +295,7 @@ def _run(
                 " This re-measures an earlier study of the same find under the new per-asset"
                 " cost rule; it counts as one more look, not a new idea."
             )
+        reserve.carry_to_outcome(summary, manifest)
         summary["data_health"] = record
         summary["labels"] = [
             label for label in summary["labels"] if not label.startswith("data-health-")

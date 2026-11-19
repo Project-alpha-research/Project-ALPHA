@@ -3,17 +3,18 @@ owner: project layer
 sources:
   - packages/alpha-core/src/alpha_core/*.py
   - apps/alpha-cli/src/alpha_cli/toolbox/reserve.py
+  - apps/alpha-cli/src/alpha_cli/spine/reserve.py
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: 02e0e6657075c931
+verified: 5817a087dae59122
 ---
 
 # The reserved period
 
-The reserved period is all data on or after 2024-01-01. It is kept back so that an idea is never tuned on it. Today only RD-Agent's factor loop, its rule
-families, its post-verdict checks and its journey figures lock it. Other commands label it or ignore it.
+The reserved period is all data on or after 2024-01-01. It is kept back so that an idea is never tuned on it. Today RD-Agent's factor loop, its rule
+families, its post-verdict checks and its journey figures lock it, and so do rule tests and setups. Other commands label it or ignore it.
 
 ## Where the code defines the date
 
@@ -33,19 +34,19 @@ Locks it out (the code refuses reserved rows or aborts):
 - RD-Agent rule families (`rdagent_rule_family.py`): the run aborts if the loader returns a bar or dividend on or after the date.
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
+- Rule tests (`alpha test`) and setups (`alpha setup find|study|trade`): every bar and dividend read passes the cut-off 2023-12-31 (`spine/reserve.py`).
+  A bar is kept only if its date is before the reserved day, for stocks and crypto alike. The count of held-back bars comes from a timestamp-only scan.
+  A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence. A run with no held-back bars is unchanged.
+  Study and trade refuse an older find that used the period (`RESERVED_PERIOD_SEEN`). `alpha tool` reads a held-back run with the run's own cut-off.
+- Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
 Only labels it:
 
-- `alpha tool` (the [toolbox](components/toolbox.md)): a run whose data used the date gets the label `reserved-period-seen`. Nothing is hidden, and a
-  cut-off for tool inputs is not built (`toolbox/inputs.py`).
+- Older rule runs that saw the date, and `alpha tool` on them: the label `reserved-period-seen`. Nothing is rewritten. The label is derived when the
+  run is read, from its last bar date and the lack of a hold-back record (`toolbox/inputs.py`, `alpha results show`).
 
 Holds nothing back:
 
-- `alpha test` (rule tests) and `alpha setup`. Checked in code at 458503bb: every import reachable from `test_cmds.py` and `setup_cmds.py` (198
-  modules) was searched for `RESERVED_DAY`, `RESERVED_START`, `toolbox.reserve` and the text `2024-01-01`. The hits are the toolbox store and inputs
-  (labels only), the RD-Agent judge, thirds and journey-figure modules, and the daily funding reader. They are imported through the ledger readers;
-  none cuts the bars a rule test or setup reads. An import is not a call, so this shows no use of the date, not a full call trace. The same finding is
-  in [ideas and things considered](ideas-and-considered.md#open-questions).
 - Every other command: not verified.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
@@ -59,6 +60,5 @@ Holds nothing back:
 
 ## What is open
 
-- The reserve policy for rule tests and setups: one held-back period for everything, a held-back tail chosen per idea, or the status quo with
-  labels ([open questions](ideas-and-considered.md#open-questions)).
+- The other commands (optimise, validate, backtest, lookalike, labels, scans, forecasts): each should hold the period back or label it. Not built.
 - Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.

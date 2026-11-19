@@ -15,6 +15,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine import reserve
 from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.deflation import (
     TrialFamily,
@@ -132,8 +133,16 @@ def _prepare(
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
-    bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
-    dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir)
+    held_back = reserve.held_back_count(resolved)
+    if held_back:
+        result["labels"].append(reserve.HELD_BACK)
+        result["reserve"] = reserve.record(held_back)
+    bars, snapshot_id = _runner.load_bars(
+        resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
+    )
+    dividends = _runner.load_dividends(
+        resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
+    )
     verify_inputs([resolved], record)
     result.update(
         first_ts=bars[0].ts.isoformat(), last_ts=bars[-1].ts.isoformat(), n_bars=len(bars)
@@ -149,7 +158,7 @@ def _prepare(
             "command": "validate",
             "symbol": resolved.symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": None,
+            "research_cutoff": reserve.CUTOFF_DATE if held_back else None,
             **_fields(spec),
             **{key: value for key, value in _fields(knobs).items() if key != "max_workers"},
             "spec_sha256": idea.spec_sha256,
@@ -211,6 +220,8 @@ def _execute(
         facts=build_facts(rdir),
     )
 
+    if result.get("reserve"):
+        print(reserve.sentence(result["reserve"]["held_back_bars"]))
     if result.get("sentence"):
         print(f"{result['sentence']} [too-few-trades]")
     if result["resized_entries"] > 0:
@@ -274,12 +285,15 @@ def _write_run(
         result,
         snapshot=snapshot,
     )
+    # Only a held-back run names its cut-off, so every other run keeps its old identity.
+    cutoff: dict[str, Any] = {"as_of": reserve.CUTOFF_DATE} if result.get("reserve") else {}
     _, manifest = write_validation_run(
         staged_home,
         prepared.bars,
         prepared.spec,
         out,
         prepared.identity,
+        **cutoff,
         extra_manifest={
             **headline_manifest(out, result),
             "data_health": result["data_health"],
@@ -309,6 +323,7 @@ def _write_run(
                     "first_ts": out.oos.oos_timestamps[0].isoformat(),
                     "last_ts": out.oos.oos_timestamps[-1].isoformat(),
                 },
+                **({"reserve": result["reserve"]} if result.get("reserve") else {}),
             },
         },
     )

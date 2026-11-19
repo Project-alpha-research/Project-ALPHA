@@ -68,7 +68,7 @@ def _check_reading(spec: ToolSpec, doc: dict[str, Any], home: Path) -> None:
                 parts.append(f" [{RUN}:{spec.id}.{key}]")
     diagnostics = home / "runs" / RUN / "diagnostics.json"
     diagnostics.write_text(json.dumps({"trials": {"total_trials": 1}}))
-    draft = f"Quick look. {''.join(parts)}\n1 [{RUN}:total_trials]"
+    draft = f"Quick look. Reserved period seen. {''.join(parts)}\n1 [{RUN}:total_trials]"
     checked = check_text(draft, fact_lookup(home))
     assert checked["ok"], checked
 

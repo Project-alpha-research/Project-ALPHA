@@ -49,6 +49,7 @@ def _text(output: dict[str, Any]) -> str:
     return "\n".join(
         [
             *lines,
+            *([output["reserve_sentence"]] if output.get("reserve_sentence") else []),
             health_sentence(output.get("data_health")),
             output["folder"],
             (
@@ -147,6 +148,7 @@ def run_find(
     """A find counts one exploratory look; completed folders are never rewritten."""
     import polars as pl
 
+    from alpha_cli.spine import reserve
     from alpha_cli.spine.setup_find import (
         _counts,
         health_find_id,
@@ -178,6 +180,8 @@ def run_find(
     identity = dict(find_id=find_id, spec_sha256=spec.spec_sha256, name=spec.setup.name)
     folder = home / "setups" / find_id
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]
+    held_back = sum(r.get("held_back_bars", 0) for r in results)
+    block = {"reserve": reserve.record(held_back)} if held_back else {}
     labels.extend(health_labels(record))
     labels += sorted({label for r in results for label in r["labels"]})
     if (folder / "manifest.json").exists():
@@ -223,6 +227,7 @@ def run_find(
             assets=results,
             sheets=sheet_counts,
             facts=facts,
+            **block,
         )
         folder.mkdir(parents=True, exist_ok=True)
         write_text(
@@ -240,6 +245,7 @@ def run_find(
             context_bars=context_bars,
             labels=labels,
             assets=results,
+            **block,
             files=dict(candidates="candidates.parquet", summary="summary.json", sheets=sheets),
         )
         write_text(folder / "manifest.json", json.dumps(manifest, default=str, allow_nan=False))
@@ -263,6 +269,7 @@ def run_find(
     )
     return dict(
         find_id=find_id,
+        **({"reserve_sentence": reserve.sentence(held_back)} if held_back else {}),
         folder=str(folder),
         data_health=record,
         labels=labels,

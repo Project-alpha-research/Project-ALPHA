@@ -10,7 +10,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
   - tests/smoke/test_rule_tools_smoke.py
-verified: 1cd1c3fa4ed30b3e
+verified: aac40a7404c87536
 ---
 
 # Investigation tools invariants
@@ -54,3 +54,4 @@ Follow-up questions on a recorded rule test or judged factor replay; part of [co
   Earlier metric names and stored files remain citable. Use `--tool-output <id>` for multiple outputs or any non-default setting.
   Copy the output-specific tag and settings count into the draft. The checker reads the same fact.
 - `reserved-period-seen` means the run used data on or after the reserve date. All bars used by the original run remain in the calculation.
+  A run that held bars back records its `research_cutoff`, and the tools read bars and dividends only up to it.

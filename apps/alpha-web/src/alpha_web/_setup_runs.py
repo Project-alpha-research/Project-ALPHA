@@ -67,6 +67,10 @@ LABELS = {
     "older-cost-rule": "Recorded under the earlier cost rule.",
     "remeasured-new-cost-rule": "An earlier find was measured with a new cost rule; another look.",
     "repeat": "A repeat of an earlier result, not independent evidence.",
+    "reserved-period-held-back": "Data from 2024-01-01 on was held back for the owner's "
+    "confirmation.",
+    "reserved-period-seen": "This run used data from 2024-01-01 on, before that data was held "
+    "back. It is not a fresh test on that period.",
     "not-primary": "Also looked at, not tested as the primary horizon.",
 }
 

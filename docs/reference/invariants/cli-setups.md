@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
-verified: 79d1daee6fb2661b
+verified: 182b9948d3aa22fc
 ---
 
 # Command line setup invariants
@@ -21,7 +21,8 @@ Rules for `alpha setup find`, `alpha setup study` and `alpha setup trade`. Other
   matching old id. The atomic manifest is last; repeats append a ledger row, rewrite nothing. A `setup_find` row is an uncounted look, no verdict.
 ## Setup study
 - `alpha setup study FIND_ID` reads accepted cluster-first candidates without detecting again or changing the find.
-- Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find.
+- Reload successful assets through the same point-in-time loader; changed fingerprints or providers require another find. Find and reload cut at 2023-12-31;
+  a find with held-back bars records `reserve` and its label, and study and trade carry them. A find without `reserve` whose last bar is on or after 2024-01-01 is refused (`RESERVED_PERIOD_SEEN`).
 - Recorded next-open entry to close h−1 positions later, less per-asset round-trip `setup_costs` (stocks/ETFs: 1+2 bp per side; crypto: 10+5 bp); no exits,
   dividends or sizing.
 - Incomplete outcomes are excluded per horizon. Drift uses every post-warm-up eligible date; random controls use 2,000 spaced uniform subsets.

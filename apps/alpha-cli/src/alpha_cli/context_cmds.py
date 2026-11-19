@@ -10,6 +10,7 @@ from typing import Annotated, Any
 import polars as pl
 import typer
 
+from alpha_cli import context_free_cmds as free
 from alpha_cli import context_sources_cmds as sources
 from alpha_cli._cli_json import emit
 from alpha_core import DataError
@@ -24,7 +25,9 @@ from alpha_data.context.fred import (
 )
 from alpha_data.context.views import read_provenance
 
-context_app = typer.Typer(help="Point-in-time macro, SEC filings and Binance derivatives context.")
+context_app = typer.Typer(
+    help="Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context."
+)
 
 
 def _emit(payload: dict[str, Any], json_out: bool) -> None:
@@ -82,7 +85,7 @@ def pull(
 
 @context_app.command("list")
 def list_series(json_out: bool = typer.Option(False, "--json")) -> None:
-    """List locally stored series and their provenance (no network)."""
+    """List stored FRED series and free CFTC/FINRA tables with provenance (no network)."""
     data_dir = AlphaSettings().data_dir
     rows = []
     try:
@@ -97,7 +100,7 @@ def list_series(json_out: bool = typer.Option(False, "--json")) -> None:
             )
     except (DataError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from None
-    _emit({"series": rows}, json_out)
+    _emit({"series": rows, "free_context": free.free_listing()}, json_out)
 
 
 @context_app.command()
@@ -209,3 +212,4 @@ def window(
 
 
 context_app.add_typer(sources.sources_app)
+context_app.add_typer(free.free_app)

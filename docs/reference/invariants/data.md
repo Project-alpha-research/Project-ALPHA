@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: e9713aceef673a0d
+verified: 05bc0170eb682f98
 ---
 
 # Data layer invariants
@@ -168,7 +168,7 @@ import it. It must never let a read see data that was not knowable at the cutoff
   `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
   house in `crypto/` and `crypto/providers/` (command-local raw-resource discovery is owned by
   `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
-  Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
+  Binance derivatives, offline Bybit, CFTC positioning and FINRA short-volume context in `context/` (separate hashed tables under `data_dir/context/`,
   never bars or backtest inputs; event reads require an aware UTC cutoff); provider-neutral
   option chains, their point-in-time store (research reads cut at the held-back day; forward use through a named
   reader) and a synthetic fixture in `options/` ([rules](data-options.md)).

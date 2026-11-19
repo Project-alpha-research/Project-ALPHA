@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 6e7278a5e33a4107
+verified: 6a5dfa9d983735bd
 ---
 
 # Deflated Sharpe and trial counting

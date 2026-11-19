@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 28e0ab3cd8d5e9ee
+verified: 6c38aa97437364f1
 ---
 # Results and cite
 **Reach for it when** quoting a stored run or checking what was tried. **Commands** `alpha results --symbol SPY --limit 50 --json`,

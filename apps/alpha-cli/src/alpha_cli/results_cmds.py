@@ -203,7 +203,10 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         # Investigation-tool outputs live outside the immutable run directory.
         "tool_history": history(home, run_id),
         "tools": [
-            {key: item[key] for key in ("tool", "id", "params", "recorded_at", "file", "labels")}
+            {
+                key: item[key]
+                for key in ("tool", "id", "params", "recorded_at", "file", "labels", "reading")
+            }
             for item in tool_outputs(home, run_id)
         ],
         "charts": [

@@ -1,0 +1,19 @@
+id = "asset-growth"
+name = "Asset growth"
+year_published = 2008
+market = "us-equities"
+idea = "Firms whose total assets grew fast have tended to earn less afterwards than firms that grew slowly."
+mechanism_claimed = "The authors say investors over-value growth and managers over-invest, so fast growers disappoint."
+data_needed = ["accounting data: total assets"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = ""
+
+[source]
+authors = "Cooper, Gulen and Schill"
+year = 2008
+title = "Asset growth and the cross-section of stock returns"
+venue = "Journal of Finance 63(4)"
+url = "https://doi.org/10.1111/j.1540-6261.2008.01370.x"

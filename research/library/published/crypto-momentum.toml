@@ -1,0 +1,19 @@
+id = "crypto-momentum"
+name = "Crypto momentum"
+year_published = 2022
+market = "crypto"
+idea = "Coins that rose over the past one to four weeks have tended to keep rising for a while."
+mechanism_claimed = "The paper reports the pattern and states no firm cause. The sample is short."
+data_needed = ["daily prices for many coins"]
+direction = "long-short"
+holding_clock = "weeks"
+decay_evidence = "none found; the sample is short."
+can_test_today = "yes - crypto daily bars are held for the coins in the stored panel."
+notes = ""
+
+[source]
+authors = "Liu, Tsyvinski and Wu"
+year = 2022
+title = "Common risk factors in cryptocurrency"
+venue = "Journal of Finance 77(2)"
+url = "https://doi.org/10.1111/jofi.13119"

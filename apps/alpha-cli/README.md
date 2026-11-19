@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 96ebf7d8a3b0af78
+verified: 598bb68ab779aec2
 ---
 
 # alpha-cli: code map and change loop
@@ -24,6 +24,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Control store | `control_store`, `_control_*`, `owner_auth*`, `durable_lease`, `job_capacity`, `project_*` | `test_control_*`, `test_owner_*` |
 | Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`,
 `test_look*` |
+| Front door | `next_cmds` (read-only; reuses `spine/stores`, `spine/trial_reader`, `rdagent_discussion`) | `test_next_cmd`, `smoke/test_next_smoke` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
 `test_suite_*` |
 | Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |

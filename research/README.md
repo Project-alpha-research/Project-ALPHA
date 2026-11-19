@@ -10,6 +10,8 @@ verified: 9e61db19cd45b06a
 
 Which skill to use for what the owner says. The routing page is [CONTEXT.md](CONTEXT.md).
 
+New here? Run `uv run alpha next`. It shows what data and records exist and three ways to start. It writes nothing.
+
 ## Skills by trigger
 
 | The owner says | Skill (`.agents/skills/<name>/SKILL.md`) |

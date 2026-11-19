@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 96ebf7d8a3b0af78 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified 598bb68ab779aec2 on 2026-11-19: alpha next added: one read-only command, registered in main.py and classed safe in catalog.py; the code map has its row
 
 apps/alpha-cli/README.md
-  verified 96ebf7d8a3b0af78 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified 598bb68ab779aec2 on 2026-11-19: alpha next added: one read-only command, registered in main.py and classed safe in catalog.py; the code map has its row
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -74,7 +74,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified e03897d6a8ab6d9c on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
+  verified e03897d6a8ab6d9c on 2026-11-19: front-door capability claimed; the part's purpose is unchanged
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

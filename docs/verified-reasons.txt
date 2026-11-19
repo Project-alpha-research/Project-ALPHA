@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 3a9f8d4044ea7cc5 on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
+  verified 96ebf7d8a3b0af78 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 apps/alpha-cli/README.md
-  verified 3a9f8d4044ea7cc5 on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
+  verified 96ebf7d8a3b0af78 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 apps/alpha-web/CONTEXT.md
   verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -17,16 +17,19 @@ docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
-  verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
+  verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 69389fec2e960887 on 2026-11-19: Count now fifteen (regime entry dropped); main's facts.py change adds a reading field to stored tool facts, which no rule here contradicts
+  verified f616aee0ea28d749 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
   verified 6cba75aed59c6842 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+
+docs/reference/invariants/cli-toolbox.md
+  verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
@@ -98,7 +101,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
 
 docs/reference/project/components/toolbox.md
-  verified 392648233f13dee1 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 docs/reference/project/components/validation-and-evidence.md
   verified 9fcc3abfebb42b86 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -110,7 +113,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
+  verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -209,7 +212,7 @@ workflow/CONTEXT.md
   verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 workflow/README.md
-  verified eb366577c36de56b on 2026-11-19: re-read; only routing rows and a new test were added
+  verified c4a3d7272c352892 on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

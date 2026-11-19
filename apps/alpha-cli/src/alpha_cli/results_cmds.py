@@ -10,6 +10,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
+from alpha_cli.spine import reserve
 from alpha_cli.spine.check import FlagLookup, check_text, render_check
 from alpha_cli.spine.compare import (
     DEFAULT_METRICS,
@@ -176,7 +177,9 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         {"reader_trials": 0, "rows": 0, "outcomes": {}},
     )
     at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
+    labels = reserve.read_labels(manifest)
     return {
+        **({"reserve_sentence": reserve.SEEN_SENTENCE} if reserve.SEEN in labels else {}),
         "family": {
             "family_id": family_id,
             "trials_at_run": at_run,
@@ -187,7 +190,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         "idea_id": manifest.get("idea_id"),
         "data_health": manifest.get("data_health"),
         "facts": build_facts(rdir),
-        "labels": manifest.get("spine", {}).get("labels", []),
+        "labels": labels,
         "flags": diagnostics.get("flags", []),
         "audit": diagnostics.get("audit", []),
         "diagnostics_reason": None

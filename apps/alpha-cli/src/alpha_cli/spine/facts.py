@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine import reserve
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.registry import ALIASES, METRIC_OUTPUTS
 
@@ -254,7 +255,7 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
         return facts
     documents = {name: read_json(rdir / name) for name in ("manifest.json", "diagnostics.json")}
     spine = documents["manifest.json"].get("spine", {})
-    labels = spine.get("labels", [])
+    labels = reserve.read_labels(documents["manifest.json"])
     periods = spine.get("periods", {})
     fields = _FIELDS.copy()
     if periods.get("full_history"):

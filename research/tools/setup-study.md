@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 6eb4c599a9d03988
+verified: fc6edf75ad8a1ea5
 ---
 # Setup study
 
@@ -30,7 +30,7 @@ uv run alpha results cite <study_id> setup_mean_net_return --json
 - Compare mean net return with drift and 2,000 spaced random-date samples (figure: grey band, dashed drift).
 - Under 30 complete occurrences, overlapping outcomes and disagreeing halves are labels, not
   evidence to omit; each half meets controls from its own years.
-- Each study counts one trial; repeating it labels `repeat` without rewriting the folder.
+- Each study counts one trial; a repeat is labelled `repeat`. A held-back find passes its label on; a find that used reserved bars is refused.
 
 The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)
 **What it cannot tell you** Exits, sizing, portfolios, dividends or reserved-data confirmation.

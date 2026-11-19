@@ -200,13 +200,15 @@ def load_run(home: Path, target: Target) -> RunSeries:
     meta = manifest["metadata"]
     resolved = resolve_asset(f"{meta['symbol']}@{manifest['spine']['store']}", data_dir=home)
     last = datetime.fromisoformat(meta["last_ts"])
+    # A held-back run records its cut-off; bars and dividends known after it are never read.
+    cutoff = _runner.parse_as_of(manifest.get("research_cutoff"))
     # Bars added after the run are left out, so the tool describes the run's own history.
     bars = [
         bar
-        for bar in _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)[0]
+        for bar in _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=cutoff)[0]
         if bar.ts <= last
     ]
-    dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir)
+    dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=cutoff)
     changed = SpineError(
         "RUN_DATA_CHANGED",
         f"The stored history of {resolved.symbol} no longer reproduces run {run_id}.",

@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine import reserve
 from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
@@ -313,6 +314,7 @@ def _run(
         summary["controls"]["opposite_direction"] = _opposite_control(
             rows, prepared, control_costs, other, control_labels
         )
+        reserve.carry_to_outcome(summary, manifest)
         summary["data_health"] = record
         summary["labels"] = [
             label for label in summary["labels"] if not label.startswith("data-health-")

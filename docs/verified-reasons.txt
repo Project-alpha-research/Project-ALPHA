@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 6d90919122ff3189 on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 apps/alpha-cli/README.md
   verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
@@ -11,7 +11,7 @@ apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 135068fa03637875 on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 apps/alpha-web/README.md
   verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
@@ -21,6 +21,9 @@ docs/CONTEXT.md
 
 docs/reference/invariants/README.md
   verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
+
+docs/reference/invariants/cli-crypto-data.md
+  verified 58ac39557605c1cf on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 docs/reference/invariants/cli-investigation-tools.md
   verified f616aee0ea28d749 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
@@ -43,6 +46,9 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
+docs/reference/invariants/data-free-sources.md
+  verified 9a9c3c10a2f6fa40 on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
+
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
@@ -56,13 +62,13 @@ docs/reference/invariants/web-api-reads.md
   verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
 docs/reference/invariants/web-api.md
-  verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified 5e2d82403edd0cdb on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 docs/reference/invariants/web-frontend.md
   verified 25f6d8651e3fb73c on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
 
 docs/reference/invariants/web-run-detail.md
-  verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified d0476d8bf43737c9 on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -186,6 +192,9 @@ research/tools/benchmark-and-drawdowns.md
 
 research/tools/charts.md
   verified 18edee030ad2bf0a on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+
+research/tools/data-health.md
+  verified e8f970777c31eed4 on 2026-11-19: Market overview change adds one read-only data command and one web route; this page's rules are unchanged
 
 research/tools/deflated-sharpe-and-trials.md
   verified 032a9e159daf0f09 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here

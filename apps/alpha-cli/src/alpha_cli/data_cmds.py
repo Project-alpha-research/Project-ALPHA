@@ -11,6 +11,7 @@ from typing import Annotated
 
 import typer
 
+from alpha_cli.market_overview_cmds import market_overview_command
 from alpha_cli.providers import (
     HistoricalAdapterFactory,
     historical_adapter_factories,
@@ -801,6 +802,9 @@ def universe_show(
             f"{name} as of {when}: {len(members)} members ({len(later_removed)} later removed)"
         )
         typer.echo(" ".join(members))
+
+
+data_app.command("market-overview")(market_overview_command)
 
 
 @data_app.command("chart-datasets")

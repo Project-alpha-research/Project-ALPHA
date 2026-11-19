@@ -493,6 +493,13 @@
     {
       "method": "GET",
       "mode": "automatic",
+      "operation_id": "overview_api_market_overview_get",
+      "path": "/api/market/overview",
+      "reason": "Safe read exercised against an isolated temporary store."
+    },
+    {
+      "method": "GET",
+      "mode": "automatic",
       "operation_id": "get_capabilities_api_ml_capabilities_get",
       "path": "/api/ml/capabilities",
       "reason": "Safe read exercised against an isolated temporary store."

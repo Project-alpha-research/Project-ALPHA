@@ -50,7 +50,7 @@ METRICS = {
     "top_3_profit_share": "Top three trades vs total profit; above 1 if the rest lost.",
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
-    "total_trials": "Ledger trial count observed for this diagnostic pass.",
+    "total_trials": "Ledger entry number of this run: an audit sequence, not ideas tried.",
     "trial_dsr": "Deflated Sharpe using the idea family's trial count from the one ledger.",
     "family_trials": (
         "Trials counted for the deflated Sharpe: the idea's family in the one ledger, "

@@ -192,6 +192,18 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     )
     at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     labels = reserve.read_labels(manifest)
+    # A run is a repeat when its first ledger row says so (the same test after a code change has
+    # a new run folder); the label lives in the ledger row only, never in the stored manifest.
+    first = next(
+        (
+            row
+            for row in read_trials(home)
+            if row.get("run_id") == run_id and row.get("kind", "rule_test") == "rule_test"
+        ),
+        None,
+    )
+    if first is not None and "repeat" in (first.get("labels") or ()) and "repeat" not in labels:
+        labels.append("repeat")
     stored_tools = tool_outputs(home, run_id)
     return {
         **({"reserve_sentence": reserve.SEEN_SENTENCE} if reserve.SEEN in labels else {}),

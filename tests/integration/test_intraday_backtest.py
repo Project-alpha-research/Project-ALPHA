@@ -23,10 +23,10 @@ from alpha_data.timeframe import parse_timeframe
 def _bars(symbol: str = "X", timeframe: str = "5m", sessions: int = 2) -> list[Bar]:
     period = parse_timeframe(timeframe)
     if "/" in symbol:
-        stamps = [datetime(2024, 1, 2, tzinfo=UTC) + i * period.duration for i in range(156)]
+        stamps = [datetime(2023, 1, 3, tzinfo=UTC) + i * period.duration for i in range(156)]
     else:
         stamps = [
-            datetime(2024, 1, 2 + day, 14, 30, tzinfo=UTC) + i * period.duration
+            datetime(2023, 1, 3 + day, 14, 30, tzinfo=UTC) + i * period.duration
             for day in range(sessions)
             for i in range(78)
         ]
@@ -167,7 +167,7 @@ def test_daily_identity_inputs_and_manifest_keys_are_unchanged(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     bars = [
-        bar.model_copy(update={"ts": datetime(2024, 1, 2, tzinfo=UTC) + timedelta(days=i)})
+        bar.model_copy(update={"ts": datetime(2023, 1, 3, tzinfo=UTC) + timedelta(days=i)})
         for i, bar in enumerate(_bars())
     ]
     _seed(tmp_path, monkeypatch, bars, "1D")

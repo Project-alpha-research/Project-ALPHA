@@ -93,12 +93,12 @@ def test_zero_time_to_expiry_is_typed() -> None:
     assert isinstance(out, IvUnsolved) and out.reason == "zero_time_to_expiry"
 
 
-def test_american_style_is_a_typed_not_supported_result() -> None:
+def test_the_closed_form_solver_hands_american_style_to_the_tree_solver() -> None:
     inp = inputs(1.0, 0.5, "P")
     out = solve_implied_vol(inp, price(inp, 0.3), style="A")
     assert isinstance(out, IvUnsolved)
-    assert out.reason == "american_style_not_supported"
-    assert out.message == "no implied volatility: American style is not supported yet"
+    assert out.reason == "american_style_needs_tree_inputs"
+    assert out.message == "no implied volatility: American style needs the tree solver"
 
 
 def test_a_vol_outside_the_search_interval_is_typed() -> None:

@@ -3,44 +3,45 @@
 Pure math plus the layer's records. No data reads, no clock.
 
 Sources
-- The models are in `alpha_data.options.pricing` (Black-Scholes-Merton, Black-76).
-- Root finder: safeguarded Newton-Raphson that keeps a bracket and bisects whenever the Newton step
-  leaves the bracket or does not halve it fast enough. Press, Teukolsky, Vetterling and Flannery,
-  "Numerical Recipes", the routine `rtsafe`. The price is strictly increasing in volatility
-  (vega > 0), so a sign change of price(vol) - target on the interval guarantees one root.
+- The closed-form models are in `alpha_data.options.pricing` (Black-Scholes-Merton, Black-76); the
+  American tree is in `alpha_data.options.tree`, its solver in `implied_american`. The root
+  finder, result types and the low-confidence rule are in `iv_core`.
 
 Rules
-- Day count: ACT/365 fixed on calendar time. years = (expiry_ts - snapshot_ts) seconds /
-  (365 * 86400), both aware-UTC.
-- Search interval for the volatility: [IV_LOW, IV_HIGH] = [0.0001, 10.0] (0.01% to 1000%).
 - Typed outcomes, never a silent NaN: `IvSolved` or `IvUnsolved` with a stated reason. Non-finite
   inputs raise `OptionsDataError` naming the field.
-- The price must lie strictly inside the no-arbitrage bounds, else "no implied volatility: price
-  outside no-arbitrage bounds".
-- Low confidence, exact rule: iv_uncertainty = price_resolution / vega (vega per 1.00 of vol at
-  the solved vol). The result is "low_vega" when iv_uncertainty > LOW_CONFIDENCE_IV_ERROR (0.005,
-  half a vol point); with the default half-cent resolution that is vega < 1.0. `solve_row` stores
-  no computed block for it. Pass the quote's tick size or half-spread as price_resolution when it
-  is known.
+- European: the price must lie strictly inside the no-arbitrage bounds, else "no implied
+  volatility: price outside no-arbitrage bounds".
 - Mid: a crossed, zero-width or zero-bid quote has no mid. A zero bid is never averaged.
 - Expiry time: the contract has only a date. The caller passes the exchange's expiry cut-off in UTC
   (`expiry_time_utc`), for example the settlement-price time of the series.
-- American exercise is NOT supported yet: it returns "american_style_not_supported". No
-  approximation is invented. Listed US equity and ETF options are American-style, so until an
-  American method exists this solver covers European-style index options and futures options only.
+- `solve_row` prices European-style contracts in closed form and American-style contracts on the
+  CRR tree (explicit dividends and step count required; both are recorded in the model tag).
 - Quotes are per unit of underlying (per share); the contract multiplier does not scale them.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, time
-from typing import Literal
 
+from alpha_data.options.implied_american import american_model_tag, solve_american_implied_vol
+from alpha_data.options.iv_core import (
+    DEFAULT_PRICE_RESOLUTION,
+    IV_HIGH,
+    IV_LOW,
+    LOW_CONFIDENCE_IV_ERROR,
+    IvSolved,
+    IvUnsolved,
+    Reason,
+    finite,
+    safeguarded_root,
+    years_between,
+)
 from alpha_data.options.pricing import (
     DAY_COUNT,
-    Conventions,
     OptionInputs,
     greeks,
     price_bounds,
@@ -51,44 +52,29 @@ from alpha_data.options.schema import (
     Greeks,
     OptionsDataError,
     Quote,
-    aware_utc,
     quote_labels,
 )
+from alpha_data.options.tree import DEFAULT_STEPS, AmericanInputs, Dividend, TreeRefused
+from alpha_data.options.tree_greeks import american_greeks
 
-IV_LOW = 1e-4
-IV_HIGH = 10.0
-DEFAULT_PRICE_RESOLUTION = 0.005
-LOW_CONFIDENCE_IV_ERROR = 0.005
-_SECONDS_PER_YEAR = 365.0 * 86400.0
-_XTOL = 1e-14
-_MAX_ITER = 200
-
-Reason = Literal[
-    "price_outside_no_arbitrage_bounds",
-    "zero_time_to_expiry",
-    "american_style_not_supported",
-    "implied_vol_outside_search_interval",
-    "did_not_converge",
-    "no_quote",
-    "no_mid",
+__all__ = [
+    "DEFAULT_PRICE_RESOLUTION",
+    "IV_HIGH",
+    "IV_LOW",
+    "LOW_CONFIDENCE_IV_ERROR",
+    "IvSolved",
+    "IvUnsolved",
+    "Mid",
+    "Reason",
+    "RowSolve",
+    "mid_price",
+    "model_tag",
+    "solve_implied_vol",
+    "solve_row",
+    "years_between",
 ]
-_MESSAGES: dict[str, str] = {
-    "price_outside_no_arbitrage_bounds": "price outside no-arbitrage bounds",
-    "zero_time_to_expiry": "zero time to expiry",
-    "american_style_not_supported": "American style is not supported yet",
-    "implied_vol_outside_search_interval": f"volatility outside [{IV_LOW:g}, {IV_HIGH:g}]",
-    "did_not_converge": "the root finder did not converge",
-    "no_quote": "the row has no quote",
-    "no_mid": "the quote has no usable mid",
-}
 
-
-def years_between(snapshot_ts: datetime, expiry_ts: datetime) -> float:
-    """ACT/365 fixed calendar years from the snapshot to expiry; both must be aware UTC."""
-    start, end = aware_utc("snapshot_ts", snapshot_ts), aware_utc("expiry_ts", expiry_ts)
-    if end < start:
-        raise OptionsDataError("expiry_ts", "is before the snapshot time")
-    return (end - start).total_seconds() / _SECONDS_PER_YEAR
+_XTOL = 1e-14
 
 
 @dataclass(frozen=True)
@@ -109,71 +95,13 @@ def mid_price(quote: Quote) -> Mid:
     return Mid((quote.bid + quote.ask) / 2.0, ())
 
 
-@dataclass(frozen=True)
-class IvSolved:
-    """A solved volatility with how it was found. `confidence` is "normal" or "low_vega"."""
-
-    iv: float
-    confidence: str
-    vega: float
-    iv_uncertainty: float
-    iterations: int
-    price: float
-    model: str
-    inputs: OptionInputs
-    conventions: Conventions
-    greeks: Greeks | None = None
-
-
-@dataclass(frozen=True)
-class IvUnsolved:
-    """No volatility, with a typed reason. `message` starts "no implied volatility: "."""
-
-    reason: Reason
-    inputs: OptionInputs | None
-
-    @property
-    def message(self) -> str:
-        return f"no implied volatility: {_MESSAGES[self.reason]}"
-
-
-def _finite(field: str, value: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value):
-        raise OptionsDataError(field, f"must be a finite number, got {value!r}")
-    return float(value)
-
-
 def _root(inp: OptionInputs, target: float) -> tuple[float, int] | Reason:
-    """Safeguarded Newton on [IV_LOW, IV_HIGH]; returns (vol, iterations) or a reason."""
-    lo, hi = IV_LOW, IV_HIGH
-    if greeks(inp, lo).price > target:
-        return "implied_vol_outside_search_interval"
-    if greeks(inp, hi).price < target:
-        return "implied_vol_outside_search_interval"
-    guess = math.sqrt(2.0 * math.pi / inp.years) * target / inp.forward / inp.discount
-    x = min(max(guess, 2 * lo), hi / 2)
-    step = hi - lo
-    for iteration in range(1, _MAX_ITER + 1):
+    def func(x: float) -> tuple[float, float]:
         g = greeks(inp, x)
-        diff = g.price - target
-        if diff == 0.0:
-            return x, iteration
-        if diff < 0:
-            lo = x
-        else:
-            hi = x
-        previous = step
-        newton = x - diff / g.vega if g.vega > 0 else math.inf
-        if not lo < newton < hi or abs(2.0 * diff) > abs(previous * g.vega):
-            new_x = 0.5 * (lo + hi)
-            step = hi - lo
-        else:
-            new_x = newton
-            step = abs(new_x - x)
-        if abs(new_x - x) < _XTOL or hi - lo < _XTOL:
-            return new_x, iteration
-        x = new_x
-    return "did_not_converge"
+        return g.price, g.vega
+
+    guess = math.sqrt(2.0 * math.pi / inp.years) * target / inp.forward / inp.discount
+    return safeguarded_root(func, target, lo=IV_LOW, hi=IV_HIGH, guess=guess, xtol=_XTOL)
 
 
 def solve_implied_vol(
@@ -184,13 +112,13 @@ def solve_implied_vol(
     price_resolution: float = DEFAULT_PRICE_RESOLUTION,
 ) -> IvSolved | IvUnsolved:
     """Implied volatility of `target_price` under the model in `inp`, or a typed reason."""
-    _finite("price", target_price)
-    if _finite("price_resolution", price_resolution) <= 0:
+    finite("price", target_price)
+    if finite("price_resolution", price_resolution) <= 0:
         raise OptionsDataError("price_resolution", "must be above zero")
     if style not in STYLES:
         raise OptionsDataError("style", f"must be one of {STYLES}, got {style!r}")
     if style == "A":
-        return IvUnsolved("american_style_not_supported", inp)
+        return IvUnsolved("american_style_needs_tree_inputs", inp)
     if inp.years <= 0:
         return IvUnsolved("zero_time_to_expiry", inp)
     lower, upper = price_bounds(inp)
@@ -221,6 +149,7 @@ class RowSolve:
 
     row: ChainRow
     outcome: IvSolved | IvUnsolved
+    labels: tuple[str, ...] = ()
 
 
 def model_tag(inp: OptionInputs) -> str:
@@ -237,6 +166,33 @@ def model_tag(inp: OptionInputs) -> str:
     )
 
 
+def _american_row(
+    row: ChainRow,
+    inp: AmericanInputs,
+    mid: float,
+    steps: int,
+) -> RowSolve:
+    out = solve_american_implied_vol(inp, mid, steps=steps)
+    if isinstance(out, IvUnsolved) or out.confidence != "normal":
+        return RowSolve(row, out)
+    g = american_greeks(inp, out.iv, steps)
+    if isinstance(g, TreeRefused):  # a bumped tree broke no-arbitrage: keep the IV, label the row
+        block = Greeks(source="computed", model=american_model_tag(inp, steps), iv=out.iv)
+        return RowSolve(
+            replace(row, computed=block), replace(out, greeks=block), ("greeks_not_available",)
+        )
+    block = Greeks(
+        source="computed",
+        model=american_model_tag(inp, steps),
+        iv=out.iv,
+        delta=g.delta,
+        gamma=g.gamma,
+        vega=g.vega,
+        theta=g.theta,
+    )
+    return RowSolve(replace(row, computed=block), replace(out, greeks=block))
+
+
 def solve_row(
     row: ChainRow,
     *,
@@ -245,13 +201,26 @@ def solve_row(
     rate: float,
     dividend_yield: float,
     expiry_time_utc: time,
+    dividends: Sequence[Dividend] | None = None,
+    steps: int = DEFAULT_STEPS,
 ) -> RowSolve:
     """Solve one row from its mid. The provided slot is never touched; only `computed` is set.
 
-    A low-confidence, unsolved or mid-less row comes back unchanged with the reason in `outcome`.
+    European-style contracts use the closed form. American-style contracts use the CRR tree and
+    need `dividends` stated (pass `()` for none; `None` raises) and a step count (default 500,
+    recorded in the model tag). A low-confidence, unsolved or mid-less row comes back unchanged
+    with the reason in `outcome`. If a bumped greek tree breaks no-arbitrage, `computed` holds the
+    IV only and `labels` is ("greeks_not_available",).
     """
     contract = row.contract
     expiry_ts = datetime.combine(contract.expiry, expiry_time_utc, UTC)
+    american = contract.style == "A"
+    if american and dividends is None:
+        raise OptionsDataError(
+            "dividends",
+            "must be stated for an American-style contract: pass dividends=() for none, or the "
+            "Dividend(ex_ts, amount) list; None never means no dividends",
+        )
     inp = OptionInputs(
         underlying=underlying_price,
         kind="spot",
@@ -266,6 +235,18 @@ def solve_row(
     mid = mid_price(row.quote).value
     if mid is None:
         return RowSolve(row, IvUnsolved("no_mid", inp))
+    if american:
+        tree_inp = AmericanInputs(
+            spot=underlying_price,
+            strike=float(contract.strike),
+            valuation_ts=snapshot_ts,
+            expiry_ts=expiry_ts,
+            rate=rate,
+            dividend_yield=dividend_yield,
+            dividends=tuple(dividends or ()),
+            right=contract.right,
+        )
+        return _american_row(row, tree_inp, mid, steps)
     out = solve_implied_vol(inp, mid, style=contract.style)
     if isinstance(out, IvUnsolved) or out.confidence != "normal":
         return RowSolve(row, out)

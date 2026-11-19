@@ -15,7 +15,8 @@ Sources
   finite difference of the price in tests/unit/test_options_pricing.py.
 
 Assumptions, in plain words (all must hold for the number to mean something)
-- The exercise is European: only at expiry. American contracts are NOT priced here.
+- The exercise is European: only at expiry. American contracts are priced in
+  `alpha_data.options.tree`.
 - The underlying follows a geometric Brownian motion with one constant volatility to expiry.
 - The risk-free rate and the dividend yield are constant and continuously compounded.
 - No transaction costs, no borrow cost beyond the yield, and trading is continuous.

@@ -9,6 +9,7 @@ anything is implemented.
 
 from __future__ import annotations
 
+import math
 import re
 import subprocess
 from dataclasses import dataclass
@@ -62,7 +63,7 @@ class Section:
     end: int
     text: str
     kind: str
-    score: int = 0
+    score: float = 0.0
 
     def location(self) -> dict[str, Any]:
         return {
@@ -161,33 +162,84 @@ def sections(path: str, source: Source) -> list[Section]:
     return found
 
 
+_STOP_WORDS = frozenset(
+    [
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "do",
+        "does",
+        "why",
+        "what",
+        "how",
+        "i",
+        "to",
+        "of",
+        "for",
+        "and",
+        "in",
+        "on",
+        "it",
+        "have",
+        "has",
+        "with",
+        "can",
+        "we",
+        "be",
+    ]
+)
+_TITLE_WEIGHT = 3.0
+_PROJECT_BOOST = 1.5
+_ARCHIVE_DAMPING = 0.5
+_PROJECT_PAGES = "docs/reference/project/"
+_ARCHIVE_PAGES = "docs/archive/"
+
+
+def _path_weight(path: str) -> float:
+    if path.startswith(_PROJECT_PAGES):
+        return _PROJECT_BOOST
+    return _ARCHIVE_DAMPING if path.startswith(_ARCHIVE_PAGES) else 1.0
+
+
 def search_sections(sources: dict[str, Source], query: str, *, kind: str = "all") -> list[Section]:
-    """Excerpts containing every query word; heading matches rank ahead of text matches."""
-    terms = set(_TOKENS.findall(query.lower()))
-    if not terms or len(query) > 160 or len(terms) > 12:
+    """Excerpts ranked by IDF-weighted hits of the query's content words, heading hits first.
+
+    Common words are dropped; an excerpt needs at least half of the remaining words (rounded
+    up, minimum one). Project pages count 1.5 times, archive pages half; ties go by path.
+    """
+    words = set(_TOKENS.findall(query.lower()))
+    if not words or len(query) > 160 or len(words) > 12:
         raise ValueError("query must contain 1-12 words and at most 160 characters")
     if kind not in KINDS:
         raise ValueError(f"unknown document kind: {kind}")
-    found: list[Section] = []
+    terms = words - _STOP_WORDS
+    if not terms:
+        raise ValueError(
+            "query has only common words (the, is, how, ...); add a word that names the topic"
+        )
+    needed = max(1, -(-len(terms) // 2))
+    rows: list[tuple[Section, set[str], set[str]]] = []
+    frequency = dict.fromkeys(terms, 0)
     for path, source in sorted(sources.items()):
-        if kind != "all" and source.kind != kind:
-            continue
         for row in sections(path, source):
-            title_terms = set(_TOKENS.findall(row.heading.lower()))
-            text_terms = set(_TOKENS.findall(row.text.lower()))
-            if terms <= title_terms | text_terms:
-                score = 10 * len(terms & title_terms) + len(terms & text_terms)
-                found.append(
-                    Section(
-                        row.path,
-                        row.heading,
-                        row.start,
-                        row.end,
-                        row.text,
-                        row.kind,
-                        score,
-                    )
-                )
+            title_terms = terms & set(_TOKENS.findall(row.heading.lower()))
+            text_terms = terms & set(_TOKENS.findall(row.text.lower()))
+            for term in title_terms | text_terms:
+                frequency[term] += 1
+            if kind == "all" or source.kind == kind:
+                rows.append((row, title_terms, text_terms))
+    total = sum(1 for _ in rows) or 1
+    weight = {term: math.log(1 + total / count) for term, count in frequency.items() if count}
+    found: list[Section] = []
+    for row, title_terms, text_terms in rows:
+        hit = title_terms | text_terms
+        if len(hit) < needed:
+            continue
+        raw = sum(weight[t] * (_TITLE_WEIGHT if t in title_terms else 1.0) for t in hit)
+        score = round(raw * _path_weight(row.path), 4)
+        found.append(Section(row.path, row.heading, row.start, row.end, row.text, row.kind, score))
     return sorted(found, key=lambda row: (-row.score, row.path, row.start))
 
 

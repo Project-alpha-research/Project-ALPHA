@@ -42,8 +42,8 @@ def docs_repo(tmp_path: Path) -> Path:
 
 
 def test_search_keeps_line_ranges_headings_and_skips_private_paths(docs_repo: Path) -> None:
-    found = search_sections(read_sources(docs_repo), "context filesystem")
-    assert len(found) == 3
+    # Any-term search: the three pages with both words rank first, then pages with one.
+    found = search_sections(read_sources(docs_repo), "context filesystem")[:3]
     assert {row.kind for row in found} == {"feature", "task", "decision"}
     feature = next(row for row in found if "H26" in row.heading)
     assert (feature.start, feature.end) == (2, 3)
@@ -149,10 +149,10 @@ def test_missing_tracked_document_fails_loud(docs_repo: Path) -> None:
 def test_limit_and_budget_name_every_omitted_match(docs_repo: Path) -> None:
     result = search(docs_repo, "context filesystem", limit=1)
     assert len(result["results"]) == 1
-    assert result["matched"] == 3 == len(result["results"]) + len(result["omitted"])
+    assert result["matched"] == 5 == len(result["results"]) + len(result["omitted"])
     assert all("text" not in row for row in result["omitted"])
     tight = search(docs_repo, "context filesystem", budget_bytes=10)
-    assert tight["results"] == [] and len(tight["omitted"]) == 3
+    assert tight["results"] == [] and len(tight["omitted"]) == 5
     assert search(docs_repo, "absentneedle")["matched"] == 0
     # A large first match that does not fit is not skipped in favour of later, smaller ones.
     first = search(docs_repo, "context filesystem")["results"][0]
@@ -167,12 +167,86 @@ def test_cli_text_and_json(docs_repo: Path, capsys: pytest.CaptureFixture[str]) 
     root = ["--root", str(docs_repo)]
     assert fs.main([*root, "search", "context filesystem", "--format", "json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["authority"] == "none" and payload["matched"] == 3
+    assert payload["authority"] == "none" and payload["matched"] == 5
     assert {"path", "heading", "start", "end", "kind", "text"} <= set(payload["results"][0])
     assert fs.main([*root, "search", "context filesystem", "--limit", "2"]) == 0
     rendered = capsys.readouterr().out
-    assert "2 of 3 matches" in rendered
+    assert "2 of 5 matches" in rendered
     assert "[decision]" in rendered or "[feature]" in rendered
-    assert "Not shown (1):" in rendered
+    assert "Not shown (3):" in rendered
     assert fs.main(["--root", str(docs_repo / "data"), "search", "context"]) == 2
     assert "no tracked documents" in capsys.readouterr().err
+
+
+_RANKED_PAGES = {
+    "docs/reference/project/components/toolbox.md": "# Toolbox\n## What the toolbox is for\n"
+    "The toolbox holds the checks. To add a check, register it.\n",
+    "docs/reference/project/components/monte-carlo.md": "# Monte Carlo\n"
+    "## Why four Monte Carlo methods\nFour methods answer four questions.\n",
+    "docs/reference/project/components/kronos.md": "# Kronos\n## Purpose\n"
+    "Kronos is a tool that RD-Agent calls to forecast candles.\n",
+    "docs/reference/project/components/web-workstation.md": "# Workstation\n"
+    "## Theme decision\nThe workstation keeps a light theme by owner decision.\n",
+    "docs/reference/project/reserved-period.md": "# Reserved data\n"
+    "## Held back period\nThe held back period of reserved data is never searched.\n",
+    "docs/reference/invariants/noise.md": "# Noise\nA check is a word; the data is here.\n",
+    "docs/archive/research-notes/old.md": "# Old notes\nMonte Carlo methods, four of them.\n",
+}
+
+
+@pytest.fixture
+def ranked_repo(tmp_path: Path) -> Path:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    _add(tmp_path, _RANKED_PAGES)
+    return tmp_path
+
+
+@pytest.mark.parametrize(
+    ("query", "page"),
+    [
+        ("what is the toolbox for and how do I add a check", "components/toolbox.md"),
+        ("why does ALPHA have four Monte Carlo methods", "components/monte-carlo.md"),
+        ("Kronos purpose RD-Agent tool", "components/kronos.md"),
+        ("light theme workstation decision", "components/web-workstation.md"),
+        ("held back period reserved data", "project/reserved-period.md"),
+    ],
+)
+def test_natural_questions_find_a_relevant_page_in_the_top_three(
+    ranked_repo: Path, query: str, page: str
+) -> None:
+    top = [row.path for row in search_sections(read_sources(ranked_repo), query)[:3]]
+    assert any(path.endswith(page) for path in top), top
+
+
+def test_an_archive_page_never_outranks_a_project_page_with_the_same_hits(
+    tmp_path: Path,
+) -> None:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    text = "# Ledger\nLedger rotation plan.\n"
+    _add(
+        tmp_path,
+        {
+            "docs/archive/research-notes/a.md": text,
+            "docs/reference/project/z.md": text,
+        },
+    )
+    found = search_sections(read_sources(tmp_path), "ledger rotation")
+    assert [row.path for row in found] == [
+        "docs/reference/project/z.md",
+        "docs/archive/research-notes/a.md",
+    ]
+
+
+def test_a_query_of_only_common_words_is_refused_with_a_clear_message(
+    ranked_repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(ValueError, match="only common words"):
+        search_sections(read_sources(ranked_repo), "why is it the")
+    assert fs.main(["--root", str(ranked_repo), "search", "how do we"]) == 2
+    assert "only common words" in capsys.readouterr().err
+
+
+def test_ranked_order_is_stable_across_runs(ranked_repo: Path) -> None:
+    query = "why does ALPHA have four Monte Carlo methods"
+    runs = [search_sections(read_sources(ranked_repo), query) for _ in range(2)]
+    assert runs[0] == runs[1] and len(runs[0]) >= 2

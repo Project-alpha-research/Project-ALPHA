@@ -58,6 +58,7 @@ other files link to it.
   Another document counts as a source only when `sources` names its exact path, and then by its text below
   the front matter (its own re-stamp does not cascade); one a glob merely covers never counts. A document left
   with nothing to fingerprint is listed by `fs.py stale` as "cannot be checked": give it a real source.
+  `fs.py stale` also fails on a document with unreadable front matter or merge conflict markers.
   `uv run python scripts/fs.py stale` lists stale documents, and `gate.py check` and the CI `static` job fail
   while one exists, so no pull request merges with a stale document and none can stay stale on `main`.
 - `uv run python scripts/fs.py owners <path>...` names the documents that describe a file. Claude Code is told

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 4a7172e6fd80a114 on 2026-11-20: Nightly readiness logic changed inside the same six files; the rows here stay true.
+  verified 1a178a179429f355 on 2026-11-20: Cosmetic edit only; rows stay true.
 
 apps/alpha-cli/README.md
-  verified 4a7172e6fd80a114 on 2026-11-20: Nightly readiness logic changed inside the same six files; the rows here stay true.
+  verified 1a178a179429f355 on 2026-11-20: Cosmetic edit only; rows stay true.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified c95595a7c5e135ff on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-runs.md
-  verified 5901c1ebaf4b91a4 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 5f319d0220493851 on 2026-11-20: Cosmetic edit only; the page matches the code.
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -225,6 +225,9 @@ research/tools/inverted-signal-control.md
 
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+
+research/tools/nightly-run.md
+  verified 646843bb494848e4 on 2026-11-20: Cosmetic edit only; the page matches the code.
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct

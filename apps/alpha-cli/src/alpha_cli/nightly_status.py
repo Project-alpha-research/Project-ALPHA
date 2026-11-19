@@ -182,7 +182,7 @@ def status_text(facts: dict[str, Any]) -> str:
     lines.extend(f"  Missing {reason}" for reason in facts["reasons"])
     lines.append(RULE)
     defects = facts["open_defects"]
-    lines.append("Open defects (from the last full-attempt run): " + ("none." if not defects else ""))
+    lines.append("Open defects (last full-attempt run): " + ("none." if not defects else ""))
     lines.extend(
         f"  {d['severity']} in {d['step']}: {d['text']}  To reproduce: {d['reproduce']}"
         for d in defects

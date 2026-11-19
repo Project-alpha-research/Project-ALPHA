@@ -3,7 +3,7 @@ owner: study projections
 sources:
   - packages/alpha-study/src/**
   - packages/alpha-study/pyproject.toml
-verified: 5cefafbb140111a2
+verified: fc073e814f9e99b2
 ---
 
 # alpha-study workspace

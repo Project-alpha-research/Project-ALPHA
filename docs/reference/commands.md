@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-274 commands in 37 groups. Options marked (required) are
+277 commands in 38 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -148,6 +148,14 @@ Kronos foundation-model forecasting (probabilistic outcome cones).
 
 - `alpha forecast eval <SYMBOL>` — Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines. Options: `--horizon`, `--stride`, +16 more
 - `alpha forecast run <SYMBOL>` — Sample future OHLCV paths for SYMBOL and write the outcome-cone artifacts. Options: `--horizon`, `--samples`, +12 more
+
+## alpha idea
+
+Write an idea card before you test an idea.
+
+- `alpha idea list` — List every card with its idea and whether a test is linked to it. Options: `--json`
+- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +5 more
+- `alpha idea show <CARD_ID>` — Print one card, and name the fields that are not stated. Options: `--json`
 
 ## alpha info
 
@@ -439,7 +447,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +8 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +9 more
 
 ## alpha tool
 

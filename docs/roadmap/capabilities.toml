@@ -444,6 +444,27 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "idea-card"
+name = "Idea card (alpha idea)"
+what = "Write a short card before any test: the idea, why it could work, who is on the other side, what would disprove it, the baseline to beat and four clocks. A test can link to it by id without changing any test id."
+see_it = ["uv run alpha idea new --from research/examples/idea-card.example.toml", "uv run alpha idea list"]
+entry_points = [
+  "cli: alpha idea new",
+  "cli: alpha idea show",
+  "cli: alpha idea list",
+]
+proof_synthetic = [
+  "tests/unit/test_idea_card.py::test_run_and_test_ids_do_not_change_with_the_link",
+  "tests/unit/test_idea_card.py::test_empty_fields_are_allowed_and_shown_as_not_stated",
+]
+proof_smoke = [
+  "tests/smoke/test_idea_card_smoke.py::test_the_example_card_can_be_saved_shown_and_listed",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Working"
+
+[[capability]]
 id = "risk-numbers"
 name = "Risk numbers that state what they are based on"
 codes = ["C04"]

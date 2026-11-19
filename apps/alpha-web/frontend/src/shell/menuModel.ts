@@ -41,6 +41,7 @@ export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   assistant: 'Research',
   tool: 'Research',
   next: 'Research',
+  idea: 'Research',
   setup: 'Research',
   labels: 'Research',
   'strategy-candidate': 'Strategy',

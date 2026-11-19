@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 0506063e4bb0dce1
+verified: f36f86deb8ffb349
 ---
 
 # Research tools, by symptom
@@ -16,7 +16,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | What you see or need | Open |
 |---|---|
 | Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
-| An idea to test | [rule test](rule-test.md) |
+| An idea to test (write the [idea card](idea-card.md) first) | [rule test](rule-test.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |
 | A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |

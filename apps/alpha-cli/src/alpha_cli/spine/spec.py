@@ -86,6 +86,8 @@ class IdeaSpec(FrozenModel):
     assets: tuple[Annotated[str, Field(min_length=1)], ...] = Field(min_length=1)
     rule: Rule
     costs: Costs = Field(default_factory=Costs)
+    # A link to an idea card. Excluded from dumps, so it is in no hash, run id or stored spec.
+    idea_card: str = Field(default="", exclude=True)
 
     @model_validator(mode="after")
     def default_name(self) -> Self:
@@ -118,12 +120,12 @@ def load_spec(
     idea: str | None = None,
     fee_bps: float | None = None,
     slippage_bps: float | None = None,
+    idea_card: str | None = None,
 ) -> IdeaSpec:
     """Read one file or an equivalent complete set of flags, never a silent override."""
     if path is not None:
-        if any(
-            value is not None for value in (rule, param, asset, name, idea, fee_bps, slippage_bps)
-        ):
+        flags = (rule, param, asset, name, idea, fee_bps, slippage_bps, idea_card)
+        if any(value is not None for value in flags):
             raise ValueError("a spec path and rule flags cannot be used together")
         if path.suffix.lower() == ".toml":
             with path.open("rb") as stream:
@@ -149,6 +151,7 @@ def load_spec(
         {
             "name": name or "",
             "idea": idea or "",
+            "idea_card": idea_card or "",
             "assets": asset or [],
             "rule": values,
             "costs": costs,

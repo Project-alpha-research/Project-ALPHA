@@ -15,7 +15,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine import reserve
+from alpha_cli.spine import idea_card, reserve
 from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.deflation import (
     TrialFamily,
@@ -324,6 +324,7 @@ def _write_run(
                     "last_ts": out.oos.oos_timestamps[-1].isoformat(),
                 },
                 **({"reserve": result["reserve"]} if result.get("reserve") else {}),
+                **idea_card.linked(home, idea.idea_card, "rule_test", prepared.identity.run_id),
             },
         },
     )
@@ -346,6 +347,7 @@ def run_idea(
     report_time: datetime | None = None,
 ) -> dict[str, Any]:
     """Run assets independently; ledger failures remain fatal rather than losing trial history."""
+    idea_card.require(home, idea.idea_card)
     knobs = _gauntlet.GauntletParams(seed=seed)
     if quick:
         knobs = replace(

@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 650664a488917d4a
+verified: 6752afcd4702357e
 ---
 
 # Command line runs invariants

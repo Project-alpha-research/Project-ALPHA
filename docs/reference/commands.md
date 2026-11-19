@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-276 commands in 38 groups. Options marked (required) are
+278 commands in 39 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -210,6 +210,13 @@ Required scenario/path-risk Monte Carlo evidence from a completed validation run
 ## alpha next
 
 - `alpha next` — Say where the project stands and what you can do now. Options: `--json`
+
+## alpha nightly
+
+Run the golden paths on real stored data and read the record.
+
+- `alpha nightly run` — Run the golden paths end to end and write one dated record. Options: `--config`, `--only`, `--json`
+- `alpha nightly status` — Say what the last run showed, the clean streak, and whether it is ready. Options: `--config`, `--json`
 
 ## alpha optim
 

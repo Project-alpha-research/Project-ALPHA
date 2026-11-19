@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 157c71feccbf4587
+verified: 86257d44dd17437c
 ---
 
 # alpha-cli workspace
@@ -20,7 +20,7 @@ It must never grant authority the owner did not give, and never route live capit
 | [command reference](../../docs/reference/commands.md) | — | finding a command or its options |
 | [command line research](../../docs/reference/invariants/cli-research.md) | — | research cases, contracts, D0/D1/D2 runs, `research_*` |
 | [command line control store](../../docs/reference/invariants/cli-control-store.md) | — | the SQLite control store, migrations, owner receipts, jobs |
-| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, optimise, rule tests, tools, suites |
+| [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, rule tests, tools, suites, nightly run |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
 | [invariants router](../../docs/reference/invariants/README.md) | Command line | other `alpha` areas: setups, data, ml, paper, assistant |

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: e03897d6a8ab6d9c
+verified: 955a95357fec3ad4
 ---
 
 # Command line
@@ -49,11 +49,13 @@ checks on a recorded rule test, including seeded intervals and path-risk estimat
 RD-Agent's evaluator sends fixed check readings to the agent after each shown trading verdict.
 The [RD-Agent discussion commands](../../../../workers/rdagent/propose-and-discuss.md)
 let the user choose the ideas a waiting worker builds and read the verdict for each built idea.
+`alpha nightly run` runs the rule and setup paths each night on the stored data and writes a dated record;
+`alpha nightly status` says when two clean full runs in a row make it ready. It judges the system, never an idea.
 
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`
+- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`, `nightly-run`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),

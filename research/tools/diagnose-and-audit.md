@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/*.py
-verified: c12ce447e2f51ca1
+verified: 685d53d4396980e0
 ---
 
 # Diagnose and audit
@@ -32,9 +32,9 @@ verified: c12ce447e2f51ca1
   `price_noise`, `inverted_signal`, `walk_forward_efficiency`, `trials`, and `macro_window` (stored macro series around
   the worst drawdown, or `available: false` and a `reason`).
 - `implausibly-good`: at least 30 OOS trades and net Sharpe above 3, hit rate above 80%, or mean net
-  daily-trade return above 5%. Check data and look-ahead; this observation never improves a grade.
-- `too-few-trades`: fewer than 30 closed OOS trades caps the grade at C (inconclusive), retaining D/F.
+  daily-trade return above 5%. Check data and look-ahead; this observation blocks the word `clear of chance`.
+- `too-few-trades`: fewer than 30 closed OOS trades. The reading says `too little to read`; the numbers stay.
 **What it cannot tell you**
-- An overall grade: there is none, by design. No flag is not proof of an edge.
+- A grade or pass mark: there is none. `alpha diagnose` prints the reading first. No flag is not proof of an edge.
 - Volume against trade size, beta, regimes, or cherry-picking beyond the recorded variants. `--no-diagnose` runs return `NO_DIAGNOSTICS`.
 **Next** Take the first `FLAG` to [the symptom index](README.md) and pick the cheapest test.

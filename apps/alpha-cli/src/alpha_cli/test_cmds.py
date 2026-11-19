@@ -11,6 +11,7 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
+from alpha_cli.spine.reading import reading_word
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_cli.spine.stores import _stores
@@ -82,7 +83,7 @@ def test_rule(
         fail(test_error(str(exc)), json_out)
     lines = [
         f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
-        "ASSET\tRUN\tVERDICT\tOOS SHARPE\tLABELS / ERROR",
+        "ASSET\tRUN\tREADING\tOOS SHARPE\tLABELS / ERROR",
     ]
     for result in output["results"]:
         sharpe = result["oos_sharpe"]
@@ -91,12 +92,14 @@ def test_rule(
                 (
                     result["asset"],
                     result["run_id"] or "—",
-                    result["verdict"] or "—",
+                    reading_word(result["reading"]) if result.get("reading") else "—",
                     f"{sharpe:.3f}" if sharpe is not None else "—",
                     result["error"] or ", ".join(result["labels"]),
                 )
             )
         )
+        if result.get("reading"):
+            lines.append(result["reading"]["sentence"])
         if result.get("data_health"):
             lines.append(health_sentence(result["data_health"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))

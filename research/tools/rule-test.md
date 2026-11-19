@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: d166820bb1f88344
+verified: 1aaccadf587f557d
 ---
 
 # Rule test
@@ -23,13 +23,13 @@ runs a small gauntlet and labels the result `quick`. An optional `idea_card` lin
 
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
-- The headline starts at the first open after indicator warm-up. The smaller data dates include warm-up.
-- Tiles, Sharpe and charts share each row’s dates. “Scored test periods only” uses the fresh walk-forward portfolio.
-- Both lines use split-adjusted opens and the same recorded dividend basis. Missing period facts read “not recorded”.
-- Each asset has `run_id`, `verdict` (grade), `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`.
+- The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates. “Scored test periods only” is walk-forward.
+- Both lines use split-adjusted opens and one dividend basis. Missing period facts read “not recorded”.
+- Each asset has `run_id`, `reading`, `oos_sharpe`, `benchmark_sharpe`, `labels`, `flags`, `error`, `resized_entries`.
   `resized_entries` counts reduced scored entries; `trials_total` counts ledger trials; `test_id` names the test.
-- A failed asset keeps its row with `error` set and still counts as a trial. If every asset fails, the output
-  is an `error` object: read `known` and `next`, and do what `next` says.
+- Quote the `reading`, never a grade: `clear of chance`, `some evidence`, `not clear of chance` or `too little to read`,
+  and above or below buy-and-hold. `Fault:` means no reading. `verdict` is the old letter, for machines; old rows say "graded C under the old rules".
+- A failed asset keeps its row with `error` set and counts as a trial. If every asset fails, read `known` and `next` in the `error` object.
 - Bars per year follow each market's calendar, so crypto is not treated as stocks. Bars from 2024-01-01 on are held back (`reserved-period-held-back`).
 **What it cannot tell you**
 - Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): three rule kinds,

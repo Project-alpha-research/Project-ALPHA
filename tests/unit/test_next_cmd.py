@@ -70,7 +70,8 @@ def test_synthetic_home_lists_stores_and_trials_in_plain_words(tmp_path: Path) -
     assert "home: 1 asset" in output
     assert "2026-11-17" in output and "Breakout idea" in output
     assert "rule test" in output
-    assert "not supported" in output
+    assert "graded D under the old rules" in output
+    assert "not supported" not in output
     assert "alpha test --rule ma_cross" in output and "--asset SPY" in output
     assert "profit" not in output.lower()
 
@@ -83,7 +84,7 @@ def test_synthetic_home_json_has_stable_keys(tmp_path: Path) -> None:
     assert data["stores"][0]["name"] == "home" and data["stores"][0]["asset_count"] == 1
     assert data["stores"][0]["health"] == {"pass": 0, "warn": 0, "fail": 0, "unchecked": 1}
     assert [t["name"] for t in data["recent_trials"]] == ["Breakout idea", "Trend"]
-    assert sorted(data["recent_trials"][0]) == ["date", "kind", "name", "outcome"]
+    assert sorted(data["recent_trials"][0]) == ["date", "kind", "name", "outcome", "reading"]
     assert sorted(data["paths"]) == ["own_chart_setup", "own_rule", "rdagent_idea"]
     assert sorted(data["waiting"]) == ["rdagent_proposals"]
 

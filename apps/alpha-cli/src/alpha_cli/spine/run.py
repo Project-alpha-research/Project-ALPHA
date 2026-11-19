@@ -27,6 +27,7 @@ from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.reading import build_reading, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import spine_snapshot
@@ -200,6 +201,7 @@ def _execute(
     )
     result["sentence"] = manifest.get("spine", {}).get("sentence")
     result["idea_id"] = manifest.get("idea_id")
+    result["reading"] = stored_reading(manifest, read_json(rdir / "diagnostics.json"))
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
@@ -285,6 +287,12 @@ def _write_run(
         result,
         snapshot=snapshot,
     )
+    stored = report_to_manifest(out.report)
+    stored.update(
+        data_health=result["data_health"],
+        spine={"labels": result["labels"], "periods": result.get("periods", {})},
+    )
+    reading = build_reading(stored, read_json(rdir / "diagnostics.json"))
     # Only a held-back run names its cut-off, so every other run keeps its old identity.
     cutoff: dict[str, Any] = {"as_of": reserve.CUTOFF_DATE} if result.get("reserve") else {}
     _, manifest = write_validation_run(
@@ -296,6 +304,7 @@ def _write_run(
         **cutoff,
         extra_manifest={
             **headline_manifest(out, result),
+            "reading": reading,
             "data_health": result["data_health"],
             "idea_id": idea_id(idea.spec_sha256, prepared.identity.source_fingerprint),
             "source": result["source"],
@@ -365,6 +374,7 @@ def run_idea(
                 "run_dir",
                 "periods_per_year",
                 "verdict",
+                "reading",
                 "oos_sharpe",
                 "benchmark_sharpe",
                 "dsr",
@@ -436,7 +446,7 @@ def run_idea(
                 **{
                     key: value
                     for key, value in result.items()
-                    if key not in {"asset", "run_dir", "error", "facts"}
+                    if key not in {"asset", "run_dir", "error", "facts", "reading"}
                 },
             },
         )

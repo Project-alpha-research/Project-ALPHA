@@ -316,7 +316,9 @@ def test_rule_run_publishes_diagnostics_and_reads_them_back(
     run_id = result["run_id"]
     read = CliRunner().invoke(app(), ["diagnose", run_id, "--json"])
     assert read.exit_code == 0, read.output
-    assert json.loads(read.stdout) == stored
+    read_back = json.loads(read.stdout)
+    assert read_back.pop("reading")["schema"] == "AlphaReadingV1"
+    assert read_back == stored
     shown = CliRunner().invoke(app(), ["results", "show", run_id, "--json"])
     assert shown.exit_code == 0, shown.output
     (run,) = json.loads(shown.stdout)["runs"]

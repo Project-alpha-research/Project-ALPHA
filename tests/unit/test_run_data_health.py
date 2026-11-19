@@ -352,6 +352,8 @@ def _pass_report(home: Path, symbol: str) -> None:
 
 def _without_health(manifest: dict[str, Any], run_id: str, test_id: str) -> str:
     manifest.pop("data_health")
+    reading = manifest["reading"]
+    reading["checks"] = [c for c in reading["checks"] if c["name"] != "data-health"]
     spine = manifest["spine"]
     spine["labels"] = [x for x in spine["labels"] if not x.startswith("data-health-")]
     manifest["artifacts"]["tearsheet.html"].pop("sha256")

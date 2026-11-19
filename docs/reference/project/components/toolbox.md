@@ -63,11 +63,11 @@ The Workstation shows a rule test's stored checks under its report Summary.
 ## What is real today
 
 Fourteen checks are registered: three market descriptions, five that read a rule test's stored files, and six tests on
-that stored history (resampling, trade order and the deflated Sharpe). `alpha tool` lists, describes and runs them.
-Every attempt is recorded and a stored answer is reused. Each judged RD-Agent idea with a shown trading replay gets
-two fixed checks after the verdict, pass or fail. They never change the verdict. Not built: two named tests,
-agent-chosen checks in the proposal, and most of the 480-entry catalogue. See [STATUS.md](../../../../STATUS.md). The list and how to add a check: [toolbox
-rules](../../invariants/cli-toolbox.md).
+that stored history. `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
+Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
+each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow
+"Adding a check" in the [toolbox rules](../../invariants/cli-toolbox.md#adding-a-check). Not built: two named tests,
+agent-chosen checks in the proposal, and most of the 480-entry catalogue ([STATUS.md](../../../../STATUS.md)).
 
 ## Where it lives
 

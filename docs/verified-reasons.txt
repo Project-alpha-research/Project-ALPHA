@@ -104,7 +104,7 @@ docs/reference/project/components/validation-and-evidence.md
   verified 9fcc3abfebb42b86 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/project/components/web-workstation.md
-  verified a1a96a624976d513 on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
+  verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
 
 docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content

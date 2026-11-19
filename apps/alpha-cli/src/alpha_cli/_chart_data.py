@@ -142,9 +142,10 @@ def chart_datasets(store: CryptoBulkStore) -> list[dict[str, object]]:
     )
 
 
-def load_chart_dataset(
-    store: CryptoBulkStore, manifest_id: str, *, symbol: str, as_of: datetime | None = None
-) -> tuple[list[Bar], dict[str, Any]]:
+def _chart_frame(
+    store: CryptoBulkStore, manifest_id: str, symbol: str
+) -> tuple[pl.DataFrame, CryptoDatasetIdentityV1, str, str]:
+    """The verified, sorted, de-duplicated rows of a dataset group, and its column names."""
     store.verify_readable()
     available_groups = chart_datasets(store)
     groups = [row for row in available_groups if row["manifest_id"] == manifest_id]
@@ -236,6 +237,28 @@ def load_chart_dataset(
         if conflicting.height:
             raise DataError("overlapping chart segments disagree on OHLCV values")
         frame = frame.unique(subset=[time_column], keep="first").sort(time_column)
+    return frame, dataset, time_column, volume_column
+
+
+def held_back_chart_rows(
+    store: CryptoBulkStore,
+    manifest_id: str,
+    *,
+    symbol: str,
+    start: datetime,
+    until: datetime | None = None,
+) -> int:
+    """Count rows stamped at or after ``start`` (and known by ``until``); no price leaves here."""
+    frame, dataset, time_column, _ = _chart_frame(store, manifest_id, symbol)
+    stamps = frame[time_column].to_list()
+    period = _FREQUENCIES[dataset.frequency]
+    return sum(1 for s in stamps if s >= start and (until is None or s + period <= until))
+
+
+def load_chart_dataset(
+    store: CryptoBulkStore, manifest_id: str, *, symbol: str, as_of: datetime | None = None
+) -> tuple[list[Bar], dict[str, Any]]:
+    frame, dataset, time_column, volume_column = _chart_frame(store, manifest_id, symbol)
     cutoff = as_of or datetime.now(UTC)
     period = _FREQUENCIES[dataset.frequency]
     bars = []

@@ -6,11 +6,29 @@ from datetime import datetime
 
 import polars as pl
 
-from alpha_cli import _chart_data
+from alpha_cli import _chart_data, _runner
+from alpha_cli.spine import reserve
 from alpha_core import Bar, DataError
 from alpha_data.crypto.storage import CryptoBulkStore
 from alpha_data.resample import resample_bars
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe
+
+
+def hold_archive(
+    store: CryptoBulkStore, manifest_id: str, symbol: str, as_of: str | None
+) -> reserve.Hold:
+    """The cut-off for an archive read: it ends where the reserved day starts.
+
+    A bar is known when it closes, so the last bar of the day before is kept. The user's own
+    earlier cut-off wins and holds nothing back. The count reads timestamps only.
+    """
+    user = _runner.parse_cutoff(as_of)
+    if user is not None and user <= reserve.RESERVED_INSTANT:
+        return reserve.Hold(user, as_of, 0)
+    held = _chart_data.held_back_chart_rows(
+        store, manifest_id, symbol=symbol, start=reserve.RESERVED_INSTANT, until=user
+    )
+    return reserve.Hold(reserve.RESERVED_INSTANT, reserve.CUTOFF_DATE if held else as_of, held)
 
 
 def load_archive_bars(

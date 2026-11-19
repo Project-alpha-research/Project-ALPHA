@@ -289,6 +289,7 @@ entry_points = [
 proof_synthetic = [
   "tests/integration/test_backtest_cli.py::test_backtest_run_writes_trade_log_and_equity_curve",
   "tests/integration/test_portfolio_cli.py::test_portfolio_writes_manifest",
+  "tests/unit/test_reserve_holdback_commands.py::test_command_reads_no_held_back_bar_and_equals_the_cut_store",
 ]
 proof_smoke = [
   "tests/smoke/test_backtest_smoke.py::test_backtest_run_is_stored_and_reported",
@@ -345,6 +346,7 @@ entry_points = [
 proof_synthetic = [
   "tests/integration/test_cli_rules.py::test_rules_lifecycle",
   "tests/integration/test_cli_scan.py::test_scan_lifecycle",
+  "tests/unit/test_reserve_holdback_commands.py::test_alpha_scan_and_rules_explain_hold_the_period_back",
   "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions, scan drilldown and assistant context share recorded inputs",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"

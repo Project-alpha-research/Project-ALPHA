@@ -2,7 +2,7 @@
 owner: invariants router
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 817bbad6d1f431f3
+verified: 7c87af8b6fd472c6
 ---
 # Invariants: which file to load
 | file | owns | load when |

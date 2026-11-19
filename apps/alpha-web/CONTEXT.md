@@ -10,14 +10,12 @@ verified: a3480c23a04bafd2
 ---
 
 # alpha-web workspace
-
 ## Purpose
-
 The ALPHA Workstation: a local FastAPI backend and a React single-page app.
-It runs `alpha` as a subprocess for every action. It never runs the engine, reads SQLite itself or grants authority.
+It runs `alpha` as a subprocess for every action, except that Setup Lab reads stored files directly, bounded and read-only
+([rule](../../docs/reference/invariants/web-api-reads.md#reads-and-writes)). It never runs the engine, reads SQLite itself or grants authority.
 
 ## Read first
-
 | Read | Section | When |
 |---|---|---|
 | [engineering rules](../../docs/reference/invariants/engineering.md) | Subprocess boundary | always |
@@ -29,12 +27,11 @@ It runs `alpha` as a subprocess for every action. It never runs the engine, read
 | [web frontend invariants](../../docs/reference/invariants/web-frontend.md) | — | changing a panel, chart or the browser app |
 | [web research surfaces](../../docs/reference/invariants/web-research.md) | — | changing the assistant, investigations, rules or scans |
 | [what this part is for](../../docs/reference/project/components/web-workstation.md) | — | why it exists; before you keep, shelve or remove it |
+| [Setup Lab](../../docs/reference/project/components/setup-lab.md) | — | any Setup Lab screen work |
 | [alpha-web README](README.md) | Code map | finding a module or its tests |
 
 ## How to change it
-
 - Code, tests and checks: [code map](README.md#code-map), [change loop](README.md#change-loop); `uv run python scripts/gate.py check`.
 
 ## Outputs
-
 - The owning document: `docs/reference/invariants/web-api.md` or `web-frontend.md`.

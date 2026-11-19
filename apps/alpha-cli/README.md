@@ -62,13 +62,10 @@ do not add a private copy.
   `_structural_digest.py` itself is guarded: any edit invalidates every approval.
 
 ## Also read
-
 | Read | Section | When |
 |---|---|---|
-
 | [architecture](../../docs/ARCHITECTURE.md) | Runtime data-directory layout | adding a folder under the data directory |
 | [bounded discovery workflow](../../docs/operations/bounded-research-workflow.md) | — | running a bounded discovery or frozen-rule study |
 | [Codex investigations runbook](../../docs/operations/codex-investigations.md) | — | running or changing a recorded-run investigation |
 | [local operations runbook](../../docs/operations/README.md) | — | daily Tiingo data, IBKR Paper setup or the acceptance steps |
-
 | [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`, `toolbox/`: adding a test, its honesty rules, what is not built yet |

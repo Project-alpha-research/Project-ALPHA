@@ -7,7 +7,7 @@ sources:
   - .claude/agents/*.md
   - .codex/config.toml
   - AGENTS.md
-verified: 6720541c8834fa7f
+verified: 7fb7aae6a6b242b5
 ---
 
 # Model routing when Codex is turned back on

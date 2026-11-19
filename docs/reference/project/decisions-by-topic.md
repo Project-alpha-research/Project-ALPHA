@@ -7,7 +7,7 @@ sources:
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
   - docs/reference/project/owner-decisions-6.md
-verified: b276e6f193f1da10
+verified: dce8dfd9bf3e211f
 ---
 
 # Owner decisions by topic
@@ -50,6 +50,7 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 | RD-Agent chooses tests but does not write them | Fixed checks run after the verdict. Agent choice is still a recommendation | [vol. 5][e22] |
 | The orchestrator's plan: discussable RD-Agent | Paths are ways of working; later RD-Agent shows each refusal's reason and discusses ideas | [vol. 4][e23] |
 | Never reduce RD-Agent's capability | The research loop keeps its full context; token cuts are for development overhead only | [vol. 6][e52] |
+| One system; reserve for all tests | Join every feature; rule tests and setups hold back the reserved period; RD-Agent may use setups | [vol. 6][e53] |
 
 ## Tools, Kronos, Monte Carlo
 
@@ -151,3 +152,4 @@ Six volumes hold the log: [volume 1](owner-decisions.md),
 [e50]: owner-decisions-5.md#2026-11-18-text-the-owner-reads-follows-simplified-technical-english
 [e51]: owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first
 [e52]: owner-decisions-6.md#2026-11-19-never-reduce-rd-agents-capability-to-save-tokens-or-cost
+[e53]: owner-decisions-6.md#2026-11-19-all-features-work-together-as-one-system-four-approvals

@@ -88,6 +88,22 @@ says the web app calls the CLI as a subprocess with no exception for Setup Lab's
   - Fails the 16 KB reading limit on 2 of 10 questions; all ten pass the old 32 KB limit.
 - The detail of what readers missed is kept outside the repository.
 
+## Round 5 (final, commit f15ebbd8, 2026-11-19)
+
+| Measure | Round 5 |
+|---|---|
+| Strict full answers per reader (of 10) | 2, 4, 3 |
+| Core full per reader (of 10) | 9, 8, 10 |
+| Core full by majority of three (of 10) | 10 |
+| Wrong facts | none (rounds 2 to 5: zero wrong facts in 120 answers) |
+| Critical facts missed | none |
+| Median bytes read per question, per reader | about 15K, 12K, 17K |
+| Pass mark: "no wrong fact", "every critical fact", "core 9 of 10", "facts on the routed path" | all four pass |
+| Pass mark: 16 KB reading limit | fails on 4 of 10 questions; all ten pass the old 32 KB limit |
+| Grader's judgement | fit for use by building agents; a typical task costs 9 to 21 KB of reading, against 32 to 98 KB in round 1 |
+| Status | measurement stops here and is repeated in the periodic health check |
+| What readers missed | kept outside the repository |
+
 ## Pass bar
 
 - **Original bar:** at least 9 of 10 fully correct (strict), no wrong fact, median reading under 32 KB. **Round 2 fails it:** every reader had 1 of 10 strictly

@@ -45,6 +45,11 @@ KNOWN_RULE = (
     "row in a vintage uses that vintage's date, because the source revises history with each "
     "annual release and a revised value was not known before it. known_basis says which time won."
 )
+PROVENANCE = (
+    "release date supplied by the operator; the source's files carry none. Find it on the "
+    "release's page at openassetpricing.com or in the Hugging Face commit history of the "
+    "Data-Release branch (the date of its last data commit)."
+)
 CAVEAT = (
     "Long-short returns of the source's own portfolios of US stocks, as published in one release. "
     "Releases revise history; name the release you read. Not a claim that any factor makes money."
@@ -124,7 +129,14 @@ def map_returns(raw: bytes, docs: list[SignalDoc], *, release: str, released: da
     )
     if long.is_empty():
         raise DataError("the return file holds no returns")
-    clock = {m: known_from(m, released) for m in long["month"].unique().to_list()}
+    months: list[date] = long["month"].unique().to_list()
+    newest = max(months)
+    if released < newest + timedelta(days=1):
+        raise DataError(
+            f"released ({released}) is earlier than the newest month in the file ({newest}) plus "
+            "one day; a release cannot be older than its data. Give the true release date."
+        )
+    clock = {m: known_from(m, released) for m in months}
     out = long.with_columns(
         long_short_return=pl.col("percent") / PERCENT,
         published_year=pl.col("signal").replace_strict(
@@ -202,6 +214,7 @@ def pull_portfolios(
             "fetched_at": fetched_at.isoformat(),
             "release": release,
             "released": released.isoformat(),
+            "released_provenance": PROVENANCE,
             "project": PROJECT,
             "citation": CITATION,
             "license": LICENSE,

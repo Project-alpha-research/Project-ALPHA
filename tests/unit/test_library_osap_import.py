@@ -106,13 +106,15 @@ def test_list_defaults_to_checked_and_prints_the_counts_of_each_tier(tmp_path: P
     assert _cli(tmp_path, "list", "--tier", "bogus")[0] == 1
 
 
-def test_show_names_the_source_facts_and_a_card_is_refused(tmp_path: Path) -> None:
+def test_show_names_the_source_facts_and_a_card_is_allowed(tmp_path: Path) -> None:
     _import(tmp_path)
     code, text = _cli(tmp_path, "show", "osap-synthmom")
     assert code == 0
     assert "imported" in text and "SynthMom" in text and "2026.10" in text and "+1" in text
     code, text = _cli(tmp_path, "card", "osap-synthmom")
-    assert code == 1 and "no idea of its own" in text
+    assert code == 0 and "from imported library record osap-synthmom; not hand-checked" in text
+    code, shown = _cli(tmp_path, "show", "osap-synthmom")
+    assert code == 0 and "osap-synthmom" in shown
 
 
 def test_the_two_tiers_live_in_separate_folders_and_are_checked_on_load(tmp_path: Path) -> None:

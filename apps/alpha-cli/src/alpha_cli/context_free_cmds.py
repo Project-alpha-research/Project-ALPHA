@@ -161,7 +161,7 @@ def show_finra_short_volume(
 @free_app.command("pull-osap-portfolios")
 def pull_osap_portfolios(
     release: str = typer.Option(..., help="The source's release id, e.g. 2026.10."),
-    released: str = typer.Option(..., help="The release date, YYYY-MM-DD (the files carry none)."),
+    released: str = typer.Option(..., help="True release date YYYY-MM-DD, not before the newest month + 1 day; you supply it."),
     branch: str | None = typer.Option(None, help="Release branch if not Data-Release-<release>."),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:

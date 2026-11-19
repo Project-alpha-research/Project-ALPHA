@@ -33,7 +33,7 @@ class Source(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     authors: str
-    year: int
+    year: int | None = None
     title: str
     venue: str
     url: str
@@ -61,7 +61,7 @@ class Record(BaseModel):
     id: str
     name: str
     source: Source
-    year_published: int
+    year_published: int | None = None
     market: Literal["us-equities", "crypto", "futures", "multi"]
     idea: str
     mechanism_claimed: str
@@ -78,6 +78,8 @@ class Record(BaseModel):
     def _facts_match_tier(self) -> Record:
         if (self.tier == "imported") != (self.imported is not None):
             raise ValueError("an imported record carries [imported] facts; a checked one does not")
+        if self.tier == "checked" and self.year_published is None:
+            raise ValueError("a checked record states its publication year")
         return self
 
     @field_validator("id")
@@ -185,16 +187,14 @@ def find(home: Path, wanted: str) -> Entry:
 
 
 def provenance(record: Record) -> str:
-    return f"from library record {record.id}, published {record.year_published}"
+    year = record.year_published if record.year_published is not None else "year not stated"
+    if record.tier == "imported":
+        return f"from imported library record {record.id}; not hand-checked; published {year}"
+    return f"from library record {record.id}, published {year}"
 
 
 def make_card(record: Record) -> cards.IdeaCard:
-    if record.tier == "imported":
-        raise SpineError(
-            "LIBRARY_IMPORTED_NO_CARD",
-            f"The imported record {record.id} has no idea of its own to make a card from.",
-            "Write the idea yourself with `alpha idea`, or pick a checked record.",
-        )
+    """An imported record gives a neutral label as the idea; the owner edits it."""
     return cards.IdeaCard(
         claim=record.idea,
         mechanism=record.mechanism_claimed,

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
-verified: 724048134f587da3
+verified: 1f528c2f702dcbf1
 ---
 
 # Data layer invariants: context data
@@ -105,7 +105,10 @@ the code repository is GPL-2.0. Attribution is in `research/library/imported/osa
 - **Month.** The source stamps each month with its last trading day. Stored `month` is the calendar month end.
 - **Layer 1, `known_from`.** The later of 12:00 UTC on the day after the month ends and 00:00 UTC on the day after the
   release date of the vintage that holds the value. The files carry no release date, so `pull-osap-portfolios` requires
-  `--released`. `known_basis` is `release` or `month-lag`. Every row of a vintage uses that vintage's date: a revised value
+  `--released`, which a person types: it may not be earlier than the newest month in the file plus
+  one day, and the stored `.json` records "release date supplied by the operator". Find the true date on the release
+  page at openassetpricing.com or in the Hugging Face commit history of the release branch.
+  `known_basis` is `release` or `month-lag`. Every row of a vintage uses that vintage's date: a revised value
   was not known before its release, so a read as of an earlier time sees nothing from it.
 - **Layer 2, `published_year`.** The signal's publication year from the signal table, stored on each row, so a reader can
   split before and after publication. Year only: the source gives no sample-end rule finer than that.
@@ -117,8 +120,10 @@ the code repository is GPL-2.0. Attribution is in `research/library/imported/osa
   not a predictor in the signal table, a changed signal-table header, a release id that is not `YYYY.MM`, a future
   release date. Release 2026.10 uses CRSP v2 and revises 26 of 212 predictors against 2025.10 (its release notes).
 - **Network.** `free_http` only: generic agent, 30 s timeout, one request per second. Its data files answer with a
-  redirect to a signed host, so `Client.get_following` follows at most three redirects, https only, to `huggingface.co`
-  or `*.hf.co`; any other host is refused.
+  redirect to a signed host, so `Client.get_following` follows at most three redirects, https only, default port, no credentials in
+  the address, to `huggingface.co` or `*.hf.co` (exact host match on the parsed name; the start address is checked too);
+  any other host is refused. The caller passes the list, so no other source follows redirects. Only the generic agent
+  header is sent.
 - **Reserved period.** No research command reads these series. A future read must use `read_known` (same
   `as_known_events` cut-off) and stop at the reserved day from `alpha_core.reserve`, with no date typed in the reader; it
   must not add a second path. The series run to 2025-12, past the reserved day, so the stop is required.

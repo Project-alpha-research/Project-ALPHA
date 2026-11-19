@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/library.py
   - apps/alpha-cli/src/alpha_cli/spine/library_import.py
-verified: cc5c407f2c68358b
+verified: 75c6534b01f2afbb
 ---
 # Library of published ideas
 
@@ -23,7 +23,8 @@ or DOI), `year_published`, `market`, `idea` (one sentence), `mechanism_claimed` 
   `tier = "imported"` and an `[imported]` table (source id, release, category, sign, sample years). A record must sit in
   the folder of its tier.
 - `alpha library list` shows checked records only and prints the count of each tier. `--tier imported` or `--tier all`
-  shows more. `show` works for both. `card` refuses an imported record: it has no idea of its own.
+  shows more. `show` works for both. `card` works for an imported record too.
+  The idea is a neutral label; edit it. The card's source says "from imported library record <id>; not hand-checked".
 
 ## Importing a catalogue
 Source: the Open Source Asset Pricing signal table (Chen and Zimmermann, CC BY 4.0). Attribution is in

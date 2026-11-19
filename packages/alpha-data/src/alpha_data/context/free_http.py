@@ -39,6 +39,19 @@ def default_transport(
             return error.code, dict(error.headers), error.read(MAX_BYTES + 1)
 
 
+def _require_listed(url: str, hosts: tuple[str, ...], label: str) -> None:
+    """Refuse a url unless it is https, default port, no credentials, on a listed host."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        port = parts.port
+    except ValueError:
+        raise DataError(f"{label} redirect has an invalid address; refused") from None
+    host = parts.hostname or ""
+    listed = any(host == h or (h.startswith(".") and host.endswith(h)) for h in hosts)
+    if parts.scheme != "https" or port not in (None, 443) or "@" in parts.netloc or not listed:
+        raise DataError(f"{label} redirect to an unlisted host ({host or 'none'}); refused")
+
+
 class Client:
     """Sequential client: generic User-Agent, a timeout, and a pause between request starts."""
 
@@ -63,18 +76,14 @@ class Client:
 
         An entry of `hosts` is an exact host name, or a suffix that starts with a dot.
         """
+        _require_listed(url, hosts, label)
         for _ in range(hops + 1):
             status, headers, raw = self._send(url, label)
             if status not in (301, 302, 303, 307, 308):
                 return status, raw
             where = next((v for k, v in headers.items() if k.lower() == "location"), "")
             url = urllib.parse.urljoin(url, where)
-            parts = urllib.parse.urlsplit(url)
-            host = parts.hostname or ""
-            if parts.scheme != "https" or not any(
-                host == h or (h.startswith(".") and host.endswith(h)) for h in hosts
-            ):
-                raise DataError(f"{label} redirect to an unlisted host ({host or 'none'}); refused")
+            _require_listed(url, hosts, label)
         raise DataError(f"{label} redirected more than {hops} times; refused")
 
     def _send(self, url: str, label: str) -> tuple[int, Mapping[str, str], bytes]:

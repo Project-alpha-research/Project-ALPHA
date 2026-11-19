@@ -44,7 +44,7 @@ class SignalDoc(BaseModel):
     short_name: str
     kind: Literal["Predictor", "Placebo", "Drop"]
     authors: str
-    year: int
+    year: int | None
     journal: str | None
     data_category: str
     category: str
@@ -118,7 +118,7 @@ def parse_signal_doc(raw: bytes) -> list[SignalDoc]:
                 short_name=(row["Acronym2"] or "").strip() or acronym,
                 kind=_kind(row),
                 authors=(row["Authors"] or "").strip(),
-                year=_whole(row, "Year", required=True) or 0,
+                year=_whole(row, "Year", required=False),
                 journal=(row["Journal"] or "").strip() or None,
                 data_category=(row["Cat.Data"] or "").strip(),
                 category=(row["Cat.Economic"] or "").strip(),

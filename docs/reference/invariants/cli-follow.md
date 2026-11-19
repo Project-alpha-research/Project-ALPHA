@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_source.py
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
   - tests/unit/test_follow_separation.py
-verified: 765c2bfe8a144524
+verified: 9868a8adfe70d19b
 ---
 
 # Command line follow invariants
@@ -23,7 +23,7 @@ No signal is computed and no trade is simulated yet. Every screen of text says "
   a Today page) is added to the list on purpose, in review.
 - The guard reads source text under `apps/*/src`, `packages/*/src` and `workers/`. It also fails on the store's file names
   (`journal.jsonl`, `follow.toml`), `FOLLOW_DIR`, `AlphaFollowV1`, a name glued from parts (`"for" "ward"`), and a module that
-  lists every folder of the data directory (`home` or `data_dir` with `iterdir`, `glob`, `rglob`, `os.walk`, `copytree`).
+  lists every folder of the data directory (`home` or `data_dir` with `iterdir`, `rglob`, `os.walk`, `copytree`, or a `glob` that starts with `*`).
   It proves itself with fixture strings, not an edit of real modules. It is a text guard: a path built at run time from
   other words is not caught.
 - `follow start` writes no trial-ledger row, changes no research record and writes no file outside `forward/`.

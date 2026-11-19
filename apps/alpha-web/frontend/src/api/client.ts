@@ -95,6 +95,7 @@ import type {
   ActiveResearchGateOverride,
   AgentBrief,
   Candles,
+  MarketOverview,
   ChartOverlays,
   RuleList,
   RuleRecord,
@@ -471,6 +472,8 @@ export const api = {
   strategies: (): Promise<StrategyDef[]> => getJSON('/api/strategies'),
   commands: (): Promise<CommandDef[]> => getJSON('/api/commands'),
   symbols: (): Promise<{ symbols: string[] }> => getJSON('/api/symbols'),
+  marketOverview: (store: string, window: number, limit = 15): Promise<MarketOverview> =>
+    getJSON(`/api/market/overview?${new URLSearchParams({ store, window: String(window), limit: String(limit) })}`),
   firstBar: (symbol: string, exchange: string): Promise<FirstBar> =>
     getJSON(
       `/api/data/first-bar?symbol=${encodeURIComponent(symbol)}&exchange=${encodeURIComponent(exchange)}`,

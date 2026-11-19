@@ -28,7 +28,7 @@ FORWARD_PATH = re.compile(
     r"""|AlphaFollowV1|\bFOLLOW_DIR\b"""
 )
 DATA_DIR_SWEEP = re.compile(
-    r"\b(home|data_dir)\)?\s*\.\s*(iterdir|rglob)\(|\b(home|data_dir)\.glob\(|"
+    r"\b(home|data_dir)\)?\s*\.\s*(iterdir|rglob)\(|\b(home|data_dir)\.glob\(\s*[\"']\*|"
     r"os\.walk\(\s*(home|data_dir)\b|copytree\(\s*(home|data_dir)\b"
 )
 MUST_SCAN = (

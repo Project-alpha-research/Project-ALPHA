@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f6fa21f1a0c3b4a0 on 2026-11-19: follow journal hardening adds head record and chain module; the workspace router rows are unchanged
+  verified 2df29ed79ceff2af on 2026-11-19: after merging main: re-added this branch's follow router entry and code-map row; market view rows from main are correct
 
 apps/alpha-cli/README.md
-  verified 3fff441446bb6de8 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
+  verified 2df29ed79ceff2af on 2026-11-19: after merging main: re-added this branch's follow router entry and code-map row; market view rows from main are correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified 6d70ebadcfffe021 on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 apps/alpha-web/README.md
-  verified 6d70ebadcfffe021 on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 9a172487daa82bde on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified 70b93826df280038 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -80,7 +80,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified ae8cdffdb4cfc1d4 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
+  verified 1f899137cfab7641 on 2026-11-19: after merging main: the CLI workspace page only re-gained the follow router word; this page is still correct
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

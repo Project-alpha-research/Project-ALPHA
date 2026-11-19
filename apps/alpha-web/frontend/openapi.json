@@ -10296,6 +10296,238 @@
         "title": "LiteratureDiscoveryRequest",
         "type": "object"
       },
+      "MarketAsset": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "bar_count": {
+            "title": "Bar Count",
+            "type": "integer"
+          },
+          "change_1_pct": {
+            "title": "Change 1 Pct",
+            "type": "number"
+          },
+          "change_7_pct": {
+            "title": "Change 7 Pct",
+            "type": "number"
+          },
+          "change_window_pct": {
+            "title": "Change Window Pct",
+            "type": "number"
+          },
+          "last_bar": {
+            "title": "Last Bar",
+            "type": "string"
+          },
+          "last_close": {
+            "title": "Last Close",
+            "type": "number"
+          },
+          "last_volume": {
+            "title": "Last Volume",
+            "type": "number"
+          },
+          "median_traded_value": {
+            "title": "Median Traded Value",
+            "type": "number"
+          },
+          "series": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "series_ts": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Series Ts",
+            "type": "array"
+          },
+          "volume_vs_median": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume Vs Median"
+          }
+        },
+        "required": [
+          "asset",
+          "last_close",
+          "change_1_pct",
+          "change_7_pct",
+          "change_window_pct",
+          "last_volume",
+          "volume_vs_median",
+          "median_traded_value",
+          "series",
+          "series_ts",
+          "last_bar",
+          "bar_count"
+        ],
+        "title": "MarketAsset",
+        "type": "object"
+      },
+      "MarketOverview": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/MarketAsset"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "assets_in_store": {
+            "title": "Assets In Store",
+            "type": "integer"
+          },
+          "assets_scanned": {
+            "title": "Assets Scanned",
+            "type": "integer"
+          },
+          "available_stores": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Stores",
+            "type": "array"
+          },
+          "bar_unit": {
+            "enum": [
+              "day",
+              "bar"
+            ],
+            "title": "Bar Unit",
+            "type": "string"
+          },
+          "bars_cap": {
+            "title": "Bars Cap",
+            "type": "integer"
+          },
+          "data_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data To"
+          },
+          "eligible_assets": {
+            "title": "Eligible Assets",
+            "type": "integer"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "scan_cap": {
+            "title": "Scan Cap",
+            "type": "integer"
+          },
+          "store": {
+            "title": "Store",
+            "type": "string"
+          },
+          "too_few_bars": {
+            "items": {
+              "$ref": "#/components/schemas/MarketTooFewBars"
+            },
+            "title": "Too Few Bars",
+            "type": "array"
+          },
+          "unreadable": {
+            "items": {
+              "$ref": "#/components/schemas/MarketUnreadable"
+            },
+            "title": "Unreadable",
+            "type": "array"
+          },
+          "window": {
+            "title": "Window",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "store",
+          "available_stores",
+          "bar_unit",
+          "window",
+          "limit",
+          "assets_in_store",
+          "assets_scanned",
+          "scan_cap",
+          "bars_cap",
+          "eligible_assets",
+          "data_to",
+          "assets",
+          "too_few_bars",
+          "unreadable",
+          "generated_at"
+        ],
+        "title": "MarketOverview",
+        "type": "object"
+      },
+      "MarketTooFewBars": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "bar_count": {
+            "title": "Bar Count",
+            "type": "integer"
+          },
+          "needed": {
+            "title": "Needed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "asset",
+          "bar_count",
+          "needed"
+        ],
+        "title": "MarketTooFewBars",
+        "type": "object"
+      },
+      "MarketUnreadable": {
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "reason"
+        ],
+        "title": "MarketUnreadable",
+        "type": "object"
+      },
       "MlBackendCapability": {
         "additionalProperties": false,
         "properties": {
@@ -30387,6 +30619,78 @@
         "summary": "Stream Job",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/api/market/overview": {
+      "get": {
+        "description": "Relay ``alpha data market-overview``: the assets with the highest median traded value.",
+        "operationId": "overview_api_market_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "store",
+            "required": false,
+            "schema": {
+              "default": "1D",
+              "pattern": "^(1D|[1-9][0-9]?m|[1-9][0-9]?h)$",
+              "title": "Store",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": "90",
+              "enum": [
+                "30",
+                "90",
+                "365"
+              ],
+              "title": "Window",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 15,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "market"
         ]
       }
     },

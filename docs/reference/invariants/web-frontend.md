@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 9a172487daa82bde
+verified: 70b93826df280038
 ---
 
 # Web frontend invariants
@@ -72,6 +72,15 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   verified` and is never treated as verified provider inventory.
 - The Data Manager and status bar relay storage readiness without device names; blocked details remain visible. `controlPlane.buildDataPullArgs` throws the
   date problem the CLI would reject.
+- The Market screen (Data & Assets › Market, pane `MarketOverview`, a workflow pane and not a document) shows stored bars from `GET
+  /api/market/overview`. It is a display, not a research result: it says `Market view. Not a test result.` and prints `Data to:` with the last stored
+  bar. It names its scan caps.
+- Every Market tile and the all-lines chart share one scale by default (100 at the window start).
+  A `Scale` selector lets the owner give each tile its own range; the page states the active scale in one line.
+  Change numbers carry a direction mark and a direction colour, and the mark stays. `Differs most` marks the asset furthest from the group median
+  (`panels/marketModel.differsMost`); it is neutral, never a good or bad colour. Tiles and rows are buttons that open the single-asset chart
+  (`actions.openStoredMarket`). Colour is never the only signal. Enforced by `src/panels/MarketOverview.test.tsx`, `marketModel.test.ts`,
+  `e2e/market-overview.spec.ts`.
 
 ## Workstation themes and readability
 

@@ -60,6 +60,15 @@ def seen(last_ts: str | datetime | None, manifest: Mapping[str, Any]) -> bool:
     return last.date() >= RESERVED_DAY and block is None
 
 
+def read_labels(manifest: Mapping[str, Any]) -> list[str]:
+    """A rule run's stored labels, plus `reserved-period-seen` derived when it is read."""
+    spine = manifest.get("spine", {})
+    labels = list(spine.get("labels", []))
+    if SEEN not in labels and seen(spine.get("data_period", {}).get("last_ts"), manifest):
+        labels.append(SEEN)
+    return labels
+
+
 def refuse_find_that_saw_period(manifest: Mapping[str, Any]) -> None:
     """Study and trade never run on a find that used reserved bars (checked before any load)."""
     for asset in manifest["assets"]:

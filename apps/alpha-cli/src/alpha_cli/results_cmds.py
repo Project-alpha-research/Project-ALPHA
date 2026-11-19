@@ -177,13 +177,9 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         {"reader_trials": 0, "rows": 0, "outcomes": {}},
     )
     at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
-    labels = list(manifest.get("spine", {}).get("labels", []))
-    last_ts = manifest.get("spine", {}).get("data_period", {}).get("last_ts")
-    seen = reserve.seen(last_ts, manifest)
-    if seen and reserve.SEEN not in labels:
-        labels.append(reserve.SEEN)
+    labels = reserve.read_labels(manifest)
     return {
-        **({"reserve_sentence": reserve.SEEN_SENTENCE} if seen else {}),
+        **({"reserve_sentence": reserve.SEEN_SENTENCE} if reserve.SEEN in labels else {}),
         "family": {
             "family_id": family_id,
             "trials_at_run": at_run,

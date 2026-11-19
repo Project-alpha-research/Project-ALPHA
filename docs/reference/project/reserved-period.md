@@ -8,7 +8,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: 5817a087dae59122
+verified: e61b036507b19b6c
 ---
 
 # The reserved period
@@ -36,7 +36,10 @@ Locks it out (the code refuses reserved rows or aborts):
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
 - Rule tests (`alpha test`) and setups (`alpha setup find|study|trade`): every bar and dividend read passes the cut-off 2023-12-31 (`spine/reserve.py`).
   A bar is kept only if its date is before the reserved day, for stocks and crypto alike. The count of held-back bars comes from a timestamp-only scan.
-  A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence. A run with no held-back bars is unchanged.
+  A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence. A run with no held-back bars keeps its id.
+  Exception: a split or dividend known only from the date on is never applied. A store that ends before 2024 but records such an action
+  therefore gives other prices, and a new id, than before. Stores with no such action are byte-identical (the pinned run and find ids hold).
+  A cited draft must say "held back" or "reserved period seen" when a cited run carries that label (`alpha results check`).
   Study and trade refuse an older find that used the period (`RESERVED_PERIOD_SEEN`). `alpha tool` reads a held-back run with the run's own cut-off.
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
@@ -45,9 +48,15 @@ Only labels it:
 - Older rule runs that saw the date, and `alpha tool` on them: the label `reserved-period-seen`. Nothing is rewritten. The label is derived when the
   run is read, from its last bar date and the lack of a hold-back record (`toolbox/inputs.py`, `alpha results show`).
 
-Holds nothing back:
+Holds nothing back (they still read bars from the date on):
 
-- Every other command: not verified.
+- Cover first: `alpha optim`, `alpha validate`, `alpha backtest`, `alpha lookalike` and `alpha unusual`, `alpha labels`, research diagnostics,
+  ML input, the hypothesis scan, `alpha scan`, `alpha rules`, cross-sectional and portfolio runs, `alpha forecast`, `alpha propfirm`,
+  and research case runs (`research_cmds.py`, `research_execution.py`; they also have their own sealed holdout).
+- Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
+- Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.
+- Data health (`alpha data health`, and `--check-data` on a rule test or setup) checks every stored bar, the held-back ones too.
+  Its verdict can label or stop a run; its numbers do not enter a result.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
 ## What the owner decided

@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,7 @@ from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_cli.toolbox import inputs
 from alpha_core import Bar
+from alpha_core.corporate import ActionType, CorporateAction
 from alpha_core.reserve import RESERVED_DAY
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
@@ -262,3 +263,88 @@ def test_older_run_that_saw_the_period_is_labelled_when_read(tmp_path: Path) -> 
     manifest["spine"]["reserve"] = reserve.record(3)
     assert not reserve.seen("2024-02-01T00:00:00+00:00", manifest)
     assert not reserve.seen(datetime(2023, 12, 31, tzinfo=UTC), {})
+
+
+def _boundary_store(home: Path) -> None:
+    """Events on the last kept bar, two and four bars before it, and one complete event."""
+    store = _store(home, "SPY", LONG, poison=True)
+    frame = store.read_bars("SPY")
+    events = {date(2023, 6, 1), date(2023, 12, 27), date(2023, 12, 29), date(2023, 12, 31)}
+    flags = [1.0 if ts.date() in events else 0.0 for ts in frame["ts"]]
+    store.write_bars("SPY", frame.with_columns(pl.Series("volume", flags)))
+
+
+def test_boundary_last_kept_bar_has_no_fill_open_trade_is_marked_and_horizon_is_pending(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(setup_cmds, "draw_sheet", lambda *a, **kw: b"png")
+    _boundary_store(tmp_path)
+    spec = _spec(tmp_path, "SPY")
+    # A ten-bar hold with wide exits: the 2023-12-28 entry is still open on the last kept bar.
+    spec.write_text(
+        spec.read_text().replace(
+            'time_bars=2\nstop="5 %"\ntarget="10 %"', 'time_bars=10\nstop="50 %"\ntarget="90 %"'
+        )
+    )
+    found = setup_cmds.run_find(spec, home=tmp_path)
+    candidates = pl.read_parquet(Path(found["folder"]) / "candidates.parquet")
+    last = candidates.filter(pl.col("event_ts").dt.date() == date(2023, 12, 31))
+    assert last["reason"].to_list() == ["no-next-bar"]  # no t+1 bar: no entry
+    study = setup_study.run_study(found["find_id"], home=tmp_path)
+    outcomes = pl.read_parquet(Path(study["folder"]) / "outcomes.parquet")
+    late = outcomes.filter(pl.col("entry_ts").dt.date() == date(2023, 12, 28))
+    assert late.filter(pl.col("horizon") == 5)["complete"].to_list() == [False]
+    assert late.filter(pl.col("horizon") == 5)["net_return"].to_list() == [None]
+    assert outcomes.filter(pl.col("entry_ts").dt.date() == date(2023, 6, 2))["complete"].all()
+    trade = setup_trade.run_trade(found["find_id"], home=tmp_path)
+    trades = pl.read_parquet(Path(trade["folder"]) / "trades.parquet")
+    kept = ParquetStore(tmp_path / "store").read_bars("SPY")
+    last_close = kept.filter(pl.col("ts").dt.date() == date(2023, 12, 31))["close"].item()
+    open_at_end = trades.filter(pl.col("reason") == "open-at-end")
+    assert open_at_end.height >= 1
+    assert open_at_end["exit_price"].to_list() == [last_close] * open_at_end.height
+    assert (trades["exit_ts"].dt.date() < RESERVED_DAY).all()
+    out = run_idea(_idea("SPY"), home=tmp_path, quick=True)["results"][0]
+    run_dir = Path(out["run_dir"])
+    fills = pl.read_parquet(run_dir / "fills.parquet")
+    orders = pl.read_parquet(run_dir / "orders.parquet")
+    assert (fills["ts"].dt.date() < RESERVED_DAY).all()
+    on_last = orders.filter(pl.col("ts").dt.date() >= date(2023, 12, 31))
+    assert on_last["filled_quantity"].sum() == 0  # a decision on the last kept close never fills
+
+
+def test_point_in_time_action_known_only_in_the_reserved_period_is_not_applied(
+    tmp_path: Path,
+) -> None:
+    """A store that ends before 2024 changes only if it records a split dated in 2024 or later."""
+    seed_store(tmp_path, symbol="SPY", n=700)
+    store = ParquetStore(tmp_path / "store")
+    split = CorporateAction(
+        symbol="SPY", action_type=ActionType.SPLIT, ex_date=date(2024, 2, 15), ratio=4.0
+    )
+    before, _ = _runner.load_bars("SPY", data_dir=tmp_path, as_of=reserve.CUTOFF)
+    store.write_actions("SPY", [split])
+    after, _ = _runner.load_bars("SPY", data_dir=tmp_path, as_of=reserve.CUTOFF)
+    unbounded, _ = _runner.load_bars("SPY", data_dir=tmp_path)
+    assert [b.close for b in after] == [b.close for b in before]
+    assert unbounded[0].close == pytest.approx(before[0].close / 4.0, rel=1e-9)
+
+
+def test_held_back_rerun_of_an_old_test_is_one_more_trial_in_the_same_family(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, spy: Spy
+) -> None:
+    _store(tmp_path, "SPY", LONG, poison=False)
+    with monkeypatch.context() as old:  # how a run looked before the hold-back existed
+        old.setattr(reserve, "held_back_count", lambda resolved: 0)
+        old.setattr(reserve, "CUTOFF", datetime(2999, 1, 1, tzinfo=UTC))
+        first = run_idea(_idea("SPY"), home=tmp_path, quick=True)["results"][0]
+    assert spy.latest[-1].date() >= RESERVED_DAY
+    old_manifest = (Path(first["run_dir"]) / "manifest.json").read_bytes()
+    assert SEEN_LABEL in results_cmds._show(tmp_path, first["run_id"])["labels"]
+    second = run_idea(_idea("SPY"), home=tmp_path, quick=True)["results"][0]
+    rows = read_trials(tmp_path)
+    assert [r["kind"] for r in rows] == ["rule_test", "rule_test"]
+    assert [r["total_trials"] for r in rows] == [1, 2]
+    assert rows[0]["last_ts"] > rows[1]["last_ts"]
+    assert first["run_id"] != second["run_id"]
+    assert (Path(first["run_dir"]) / "manifest.json").read_bytes() == old_manifest

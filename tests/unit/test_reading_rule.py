@@ -36,7 +36,14 @@ def manifest(**over: Any) -> dict[str, Any]:
         "cis": [
             {"metric": "sharpe", "point": 0.75, "lower": 0.2, "upper": 1.3, "confidence": 0.95}
         ],
-        "dsr": {"dsr": 0.99, "psr": 0.995, "passed": True, "threshold": 0.95, "n_trials": 1},
+        "dsr": {
+            "dsr": 0.99,
+            "psr": 0.995,
+            "passed": True,
+            "threshold": 0.95,
+            "n_trials": 1,
+            "family_id": "spine:ma_cross",
+        },
         "cpcv": {"mean_sharpe": 0.7, "passed": True},
         "verdict": {
             "overall": "B",
@@ -49,6 +56,7 @@ def manifest(**over: Any) -> dict[str, Any]:
             "labels": ["quick"],
             "periods": {
                 "scored": {
+                    "price_basis": "with dividends",
                     "benchmark": {"sharpe": 0.78},
                     "strategy": {"trades": 80},
                 }
@@ -71,8 +79,13 @@ def test_the_four_words_have_fixed_definitions() -> None:
     assert all(reading.WORDS.values())
 
 
+CLEAN: dict[str, Any] = {"plausibility": []}
+
+
 def test_below_buy_and_hold_reads_below_the_aim_with_no_positive_word() -> None:
-    result = reading.build_reading(manifest())
+    value = manifest()
+    value["cis"][0].update(lower=0.1, upper=0.7)
+    result = reading.build_reading(value, CLEAN)
     row = result["aim"]["rows"][0]
     assert result["schema"] == "AlphaReadingV1"
     assert result["aim"]["source"] == "default"
@@ -88,18 +101,38 @@ def test_below_buy_and_hold_reads_below_the_aim_with_no_positive_word() -> None:
 
 
 @pytest.mark.parametrize(
-    ("observed", "bench", "relation"),
+    ("bench", "relation"),
     [
-        (1.2, 0.5, "above the aim"),
-        (0.5, 1.2, "below the aim"),
-        (0.7803, 0.7801, "within the uncertainty of the aim"),
+        (0.19, "above the aim"),
+        (1.31, "below the aim"),
+        (0.2, "within the uncertainty of the aim"),
+        (1.3, "within the uncertainty of the aim"),
+        # A point estimate below the aim is still within the strategy's interval: no "below".
+        (0.9, "within the uncertainty of the aim"),
     ],
 )
-def test_relation_to_the_default_aim(observed: float, bench: float, relation: str) -> None:
-    value = manifest()
-    value["oos_metrics"]["sharpe"] = observed
+def test_relation_to_the_default_aim_uses_the_stored_interval(bench: float, relation: str) -> None:
+    value = manifest()  # Sharpe 0.75, stored 95% interval 0.2 to 1.3
     value["spine"]["periods"]["scored"]["benchmark"]["sharpe"] = bench
-    assert reading.build_reading(value)["aim"]["rows"][0]["relation"] == relation
+    aim = reading.build_reading(value, CLEAN)["aim"]
+    assert aim["rows"][0]["relation"] == relation
+    assert "same scored days (with dividends, no costs)" in aim["basis"]
+    assert "95% bootstrap Sharpe interval" in aim["basis"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        manifest(cis=[]),
+        manifest(spine={"labels": [], "periods": {"full_history": {"benchmark": {"sharpe": 0.1}}}}),
+    ],
+)
+def test_no_same_days_benchmark_or_no_interval_gives_no_aim_relation(
+    value: dict[str, Any],
+) -> None:
+    result = reading.build_reading(value, {**CLEAN, "closed_oos_trades": 80})
+    assert result["aim"] == {"source": "none", "basis": None, "rows": []}
+    assert "aim" not in result["sentence"]
 
 
 def _trades(count: int) -> dict[str, Any]:
@@ -117,49 +150,79 @@ def _with(**changes: Any) -> dict[str, Any]:
     return value
 
 
+NULL_FAIL = [{"tier": "full_engine", "passed": False, "percentile": 0.6, "threshold": 0.95}]
+LOW_CI = [{"metric": "sharpe", "lower": -0.1, "upper": 1.0, "point": 0.4}]
+
+
 @pytest.mark.parametrize(
-    ("value", "word"),
+    ("value", "diagnostics", "word"),
     [
-        (manifest(), "clear of chance"),
-        (_with(dsr__passed=False, dsr__dsr=0.6), "some evidence"),
-        (_with(cpcv__passed=False), "some evidence"),
-        (
-            _with(cis=[{"metric": "sharpe", "lower": -0.1, "upper": 1.0, "point": 0.4}]),
-            "not clear of chance",
-        ),
-        (
-            _with(
-                nulls=[
-                    {"tier": "full_engine", "passed": False, "percentile": 0.6, "threshold": 0.95}
-                ]
-            ),
-            "not clear of chance",
-        ),
+        (manifest(), CLEAN, "clear of chance"),
+        # Held back from the top word, every other check holding.
+        (_with(cpcv__passed=False), CLEAN, "some evidence"),
+        (_with(cpcv={}), CLEAN, "some evidence"),
+        (_with(dsr__family_id=None), CLEAN, "some evidence"),
+        (manifest(), {}, "some evidence"),
+        (manifest(), {"plausibility": [{"flag": "implausibly-good"}]}, "some evidence"),
+        # The trial-corrected figure under the line, or missing: never a positive word.
+        (_with(dsr__passed=False, dsr__dsr=0.6), CLEAN, "not clear of chance"),
+        (_with(dsr__dsr=0.9499), CLEAN, "not clear of chance"),
+        (_with(dsr__passed=True, dsr__dsr=0.6), CLEAN, "not clear of chance"),
+        (_with(dsr__dsr=None), CLEAN, "not clear of chance"),
+        (_with(dsr__dsr=float("nan")), CLEAN, "not clear of chance"),
+        (_with(dsr={}), CLEAN, "not clear of chance"),
+        (_with(cis=LOW_CI), CLEAN, "not clear of chance"),
+        (_with(cis=[]), CLEAN, "not clear of chance"),
+        (_with(nulls=NULL_FAIL), CLEAN, "not clear of chance"),
+        (_with(nulls=[]), CLEAN, "not clear of chance"),
+        (_with(nulls=[{"tier": "full_engine"}]), CLEAN, "not clear of chance"),
         (
             _with(oos_metrics={"sharpe": -0.2, "max_drawdown": -0.1, "risk_of_ruin": 0.1}),
+            CLEAN,
             "not clear of chance",
         ),
-        (_with(spine={"labels": [], "periods": _trades(29)}), "too little to read"),
+        # Too little wins, and a count that was not stored is too little, never enough.
+        (_with(spine={"labels": [], "periods": _trades(29)}), CLEAN, "too little to read"),
+        (_with(spine={"labels": [], "periods": {}}), CLEAN, "too little to read"),
+        (_with(verdict__detail={"sample_n_oos": 99.0}), CLEAN, "too little to read"),
+        (_with(verdict__detail={}), CLEAN, "too little to read"),
         (
-            _with(
-                verdict={
-                    "overall": "A",
-                    "n_trials": 1,
-                    "detail": {"sample_n_oos": 99.0},
-                    "labels": [],
-                }
-            ),
+            _with(spine={"labels": [], "periods": _trades(29)}, cis=LOW_CI, nulls=NULL_FAIL),
+            CLEAN,
             "too little to read",
         ),
     ],
 )
-def test_evidence_word_follows_the_fixed_definitions(value: dict[str, Any], word: str) -> None:
-    assert reading.build_reading(value)["evidence"]["word"] == word
+def test_evidence_word_truth_table(
+    value: dict[str, Any], diagnostics: dict[str, Any], word: str
+) -> None:
+    assert reading.build_reading(value, diagnostics)["evidence"]["word"] == word
+
+
+def test_no_taste_band_or_letter_chooses_the_word() -> None:
+    base = reading.build_reading(manifest(), CLEAN)
+    for verdict_letter, drawdown, ruin in (("F", -0.9, 0.99), ("A", -0.01, 0.0)):
+        value = _with(verdict__overall=verdict_letter)
+        value["oos_metrics"].update(max_drawdown=drawdown, risk_of_ruin=ruin)
+        assert reading.build_reading(value, CLEAN)["evidence"] == base["evidence"]
+    for sharpe in (0.4, 0.6, 1.1, 1.6):  # either side of every old Sharpe band
+        assert reading.build_reading(_with(oos_metrics__sharpe=sharpe), CLEAN)["evidence"][
+            "word"
+        ] == ("clear of chance")
+
+
+def test_the_page_states_each_definition_as_the_code_has_it() -> None:
+    page = (
+        Path(__file__).resolve().parents[2] / "docs/reference/invariants/cli-rule-readings.md"
+    ).read_text(encoding="utf-8")
+    flat = " ".join(page.replace(">", " ").split())
+    for word, definition in reading.WORDS.items():
+        assert f"`{word}`: {definition}" in flat, word
 
 
 def test_too_little_wins_over_every_other_word() -> None:
     value = _with(spine={"labels": ["too-few-trades"], "periods": _trades(80)})
-    assert reading.build_reading(value)["evidence"]["word"] == "too little to read"
+    assert reading.build_reading(value, CLEAN)["evidence"]["word"] == "too little to read"
 
 
 def test_implausibly_good_blocks_clear_of_chance() -> None:
@@ -217,7 +280,8 @@ def test_counts_and_sentence_shape() -> None:
 def test_old_manifest_without_reading_derives_one_and_old_letters_read_as_old() -> None:
     old = manifest()
     assert "reading" not in old
-    assert reading.stored_reading(old)["evidence"]["word"] == "clear of chance"
+    assert reading.stored_reading(old, CLEAN)["evidence"]["word"] == "clear of chance"
+    assert reading.stored_reading(old)["evidence"]["word"] == "some evidence"
     stored = {**old, "reading": {"sentence": "kept as stored"}}
     assert reading.stored_reading(stored) == {"sentence": "kept as stored"}
     assert reading.old_grade_text("B") == "graded B under the old rules"
@@ -286,7 +350,7 @@ def test_owner_text_has_no_grade_and_no_verdict_words(home: Path, first_run: str
         assert not FORBIDDEN_WORDS.search(new_text), (name, FORBIDDEN_WORDS.search(new_text))
         assert not LETTER_GRADE.search(text), (name, LETTER_GRADE.search(text))
         assert '"PASS"' not in text, name
-    assert "below the aim" in texts["test"]
+    assert "within the uncertainty of the aim" in texts["test"]
     assert "Evidence strength: " in texts["show"]
     assert "Evidence strength: " in texts["diagnose"]
     assert "(too little to read)" in texts["next"]

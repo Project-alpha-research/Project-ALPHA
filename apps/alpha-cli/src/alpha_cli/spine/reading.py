@@ -20,28 +20,38 @@ NULL_THRESHOLD = 0.95  # _gauntlet.py: null percentile every stored null test mu
 CONFIDENCE = 0.95  # _gauntlet.py: bootstrap Sharpe interval; its lower end must be above 0
 DSR_THRESHOLD = 0.95  # _gauntlet.py dsr_threshold: deflated Sharpe, after counting every trial
 # CPCV: its mean out-of-sample Sharpe must be above 0 (_gauntlet.py).
+# Only the deflated Sharpe counts trials; the bootstrap interval and the null tests do not. So the
+# corrected figure decides between "not clear of chance" and the two positive words, and only a
+# deflated Sharpe counted against a ledger family can give the top word. A missing number never
+# helps: it makes the word weaker.
 WORDS = {
     "clear of chance": (
         f"Every check holds after counting all trials: each null test at {NULL_THRESHOLD}, the "
-        f"{CONFIDENCE:.0%} Sharpe interval above 0, deflated Sharpe at least {DSR_THRESHOLD}, "
-        "cross-validated mean Sharpe above 0, and nothing looks too good."
+        f"{CONFIDENCE:.0%} Sharpe interval above 0, deflated Sharpe at least {DSR_THRESHOLD} with "
+        "the trials counted from the ledger family, cross-validated mean Sharpe above 0, and the "
+        "plausibility check ran and raised nothing."
     ),
     "some evidence": (
-        "The Sharpe interval is above 0 and every null test holds, but deflated Sharpe, "
-        "cross-validation or a plausibility caution holds back the top word."
+        f"The Sharpe interval is above 0, every null test holds and deflated Sharpe is at least "
+        f"{DSR_THRESHOLD}, but cross-validation, a plausibility caution or a plausibility check "
+        "that did not run, or trials not counted from a ledger family hold back the top word."
     ),
     "not clear of chance": (
-        "The Sharpe is not above 0, its interval includes 0, or random data did as well "
-        f"as the rule in more than {1 - NULL_THRESHOLD:.0%} of draws."
+        "The Sharpe is not above 0, its interval includes 0, random data did as well as the rule "
+        f"in more than {1 - NULL_THRESHOLD:.0%} of draws, or the deflated Sharpe after counting "
+        f"trials is under {DSR_THRESHOLD}. A missing interval, null test or deflated Sharpe "
+        "reads the same way."
     ),
     "too little to read": (
         f"Under {MIN_TRADES} closed trades or under {MIN_OOS_OBSERVATIONS} out-of-sample "
-        "observations. This word wins over every other."
+        "observations, or either count was not stored. This word wins over every other."
     ),
 }
 RELATIONS = ("above the aim", "below the aim", "within the uncertainty of the aim")
 AIM_BASIS = (
-    "point estimates of the Sharpe over the same days; no interval for the difference is computed"
+    "buy-and-hold Sharpe over the same scored days ({price}, no costs) against the strategy's "
+    f"{CONFIDENCE:.0%} bootstrap Sharpe interval: within the interval reads within the "
+    "uncertainty of the aim; the benchmark's own uncertainty is not included"
 )
 
 
@@ -112,29 +122,64 @@ def _trades(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> int 
     return None
 
 
+def _too_little(manifest: Mapping[str, Any], trades: int | None, n_oos: float | None) -> str | None:
+    """Why the sample is too small to read, or None when both counts are stored and large enough."""
+    if trades is None:
+        return "the closed-trade count was not stored"
+    if trades < MIN_TRADES or "too-few-trades" in (_get(manifest, "spine", "labels") or []):
+        return f"{trades} closed trades (fewer than {MIN_TRADES} make too few to judge)"
+    if n_oos is None:
+        return "the out-of-sample observation count was not stored"
+    if n_oos < MIN_OOS_OBSERVATIONS:
+        return f"{n_oos:.0f} out-of-sample observations (fewer than {MIN_OOS_OBSERVATIONS})"
+    return None
+
+
+def _word(
+    manifest: Mapping[str, Any], diagnostics: Mapping[str, Any], little: str | None
+) -> tuple[str, list[str]]:
+    """The evidence word, by the fixed precedence in ``WORDS``, and what held back the top word."""
+    sharpe = _num(_get(manifest, "oos_metrics", "sharpe"))
+    lower = _num(_sharpe_ci(manifest).get("lower"))
+    nulls = manifest.get("nulls") or []
+    dsr = _num(_get(manifest, "dsr", "dsr"))
+    if little:
+        return "too little to read", []
+    if (
+        sharpe is None
+        or sharpe <= 0
+        or lower is None
+        or lower <= 0
+        or not nulls
+        or not all(n.get("passed") is True for n in nulls)
+        or dsr is None
+        or dsr < DSR_THRESHOLD
+    ):
+        return "not clear of chance", []
+    held = []
+    if _get(manifest, "cpcv", "passed") is not True:
+        held.append("Cross-validated mean Sharpe is not above 0.")
+    if not _get(manifest, "dsr", "family_id"):
+        held.append("Trials were not counted from a ledger family.")
+    plausible = diagnostics.get("plausibility")
+    if not isinstance(plausible, list):
+        held.append("The plausibility check did not run.")
+    elif plausible:
+        held.append("The result looks too good: check for a data error first.")
+    return ("some evidence" if held else "clear of chance"), held
+
+
 def _evidence(
     manifest: Mapping[str, Any], diagnostics: Mapping[str, Any], trades: int | None
 ) -> dict[str, Any]:
-    sharpe = _num(_get(manifest, "oos_metrics", "sharpe"))
     ci = _sharpe_ci(manifest)
     lower, upper = _num(ci.get("lower")), _num(ci.get("upper"))
     nulls = manifest.get("nulls") or []
-    nulls_ok = bool(nulls) and all(n.get("passed") is True for n in nulls)
-    dsr_ok = _get(manifest, "dsr", "passed") is True
-    cpcv_ok = _get(manifest, "cpcv", "passed") is True
-    n_oos = _num(_get(manifest, "verdict", "detail", "sample_n_oos"))
-    too_few = (trades is not None and trades < MIN_TRADES) or "too-few-trades" in (
-        _get(manifest, "spine", "labels") or []
+    little = _too_little(
+        manifest, trades, _num(_get(manifest, "verdict", "detail", "sample_n_oos"))
     )
-    little = too_few or (n_oos is not None and n_oos < MIN_OOS_OBSERVATIONS)
-    odd = bool(diagnostics.get("plausibility"))
-    because = []
-    if little:
-        because.append(
-            f"{trades} closed trades (fewer than {MIN_TRADES})"
-            if too_few and trades is not None
-            else f"too few trades or out-of-sample observations ({_f(n_oos)})"
-        )
+    word, held = _word(manifest, diagnostics, little)
+    because = [little.capitalize() + "."] if little else []
     ok_nulls = sum(n.get("passed") is True for n in nulls)
     because.append(f"Random-data tests held: {ok_nulls} of {len(nulls)}.")
     because.append(f"Sharpe interval {_f(lower)} to {_f(upper)} ({CONFIDENCE:.0%}).")
@@ -143,35 +188,28 @@ def _evidence(
         f"Deflated Sharpe {_f(dsr)} over {_get(manifest, 'dsr', 'n_trials')} trials "
         f"(needs {DSR_THRESHOLD}); {_f(psr)} before counting trials."
     )
-    if odd:
-        because.append("The result looks too good: check for a data error first.")
-    if little:
-        word = "too little to read"
-    elif (sharpe is None or sharpe <= 0) or lower is None or lower <= 0 or not nulls_ok:
-        word = "not clear of chance"
-    elif dsr_ok and cpcv_ok and not odd:
-        word = "clear of chance"
-    else:
-        word = "some evidence"
-    return {"word": word, "because": because}
+    return {"word": word, "because": because + held}
 
 
-def _aim(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> dict[str, Any]:
+def _aim(manifest: Mapping[str, Any]) -> dict[str, Any]:
     observed = _num(_get(manifest, "oos_metrics", "sharpe"))
-    scored = _num(_get(manifest, "spine", "periods", "scored", "benchmark", "sharpe"))
-    aim = scored if scored is not None else _num(_get(diagnostics, "benchmark", "sharpe"))
-    if observed is None or aim is None:
+    scored = _get(manifest, "spine", "periods", "scored")
+    aim = _num(_get(scored, "benchmark", "sharpe"))
+    ci = _sharpe_ci(manifest)
+    lower, upper = _num(ci.get("lower")), _num(ci.get("upper"))
+    # Only buy-and-hold over the same scored days is an aim; no interval, no relation.
+    if observed is None or aim is None or lower is None or upper is None:
         return {"source": "none", "basis": None, "rows": []}
-    same = round(observed, 2) == round(aim, 2)
-    relation = RELATIONS[2] if same else RELATIONS[0] if observed > aim else RELATIONS[1]
-    basis = AIM_BASIS if scored is not None else AIM_BASIS.replace("same days", "full history")
+    relation = RELATIONS[0] if aim < lower else RELATIONS[1] if aim > upper else RELATIONS[2]
+    price = _get(scored, "price_basis") or "price basis not stored"
     row = {
         "measure": "out-of-sample Sharpe",
         "aim": aim,
         "observed": observed,
+        "interval_95": [lower, upper],
         "relation": relation,
     }
-    return {"source": "default", "basis": basis, "rows": [row]}
+    return {"source": "default", "basis": AIM_BASIS.format(price=price), "rows": [row]}
 
 
 def _counts(manifest: Mapping[str, Any], diagnostics: Mapping[str, Any]) -> dict[str, Any]:
@@ -250,7 +288,7 @@ def build_reading(
     faults = [c["detail"] for c in checks if c["state"] == "fault"]
     trades = _trades(manifest, diag)
     evidence = _evidence(manifest, diag, trades)
-    aim = _aim(manifest, diag)
+    aim = _aim(manifest)
     counts = _counts(manifest, diag)
     if faults:
         evidence = {"word": None, "because": []}

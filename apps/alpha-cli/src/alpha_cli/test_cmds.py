@@ -25,6 +25,7 @@ def test_rule(
     asset: list[str] | None = typer.Option(None, help="Symbol or symbol@store (repeatable)."),  # noqa: B008
     name: str | None = None,
     idea: str | None = None,
+    idea_card: str | None = typer.Option(None, help="Id of the idea card for this test."),
     fee_bps: float | None = None,
     slippage_bps: float | None = None,
     quick: bool = typer.Option(
@@ -53,6 +54,7 @@ def test_rule(
             asset=asset,
             name=name,
             idea=idea,
+            idea_card=idea_card,
             fee_bps=fee_bps,
             slippage_bps=slippage_bps,
         )

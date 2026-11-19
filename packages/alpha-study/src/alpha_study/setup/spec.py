@@ -143,6 +143,8 @@ class SetupSpec(_Frozen):
     reference: Mapping[str, str] = Field(default_factory=dict)
     exit: Exit | None = None
     study: Study | None = None
+    # A link to an idea card. Excluded from dumps, so it is in no hash and no stored spec.
+    idea_card: str = Field(default="", exclude=True)
 
     @field_validator("filters", "reference", mode="after")
     @classmethod

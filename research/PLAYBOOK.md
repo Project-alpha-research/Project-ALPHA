@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: e871e2c68db64aa4
+verified: def0cf0330cd3ef8
 ---
 
 # Research playbook: how to work any idea
@@ -18,8 +18,8 @@ something is imperfect, label it and carry on. Nothing here promises a profit, a
 ## The method
 1. **Look at what was tried.** `uv run alpha results --json` lists every recorded trial; read
    [the lessons](lessons/README.md). Tell the owner what is already known.
-2. **State the idea and what would disprove it.** Quote the owner's sentence. Say in one line
-   what result would make you drop it (for example "it does not beat holding the asset").
+2. **State the idea and what would disprove it.** Quote the owner's sentence in an [idea card](tools/idea-card.md)
+   (`alpha idea new`). Say in one line what result would make you drop it (for example "it does not beat holding the asset").
 3. **Run the test.** `uv run alpha test <spec.toml> --json` ([card](tools/rule-test.md)). Any asset the stores
    hold; it reads daily bars today, so label an intraday idea as such. Unclear definition: ask once, then run.
 4. **Read the labels, flags and audit** before saying anything: `uv run alpha diagnose <run_id> --json`.

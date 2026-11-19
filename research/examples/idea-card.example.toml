@@ -1,0 +1,11 @@
+# Example card for `alpha idea new --from`. Copy it, then write your own idea in your own words.
+# Every field may stay empty. An empty field reads "not stated".
+claim = "After a long quiet spell, a synthetic index tends to make a bigger move than usual."
+mechanism = "Calm markets lull traders into small positions, so news hits an unprepared crowd."
+other_side = "Traders who sell cheap protection during calm spells."
+disproved_by = "No bigger move after ten or more quiet spells, or the same moves after any other spell."
+baseline = "Holding the index through the same dates."
+signal_forms = "About twenty trading days of low movement."
+held_for = "Two to four weeks."
+how_often = "A few times a year."
+edge_lasts = "Years, if the mechanism is about how people behave."

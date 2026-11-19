@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: be9af51d088294c7
+verified: d166820bb1f88344
 ---
 
 # Rule test
@@ -19,7 +19,7 @@ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY -
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]`
 table (`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom`
 (`lookback`, `skip`). An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick`
-runs a small gauntlet and labels the result `quick`.
+runs a small gauntlet and labels the result `quick`. An optional `idea_card` links an [idea card](idea-card.md).
 
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.

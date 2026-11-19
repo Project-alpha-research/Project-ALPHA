@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: 99ada1ee52a57e7e
+verified: 9f2ea6d08f1014de
 ---
 # Setup find
 
@@ -21,7 +21,7 @@ uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
 
 - The spec (TOML) has a setup table (name, idea, assets, timeframe "1D", event), ordered filters, an optional
   trigger (when, within) and reference levels; expressions read only past bars
-  ([setup causality](../../docs/reference/invariants/study.md#setup-causality)).
+  ([setup causality](../../docs/reference/invariants/study.md#setup-causality)). An optional `idea_card` links an [idea card](idea-card.md).
 - Lead with separate occurrences, not matching days: days within ten bars of each other are one
   occurrence (`accepted_clusters` against `accepted` in `totals`).
 - `sheets` lists contact sheets: accepted matches (the first day of each occurrence), and one greyed sheet

@@ -12,7 +12,7 @@ from tests.fixtures.cli_fixtures import seed_store
 from tests.unit.test_trial_record import spine
 
 RUNNER = CliRunner()
-JSON_KEYS = ["last_night", "notes", "paths", "recent_trials", "stores", "waiting"]
+JSON_KEYS = ["ideas", "last_night", "notes", "paths", "recent_trials", "stores", "waiting"]
 
 
 def _run(home: Path, *args: str) -> tuple[int, str]:

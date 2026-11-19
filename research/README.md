@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
-verified: 9e61db19cd45b06a
+verified: d9553640074a1138
 ---
 
 # Research: skills by trigger

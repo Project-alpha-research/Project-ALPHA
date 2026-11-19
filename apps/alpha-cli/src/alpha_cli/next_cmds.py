@@ -10,6 +10,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.nightly_status import last_night_line
+from alpha_cli.spine import idea_card
 from alpha_cli.spine.stores import _stores
 from alpha_core.config import AlphaSettings
 from alpha_data.store import ParquetStore
@@ -164,6 +165,7 @@ def collect(home: Path) -> dict[str, Any]:
         "stores": stores,
         "recent_trials": _trial_facts(home),
         "waiting": _waiting_facts(home),
+        "ideas": idea_card.counts(home),
         "paths": _paths(smallest),
         "notes": notes,
     }
@@ -195,6 +197,12 @@ def _text(facts: dict[str, Any]) -> str:
             f"See them: alpha ledger proposal --run-dir {w['run_dir']}"
             for w in waiting
         )
+    ideas = facts["ideas"]
+    plural = "" if ideas["cards"] == 1 else "s"
+    lines.append(
+        f"Idea cards: {ideas['cards']} idea card{plural}, {ideas['without_test']} with no test yet."
+        " Write one: alpha idea new."
+    )
     paths = facts["paths"]
     lines += [
         "Three ways to start",

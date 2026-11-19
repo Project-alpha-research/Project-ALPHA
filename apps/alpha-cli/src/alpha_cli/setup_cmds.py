@@ -149,6 +149,7 @@ def run_find(
     import polars as pl
 
     from alpha_cli.spine import reserve
+    from alpha_cli.spine.idea_card import link_fields, note_link, require
     from alpha_cli.spine.setup_find import (
         _counts,
         health_find_id,
@@ -160,6 +161,7 @@ def run_find(
     if not 5 <= context_bars <= 250 or not 1 <= max_sheets <= 50:
         raise ValueError("context-bars must be 5–250 and max-sheets 1–50")
     spec = load_spec(path, assets)
+    require(home, spec.idea_card)
     results, candidates, frames, record = prepare_assets(
         spec,
         home,
@@ -246,6 +248,7 @@ def run_find(
             labels=labels,
             assets=results,
             **block,
+            **link_fields(home, spec.idea_card),
             files=dict(candidates="candidates.parquet", summary="summary.json", sheets=sheets),
         )
         write_text(folder / "manifest.json", json.dumps(manifest, default=str, allow_nan=False))
@@ -267,6 +270,7 @@ def run_find(
             },
         ),
     )
+    note_link(home, spec.idea_card, "setup_find", find_id)
     return dict(
         find_id=find_id,
         **({"reserve_sentence": reserve.sentence(held_back)} if held_back else {}),

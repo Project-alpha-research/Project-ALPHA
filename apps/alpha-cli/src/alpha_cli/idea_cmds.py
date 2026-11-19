@@ -9,7 +9,9 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine import idea_card as cards
+from alpha_cli.spine import idea_file
 from alpha_cli.spine.errors import SpineError, fail
+from alpha_cli.spine.idea_file_text import render
 from alpha_core.config import AlphaSettings
 
 idea_app = typer.Typer(help="Write an idea card before you test an idea.")
@@ -34,6 +36,7 @@ def _show_text(identity: str, card: cards.IdeaCard, home: Path) -> str:
     if newer:
         lines.append(f"Replaced by card {newer}.")
     status = "linked to a test" if identity in cards.tested_ids(home) else "no test yet"
+    lines.append(f"The whole story on one page: alpha idea file {identity}")
     lines.append(f"Status: {status}. This card is a note. It is not a result and not advice.")
     return "\n".join(lines)
 
@@ -139,3 +142,17 @@ def list_cards(json_out: JSON = False) -> None:
         for r in rows
     ]
     emit({"cards": rows}, json_out=json_out, fallback="\n".join(lines))
+
+
+@idea_app.command("file")
+def file_cmd(
+    card_id: Annotated[str, typer.Argument(help="Card id (or its first characters).")],
+    json_out: JSON = False,
+) -> None:
+    """One page for one idea: the card, the map, every reading, the counts, the open points."""
+    home = AlphaSettings().data_dir
+    try:
+        facts = idea_file.build(home, card_id)
+    except SpineError as exc:
+        fail(exc, json_out)
+    emit(facts, json_out=json_out, fallback=render(facts))

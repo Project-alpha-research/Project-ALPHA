@@ -333,11 +333,11 @@ def require_metric(metric: str) -> None:
 
 def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
     """Stored investigation-tool outputs for a run, oldest first; they live outside the run."""
-    from alpha_cli.spine.ledger import read_trials
+    from alpha_cli.spine.ledger import read_trials_readonly
 
     committed = {
         row.get("tool_output")
-        for row in read_trials(home)
+        for row in read_trials_readonly(home)
         if row.get("run_id") == run_id and row.get("outcome") == "ok"
     }
     outputs = []

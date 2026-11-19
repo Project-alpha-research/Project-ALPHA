@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 95f2bd4f2f4c39b4
+verified: ab4e1a460af3a2e2
 ---
 
 # Research tools, by symptom

@@ -7,14 +7,11 @@ verified: d78abbd684e38fb4
 ---
 
 # alpha-cli workspace
-
 ## Purpose
-
 The `alpha` CLI composes data, strategies, the engine, validation, research and models, and owns the SQLite control store.
 It must never grant authority the owner did not give, and never route live capital.
 
 ## Read first
-
 | Read | Section | When |
 |---|---|---|
 | [research integrity](../../docs/reference/invariants/research-integrity.md) | Owner authority | always |
@@ -27,14 +24,13 @@ It must never grant authority the owner did not give, and never route live capit
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
 | [invariants router](../../docs/reference/invariants/README.md) | Command line | other `alpha` areas: setups, data, ml, paper, assistant |
+| [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`: adding a test; the honesty rules |
 | [alpha-cli README](README.md) | Code map | finding a module or its tests |
 
 ## How to change it
-
 - Code and tests: [code map](README.md#code-map). A new or changed command: [change loop](README.md#change-loop).
 - Check: `uv run python scripts/gate.py check`.
 - Owner approvals bind code structure, not bytes: [approvals](README.md#approvals-bind-structure).
 
 ## Outputs
-
 - Tests and the owning `cli-*.md` page: see the [code map](README.md#code-map) and [change loop](README.md#change-loop).

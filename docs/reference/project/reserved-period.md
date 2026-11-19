@@ -13,7 +13,7 @@ verified: 02e0e6657075c931
 # The reserved period
 
 The reserved period is all data on or after 2024-01-01. It is kept back so that an idea is never tuned on it. Today only RD-Agent's factor loop, its rule
-families and its journey figures lock it. Other commands label it or ignore it.
+families, its post-verdict checks and its journey figures lock it. Other commands label it or ignore it.
 
 ## Where the code defines the date
 
@@ -32,6 +32,7 @@ Locks it out (the code refuses reserved rows or aborts):
   replay or lineage matrix that reaches it. The loop is never given that data ([rules](../invariants/rdagent.md#factor-loop-and-judging)).
 - RD-Agent rule families (`rdagent_rule_family.py`): the run aborts if the loader returns a bar or dividend on or after the date.
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
+- RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
 
 Only labels it:
 

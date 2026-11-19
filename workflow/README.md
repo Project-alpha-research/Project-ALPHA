@@ -4,7 +4,7 @@ sources:
   - scripts/handoff.py
   - scripts/roadmap_index.py
   - tests/unit/test_filesystem_contract.py
-verified: 22c2b09f2fa090ee
+verified: eb366577c36de56b
 ---
 
 # Delivery pipeline: from an idea to a merged change
@@ -20,13 +20,12 @@ all `done`: 03. Slices done but no `04-verify.md`: 04. Otherwise: 05.
 
 The whole path in one place. Other pages link here and do not repeat it.
 
-1. **Who builds.** Claude plans, decides, reviews, commits and opens the pull request. Codex builds (`gpt-6.2-sol` for small and standard work,
-`gpt-6.2-astra`
-   for hard) in a sandboxed worktree with the network off; it never commits. A Claude sub-agent builds only on a fallback (exit 10 to 13) or when the work
-   needs the network or a decision ([model routing](../docs/reference/model-routing.md)).
-2. **The brief.** Write it outside the repository with the headings Task, Decision already made, Files, Do not touch, Checks, Report. Hand it over with
-   `uv run python scripts/handoff.py build --brief <file>`, outside any sandbox. A planned task uses `--task docs/work/<task>/` instead. The tool drives
-   up to two fix rounds, then you review (stage 04).
+1. **Who builds.** Claude plans, decides, reviews, commits and opens the pull request. Claude Sonnet builds from a precise brief; Opus reviews
+   honesty and quant work ([model routing](../docs/reference/model-routing.md); owner decision of
+   [2026-11-19](../docs/reference/project/owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first)).
+   The Codex hand-off tool (`scripts/handoff.py`) is paused until the owner turns Codex back on.
+2. **The brief.** Write it in the shape of the [brief template](../docs/reference/model-routing.md#brief-template), outside the repository, and give
+   it to the builder. A planned task uses its `docs/work/<task>/` folder instead. Then you review (stage 04).
 3. **Where the files land.** `brief.md` and the builder's `report.md` go to `docs/work/<yyyy-mm-dd>-<slug>/`, merge with the work and are linked from the pull
    request. The JSON build record stays outside the repository, in the handoff folder ([task folders](../docs/work/CONTEXT.md)).
 4. **Checks.** Locally: `uv run python scripts/gate.py check`. On the pull request the one required check is `ci-ok`. Open the pull request as a draft.
@@ -46,8 +45,8 @@ owner keeps
 - The small route skips the folder: a fix in one module with an obvious test, or a documentation-only change. It runs stages 03 to 05 on a branch from a
   short brief and the area's `CONTEXT.md`; 04's results go under `## Checks run` in the pull request; 05 fills the template directly.
 
-One folder per build, `docs/work/<yyyy-mm-dd>-<slug>/`, written by `scripts/handoff.py build` on the
-build's branch and merged with the work. These are outputs (the paper's Layer 4), not reference
+One folder per build, `docs/work/<yyyy-mm-dd>-<slug>/`, on the build's branch and merged with the work
+(the paused Codex hand-off tool wrote it; today the orchestrator saves it). These are outputs (the paper's Layer 4), not reference
 documents: they carry no front matter, no line limit and are never re-verified.
 
 - `brief.md`: what was asked and what was already decided, as the builder received it. Edit it

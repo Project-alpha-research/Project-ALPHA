@@ -13,6 +13,32 @@ recommend keeping, changing, shelving or removing any part. Rules for changing c
 [`invariants/`](../invariants/research-integrity.md); delivery steps live in the
 [delivery pipeline](../../../workflow/CONTEXT.md).
 
+## Components
+
+| Page | In one line |
+|---|---|
+| [Reserved period](reserved-period.md) | The 2024-01-01 data kept back; what locks, labels or ignores it |
+| [Decisions by topic](decisions-by-topic.md) | Owner decisions listed by subject |
+| [Stand-in user rule](owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests) | What a stand-in may answer for the owner, and never |
+| [Data health card](../../../research/tools/data-health.md) | Checking stored bars before a test |
+| [RD-Agent](components/rd-agent.md) | The AI research loop: propose, build, run, judge, remember, repeat |
+| [Qlib](components/qlib.md) | Microsoft's machine-learning toolkit for stock prediction, run in its own worker |
+| [Nautilus](components/nautilus.md) | The backtest engine (NautilusTrader) and ALPHA's harness around it |
+| [Data layer](components/data-layer.md) | Downloads, point-in-time storage and frozen snapshots |
+| [Strategies and signals](components/strategies-and-signals.md) | Trading rules, chart patterns and indicators |
+| [Forecasting](components/forecasting.md) | The Kronos price-forecasting model and its Kronos Studio screen |
+| [Toolbox](components/toolbox.md) | The open catalogue of tests and analyses, with a record of every run |
+| [Setup Lab](components/setup-lab.md) | Chart setups: find every match, study what followed, trade it |
+| [Monte Carlo](components/monte-carlo.md) | The four path-risk methods: how bad could it get |
+| [Validation and evidence](components/validation-and-evidence.md) | The statistical checks and the reports they produce |
+| [Research cases and approval](components/research-cases-and-approval.md) | Research cases, phases and the owner's decisions |
+| [Literature worker](components/literature-worker.md) | Finds papers and screens their claims |
+| [Command line](components/command-line.md) | The `alpha` command, the control store and the shared core |
+| [Web workstation](components/web-workstation.md) | The browser screens |
+| [AI assistants](components/ai-assistants.md) | The research partner's playbook, tool cards, skills and lessons; the assistant and tool server |
+| [Paper and live trading](components/paper-and-live.md) | The route from research to practice trading to real money |
+| [Delivery and agent tooling](components/delivery-and-agent-tooling.md) | How changes are made and checked: the gate, tests, this file system |
+
 ## What ALPHA is for
 
 ALPHA is one person's private research platform for trading strategies. "Private" means it is
@@ -122,28 +148,6 @@ Each step needs the owner's approval before the next starts.
 - Keep it tidy. The owner wants steady, healthy progress and a project that never becomes a mess
   ([owner decision](owner-decisions.md#2026-11-14-steady-progress-never-a-mess)).
 - One home per fact: link to it, never copy it.
-
-## Components
-
-| Component | In one line |
-|---|---|
-| [RD-Agent](components/rd-agent.md) | The AI research loop: propose, build, run, judge, remember, repeat |
-| [Qlib](components/qlib.md) | Microsoft's machine-learning toolkit for stock prediction, run in its own worker |
-| [Nautilus](components/nautilus.md) | The backtest engine (NautilusTrader) and ALPHA's harness around it |
-| [Data layer](components/data-layer.md) | Downloads, point-in-time storage and frozen snapshots |
-| [Strategies and signals](components/strategies-and-signals.md) | Trading rules, chart patterns and indicators |
-| [Forecasting](components/forecasting.md) | The Kronos price-forecasting model and its Kronos Studio screen |
-| [Toolbox](components/toolbox.md) | The open catalogue of tests and analyses, with a record of every run |
-| [Setup Lab](components/setup-lab.md) | Chart setups: find every match, study what followed, trade it |
-| [Monte Carlo](components/monte-carlo.md) | The four path-risk methods: how bad could it get |
-| [Validation and evidence](components/validation-and-evidence.md) | The statistical checks and the reports they produce |
-| [Research cases and approval](components/research-cases-and-approval.md) | Research cases, phases and the owner's decisions |
-| [Literature worker](components/literature-worker.md) | Finds papers and screens their claims |
-| [Command line](components/command-line.md) | The `alpha` command, the control store and the shared core |
-| [Web workstation](components/web-workstation.md) | The browser screens |
-| [AI assistants](components/ai-assistants.md) | The research partner's playbook, tool cards, skills and lessons; the assistant and tool server |
-| [Paper and live trading](components/paper-and-live.md) | The route from research to practice trading to real money |
-| [Delivery and agent tooling](components/delivery-and-agent-tooling.md) | How changes are made and checked: the gate, tests, this file system |
 
 ## Before you recommend removing anything
 

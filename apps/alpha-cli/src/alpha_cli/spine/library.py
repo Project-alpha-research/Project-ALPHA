@@ -92,7 +92,11 @@ def load_record(path: Path) -> Record:
 def entries(home: Path, public_dir: Path = PUBLIC_DIR) -> list[Entry]:
     """Public records, then the owner's private records, sorted by id."""
     found: dict[str, Entry] = {}
-    for origin, folder in (("public", public_dir), ("private", home / "library" / "private")):
+    folders: list[tuple[Literal["public", "private"], Path]] = [
+        ("public", public_dir),
+        ("private", home / "library" / "private"),
+    ]
+    for origin, folder in folders:
         for path in sorted(folder.glob("*.toml")):
             record = load_record(path)
             if record.id in found:
@@ -101,7 +105,7 @@ def entries(home: Path, public_dir: Path = PUBLIC_DIR) -> list[Entry]:
                     f"The library id {record.id!r} is used twice ({path}).",
                     "Rename the private record file and its id.",
                 )
-            found[record.id] = Entry(record=record, origin="private" if origin == "private" else "public")
+            found[record.id] = Entry(record=record, origin=origin)
     return [found[key] for key in sorted(found)]
 
 
@@ -161,5 +165,7 @@ def _link_rows(home: Path) -> list[dict[str, str]]:
 
 def cards_from(home: Path, record_id: str) -> list[dict[str, str | int]]:
     """Existing idea cards made from this record, each with its count of linked tests."""
-    ids = sorted({row.get("card", "") for row in _link_rows(home) if row.get("record") == record_id})
-    return [{"card": c, "tests": cards.linked_tests(home, c)} for c in ids if c in cards.all_ids(home)]
+    rows = _link_rows(home)
+    ids = sorted({row.get("card", "") for row in rows if row.get("record") == record_id})
+    stored = set(cards.all_ids(home))
+    return [{"card": c, "tests": cards.linked_tests(home, c)} for c in ids if c in stored]

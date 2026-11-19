@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/library_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/library.py
-verified: ffe08df0904d2c7d
+verified: f6b43c129180b00d
 ---
 # Library of published ideas
 

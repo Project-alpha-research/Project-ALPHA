@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified a86d9a330434a9b4 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 3925622dd9ec2f3f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 6a647b3ccc4ee0b7 on 2026-11-19: only more tests were added; the rules on this page are unchanged
 
 docs/reference/invariants/cli-runs.md
   verified bacb8394fdca36f3 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged

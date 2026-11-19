@@ -14,6 +14,9 @@ The toolbox is one catalogue of tests and analyses that can be run on a stored r
 question, declared inputs and settings, a plain reading and caveats, and every attempt to run one is
 recorded. The owner's AI assistant uses the catalogue. ALPHA also runs two fixed checks on judged RD-Agent ideas.
 
+Two rule sets: the [runner rules](../../invariants/cli-investigation-tools.md) for every `alpha tool` run (attempts logged,
+stored answers reused), and the five [honesty rules](../../invariants/cli-toolbox.md#honesty-rules) for RD-Agent's post-verdict checks only.
+
 ## Why it exists
 
 The owner wants "all possible test and system availability like permutation, parameter sensitivity, etc.":
@@ -65,9 +68,7 @@ that stored history (resampling, trade order and the deflated Sharpe). `alpha to
 Every attempt is recorded and a stored answer is reused. Each judged RD-Agent idea with a shown trading replay gets
 two fixed checks after the verdict, pass or fail. They never change the verdict. Not built: two named tests,
 agent-chosen checks in the proposal, and most of the 480-entry catalogue. See [STATUS.md](../../../../STATUS.md). The list and how to add a check: [toolbox
-rules](../../invariants/cli-toolbox.md). The five honesty rules cover only RD-Agent's post-verdict checks
-([rules](../../invariants/cli-toolbox.md#honesty-rules)); every `alpha tool` run follows the
-[runner rules](../../invariants/cli-investigation-tools.md) (attempts logged, stored answers reused).
+rules](../../invariants/cli-toolbox.md).
 
 ## Where it lives
 

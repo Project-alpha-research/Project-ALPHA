@@ -37,4 +37,4 @@ Step one names the proposer and identifies a stand-in's answer. It leads with th
 plain sentence or the description's lead, then the idea type, direction and any later choice of sign.
 The full description stays in the idea's own words. Code can be an excerpt; long lines wrap. The run summary and the
 final step's exploratory label show only recorded values; the picker reads verdicts from the run.
-During a run, `alpha ledger proposal` shows the last results; to answer, see [propose and discuss](../../workers/rdagent/README.md#propose-and-discuss).
+During a run, `alpha ledger proposal` shows the last results; to answer, see [propose and discuss](../../workers/rdagent/propose-and-discuss.md).

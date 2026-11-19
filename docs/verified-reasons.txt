@@ -14,7 +14,7 @@ apps/alpha-web/README.md
   verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/CONTEXT.md
-  verified 116bd0583054770c on 2026-11-19: routing only; search and stale internals change nothing it says
+  verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added

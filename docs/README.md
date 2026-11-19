@@ -56,7 +56,7 @@ To find a document, run `uv run python scripts/fs.py orient` or `fs.py search "<
 | Commands and options | [docs/reference/commands.md](reference/commands.md) (generated) |
 | Part purposes, owner decisions | [project layer](reference/project/overview.md); by topic: [topic index](reference/project/decisions-by-topic.md) |
 | Checking a dataset before a backtest | [data health card](../research/tools/data-health.md) (`alpha data health`) |
-| A stand-in for the owner in RD-Agent tests | [propose and discuss](../workers/rdagent/README.md#propose-and-discuss); the rule: topic index above |
+| A stand-in for the owner in RD-Agent tests | [propose and discuss](../workers/rdagent/propose-and-discuss.md); the rule: topic index above |
 | The reserved period (2024-01-01 onward) | [reserved period](reference/project/reserved-period.md) |
 | Outside libraries and engines, and how to add one | [register](reference/project/outside-projects.md) (links the glue rules) |
 | Rules that must not break | [reference/invariants/](reference/invariants/README.md) |

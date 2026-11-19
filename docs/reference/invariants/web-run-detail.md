@@ -67,7 +67,7 @@ New rows show declared choices, cutoff/counts, diagnostic p/q, deflation, twins 
 adds "shortlisted (passed all but the many-tries correction)" before the deflation stage. Shortlisted is not a pass,
 not a candidate, and not evidence of profit; missing flags mean "not recorded". Lineage R², regressor count and
 convention are recorded diagnostics; suspects say "looks like a blend of earlier tries". The [shortlist
-policy](../../../workers/rdagent/README.md#shortlist-bookkeeping) leaves every gate and count unchanged. Old
+policy](../../../workers/rdagent/judge-rules.md#shortlist-bookkeeping) leaves every gate and count unchanged. Old
 failed-deflation candidates read DEFLATION_FAIL (derived); stored deflation is labelled "old rule (fewer looks
 counted)". Absent facts stay null. Counts come from recorded rows, never candidate status; step minutes need two
 timestamps. New factor rows store family and critic status. Older rows can lack both. The panel was opened headless on

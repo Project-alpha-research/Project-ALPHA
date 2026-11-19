@@ -2,25 +2,28 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 933c6191e0225160 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
+  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 apps/alpha-cli/README.md
-  verified 933c6191e0225160 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
+  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified 77c8b7727dacdea1 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
+  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 apps/alpha-web/README.md
-  verified 77c8b7727dacdea1 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
+  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
+
+docs/reference/invariants/cli-follow.md
+  verified f9e95839616de75b on 2026-11-20: the separation guard now ignores the bare word forward as a value; this page's rules are unchanged
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -38,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified c95595a7c5e135ff on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-runs.md
-  verified 79af434cb54de18f on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 5901c1ebaf4b91a4 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -46,14 +49,11 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified b4dca1c086c3d033 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
 
-docs/reference/invariants/data-context.md
-  verified da925d4f9e1b1ff3 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
-
 docs/reference/invariants/data-options.md
   verified 1f2a80ba816efe77 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
 
 docs/reference/invariants/data.md
-  verified ec1d5152962ed023 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified daea59e90a7e7b88 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -71,7 +71,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 0c41474f56243ea8 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
+  verified 70b93826df280038 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -92,7 +92,7 @@ docs/reference/project/components/ai-assistants.md
   verified d377e1ecfcdb7a2b on 2026-11-19: Re-read: the playbook's repeat label row now names store and data content; this page only routes to the playbook
 
 docs/reference/project/components/command-line.md
-  verified 7048fde80bcd089a on 2026-11-19: ARCHITECTURE gained two context table rows; command line page unaffected
+  verified 29f44436e948e189 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -134,7 +134,7 @@ docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a2451245e50533ee on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 6a13bac6fa56fddd on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -182,13 +182,13 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 49c3ee55e4cb4973 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 09731268111757ce on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
 
 research/CONTEXT.md
-  verified 515dce107f822a88 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 0272affe2a51e27f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/PLAYBOOK.md
-  verified d85af529391730f0 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 33b3f3be54efae39 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
 
 research/README.md
   verified b3f7e63b0f7e65df on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -197,25 +197,25 @@ research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/library/README.md
-  verified 75c6534b01f2afbb on 2026-11-20: Re-read after review fixes: release-date floor, redirect rules and imported card source line are stated; text is correct.
+  verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f2291ad937c81880 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified e3e89eaad868c402 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 7e779dc0d3ff34c9 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 2473db61b60cc50b on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/charts.md
   verified b320c36e794b4d49 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 6b4f75869dd3754d on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 147bf7e23b912c9f on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
 
 research/tools/diagnose-and-audit.md
-  verified 1b8914e725073b35 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified c48efd7ea1bfb32a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
@@ -223,14 +223,8 @@ research/tools/idea-card.md
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
-research/tools/library.md
-  verified 445857b6fb8af7f7 on 2026-11-20: Re-read after review fixes: release-date floor, redirect rules and imported card source line are stated; text is correct.
-
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
-
-research/tools/positioning-short-volume-context.md
-  verified aea789fd7b411339 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -248,13 +242,13 @@ research/tools/results-and-cite.md
   verified 617b0bbed74a2387 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/rule-test.md
-  verified 694e2f1aabe9e329 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified d493fd562dffec17 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 6b4f75869dd3754d on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 147bf7e23b912c9f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

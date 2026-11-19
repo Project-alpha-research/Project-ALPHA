@@ -23,17 +23,14 @@ A record points to a paper in our own words: the idea, why it is said to work (t
 long a trade is held, what later research says about decay, and whether ALPHA can test it today.
 
 **How to read it**
-- `list` shows every record. `--market` takes us-equities, crypto, futures or multi. Rows marked
-  "private" come from the owner's own notes in `<home>/library/private/`; they are never in git.
-- `list` shows `checked` records (hand-verified). `--tier imported|all` adds the 212 facts-only records of a published
-  signal catalogue (id `osap-<name>`); the header counts each tier. Imported records give authors, year, category,
-  predicted sign and sample years only. Read the paper for the idea.
+- `list` shows `checked` records. `--market` takes us-equities, crypto, futures or multi. "private" rows are the owner's
+  notes in `<home>/library/private/`, never in git. `--tier imported|all` adds 212 facts-only records (id `osap-<name>`):
+  authors, year, category, sign, sample years. The header counts each tier. Read the paper for the idea.
 - `show` also lists idea cards already made from the record, and how many tests are linked to each.
 - `card` writes an idea card with the idea, the mechanism and the holding time. What would disprove it and the
   baseline stay "not stated": the owner fills them. The card keeps a `source` line,
   "from library record <id>, published <year>". It is not part of the card id, so the idea text stays the owner's.
-- Nothing is tested and no ledger row is written.
-- Return series of those signals are in `alpha context show-osap-portfolios` (reference only; name the release).
+- Nothing is tested and no ledger row is written. Their published returns: `alpha context show-osap-portfolios`.
 - To give an idea to RD-Agent, pass it in discussion with `alpha ledger reply --idea`. There is no other channel.
 
 **What it cannot tell you** Whether an idea works today. Published results often shrink after publication.

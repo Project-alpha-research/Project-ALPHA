@@ -77,6 +77,8 @@ drafted answer against stored run facts, and the computed differences between ru
   a fact from a non-default setting must be followed by `(1 of N settings tried)` with the current count, else `SETTINGS_OMITTED`.
 - A registered metric absent from a run's built facts raises `METRIC_NOT_STORED`, with a next step to cite
   tool output. It never crashes with `KeyError`; a present fact with a null value is still `VALUE_NOT_COMPUTED`.
+## Run comparisons
+
 - `alpha results compare` accepts two to eight runs, lists labels and flags differing metric bases.
   Each metric has per-run `value`, `diff` and `ratio` facts. Difference means run minus first run;
   ratio means run divided by first run. Unavailable/non-finite arithmetic is null with a reason;

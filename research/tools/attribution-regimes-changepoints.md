@@ -5,7 +5,7 @@ sources:
   - packages/alpha-validation/src/alpha_validation/attribution.py
   - packages/alpha-validation/src/alpha_validation/regimes.py
   - packages/alpha-validation/src/alpha_validation/changepoints.py
-verified: 73c93045391ff4f1
+verified: 96231f129d35a504
 ---
 
 # Market attribution, regimes and change points

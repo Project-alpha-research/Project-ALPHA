@@ -1,4 +1,9 @@
-"""`forward/` is one-way: only the follow, today and nightly modules may touch it."""
+"""`forward/` is one-way: only the modules on `READERS` may touch it.
+
+A new reader (the F2 nightly step, a Today page) is added to `READERS` on purpose, in review.
+The guard also catches the cheap ways around a plain name search: the store's file names and
+constants, a path glued from parts, and a module that lists every folder of the data directory.
+"""
 
 from __future__ import annotations
 
@@ -7,9 +12,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = "apps/alpha-cli/src/alpha_cli/"
-ALLOWED = re.compile(r"^apps/alpha-cli/src/alpha_cli/(follow|today|nightly)_[a-z_]*\.py$")
-STORE_IMPORT = re.compile(r"follow_(store|journal|source)\b")
-FORWARD_PATH = re.compile(r"""["']forward["'/]|/forward/""")
+READERS = frozenset(
+    CLI + name
+    for name in (
+        "follow_cmds.py",
+        "follow_store.py",
+        "follow_chain.py",
+        "follow_journal.py",
+        "follow_source.py",
+    )
+)
+STORE_IMPORT = re.compile(r"follow_(store|chain|journal|source)\b")
+FORWARD_PATH = re.compile(
+    r"""["']forward["'/]|/forward/|["']for["']\s*["']ward["']|journal\.jsonl|follow\.toml"""
+    r"""|AlphaFollowV1|\bFOLLOW_DIR\b"""
+)
+DATA_DIR_SWEEP = re.compile(
+    r"\b(home|data_dir)\)?\s*\.\s*(iterdir|rglob)\(|\b(home|data_dir)\.glob\(|"
+    r"os\.walk\(\s*(home|data_dir)\b|copytree\(\s*(home|data_dir)\b"
+)
 MUST_SCAN = (
     "spine/run.py",
     "spine/ledger.py",
@@ -38,20 +59,23 @@ def sources() -> dict[str, str]:
 def violations(files: dict[str, str]) -> list[str]:
     found: list[str] = []
     for name, text in sorted(files.items()):
-        if ALLOWED.match(name):
+        if name in READERS:
             continue
         if STORE_IMPORT.search(text):
             found.append(f"{name}: names the follow store")
         if FORWARD_PATH.search(text):
             found.append(f"{name}: opens a path under forward/")
+        if DATA_DIR_SWEEP.search(text):
+            found.append(f"{name}: lists every folder of the data directory")
     return found
 
 
-def test_no_module_outside_follow_today_nightly_touches_forward() -> None:
+def test_no_module_off_the_reader_list_touches_forward() -> None:
     files = sources()
     scanned = set(files)
     assert all(CLI + name in scanned for name in MUST_SCAN)
     assert any(n.startswith("workers/rdagent/") for n in scanned)
+    assert scanned >= READERS
     assert violations(files) == []
 
 
@@ -63,9 +87,21 @@ def test_the_guard_fails_on_a_forbidden_import_in_a_research_module() -> None:
         f"{CLI}follow_cmds.py": "from alpha_cli.follow_store import load_follow\n",
         f"{CLI}nightly_steps.py": "p = home / 'forward'\n",
         f"{CLI}spine/ok.py": "forward: bool = False\n",
+        f"{CLI}today_page.py": "from alpha_cli.follow_chain import read_entries\n",
+        f"{CLI}backup.py": "for p in data_dir.iterdir():\n    copy(p)\n",
+        f"{CLI}glued.py": 'p = home / "for" "ward"\n',
+        f"{CLI}globbed.py": 'p = home.glob("*/journal.jsonl")\n',
+        f"{CLI}constant.py": "from x import FOLLOW_DIR\n",
     }
     assert violations(fixture) == [
+        f"{CLI}backup.py: lists every folder of the data directory",
+        f"{CLI}constant.py: opens a path under forward/",
+        f"{CLI}globbed.py: opens a path under forward/",
+        f"{CLI}globbed.py: lists every folder of the data directory",
+        f"{CLI}glued.py: opens a path under forward/",
+        f"{CLI}nightly_steps.py: opens a path under forward/",
         f"{CLI}spine/ledger.py: opens a path under forward/",
         f"{CLI}spine/run.py: names the follow store",
+        f"{CLI}today_page.py: names the follow store",
         "workers/rdagent/loop.py: opens a path under forward/",
     ]

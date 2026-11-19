@@ -4,7 +4,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
   - apps/alpha-cli/src/alpha_cli/follow_store.py
   - apps/alpha-cli/src/alpha_cli/follow_journal.py
-verified: 4c7cc9d2ba1dcf9a
+  - apps/alpha-cli/src/alpha_cli/follow_chain.py
+verified: ca184e1177f7193e
 ---
 # Follow a tested idea on paper
 
@@ -30,4 +31,4 @@ start time. A journal in `forward/` records each new session. Today it only hold
 
 **What it cannot tell you** Whether the idea works. It is paper only, with no order and no advice. A factor cannot be followed yet.
 
-**Next** Wait for new bars, then `alpha follow show <follow id>`. Write the [idea card](idea-card.md) first to link versions.
+**Next** Wait for new bars, then `alpha follow show <follow id>`. Without an [idea card](idea-card.md), only restarts of the same test are versions; write the card first to link different tests.

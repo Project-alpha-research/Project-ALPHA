@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 3fff441446bb6de8 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
+  verified f6fa21f1a0c3b4a0 on 2026-11-19: follow journal hardening adds head record and chain module; the workspace router rows are unchanged
 
 apps/alpha-cli/README.md
   verified 3fff441446bb6de8 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged

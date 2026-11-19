@@ -3,31 +3,28 @@
 A follow is frozen when it starts. Changing a followed idea is never an edit: it makes a new
 version that names the old follow, and the old follow gets a `stop` entry. This module computes
 no signal and simulates no trade. It reads one bar per asset, only to record that bar's hash.
-Only the follow, today and nightly modules may import it (`tests/unit/test_follow_separation.py`).
+Only the modules on the allow-list in `tests/unit/test_follow_separation.py` may import it.
 """
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
 import re
 import tomllib
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from alpha_cli.follow_journal import (
-    Clock,
-    Entry,
-    JournalRefusal,
-    append_entry,
-    read_entries,
-    verify_journal,
-)
+from alpha_cli.follow_chain import append_entry, read_entries, verify_journal
+from alpha_cli.follow_journal import Clock, Entry, JournalRefusal
 from alpha_cli.follow_source import Source, latest_bar_hashes, refuse
 from alpha_cli.spine import idea_card
 from alpha_cli.spine.errors import SpineError
@@ -127,7 +124,7 @@ def resolve(home: Path, wanted: str) -> str:
 
 
 def entries_of(home: Path, follow_id: str) -> list[Entry]:
-    return read_entries(folder_of(home, follow_id))
+    return read_entries(folder_of(home, follow_id), follow_id)
 
 
 def state_of(entries: list[Entry]) -> str:
@@ -152,16 +149,30 @@ def _same(record: FollowRecord, source: Source, pct: float) -> bool:
     ) and record.paper_account_percent == pct
 
 
-def _lineage(home: Path, card: str) -> list[tuple[FollowRecord, str]]:
-    if not card:
-        return []
+def _same_idea(record: FollowRecord, source: Source, card: str) -> bool:
+    """One idea: the same idea card, or with no card the same test or find."""
+    if card:
+        return record.card_id == card
+    return not record.card_id and (record.kind, record.source_id) == (source.kind, source.source_id)
+
+
+def _lineage(home: Path, source: Source, card: str) -> list[tuple[FollowRecord, str]]:
     found = [
         (load_record(folder_of(home, i)), state_of(entries_of(home, i))) for i in all_ids(home)
     ]
     return sorted(
-        [(r, s) for r, s in found if r.card_id == card],
+        [(r, s) for r, s in found if _same_idea(r, source, card)],
         key=lambda x: (x[0].version, x[0].started_at),
     )
+
+
+@contextmanager
+def _start_lock(home: Path) -> Iterator[None]:
+    """One start at a time, so two starts of one spec cannot make two follows."""
+    _root(home).mkdir(parents=True, exist_ok=True)
+    with (_root(home) / ".start.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
 
 
 def start_follow(
@@ -169,16 +180,18 @@ def start_follow(
 ) -> dict[str, Any]:
     """Freeze a follow and write its start entry. Writes only under `forward/`. No ledger row."""
     card_id = idea_card.resolve(home, card or source.card) if (card or source.card) else ""
-    related = _lineage(home, card_id)
+    with _start_lock(home):
+        return _start_locked(home, source, card_id, size_pct, clock)
+
+
+def _start_locked(
+    home: Path, source: Source, card_id: str, size_pct: float, clock: Clock
+) -> dict[str, Any]:
+    related = _lineage(home, source, card_id)
     active = [r for r, s in related if s != "stopped"]
     for record, state in ((r, s) for r, s in related if s != "stopped"):
         if _same(record, source, size_pct):
             return {**_facts(record, state), "created": False, "replaced": ""}
-    if not card_id:
-        for i in all_ids(home):
-            record = load_record(folder_of(home, i))
-            if _same(record, source, size_pct) and state_of(entries_of(home, i)) != "stopped":
-                return {**_facts(record, "active"), "created": False, "replaced": ""}
     hashes = latest_bar_hashes(home, source.assets)
     now = clock()
     previous = related[-1][0] if related else None
@@ -206,7 +219,8 @@ def start_follow(
         session_date=record.started_at.date(),
         clock=lambda: record.started_at,
         bar_hashes=hashes,
-        payload={**payload, "paper": True},
+        payload={**payload, "follow_id": record.follow_id, "paper": True},
+        follow_id=record.follow_id,
     )
     replaced = ""
     for old in active:
@@ -222,7 +236,12 @@ def stop_follow(home: Path, follow_id: str, *, reason: str, clock: Clock) -> Ent
     load_record(folder)
     now = clock()
     return append_entry(
-        folder, kind="stop", session_date=now.date(), clock=lambda: now, payload={"reason": reason}
+        folder,
+        kind="stop",
+        session_date=now.date(),
+        clock=lambda: now,
+        payload={"reason": reason},
+        follow_id=follow_id,
     )
 
 
@@ -259,6 +278,6 @@ def list_facts(home: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def journal_report(home: Path, follow_id: str) -> Any:
+def journal_report(home: Path, follow_id: str, *, now: datetime) -> Any:
     load_record(folder_of(home, follow_id))
-    return verify_journal(folder_of(home, follow_id))
+    return verify_journal(folder_of(home, follow_id), follow_id=follow_id, now=now)

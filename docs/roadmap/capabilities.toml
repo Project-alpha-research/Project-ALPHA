@@ -480,7 +480,7 @@ entry_points = [
 proof_synthetic = [
   "tests/unit/test_follow_journal.py::test_verify_detects_a_flipped_byte",
   "tests/unit/test_follow_cmds.py::test_a_changed_spec_of_the_same_idea_is_a_new_version",
-  "tests/unit/test_follow_separation.py::test_no_module_outside_follow_today_nightly_touches_forward",
+  "tests/unit/test_follow_separation.py::test_no_module_off_the_reader_list_touches_forward",
 ]
 proof_smoke = [
   "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",

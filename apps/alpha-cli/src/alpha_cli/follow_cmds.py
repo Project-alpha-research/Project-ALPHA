@@ -37,7 +37,9 @@ def _clock() -> datetime:
 
 def _row(f: dict[str, Any]) -> str:
     if f["state"] == "broken":
-        return f"  {f['follow_id']}  broken: run `alpha follow verify {f['follow_id']}`"
+        return (
+            f"  {f['follow_id']}  paper follow, broken: run `alpha follow verify {f['follow_id']}`"
+        )
     state = store.WAITING if f["state"] == "waiting" else f["state"]
     return (
         f"  {f['follow_id']}  {store.KINDS[f['kind']]}  {', '.join(f['assets'])}  "
@@ -157,7 +159,7 @@ def verify(
     home = AlphaSettings().data_dir
     try:
         identity = store.resolve(home, follow_id)
-        report = store.journal_report(home, identity)
+        report = store.journal_report(home, identity, now=_clock())
     except (SpineError, JournalRefusal) as exc:
         fail(exc, json_out)
     broken = report.first_break
@@ -172,7 +174,8 @@ def verify(
         f"Journal of follow {identity} (paper) is intact: {report.entries} entries, "
         f"head {report.head}."
         if broken is None
-        else f"Journal of follow {identity} is broken at entry {broken.seq}: {broken.reason}"
+        else f"Journal of follow {identity} (paper) is broken at entry {broken.seq}: "
+        f"{broken.reason}"
     )
     emit(facts, json_out=json_out, fallback=text)
     if broken is not None:

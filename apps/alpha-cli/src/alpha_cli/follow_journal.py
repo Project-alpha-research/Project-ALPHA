@@ -4,25 +4,22 @@ Each line is one entry. An entry names the hash of the one before it, so a chang
 reordered line shows at the first place it differs. The writer refuses back-fill: a session date
 that is not after the last one, a clock that runs backwards, a gap in the numbers, a second
 start, and any write after a stop. A day not recorded in time can only be written as `missed`.
-The clock is always passed in; nothing here sleeps or reads the wall clock.
+The clock is always passed in; nothing here sleeps or reads the wall clock. Reading, verifying
+and appending are in `follow_chain`.
 """
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
-import os
 from collections.abc import Callable, Mapping
 from datetime import UTC, date, datetime, timedelta
-from pathlib import Path
 from typing import Any, Literal, NamedTuple
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from alpha_cli.spine.errors import SpineError
 
-JOURNAL_FILE = "journal.jsonl"
 GENESIS = "0" * 64
 # A bar for session day D may be written on D or on the next calendar day. Later, it is `missed`.
 MAX_BAR_LATENESS_DAYS = 1
@@ -37,6 +34,12 @@ STOPPED = "FOLLOW_STOPPED"
 SECOND_START = "FOLLOW_SECOND_START"
 NO_START = "FOLLOW_NO_START"
 BAR_TOO_LATE = "FOLLOW_BAR_TOO_LATE"
+SESSION_AHEAD = "FOLLOW_SESSION_AHEAD"
+WRITTEN_AHEAD = "FOLLOW_WRITTEN_AHEAD"
+PARTIAL_LINE = "FOLLOW_PARTIAL_LINE"
+TRUNCATED = "FOLLOW_TRUNCATED"
+WRONG_FOLDER = "FOLLOW_WRONG_FOLDER"
+REPAIR = "Keep a copy of the folder. Then see `docs/reference/invariants/cli-follow.md#repair`."
 
 
 class JournalRefusal(SpineError):
@@ -128,6 +131,13 @@ def _refuse(code: str, message: str, next_step: str) -> JournalRefusal:
 
 def check_rules(prev: Entry | None, entry: Entry) -> None:
     """Raise `JournalRefusal` unless `entry` may follow `prev`."""
+    if entry.session_date > entry.written_at.date():
+        raise _refuse(
+            SESSION_AHEAD,
+            f"Session {entry.session_date} is later than the day it is written "
+            f"({entry.written_at.date()}). A day cannot be recorded before it happens.",
+            "Check the clock and the session date.",
+        )
     if prev is None:
         if entry.kind != "start":
             raise _refuse(
@@ -191,87 +201,3 @@ def _check_not_after(prev: Entry, entry: Entry) -> None:
                 f"A bar must be written within {MAX_BAR_LATENESS_DAYS} day of its session.",
                 "Write that day as `missed`. It cannot be written as a bar.",
             )
-
-
-def _lines(folder: Path) -> list[str]:
-    try:
-        text = (folder / JOURNAL_FILE).read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return []
-    return [line for line in text.split("\n") if line]
-
-
-def _walk(folder: Path) -> tuple[list[Entry], Break | None]:
-    entries: list[Entry] = []
-    for position, line in enumerate(_lines(folder), start=1):
-        try:
-            raw = json.loads(line)
-            entry = Entry.model_validate(raw)
-        except (ValueError, TypeError) as exc:
-            reason = f"Line {position} cannot be read ({type(exc).__name__})."
-            return entries, Break(position, CHAIN_BROKEN, reason)
-        recomputed = entry_hash_of(entry.model_dump(mode="json"))
-        if entry.seq != position:
-            return entries, Break(
-                position,
-                SEQ_GAP,
-                f"Entry {position} is numbered {entry.seq}: a line was moved or removed.",
-            )
-        if recomputed != entry.entry_hash:
-            return entries, Break(
-                position, CHAIN_BROKEN, f"Entry {position} no longer matches its own hash."
-            )
-        try:
-            check_rules(entries[-1] if entries else None, entry)
-        except JournalRefusal as exc:
-            return entries, Break(position, str(exc.payload["code"]), str(exc))
-        entries.append(entry)
-    return entries, None
-
-
-def verify_journal(folder: Path) -> JournalReport:
-    """Recompute the whole chain. The first break is named by its entry number."""
-    entries, found = _walk(folder)
-    return JournalReport(len(entries), entries[-1].entry_hash if entries else GENESIS, found)
-
-
-def read_entries(folder: Path) -> list[Entry]:
-    """The entries, or a refusal at the first break."""
-    entries, found = _walk(folder)
-    if found is not None:
-        raise _refuse(
-            found.code,
-            f"The journal is broken at entry {found.seq}: {found.reason}",
-            "Do not edit the journal. Run `alpha follow verify`.",
-        )
-    return entries
-
-
-def append_entry(
-    folder: Path,
-    *,
-    kind: Kind,
-    session_date: date,
-    clock: Clock,
-    bar_hashes: Mapping[str, str] | None = None,
-    payload: Mapping[str, Any] | None = None,
-) -> Entry:
-    """Append one entry under a lock. `written_at` comes from the injected clock."""
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / JOURNAL_FILE
-    with path.open("ab") as stream:
-        fcntl.flock(stream, fcntl.LOCK_EX)
-        entries = read_entries(folder)
-        entry = build_entry(
-            entries[-1] if entries else None,
-            kind=kind,
-            session_date=session_date,
-            written_at=clock(),
-            bar_hashes=bar_hashes,
-            payload=payload,
-        )
-        line = json.dumps(entry.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
-        stream.write(line.encode("utf-8") + b"\n")
-        stream.flush()
-        os.fsync(stream.fileno())
-    return entry

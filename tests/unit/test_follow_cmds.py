@@ -97,7 +97,8 @@ def test_start_writes_only_under_forward_and_no_ledger_row(tmp_path: Path, clock
     started = _start(home, "--test", RUN_A)
     after = _files(home)
     new = set(after) - set(before)
-    assert new and all(name.startswith(f"forward/{started['follow_id']}/") for name in new)
+    mine = f"forward/{started['follow_id']}/"
+    assert new and all(n.startswith(mine) or n == "forward/.start.lock" for n in new)
     assert {n for n in before if before[n] != after.get(n)} == set()
     assert ledger.read_text() == '{"kind": "rule_test"}\n'
 
@@ -161,7 +162,7 @@ def test_the_same_spec_again_is_not_a_new_follow(tmp_path: Path, clock: Now) -> 
     first = _start(home, "--test", RUN_A)
     again = _start(home, "--test", RUN_A)
     assert again["follow_id"] == first["follow_id"] and again["created"] is False
-    assert len(list((home / "forward").iterdir())) == 1
+    assert len([p for p in (home / "forward").iterdir() if p.is_dir()]) == 1
 
 
 def test_the_forward_clock_restart_is_said_in_words(tmp_path: Path, clock: Now) -> None:
@@ -211,3 +212,40 @@ def test_an_unknown_follow_or_run_is_refused_in_plain_words(tmp_path: Path, cloc
     assert "no follow" in _cli(home, "show", "abcd")[1].lower()
     code, output = _cli(home, "start", "--test", RUN_A)
     assert code == 1 and "no rule test" in output.lower()
+
+
+def test_without_a_card_a_new_size_for_the_same_test_is_a_new_version(
+    tmp_path: Path, clock: Now
+) -> None:
+    home = _home(tmp_path)
+    _rule_test(home, RUN_A, "1" * 64, card="")
+    _rule_test(home, RUN_B, "2" * 64, card="")
+    old = _start(home, "--test", RUN_A)
+    new = _start(home, "--test", RUN_A, "--size-pct", "5")
+    assert new["version"] == 2 and new["replaced"] == old["follow_id"]
+    other = _start(home, "--test", RUN_B)
+    assert other["version"] == 1 and other["replaced"] == ""
+
+
+def test_an_edited_record_a_renamed_folder_or_a_moved_journal_is_caught(
+    tmp_path: Path, clock: Now
+) -> None:
+    home = _home(tmp_path)
+    _rule_test(home, RUN_A, "1" * 64)
+    _rule_test(home, RUN_B, "2" * 64, card="")
+    first = str(_start(home, "--test", RUN_A)["follow_id"])
+    second = str(_start(home, "--test", RUN_B)["follow_id"])
+    root = home / "forward"
+    journal = (root / second / "journal.jsonl").read_bytes()
+    (root / second / "journal.jsonl").write_bytes((root / first / "journal.jsonl").read_bytes())
+    (root / second / "head.json").write_bytes((root / first / "head.json").read_bytes())
+    code, text = _cli(home, "verify", second)
+    assert code == 1 and "another follow" in text
+    (root / second / "journal.jsonl").write_bytes(journal)
+    record = root / first / "follow.toml"
+    record.write_text(record.read_text().replace("10.0", "20.0"))
+    code, text = _cli(home, "show", first)
+    assert code == 1 and "no longer matches its id" in text
+    (root / second).rename(root / ("9" * 12))
+    code, text = _cli(home, "show", "9" * 12)
+    assert code == 1 and "no longer matches its id" in text

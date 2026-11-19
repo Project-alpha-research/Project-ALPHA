@@ -8,17 +8,15 @@ from pathlib import Path
 
 import pytest
 
+from alpha_cli.follow_chain import append_entry, read_entries, verify_journal
 from alpha_cli.follow_journal import (
     GENESIS,
     MAX_BAR_LATENESS_DAYS,
     Entry,
     JournalRefusal,
     Kind,
-    append_entry,
     build_entry,
     check_rules,
-    read_entries,
-    verify_journal,
 )
 
 T0 = datetime(2026, 11, 19, 8, 0, tzinfo=UTC)
@@ -76,15 +74,18 @@ def test_session_date_must_be_after_the_last_session_date(tmp_path: Path) -> Non
 
 
 def test_written_at_must_not_go_backwards(tmp_path: Path) -> None:
-    _journal(tmp_path, bars=1)
+    _write(tmp_path, "start", D0, T0)
+    _write(tmp_path, "bar", D0 + timedelta(days=1), T0 + timedelta(days=2))
     with pytest.raises(JournalRefusal) as error:
-        _write(tmp_path, "bar", D0 + timedelta(days=2), T0)
+        _write(tmp_path, "bar", D0 + timedelta(days=2), T0 + timedelta(days=2, hours=-1))
     assert _code(error) == "FOLLOW_CLOCK_BACK"
 
 
 def test_a_sequence_gap_is_refused() -> None:
     first = build_entry(None, kind="start", session_date=D0, written_at=T0)
-    second = build_entry(first, kind="bar", session_date=D0 + timedelta(days=1), written_at=T0)
+    second = build_entry(
+        first, kind="bar", session_date=D0 + timedelta(days=1), written_at=T0 + timedelta(days=1)
+    )
     skipped = second.model_copy(update={"seq": 3})
     with pytest.raises(JournalRefusal) as error:
         check_rules(first, skipped)
@@ -99,7 +100,9 @@ def test_a_broken_chain_is_refused_by_the_writer(tmp_path: Path) -> None:
         _write(tmp_path, "bar", D0 + timedelta(days=9), T0 + timedelta(days=9))
     assert _code(error) in {"FOLLOW_SEQ_GAP", "FOLLOW_CHAIN_BROKEN"}
     first = build_entry(None, kind="start", session_date=D0, written_at=T0)
-    wrong = build_entry(first, kind="bar", session_date=D0 + timedelta(days=1), written_at=T0)
+    wrong = build_entry(
+        first, kind="bar", session_date=D0 + timedelta(days=1), written_at=T0 + timedelta(days=1)
+    )
     with pytest.raises(JournalRefusal) as link:
         check_rules(first.model_copy(update={"entry_hash": HASH}), wrong)
     assert _code(link) == "FOLLOW_CHAIN_BROKEN"

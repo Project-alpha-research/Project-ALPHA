@@ -1,0 +1,19 @@
+id = "52-week-high"
+name = "52-week high"
+year_published = 2004
+market = "us-equities"
+idea = "Stocks trading close to their highest price of the past year have tended to beat stocks far below it."
+mechanism_claimed = "The authors say investors anchor on the 52-week high, so they sell too early near it and news is absorbed slowly."
+data_needed = ["daily prices for a wide stock universe"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none found for this exact rule; McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = ""
+
+[source]
+authors = "George and Hwang"
+year = 2004
+title = "The 52-week high and momentum investing"
+venue = "Journal of Finance 59(5)"
+url = "https://doi.org/10.1111/j.1540-6261.2004.00695.x"

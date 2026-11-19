@@ -137,6 +137,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "ledger",
             "lookalike",
             "idea",
+            "library",
             "ml",
             "monte-carlo",
             "next",

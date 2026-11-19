@@ -1,0 +1,19 @@
+id = "time-series-momentum"
+name = "Time-series momentum"
+year_published = 2012
+market = "multi"
+idea = "An asset that rose over the past year tends to keep rising next month, and one that fell tends to keep falling, judged against its own past."
+mechanism_claimed = "The authors link it to slow reaction by investors and to hedgers and speculators trading over time. The other side is not named clearly."
+data_needed = ["daily or monthly prices for a broad set of liquid futures"]
+direction = "long-short"
+holding_clock = "weeks to months"
+decay_evidence = "Huang, Li, Wang and Zhou (2020, Journal of Financial Economics 135(3), doi 10.1016/j.jfineco.2019.08.004) find the statistical evidence weaker than first reported."
+can_test_today = "partly - the rule runs on daily bars for stocks and crypto, but futures data are not held."
+notes = "Futures are the original market. Test it on ETFs or crypto as a stand-in, and say so."
+
+[source]
+authors = "Moskowitz, Ooi and Pedersen"
+year = 2012
+title = "Time series momentum"
+venue = "Journal of Financial Economics 104(2)"
+url = "https://doi.org/10.1016/j.jfineco.2011.11.003"

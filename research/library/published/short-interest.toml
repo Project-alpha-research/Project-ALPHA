@@ -1,0 +1,19 @@
+id = "short-interest"
+name = "Short interest"
+year_published = 2005
+market = "us-equities"
+idea = "Stocks with a lot of their shares sold short, and few big holders, have tended to earn less."
+mechanism_claimed = "The authors say short sellers hold information. The effect is strongest where few big institutions hold the stock."
+data_needed = ["short interest reports", "institutional ownership", "daily prices"]
+direction = "short"
+holding_clock = "months"
+decay_evidence = "none found."
+can_test_today = "no - short interest data is not held yet."
+notes = "Free public reports exist; they are not in ALPHA."
+
+[source]
+authors = "Asquith, Pathak and Ritter"
+year = 2005
+title = "Short interest, institutional ownership, and stock returns"
+venue = "Journal of Financial Economics 78(2)"
+url = "https://doi.org/10.1016/j.jfineco.2005.01.001"

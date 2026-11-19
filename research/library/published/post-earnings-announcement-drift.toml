@@ -1,0 +1,19 @@
+id = "post-earnings-announcement-drift"
+name = "Post-earnings-announcement drift"
+year_published = 1989
+market = "us-equities"
+idea = "After a company reports earnings far above or below what was expected, its stock tends to keep moving the same way for some weeks."
+mechanism_claimed = "The authors say investors under-react to the news at first, so the price adjusts slowly."
+data_needed = ["earnings announcement dates", "earnings surprise measure (needs forecasts or past earnings)", "daily prices"]
+direction = "long-short"
+holding_clock = "weeks"
+decay_evidence = "Martineau (2022, Critical Finance Review 11(3-4), doi 10.1561/104.00000122) reports that the drift is gone in recent large-stock data."
+can_test_today = "partly - earnings dates and daily bars can be read; the earnings surprise needs earnings or forecast data that is not held."
+notes = ""
+
+[source]
+authors = "Bernard and Thomas"
+year = 1989
+title = "Post-earnings-announcement drift: delayed price response or risk premium?"
+venue = "Journal of Accounting Research 27 (Supplement)"
+url = "https://doi.org/10.2307/2491062"

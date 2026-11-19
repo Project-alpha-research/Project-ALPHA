@@ -22,9 +22,8 @@ stored answers reused), and the five [honesty rules](../../invariants/cli-toolbo
 The owner wants "all possible test and system availability like permutation, parameter sensitivity, etc.":
 hundreds of tests, if not thousands, not a small fixed set
 ([owner, 2026-11-18](../owner-decisions-5.md#2026-11-18-the-toolbox-is-an-open-catalogue-meant-to-grow-to-hundreds-of-tests)).
-One uniform way to describe, find and run a test means a new one costs a small module
-and one entry. Running many tests and quoting the favourable ones is itself overfitting, so
-the record of what was run is part of the design.
+One way to describe, find and run a test makes a new one cost one module and one entry.
+Running many tests and quoting the favourable ones is itself overfitting, so the record of what was run is part of the design.
 
 ## Its job in the research loop
 

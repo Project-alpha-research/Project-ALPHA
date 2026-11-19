@@ -94,6 +94,7 @@ def test_parity_attempts_and_cache(tmp_path: Path, recorded_time: None) -> None:
             "rdagent-factor",
             "excess-over-equal-weight-basket",
             "after-verdict",
+            "exploratory",
         ]
         assert doc["values"] == pytest.approx(
             direct(tool, returns, doc["result"]["seed"]), rel=1e-9, abs=1e-12

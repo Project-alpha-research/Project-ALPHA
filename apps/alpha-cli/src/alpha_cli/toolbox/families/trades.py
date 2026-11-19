@@ -45,6 +45,8 @@ def dependence(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
 
 DEPENDENCE = ToolSpec(
     id="trades.dependence",
+    answers=("Did winning and losing trades cluster or alternate?",),
+    situations=("trade-streaks", "few-trades"),
     family="trades",
     kind="test",
     look="test",

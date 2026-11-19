@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: 7fe49bd4ab2f725f
+verified: 34ec80f1257d9ff7
 ---
 
 # Command line toolbox
@@ -94,3 +94,21 @@ deflation, a budget for agent-selected checks, exporting causal tools as factor 
 entries (minimum track record length waits for a function in `alpha_validation`); and the growth plan. The 480-entry
 catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is not yet in the repository; random-exit
 control remains among its highest-value gaps.
+
+## Finding checks and recording the plan
+
+`alpha tool find "<plain words>"` ranks checks by plain token overlap with each entry's `answers`, `situations` and
+name, plus a small synonym table (`toolbox/find.py`). It uses no model and no network. Each hit shows what it answers,
+its cost, the command to run it and the named set that holds it. `alpha tool situations` lists situation to checks,
+cheapest first; the same table is pasted into [research/tools/toolbox-by-situation.md](../../../research/tools/toolbox-by-situation.md)
+and a test keeps it equal to the registry. The closed list of situations lives only in `toolbox/situations.py`.
+
+A check gives a reading in context, never a pass or fail, and any check may run at any time, also on one part of an idea.
+Nothing gates a result. The guard against result-shopping is the record and the counts.
+
+`alpha tool declare <run_id> --set <name> | --tools a,b,c [--why "..."]` appends one line with the time to
+`ledger/declarations/<run_id>.jsonl`, before results. The runner is the one place a result is written. It marks the result
+`declared` if a declaration naming the check (or its set) is older than the write, else `exploratory`. The word is in the
+result's `labels`. `alpha tool results <run_id>` and `alpha results show` print it with the counts:
+"N checks run on this result: D declared, E exploratory". Results stored before this change count as exploratory.
+Exploratory is a label, not an error, and no statistic, seed or result value depends on it.

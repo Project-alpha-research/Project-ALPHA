@@ -132,6 +132,11 @@ def break_even(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
 
 BREAK_EVEN = ToolSpec(
     id="costs.break_even",
+    answers=(
+        "How much could costs rise before the result reaches zero?",
+        "Does the result survive higher trading costs?",
+    ),
+    situations=("cost-fragile", "just-the-market"),
     family="costs",
     question="How much could costs rise before the result reached zero or matched buy and hold?",
     needs=("stored_equity", "stored_benchmark"),

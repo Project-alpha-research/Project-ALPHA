@@ -1,12 +1,17 @@
-"""Seeded synthetic chains from a known volatility surface, for tests and later solver work.
+"""Seeded synthetic chains from a known volatility surface, for tests and solver work.
 
-No real market data. Quotes use a placeholder price shape (intrinsic value plus a time value that
-grows with the surface IV). It is NOT an option model: these prices are not arbitrage-free, and no
-implied-volatility solver can recover the stored surface IV from them. Never use this fixture to
-judge a pricing or volatility method. It only tests records, storage and point-in-time reads.
-The solver build must add a fixture priced with a stated model (for example Black-Scholes at the
-surface IV) so a solver can recover the known volatility. The surface IV is stored as the provided
-IV so that later check has a target.
+No real market data. Two modes.
+- Placeholder mode (default): quotes use a placeholder price shape (intrinsic value plus a time
+  value that grows with the surface IV). It is NOT an option model: these prices are not
+  arbitrage-free, and no implied-volatility solver can recover the stored surface IV from them.
+  Never use this mode to judge a pricing or volatility method. It only tests records, storage and
+  point-in-time reads. Contracts are American-style.
+- Model-priced mode (`priced=PricedModel(rate, dividend_yield)`): every quote is centred on the
+  Black-Scholes-Merton price (`alpha_data.options.pricing`) at the surface IV, with a small fixed
+  spread. Contracts are European-style, so the model price is exact and a solver can recover the
+  surface IV from the quote mid. Time to expiry is ACT/365 from the snapshot to 21:00 UTC on the
+  expiry day. The rate and dividend yield are the explicit values in `PricedModel`.
+The surface IV is stored as the provided IV in both modes so a check has a target.
 """
 
 from __future__ import annotations
@@ -19,12 +24,25 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 
 from alpha_core import DataError
+from alpha_data.options.implied import years_between
+from alpha_data.options.pricing import OptionInputs, price
 from alpha_data.options.schema import ChainRow, ChainSnapshot, ContractId, Greeks, Quote
 
 UNDERLYING = "AAA"
 PROVIDER = "fixture"
 STRIKES = tuple(Decimal(5 * k) for k in range(16, 25))
 _MODEL = "synthetic-surface-v1"
+EXPIRY_TIME_UTC = time(21, 0)
+SPREAD_FLOOR = 0.01
+SPREAD_FRACTION = 0.01
+
+
+@dataclass(frozen=True)
+class PricedModel:
+    """Rate and dividend yield for the model-priced fixture mode. Both are explicit."""
+
+    rate: float
+    dividend_yield: float
 
 
 @dataclass(frozen=True)
@@ -54,9 +72,14 @@ class SyntheticAdapter:
     """Implements `OptionsAdapter` for one generic underlying, deterministic per seed."""
 
     def __init__(
-        self, seed: int, surface: VolSurface | None = None, strikes: tuple[Decimal, ...] = STRIKES
+        self,
+        seed: int,
+        surface: VolSurface | None = None,
+        strikes: tuple[Decimal, ...] = STRIKES,
+        priced: PricedModel | None = None,
     ) -> None:
         self._seed = seed
+        self._priced = priced
         self._strikes = strikes
         self._surface = surface or VolSurface()
 
@@ -64,13 +87,14 @@ class SyntheticAdapter:
         return [UNDERLYING]
 
     def _contract(self, expiry: date, strike: Decimal, right: str) -> ContractId:
+        style = "A" if self._priced is None else "E"
         return ContractId(
             underlying_id=UNDERLYING,
             root=UNDERLYING,
             expiry=expiry,
             strike=strike,
             right=right,
-            style="A",
+            style=style,
             multiplier=100,
             listed_on=expiry - timedelta(days=120),
             provider_symbol=f"{UNDERLYING}-{expiry:%y%m%d}-{right}-{strike}",
@@ -110,13 +134,17 @@ class SyntheticAdapter:
         k = float(strike)
         iv = self._surface.iv(k, spot, years)
         intrinsic = max(spot - k, 0.0) if right == "C" else max(k - spot, 0.0)
-        mid = intrinsic + 0.4 * iv * spot * math.sqrt(max(years, 1.0 / 365.0))
-        half = max(0.01, 0.02 * mid)
+        if self._priced is None:
+            mid = intrinsic + 0.4 * iv * spot * math.sqrt(max(years, 1.0 / 365.0))
+            half = max(0.01, 0.02 * mid)
+            bid, ask = max(0.0, round(mid - half, 2)), round(mid + half, 2)
+        else:
+            bid, ask = self._model_quote(ts, expiry, strike, right, spot, iv)
         return ChainRow(
             contract=self._contract(expiry, strike, right),
             quote=Quote(
-                bid=max(0.0, round(mid - half, 2)),
-                ask=round(mid + half, 2),
+                bid=bid,
+                ask=ask,
                 bid_size=10,
                 ask_size=12,
                 quote_ts=ts,
@@ -125,6 +153,24 @@ class SyntheticAdapter:
             oi_as_of=ts.date() - timedelta(days=1),
             provided=Greeks(source="provided", model=_MODEL, iv=iv),
         )
+
+    def _model_quote(
+        self, ts: datetime, expiry: date, strike: Decimal, right: str, spot: float, iv: float
+    ) -> tuple[float, float]:
+        """Bid and ask around the model price; the mid is the model price (spread is symmetric)."""
+        assert self._priced is not None
+        inp = OptionInputs(
+            underlying=spot,
+            kind="spot",
+            strike=float(strike),
+            years=years_between(ts, datetime.combine(expiry, EXPIRY_TIME_UTC, UTC)),
+            rate=self._priced.rate,
+            dividend_yield=self._priced.dividend_yield,
+            right=right,
+        )
+        value = price(inp, iv)
+        half = min(max(SPREAD_FLOOR, SPREAD_FRACTION * value), value)
+        return value - half, value + half
 
     def contracts(self, underlying: str, start: date, end: date) -> list[ContractId]:
         found: dict[str, ContractId] = {}

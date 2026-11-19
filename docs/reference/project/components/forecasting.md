@@ -10,7 +10,9 @@ verified: 5a7e922e1892468b
 
 Kronos is an open-source "foundation model" for price charts: given recent bars, it draws many
 possible future price paths. ALPHA wraps it so its forecasts can be studied and tested like any
-other experiment.
+other experiment. The owner decided on 2026-11-14 that Kronos is "a flexible research and exploration
+tool" and that its "forecasts and scenarios still need validation before we rely on them for decisions"
+([entry](../owner-decisions.md#2026-11-14-what-kronos-is-for)).
 
 ## Why it exists
 

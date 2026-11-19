@@ -21,9 +21,9 @@ part that owns it can link to one clear entry.
   owner is busy, and while the ideas are only system tests, an AI may play the user.
 - **Decided:** while RD-Agent pauses for a person, Claude or a helper agent may read its proposals
   as a trader using the software would, accept, redirect or suggest another idea. Every such answer
-  is labelled "stand-in user, not the owner". It is never used for a real approval: confirming
-  reserved data, promoting a strategy, paper or live trading, changing a guard or a security
-  setting, or deleting a feature.
+  is labelled "stand-in user, not the owner". It is never used for a real approval: only the owner approves reserved-data use,
+  promotion, paper or live trading, guard or security changes, or deleting a feature. `apps/alpha-cli/src/alpha_cli/owner_auth.py`
+  and the `pre-owner-action-guard` hook enforce it.
 - **Why:** the owner cannot answer every pause, and the test phase needs the discussion flow
   exercised.
 - **In practice:** each stand-in exchange is judged as a test of the collaboration flow, and the

@@ -5,7 +5,7 @@ sources:
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: e90f700e6a3bf954
+verified: 5f770e5304808c21
 ---
 
 # RD-Agent
@@ -67,14 +67,14 @@ Being uninstalled somewhere, or having skipped tests, means work is left, not th
   ([log](../owner-decisions.md#2026-11-14-api-spending-limit-for-rd-agents-models)).
 - 2026-11-14: accept losing the "temperature" setting on the Codex route
   ([log](../owner-decisions-2.md#2026-11-14-accept-losing-temperature-on-the-codex-route-for-now)).
-- 2026-11-14: DeepSeek through OpenRouter allowed, caps unchanged ([details](../../../../workers/rdagent/README.md#moved-from-the-project-page)).
+- 2026-11-14: DeepSeek through OpenRouter allowed, caps unchanged ([details](../rd-agent-detail.md)).
 - 2026-11-14: first goal is one real loop through Codex ([log](../owner-decisions-2.md#2026-11-14-first-goal-one-real-rd-agent-loop)).
 - 2026-11-14: long studies use the Dell's disk ([log](../owner-decisions.md#2026-11-14-use-the-dells-disk-for-studies-for-now)).
 - 2026-11-14: the autonomous research team builds around RD-Agent ([log](../owner-decisions.md#2026-11-14-the-autonomous-research-team)).
 - 2026-11-16: 66 factors judged, no candidate; the spread check rejects most replay passes
-  ([measured](../../../../workers/rdagent/README.md#moved-from-the-project-page)).
+  ([measured](../rd-agent-detail.md)).
 - 2026-11-17: free local embeddings are exempt from call caps
-  ([measured](../../../../workers/rdagent/README.md#moved-from-the-project-page)).
+  ([measured](../rd-agent-detail.md)).
 - 2026-11-18: RD-Agent is a collaborator, never a black box
   ([log](../owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)). Built: the optional proposal pause on the command
   line. Not built: the pause on the Workstation screen, overriding an automatic refusal, honesty checks as labels.

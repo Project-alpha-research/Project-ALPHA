@@ -47,7 +47,7 @@ in the same ledger as an exploratory trial. `alpha tool` lists, describes and ru
 checks on a recorded rule test, including seeded intervals and path-risk estimates.
 `alpha tool history` lists every attempt, failed and unfinished ones included. [Toolbox](toolbox.md).
 RD-Agent's evaluator sends fixed check readings to the agent after each shown trading verdict.
-The [RD-Agent discussion commands](../../../../workers/rdagent/README.md#propose-and-discuss)
+The [RD-Agent discussion commands](../../../../workers/rdagent/propose-and-discuss.md)
 let the user choose the ideas a waiting worker builds and read the verdict for each built idea.
 
 ## Where it lives

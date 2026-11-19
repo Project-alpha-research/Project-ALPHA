@@ -21,7 +21,7 @@ counting decision. Options are in the [command reference](../commands.md#alpha-l
 The run-folder commands `proposal` and `reply` exchange build choices with a waiting worker.
 Between proposals, the command reads the worker's phase and its latest decision.
 A reply publishes a file in that round's folder. Trial counts and owner approvals come from
-their existing records. See the [discussion protocol](../../../workers/rdagent/README.md#propose-and-discuss).
+their existing records. See the [discussion protocol](../../../workers/rdagent/propose-and-discuss.md).
 
 ## Sources and snapshots
 

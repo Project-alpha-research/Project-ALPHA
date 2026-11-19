@@ -8,7 +8,7 @@ apps/alpha-cli/README.md
   verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
 
 docs/CONTEXT.md
-  verified 116bd0583054770c on 2026-11-19: routing only; search and stale internals change nothing it says
+  verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added

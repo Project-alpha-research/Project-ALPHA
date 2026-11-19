@@ -24,8 +24,8 @@ The whole path in one place. Other pages link here and do not repeat it.
    honesty and quant work ([model routing](../docs/reference/model-routing.md); owner decision of
    [2026-11-19](../docs/reference/project/owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first)).
    The Codex hand-off tool (`scripts/handoff.py`) is paused until the owner turns Codex back on.
-2. **The brief.** Write it in the shape of the [brief template](../docs/reference/model-routing.md#brief-template), outside the repository, and give
-   it to the builder. A planned task uses its `docs/work/<task>/` folder instead. Then you review (stage 04).
+2. **The brief.** Write it outside the repository, in the shape of the [brief template](../docs/reference/model-routing.md#brief-template), and give
+   it to the builder. Headings: Task, Workspace, Decision, Change, Do not touch, Done when, Tier, Builder, Do NOT load, Report. A planned task uses its `docs/work/<task>/` folder instead. Then you review (stage 04).
 3. **Where the files land.** `brief.md` and the builder's `report.md` go to `docs/work/<yyyy-mm-dd>-<slug>/`, merge with the work and are linked from the pull
    request. The JSON build record stays outside the repository, in the handoff folder ([task folders](../docs/work/CONTEXT.md)).
 4. **Checks.** Locally: `uv run python scripts/gate.py check`. On the pull request the one required check is `ci-ok`. Open the pull request as a draft.

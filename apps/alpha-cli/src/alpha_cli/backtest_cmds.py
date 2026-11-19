@@ -435,9 +435,12 @@ def _run_hold(
     stored: BarTimeframe,
     manifest_id: str | None,
 ) -> reserve.Hold:
-    """The run's cut-off. A bulk archive read (``--manifest-id``) is not held back yet."""
+    """The run's cut-off. An archive read (``--manifest-id``) is cut by the same rule."""
     if manifest_id is not None:
-        return reserve.Hold(_runner.parse_cutoff(as_of), as_of, 0)
+        from alpha_cli._archive_bars import hold_archive
+        from alpha_cli.crypto_data_cmds import _bulk_store
+
+        return hold_archive(_bulk_store(), manifest_id, symbol, as_of)
     return reserve.hold(
         symbol,
         data_dir=data_dir,

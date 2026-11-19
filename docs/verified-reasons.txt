@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 86257d44dd17437c on 2026-11-19: alpha nightly adds one command group and one menu entry; this page's statements are unchanged
+  verified 1178b2a68341f676 on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 apps/alpha-cli/README.md
-  verified 86257d44dd17437c on 2026-11-19: alpha nightly adds one command group and one menu entry; this page's statements are unchanged
+  verified 1178b2a68341f676 on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified 43a7582ad8e631a6 on 2026-11-19: alpha nightly adds one root command and one menu entry; this page's statements are unchanged
+  verified 4f35b886f5601b41 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 apps/alpha-web/README.md
-  verified 43a7582ad8e631a6 on 2026-11-19: alpha nightly adds one root command and one menu entry; this page's statements are unchanged
+  verified 4f35b886f5601b41 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 650664a488917d4a on 2026-11-19: validate gained one comment line only; text still correct
+  verified 13d6531bed4fe96b on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 docs/reference/invariants/cli-toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 73ea80381b767d2f on 2026-11-19: alpha nightly adds one root command and one menu entry; this page's statements are unchanged
+  verified 85dc3ce2debe94aa on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.

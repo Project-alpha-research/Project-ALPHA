@@ -165,6 +165,7 @@ def validate(
                 "command": "validate",
                 "symbol": symbol,
                 "snapshot_id": snapshot_id,
+                # research_cutoff, and the hold-back record only when bars were held back.
                 **held.identity(),
                 **_artifacts.research_gate_override_identity(research_gate_override),
                 **vars(spec),

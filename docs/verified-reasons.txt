@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 3ea688297b2fdb8c on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
+  verified d59fdcc62ac22bfe on 2026-11-19: validate gained one comment line only; text still correct
 
 apps/alpha-cli/README.md
-  verified 3ea688297b2fdb8c on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
+  verified d59fdcc62ac22bfe on 2026-11-19: validate gained one comment line only; text still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 48321a7ac2675286 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified 650664a488917d4a on 2026-11-19: validate gained one comment line only; text still correct
 
 docs/reference/invariants/cli-toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
@@ -212,7 +212,7 @@ research/tools/sensitivity.md
   verified ae3e6677256bbf6d on 2026-11-19: reserved-period hold-back added to more commands; text still correct
 
 research/tools/walk-forward.md
-  verified da0a35c7496f5a91 on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
+  verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

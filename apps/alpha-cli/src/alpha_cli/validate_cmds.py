@@ -165,7 +165,6 @@ def validate(
                 "command": "validate",
                 "symbol": symbol,
                 "snapshot_id": snapshot_id,
-                "research_cutoff": held.research_cutoff,
                 **held.identity(),
                 **_artifacts.research_gate_override_identity(research_gate_override),
                 **vars(spec),

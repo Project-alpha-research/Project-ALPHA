@@ -284,10 +284,14 @@ def test_lookalike_and_unusual_hold_the_period_back(
     monkeypatch.setenv("ALPHA_DATA_DIR", str(cut))
     plain = CliRunner().invoke(_command(command), args)
     assert held.exit_code == 0 and plain.exit_code == 0, held.output
-    assert SENTENCE in held.output and SENTENCE not in plain.output
-    held_doc = json.loads(held.stdout.strip().splitlines()[-1])
-    plain_doc = json.loads(plain.stdout.strip().splitlines()[-1])
+    # One behaviour for every covered command: --json carries a reserve field, no sentence.
+    held_doc, plain_doc = json.loads(held.output), json.loads(plain.output)
+    assert held_doc["reserve"] == {"reserved_start": RESERVED_START, "held_back_bars": HELD}
+    assert "reserve" not in plain_doc
     assert HELD_BACK in held_doc["labels"] and HELD_BACK not in plain_doc["labels"]
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(poisoned))
+    text = CliRunner().invoke(_command(command), args[:-1])
+    assert text.exit_code == 0 and SENTENCE in text.output, text.output
     assert [f["value"] for f in held_doc["facts"] if isinstance(f["value"], float)] == [
         pytest.approx(f["value"], rel=1e-9, abs=1e-12)
         for f in plain_doc["facts"]
@@ -297,13 +301,12 @@ def test_lookalike_and_unusual_hold_the_period_back(
 
 
 def test_labels_input_holds_the_period_back(
-    tmp_path: Path, spy: Spy, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, spy: Spy, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     poisoned, cut = _pair(tmp_path)
     held = labels_cmds._read_bars("SPY", poisoned)
-    printed = capsys.readouterr().out
     plain = labels_cmds._read_bars("SPY", cut)
-    assert SENTENCE in printed and HELD_BACK in held.labels and HELD_BACK not in plain.labels
+    assert HELD_BACK in held.labels and HELD_BACK not in plain.labels
     assert held.meta["reserve"]["held_back_bars"] == HELD and "reserve" not in plain.meta
     assert held.frame["close"].to_list() == pytest.approx(
         plain.frame["close"].to_list(), rel=1e-9, abs=1e-12

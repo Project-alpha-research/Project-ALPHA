@@ -129,7 +129,6 @@ def explain_saved_rule(
 ) -> dict[str, Any]:
     """Explain the saved rule on canonical PIT bars; unavailable is never a flat signal."""
     from alpha_cli._runner import load_bars
-    from alpha_cli.spine import reserve
     from alpha_strategies.rules import (
         explain_rules,
         rule_spec_from_json,

@@ -165,8 +165,6 @@ def _read_bars(asset: str, home: Path) -> _BarsInput:
     bars, snapshot_id = _runner.load_bars(
         resolved.symbol, data_dir=resolved.data_dir, as_of=held.as_of
     )
-    if held.say():
-        print(held.say())
     if len(bars) < 60:
         raise DataError(f"{resolved.symbol}: labels need at least 60 bars, got {len(bars)}")
     frame = pl.DataFrame(
@@ -308,6 +306,7 @@ def barrier(
                 "summary": summary,
                 "labels": labels,
                 "facts": _barrier_facts(summary, basis, rid, labels),
+                **({"reserve": data.meta["reserve"]} if "reserve" in data.meta else {}),
                 "created_at": datetime.now(UTC).isoformat(),
             }
             (staging / "result.json").write_text(
@@ -330,6 +329,8 @@ def barrier(
     lines = [f"Labels {rid} — {data.meta['symbol']} ({BASES[basis]})", f"Folder: {final}"]
     lines += [f"{f['metric']}: {f['value']}" for f in output["facts"]]
     lines.append("Labels: " + (", ".join(output["labels"]) or "none"))
+    if "reserve" in output:
+        lines.append(reserve.sentence(output["reserve"]["held_back_bars"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))
 
 

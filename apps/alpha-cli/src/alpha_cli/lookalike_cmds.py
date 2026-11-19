@@ -47,8 +47,6 @@ def _load(asset: str, timeframe: str, home: Path) -> tuple[Any, Any, Any, Any]:
     bars, _ = _runner.load_bars(
         resolved.symbol, data_dir=resolved.data_dir, timeframe=timeframe, as_of=held.as_of
     )
-    if held.say():
-        typer.echo(held.say(), err=True)
     return resolved, bars, to_ohlcv(bars), held
 
 
@@ -427,6 +425,7 @@ def lookalike(
             labels=labels,
             facts=facts,
         )
+        document.update(held.record_fields())
         figure = _render(
             lookalike_figure(
                 series,
@@ -453,7 +452,7 @@ def lookalike(
         labels=labels,
         rdir=rdir,
     )
-    emit(output, json_out=json_out, fallback=text)
+    emit(output, json_out=json_out, fallback=text + held.note())
 
 
 def unusual(
@@ -538,6 +537,7 @@ def unusual(
             },
             "labels": labels,
             "facts": facts,
+            **held.record_fields(),
         }
         figure = _render(
             unusual_figure(
@@ -561,4 +561,4 @@ def unusual(
         f"Labels: {', '.join(labels)}",
         f"Figure: {rdir / 'figure.png'}",
     ]
-    emit(output, json_out=json_out, fallback="\n".join(lines))
+    emit(output, json_out=json_out, fallback="\n".join(lines) + held.note())

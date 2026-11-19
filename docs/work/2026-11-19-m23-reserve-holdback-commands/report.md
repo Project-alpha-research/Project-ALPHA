@@ -21,7 +21,7 @@ The helper is `Hold` and `hold` / `hold_many` in `apps/alpha-cli/src/alpha_cli/s
 - `alpha scan check` is the alert watcher. It is forward use, so it still reads the latest bars. `scan run` and `rules explain` hold back.
 - The earlier of the user's `--as-of` and the cut-off wins. A user cut-off before the reserved day holds nothing back and keeps its own record.
 - Loaders always get the cut-off, so a split or dividend known from the date on is not applied, even when no bar is held back.
-- Sentence goes to stdout in text output; for `lookalike`, `unusual` it goes to stderr so `--json` stays clean.
+- Text output prints the sentence; `--json` output carries a `reserve` field instead (review fix: `lookalike`, `unusual` and `labels barrier` printed it on stderr).
 - Old stored results of these commands carry no `reserved-period-seen` label: they have no label mechanism.
 
 ## Tests

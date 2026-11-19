@@ -8,7 +8,7 @@ sources:
   - tests/bias_guards/test_walkforward_no_leak.py
   - tests/bias_guards/test_montecarlo_null_calibration.py
   - tests/integration/test_gauntlet_degenerate.py
-verified: bf8ee0f3ccc4c1d6
+verified: 53787192f38e82af
 ---
 
 # Validation statistics invariants
@@ -154,6 +154,8 @@ General rule: [research integrity § Point-in-time reads](research-integrity.md#
   ([ADR-0028](../../adr/0028-governed-market-state-and-model-candidates.md)).
 
 ## Oracles and tolerances
+
+- Factor attribution and the correlation interval have their own page: [rules](validation-factor-statistics.md).
 
 - Every public statistical primitive must be wrong-detectable: a metamorphic relation, a known-truth
   calibration or a differential oracle in `tests/oracles/` (markers `oracle`, `slow_oracle`), with a

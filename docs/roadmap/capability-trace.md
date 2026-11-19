@@ -12,6 +12,7 @@ table. A capability may serve several rows; a row may be served by several capab
 |---|---|
 | `workstation` | The Workstation opens in a browser |
 | `price-charts` | Dense multi-panel price charts, full screen, trade markers, two chart styles |
+| `market-overview` | Dense multi-panel price charts, full screen, trade markers, two chart styles |
 | `stock-data` | Daily stock and ETF bars from a free source, frozen and verified |
 | `stock-data` | Results on free data labelled not yet confirmed |
 | `intraday-bars` | Any bar size from one minute up; the daily-only refusal removed |

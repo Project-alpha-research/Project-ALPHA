@@ -77,6 +77,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 
 - **Price charts with indicators and patterns** — tested in-process and in a browser against a test server (a real run is recorded).
+- **Market overview of stored bars** — tested in-process and in a browser against a test server.
 - **Write trading rules and scan markets** — tested in-process and in a browser against a test server.
 - **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — tested in-process only.

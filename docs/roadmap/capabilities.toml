@@ -469,17 +469,20 @@ state = "Working"
 [[capability]]
 id = "idea-card"
 name = "Idea card (alpha idea)"
-what = "Write a short card before any test: the idea, why it could work, who is on the other side, what would disprove it, the baseline to beat and four clocks. A test can link to it by id without changing any test id."
-see_it = ["uv run alpha idea new --from research/examples/idea-card.example.toml", "uv run alpha idea list"]
+what = "Write a short card before any test: the idea, why it could work, who is on the other side, what would disprove it, the baseline to beat and four clocks. A test can link to it by id without changing any test id. `alpha idea file <id>` prints one read-only page with the card, the map of what is done, every reading and the counts."
+see_it = ["uv run alpha idea new --from research/examples/idea-card.example.toml", "uv run alpha idea list", "uv run alpha idea file <id>"]
 entry_points = [
   "cli: alpha idea new",
   "cli: alpha idea show",
   "cli: alpha idea list",
+  "cli: alpha idea file",
 ]
 proof_synthetic = [
   "tests/unit/test_idea_card.py::test_run_and_test_ids_do_not_change_with_the_link",
   "tests/unit/test_idea_card.py::test_empty_fields_are_allowed_and_shown_as_not_stated",
   "tests/unit/test_idea_card.py::test_adding_or_removing_the_link_is_a_repeat_not_a_new_trial",
+  "tests/unit/test_idea_file.py::test_readings_and_the_fault_appear_in_order_and_none_is_dropped",
+  "tests/unit/test_idea_file.py::test_the_idea_file_changes_nothing",
 ]
 proof_smoke = [
   "tests/smoke/test_idea_card_smoke.py::test_the_example_card_can_be_saved_shown_and_listed",
@@ -1328,7 +1331,7 @@ proof_synthetic = [
 real_data = "not yet confirmed; no provider is chosen and the synthetic fixture is the only source"
 needs = []
 state = "Partial"
-missing = "no provider adapter, solver, derived series, health rows or command; waits for the paid data package"
+missing = "no provider adapter, American-style pricing, derived series, health rows or command; waits for the paid data package"
 docs = ["docs/reference/project/components/options-data.md"]
 
 [[capability]]
@@ -1434,6 +1437,21 @@ real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
 needs = []
 state = "Partial"
 missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "positioning-short-volume-context"
+name = "Futures positioning and short sale volume as known"
+what = "Read CFTC weekly positioning and FINRA daily short sale volume using only rows public by a UTC knowledge cutoff."
+see_it = ["alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 --json", "alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_cftc_cot.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_finra_short.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_free_cmds.py::test_pull_show_list_cftc"]
+proof_smoke = ["tests/smoke/test_context_free_smoke.py::test_context_free_local_reads"]
+real_data = "confirmed 2026-11-19: CFTC legacy futures for 3 markets, 104 weeks each (2024-11-19 to 2026-11-10), and FINRA short volume for SPY and QQQ, 5 days 2026-11-09 to 2026-11-13, pulled live into a scratch home and read as known"
+real_data_needs = "network; no key"
+needs = []
+state = "Partial"
+missing = "inputs only: no signal, factor or research read is wired yet; CFTC known_from for pre-2022-09 rows is a rule, not a stamp"
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]

@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: e9713aceef673a0d
+verified: daea59e90a7e7b88
 ---
 
 # Data layer invariants
@@ -168,10 +168,10 @@ import it. It must never let a read see data that was not knowable at the cutoff
   `sessions.py`, `resample.py` and `align.py`; vendor adapters in `adapters/`, the crypto data
   house in `crypto/` and `crypto/providers/` (command-local raw-resource discovery is owned by
   `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
-  Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
+  Binance derivatives, offline Bybit, CFTC positioning and FINRA short-volume context in `context/` (separate hashed tables under `data_dir/context/`,
   never bars or backtest inputs; event reads require an aware UTC cutoff); provider-neutral
   option chains, their point-in-time store (research reads cut at the held-back day; forward use through a named
-  reader) and a synthetic fixture in `options/` ([rules](data-options.md)).
+  reader), a synthetic fixture and a European implied-volatility and greeks solver in `options/` ([rules](data-options.md)).
 - Daily OHLCV health checks and their supplied report cutoff live in `health.py`. See [the tool card](../../../research/tools/data-health.md).
 - Tests: `tests/unit/test_data_health_report.py`, `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,

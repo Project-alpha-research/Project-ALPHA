@@ -28,17 +28,18 @@ from alpha_cli.spine.controls import (
     walk_forward_efficiency,
 )
 from alpha_cli.spine.deflation import (
-    TestKey,
     TrialFamily,
     count_snapshot,
     family_deflation,
     family_sharpes,
+    same_asset_tests,
     spine_test_key,
 )
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
+from alpha_cli.spine.trial_record import TestKey
 from alpha_cli.validate_cmds import write_validation_sidecars
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_validation.metrics import to_returns
@@ -111,17 +112,12 @@ def trials(
     """The trial count and family-deflated Sharpe, from the same inputs as the verdict's ``dsr``."""
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     count = count_snapshot(snapshot, rule_kind, current_test)
-    # Same-asset Sharpes of any rule, this run and its variants: only their number is used, as a
-    # wider count of tries when it is larger than the family's.
-    same_asset = sum(
-        row.get("symbol") == symbol
-        and row.get("oos_sharpe") is not None
-        and bool(row.get("periods_per_year"))
-        for row in snapshot.raw_rows.values()
-    )
+    # Distinct same-asset tests of any rule (one per test key; repeats not counted): only their
+    # number is used, as a wider count of tries when it is larger than the family's.
+    same_asset, same_asset_repeats, current_seen = same_asset_tests(snapshot, symbol, current_test)
     current, _ = d.score(returns, ppy)
     variants_scored = sum(v["sharpe"] is not None for v in variants)
-    available = same_asset + (current is not None) + variants_scored
+    available = same_asset + (current is not None and not current_seen) + variants_scored
     n_trials = count.prior_trials + count.this_run + count.unknown_rows + variants_scored
     prior = family_sharpes(snapshot, count.family_id, ppy, current_test)
     family = TrialFamily(
@@ -133,8 +129,10 @@ def trials(
             "walk-forward out-of-sample returns, the same inputs as the verdict's dsr: spread from "
             "the idea family's distinct tests at this bar size and this run (sensitivity variants "
             "count as tries but are full-sample figures, so they stay out of the spread); tries "
-            "from the family in the one trial ledger, or the wider count of same-asset tests of "
-            "any rule when that is larger"
+            "from the family in the one trial ledger, or the wider count of distinct same-asset "
+            "tests of any rule when that is larger; a test is what was tested (spec, asset, data "
+            "window, bar size, store, data content), so a re-run after a code change is a repeat "
+            "and is not counted"
         ),
         "total_trials": count.ledger_rows + 1,
         "available_sharpes": available,
@@ -145,6 +143,8 @@ def trials(
             "this_run": count.this_run,
             "repeats_not_counted": count.repeats,
             "variants_scored": variants_scored,
+            "same_asset_tests": same_asset,
+            "same_asset_repeats": same_asset_repeats,
             "unknown_rows": count.unknown_rows,
             "n_trials": n_trials,
             "available_sharpes": available,
@@ -409,7 +409,13 @@ def write_diagnostics(
     # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     current = spine_test_key(
-        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        idea.spec_sha256,
+        bars[0].symbol,
+        bars[0].ts.isoformat(),
+        bars[-1].ts.isoformat(),
+        ppy,
+        store=result.get("store"),
+        data_id=result.get("idea_id"),
     )
     document["trials"] = trials(
         home,

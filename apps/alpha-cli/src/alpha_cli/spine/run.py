@@ -26,7 +26,8 @@ from alpha_cli.spine.deflation import (
 from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
-from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
+from alpha_cli.spine.reading import build_reading, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import spine_snapshot
@@ -195,11 +196,17 @@ def _execute(
             if not line.startswith("HTML report saved to:"):
                 print(line)
         print(f"HTML report saved to: {rdir / 'tearsheet.html'}")
+    # The same test again after a code change has a new run folder but is still a repeat.
+    if "repeat" not in result["labels"] and first_same_test(
+        read_trials(home), {**result, "spec_sha256": idea.spec_sha256, "kind": "rule_test"}
+    ):
+        result["labels"].append("repeat")
     result["labels"] = list(
         dict.fromkeys([*result["labels"], *manifest.get("spine", {}).get("labels", [])])
     )
     result["sentence"] = manifest.get("spine", {}).get("sentence")
     result["idea_id"] = manifest.get("idea_id")
+    result["reading"] = stored_reading(manifest, read_json(rdir / "diagnostics.json"))
     verdict = manifest.get("verdict")
     dsr = manifest.get("dsr")
     result.update(
@@ -247,7 +254,13 @@ def _write_run(
     snapshot = spine_snapshot(home)
     bars, ppy = prepared.bars, prepared.spec.periods_per_year
     current = spine_test_key(
-        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        idea.spec_sha256,
+        bars[0].symbol,
+        bars[0].ts.isoformat(),
+        bars[-1].ts.isoformat(),
+        ppy,
+        store=result.get("store"),
+        data_id=result.get("idea_id"),
     )
     count = count_snapshot(snapshot, idea.rule.kind, current)
     sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
@@ -285,6 +298,12 @@ def _write_run(
         result,
         snapshot=snapshot,
     )
+    stored = report_to_manifest(out.report)
+    stored.update(
+        data_health=result["data_health"],
+        spine={"labels": result["labels"], "periods": result.get("periods", {})},
+    )
+    reading = build_reading(stored, read_json(rdir / "diagnostics.json"))
     # Only a held-back run names its cut-off, so every other run keeps its old identity.
     cutoff: dict[str, Any] = {"as_of": reserve.CUTOFF_DATE} if result.get("reserve") else {}
     _, manifest = write_validation_run(
@@ -296,6 +315,7 @@ def _write_run(
         **cutoff,
         extra_manifest={
             **headline_manifest(out, result),
+            "reading": reading,
             "data_health": result["data_health"],
             "idea_id": idea_id(idea.spec_sha256, prepared.identity.source_fingerprint),
             "source": result["source"],
@@ -365,6 +385,7 @@ def run_idea(
                 "run_dir",
                 "periods_per_year",
                 "verdict",
+                "reading",
                 "oos_sharpe",
                 "benchmark_sharpe",
                 "dsr",
@@ -436,7 +457,7 @@ def run_idea(
                 **{
                     key: value
                     for key, value in result.items()
-                    if key not in {"asset", "run_dir", "error", "facts"}
+                    if key not in {"asset", "run_dir", "error", "facts", "reading"}
                 },
             },
         )

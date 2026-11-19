@@ -6,10 +6,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/trial_query.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/deflation.py
+  - apps/alpha-cli/src/alpha_cli/spine/ledger.py
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 18fa04151f7762ec
+verified: b4dca1c086c3d033
 ---
 
 # One trial ledger invariants
@@ -57,13 +58,26 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   contribute conservatively even if there are no mapped factors; an unmapped row of a factor
   schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` is the sum of family
   counts plus unknown spine rows: each row once, never doubled (ADR-0053).
+## Rule-test counting
+
 - Rule-test deflation reads only the spine ledger, never `sources.toml` or RD-Agent. Reader version 1
   counts prior `spine:<rule>` trials excluding repeats and errors, plus this run, scored sensitivity
   variants and all unknown spine rows. It is raised to the wider count of same-asset tests of any
   rule, this run and its variants when that is larger.
-  Trials of the same test (spec hash, symbol, data window and bar size) count once, keeping the
-  earliest; a run repeating an earlier test is not counted again (`this_run` 0) and its own Sharpe
-  replaces the earlier one. Rows without a spec hash or symbol cannot be matched and each count.
+  The test key is (spec hash, symbol, data window start and end as used, bar size, store, `idea_id`:
+  spec hash plus the exact bars and dividends used), one definition (`make_test_key`, `trial_record.py`)
+  for repeat labelling, the family count and the same-asset count. Another store, a price revision or
+  another adjustment basis is a new key. Costs are in the spec hash; seed and `--quick` change no
+  out-of-sample return. It never includes the code fingerprint: a re-run after a code change is the
+  same test. Trials of
+  one key count once, keeping the earliest; a run repeating an earlier test is not counted again
+  (`this_run` 0) and its own Sharpe replaces the earlier one. A longer data window is a new key, by
+  design. Rows without a spec hash or symbol cannot be matched and each count. `append_trial` labels a
+  new row `repeat` when an earlier non-error row has its key (or its run id; an error row never
+  matches) and adds `repeat_of`, the first such `run_id`; old rows are never rewritten, so every dedupe happens on read.
+  The wider count is of distinct keys: `same_asset_tests` (counted) and `same_asset_repeats` (rows not
+  counted: key-equal, or key-less and labelled repeat) in `trials.family`. `total_trials` is the ledger row number
+  (audit sequence, no statistic reads it).
 - `trial_dsr` uses exactly the verdict's inputs below, so for a rule test with diagnostics it equals
   the verdict's `dsr`. The public expected-maximum and PSR functions compute the probability.
   Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;
@@ -88,6 +102,8 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   in its manifest, never today's grown ledger. No ledger history or immutable run is rewritten.
 - `alpha results show` adds the recorded count and live `family_counts` rows, outcomes and reader
   trials from the spine-only snapshot. Older runs have a null recorded count and an explicit reason.
+## Queries and factor rows
+
 - DuckDB is imported only for a query, connects to `:memory:` with external access disabled,
   and receives a Polars frame converted to Arrow. There is no database file or SQL file read.
 - Questions are `by-family`, `by-outcome`, `by-asset`, `by-month`, `asset-history`,

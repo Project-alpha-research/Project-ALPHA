@@ -6,13 +6,17 @@ sources:
   - tests/unit/test_options_store.py
   - tests/unit/test_options_held_back.py
   - tests/unit/test_options_forward_guard.py
-verified: ff7acf75edf4948e
+  - tests/unit/test_options_pricing.py
+  - tests/unit/test_options_implied.py
+  - tests/unit/test_options_priced_fixture.py
+  - tests/unit/test_options_conventions.py
+verified: 1f2a80ba816efe77
 ---
 
 # Data layer invariants: options
 
-Rules for `alpha_data.options`: the provider-neutral option chain records, their store and the synthetic fixture adapter.
-No provider code, no network and no pricing model live here yet. The rest of the data layer is in [data.md](data.md).
+Rules for `alpha_data.options`: the provider-neutral option chain records, their store, the synthetic fixture adapter and the
+implied-volatility and greeks solver. No provider code and no network live here. The rest of the data layer is in [data.md](data.md).
 The component page is [options data](../project/components/options-data.md).
 
 ## Records
@@ -71,15 +75,68 @@ The held-back period (`alpha_core.reserve.RESERVED_DAY`, no date literal here) w
 - Size: the fixture measures about 227 bytes per row for 54-row files and about 17 for a 1,920-row chain. The design estimate
   is about 35 bytes per row. Real chains compress less well than synthetic ones, so recheck with the provider's data.
 
+## Pricing and implied volatility
+
+Two pure-math modules, no data reads and no clock: `pricing.py` (models and greeks) and `implied.py` (day count, mid, solver).
+They live inside `alpha_data.options` so the solver can fill the row's `computed` slot. The sources are in the module docstrings.
+
+- Models: Black-Scholes-Merton (Black and Scholes 1973, the call formula; Merton 1973) for a spot with a continuous dividend yield, and
+  Black-76 (Black 1976) for a forward. European exercise only. One constant volatility, constant rate and yield.
+- Inputs are explicit: spot or forward, strike, years, rate and dividend yield (None for a forward). There is no default for
+  the rate or the yield. The stored model name records which were used. Its format is stable and parseable:
+  `<model>;r=<rate>;q=<yield or forward>;day_count=act365f;theta=per_calendar_day;vega=per_1.00_vol`. Split on `;`, then on
+  the first `=`. The numbers are shortest round-trip float text. The `Greeks` schema is not changed, so stored hashes stay.
+- Day count: ACT/365 fixed on calendar time. `years_between(snapshot_ts, expiry_ts)` takes two aware-UTC datetimes. The caller
+  passes the exchange's expiry cut-off for the series in UTC (`expiry_time_utc`); the contract only has a date. A naive or
+  non-UTC datetime is an error naming the field. An expiry before the snapshot is an error; an equal one is the typed
+  outcome `zero_time_to_expiry`.
+- Conventions: `vega` per 1.00 of volatility (divide by 100 for one point); `theta` per calendar day (times 365 for a year);
+  `rho` per 1.00 of the rate. `delta` and `gamma` are with respect to the input underlying. Quotes are per share; the
+  multiplier does not scale them. `rho` is in `ModelGreeks` only: the stored `Greeks` block has no rho field. Every
+  `ModelGreeks` and `IvSolved` carries a `conventions` record with these units.
+- Converting a provider's greeks before any comparison: theta per trading day = ALPHA theta * 365 / 252 (for a 252-day
+  provider); vega per vol point = ALPHA vega / 100; rho per 1% = ALPHA rho / 100. Never compare unconverted numbers.
+- Edges: pricing needs years > 0 and vol > 0, and vol * sqrt(years) must not be zero in floating point (a named error).
+  As vol or time falls to zero the price tends to the discounted intrinsic on the forward, max(phi D (F - K), 0).
+## Mid price and implied-volatility solver
+
+- Mid price: `mid_price(quote)` is (bid + ask) / 2. A crossed, zero-width or zero-bid quote has no mid and returns its label
+  (`crossed`, `zero_width`, `zero_bid`). A zero bid is never averaged; `solve_row` returns `no_mid` for it.
+- Solver: safeguarded Newton with a bracket (bisection fallback) on volatility in [0.0001, 10.0]. A true volatility outside
+  that interval is the typed outcome `implied_vol_outside_search_interval`, never a clamped number. The price is strictly
+  increasing in volatility (vega > 0), so the root is unique.
+- No-arbitrage bounds, with D = exp(-rT) and F the forward (F = S exp((r - q) T) for a spot): call max(D (F - K), 0) < C < D F,
+  put max(D (K - F), 0) < P < D K. For a spot, D F = S exp(-qT). The inequalities are strict with no tolerance, so a price at
+  or below intrinsic is always `price_outside_no_arbitrage_bounds`. A price a hair above intrinsic solves to a tiny
+  volatility with very low vega, so it is labelled `low_vega` and not stored.
+- Typed outcomes, never a silent NaN: `IvSolved` or `IvUnsolved` with a reason. Reasons: `price_outside_no_arbitrage_bounds`,
+  `zero_time_to_expiry`, `american_style_not_supported`, `implied_vol_outside_search_interval`, `did_not_converge`, `no_quote`
+  and `no_mid`. A non-finite input raises `OptionsDataError` naming the field.
+- Low confidence, exact rule: `iv_uncertainty = price_resolution / vega` at the solved volatility (vega per 1.00). The result
+  is `low_vega` when `iv_uncertainty > 0.005` (half a vol point). With the default resolution of half a cent that is vega < 1.0.
+- Computed block: `solve_row` fills only the `computed` slot (source `computed`, delta, gamma, vega, theta, iv) and only for a
+  normal-confidence solve. The provided slot is never touched. A low-confidence or unsolved row comes back unchanged.
+- American style: not supported yet. It returns `american_style_not_supported`. No approximation is invented. Listed US equity
+  and ETF options are American-style, so until an American method exists the solver covers European-style index options and
+  futures options only. The specification for the next build is on the [component page](../project/components/options-data.md).
+
+Known-answer tests: Hull's published prices and greeks, Haug's Black-76 value, put-call parity to 1e-10, every greek against a
+central finite difference, the conventions record, the model-tag format, no mid for a zero bid, round trip of price to
+volatility (error 1.6e-14 where confidence is normal), the zero and large
+volatility limits, monotonicity, and Black-76 equal to BSM when the forward is built from the same inputs.
+
 ## Synthetic fixture
 
 `SyntheticAdapter(seed)` implements `OptionsAdapter` for the generic underlying `AAA`. Chains are deterministic for a seed.
-The known surface IV is stored as the provided IV. Quotes use a placeholder price shape, not an option model.
-Fixture prices are NOT arbitrage-free, and a solver cannot recover the stored IV from them. Never use the fixture to judge a
-pricing or volatility method. The solver build must add a fixture priced with a stated model (for example Black-Scholes at the
-surface IV) so a solver can recover the known volatility. No real market data or symbols are used.
+The known surface IV is stored as the provided IV. No real market data or symbols are used.
+- Placeholder mode (the default) uses a placeholder price shape and American-style contracts. Its prices are NOT
+  arbitrage-free, and a solver cannot recover the stored IV from them. Never use it to judge a pricing or volatility method.
+- Model-priced mode (`priced=PricedModel(rate, dividend_yield)`) centres each quote on the Black-Scholes-Merton price at the
+  surface IV with a symmetric spread (the larger of one cent and 1% of the price, capped at half the price so the bid stays
+  above zero). Contracts are European-style. The solver recovers the surface IV from the mid to 1e-7; 44 of 54 rows are
+  stored, and the other 10 are `low_vega`.
 
 ## Not here yet
 
-IV and greeks solver, derived series, health card rows, a provider adapter, the security-id map, delisted names,
+American-style pricing, derived series, health card rows, a provider adapter, the security-id map, delisted names,
 `occ_symbol`, `deliverable`, `first_seen` and `last_seen` as separate fields, put-call parity reading, and a command group.

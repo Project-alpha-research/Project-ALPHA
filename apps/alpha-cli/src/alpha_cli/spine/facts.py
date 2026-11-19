@@ -50,7 +50,7 @@ METRICS = {
     "top_3_profit_share": "Top three trades vs total profit; above 1 if the rest lost.",
     "delay_base_sharpe": "Base returns-level surrogate Sharpe.",
     "delayed_sharpe": "Surrogate Sharpe with weights delayed one bar.",
-    "total_trials": "Ledger trial count observed for this diagnostic pass.",
+    "total_trials": "Ledger entry number of this run: an audit sequence, not ideas tried.",
     "trial_dsr": "Deflated Sharpe using the idea family's trial count from the one ledger.",
     "family_trials": (
         "Trials counted for the deflated Sharpe: the idea's family in the one ledger, "
@@ -333,11 +333,11 @@ def require_metric(metric: str) -> None:
 
 def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
     """Stored investigation-tool outputs for a run, oldest first; they live outside the run."""
-    from alpha_cli.spine.ledger import read_trials
+    from alpha_cli.spine.ledger import read_trials_readonly
 
     committed = {
         row.get("tool_output")
-        for row in read_trials(home)
+        for row in read_trials_readonly(home)
         if row.get("run_id") == run_id and row.get("outcome") == "ok"
     }
     outputs = []

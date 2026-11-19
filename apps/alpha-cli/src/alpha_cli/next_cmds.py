@@ -11,6 +11,7 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_cli.nightly_status import last_night_line
 from alpha_cli.spine import idea_card
+from alpha_cli.spine.reading_read import owner_word, run_reading
 from alpha_cli.spine.stores import _stores
 from alpha_core.config import AlphaSettings
 from alpha_data.store import ParquetStore
@@ -81,6 +82,13 @@ def _stores_facts(home: Path) -> tuple[list[dict[str, Any]], str | None]:
     return facts, smallest[1] if smallest else None
 
 
+def _outcome_words(home: Path, record: Any) -> str:
+    """Rule tests read as evidence words; a row with only a letter says which rules graded it."""
+    if record.kind == "rule_test" and record.outcome != "error":
+        return owner_word(home, record.run_id, record.raw_status)
+    return str(OUTCOME_WORDS.get(record.outcome, record.outcome))
+
+
 def _trial_facts(home: Path) -> list[dict[str, Any]]:
     from alpha_cli.ledger_cmds import _rdagent_ledger
     from alpha_cli.spine.trial_reader import ledger_sources, read_ledgers
@@ -100,7 +108,8 @@ def _trial_facts(home: Path) -> list[dict[str, Any]]:
             "date": (r.created_at or "not recorded")[:10],
             "kind": KIND_WORDS.get(r.kind, r.kind),
             "name": r.name or r.subkind or r.family_id,
-            "outcome": OUTCOME_WORDS.get(r.outcome, r.outcome),
+            "outcome": _outcome_words(home, r),
+            **({"reading": run_reading(home, r.run_id)} if r.kind == "rule_test" else {}),
         }
         for r in records[:RECENT]
     ]
@@ -201,7 +210,7 @@ def _text(facts: dict[str, Any]) -> str:
     plural = "" if ideas["cards"] == 1 else "s"
     lines.append(
         f"Idea cards: {ideas['cards']} idea card{plural}, {ideas['without_test']} with no test yet."
-        " Write one: alpha idea new."
+        " Write one: alpha idea new. See one: alpha idea file <id>."
     )
     paths = facts["paths"]
     lines += [

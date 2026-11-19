@@ -21,6 +21,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `download-bookkeeping` | Download receipts and quota bookkeeping |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
+| `positioning-short-volume-context` | Macro series as first published: rates, inflation, jobs, credit, volatility index |
 | `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |
 | `setup-trade` | Short selling in setup trades with assumed borrow or funding costs |
 | `setup-trade` | Which came first after each match, target or stop, with still-open trades counted |

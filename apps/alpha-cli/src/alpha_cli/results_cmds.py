@@ -29,6 +29,8 @@ from alpha_cli.spine.facts import (
     tool_outputs,
 )
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.reading import stored_reading
+from alpha_cli.spine.reading_read import owner_word, run_reading
 from alpha_cli.spine.trial_reader import family_counts, spine_snapshot
 from alpha_cli.toolbox.registry import METRIC_OUTPUTS
 from alpha_core import DataError
@@ -122,7 +124,18 @@ def list_results(
             }
             for row in selected
         ]
-        lines = ["\t".join(str(row[key]) for key in row) for row in items]
+        home = AlphaSettings().data_dir
+        lines = [
+            "\t".join(
+                owner_word(home, row["run_id"], row["verdict"])
+                if key == "verdict"
+                else str(row[key])
+                for key in row
+            )
+            for row in items
+        ]
+        for row in items:
+            row["reading"] = run_reading(home, row["run_id"])
         for row in items:
             row["reasons"] = {
                 key: "an investigation-tool row; see alpha results show for its output"
@@ -179,6 +192,18 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     )
     at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     labels = reserve.read_labels(manifest)
+    # A run is a repeat when its first ledger row says so (the same test after a code change has
+    # a new run folder); the label lives in the ledger row only, never in the stored manifest.
+    first = next(
+        (
+            row
+            for row in read_trials(home)
+            if row.get("run_id") == run_id and row.get("kind", "rule_test") == "rule_test"
+        ),
+        None,
+    )
+    if first is not None and "repeat" in (first.get("labels") or ()) and "repeat" not in labels:
+        labels.append("repeat")
     stored_tools = tool_outputs(home, run_id)
     return {
         **({"reserve_sentence": reserve.SEEN_SENTENCE} if reserve.SEEN in labels else {}),
@@ -189,6 +214,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
             "reason": None if at_run is not None else "recorded before family counts were used",
         },
         "run_id": run_id,
+        "reading": stored_reading(manifest, diagnostics),
         "idea_id": manifest.get("idea_id"),
         "data_health": manifest.get("data_health"),
         "facts": build_facts(rdir),
@@ -217,6 +243,17 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
             if entry.available
         ],
     }
+
+
+def _show_text_fields(row: dict[str, Any]) -> dict[str, Any]:
+    """The details printed as text: the reading is a sentence above; the old letter stays out."""
+    hidden = {"data_health", "data_health_sentence"}
+    if isinstance(row.get("reading"), dict):
+        hidden.add("reading")
+    shown = {k: v for k, v in row.items() if k not in hidden}
+    if isinstance(shown.get("facts"), list):
+        shown["facts"] = [f for f in shown["facts"] if f.get("metric") != "verdict"]
+    return _plain_audit(shown)
 
 
 @results_app.command("show")
@@ -286,13 +323,12 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             run["data_health_sentence"] = health_sentence(run.get("data_health"))
         output = {"runs": runs, "failed": failed}
         lines = [
-            (f"{row['run_id']} — " if len(runs) > 1 else "") + row["data_health_sentence"]
+            (f"{row['run_id']} — " if len(runs) > 1 else "")
+            + row["data_health_sentence"]
+            + (f"\n{row['reading']['sentence']}" if isinstance(row.get("reading"), dict) else "")
             for row in runs
         ]
-        details = [
-            {k: v for k, v in row.items() if k not in {"data_health", "data_health_sentence"}}
-            for row in runs
-        ]
+        details = [_show_text_fields(row) for row in runs]
         lines.append(json.dumps({"runs": details, "failed": failed}, indent=2, allow_nan=False))
         emit(output, json_out=json_out, fallback="\n".join(lines))
     except (ValueError, OSError, DataError) as exc:
@@ -330,10 +366,20 @@ def cite_result(
         _error(exc, json_out)
 
 
+def _plain_audit(output: dict[str, Any]) -> dict[str, Any]:
+    """Audit states in owner words: ok, flagged, not checked; the stored file keeps its codes."""
+    words = {"PASS": "ok", "FLAG": "flagged", "NOT-CHECKED": "not checked"}
+    audit = [
+        {**item, "status": words.get(item.get("status"), item.get("status"))}
+        for item in output.get("audit", [])
+    ]
+    return {**output, "audit": audit}
+
+
 def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
     """Read the automatic diagnostic pass and audit stored with a rule test."""
     try:
-        rdir, _ = _run(AlphaSettings().data_dir, run_id)
+        rdir, manifest = _run(AlphaSettings().data_dir, run_id)
         if not (rdir / "diagnostics.json").exists():
             raise SpineError(
                 "NO_DIAGNOSTICS",
@@ -341,7 +387,13 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
                 f"Re-run alpha test with diagnostics enabled using the original spec for {run_id}.",
             )
         output = read_json(rdir / "diagnostics.json")
-        emit(output, json_out=json_out, fallback=json.dumps(output, indent=2, allow_nan=False))
+        found = stored_reading(manifest, output)
+        text = json.dumps(_plain_audit(output), indent=2, allow_nan=False)
+        emit(
+            {**output, "reading": found},
+            json_out=json_out,
+            fallback=f"{found['sentence']}\n{text}",
+        )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)
 

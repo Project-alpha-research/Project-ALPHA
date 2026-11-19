@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 95c69917e5449d32
+verified: 5901c1ebaf4b91a4
 ---
 
 # Command line runs invariants
@@ -94,7 +94,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar dates are
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
-  trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+  trial; so does the same test after a code change ([test key](cli-trial-ledger.md#rule-test-counting));
+  the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.
@@ -126,6 +127,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   thumb, not a test; folds without OOS trades are counted and null it when most: [WFE card](../../../research/tools/walk-forward.md).
 - Under 30 closed OOS trades, `too-few-trades` labels the run, facts and verdict/DSR headlines (`results check` needs "too few trades"); grade A/B reads C
   in the manifest and ledger row, D/F and numbers kept. The HTML tear sheet does not yet carry the too-few-trades caveat.
+- A rule test also stores a `reading` beside `verdict`: [readings](cli-rule-readings.md).
 - [`price_noise`](../../../research/tools/price-noise.md): 50 run-id-seeded price-feed controls, no ledger trial; `implausibly-good` never improves a verdict.
 - Audit entries are independent PASS / FLAG / NOT-CHECKED, no overall grade; traces use walk-forward artifacts; fill ranges allow recorded slippage
   (NOT-CHECKED without cost settings); the manifest verifies every sidecar. `data_period` / `traded_period` facts: loaded-bar and stored-equity endpoints.

@@ -6,7 +6,8 @@ sources:
   - tests/integration/test_mcp_server.py
   - tests/integration/test_research_mcp.py
   - tests/unit/test_codex_investigation.py
-verified: c29682ff752ccf97
+  - tests/unit/test_mcp_spine_tools.py
+verified: 3017678c22d94318
 ---
 
 # MCP invariants
@@ -46,6 +47,21 @@ It is a surface like the web backend: it composes nothing and has no authority o
 - Seams in use: `run_projection`, `catalog` (`known_strategies`, `strategy_params`), `run_store`, `artifact_contract`,
   `durable_lease`, `job_capacity`, `suite_catalog`. Do not import `alpha_cli.owner_auth` or any control-store module.
 
+## Spine tools
+
+- `spine_tools.py` holds the main research path as 15 thin tools, registered from `server.py`. Each runs one `alpha`
+  command with `--json` through `_invoke.run_json` and returns its JSON. The server adds no logic and reads no files.
+- Groups: `rule_test` (`alpha test`); `tool_list`, `tool_describe`, `tool_run`, `tool_run_set` (`alpha tool`);
+  `results_show`, `results_cite`, `results_check` (`alpha results`); `ledger_summary`, `ledger_history`
+  (`alpha ledger summary`, `alpha ledger list`); `diagnose_run` (`alpha diagnose`); `data_health`
+  (`alpha data health`); `setup_find`, `setup_study`, `setup_trade` (`alpha setup`).
+- Every tool has an explicit, validated argument list and refuses any other argument. No free-form flags.
+  Flags that grant authority are not in any list: `--accept-bad-data`, `ledger reply`, owner authentication.
+- A spec or draft given as text is written to a content-addressed file in `<data dir>/mcp-inputs`.
+  A spec given as a path must resolve inside the data directory.
+- Each description says what it runs and that results are research records, not approvals.
+  Enforced by `tests/unit/test_mcp_spine_tools.py`.
+
 ## Tool inputs
 
 - Common knobs are typed parameters. The deprecated `options` dict accepts only that tool's closed vocabulary
@@ -69,7 +85,8 @@ It is a surface like the web backend: it composes nothing and has no authority o
   [research-integrity § No live capital](research-integrity.md#no-live-capital).
 - Research tools are exactly `research_capture`, `research_get`, `research_propose`, `research_launch`,
   `research_status` and `research_report`, and no tool name may contain `approve`, `decide`, `decision`, `reveal`, `d2`,
-  `order` or `paper`. Enforced by
+  `order` or `paper`. Spine tool names and arguments also never match
+  `approve|promote|confirm|accept_bad|owner|order|enroll`. Enforced by
   `tests/integration/test_research_mcp.py::test_research_mcp_surface_is_pinned_without_owner_authority`.
 - Agent output is commentary or a draft, never evidence. Research source page reads return bounded, project-bound
   slices of the hash-verified extraction labelled `UNTRUSTED_SOURCE`; they do not screen claims or advance state.
@@ -97,8 +114,9 @@ atop the DAG") and runs the CLI as a subprocess. It can never approve or decide 
 D2 confirmation, reveal a holdout or place orders.
 
 - Code: `apps/alpha-mcp/src/alpha_mcp/` (`server.py` holds the tools and each tool's option
-  allowlist; `_invoke.py` runs the CLI).
+  allowlist; `spine_tools.py` holds the research-path tools; `_invoke.py` runs the CLI).
 - Tests: `tests/unit/test_mcp_invoke.py`, `tests/integration/test_mcp_server.py`,
-  `tests/integration/test_research_mcp.py` (pins the exact tool list and count).
+  `tests/integration/test_research_mcp.py` (pins the exact tool list and count),
+  `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals).
 - Check: `uv run python scripts/gate.py check`.
 - Tests: a test that the new tool refuses options outside its allowlist.

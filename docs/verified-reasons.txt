@@ -7,6 +7,9 @@ apps/alpha-cli/CONTEXT.md
 apps/alpha-cli/README.md
   verified 84e2b02d828447f4 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
 
+apps/alpha-mcp/CONTEXT.md
+  verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
+
 apps/alpha-web/CONTEXT.md
   verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
@@ -21,6 +24,9 @@ docs/reference/invariants/README.md
 
 docs/reference/invariants/cli-investigation-tools.md
   verified f616aee0ea28d749 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+
+docs/reference/invariants/cli-research.md
+  verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.

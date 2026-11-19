@@ -619,12 +619,13 @@ missing = "tested in a browser against a test server only; no end-to-end smoke c
 id = "ai-tools-connection"
 name = "Let an AI assistant use ALPHA's tools"
 codes = ["MCP"]
-what = "Connect an AI assistant so it can run ALPHA commands; it can suggest and run, but never approve."
+what = "Connect an AI assistant so it can run ALPHA commands, including the main research path (rule test, checks, results, trial ledger, data health); it can suggest and run, but never approve."
 see_it = ["uv run alpha-mcp (started by an MCP-capable AI client)"]
 entry_points = ["script: alpha-mcp"]
 proof_synthetic = [
   "tests/integration/test_mcp_server.py::test_backtest_run_tool_returns_a_manifest",
   "tests/integration/test_research_mcp.py::test_research_mcp_capture_propose_status_and_report_round_trip",
+  "tests/integration/test_mcp_server.py::test_spine_rule_test_then_ledger_summary_reads_the_new_row",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []

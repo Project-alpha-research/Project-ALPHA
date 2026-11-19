@@ -19,7 +19,7 @@ from alpha_cli.control_store import ControlStore
 from alpha_core import DataError
 from alpha_data.snapshot import create_snapshot
 from alpha_data.store import ParquetStore
-from alpha_mcp import _invoke, server
+from alpha_mcp import _invoke, server, spine_tools
 from tests.fixtures.cli_fixtures import seed_store
 from tests.fixtures.control_store_fixtures import (
     mark_project_as_migrated_legacy,
@@ -607,3 +607,23 @@ def test_portfolio_analytics_tool_is_typed_bounded_and_cited(
     assert projection["provenance"]["artifact_sha256"]["correlations.parquet"]
     with pytest.raises(DataError, match="symbol_limit"):
         server.get_portfolio_analytics(manifest["run_id"], symbol_limit=101)
+
+
+def test_spine_rule_test_then_ledger_summary_reads_the_new_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.unit.test_setup_find import seed
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed(tmp_path, symbol="SPY", n=400)
+
+    before = spine_tools.ledger_summary()
+    result = spine_tools.rule_test(
+        rule="breakout", params={"window": "20"}, assets=["SPY"], quick=True
+    )
+    after = spine_tools.ledger_summary()
+
+    assert isinstance(result, dict)
+    assert after != before
+    rows = spine_tools.ledger_history(kind=None, asset="SPY", limit=5)
+    assert "SPY" in str(rows)

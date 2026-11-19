@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 33 working, 31 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 34 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -24,6 +24,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Path-risk simulation (Monte Carlo)** — uv run alpha monte-carlo classical --from-run <run-id> (a real run is recorded)
 - **Front door (alpha next)** — uv run alpha next
 - **Idea card (alpha idea)** — uv run alpha idea new --from research/examples/idea-card.example.toml
+- **Library of published ideas (alpha library)** — uv run alpha library list
 - **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md).
 - **Risk numbers that state what they are based on (C04)** — uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis (a real run is recorded)
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
@@ -31,7 +32,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Upstream Alpha158 price features** — set feature_recipe_version: 3 in an ML stage config, or version 3 in an alpha ml prepare spec
 - **Textbook labels and overlap weights (López de Prado)** — uv run alpha labels barrier --asset SPY@alpaca (result folder with facts and a picture) (a real run is recorded)
 - **Which factors the labels lean on (purged MDI, MDA, SFI)** — uv run alpha labels importance <result-id> --factors <factors.parquet> (a real run is recorded)
-- **Investigation tools for rule tests and fixed checks on RD-Agent replays** — alpha tool run resampling.sharpe_interval <run_id> (a real run is recorded) More: [research/tools/resampling-checks.md](research/tools/resampling-checks.md). More: [research/tools/montecarlo-checks.md](research/tools/montecarlo-checks.md). More: [research/tools/run-level-checks.md](research/tools/run-level-checks.md). More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-investigation-tools.md](docs/reference/invariants/cli-investigation-tools.md).
+- **Investigation tools for rule tests and fixed checks on RD-Agent replays** — alpha tool find "how bad could drawdown get" (a real run is recorded) More: [research/tools/resampling-checks.md](research/tools/resampling-checks.md). More: [research/tools/montecarlo-checks.md](research/tools/montecarlo-checks.md). More: [research/tools/run-level-checks.md](research/tools/run-level-checks.md). More: [docs/reference/project/components/validation-and-evidence.md](docs/reference/project/components/validation-and-evidence.md). More: [docs/reference/invariants/cli-investigation-tools.md](docs/reference/invariants/cli-investigation-tools.md).
 - **Has price action like this happened before? (STUMPY matrix profile)** — uv run alpha lookalike --asset SPY@alpaca --last 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
 - **What is unusual right now? (STUMPY left matrix profile)** — uv run alpha unusual --asset BTC/USDT --window 30 (a real run is recorded) More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md). More: [docs/reference/project/outside-projects.md](docs/reference/project/outside-projects.md).
 - **Check an answer's numbers against the records** — alpha results check answer.md --json More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
@@ -67,14 +68,17 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **AI-run daily trading-rule study (Packet 3, W08)** — with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired. Needs: the Dell's storage settings, created by you (docs/operations/storage-settings.md; 10 GB reserve per ADR-0043); real Binance daily bars admitted into that storage. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md). More: [docs/operations/storage-settings.md](docs/operations/storage-settings.md).
 - **Running ALPHA on your Mac with real data providers** — one final review and a run on your Mac. Needs: your Mac; access to a real data provider (blocked since 31 August).
 - **Macro context data as first published** — installed-command smoke test written; execution and live FRED behavior await verification. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
+- **Provider-neutral options data layer** — no provider adapter, solver, derived series, health rows or command; waits for the paid data package. More: [docs/reference/project/components/options-data.md](docs/reference/project/components/options-data.md).
 - **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
+- **Futures positioning and short sale volume as known** — inputs only: no signal, factor or research read is wired yet; CFTC known_from for pre-2022-09 rows is a rule, not a stamp. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 
 - **Price charts with indicators and patterns** — tested in-process and in a browser against a test server (a real run is recorded).
+- **Market overview of stored bars** — tested in-process and in a browser against a test server.
 - **Write trading rules and scan markets** — tested in-process and in a browser against a test server.
 - **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — tested in-process only.

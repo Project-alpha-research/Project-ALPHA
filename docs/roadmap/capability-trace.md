@@ -12,6 +12,7 @@ table. A capability may serve several rows; a row may be served by several capab
 |---|---|
 | `workstation` | The Workstation opens in a browser |
 | `price-charts` | Dense multi-panel price charts, full screen, trade markers, two chart styles |
+| `market-overview` | Dense multi-panel price charts, full screen, trade markers, two chart styles |
 | `stock-data` | Daily stock and ETF bars from a free source, frozen and verified |
 | `stock-data` | Results on free data labelled not yet confirmed |
 | `intraday-bars` | Any bar size from one minute up; the daily-only refusal removed |
@@ -20,6 +21,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `download-bookkeeping` | Download receipts and quota bookkeeping |
 | `crypto-derivatives-context` | Crypto context: funding rates, open interest, listings |
 | `filing-events` | Event calendar: central-bank meetings, inflation releases, an earnings-date proxy |
+| `positioning-short-volume-context` | Macro series as first published: rates, inflation, jobs, credit, volatility index |
 | `setup-find` | Every match of a setup on the chart, rejected ones greyed, before any rule is fixed |
 | `setup-trade` | Short selling in setup trades with assumed borrow or funding costs |
 | `setup-trade` | Which came first after each match, target or stop, with still-open trades counted |
@@ -54,6 +56,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `validation-gauntlet` | Bootstrap ranges (block resampling) around results |
 | `validation-gauntlet` | Drawdown episodes listed and dated |
 | `idea-card` | Four clocks on each idea: signal lookback, decision pace, holding period, execution delay |
+| `idea-library` | Verified source library: papers, books and tools checked to exist, grouped by topic, rules of thumb traced to their origin |
 | `front-door` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `nightly-run` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `monte-carlo` | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) |
@@ -86,6 +89,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `ai-research-team` | Small autonomous research team around RD-Agent |
 | `mac-real-data` | Confirmation on the Mac with a paid, authoritative data source |
 | `macro-context` | Macro series as first published: rates, inflation, jobs, credit, volatility index |
+| `options-data` | Confirmation on the Mac with a paid, authoritative data source |
 | `rule-test` | The same backtest on real free data, shown on a screen |
 | `rule-test` | Plain rules tested as written, with no hidden sizing or rebalancing defaults |
 | `rule-test` | Integrity as labels on results, not refusals (exploratory, free data, trial count) |

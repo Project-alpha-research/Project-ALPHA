@@ -25,6 +25,7 @@ recommend keeping, changing, shelving or removing any part. Rules for changing c
 | [Qlib](components/qlib.md) | Microsoft's machine-learning toolkit for stock prediction, run in its own worker |
 | [Nautilus](components/nautilus.md) | The backtest engine (NautilusTrader) and ALPHA's harness around it |
 | [Data layer](components/data-layer.md) | Downloads, point-in-time storage and frozen snapshots |
+| [Options data](components/options-data.md) | Option chains from any provider, stored point in time |
 | [Strategies and signals](components/strategies-and-signals.md) | Trading rules, chart patterns and indicators |
 | [Forecasting](components/forecasting.md) | The Kronos price-forecasting model and its Kronos Studio screen |
 | [Toolbox](components/toolbox.md) | The open catalogue of tests and analyses, with a record of every run |

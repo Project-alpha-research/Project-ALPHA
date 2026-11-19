@@ -100,7 +100,13 @@ def test_attribution_is_stored_outside_the_run_and_counted(home: Path) -> None:
     assert stored == {k: v for k, v in output.items() if k not in ("file", "trials_total")}
     assert stored["tool"] == "market.attribution"
     assert stored["params"] == {"benchmark": "SPY@home", "risk_free": 0.0}
-    assert stored["labels"] == ["all-in", "quick", "ad-hoc", "benchmark-is-same-asset"]
+    assert stored["labels"] == [
+        "all-in",
+        "quick",
+        "ad-hoc",
+        "benchmark-is-same-asset",
+        "exploratory",
+    ]
     assert datetime.fromisoformat(stored["recorded_at"]).tzinfo is not None
     assert 0.3 < stored["result"]["beta"] < 0.7  # held about half of the time
     assert stored["result"]["join"]["run_bars_dropped"] == 0
@@ -183,6 +189,7 @@ def test_regimes_split_is_causal_with_a_hindsight_section(home: Path) -> None:
         "ad-hoc",
         "parameters-fit-in-sample",
         "benchmark-is-same-asset",
+        "exploratory",
     ]
     assert output["params"] == {"market": "SPY@home", "k": 2, "seed": 0}
     assert result["hindsight"]["labels"] == ["hindsight"]
@@ -263,6 +270,7 @@ def test_changepoints_map_back_to_dates(
         "ad-hoc",
         *(["non-default-params"] if on != "returns" else []),
         "hindsight",
+        "exploratory",
     ]
     assert output["params"] == {"model": "rbf", "min_size": 20, "max_points": 8, "on": on}
     assert output["facts"][0]["value"] == len(result["breaks"]) >= 1
@@ -385,6 +393,7 @@ def test_show_lists_outputs_and_cite_needs_a_choice_between_two(
         "file",
         "labels",
         "reading",
+        "status",
     }
     assert shown["tools"][0]["reading"] == own["reading"]
     assert [item["file"] for item in shown["tools"][:2]] == [own["file"], other["file"]]

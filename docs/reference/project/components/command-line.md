@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/CONTEXT.md
   - packages/alpha-core/CONTEXT.md
   - docs/ARCHITECTURE.md
-verified: 955a95357fec3ad4
+verified: 7048fde80bcd089a
 ---
 
 # Command line
@@ -55,7 +55,7 @@ let the user choose the ideas a waiting worker builds and read the verdict for e
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`, `idea-card`, `nightly-run`
+- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`, `idea-card`, `idea-library`, `nightly-run`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),

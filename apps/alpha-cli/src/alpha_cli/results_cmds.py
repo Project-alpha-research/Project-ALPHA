@@ -179,6 +179,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         from alpha_cli.spine.facts import read_study
 
         return dict(run_id=run_id, **read_study(rdir))
+    from alpha_cli.toolbox import declarations
     from alpha_cli.toolbox.store import history
 
     diagnostics = read_json(rdir / "diagnostics.json")
@@ -191,6 +192,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     )
     at_run = diagnostics.get("trials", {}).get("family", {}).get("n_trials_used")
     labels = reserve.read_labels(manifest)
+    stored_tools = tool_outputs(home, run_id)
     return {
         **({"reserve_sentence": reserve.SEEN_SENTENCE} if reserve.SEEN in labels else {}),
         "family": {
@@ -214,11 +216,15 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         "tool_history": history(home, run_id),
         "tools": [
             {
-                key: item[key]
-                for key in ("tool", "id", "params", "recorded_at", "file", "labels", "reading")
+                **{
+                    key: item[key]
+                    for key in ("tool", "id", "params", "recorded_at", "file", "labels", "reading")
+                },
+                "status": declarations.word_of(item["labels"] or []),
             }
-            for item in tool_outputs(home, run_id)
+            for item in stored_tools
         ],
+        "tool_counts": declarations.counts(item["labels"] or [] for item in stored_tools),
         "charts": [
             entry.definition.figure_id
             for entry in available_figures(rdir, manifest)

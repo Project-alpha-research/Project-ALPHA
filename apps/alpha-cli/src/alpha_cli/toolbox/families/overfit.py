@@ -54,6 +54,11 @@ def deflated(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> R
 
 DEFLATED_SHARPE = ToolSpec(
     id="overfit.deflated_sharpe",
+    answers=(
+        "Is this overfit after counting every try in its family?",
+        "Does the result still look too good once every try is counted?",
+    ),
+    situations=("many-tries", "looks-too-good"),
     family="overfit",
     kind="test",
     look="test",

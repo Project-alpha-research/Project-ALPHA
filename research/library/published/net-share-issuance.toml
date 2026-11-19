@@ -1,0 +1,19 @@
+id = "net-share-issuance"
+name = "Net share issuance"
+year_published = 2008
+market = "us-equities"
+idea = "Firms that issue new shares tend to do worse afterwards than firms that buy shares back."
+mechanism_claimed = "The authors say managers issue when shares look dear and buy back when cheap, and investors react too little."
+data_needed = ["shares outstanding over time", "daily prices"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "no - shares outstanding history is not held."
+notes = ""
+
+[source]
+authors = "Pontiff and Woodgate"
+year = 2008
+title = "Share issuance and cross-sectional returns"
+venue = "Journal of Finance 63(2)"
+url = "https://doi.org/10.1111/j.1540-6261.2008.01335.x"

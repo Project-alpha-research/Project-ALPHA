@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-281 commands in 40 groups. Options marked (required) are
+293 commands in 41 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -42,17 +42,21 @@ Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
 ## alpha context
 
-Point-in-time macro, SEC filings and Binance derivatives context.
+Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context.
 
 - `alpha context import-bybit` — Import verified Bybit funding and hourly open interest from a restored store. Options: `--from (required)`, `--json`
-- `alpha context list` — List locally stored series and their provenance (no network). Options: `--json`
+- `alpha context list` — List stored FRED series and free CFTC/FINRA tables with provenance (no network). Options: `--json`
 - `alpha context pull` — Pull FRED vintages using FRED_API_KEY; default to the macro starter set. Options: `--series`, `--json`
 - `alpha context pull-binance` — Pull checksum-verified funding months or metrics days (at most 400 days). Options: `--symbol (required)`, +4 more
+- `alpha context pull-cftc-cot` — Pull weekly CFTC positioning (legacy, futures only); no key. Options: `--market (required)`, `--since`, `--json`
 - `alpha context pull-edgar` — Pull filings and insider transactions with the declared ALPHA_SEC_USER_AGENT. Options: `--ticker`, `--cik`, `--forms`, +2 more
+- `alpha context pull-finra-short-volume` — Pull FINRA daily short sale volume; no key. Options: `--symbol (required)`, `--start (required)`, +2 more
 - `alpha context show <SERIES_ID>` — Show stored observations with the selected vintage view named in the output. Options: `--as-of`, `--start`, +3 more
 - `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +5 more
 - `alpha context show-bybit` — Show imported Bybit context known at the UTC cutoff. Options: `--symbol (required)`, `--kind (required)`, `--as-of`, `--json`
+- `alpha context show-cftc-cot` — Show stored CFTC positioning known at the cutoff (a row appears only once published). Options: `--market (required)`, +2 more
 - `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, `--json`
+- `alpha context show-finra-short-volume` — Show stored FINRA short volume known at the cutoff; FINRA-reported trades o… Options: `--symbol (required)`, +2 more
 - `alpha context window` — Summarise the macro window; endpoints use values knowable at each boundary. Options: `--start (required)`, +4 more
 
 ## alpha crypto-data
@@ -105,6 +109,7 @@ Data ingestion, snapshots, and integrity.
 - `alpha data chart-datasets` — Discover qualified external archive chart datasets without hashing all artifacts. Options: `--json`
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data health <ASSET>` — Check daily bars for adjustment, timestamp, gap and survivorship faults. Options: `--universe`, `--stored`, `--json`
+- `alpha data market-overview` — Read-only market overview of stored bars. Options: `--store`, `--window`, `--limit`, `--json`
 - `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more
 - `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`, +1 more
 - `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`, `--timeframe`
@@ -187,6 +192,14 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
+
+## alpha library
+
+Browse published ideas and turn one into an idea card.
+
+- `alpha library card <RECORD_ID>` — Make an idea card from a record. Options: `--json`
+- `alpha library list` — List the records. Options: `--market`, `--json`
+- `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike
 
@@ -467,11 +480,15 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 Discover and run investigation tools.
 
+- `alpha tool declare <RUN_ID>` — Record which checks you chose before seeing their results. Options: `--set`, `--tools`, `--why`, `--json`
 - `alpha tool describe <TOOL_ID>` — Read a tool's question, inputs, parameters, outputs and caveats. Options: `--json`
+- `alpha tool find <WORDS>` — Find checks from plain words: what each answers, its cost and the command to run it. Options: `--json`
 - `alpha tool history <TARGET>` — List successful, failed and unfinished attempts in ledger order. Options: `--json`
 - `alpha tool list` — Find tools by target, question, family or kind. Options: `--for`, `--search`, `--family`, `--kind`, `--json`
+- `alpha tool results <RUN_ID>` — List the stored check results of a run, each marked declared or exploratory. Options: `--json`
 - `alpha tool run <TOOL_ID> <TARGET>` — Run one tool with repeatable key=value parameters. Options: `--param`, `--seed`, `--json`
 - `alpha tool run-set <NAME> <TARGET>` — Run each member of a predeclared set and report every outcome. Options: `--json`
+- `alpha tool situations` — List each situation with its checks, cheapest first. Options: `--json`, `--markdown`
 
 ## alpha unusual
 

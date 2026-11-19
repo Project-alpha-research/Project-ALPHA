@@ -5,7 +5,7 @@ sources:
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: b24624ae57cd5a1c
+verified: b3b868ba51472ece
 ---
 
 # RD-Agent

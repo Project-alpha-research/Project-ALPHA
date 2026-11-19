@@ -82,6 +82,29 @@ state = "Partial"
 missing = "tested in-process and in a browser against a test server; no end-to-end smoke check yet"
 
 [[capability]]
+id = "market-overview"
+name = "Market overview of stored bars"
+what = "See the stored assets with the highest traded value as small charts on one scale, with price, change and volume, so the odd one out stands out."
+see_it = [
+  "Workstation: View → Data & Assets › Market",
+  "uv run alpha data market-overview --json",
+]
+entry_points = [
+  "cli: alpha data market-overview",
+  "api: GET /api/market/overview",
+  "panel: apps/alpha-web/frontend/src/panels/MarketOverview.tsx",
+]
+proof_synthetic = [
+  "tests/unit/test_market_overview.py::test_assets_rank_by_median_traded_value_not_by_price_or_volume",
+  "tests/integration/test_web_api_market.py::test_overview_ranks_assets_and_lists_short_ones",
+  "apps/alpha-web/frontend/e2e/market-overview.spec.ts::Market overview reads the real backend store of synthetic bars",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "tested in-process and in a browser against a test server; no end-to-end smoke check yet"
+
+[[capability]]
 id = "stock-data"
 name = "Download and freeze stock and ETF prices"
 what = "Download stock or ETF prices (daily by default; intraday bars: see intraday-bars), freeze them into a checked snapshot, and verify it later."
@@ -460,6 +483,29 @@ proof_synthetic = [
 ]
 proof_smoke = [
   "tests/smoke/test_idea_card_smoke.py::test_the_example_card_can_be_saved_shown_and_listed",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Working"
+
+[[capability]]
+id = "idea-library"
+name = "Library of published ideas (alpha library)"
+what = "Browse a small starting map of well-known published ideas, written in our own words with the source, the claimed reason, later decay evidence and whether ALPHA can test it today, and turn one into an idea card. The owner's private notes are read from the data folder. It tests nothing."
+see_it = ["uv run alpha library list", "uv run alpha library show time-series-momentum", "uv run alpha library card short-term-reversal"]
+entry_points = [
+  "cli: alpha library list",
+  "cli: alpha library show",
+  "cli: alpha library card",
+]
+proof_synthetic = [
+  "tests/unit/test_library.py::test_every_public_record_passes_the_schema",
+  "tests/unit/test_library.py::test_an_unknown_key_fails_the_schema",
+  "tests/unit/test_library.py::test_the_private_overlay_is_read_and_marked",
+  "tests/unit/test_library.py::test_card_fills_the_card_and_writes_nothing_else",
+]
+proof_smoke = [
+  "tests/smoke/test_library_smoke.py::test_a_library_record_becomes_an_idea_card",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
@@ -1244,6 +1290,22 @@ missing = "installed-command smoke test written; execution and live FRED behavio
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]
+id = "options-data"
+name = "Provider-neutral options data layer"
+what = "Store option chains from any provider in one shape and read them point in time, without changing stored snapshots."
+see_it = ["uv run pytest -q tests/unit/test_options_store.py"]
+entry_points = ["code: packages/alpha-data/src/alpha_data/options/store.py"]
+proof_synthetic = [
+  "tests/unit/test_options_store.py::test_early_read_sees_nothing_and_later_reads_see_only_known_snapshots",
+  "tests/unit/test_options_schema.py::test_duplicate_contract_in_one_snapshot_is_refused",
+]
+real_data = "not yet confirmed; no provider is chosen and the synthetic fixture is the only source"
+needs = []
+state = "Partial"
+missing = "no provider adapter, solver, derived series, health rows or command; waits for the paid data package"
+docs = ["docs/reference/project/components/options-data.md"]
+
+[[capability]]
 id = "rule-test"
 name = "Test a trading rule on several assets with one command"
 what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger."
@@ -1274,8 +1336,9 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 [[capability]]
 id = "investigation-tools"
 name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
-what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. A rule test's Workstation report lists the stored checks of that run with their readings, or the command to run the standard set. Agent choice is not built."
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. A rule test's Workstation report lists the stored checks of that run with their readings, or the command to run the standard set. Find a check from a plain question with alpha tool find, list checks by situation, and record which checks were chosen before their results (declared) so the rest show as exploratory. Agent choice is not built."
 see_it = [
+  "alpha tool find \"how bad could drawdown get\"", "alpha tool situations", "alpha tool declare <run_id> --set market-context", "alpha tool results <run_id> --json",
   "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run resampling.student_t_paths <run_id>", "alpha tool run trades.dependence <run_id>",
   "alpha tool run overfit.deflated_sharpe <run_id>",
   "alpha tool run performance.downside_ratios <run_id>",
@@ -1294,6 +1357,9 @@ proof_synthetic = [
   "tests/unit/test_toolbox_run_level_checks.py::test_date_windows",
   "tests/unit/test_toolbox_run_level_checks.py::test_side_contribution",
   "tests/unit/test_toolbox_run_level_checks.py::test_concentration",
+  "tests/unit/test_toolbox_find.py::test_drawdown_question_finds_the_drawdown_entries",
+  "tests/unit/test_toolbox_declarations.py::test_declared_before_the_result_is_marked_declared",
+  "tests/unit/test_toolbox_declarations.py::test_values_and_result_ids_do_not_depend_on_a_declaration",
   "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/integration/test_web_api_rule_test_checks.py::test_stored_results_are_returned_with_their_stored_reading", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
 proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test", "tests/smoke/test_web_checks_smoke.py::test_web_api_returns_the_readings_of_a_rule_tests_standard_set"]
 real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs"
@@ -1342,6 +1408,21 @@ real_data_needs = "network; ALPHA_SEC_USER_AGENT for EDGAR"
 needs = []
 state = "Partial"
 missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
+id = "positioning-short-volume-context"
+name = "Futures positioning and short sale volume as known"
+what = "Read CFTC weekly positioning and FINRA daily short sale volume using only rows public by a UTC knowledge cutoff."
+see_it = ["alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 --json", "alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_cftc_cot.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_finra_short.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_free_cmds.py::test_pull_show_list_cftc"]
+proof_smoke = ["tests/smoke/test_context_free_smoke.py::test_context_free_local_reads"]
+real_data = "confirmed 2026-11-19: CFTC legacy futures for 3 markets, 104 weeks each (2024-11-19 to 2026-11-10), and FINRA short volume for SPY and QQQ, 5 days 2026-11-09 to 2026-11-13, pulled live into a scratch home and read as known"
+real_data_needs = "network; no key"
+needs = []
+state = "Partial"
+missing = "inputs only: no signal, factor or research read is wired yet; CFTC known_from for pre-2022-09 rows is a rule, not a stamp"
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]

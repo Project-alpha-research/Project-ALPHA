@@ -28,6 +28,8 @@ def _show_text(identity: str, card: cards.IdeaCard, home: Path) -> str:
         lines.append("Not stated yet: " + "; ".join(missing) + ".")
     if card.supersedes:
         lines.append(f"Replaces card {card.supersedes}.")
+    if card.source:
+        lines.append(f"Source: {card.source}.")
     newer = cards.successors(home).get(identity)
     if newer:
         lines.append(f"Replaced by card {newer}.")

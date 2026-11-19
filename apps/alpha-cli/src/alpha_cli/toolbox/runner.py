@@ -10,7 +10,7 @@ from alpha_cli._seeds import semantic_seed
 from alpha_cli.spine.errors import SpineError, tool_error
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.stores import _stores
-from alpha_cli.toolbox import inputs, store
+from alpha_cli.toolbox import declarations, inputs, store
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.registry import get
 
@@ -60,6 +60,7 @@ def run(
     *,
     set_name: str | None = None,
     source: inputs.Target | None = None,
+    now: declarations.Clock = declarations.utc_now,
 ) -> dict[str, Any]:
     with store.target_lock(home, target):
         started = monotonic()
@@ -109,9 +110,18 @@ def run(
             )
             rng = default_rng(effective_seed) if spec.seeded else None
             result = spec.compute(inputs.Inputs(series, market, effective_seed), settings, rng)
+            written_at = now()
+            # The one place a result is written: it is declared only if chosen before this moment.
+            declared = declarations.status(home, target, tool_id, set_name, written_at)
             labels = list(
                 dict.fromkeys(
-                    [*resolved.labels, *base["labels"], *series.reserve_labels(), *result.labels]
+                    [
+                        *resolved.labels,
+                        *base["labels"],
+                        *series.reserve_labels(),
+                        *result.labels,
+                        declared,
+                    ]
                 )
             )
             document = store.publish(
@@ -124,6 +134,7 @@ def run(
                 labels,
                 store.settings_tried([*rows, attempt], tool_id),
                 monotonic() - started,
+                written_at,
             )
             outcome = append_trial(
                 home,

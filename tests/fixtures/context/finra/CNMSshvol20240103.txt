@@ -1,0 +1,4 @@
+Date|Symbol|ShortVolume|ShortExemptVolume|TotalVolume|Market
+20240103|SPY|6000000.5|200|13000000.25|B,Q,N
+20240103|TEST|1100|0|4100|Q,N
+2

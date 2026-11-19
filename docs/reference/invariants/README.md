@@ -15,6 +15,7 @@ verified: 784cc0d0b38600fd
 | [data.md](data.md) | alpha_data: storage, readers, receipts, snapshots | editing alpha-data |
 | [data-crypto.md](data-crypto.md) | alpha_data crypto: storage, identity, offline Bybit context | editing crypto storage or identity |
 | [data-context.md](data-context.md) | alpha_data context: macro series, SEC filings, derivatives | editing context data |
+| [data-options.md](data-options.md) | alpha_data options: chain records, point-in-time store, fixture | editing options data |
 | [data-free-sources.md](data-free-sources.md) | free data on the Dell and provider limits | adding or judging a free data source |
 | [data-bar-timeframes.md](data-bar-timeframes.md) | bars of any timeframe in the store | touching bar timeframes |
 | [crypto-providers.md](crypto-providers.md) | crypto provider modules and coverage profiles | editing crypto providers |

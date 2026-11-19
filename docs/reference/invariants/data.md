@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: d88ae808b699f286
+verified: a49d00f8cb30d16d
 ---
 
 # Data layer invariants
@@ -169,12 +169,13 @@ import it. It must never let a read see data that was not knowable at the cutoff
   house in `crypto/` and `crypto/providers/` (command-local raw-resource discovery is owned by
   `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
   Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
-  never bars or backtest inputs; event reads require an aware UTC cutoff).
+  never bars or backtest inputs; event reads require an aware UTC cutoff); provider-neutral
+  option chains, their point-in-time store and a synthetic fixture in `options/` ([rules](data-options.md)).
 - Daily OHLCV health checks and their supplied report cutoff live in `health.py`. See [the tool card](../../../research/tools/data-health.md).
 - Tests: `tests/unit/test_data_health_report.py`, `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,
   `test_bar_timeframe.py`, `test_ingest_pipeline_intraday.py`, `test_sessions.py`, `test_resample.py`, `test_align.py`,
-  `test_crypto_*`, `test_context_*.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
+  `test_crypto_*`, `test_context_*.py`, `test_options_*.py` (all in `tests/unit/`); bias guards `tests/bias_guards/test_pit_*.py`,
   `test_survivorship.py`, `test_candles_pit.py`, `test_intraday_future_poison.py`, `test_crypto_*_future_poison.py`; integration
   `tests/integration/test_data_cli.py` and `tests/integration/test_crypto_*`.
 - Check: `uv run python scripts/gate.py check` (lint, `lint-imports`, mypy, mapped tests and every

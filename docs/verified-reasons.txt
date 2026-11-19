@@ -166,6 +166,9 @@ docs/roadmap/production-scope.md
 docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
+packages/alpha-data/CONTEXT.md
+  verified b58ffff9ba61d83d on 2026-11-19: Read-first rows and purpose unchanged; the options rules are routed from the invariants README, as this file is at its line limit.
+
 research/CONTEXT.md
   verified 6175c829bcd093e4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
 

@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-273 commands in 36 groups. Options marked (required) are
+274 commands in 37 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -206,6 +206,10 @@ Required scenario/path-risk Monte Carlo evidence from a completed validation run
 
 - `alpha monte-carlo classical` — Publish IID, causal regime-Markov, and Student-t OOS account-return paths. Options: `--from-run (required)`, +6 more
 - `alpha monte-carlo kronos` — Generate synthetic OHLCV tails and fully replay the unchanged canonical strategy. Options: `--from-run (required)`, +12 more
+
+## alpha next
+
+- `alpha next` — Say where the project stands and what you can do now. Options: `--json`
 
 ## alpha optim
 

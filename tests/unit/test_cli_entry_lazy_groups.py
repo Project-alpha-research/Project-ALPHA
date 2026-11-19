@@ -138,6 +138,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "lookalike",
             "ml",
             "monte-carlo",
+            "next",
             "optim",
             "owner-auth",
             "paper",
@@ -190,3 +191,15 @@ def test_setup_help_keeps_drawing_and_evaluator_lazy(tmp_path: Path) -> None:
     )
     result = _run(script, ["setup", "--help"], tmp_path)
     assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
+
+
+def test_next_command_keeps_heavy_engines_out(tmp_path: Path) -> None:
+    result = _run(_RUN, ["next", "--json"], tmp_path)
+    assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
+    assert sorted(json.loads(result.stdout)) == [
+        "notes",
+        "paths",
+        "recent_trials",
+        "stores",
+        "waiting",
+    ]

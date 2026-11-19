@@ -28,7 +28,7 @@ from alpha_cli.catalog import strategy_params as catalog_strategy_params
 from alpha_cli.run_store import valid_run_id
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
-from alpha_mcp import _control, _invoke, _runs, _types
+from alpha_mcp import _control, _invoke, _runs, _types, spine_tools
 
 mcp = FastMCP("alpha")
 
@@ -1398,6 +1398,9 @@ def compare_runs(run_ids: list[str]) -> _types.RunComparisonOut:
         _types.RunComparisonOut,
         run_projection.compare_runs(run_ids, data_dir=_data_dir()),
     )
+
+
+spine_tools.register(mcp)
 
 
 def main() -> None:

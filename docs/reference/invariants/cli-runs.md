@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 1b448c0c5952237c
+verified: 5901c1ebaf4b91a4
 ---
 
 # Command line runs invariants
@@ -94,7 +94,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   and an annualisation basis (daily: elapsed years snapped to 252/365; intraday: median bars per trading date times 365 if 20% or more of bar dates are
   weekends, else 252 on weekdays; outside identity); `source` identifies the resolved provider.
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
-  trial; the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+  trial; so does the same test after a code change ([test key](cli-trial-ledger.md#rule-test-counting));
+  the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.

@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.spine.trial_record import row_test_key
 from alpha_core import DataError
 
 
@@ -35,6 +36,25 @@ def _history(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def first_same_test(rows: list[dict[str, Any]], values: dict[str, Any]) -> dict[str, Any] | None:
+    """The earliest row this one repeats: the same run, or (rule tests) the same test key.
+
+    The test key is what was tested, not which code ran it, so a re-run after a code change is a
+    repeat. An earlier error row is never matched, by run id or by key: a failed attempt never
+    hides the later real one. Rows without a key match only on the same run id.
+    """
+    key = row_test_key(values)
+    for row in rows:
+        if "error" in (row.get("labels") or ()):
+            continue
+        same_run = values.get("run_id") is not None and all(
+            row.get(name) == values.get(name) for name in ("run_id", "kind", "tool_output")
+        )
+        if same_run or (key is not None and row_test_key(row) == key):
+            return row
+    return None
+
+
 def append_trial(home: Path, values: dict[str, Any]) -> dict[str, Any]:
     """Allocate the next index and append under the RD-Agent lock-file/fsync discipline."""
     path = home / "ledger" / "trials.jsonl"
@@ -43,15 +63,12 @@ def append_trial(home: Path, values: dict[str, Any]) -> dict[str, Any]:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         rows = _history(path)
         labels = list(values["labels"])
-        # A repeat is the same run recorded again by the same kind of row (and tool output).
-        same = ("run_id", "kind", "tool_output")
         values = {"kind": "rule_test", **values}
-        if (
-            values.get("run_id") is not None
-            and any(all(row.get(key) == values.get(key) for key in same) for row in rows)
-            and "repeat" not in labels
-        ):
+        first = first_same_test(rows, values)
+        if first is not None and "repeat" not in labels:
             labels.append("repeat")
+        if first is not None and first.get("run_id") is not None:
+            values["repeat_of"] = first["run_id"]
         index = len(rows) + 1
         row = {
             **values,

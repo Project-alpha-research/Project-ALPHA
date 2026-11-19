@@ -1,4 +1,4 @@
-"""The hypothesis scan and archive replays hold back the reserved period, as the other commands do."""
+"""The hypothesis scan and archive replays hold back the reserved period."""
 
 from __future__ import annotations
 
@@ -104,9 +104,7 @@ def _equity_home(root: Path, n: int, *, poisoned: bool) -> Path:
     return root
 
 
-def _scan(
-    home: Path, monkeypatch: pytest.MonkeyPatch, as_of: str, *extra: str
-) -> dict[str, Any]:
+def _scan(home: Path, monkeypatch: pytest.MonkeyPatch, as_of: str, *extra: str) -> dict[str, Any]:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     result = CliRunner().invoke(app, [*SCAN, "--as-of", as_of, *extra])
     assert result.exit_code == 0, result.output
@@ -128,9 +126,7 @@ def assert_equal_results(left: object, right: object) -> None:
     assert [p for p, _ in a] == [p for p, _ in b]
     for (path, x), (_, y) in zip(a, b, strict=True):
         if isinstance(x, float) and isinstance(y, float):
-            assert x == pytest.approx(y, rel=1e-9, abs=1e-12) or (
-                np.isnan(x) and np.isnan(y)
-            ), path
+            assert x == pytest.approx(y, rel=1e-9, abs=1e-12) or (np.isnan(x) and np.isnan(y)), path
         else:
             assert x == y, path
 
@@ -195,7 +191,9 @@ def test_text_replay_and_an_earlier_user_cutoff(
     assert json.loads(replay.stdout)["reserve"]["held_back_bars"] == HELD * 5
     early = _scan(poisoned, monkeypatch, "2023-06-30")
     assert "reserve" not in early and "labels" not in early
-    spec = json.loads((poisoned / "scans/hypotheses/specs" / f"{early['scan_id']}.json").read_text())
+    spec = json.loads(
+        (poisoned / "scans/hypotheses/specs" / f"{early['scan_id']}.json").read_text()
+    )
     assert "research_cutoff" not in spec
     assert all(ts.date() <= date(2023, 6, 30) for ts in latest.bars[-5:])
 
@@ -419,7 +417,9 @@ def test_manifest_replay_with_an_earlier_user_cutoff_wins(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     store, mid = _archive_store(tmp_path / "long", date(2024, 6, 30))
-    _, manifest, returned = _replay(tmp_path / "h", store, mid, monkeypatch, "--as-of", "2023-06-30")
+    _, manifest, returned = _replay(
+        tmp_path / "h", store, mid, monkeypatch, "--as-of", "2023-06-30"
+    )
     assert "reserve" not in manifest and manifest["research_cutoff"] == "2023-06-30"
     assert max(returned).date() < date(2023, 6, 30)
 

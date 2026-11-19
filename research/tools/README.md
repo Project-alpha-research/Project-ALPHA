@@ -6,7 +6,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: cc9a39abed03f17f
+  - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
+verified: 3c7336314a1f62c3
 ---
 
 # Research tools, by symptom
@@ -38,6 +39,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
 | A picture for the owner | [charts](charts.md) (`trade_pnl` for profit by trade) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |
+| Futures positioning or short sale volume as known | [positioning and short volume](positioning-short-volume-context.md) |
 | Crypto funding or open interest as known | `alpha context show-bybit --symbol BTCUSDT --kind funding --as-of 2024-03-12 --json` |
 
 ## Not available yet

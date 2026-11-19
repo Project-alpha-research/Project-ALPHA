@@ -4,12 +4,13 @@ sources:
   - packages/alpha-data/src/alpha_data/context/**
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 72dd83d10ce8ebab
+  - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
+verified: 338217eaa20cb588
 ---
 
 # Data layer invariants: context data
 
-Rules and facts for context data in `alpha_data`: macro series, SEC filings and crypto derivatives. They explain
+Rules and facts for context data in `alpha_data`: macro series, SEC filings, crypto derivatives, CFTC positioning and FINRA short volume. They explain
 research results and never enter the bar store, snapshots or backtest inputs. The rest of the data layer is in
 [data.md](data.md).
 
@@ -54,3 +55,35 @@ after their stamp. A changed stored value fails; missing periods are listed. Fil
 funding and hourly open interest are imported offline (`alpha context import-bybit --from <store>`) into
 `context/bybit/linear/`, checksum-verified; funding is known at settlement, open interest 1 h 5 min after its hour
 starts. First import 2026-11-17: 50 + 51 symbols, 2022-2026.
+
+## CFTC positioning and FINRA short volume
+
+Two free, key-less sources, added 2026-11-19 on the owner's "grab all the free data". They are inputs only: no signal
+or statistic is defined on them and RD-Agent does not read them yet. Rows live in hashed tables under
+`context/cftc/cot/<market>.parquet` and `context/finra/short_volume/<symbol>.parquet`, written by `store_events` and
+read by `as_known_events` with an aware UTC cutoff, exactly as EDGAR and Binance rows are. Every row holds the period it
+describes (`report_date`, `trade_date`) and `known_from`, the time it became public. Network use is confined to
+`free_http.default_transport`: 30 s timeout, generic `Project-ALPHA/1.0` agent, one request per second, no redirects.
+A day or market is fetched in full before anything is stored, and offline is a clear `DataError`.
+
+- **CFTC Commitments of Traders** (legacy, futures only; Socrata dataset `6dca-aqww`, report as of Tuesday). The API
+  has no publication field, but each row carries the system stamp `:created_at`, which matches live releases to the
+  second since 2022-09 (checked 2026-11-19 against 2024-2026 rows). `known_from` is the later of the rule time (Friday
+  15:30 US Eastern; in a week with a US federal holiday, the next non-holiday weekday after that Friday) and the stamp,
+  and `known_basis` says which won. A stamp more than 120 days after the rule time is a bulk reload (all history before
+  2022-09 carries one stamp), so the rule time is used there. The stamp matters: the 2025 shutdown held reports of
+  30 Sep to 10 Nov 2025 until 19 Nov to 12 Dec 2025, and the rule alone would show them 2 to 6 weeks early.
+- **FINRA daily short sale volume** (consolidated file `CNMSshvol<date>.txt`). A trading day is known at 00:00 UTC on the
+  next calendar day, later than FINRA's publication. The host answers 403 for a day with no file (weekend, holiday); such
+  days are listed as missing, not stored. The file ends with a record count that must match its rows. Volumes are
+  fractional. **Caveat, stored in every table's metadata and printed by every command:** the files cover trades reported
+  to FINRA facilities only, not all exchange volume.
+- **No revision overwrite.** A re-pull whose value differs from a stored period fails with `revised ...` and keeps the
+  stored file. Identical rows merge. This is the Binance behaviour; neither source keeps vintages.
+- **Invalid data fails loud** with the field named: non-numeric, non-finite or negative counts, short volume above total,
+  duplicate or disordered dates, a changed header or column set, a date unlike its file's, a record count mismatch.
+- **Reads.** `alpha context show-cftc-cot --market 13874A --as-of <UTC date or minute>` and `show-finra-short-volume
+  --symbol SPY --as-of ...` return only rows with `known_from <= as-of`; `alpha context list` shows them under
+  `free_context` with the caveat. Pull with `pull-cftc-cot` and `pull-finra-short-volume`. No research command reads
+  these yet. A research read must use the same `as_known_events` cutoff and reject periods from `RESERVED_DAY`
+  (2024-01-01) on, as `daily_funding.py` does; it must not add a second path.

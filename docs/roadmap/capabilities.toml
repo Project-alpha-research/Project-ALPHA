@@ -1345,6 +1345,21 @@ missing = "live SEC check (ticker map, submissions, time zone, Form 4 path) need
 docs = ["docs/reference/project/components/data-layer.md"]
 
 [[capability]]
+id = "positioning-short-volume-context"
+name = "Futures positioning and short sale volume as known"
+what = "Read CFTC weekly positioning and FINRA daily short sale volume using only rows public by a UTC knowledge cutoff."
+see_it = ["alpha context show-cftc-cot --market 13874A --as-of 2024-03-15T21:00 --json", "alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --json"]
+entry_points = ["cli: alpha context"]
+proof_synthetic = ["tests/unit/test_context_cftc_cot.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_finra_short.py::test_early_read_cannot_see_a_late_known_row", "tests/unit/test_context_free_cmds.py::test_pull_show_list_cftc"]
+proof_smoke = ["tests/smoke/test_context_free_smoke.py::test_context_free_local_reads"]
+real_data = "confirmed 2026-11-19: CFTC legacy futures for 3 markets, 104 weeks each (2024-11-19 to 2026-11-10), and FINRA short volume for SPY and QQQ, 5 days 2026-11-09 to 2026-11-13, pulled live into a scratch home and read as known"
+real_data_needs = "network; no key"
+needs = []
+state = "Partial"
+missing = "inputs only: no signal, factor or research read is wired yet; CFTC known_from for pre-2022-09 rows is a rule, not a stamp"
+docs = ["docs/reference/project/components/data-layer.md"]
+
+[[capability]]
 id = "crypto-derivatives-context"
 name = "Crypto funding rates and open interest as known"
 what = "Read verified Binance USD-M context and offline-imported Bybit linear funding and hourly open interest at a UTC knowledge cutoff."

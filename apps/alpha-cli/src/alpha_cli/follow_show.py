@@ -9,6 +9,18 @@ from alpha_cli.follow_book import PAPER_ACCOUNT
 from alpha_cli.follow_journal import Entry
 
 RECENT = 5
+PAPER_TERMS = (
+    f"Size is fixed: each paper buy uses the same share of the {PAPER_ACCOUNT:,.0f} start value. "
+    "Gains and losses are not compounded, so the size does not grow or shrink.",
+    "Price only: dividends are not booked. A stock held over a dividend date reads lower "
+    "than the rule test, which includes dividends.",
+    "Forward use; not research. These readings do not go to `alpha results`, the ledger "
+    "or RD-Agent.",
+)
+LONG_AT_START = (
+    "The rule was already long when the follow started. The paper account stays flat until "
+    "the next entry signal, so it differs from the rule test at first."
+)
 LATE_OR_MISSED = {"late": "late: a session's bar was not stored", "missed": "missed a session"}
 
 
@@ -62,6 +74,10 @@ def extra(entries: list[Entry]) -> dict[str, Any]:
         "paper": _paper(entries),
         "replay": replays[-1] if replays else None,
         "reading": reading(entries),
+        "long_at_start": any(
+            str(e.payload.get("decision", {}).get("words", "")).startswith("long at the start")
+            for e in sessions
+        ),
     }
 
 
@@ -104,6 +120,10 @@ def text(facts: dict[str, Any]) -> list[str]:
             lines.append(
                 f"  Open paper position: {p['units']:.4g} units from {p['entry_price']:.2f}."
             )
+    if facts["recent"] or p:
+        lines += [f"  {line}" for line in PAPER_TERMS]
+    if facts.get("long_at_start"):
+        lines.append(f"  {LONG_AT_START}")
     check = facts["replay"]
     if check:
         said = "agrees" if check["agrees"] else f"differs ({len(check['differences'])} place(s))"

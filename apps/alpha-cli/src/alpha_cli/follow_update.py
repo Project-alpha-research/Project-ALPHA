@@ -16,7 +16,7 @@ newest bars only through `follow_source`. Writes only under `forward/<follow id>
 from __future__ import annotations
 
 import bisect
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -26,18 +26,21 @@ from alpha_cli import follow_source
 from alpha_cli import follow_store as store
 from alpha_cli.follow_chain import append_entry
 from alpha_cli.follow_journal import (
+    CALENDAR_KEY,
     MAX_BAR_LATENESS_DAYS,
     STOPPED,
     Clock,
     Entry,
     JournalRefusal,
     Kind,
+    session_close,
 )
+from alpha_cli.follow_journal import next_open as _next_open
 from alpha_cli.follow_replay import Replay
 from alpha_cli.follow_update_check import Digests, check_replay, digests_of
 from alpha_cli.spine.errors import SpineError
 from alpha_core import DataError
-from alpha_data.sessions import session_bounds, sessions_between
+from alpha_data.sessions import sessions_between
 
 
 class _Ctx:
@@ -79,16 +82,11 @@ class _Ctx:
 
 
 def close_of(calendar: str | None, session: date) -> datetime:
-    if calendar is None:
-        return datetime(session.year, session.month, session.day, tzinfo=UTC) + timedelta(days=1)
-    return session_bounds(calendar, session)[1]
+    return session_close(calendar or "", session)
 
 
 def next_open(calendar: str | None, session: date) -> datetime:
-    if calendar is None:
-        return close_of(None, session)
-    nxt = sessions_between(calendar, session + timedelta(1), session + timedelta(14))[0]
-    return session_bounds(calendar, nxt)[0]
+    return _next_open(calendar or "", session)
 
 
 def _armed(replay: Replay | None, session: date) -> bool:
@@ -161,8 +159,6 @@ def _entry(
         book = held
         payload["decision"] = decision
         payload["labels"] = _labels(ctx, session, opens)
-        if ctx.calendar is not None:
-            payload["must_write_by"] = opens.isoformat()
     else:
         payload.update(
             would_have=decision["words"], reason="written after the next open: no paper order"
@@ -204,6 +200,14 @@ def update_follow(home: Path, follow_id: str, *, clock: Clock) -> dict[str, Any]
         )
     now = clock()
     ctx = _Ctx(home, record, now)
+    sealed = entries[0].payload.get(CALENDAR_KEY)
+    if sealed is None or sealed != (ctx.calendar or ""):
+        raise follow_source.refuse(
+            "FOLLOW_CALENDAR_CHANGED",
+            f"The start entry names the market calendar {sealed!r}; the store now names "
+            f"{ctx.calendar or ''!r}. The journal deadlines come only from the start entry.",
+            "Start a new follow with `alpha follow start`.",
+        )
     last = entries[-1]
     todo = [s for s in ctx.expected() if last.kind == "start" or s > last.session_date]
     check = check_replay(

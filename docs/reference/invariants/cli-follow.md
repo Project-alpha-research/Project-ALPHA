@@ -12,7 +12,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_book.py
   - apps/alpha-cli/src/alpha_cli/follow_show.py
   - tests/unit/test_follow_separation.py
-verified: 44e583e1260687e7
+verified: 8d4bdf1656faff88
 ---
 
 # Command line follow invariants
@@ -85,9 +85,11 @@ Each refusal is a typed error with a stable code and plain words.
 - A `stop` may share the last session date, so a follow can be replaced on the day it started. It cannot be earlier.
 - The first session entry may share the date of the `start` entry: a follow can start in the morning of the session it first records.
 - A day not recorded in time can only be written as `missed`. The function that builds a `bar` entry refuses the late day.
-- A `bar` entry of a market with a calendar carries `must_write_by`, the next session's open from `alpha_data.sessions`. The writer
-  and the verifier refuse `written_at` after it. A `bar` without it (crypto) is refused more than one calendar day
-  (`MAX_BAR_LATENESS_DAYS`) after its session date.
+- The `start` entry seals `market_calendar` (`""`: trades every day). Only it sets a `bar`'s window; the caller cannot.
+  With a calendar the writer sets `must_write_by`, the next session's open from `alpha_data.sessions`; another value is
+  `FOLLOW_DEADLINE_NOT_FROM_CALENDAR`. A `bar` before its session's close is `FOLLOW_BAR_BEFORE_CLOSE` (00:00 UTC next day
+  with no calendar). A `bar` after the deadline (no calendar: `MAX_BAR_LATENESS_DAYS` after the close) is too late.
+  `alpha follow update` refuses `FOLLOW_CALENDAR_CHANGED` if the store's calendar differs from the sealed one.
 
 ## Verify
 - `alpha follow verify <id>` recomputes the chain and the same rules. It reports the first break by entry number and exits 1.
@@ -127,7 +129,8 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
 - Each entry holds `decision` (words), `readings` (the rule's operands), `fills`, `book` (cash, units, pending order, equity,
   percent, fees), `bar_hashes` (hash of all bars up to the session), `latest_bar_ts` (a forward bar only), `engine_code_sha256`, `replay`.
 - Paper size is a percent of a paper account of 10,000, a fixed share, not compounded. Fees are the rule test's `fee_bps`. Slippage
-  is in the engine fill price. Long only. No dividends and no carry (a long rule pays none; no new data reader was added).
+  is in the engine fill price. Long only. Price only: no dividend or carry is booked, so a stock held over a dividend date reads
+  lower than the rule test. `follow show` states these terms and a rule long at the start in plain words.
 
 ## Replay check
 - Each run replays the frozen rule over warm-up and forward bars and compares the journal with it: decision, readings, fills,

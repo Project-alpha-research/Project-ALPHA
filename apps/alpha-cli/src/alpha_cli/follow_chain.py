@@ -90,7 +90,7 @@ def _read_line(position: int, line: str, entries: list[Entry]) -> Entry | Break:
     if entry_hash_of(entry.model_dump(mode="json")) != entry.entry_hash:
         return Break(position, CHAIN_BROKEN, f"Entry {position} no longer matches its own hash.")
     try:
-        check_rules(entries[-1] if entries else None, entry)
+        check_rules(entries[-1] if entries else None, entry, start=entries[0] if entries else None)
     except JournalRefusal as exc:
         return Break(position, str(exc.payload["code"]), str(exc))
     return entry
@@ -183,6 +183,7 @@ def append_entry(
             written_at=clock(),
             bar_hashes=bar_hashes,
             payload=payload,
+            start=entries[0] if entries else None,
         )
         line = json.dumps(entry.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
         stream.write(line.encode("utf-8") + b"\n")

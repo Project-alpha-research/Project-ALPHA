@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d6f78be323bd8a5e on 2026-11-20: Merged main; routing rows unchanged by follow update
+  verified 0f8a8a46d3f5c96c on 2026-11-20: Review fixes: the start entry seals the market calendar and the writer sets must_write_by; show states the paper terms. These pages name the modules and steps, which did not change.
 
 apps/alpha-cli/README.md
-  verified d6f78be323bd8a5e on 2026-11-20: Merged main; the follow row now lists the ten follow modules and the library rows from main are unchanged
+  verified 0f8a8a46d3f5c96c on 2026-11-20: Review fixes: the start entry seals the market calendar and the writer sets must_write_by; show states the paper terms. These pages name the modules and steps, which did not change.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -216,6 +216,9 @@ research/tools/deflated-sharpe-and-trials.md
 
 research/tools/diagnose-and-audit.md
   verified c48efd7ea1bfb32a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+
+research/tools/follow.md
+  verified 100a9da29b5ddf48 on 2026-11-20: Review fixes: the start entry seals the market calendar and the writer sets must_write_by; show states the paper terms. These pages name the modules and steps, which did not change.
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read

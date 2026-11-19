@@ -140,7 +140,27 @@ def forward_bars(home: Path, asset: str, now: datetime) -> tuple[list[Bar], str 
     resolved = resolve_asset(asset, data_dir=home)
     try:
         bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=now)
-        calendar = _runner._bar_store(
+    except DataError as exc:
+        raise refuse(
+            "FOLLOW_NO_BARS",
+            f"Cannot read stored bars for {asset}: {exc}",
+            "Store bars for the asset first.",
+        ) from exc
+    calendar = market_calendar(home, asset) or None
+    known = [b for b in bars if bar_known_at(b.ts, timeframe=DAILY, calendar=calendar) <= now]
+    return known, calendar
+
+
+def market_calendar(home: Path, asset: str) -> str:
+    """The exchange calendar of the stored daily bars of `asset`; "" for a market that trades
+    every day. `follow start` seals it in the start entry: only that sets the journal deadlines."""
+    from alpha_cli import _runner
+    from alpha_cli.spine.stores import resolve_asset
+    from alpha_data.timeframe import DAILY
+
+    resolved = resolve_asset(asset, data_dir=home)
+    try:
+        found = _runner._bar_store(
             resolved.symbol,
             data_dir=resolved.data_dir,
             snapshot_id=None,
@@ -153,5 +173,4 @@ def forward_bars(home: Path, asset: str, now: datetime) -> tuple[list[Bar], str 
             f"Cannot read stored bars for {asset}: {exc}",
             "Store bars for the asset first.",
         ) from exc
-    known = [b for b in bars if bar_known_at(b.ts, timeframe=DAILY, calendar=calendar) <= now]
-    return known, calendar
+    return str(found or "")

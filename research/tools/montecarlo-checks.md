@@ -25,6 +25,7 @@ verified: eaabfdadccc3a76d
 - It also runs on an RD-Agent factor replay. It is not in the fixed set `rdagent-post-judge`.
 - The calm-and-stormy family is not a check yet: it needs the market's closes, which a check on stored equity lacks.
 
-**What this check cannot tell you** Every history assumes the future looks like this one. It draws bars independently, so it cannot show losing streaks. A scenario is not proof of an edge.
+**What this check cannot tell you** Every history assumes the future looks like this one. It draws bars independently,
+so it cannot show losing streaks. A scenario is not proof of an edge.
 
 **Next** Check [trade clustering](run-level-checks.md) or [cite](results-and-cite.md) the stored output.

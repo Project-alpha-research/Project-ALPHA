@@ -170,7 +170,8 @@ import it. It must never let a read see data that was not knowable at the cutoff
   `CryptoBulkStore` in `storage.py`); FRED macro vintages, SEC filings/insider events and
   Binance derivatives and offline Bybit context in `context/` (separate hashed tables under `data_dir/context/`,
   never bars or backtest inputs; event reads require an aware UTC cutoff); provider-neutral
-  option chains, their point-in-time store (research reads cut at the held-back day; forward use through a named reader) and a synthetic fixture in `options/` ([rules](data-options.md)).
+  option chains, their point-in-time store (research reads cut at the held-back day; forward use through a named
+  reader) and a synthetic fixture in `options/` ([rules](data-options.md)).
 - Daily OHLCV health checks and their supplied report cutoff live in `health.py`. See [the tool card](../../../research/tools/data-health.md).
 - Tests: `tests/unit/test_data_health_report.py`, `tests/unit/test_pit_*.py`, `test_parquet_store.py`, `test_snapshot.py`, `test_ingest*.py`,
   `test_corporate_actions.py`, `test_dividends_pit.py`, `test_universe_store.py`, `test_tiingo_*`, `test_alpaca_adapter.py`,

@@ -17,6 +17,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from alpha_cli.spine import reserve
 from alpha_core import DataError, UniverseMembership, members_as_of
 from alpha_research import panel
 
@@ -239,9 +240,12 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         **runtime_identity(),
     }
     if options["lane"] == "crypto":
-        from alpha_cli._crypto_panel import freeze_crypto_inputs
+        from alpha_cli._crypto_panel import freeze_crypto_inputs, held_back_rows
 
         result["crypto_inputs"] = freeze_crypto_inputs(data_dir, options)
+        held = reserve.Hold(None, reserve.CUTOFF_DATE, held_back_rows(data_dir, result))
+        if held.held_back:
+            result.update(held.fields())
         return result
     from alpha_data.snapshot import resolve_snapshot_dir, snapshot_manifest_hash
     from alpha_data.store import ParquetStore
@@ -255,6 +259,11 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         options["symbols"] = sorted({item.symbol for item in memberships})
     result["memberships"] = [item.model_dump(mode="json") for item in memberships]
     result["membership_hash"] = _digest(result["memberships"])
+    held = reserve.hold_many(
+        options["symbols"], data_dir, as_of=options["as_of"], snapshot_id=options["snapshot"]
+    )
+    if held.held_back:
+        result.update(held.fields())
     return result
 
 
@@ -270,7 +279,10 @@ def equity_panel(
         raise DataError("frozen equity snapshot hash changed")
     if _digest(spec["memberships"]) != spec["membership_hash"]:
         raise DataError("frozen membership hash changed")
-    cutoff = datetime.combine(date.fromisoformat(options["as_of"]), time.max, tzinfo=UTC)
+    day = date.fromisoformat(options["as_of"])
+    cutoff = datetime.combine(day, time.max, tzinfo=UTC)
+    if day > reserve.CUTOFF_DAY:  # the held-back period is never loaded, whatever the user asked
+        cutoff = reserve.CUTOFF
     # Only manifest-bound names are inputs; an extra unmanifested parquet is not frozen.
     available = set(json.loads((snapshot / "manifest.json").read_text())["symbols"])
     names = options["symbols"]
@@ -440,6 +452,7 @@ def evaluate_spec(
     return {
         "authority": "none",
         "execution_authority": False,
+        **{key: spec[key] for key in ("reserve", "labels") if key in spec},
         "results": results,
         "trials": len(signals) * len(options["horizons"]),
         "missing": missing,

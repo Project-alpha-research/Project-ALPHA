@@ -8,7 +8,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: 81433144d9570f50
+verified: a81c1f229cf9aef2
 ---
 
 # The reserved period
@@ -43,13 +43,19 @@ Locks it out (the code refuses reserved rows or aborts):
   A cited draft must say "held back" or "reserved period seen" when a cited run carries that label (`alpha results check`).
   Study and trade refuse an older find that used the period (`RESERVED_PERIOD_SEEN`). `alpha tool` reads a held-back run with the run's own cut-off.
 - Search and score commands: `alpha optim` (grid and mcpt), `alpha validate`, `alpha backtest oos`, `run`, `portfolio` and `cross-sectional`,
-  `alpha scan run`, `alpha rules explain`, `alpha lookalike`, `alpha unusual` and `alpha labels barrier`. They use the same helper
+  `alpha scan run`, `alpha scan hypotheses` (and `replay`), `alpha backtest run --manifest-id`, `alpha rules explain`, `alpha lookalike`, `alpha
+  unusual` and `alpha labels barrier`. They use the same helper
   (`Hold` in `spine/reserve.py`) and the same cut-off, count, label and sentence as rule tests. The earlier of the cut-off and the user's own
   `--as-of` wins. A run with held-back bars records `reserve` and the label `reserved-period-held-back`, and its `research_cutoff` becomes 2023-12-31.
   A store with no bar from the date on keeps its ids and outputs, except that a split or dividend known only from the date on is never applied.
   In text output the command prints the one sentence; with `--json` the result carries the `reserve` field instead, so the JSON stays one object.
   Older stored runs of these commands are not rewritten and are not relabelled; only rule runs derive `reserved-period-seen`.
-  `alpha monte-carlo` reads with its source run's cut-off, so it holds back only when the source run did.
+  The hypothesis scan holds the period back in both lanes. A run with held-back bars puts `research_cutoff`, `reserve` and the label in its frozen spec, so
+  its scan id changes; the number of hypotheses counted as tried does not. Equity bars and the split or dividend known only from the date on are never
+  loaded. The crypto lane reads no row stamped on or after the date, and counts every such row (bars, funding, open interest) that the user's cut-off
+  would have admitted. A manifest replay ends at the first instant of the reserved day, so the last bar before it is kept; the count reads timestamps only.
+  A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
+  only when the source run did.
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
 Only labels it:
@@ -60,14 +66,12 @@ Only labels it:
 Holds nothing back (they still read bars from the date on):
 
 - Still to cover. Do not assume these hold anything back:
-  - The hypothesis scan (`_hypothesis_scan.py`): it searches and scores many hypotheses on every stored bar. Its spec and hashes are frozen, and the
-    crypto lane has its own loader, so it needs its own change. This is the most dangerous open leak.
-  - `alpha backtest run --manifest-id` (bulk archive reads): it scores on every archived bar; the archive's held-back count is not built.
   - ML input preparation (`ml_input.py`): tied to a project's frozen export.
   - Forecast evaluation (`alpha forecast`): a forecast run is forward use; the evaluation sites need their own design.
   - Research diagnostics (`research_diagnostic_cmds.py`): tied to research cases and their sealed holdout.
   - `alpha propfirm`: it reads every stored bar (no cut-off).
-  - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose.
+  - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose (tested:
+    `test_alert_check_is_forward_use_and_still_reads_the_latest_bar`).
   - Research case runs (`research_cmds.py`, `research_execution.py`): they have their own sealed holdout; `alpha backtest holdout` is the revealed
     holdout itself.
   - `alpha labels weights` and `importance` read a stored barrier result; one built before this change can hold events from the date on.
@@ -87,5 +91,6 @@ Holds nothing back (they still read bars from the date on):
 
 ## What is open
 
-- The commands under "Still to cover": each should hold the period back or label it. Not built. The hypothesis scan comes first: it searches.
+- The commands under "Still to cover": each should hold the period back or label it. Not built. Open: archived runs scored on held-back bars before
+  this change are not relabelled; only rule runs derive `reserved-period-seen`.
 - Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.

@@ -14,6 +14,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.crypto.contracts import (
@@ -107,6 +108,7 @@ def merge_rows(
     *,
     as_of: datetime,
     row_signatures: dict[datetime, bytes] | None = None,
+    before: datetime | None = None,
 ) -> None:
     family = dataset["family"]
     column = FAMILIES[family][3]
@@ -121,6 +123,8 @@ def merge_rows(
         if timestamp in seen:
             raise DataError("crypto screening duplicate timestamps within manifest")
         seen.add(timestamp)
+        if before is not None and timestamp >= before:
+            continue  # a row stamped in the held-back period is never read
         available = timestamp + timedelta(days=1) if family == "derivative_bars" else timestamp
         if available > as_of:
             continue
@@ -142,6 +146,50 @@ def merge_rows(
         if available in values and values[available] != value:
             raise DataError(f"crypto {family} overlap disagrees at {available.isoformat()}")
         values[available] = float(value)
+
+
+def capped_cutoff(options: Mapping[str, Any]) -> datetime:
+    """The user's cut-off (midnight UTC), never later than the start of the held-back period."""
+    user = datetime.combine(date.fromisoformat(options["as_of"]), time.min, tzinfo=UTC)
+    return min(user, reserve.RESERVED_INSTANT)
+
+
+def before_reserved(frame: pl.DataFrame) -> pl.DataFrame:
+    """Drop rows stamped on or after the reserved day before any row is read in Python."""
+    dtype = frame.schema.get("timestamp")
+    if not isinstance(dtype, pl.Datetime):
+        return frame
+    stamp = pl.col("timestamp")
+    if dtype.time_zone is None:
+        stamp = stamp.dt.replace_time_zone("UTC")
+    return frame.filter(stamp < reserve.RESERVED_INSTANT)
+
+
+def held_back_rows(data_dir: Path, spec: Mapping[str, Any]) -> int:
+    """Count frozen rows stamped on or after the reserved day that the user's cut-off admits.
+
+    Only the timestamp column is read. Rows of one instrument and family that repeat across
+    overlapping manifests count once.
+    """
+    store = bulk_store(data_dir)
+    user = datetime.combine(date.fromisoformat(spec["options"]["as_of"]), time.min, tzinfo=UTC)
+    stamps: dict[tuple[str, str], set[datetime]] = {}
+    for frozen in spec["crypto_inputs"]:
+        manifest = store.verify_manifest(frozen["manifest_id"])
+        dataset = frozen["dataset"]
+        family = dataset["family"]
+        path = store.bulk_root / str(manifest["artifact_key"])
+        try:
+            column = pl.read_parquet(path, columns=["timestamp"])["timestamp"]
+        except (OSError, pl.exceptions.PolarsError) as exc:
+            raise DataError("crypto screening artifact is unreadable") from exc
+        bucket = stamps.setdefault((dataset["instrument"], family), set())
+        for value in column.to_list():
+            stamp = _time(value)
+            known = stamp + timedelta(days=1) if family == "derivative_bars" else stamp
+            if stamp >= reserve.RESERVED_INSTANT and known <= user:
+                bucket.add(stamp)
+    return sum(len(bucket) for bucket in stamps.values())
 
 
 def freeze_crypto_inputs(data_dir: Path, options: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -269,7 +317,7 @@ def crypto_panel(
 ) -> tuple[list[date], np.ndarray, dict[str, np.ndarray]]:
     options = spec["options"]
     store = bulk_store(data_dir)
-    cutoff = datetime.combine(date.fromisoformat(options["as_of"]), time.min, tzinfo=UTC)
+    cutoff = capped_cutoff(options)
     names = options["symbols"]
     observations: dict[str, dict[str, dict[datetime, float]]] = {name: {} for name in names}
     signatures: dict[tuple[str, str], dict[datetime, bytes]] = {}
@@ -292,10 +340,11 @@ def crypto_panel(
             raise DataError("crypto screening quality row_count differs from artifact")
         merge_rows(
             values,
-            frame,
+            before_reserved(frame),
             dataset,
             as_of=cutoff,
             row_signatures=signatures.setdefault((dataset["instrument"], dataset["family"]), {}),
+            before=reserve.RESERVED_INSTANT,
         )
     observed = sorted(
         {day for families in observations.values() for day in families["derivative_bars"]}

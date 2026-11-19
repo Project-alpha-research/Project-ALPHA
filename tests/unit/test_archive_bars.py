@@ -22,7 +22,7 @@ def _archive(
     bars = [
         Bar(
             symbol="BTCUSDT",
-            ts=datetime(2024, 1, 2, tzinfo=UTC) + timedelta(minutes=5 * i),
+            ts=datetime(2023, 6, 2, tzinfo=UTC) + timedelta(minutes=5 * i),
             open=100.0 + i,
             high=102.0 + i,
             low=99.0 + i,
@@ -51,7 +51,18 @@ def _archive(
         calls.append((store, manifest_id, symbol, as_of))
         return [bar for bar in bars if as_of is None or bar.ts + timedelta(minutes=5) <= as_of], {}
 
+    def held(
+        store: CryptoBulkStore,
+        manifest_id: str,
+        *,
+        symbol: str,
+        start: datetime,
+        until: datetime | None = None,
+    ) -> int:
+        return sum(1 for bar in bars if bar.ts >= start)
+
     monkeypatch.setattr(_chart_data, "load_chart_dataset", loader)
+    monkeypatch.setattr(_chart_data, "held_back_chart_rows", held)
     monkeypatch.setattr(_chart_data, "chart_datasets", lambda store: [dataset])
     return bars, calls, dataset
 

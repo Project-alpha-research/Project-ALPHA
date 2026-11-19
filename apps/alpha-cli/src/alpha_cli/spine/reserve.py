@@ -17,6 +17,8 @@ from alpha_core.reserve import RESERVED_DAY, RESERVED_START
 CUTOFF_DAY = RESERVED_DAY - timedelta(days=1)
 CUTOFF_DATE = CUTOFF_DAY.isoformat()
 CUTOFF = datetime.combine(CUTOFF_DAY, time(23, 59, 59), tzinfo=UTC)
+# The first instant of the reserved day: for readers that stamp a row by when it is known.
+RESERVED_INSTANT = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
 HELD_BACK = "reserved-period-held-back"
 SEEN = "reserved-period-seen"
 SEEN_SENTENCE = (

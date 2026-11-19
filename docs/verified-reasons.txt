@@ -22,6 +22,9 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
 
+docs/reference/invariants/cli-follow.md
+  verified f9e95839616de75b on 2026-11-20: the separation guard now ignores the bare word forward as a value; this page's rules are unchanged
+
 docs/reference/invariants/cli-investigation-tools.md
   verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 

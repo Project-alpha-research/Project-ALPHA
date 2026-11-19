@@ -39,7 +39,6 @@ verified: 6c3c833076d17fee
 | file | owns | load when |
 |---|---|---|
 | [cli-runs.md](cli-runs.md) | run composition and publication | `alpha run` and published runs |
-| [cli-follow.md](cli-follow.md) | `alpha follow`: paper follow record, journal, separation | `alpha follow`, `forward/` |
 | [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
@@ -51,5 +50,5 @@ verified: 6c3c833076d17fee
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |
 | [cli-native.md](cli-native.md) | native upstream lanes: RD-Agent loop, rule studies | native loops, costed rule studies |
-| [cli-paper.md](cli-paper.md) | paper trading, scheduler, provider status | `alpha paper` |
+| [cli-paper.md](cli-paper.md), [cli-follow.md](cli-follow.md) | paper trading, scheduler; paper follow journal | `alpha paper`, `alpha follow`, `forward/` |
 | [cli-assistant.md](cli-assistant.md) | advisory assistant, Codex investigations | `alpha assistant`, investigations |

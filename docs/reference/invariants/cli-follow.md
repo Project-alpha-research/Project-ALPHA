@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_source.py
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
   - tests/unit/test_follow_separation.py
-verified: 9868a8adfe70d19b
+verified: f9e95839616de75b
 ---
 
 # Command line follow invariants

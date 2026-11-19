@@ -3,6 +3,7 @@
 A new reader (the F2 nightly step, a Today page) is added to `READERS` on purpose, in review.
 The guard also catches the cheap ways around a plain name search: the store's file names and
 constants, a path glued from parts, and a module that lists every folder of the data directory.
+The bare word "forward" as a value (an option priced on a forward) is not a path and is allowed.
 """
 
 from __future__ import annotations
@@ -24,7 +25,8 @@ READERS = frozenset(
 )
 STORE_IMPORT = re.compile(r"follow_(store|chain|journal|source)\b")
 FORWARD_PATH = re.compile(
-    r"""["']forward["'/]|/forward/|["']for["']\s*["']ward["']|journal\.jsonl|follow\.toml"""
+    r"""/\s*["']forward["']|["']forward/|/forward/|(Path|joinpath)\([^)\n]*["']forward["']"""
+    r"""|["']for["']\s*["']ward["']|journal\.jsonl|follow\.toml"""
     r"""|AlphaFollowV1|\bFOLLOW_DIR\b"""
 )
 DATA_DIR_SWEEP = re.compile(

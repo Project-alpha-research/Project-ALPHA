@@ -13,17 +13,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = "apps/alpha-cli/src/alpha_cli/"
-READERS = frozenset(
-    CLI + name
-    for name in (
-        "follow_cmds.py",
-        "follow_store.py",
-        "follow_chain.py",
-        "follow_journal.py",
-        "follow_source.py",
-    )
+# Each reader is here on purpose, with the one reason it may touch the follow store.
+READER_REASONS = {
+    "follow_cmds.py": "the `alpha follow` commands",
+    "follow_store.py": "the frozen record and the list and show facts",
+    "follow_chain.py": "reads, verifies and appends the journal",
+    "follow_journal.py": "the entry shape and the refusals",
+    "follow_source.py": "reads the newest stored bars and the frozen spec, for forward use only",
+    "follow_update.py": "F2: writes one entry per new session of a followed rule test",
+    "follow_update_check.py": "F2: the replay check of the journal against the stored bars",
+    "follow_replay.py": "F2: replays the frozen rule with the rule test's engine step",
+    "follow_book.py": "F2: the paper account arithmetic that goes into each entry",
+    "follow_show.py": "F2: prints the last entries and the paper equity of a follow",
+}
+READERS = frozenset(CLI + name for name in READER_REASONS)
+STORE_IMPORT = re.compile(
+    r"follow_(store|chain|journal|source|update|update_check|replay|book|show)\b"
 )
-STORE_IMPORT = re.compile(r"follow_(store|chain|journal|source)\b")
 FORWARD_PATH = re.compile(
     r"""/\s*["']forward["']|["']forward/|/forward/|(Path|joinpath)\([^)\n]*["']forward["']"""
     r"""|["']for["']\s*["']ward["']|journal\.jsonl|follow\.toml"""
@@ -94,6 +100,8 @@ def test_the_guard_fails_on_a_forbidden_import_in_a_research_module() -> None:
         f"{CLI}glued.py": 'p = home / "for" "ward"\n',
         f"{CLI}globbed.py": 'p = home.glob("*/journal.jsonl")\n',
         f"{CLI}constant.py": "from x import FOLLOW_DIR\n",
+        f"{CLI}nightly.py": "from alpha_cli.follow_update import update_all\n",
+        f"{CLI}spine/replayer.py": "from alpha_cli import follow_replay\n",
     }
     assert violations(fixture) == [
         f"{CLI}backup.py: lists every folder of the data directory",
@@ -101,8 +109,10 @@ def test_the_guard_fails_on_a_forbidden_import_in_a_research_module() -> None:
         f"{CLI}globbed.py: opens a path under forward/",
         f"{CLI}globbed.py: lists every folder of the data directory",
         f"{CLI}glued.py: opens a path under forward/",
+        f"{CLI}nightly.py: names the follow store",
         f"{CLI}nightly_steps.py: opens a path under forward/",
         f"{CLI}spine/ledger.py: opens a path under forward/",
+        f"{CLI}spine/replayer.py: names the follow store",
         f"{CLI}spine/run.py: names the follow store",
         f"{CLI}today_page.py: names the follow store",
         "workers/rdagent/loop.py: opens a path under forward/",

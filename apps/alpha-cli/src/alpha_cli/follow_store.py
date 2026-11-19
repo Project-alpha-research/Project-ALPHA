@@ -24,8 +24,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from alpha_cli.follow_chain import append_entry, read_entries, verify_journal
-from alpha_cli.follow_journal import Clock, Entry, JournalRefusal
-from alpha_cli.follow_source import Source, latest_bar_hashes, refuse
+from alpha_cli.follow_journal import CALENDAR_KEY, Clock, Entry, JournalRefusal
+from alpha_cli.follow_source import Source, latest_bar_hashes, market_calendar, refuse
 from alpha_cli.spine import idea_card
 from alpha_cli.spine.errors import SpineError
 
@@ -213,6 +213,7 @@ def _start_locked(
     folder = folder_of(home, record.follow_id)
     _write_record(folder, record)
     payload = {"source_id": source.source_id, "kind": source.kind, "version": record.version}
+    payload[CALENDAR_KEY] = market_calendar(home, source.assets[0])
     append_entry(
         folder,
         kind="start",

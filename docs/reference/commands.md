@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-302 commands in 42 groups. Options marked (required) are
+303 commands in 42 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -157,6 +157,7 @@ Follow a tested idea forward on paper.
 - `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--json`
 - `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--factor`, `--card`, `--size-pct`, `--json`
 - `alpha follow stop <FOLLOW_ID>` — Stop a follow. Options: `--reason`, `--json`
+- `alpha follow update <FOLLOW_ID>` — Book the sessions that closed since the last entry of a followed rule test. Options: `--all`, `--json`
 - `alpha follow verify <FOLLOW_ID>` — Recompute the hash chain. Options: `--json`
 
 ## alpha forecast

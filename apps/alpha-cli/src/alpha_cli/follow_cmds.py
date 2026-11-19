@@ -11,7 +11,7 @@ from typing import Annotated, Any
 
 import typer
 
-from alpha_cli import follow_source
+from alpha_cli import follow_show, follow_source, follow_update
 from alpha_cli import follow_store as store
 from alpha_cli._cli_json import emit
 from alpha_cli.follow_journal import JournalRefusal
@@ -43,7 +43,7 @@ def _row(f: dict[str, Any]) -> str:
     state = store.WAITING if f["state"] == "waiting" else f["state"]
     return (
         f"  {f['follow_id']}  {store.KINDS[f['kind']]}  {', '.join(f['assets'])}  "
-        f"version {f['version']}  {state}"
+        f"version {f['version']}  {f.get('reading', state)}"
     )
 
 
@@ -62,6 +62,7 @@ def _show_text(facts: dict[str, Any]) -> str:
     if r["supersedes"]:
         lines.append(f"  Replaces follow {r['supersedes']}")
     lines += [f"  Entries: {counts}", f"  Chain head: {facts['head']}"]
+    lines += follow_show.text(facts)
     if facts["state"] == "stopped":
         lines.append(f"State: stopped. Reason: {facts['stop_reason'] or 'none given'}.")
     elif facts["waiting_for_first_bar"]:
@@ -132,7 +133,13 @@ def start(
 @follow_app.command("list")
 def list_follows(json_out: JSON = False) -> None:
     """One row per follow, with its state. Paper only."""
-    rows = store.list_facts(AlphaSettings().data_dir)
+    home = AlphaSettings().data_dir
+    rows = [
+        r
+        if r["state"] == "broken"
+        else {**r, "reading": follow_show.reading(store.entries_of(home, r["follow_id"]))}
+        for r in store.list_facts(home)
+    ]
     head = f"{len(rows)} idea(s) followed on paper." if rows else "No follows yet (paper)."
     tail = [] if rows else ["Start one: alpha follow start --test <run id>"]
     emit({"follows": rows}, json_out=json_out, fallback="\n".join([head, *map(_row, rows), *tail]))
@@ -145,7 +152,11 @@ def show(
     """The frozen record, the entries by kind and the chain head."""
     home = AlphaSettings().data_dir
     try:
-        facts = store.show_facts(home, store.resolve(home, follow_id))
+        identity = store.resolve(home, follow_id)
+        facts = {
+            **store.show_facts(home, identity),
+            **follow_show.extra(store.entries_of(home, identity)),
+        }
     except (SpineError, JournalRefusal) as exc:
         fail(exc, json_out)
     emit(facts, json_out=json_out, fallback=_show_text(facts))
@@ -200,3 +211,47 @@ def stop(
         json_out=json_out,
         fallback=f"Follow {identity} stopped (paper). Its record and journal are kept.",
     )
+
+
+def _update_text(row: dict[str, Any]) -> list[str]:
+    lines = [f"Follow {row['follow_id']} (paper): {row['message']}"]
+    lines += [f"  {w['session']}  {w['kind']:<6} {w['words']}" for w in row.get("written", [])]
+    check = row.get("replay")
+    if check and not check["agrees"]:
+        lines.append(f"  Replay check differs in {len(check['differences'])} place(s):")
+        lines += [f"    {d['session']}: {d['what']}: {d['detail']}" for d in check["differences"]]
+    return lines
+
+
+@follow_app.command("update")
+def update(
+    follow_id: Annotated[str, typer.Argument(help="Follow id or prefix.")] = "",
+    all_follows: Annotated[
+        bool, typer.Option("--all", help="Update every active rule follow.")
+    ] = False,
+    json_out: JSON = False,
+) -> None:
+    """Book the sessions that closed since the last entry of a followed rule test. Paper only.
+
+    Reads the newest stored bars. It downloads nothing. A session whose bar is not stored is
+    `late`; one written after the next open is `missed`. A second run on the same session does
+    nothing."""
+    home = AlphaSettings().data_dir
+    try:
+        if bool(follow_id) == all_follows:
+            raise SpineError(
+                "FOLLOW_UPDATE_TARGET",
+                "Name one follow, or use --all.",
+                "Example: alpha follow update <follow id>",
+            )
+        if all_follows:
+            rows = follow_update.update_all(home, clock=_clock)
+        else:
+            identity = store.resolve(home, follow_id)
+            rows = [follow_update.update_follow(home, identity, clock=_clock)]
+    except (SpineError, JournalRefusal) as exc:
+        fail(exc, json_out)
+    lines = [line for row in rows for line in _update_text(row)] or ["No follows yet (paper)."]
+    emit({"follows": rows}, json_out=json_out, fallback="\n".join(lines))
+    if any(row["status"] == "refused" for row in rows):
+        raise typer.Exit(1)

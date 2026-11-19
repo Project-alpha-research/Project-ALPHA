@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 1a178a179429f355 on 2026-11-20: Cosmetic edit only; rows stay true.
+  verified f4cec63b0f9ca631 on 2026-11-20: Merge of main (nightly readiness) into the follow update branch: the code map rows still match the modules.
 
 apps/alpha-cli/README.md
-  verified 1a178a179429f355 on 2026-11-20: Cosmetic edit only; rows stay true.
+  verified f4cec63b0f9ca631 on 2026-11-20: Merge of main (nightly readiness) into the follow update branch: the code map rows still match the modules.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct

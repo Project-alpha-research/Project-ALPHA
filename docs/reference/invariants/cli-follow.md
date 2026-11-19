@@ -6,30 +6,36 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_store.py
   - apps/alpha-cli/src/alpha_cli/follow_source.py
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
+  - apps/alpha-cli/src/alpha_cli/follow_update.py
+  - apps/alpha-cli/src/alpha_cli/follow_update_check.py
+  - apps/alpha-cli/src/alpha_cli/follow_replay.py
+  - apps/alpha-cli/src/alpha_cli/follow_book.py
+  - apps/alpha-cli/src/alpha_cli/follow_show.py
   - tests/unit/test_follow_separation.py
-verified: f9e95839616de75b
+verified: 8d4bdf1656faff88
 ---
 
 # Command line follow invariants
 
 Rules for `alpha follow`. A tested idea is followed on paper as new bars arrive. Options are in the
-[command reference](../commands.md#alpha-follow). Build F1 only: the frozen record and the journal.
-No signal is computed and no trade is simulated yet. Every screen of text says "paper".
+[command reference](../commands.md#alpha-follow). F1: the frozen record and the journal. F2: `follow update` for a followed
+rule test (below). A followed setup or factor cannot be updated yet. Every screen of text says "paper".
 
 ## Separation (the integrity rule)
 - `<data_dir>/forward/` is one-way. Research writes nothing there and reads nothing from there.
 - Only the modules on the explicit `READERS` list in `tests/unit/test_follow_separation.py` may name the follow store
-  modules or open a path under `forward/`. Today that is the five `follow_*.py` modules. A new reader (the F2 nightly step,
-  a Today page) is added to the list on purpose, in review.
+  modules or open a path under `forward/`. Today that is the ten `follow_*.py` modules, each with a one-line reason in `READER_REASONS`.
+  A new reader (the nightly step, a Today page) is added on purpose, in review.
 - The guard reads source text under `apps/*/src`, `packages/*/src` and `workers/`. It also fails on the store's file names
   (`journal.jsonl`, `follow.toml`), `FOLLOW_DIR`, `AlphaFollowV1`, a name glued from parts (`"for" "ward"`), and a module that
   lists every folder of the data directory (`home` or `data_dir` with `iterdir`, `rglob`, `os.walk`, `copytree`, or a `glob` that starts with `*`).
   It proves itself with fixture strings, not an edit of real modules. It is a text guard: a path built at run time from
   other words is not caught.
-- `follow start` writes no trial-ledger row, changes no research record and writes no file outside `forward/`.
+- `follow start` and `follow update` write no trial-ledger row, change no research record and write no file outside `forward/`.
 - A follow is not a trial. Choosing what to follow is still a selection; later builds count it where the owner sees it.
-- Forward use reads the newest bars on purpose, as `alpha scan check` does. F1 reads one bar per asset, only to record its hash.
-  Research commands keep their cut-off. This module adds no reserved date and bypasses no cut-off helper.
+- Forward use reads the newest bars on purpose, as `alpha scan check` does, only through `follow_source`. `start` reads one bar per
+  asset, only to record its hash. `update` reads the bars known at the clock. Research commands keep their cut-off. No forward module
+  adds a reserved date or bypasses a cut-off helper.
 - The start entry carries bar hashes and no bar dates, so no timestamp from before the start is written.
 
 ## The follow record
@@ -55,7 +61,7 @@ No signal is computed and no trade is simulated yet. Every screen of text says "
 - Entry fields: `seq` (from 1), `session_date`, `written_at` (aware UTC, from an injected clock), `kind`
   (`start`, `bar`, `missed`, `late`, `stop`), `bar_hashes` (latest bar hash per asset), `payload` (free object),
   `prev_hash`, `entry_hash`. The hash is SHA-256 of the canonical entry without `entry_hash`. The first `prev_hash` is 64 zeros.
-- F1 commands write only `start` and `stop`. The writer already supports the other kinds.
+- `start` and `stop` come from F1. `update` writes `bar` (a normal session entry), `late` and `missed`.
 - The start entry's payload names its `follow_id`. A journal moved into another follow's folder fails every read.
 - Append takes an exclusive lock, checks the whole chain, writes one line and syncs it. Then, under the same lock, it
   replaces `forward/<follow_id>/head.json` (`entries` and `head`, the last entry hash) atomically.
@@ -77,11 +83,13 @@ Each refusal is a typed error with a stable code and plain words.
 | `FOLLOW_SESSION_AHEAD` | a session date later than the day of `written_at`: a day cannot be recorded before it happens |
 
 - A `stop` may share the last session date, so a follow can be replaced on the day it started. It cannot be earlier.
+- The first session entry may share the date of the `start` entry: a follow can start in the morning of the session it first records.
 - A day not recorded in time can only be written as `missed`. The function that builds a `bar` entry refuses the late day.
-- The allowed lateness is one calendar day (`MAX_BAR_LATENESS_DAYS`), counted from the session date to the UTC date of
-  `written_at`. This is stricter than the design rule (a bar may be written up to the next session's open): a Friday
-  bar written on Sunday is refused and must be `missed`. F2 may widen it only with the market calendar in
-  `alpha_data.sessions`, never by a larger day count.
+- The `start` entry seals `market_calendar` (`""`: trades every day). Only it sets a `bar`'s window; the caller cannot.
+  With a calendar the writer sets `must_write_by`, the next session's open from `alpha_data.sessions`; another value is
+  `FOLLOW_DEADLINE_NOT_FROM_CALENDAR`. A `bar` before its session's close is `FOLLOW_BAR_BEFORE_CLOSE` (00:00 UTC next day
+  with no calendar). A `bar` after the deadline (no calendar: `MAX_BAR_LATENESS_DAYS` after the close) is too late.
+  `alpha follow update` refuses `FOLLOW_CALENDAR_CHANGED` if the store's calendar differs from the sealed one.
 
 ## Verify
 - `alpha follow verify <id>` recomputes the chain and the same rules. It reports the first break by entry number and exits 1.
@@ -103,7 +111,37 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
 2. Open `journal.jsonl` and remove only the incomplete last line (the text after the last newline).
 3. Run `alpha follow verify <id>`. The head was not replaced for the cut-off line, so the chain verifies.
 
+## Update (F2)
+- `follow update <id>` or `--all` reads the bars known at the clock. It downloads nothing. It refuses a stopped follow, a setup
+  follow (`FOLLOW_UPDATE_SETUP_NOT_BUILT`) and a follow whose stored spec no longer hashes to the frozen hash (`FOLLOW_SPEC_CHANGED`).
+- One entry per session. A second run on the same session writes nothing and says so. The replay check still runs and is shown.
+- Decide on the close of session t from bars up to t. The paper fill is the open of t+1. The update that first sees that bar books it.
+  The test `no decision changes when later bars arrive` replays every prefix of a series.
+- The engine step is `_runner.run_full_backtest`, the call the rule test makes, with the spec from `assemble_run_spec`. It is never
+  `run_idea`: no run folder, no ledger row. `spine/run.py` and `_runner.py` are unchanged, so no run id moved.
+- The first forward session is the first whose close is after `started_at`. Bars before it only prime the indicators.
+  The follow starts flat. A rule already long at the start is not bought: the paper book waits for the next entry signal
+  (a decision that is not long, then a long one). No trade, return or date from before the start is written.
+- `late`: the session has closed and its bar is not stored. No decision. The session stays `late`: one entry per session.
+- `missed`: written after the next session's open (crypto: more than a day after the session), or a skipped older session. The entry
+  says what the rule "would have signalled". There is no paper order. A skipped session is never back-filled as a normal entry.
+- A pending order from a normal entry still fills at the next stored open, even if the entry after it is `missed`.
+- Each entry holds `decision` (words), `readings` (the rule's operands), `fills`, `book` (cash, units, pending order, equity,
+  percent, fees), `bar_hashes` (hash of all bars up to the session), `latest_bar_ts` (a forward bar only), `engine_code_sha256`, `replay`.
+- Paper size is a percent of a paper account of 10,000, a fixed share, not compounded. Fees are the rule test's `fee_bps`. Slippage
+  is in the engine fill price. Long only. Price only: no dividend or carry is booked, so a stock held over a dividend date reads
+  lower than the rule test. `follow show` states these terms and a rule long at the start in plain words.
+
+## Replay check
+- Each run replays the frozen rule over warm-up and forward bars and compares the journal with it: decision, readings, fills,
+  `engine_code_sha256`, and the hash of the bars up to each session.
+- `replay.agrees` is true only if nothing differs. `differences` names the session and what changed. `bars_changed_from` is the first
+  session whose stored bars hash differently. The journal is never rewritten. The paper book stays as recorded.
+- `missed` and `late` entries are compared on bars only. An engine change shows as `agrees = false`, never as a silent new number.
+
 ## Commands
-- `follow list`, `show` and `verify` are safe reads. `follow start` and `stop` are owner-only in the generic launcher.
-- `follow show` prints the record, the entries by kind and the chain head. It says "waiting for its first new bar" while only `start` exists.
+- `follow list`, `show` and `verify` are safe reads. `follow start`, `update` and `stop` are owner-only in the generic launcher.
+- `follow show` prints the record, the entries by kind, the last five entries with their readings, the paper equity numbers
+  and the newest replay check. It says "waiting for its first new bar" while only `start` exists.
+- `follow list` shows one state per follow: new signal, open paper position, nothing today, or late or missed.
 - Ids may be given as a unique prefix of at least four characters.

@@ -50,6 +50,7 @@ class IdeaCard(BaseModel):
     how_often: str = ""
     edge_lasts: str = ""
     supersedes: str = ""
+    source: str = ""
 
     def normalised(self) -> IdeaCard:
         return self.model_copy(
@@ -61,7 +62,7 @@ class IdeaCard(BaseModel):
 
 
 def card_id(card: IdeaCard) -> str:
-    """Short content hash of the nine content fields; the `supersedes` pointer is not content."""
+    """Short content hash of the nine content fields. `supersedes` and `source` are not content."""
     text = card.normalised()
     payload = json.dumps({name: getattr(text, name) for name in LABELS}, sort_keys=True)
     return hashlib.sha256(payload.encode()).hexdigest()[:ID_LENGTH]
@@ -72,7 +73,11 @@ def _folder(home: Path) -> Path:
 
 
 def _toml(card: IdeaCard) -> str:
-    lines = [f"{name} = {json.dumps(value, ensure_ascii=False)}" for name, value in card]
+    lines = [
+        f"{name} = {json.dumps(value, ensure_ascii=False)}"
+        for name, value in card
+        if value or name != "source"
+    ]
     return "\n".join(lines) + "\n"
 
 
@@ -86,7 +91,7 @@ def save(home: Path, card: IdeaCard) -> tuple[str, bool]:
     path = _folder(home) / f"{identity}.toml"
     if path.is_file():
         stored = load(home, identity)
-        if stored != text:
+        if stored.model_copy(update={"source": ""}) != text.model_copy(update={"source": ""}):
             raise SpineError(
                 "IDEA_CARD_CLASH",
                 f"A different idea card is already stored under the id {identity}.",

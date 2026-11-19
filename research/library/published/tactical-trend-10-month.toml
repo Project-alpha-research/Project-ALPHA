@@ -9,7 +9,7 @@ direction = "long"
 holding_clock = "months"
 decay_evidence = "none found; a short practitioner paper that later work seldom tests under costs."
 can_test_today = "partly - ETF daily bars can stand in for the asset classes."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Faber"

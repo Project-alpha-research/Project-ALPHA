@@ -2,18 +2,18 @@ id = "perpetual-funding-carry"
 name = "Perpetual futures funding carry"
 year_published = 2022
 market = "crypto"
-idea = "Hold the spot coin and short the perpetual future when funding is high, and collect the funding payments."
+idea = "Hold the spot coin and short the perpetual future when funding is high, so that the short side receives the funding payments while funding stays positive."
 mechanism_claimed = "The authors set out how funding ties the perpetual price to spot. The side that wants leverage pays the other side."
 data_needed = ["perpetual funding rates", "spot and perpetual prices"]
 direction = "long-short"
 holding_clock = "days to weeks"
 decay_evidence = "none found."
 can_test_today = "yes - Binance and Bybit funding rates and Bybit open interest are held; costs and margin are not modelled."
-notes = "citation to check: venue of publication (a working paper at the time of writing)."
+notes = "A working paper; the version cited is the December 2022 preprint."
 
 [source]
 authors = "He, Manela, Ross and von Wachter"
 year = 2022
 title = "Fundamentals of perpetual futures"
-venue = "https://arxiv.org/abs/2212.06888"
+venue = "arXiv preprint 2212.06888"
 url = "https://arxiv.org/abs/2212.06888"

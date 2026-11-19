@@ -125,7 +125,7 @@ def test_a_private_note_cannot_reuse_a_public_id(tmp_path: Path) -> None:
 def test_show_names_the_decay_evidence_and_the_data_gap(tmp_path: Path) -> None:
     code, output = _cli(tmp_path, "show", "cross-sectional-momentum")
     assert code == 0
-    for label in ("Idea", "Why the authors say it works", "Decay evidence", "Can test today"):
+    for label in ("Idea", "Why it is said to work", "Decay evidence", "Can test today"):
         assert label in output
     assert "No idea card was made from this record yet." in output
     code, output = _cli(tmp_path, "show", "no-such-record")
@@ -138,8 +138,8 @@ def test_card_fills_the_card_and_writes_nothing_else(tmp_path: Path) -> None:
     made = json.loads(output)
     card = cards.load(tmp_path, made["card"])
     record = library.load_record(PUBLIC / "short-term-reversal.toml")
-    assert record.idea in card.claim
-    assert f"from library record {record.id}, published {record.year_published}" in card.claim
+    assert card.claim == record.idea
+    assert f"from library record {record.id}, published {record.year_published}" == card.source
     assert card.mechanism == record.mechanism_claimed
     assert card.held_for == record.holding_clock
     assert card.disproved_by == "" and card.baseline == ""
@@ -166,4 +166,52 @@ def test_card_works_for_a_private_record(tmp_path: Path) -> None:
     _private(tmp_path)
     code, output = _cli(tmp_path, "card", "my-own-note", "--json")
     assert code == 0, output
-    assert "my-own-note" in cards.load(tmp_path, json.loads(output)["card"]).claim
+    assert "my-own-note" in cards.load(tmp_path, json.loads(output)["card"]).source
+
+
+def test_the_card_claim_stays_clean_and_the_source_is_not_identity(tmp_path: Path) -> None:
+    record = library.load_record(PUBLIC / "short-term-reversal.toml")
+    made = json.loads(_cli(tmp_path, "card", record.id, "--json")[1])
+    card = cards.load(tmp_path, made["card"])
+    assert card.claim == record.idea
+    assert card.source == f"from library record {record.id}, published {record.year_published}"
+    assert made["card"] == cards.card_id(card.model_copy(update={"source": ""}))
+    assert "Source: from library record" in _idea_show(tmp_path, made["card"])
+
+
+def _idea_show(home: Path, identity: str) -> str:
+    result = RUNNER.invoke(app, ["idea", "show", identity], env={"ALPHA_DATA_DIR": str(home)})
+    return result.output
+
+
+def test_an_existing_card_id_is_unchanged_by_the_source_field(tmp_path: Path) -> None:
+    plain = cards.IdeaCard(claim="Winners keep winning", mechanism="slow news", held_for="months")
+    assert cards.card_id(plain) == "a94d661d81a1"
+    sourced = plain.model_copy(update={"source": "from somewhere"})
+    assert cards.card_id(sourced) == "a94d661d81a1"
+    assert cards.save(tmp_path, plain) == ("a94d661d81a1", True)
+    assert cards.save(tmp_path, sourced) == ("a94d661d81a1", False)
+    assert "source" not in (tmp_path / "ideas" / "a94d661d81a1.toml").read_text(encoding="utf-8")
+
+
+def test_a_malformed_private_record_is_named_and_hides_nothing(tmp_path: Path) -> None:
+    _private(tmp_path)
+    (tmp_path / "library" / "private" / "broken.toml").write_text("id = ", encoding="utf-8")
+    code, output = _cli(tmp_path, "list", "--json")
+    facts = json.loads(output)
+    assert code == 0
+    assert "my-own-note" in {row["id"] for row in facts["records"]}
+    assert "broken" in facts["left_out"] and "broken.toml" in facts["left_out"]["broken"]
+    code, text = _cli(tmp_path, "list")
+    assert "Left out: The library record broken.toml" in text
+    assert _cli(tmp_path, "show", "my-own-note")[0] == 0
+    code, text = _cli(tmp_path, "show", "broken")
+    assert code == 1 and "broken.toml" in text
+
+
+def test_private_records_are_never_written_into_git_paths(tmp_path: Path) -> None:
+    _private(tmp_path)
+    before = sorted(p.name for p in PUBLIC.glob("*"))
+    _cli(tmp_path, "card", "my-own-note")
+    assert sorted(p.name for p in PUBLIC.glob("*")) == before
+    assert not any(p.stem == "my-own-note" for p in PUBLIC.glob("*"))

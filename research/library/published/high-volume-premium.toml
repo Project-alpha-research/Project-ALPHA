@@ -9,7 +9,7 @@ direction = "long"
 holding_clock = "weeks"
 decay_evidence = "none found."
 can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Gervais, Kaniel and Mingelgrin"

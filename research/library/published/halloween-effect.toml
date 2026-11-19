@@ -9,7 +9,7 @@ direction = "long"
 holding_clock = "months"
 decay_evidence = "none found."
 can_test_today = "yes - index and ETF daily bars are held, but the history is one sample of few years."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Bouman and Jacobsen"

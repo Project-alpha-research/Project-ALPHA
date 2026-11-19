@@ -89,16 +89,27 @@ def load_record(path: Path) -> Record:
     return record
 
 
-def entries(home: Path, public_dir: Path = PUBLIC_DIR) -> list[Entry]:
-    """Public records, then the owner's private records, sorted by id."""
+def read(home: Path, public_dir: Path = PUBLIC_DIR) -> tuple[list[Entry], dict[str, SpineError]]:
+    """Public records, then the owner's private records, sorted by id.
+
+    A private record that cannot be read is left out and returned by file name with its error, so
+    one bad file never hides the others. A bad public record is a bug and raises.
+    """
     found: dict[str, Entry] = {}
+    skipped: dict[str, SpineError] = {}
     folders: list[tuple[Literal["public", "private"], Path]] = [
         ("public", public_dir),
         ("private", home / "library" / "private"),
     ]
     for origin, folder in folders:
         for path in sorted(folder.glob("*.toml")):
-            record = load_record(path)
+            try:
+                record = load_record(path)
+            except SpineError as exc:
+                if origin == "public":
+                    raise
+                skipped[path.stem] = exc
+                continue
             if record.id in found:
                 raise SpineError(
                     "LIBRARY_ID_CLASH",
@@ -106,23 +117,26 @@ def entries(home: Path, public_dir: Path = PUBLIC_DIR) -> list[Entry]:
                     "Rename the private record file and its id.",
                 )
             found[record.id] = Entry(record=record, origin=origin)
-    return [found[key] for key in sorted(found)]
+    return [found[key] for key in sorted(found)], skipped
+
+
+def entries(home: Path, public_dir: Path = PUBLIC_DIR) -> list[Entry]:
+    return read(home, public_dir)[0]
 
 
 def find(home: Path, wanted: str) -> Entry:
-    for entry in entries(home):
-        if entry.record.id == wanted.strip().lower():
+    found, skipped = read(home)
+    key = wanted.strip().lower()
+    for entry in found:
+        if entry.record.id == key:
             return entry
+    if key in skipped:
+        raise skipped[key]
     raise SpineError(
         "LIBRARY_UNKNOWN",
         f"There is no library record with the id {wanted!r}.",
         "Run `alpha library list` to see the ids.",
     )
-
-
-def claim_text(record: Record) -> str:
-    """The card has no provenance field, so the claim starts with where the idea came from."""
-    return f"({provenance(record)}) {record.idea}"
 
 
 def provenance(record: Record) -> str:
@@ -131,9 +145,10 @@ def provenance(record: Record) -> str:
 
 def make_card(record: Record) -> cards.IdeaCard:
     return cards.IdeaCard(
-        claim=claim_text(record),
+        claim=record.idea,
         mechanism=record.mechanism_claimed,
         held_for=record.holding_clock,
+        source=provenance(record),
     )
 
 

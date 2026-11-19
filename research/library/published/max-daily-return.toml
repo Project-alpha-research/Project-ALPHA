@@ -9,7 +9,7 @@ direction = "long-short"
 holding_clock = "weeks to months"
 decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
 can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Bali, Cakici and Whitelaw"

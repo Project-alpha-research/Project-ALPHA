@@ -9,7 +9,7 @@ direction = "long-short"
 holding_clock = "weeks"
 decay_evidence = "none found; the sample is short."
 can_test_today = "yes - crypto daily bars are held for the coins in the stored panel."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Liu, Tsyvinski and Wu"

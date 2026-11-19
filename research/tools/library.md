@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/library_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/library.py
-verified: f6b43c129180b00d
+verified: 96ab19218f163541
 ---
 # Library of published ideas
 
@@ -17,7 +17,7 @@ uv run alpha library show <id>
 uv run alpha library card <id> --json
 ```
 
-A record points to a paper in our own words: the idea, why the authors say it works, the data needed, how
+A record points to a paper in our own words: the idea, why it is said to work (the record says whose reading it is), the data needed, how
 long a trade is held, what later research says about decay, and whether ALPHA can test it today.
 
 **How to read it**
@@ -25,8 +25,8 @@ long a trade is held, what later research says about decay, and whether ALPHA ca
   "private" come from the owner's own notes in `<home>/library/private/`; they are never in git.
 - `show` also lists idea cards already made from the record, and how many tests are linked to each.
 - `card` writes an idea card with the idea, the mechanism and the holding time. What would disprove it and the
-  baseline stay "not stated": the owner fills them. The card has no source field, so its idea text starts
-  with "from library record <id>, published <year>".
+  baseline stay "not stated": the owner fills them. The card keeps a `source` line,
+  "from library record <id>, published <year>". It is not part of the card id, so the idea text stays the owner's.
 - Nothing is tested and no ledger row is written. The same record gives the same card.
 - To give an idea to RD-Agent, pass it in discussion with `alpha ledger reply --idea`. There is no other channel.
 

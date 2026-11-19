@@ -7,9 +7,9 @@ mechanism_claimed = "The authors argue that managers judged against an index pre
 data_needed = ["daily prices for a wide stock universe"]
 direction = "long"
 holding_clock = "months"
-decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample. Costs and sector tilts can change the picture."
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
 can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
-notes = "citation to check for later decay work on low volatility."
+notes = ""
 
 [source]
 authors = "Baker, Bradley and Wurgler"

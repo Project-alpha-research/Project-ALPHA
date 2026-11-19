@@ -44,18 +44,21 @@ def list_records(
                 f"{market!r} is not a market in the library.",
                 "Use one of: " + ", ".join(library.MARKETS) + ".",
             )
-        found = [e for e in library.entries(home) if not market or e.record.market == market]
+        records, skipped = library.read(home)
+        found = [e for e in records if not market or e.record.market == market]
     except SpineError as exc:
         fail(exc, json_out)
     rows = [_row(e) for e in found]
+    left_out = {name: str(exc) for name, exc in skipped.items()}
     lines = [f"{len(rows)} library record(s). {MAP_LINE}"]
+    lines += [f"Left out: {message}" for message in left_out.values()]
     lines += [
         f"  {r['id']}  {r['name']} ({r['year_published']}, {r['market']}, "
         f"{r['direction']}, {r['holding_clock']}; test today: {r['can_test_today']})"
         + ("  [private]" if r["origin"] == "private" else "")
         for r in rows
     ]
-    emit({"records": rows}, json_out=json_out, fallback="\n".join(lines))
+    emit({"records": rows, "left_out": left_out}, json_out=json_out, fallback="\n".join(lines))
 
 
 def _show_text(entry: library.Entry, made: list[dict[str, str | int]]) -> str:
@@ -66,7 +69,7 @@ def _show_text(entry: library.Entry, made: list[dict[str, str | int]]) -> str:
         f"  Source: {s.authors} ({s.year}), {s.title}, {s.venue}. {s.url}",
         f"  Market: {r.market}. Direction: {r.direction}. Holding clock: {r.holding_clock}.",
         f"  Idea: {r.idea}",
-        f"  Why the authors say it works: {r.mechanism_claimed}",
+        f"  Why it is said to work: {r.mechanism_claimed}",
         f"  Data needed: {', '.join(r.data_needed)}",
         f"  Decay evidence: {r.decay_evidence}",
         f"  Can test today: {r.can_test_today}",

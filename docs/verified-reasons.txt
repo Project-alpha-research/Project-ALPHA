@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 56f8a62d2ae8415b on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 6774bfbe98ea20b8 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 apps/alpha-cli/README.md
-  verified 56f8a62d2ae8415b on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 6774bfbe98ea20b8 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
-  verified a573cb42451fc454 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified ac16d6f082d9e55b on 2026-11-19: Library source change is additive; this page is unaffected.
 
 docs/reference/invariants/cli-toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
@@ -119,7 +119,7 @@ docs/reference/project/components/toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 docs/reference/project/components/validation-and-evidence.md
-  verified dbe5d1820de8f2a8 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified b6853a30b0960faf on 2026-11-19: Library source change is additive; this page is unaffected.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -167,10 +167,10 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified a12cbb314c27c60e on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 8ae1e046c5ec0213 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/PLAYBOOK.md
-  verified 75a4084fcf951f72 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 54faa1dad5c2f093 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/README.md
   verified 4af3cd07ee9b898b on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -182,19 +182,19 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified d75dc4db9b85e9d7 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified c9789811aac879fb on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/benchmark-and-drawdowns.md
-  verified fa008c32fc522800 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 81b94af81a04cd08 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/charts.md
   verified 18edee030ad2bf0a on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified f1609488bd16ff0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/diagnose-and-audit.md
-  verified 6cfa8ee0b9f31f8c on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 57aebe92cf3dba9a on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -218,13 +218,13 @@ research/tools/results-and-cite.md
   verified 6c38aa97437364f1 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 research/tools/rule-test.md
-  verified cf7f3006310451b7 on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified bafef6baf5130b2c on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/run-level-checks.md
   verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 research/tools/sensitivity.md
-  verified f1609488bd16ff0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

@@ -7,9 +7,9 @@ mechanism_claimed = "The authors say carry is pay for bearing risk that shows up
 data_needed = ["futures prices or yields across asset classes"]
 direction = "long-short"
 holding_clock = "months"
-decay_evidence = "none found; the authors show losses in crises."
+decay_evidence = "none found; the authors themselves show losses in crises."
 can_test_today = "partly - crypto funding rates are held; currency and bond futures data are not."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Koijen, Moskowitz, Pedersen and Vrugt"

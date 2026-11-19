@@ -9,7 +9,7 @@ direction = "long-short"
 holding_clock = "weeks"
 decay_evidence = "none found; the sample is short and the market is young."
 can_test_today = "partly - Bybit and Binance bars are held for a subset of coins; market values may need to be added."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Liu, Tsyvinski and Wu"

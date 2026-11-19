@@ -7,9 +7,9 @@ mechanism_claimed = "The authors say insiders know more about the firm. Purchase
 data_needed = ["insider transaction filings with dates", "daily prices"]
 direction = "long"
 holding_clock = "months"
-decay_evidence = "none found Trades are public with a delay, so only the filing date may be used."
+decay_evidence = "none found."
 can_test_today = "partly - the SEC filings reader has insider trades as filed; check its coverage and dates first."
-notes = "citation to check: later decay work on this exact idea."
+notes = "Trades are public with a delay, so only the filing date may be used."
 
 [source]
 authors = "Lakonishok and Lee"

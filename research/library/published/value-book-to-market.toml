@@ -7,9 +7,9 @@ mechanism_claimed = "The authors read it as pay for risk the market asks for. Ot
 data_needed = ["accounting data: book equity", "market value"]
 direction = "long-short"
 holding_clock = "months to years"
-decay_evidence = "Value stocks lagged for long stretches in the 2010s in many reports McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
 can_test_today = "no - book values (fundamentals) are not held."
-notes = "citation to check: later decay work on this exact idea."
+notes = ""
 
 [source]
 authors = "Fama and French"

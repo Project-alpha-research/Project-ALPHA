@@ -2,7 +2,7 @@
 owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/library.py
-verified: 6ca504cc9457bc0d
+verified: 82e2a0e4b9e1dd40
 ---
 # Library of published ideas
 
@@ -11,7 +11,7 @@ Read them with `uv run alpha library list`. The tool card is [library](../tools/
 
 ## What a record is
 A pointer to a paper, in our own words. Fields: `id`, `name`, `source` (authors, year, title, venue, public URL
-or DOI), `year_published`, `market`, `idea` (one sentence), `mechanism_claimed` (why the authors say it works),
+or DOI), `year_published`, `market`, `idea` (one sentence), `mechanism_claimed` (why it is said to work; the text says if the reading is the authors' or a common later one),
 `data_needed`, `direction`, `holding_clock`, `decay_evidence`, `can_test_today`, `notes`.
 `tests/unit/test_library.py` checks every record. An unknown key fails.
 

@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 5d901b486bac98d5 on 2026-11-19: routing row for alpha follow
 
 apps/alpha-cli/README.md
   verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified e1fe39592778bf7b on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 apps/alpha-web/README.md
-  verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified e1fe39592778bf7b on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 25f6d8651e3fb73c on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 4b30fc47c81cdded on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -80,7 +80,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified e03897d6a8ab6d9c on 2026-11-19: front-door capability claimed; the part's purpose is unchanged
+  verified ae8cdffdb4cfc1d4 on 2026-11-19: alpha-cli CONTEXT routing cell only
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

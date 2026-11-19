@@ -38,6 +38,7 @@ verified: 784cc0d0b38600fd
 | file | owns | load when |
 |---|---|---|
 | [cli-runs.md](cli-runs.md) | run composition and publication | `alpha run` and published runs |
+| [cli-follow.md](cli-follow.md) | `alpha follow`: paper follow record, journal, separation | `alpha follow`, `forward/` |
 | [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |

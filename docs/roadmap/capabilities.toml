@@ -466,6 +466,32 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "forward-follow"
+name = "Follow a tested idea on paper (alpha follow)"
+what = "Follow a rule test or setup find forward on paper. The follow is frozen when it starts. An append-only, hash-chained journal records its sessions. A changed spec starts a new version."
+see_it = ["uv run alpha follow list", "uv run alpha follow show <follow id>", "uv run alpha follow verify <follow id>"]
+entry_points = [
+  "cli: alpha follow start",
+  "cli: alpha follow list",
+  "cli: alpha follow show",
+  "cli: alpha follow verify",
+  "cli: alpha follow stop",
+]
+proof_synthetic = [
+  "tests/unit/test_follow_journal.py::test_verify_detects_a_flipped_byte",
+  "tests/unit/test_follow_cmds.py::test_a_changed_spec_of_the_same_idea_is_a_new_version",
+  "tests/unit/test_follow_separation.py::test_no_module_outside_follow_today_nightly_touches_forward",
+]
+proof_smoke = [
+  "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",
+]
+docs = ["docs/reference/invariants/cli-follow.md"]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "Build F1 only: the record and the journal. No signal and no paper trade is computed yet; no new bar is recorded."
+
+[[capability]]
 id = "nightly-run"
 name = "Nightly real run (alpha nightly)"
 what = "Prove each night that the rule path and the setup path still work on the data stored here, and say when it is ready: two clean full runs in a row."

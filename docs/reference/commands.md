@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-281 commands in 40 groups. Options marked (required) are
+286 commands in 41 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -141,6 +141,16 @@ Render publication-quality figures for a stored run.
 - `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--dark`, `--json`
 - `alpha figures theme` — Emit the canonical figure theme document. Options: `--json`
 - `alpha figures theme-css` — Write (or verify) the SPA's generated theme stylesheet. Options: `--out (required)`, `--check`
+
+## alpha follow
+
+Follow a tested idea forward on paper.
+
+- `alpha follow list` — One row per follow, with its state. Options: `--json`
+- `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--json`
+- `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--factor`, `--card`, `--size-pct`, `--json`
+- `alpha follow stop <FOLLOW_ID>` — Stop a follow. Options: `--reason`, `--json`
+- `alpha follow verify <FOLLOW_ID>` — Recompute the hash chain. Options: `--json`
 
 ## alpha forecast
 

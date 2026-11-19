@@ -131,6 +131,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "diagnose",
             "evidence",
             "figures",
+            "follow",
             "forecast",
             "info",
             "labels",

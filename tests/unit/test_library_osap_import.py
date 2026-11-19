@@ -149,7 +149,7 @@ def test_the_committed_imported_records_are_facts_only() -> None:
         assert record.idea == f"Published signal: {facts.source_id} ({facts.category})"
         assert record.mechanism_claimed == "not stated here; see the paper"
         assert record.decay_evidence == "none recorded"
-        assert 1960 <= record.year_published <= 2026
+        assert record.year_published is not None and 1960 <= record.year_published <= 2026
         assert not banned.search(path.read_text(encoding="utf-8"))
         assert set(tomllib.loads(path.read_text(encoding="utf-8"))) == {
             "id",

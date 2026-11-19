@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified db5610f802de75a6 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 933c6191e0225160 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
 
 apps/alpha-cli/README.md
-  verified db5610f802de75a6 on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified 933c6191e0225160 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -47,7 +47,7 @@ docs/reference/invariants/cli-trial-ledger.md
   verified b4dca1c086c3d033 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
 
 docs/reference/invariants/data-context.md
-  verified 1f528c2f702dcbf1 on 2026-11-20: Re-read after review fixes: release-date floor, redirect rules and imported card source line are stated; text is correct.
+  verified da925d4f9e1b1ff3 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
 
 docs/reference/invariants/data-options.md
   verified 1f2a80ba816efe77 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
@@ -230,7 +230,7 @@ research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/positioning-short-volume-context.md
-  verified 125f6c0b132076de on 2026-11-20: Only the library tier field, imported-record reader, card source line and a new free context source changed; this page's text is still correct.
+  verified aea789fd7b411339 on 2026-11-20: Only a help string and test typing changed; this page's text is still correct.
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct

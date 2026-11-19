@@ -5,7 +5,7 @@ sources:
   - docs/reference/invariants/cli-assistant.md
   - research/PLAYBOOK.md
   - .agents/skills/*/SKILL.md
-verified: b47ff8d7f405ae8a
+verified: b1b818d15dfab029
 ---
 
 # AI assistants
@@ -41,6 +41,7 @@ The partner's instructions are four small sets of files, each with one job:
 | Playbook | `research/PLAYBOOK.md` | One page: the method, the numbers rule, how labels are reported; not a script |
 | Tool cards | `research/tools/` | One card per tool that runs today, found by symptom; also lists what is not built yet |
 | Six skills | `.agents/skills/<name>/` | Test an idea, review a result, investigate a surprise, report, answer from records, record a lesson |
+| Start-here skill | `.agents/skills/start-here/` | Run `alpha next` first; then follow one of the three ways to start |
 | Lessons | `research/lessons/` | What was learned, about ten lines each, with run ids; suggestions, never rules |
 
 - Numbers in an answer come only from executed runs, quoted with the run id through

@@ -1,0 +1,12 @@
+# Example spec for `alpha setup find`. Copy it, then change the idea, assets and rules to your own setup.
+[setup]
+name = "reclaim-20d-after-3-below"
+idea = "Daily close back above the 20-day average after three closes below it"
+assets = ["SPY"]
+timeframe = "1D"
+event = "crosses_above(close, sma(close, 20))"
+[filters]
+three_below = "prev(for_bars(close < sma(close, 20), 3))"
+[study]
+horizons = [1, 3, 5, 10]
+primary = 5

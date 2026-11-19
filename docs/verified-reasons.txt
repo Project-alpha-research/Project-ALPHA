@@ -43,6 +43,9 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
+docs/reference/invariants/data.md
+  verified e9713aceef673a0d on 2026-11-19: Options store read API changed (research reads cut at the held-back day, named forward reader); other content still correct
+
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
@@ -165,6 +168,9 @@ docs/roadmap/production-scope.md
 
 docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+
+packages/alpha-data/CONTEXT.md
+  verified ee3b901803b4f546 on 2026-11-19: Options store read API changed (research reads cut at the held-back day, named forward reader); other content still correct
 
 research/CONTEXT.md
   verified 75d1e966b4cb286d on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.

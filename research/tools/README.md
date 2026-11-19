@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 7a7dca2e5aacb854
+verified: d6ff0cc961a8d1b1
 ---
 
 # Research tools, by symptom
@@ -16,6 +16,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | What you see or need | Open |
 |---|---|
 | Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
+| "Which check fits my situation?" | [toolbox by situation](toolbox-by-situation.md), or `alpha tool find "<words>"` |
 | An idea to test (write the [idea card](idea-card.md) first) | [rule test](rule-test.md) |
 | "Does the whole pipeline still work on real data?" | [nightly run](nightly-run.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
@@ -46,8 +47,7 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 
 - regime detection with models refitted only on the past (today's regime parameters are fitted in sample),
   and change-point detection known on the day (today's change points are hindsight);
-- factor attribution for size and momentum (market or one chosen asset works today);
-- capacity and size-aware costs (costs are flat basis points today);
+- factor attribution for size and momentum (market or one asset works today); capacity and size-aware costs (flat basis points today);
 - an event calendar (scheduled releases and earnings dates); a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
 - the planned plain verbs that would wrap these tools (get, idea, vary, learn, promote): none is a

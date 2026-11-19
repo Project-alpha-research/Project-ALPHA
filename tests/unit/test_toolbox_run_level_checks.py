@@ -261,9 +261,10 @@ def test_full_result(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, tool: str)
         (Path(__file__).parents[1] / "fixtures/toolbox_run_level_checks.json").read_text()
     )
     assert all("reserved-period-seen" in fact["labels"] for fact in doc["facts"])
+    stored = {**doc, "labels": [word for word in doc["labels"] if word != "exploratory"]}
     _assert_close(
         {
-            key: doc[key]
+            key: stored[key]
             for key in (
                 "tool",
                 "version",

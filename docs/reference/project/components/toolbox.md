@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: 7fe49bd4ab2f725f
+verified: fac522123feb76b8
 ---
 
 # Toolbox
@@ -64,7 +64,8 @@ The Workstation report shows a rule test's stored checks.
 
 Fifteen checks are registered: three market descriptions, five that read a rule test's stored files, and seven tests on
 that stored history. `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
-Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
+`find`, `situations` and `declare` ([how](../../invariants/cli-toolbox.md#finding-checks-and-recording-the-plan))
+help choose and record checks. Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
 each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow
 "Adding a check" in the [toolbox rules](../../invariants/cli-toolbox.md#adding-a-check). Not built: two named tests,
 agent-chosen checks in the proposal, and most of the 480-entry catalogue ([STATUS.md](../../../../STATUS.md)).

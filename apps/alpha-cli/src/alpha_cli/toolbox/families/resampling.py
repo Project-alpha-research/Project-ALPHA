@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from numpy.random import Generator
 
     from alpha_cli.toolbox.inputs import Inputs
+    from alpha_cli.toolbox.situations import Situation
     from alpha_validation import FloatArray
 
 TESTS = "tests/unit/test_toolbox_resampling_checks.py::"
@@ -70,6 +71,19 @@ def _interval(
     )
 
 
+_ANSWERS = {
+    "resampling.sharpe_interval": (
+        "How wide is the range for the Sharpe ratio?",
+        "Could the Sharpe ratio be luck on a short history?",
+    ),
+    "resampling.return_interval": ("How wide is the range for the yearly return?",),
+}
+_SITUATIONS: dict[str, tuple[Situation, ...]] = {
+    "resampling.sharpe_interval": ("return-range", "looks-too-good", "few-trades"),
+    "resampling.return_interval": ("return-range", "few-trades"),
+}
+
+
 def _interval_spec(
     tool_id: str, label: str, unit: Literal["ratio", "fraction"], namespace: str
 ) -> ToolSpec:
@@ -78,6 +92,8 @@ def _interval_spec(
     phrase = label[0].lower() + label[1:]
     return ToolSpec(
         id=tool_id,
+        answers=_ANSWERS[tool_id],
+        situations=_SITUATIONS[tool_id],
         family="resampling",
         kind="test",
         look="test",
@@ -159,6 +175,11 @@ def drawdowns(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> 
 
 DRAWDOWN_DISTRIBUTION = ToolSpec(
     id="resampling.drawdown_distribution",
+    answers=(
+        "How bad could the drawdown get?",
+        "Is the worst drop unusually mild for these returns?",
+    ),
+    situations=("drawdown", "looks-too-good"),
     family="resampling",
     kind="test",
     look="test",
@@ -233,6 +254,11 @@ def block_paths(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
 
 BLOCK_PATHS = ToolSpec(
     id="resampling.block_bootstrap_paths",
+    answers=(
+        "How bad could the drawdown get on redrawn blocks of the history?",
+        "What range of final return could the history give?",
+    ),
+    situations=("drawdown", "return-range"),
     family="resampling",
     kind="test",
     look="test",

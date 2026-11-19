@@ -13,9 +13,11 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.errors import SpineError, fail, tool_error
+from alpha_cli.toolbox import declarations, find
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.registry import SPECS, get
 from alpha_cli.toolbox.sets import SETS
+from alpha_cli.toolbox.situations import SITUATIONS
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -30,6 +32,8 @@ def _card(spec: ToolSpec) -> dict[str, Any]:
         "family": spec.family,
         "kind": spec.kind,
         "question": spec.question,
+        "answers": spec.answers,
+        "situations": spec.situations,
         "needs": spec.needs,
         "outputs": [asdict(o) for o in spec.outputs],
         "params": [
@@ -183,3 +187,82 @@ def tool_history(target: str, json_out: bool = _JSON) -> None:
 
     rows = history(AlphaSettings().data_dir, target)
     emit(rows, json_out=json_out, fallback=json.dumps(rows, indent=2))
+
+
+@tool_app.command("find")
+def find_tool(
+    words: Annotated[str, typer.Argument(help="Your situation or question, in plain words.")],
+    json_out: bool = _JSON,
+) -> None:
+    """Find checks from plain words: what each answers, its cost and the command to run it."""
+    hits = find.find(words)
+    payload = {
+        "query": words,
+        "matches": [asdict(hit) for hit in hits],
+        "situations": dict(SITUATIONS) if not hits else None,
+        "pointers": find.pointers_for(words),
+    }
+    emit(payload, json_out=json_out, fallback=find.render_hits(words, hits))
+
+
+@tool_app.command("situations")
+def situations(
+    json_out: bool = _JSON,
+    markdown: Annotated[bool, typer.Option("--markdown", help="Print the README table.")] = False,
+) -> None:
+    """List each situation with its checks, cheapest first."""
+    table = {tag: [spec.id for spec in specs] for tag, specs in find.index().items()}
+    emit(
+        table,
+        json_out=json_out,
+        fallback=find.markdown_index() if markdown else find.render_index(),
+    )
+
+
+@tool_app.command("declare")
+def declare(
+    run_id: str,
+    set_name: Annotated[str | None, typer.Option("--set", help="A named set to declare.")] = None,
+    tools: Annotated[str, typer.Option("--tools", help="Comma-separated tool ids.")] = "",
+    why: Annotated[str, typer.Option("--why", help="Why these checks, in your words.")] = "",
+    json_out: bool = _JSON,
+) -> None:
+    """Record which checks you chose before seeing their results. Nothing is refused later."""
+    names = [name.strip() for name in tools.split(",") if name.strip()]
+    try:
+        row = declarations.declare(
+            AlphaSettings().data_dir, run_id, set_name=set_name, tools=names, why=why
+        )
+    except SpineError as exc:
+        fail(exc, json_out)
+    fallback = (
+        f"Declared before any result: {', '.join(row['tools'])} on {run_id} at {row['declared_at']}"
+    )
+    emit(row, json_out=json_out, fallback=fallback)
+
+
+@tool_app.command("results")
+def results(run_id: str, json_out: bool = _JSON) -> None:
+    """List the stored check results of a run, each marked declared or exploratory."""
+    from alpha_cli.spine.facts import tool_outputs
+
+    stored = tool_outputs(AlphaSettings().data_dir, run_id)
+    items = [
+        {
+            "tool": item["tool"],
+            "id": item["id"],
+            "status": declarations.word_of(item["labels"] or []),
+            "recorded_at": item["recorded_at"],
+            "labels": item["labels"],
+            "reading": item["reading"],
+            "file": item["file"],
+        }
+        for item in stored
+    ]
+    counted = declarations.counts(item["labels"] or [] for item in stored)
+    lines = [f"{i['tool']} [{i['status']}]  {i['reading']}" for i in items] + [counted["text"]]
+    emit(
+        {"run_id": run_id, "counts": counted, "results": items},
+        json_out=json_out,
+        fallback="\n".join(lines),
+    )

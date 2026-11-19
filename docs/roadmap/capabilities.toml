@@ -444,6 +444,28 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "nightly-run"
+name = "Nightly real run (alpha nightly)"
+what = "Prove each night that the rule path and the setup path still work on the data stored here, and say when it is ready: two clean full runs in a row."
+see_it = ["uv run alpha nightly status"]
+entry_points = [
+  "cli: alpha nightly run",
+  "cli: alpha nightly status",
+]
+proof_synthetic = [
+  "tests/unit/test_nightly.py::test_clean_run_passes_every_step_and_writes_a_record",
+  "tests/unit/test_nightly.py::test_readiness_needs_two_clean_full_runs_in_a_row",
+]
+proof_smoke = [
+  "tests/smoke/test_nightly_smoke.py::test_nightly_rule_path_runs_the_real_commands",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+real_data_needs = "The RD-Agent path stays off until the owner sets rdagent_config with a key file and a spend cap."
+needs = []
+state = "Working"
+docs = ["research/tools/nightly-run.md"]
+
+[[capability]]
 id = "risk-numbers"
 name = "Risk numbers that state what they are based on"
 codes = ["C04"]

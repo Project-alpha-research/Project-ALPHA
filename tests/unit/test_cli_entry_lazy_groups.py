@@ -139,6 +139,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "ml",
             "monte-carlo",
             "next",
+            "nightly",
             "optim",
             "owner-auth",
             "paper",
@@ -198,6 +199,7 @@ def test_next_command_keeps_heavy_engines_out(tmp_path: Path) -> None:
     result = _run(_RUN, ["next", "--json"], tmp_path)
     assert json.loads(result.stderr.strip().splitlines()[-1]) == {"code": 0, "heavy": []}
     assert sorted(json.loads(result.stdout)) == [
+        "last_night",
         "notes",
         "paths",
         "recent_trials",

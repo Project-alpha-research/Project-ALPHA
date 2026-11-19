@@ -12,7 +12,7 @@ from tests.fixtures.cli_fixtures import seed_store
 from tests.unit.test_trial_record import spine
 
 RUNNER = CliRunner()
-JSON_KEYS = ["notes", "paths", "recent_trials", "stores", "waiting"]
+JSON_KEYS = ["last_night", "notes", "paths", "recent_trials", "stores", "waiting"]
 
 
 def _run(home: Path, *args: str) -> tuple[int, str]:
@@ -120,3 +120,15 @@ def test_empty_home_is_fast(tmp_path: Path) -> None:
     start = time.monotonic()
     _run(tmp_path / "empty")
     assert time.monotonic() - start < 2.0
+
+
+def test_last_night_line_shows_only_when_a_record_exists(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    assert json.loads(_run(home, "--json")[1])["last_night"] is None
+    assert "Last night" not in _run(home)[1]
+    folder = home / "nightly" / "2026-11-19-1"
+    folder.mkdir(parents=True)
+    line = "Last night: 2 of 2 paths worked."
+    (folder / "record.json").write_text(json.dumps({"summary_line": line}))
+    assert _run(home)[1].splitlines()[0] == line
+    assert json.loads(_run(home, "--json")[1])["last_night"] == line

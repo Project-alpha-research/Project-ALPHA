@@ -1,0 +1,28 @@
+# Example for `alpha nightly run --config nightly.toml`. Copy it, then set your own file paths.
+# Asset names are placeholders. They must be names your stores hold.
+# The run judges the system on stored data. It never judges whether an idea is good.
+
+# Assets whose data health is checked first. Use the same names as in the two spec files.
+assets = ["AAA", "BBB"]
+
+# Keep this rule spec fixed. An identical spec resolves to the same test every night,
+# so repeats do not look like new ideas. See research/tools/rule-test.md for the format.
+rule_spec = "nightly-rule.toml"
+
+# A setup spec with an [exit] table, so `alpha setup trade` can run.
+# See research/examples/setup-find.example.toml.
+setup_spec = "nightly-setup.toml"
+
+# true runs the small gauntlet and labels the result quick. Leave false for a real night.
+quick = false
+
+# Seconds one step may run before it counts as a blocking defect.
+step_timeout_seconds = 1800
+
+# Optional tools to run on the first good rule-test run. {run_id} is filled in.
+# post_tools = ["monte-carlo classical --from-run {run_id} --json"]
+
+# Off by default. RD-Agent needs your key file and your spend cap in its own file.
+# Set this to that rdagent.toml and the run calls `alpha rdagent run --config <file>` unchanged.
+# rdagent_config = "rdagent.toml"
+# rdagent_timeout_seconds = 14400

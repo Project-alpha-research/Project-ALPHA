@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 288be6c8fbbfc438 on 2026-11-19: merge of main into the reserve scan branch; the code map and change loop name no cut-off instant
+  verified 1178b2a68341f676 on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 apps/alpha-cli/README.md
-  verified 288be6c8fbbfc438 on 2026-11-19: merge of main into the reserve scan branch; the code map and change loop name no cut-off instant
+  verified 1178b2a68341f676 on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 650664a488917d4a on 2026-11-19: validate gained one comment line only; text still correct
+  verified 13d6531bed4fe96b on 2026-11-19: alpha nightly adds one command group; main's changes and the nightly rows are both read and correct
 
 docs/reference/invariants/cli-toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.

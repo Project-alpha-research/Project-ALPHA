@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 85b0caa18ce758f3 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified 3a9f8d4044ea7cc5 on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
 
 apps/alpha-cli/README.md
-  verified 85b0caa18ce758f3 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified 3a9f8d4044ea7cc5 on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
 
 apps/alpha-web/CONTEXT.md
   verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -20,7 +20,7 @@ docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 46403e099a784b46 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
+  verified 69389fec2e960887 on 2026-11-19: Count now fifteen (regime entry dropped); main's facts.py change adds a reading field to stored tool facts, which no rule here contradicts
 
 docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -65,7 +65,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified e03897d6a8ab6d9c on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
+  verified e03897d6a8ab6d9c on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

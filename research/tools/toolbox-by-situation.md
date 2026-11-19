@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/situations.py
   - apps/alpha-cli/src/alpha_cli/toolbox/find.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/*.py
-verified: 4a75e93c3d780150
+verified: 580a02185f5e2d2c
 ---
 
 # Toolbox checks, by situation
@@ -33,8 +33,8 @@ The result is then marked `declared`. Otherwise it is marked `exploratory`. Noth
 - Fragile to costs: `costs.break_even`
 - Is this just the market going up: `market.attribution`, `costs.break_even`
 - Return compared with the risk taken: `performance.downside_ratios`
-- Does it hold up out of sample: none yet; see the other cards
-- Would a slightly different data feed change the answer: none yet; see the other cards
+- Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.
+- Would a slightly different data feed change the answer: No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.
 <!-- situations:end -->
 
 Rule: [toolbox rules](../../docs/reference/invariants/cli-toolbox.md#finding-checks-and-recording-the-plan).

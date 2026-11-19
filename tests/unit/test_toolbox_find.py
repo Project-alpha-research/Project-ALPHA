@@ -100,3 +100,38 @@ def test_card_situation_table_is_the_generated_one() -> None:
     block = re.search(f"{BEGIN}\n(.*)\n{END}", text, re.DOTALL)
     assert block, "card needs the generated situations block"
     assert block.group(1) == markdown_index(), "paste `alpha tool situations --markdown`"
+
+
+OWNER_WORDS = [
+    ("is this overfit", {"overfit.deflated_sharpe"}),
+    ("looks too good", {"overfit.deflated_sharpe"}),
+    ("why big drawdown", {"resampling.drawdown_distribution"}),
+    ("only works some years", {"robustness.start_end_dates"}),
+    ("is it just the market going up", {"market.attribution"}),
+    ("too few trades", set()),
+]
+
+
+@pytest.mark.parametrize(("words", "wanted"), OWNER_WORDS)
+def test_owner_words_find_sensible_entries(words: str, wanted: set[str]) -> None:
+    hits = find(words)
+    assert hits, words
+    assert wanted <= {hit.tool_id for hit in hits[:6]}
+    if "few trades" in words:
+        assert any("few-trades" in hit.situations for hit in hits[:3])
+
+
+@pytest.mark.parametrize(
+    ("words", "command"),
+    [
+        ("does it hold out of sample", "alpha test"),
+        ("would a different data feed change it", "alpha data health"),
+    ],
+)
+def test_situations_without_a_check_point_to_the_command_that_answers(
+    words: str, command: str
+) -> None:
+    shown = CliRunner().invoke(tool_app, ["find", words])
+    assert shown.exit_code == 0 and command in shown.stdout
+    assert json.loads(CliRunner().invoke(tool_app, ["find", words, "--json"]).stdout)["pointers"]
+    assert command in CliRunner().invoke(tool_app, ["situations"]).stdout

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: 34ec80f1257d9ff7
+verified: fac522123feb76b8
 ---
 
 # Command line toolbox
@@ -111,4 +111,8 @@ Nothing gates a result. The guard against result-shopping is the record and the 
 `declared` if a declaration naming the check (or its set) is older than the write, else `exploratory`. The word is in the
 result's `labels`. `alpha tool results <run_id>` and `alpha results show` print it with the counts:
 "N checks run on this result: D declared, E exploratory". Results stored before this change count as exploratory.
+The `rdagent-post-judge` set runs by a fixed rule in code, so that code writes its declaration (`why`: "fixed set run by rule")
+before the checks run: its results are `declared`. A stored result keeps the label it was written with; a later declaration
+does not relabel it. Equal times count as exploratory. `alpha tool find` points "out of sample" to `alpha test` and "data doubt"
+to `alpha data health`, because no toolbox check answers them yet.
 Exploratory is a label, not an error, and no statistic, seed or result value depends on it.

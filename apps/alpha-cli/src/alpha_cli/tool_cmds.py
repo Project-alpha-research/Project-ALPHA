@@ -200,6 +200,7 @@ def find_tool(
         "query": words,
         "matches": [asdict(hit) for hit in hits],
         "situations": dict(SITUATIONS) if not hits else None,
+        "pointers": find.pointers_for(words),
     }
     emit(payload, json_out=json_out, fallback=find.render_hits(words, hits))
 

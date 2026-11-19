@@ -14,7 +14,7 @@ import numpy as np
 import polars as pl
 
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.toolbox import runner
+from alpha_cli.toolbox import declarations, runner
 from alpha_cli.toolbox.inputs import Target
 from alpha_cli.toolbox.sets import SETS
 from alpha_core.reserve import RESERVED_DAY
@@ -137,6 +137,12 @@ class FactorTarget(Target):
         }
 
 
+def declare_by_rule(home: Path, run_id: str) -> None:
+    """Record, before any result, that this set runs by a fixed rule written in code."""
+    if not any(row["set"] == SET for row in declarations.read(home, run_id)):
+        declarations.declare(home, run_id, set_name=SET, why="fixed set run by rule")
+
+
 def post_judge_checks(run: Path, record: Row) -> tuple[Row, str]:
     factors, suffix = [], []
     try:
@@ -147,6 +153,8 @@ def post_judge_checks(run: Path, record: Row) -> tuple[Row, str]:
             if "net" not in replay or "counted_only" in replay:
                 continue
             results, readings = [], []
+            source = FactorTarget.from_row(run, record, row)
+            declare_by_rule(run / "checks", source.run_id)
             for tool in SETS[SET]:
                 source = FactorTarget.from_row(run, record, row)
                 try:

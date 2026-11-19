@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified c222ac8f076daa02 on 2026-11-19: Added find, declare, results and the declared or exploratory label to the toolbox and results commands; this page's claims are unchanged.
+  verified 3237f02c6e6ae96c on 2026-11-19: find.py gained pointers for two situations; text still correct
 
 apps/alpha-cli/README.md
-  verified c222ac8f076daa02 on 2026-11-19: Added find, declare, results and the declared or exploratory label to the toolbox and results commands; this page's claims are unchanged.
+  verified 3237f02c6e6ae96c on 2026-11-19: find.py gained pointers for two situations; text still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 294355a14327d7bc on 2026-11-19: Only a smoke test line changed for the added status label; this page's claims are unchanged.
+  verified b4160304934ff04c on 2026-11-19: find.py gained pointers for two situations; text still correct
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -38,7 +38,7 @@ docs/reference/invariants/cli-runs.md
   verified ec2d4d0908cd67e9 on 2026-11-19: Only a smoke test line changed for the added status label; this page's claims are unchanged.
 
 docs/reference/invariants/cli-toolbox.md
-  verified 193166c6c6b6ea03 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
@@ -104,7 +104,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified b24624ae57cd5a1c on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified b3b868ba51472ece on 2026-11-19: post-judge set now writes its declaration before running; doc text about checks unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
   verified 303d382d54a8bde4 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -116,7 +116,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified e9b71f4d445bb3e1 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/toolbox.md
-  verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
   verified 86ac49398c19e2f4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
@@ -234,6 +234,9 @@ research/tools/setup-study.md
 
 research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+
+research/tools/toolbox-by-situation.md
+  verified 580a02185f5e2d2c on 2026-11-19: reviewed against changed sources; text updated where needed
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

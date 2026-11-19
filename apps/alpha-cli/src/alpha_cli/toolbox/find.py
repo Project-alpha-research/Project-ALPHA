@@ -129,6 +129,11 @@ SYNONYMS: dict[str, tuple[Situation, ...]] = {
     "gap": ("data-doubt",),
     "dirty": ("data-doubt",),
 }
+# Situations with no toolbox check yet: the existing commands that do answer them.
+POINTERS: dict[Situation, str] = {
+    "out-of-sample": "No toolbox check yet. `alpha test` reports the out-of-sample numbers.",
+    "data-doubt": "No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.",
+}
 INPUT_WORDS: dict[InputKind, str] = {
     "run_returns": "the daily returns of a stored rule-test run",
     "run_positions": "the positions of a stored rule-test run",
@@ -222,8 +227,19 @@ def index() -> dict[Situation, list[ToolSpec]]:
     return {tag: [spec for _, spec in order if tag in spec.situations] for tag in SITUATIONS}
 
 
+def pointers_for(query: str) -> list[str]:
+    return [
+        f"{SITUATIONS[tag]}: {POINTERS[tag]}"
+        for tag in SITUATIONS
+        if tag in POINTERS and tag in _tags(query)
+    ]
+
+
 def render_hits(query: str, hits: list[Hit]) -> str:
     if not hits:
+        pointed = pointers_for(query)
+        if pointed:
+            return "\n".join([f"No toolbox check matches {query!r}.", *pointed])
         return "\n".join(
             [f"No check matches {query!r}. Situations to start from:", *situation_lines()]
         )
@@ -236,6 +252,7 @@ def render_hits(query: str, hits: list[Hit]) -> str:
             if hit.sets
             else "  In no named set."
         )
+    lines += pointers_for(query)
     return "\n".join(lines)
 
 
@@ -246,7 +263,7 @@ def situation_lines() -> list[str]:
 def render_index() -> str:
     lines = []
     for tag, specs in index().items():
-        shown = ", ".join(f"{s.id} ({s.cost})" for s in specs) or "no toolbox check yet"
+        shown = ", ".join(f"{s.id} ({s.cost})" for s in specs) or POINTERS[tag]
         lines += [f"{SITUATIONS[tag]}  [{tag}]", f"  {shown}"]
     return "\n".join(lines)
 
@@ -255,7 +272,7 @@ def markdown_index() -> str:
     """The list pasted into research/tools/toolbox-by-situation.md; a test keeps it equal."""
     items = []
     for tag, specs in index().items():
-        shown = ", ".join(f"`{s.id}`" for s in specs) or "none yet; see the other cards"
+        shown = ", ".join(f"`{s.id}`" for s in specs) or POINTERS[tag]
         items.append(
             textwrap.fill(
                 f"{SITUATIONS[tag]}: {shown}",

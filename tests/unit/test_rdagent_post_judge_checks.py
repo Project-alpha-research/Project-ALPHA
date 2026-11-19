@@ -15,7 +15,7 @@ from alpha_cli import rdagent_journey as journey
 from alpha_cli._rdagent_checks import FactorTarget, post_judge_checks
 from alpha_cli.spine.ledger import read_trials
 from alpha_cli.spine.trial_reader import spine_snapshot, trials_for_deflation
-from alpha_cli.toolbox import runner
+from alpha_cli.toolbox import declarations, runner
 from alpha_cli.toolbox.inputs import Inputs
 from alpha_cli.toolbox.registry import get
 from alpha_validation import (
@@ -94,7 +94,7 @@ def test_parity_attempts_and_cache(tmp_path: Path, recorded_time: None) -> None:
             "rdagent-factor",
             "excess-over-equal-weight-basket",
             "after-verdict",
-            "exploratory",
+            "declared",
         ]
         assert doc["values"] == pytest.approx(
             direct(tool, returns, doc["result"]["seed"]), rel=1e-9, abs=1e-12
@@ -109,6 +109,8 @@ def test_parity_attempts_and_cache(tmp_path: Path, recorded_time: None) -> None:
         assert spec.compute is not None
         fixed = spec.compute(Inputs(source, seed=0), doc["params"], np.random.default_rng(0))
         assert fixed.values == pytest.approx(ref[tool], rel=1e-9, abs=1e-12)
+    (declaration,) = declarations.read(run / "checks", source.run_id)
+    assert declaration["set"] == SET and declaration["why"] == "fixed set run by rule"
     suffix = (
         " After the verdict, ALPHA ran its fixed checks (rdagent-post-judge) on factor."
         " They do not change the verdict. They use the idea's daily return above the average"
@@ -284,3 +286,19 @@ def test_journey_keeps_older_bytes_and_appends_only_check_readings(tmp_path: Pat
     limits["source"].append(output)
     assert story == old
     assert all(len(step["numbers"]) <= 3 for step in story["steps"])
+
+
+def test_a_manual_run_of_the_set_is_declared_only_if_a_declaration_came_first(
+    tmp_path: Path,
+) -> None:
+    from datetime import UTC, datetime
+
+    home, target = tmp_path, "run-x"
+    when = datetime(2026, 11, 17, 12, tzinfo=UTC)
+    assert declarations.status(home, target, SHARPE, SET, when) == "exploratory"
+    declarations.declare(home, target, set_name=SET, why="fixed set run by rule", now=lambda: when)
+    assert declarations.status(home, target, SHARPE, SET, when) == "exploratory"  # equal time
+    later = datetime(2026, 11, 17, 12, 0, 1, tzinfo=UTC)
+    assert declarations.status(home, target, SHARPE, SET, later) == "declared"
+    assert declarations.status(home, target, SHARPE, None, later) == "declared"  # tool is in set
+    assert declarations.status(home, "other-run", SHARPE, SET, later) == "exploratory"

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 52a5b4d6fd50fb7a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 apps/alpha-cli/README.md
-  verified 52a5b4d6fd50fb7a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -89,7 +89,7 @@ docs/reference/project/components/ai-assistants.md
   verified d377e1ecfcdb7a2b on 2026-11-19: Re-read: the playbook's repeat label row now names store and data content; this page only routes to the playbook
 
 docs/reference/project/components/command-line.md
-  verified 7048fde80bcd089a on 2026-11-19: ARCHITECTURE gained two context table rows; command line page unaffected
+  verified 29f44436e948e189 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

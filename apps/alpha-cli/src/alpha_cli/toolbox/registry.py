@@ -4,6 +4,7 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.families.costs import BREAK_EVEN
 from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REGIMES
+from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
 from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
 from alpha_cli.toolbox.families.resampling import (
@@ -30,6 +31,7 @@ SPECS = (
     DEPENDENCE,
     DEFLATED_SHARPE,
     BLOCK_PATHS,
+    STUDENT_T_PATHS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

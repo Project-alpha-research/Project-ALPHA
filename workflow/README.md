@@ -4,7 +4,7 @@ sources:
   - scripts/handoff.py
   - scripts/roadmap_index.py
   - tests/unit/test_filesystem_contract.py
-verified: eb366577c36de56b
+verified: dd582b7d74d274c6
 ---
 
 # Delivery pipeline: from an idea to a merged change

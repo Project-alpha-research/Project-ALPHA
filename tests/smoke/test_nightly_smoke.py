@@ -72,3 +72,7 @@ def test_nightly_rule_path_runs_the_real_commands(tmp_path: Path) -> None:
     shown = alpha(home, "nightly", "status", "--config", str(config), "--json").json()
     assert shown["last"]["run_number"] == 1 and shown["ready"] is False
     assert "oos_sharpe" not in json.dumps(record)
+    evidence = {step["id"]: step["evidence"] for step in record["steps"]}
+    assert evidence["N1.test"] == "computed"  # the first test of this spec on this data
+    assert record["paths_run"] == ["N1"] and shown["ready"] is False
+    assert shown["missing"], "a one-path run must say what is missing"

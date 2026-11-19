@@ -88,6 +88,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `ai-research-team` | Small autonomous research team around RD-Agent |
 | `mac-real-data` | Confirmation on the Mac with a paid, authoritative data source |
 | `macro-context` | Macro series as first published: rates, inflation, jobs, credit, volatility index |
+| `options-data` | Confirmation on the Mac with a paid, authoritative data source |
 | `rule-test` | The same backtest on real free data, shown on a screen |
 | `rule-test` | Plain rules tested as written, with no hidden sizing or rebalancing defaults |
 | `rule-test` | Integrity as labels on results, not refusals (exploratory, free data, trial count) |

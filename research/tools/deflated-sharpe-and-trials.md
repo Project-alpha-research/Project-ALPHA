@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 73e921600035d3b7
+verified: 72d51e3d427b1340
 ---
 
 # Deflated Sharpe and trial counting
@@ -25,8 +25,9 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
   Pass line 0.95. Variants count in N but stay out of the spread: full-sample, neighbouring, correlated.
 - Cite `family_trials` for the count at the run: prior family trials, this run, scored variants and unknown
   rows, never below the distinct same-asset tests. `alpha results show` adds live family counts.
-- A test is spec hash, asset, data window and bar size, never the code version: the same test after a code
-  change is a `repeat` (`repeat_of` names the first run), counted nowhere; newer bars are a new test.
+- A test is spec hash, asset, data window, bar size, store and data content, never the code version: the
+  same test after a code change is a `repeat` (`repeat_of` names the first run), counted nowhere; newer bars are a new test.
+  The label is in the ledger row only; `alpha results show` reads it there, never editing the manifest.
   `same_asset_tests` and `same_asset_repeats` print "N distinct tests on this asset; R repeats not counted".
 - `total_trials`: ledger row number, an audit sequence, not ideas tried (say "ledger entry N"). `variants_evaluated`: sensitivity re-runs only.
 - `alpha optim grid` sweeps declared settings and prints the best one with its deflated Sharpe, `PBO` (the

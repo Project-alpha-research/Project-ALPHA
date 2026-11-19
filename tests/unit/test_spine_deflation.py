@@ -478,7 +478,9 @@ def test_same_test_repeats_count_once_keeping_the_earliest(tmp_path: Path) -> No
     sharpes = family_sharpes(snapshot, "spine:ma_cross", 252)
     assert sharpes == pytest.approx([0.1 / math.sqrt(252), 0.2 / math.sqrt(252)], abs=1e-15)
     # This run repeating the earlier "b" test is not counted again, and its own Sharpe stands in.
-    current = spine_test_key("b" * 64, "SPY", same[2], "2026-11-13T00:00:00+00:00", 252)
+    current = spine_test_key(
+        "b" * 64, "SPY", same[2], "2026-11-13T00:00:00+00:00", 252, store=None, data_id=None
+    )
     count = count_snapshot(snapshot, "ma_cross", current)
     assert (count.prior_trials, count.repeats, count.this_run) == (2, 3, 0)
     assert family_sharpes(snapshot, "spine:ma_cross", 252, current) == pytest.approx(

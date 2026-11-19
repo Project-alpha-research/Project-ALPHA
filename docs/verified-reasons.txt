@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b9fc0edac6c90fda on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 945428ca09c2dd68 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 apps/alpha-cli/README.md
-  verified b9fc0edac6c90fda on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 945428ca09c2dd68 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified db0bc7b4ec53024f on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 93b2c6d5e39a38f1 on 2026-11-19: Re-read: the test key now adds store and data content; this page states no key fields, so it stays correct
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -32,19 +32,19 @@ docs/reference/invariants/cli-research.md
   verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
-  verified 3665cbbdfc8ae16f on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 21a38eee4bc66800 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified b8babff096809519 on 2026-11-19: Invariants page split into sections; routing unchanged.
+  verified 1a6a7138c33439ed on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-runs.md
-  verified 1e46e4edb2af0d8f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified d663f0e8ef767abf on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/invariants/cli-trial-ledger.md
-  verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
+  verified 60e4b22f6c94f150 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/data.md
   verified 05bc0170eb682f98 on 2026-11-19: Merge of main; known-from rule changes in context sources are not stated on these pages.
@@ -83,7 +83,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified 82d2c1205796f33e on 2026-11-19: PLAYBOOK wording of ledger entry and repeat changed; this page's statements stay correct.
+  verified d377e1ecfcdb7a2b on 2026-11-19: Re-read: the playbook's repeat label row now names store and data content; this page only routes to the playbook
 
 docs/reference/project/components/command-line.md
   verified 7048fde80bcd089a on 2026-11-19: ARCHITECTURE gained two context table rows; command line page unaffected
@@ -125,7 +125,7 @@ docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified f56b1c9de696a18b on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified f9442687fc0abe50 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -176,13 +176,13 @@ packages/alpha-data/CONTEXT.md
   verified 7417bd975a33931b on 2026-11-19: Merge of main; known-from rule changes in context sources are not stated on these pages.
 
 research/CONTEXT.md
-  verified 4b71cab52d94b6bd on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified cac6b68f6dea1a67 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/PLAYBOOK.md
-  verified 0bd594768c1fd3d6 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 89207b624e8a7db6 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/README.md
-  verified 7eff12b887a5adee on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified b3f7e63b0f7e65df on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/lessons/README.md
   verified 9c2b897bc2159a0e on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
@@ -191,31 +191,31 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 87c7dcbeec50a68b on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified fef09785ff653834 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 6c3e8306f87f6703 on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 57ab754b54a4f4fb on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/charts.md
-  verified 653fe515d9788f9b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified b320c36e794b4d49 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/deflated-sharpe-and-trials.md
   verified 7eeea268b146ec5b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/diagnose-and-audit.md
-  verified 9fe2fd2b0ccc59a5 on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified ed0220988e15cb8d on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/inverted-signal-control.md
-  verified 340bb68ef4511afd on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/price-noise.md
-  verified d19f4770032a901b on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 1cb8cb905ebb8764 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/random-price-null.md
   verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
@@ -227,16 +227,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 9aef6b6633181fe9 on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 80d483e9c58fe606 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/rule-test.md
-  verified 6a530d3555b3adb6 on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 71bb51a8643175c2 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 73e921600035d3b7 on 2026-11-19: Change only affects how a repeated rule test is recognised and how ledger entry numbers are worded; this page's statements stay correct.
+  verified 72d51e3d427b1340 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

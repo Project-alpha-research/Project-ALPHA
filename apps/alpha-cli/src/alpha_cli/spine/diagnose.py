@@ -131,7 +131,8 @@ def trials(
             "count as tries but are full-sample figures, so they stay out of the spread); tries "
             "from the family in the one trial ledger, or the wider count of distinct same-asset "
             "tests of any rule when that is larger; a test is what was tested (spec, asset, data "
-            "window, bar size), so a re-run after a code change is a repeat and is not counted"
+            "window, bar size, store, data content), so a re-run after a code change is a repeat "
+            "and is not counted"
         ),
         "total_trials": count.ledger_rows + 1,
         "available_sharpes": available,
@@ -408,7 +409,13 @@ def write_diagnostics(
     # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
     snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     current = spine_test_key(
-        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        idea.spec_sha256,
+        bars[0].symbol,
+        bars[0].ts.isoformat(),
+        bars[-1].ts.isoformat(),
+        ppy,
+        store=result.get("store"),
+        data_id=result.get("idea_id"),
     )
     document["trials"] = trials(
         home,

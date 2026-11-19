@@ -40,18 +40,17 @@ def first_same_test(rows: list[dict[str, Any]], values: dict[str, Any]) -> dict[
     """The earliest row this one repeats: the same run, or (rule tests) the same test key.
 
     The test key is what was tested, not which code ran it, so a re-run after a code change is a
-    repeat. An earlier error row never makes a later row a repeat; rows without a key match only
-    on the same run id.
+    repeat. An earlier error row is never matched, by run id or by key: a failed attempt never
+    hides the later real one. Rows without a key match only on the same run id.
     """
     key = row_test_key(values)
     for row in rows:
+        if "error" in (row.get("labels") or ()):
+            continue
         same_run = values.get("run_id") is not None and all(
             row.get(name) == values.get(name) for name in ("run_id", "kind", "tool_output")
         )
-        same_test = (
-            key is not None and "error" not in row.get("labels", ()) and row_test_key(row) == key
-        )
-        if same_run or same_test:
+        if same_run or (key is not None and row_test_key(row) == key):
             return row
     return None
 

@@ -30,6 +30,8 @@ def rule_row(
     end: str | None = END,
     sharpe: float | None = 0.5,
     labels: list[str] | None = None,
+    store: str | None = "home",
+    data_id: str | None = "d" * 64,
 ) -> dict[str, Any]:
     row: dict[str, Any] = dict(
         kind="rule_test",
@@ -41,6 +43,8 @@ def rule_row(
         labels=labels or [],
         oos_sharpe=sharpe,
         periods_per_year=252,
+        store=store,
+        idea_id=data_id,
     )
     if spec is not None:
         row.update(spec_sha256=spec, first_ts=START, last_ts=end)
@@ -104,7 +108,9 @@ def test_an_error_row_does_not_make_a_later_run_a_repeat(tmp_path: Path) -> None
 
 def test_one_test_key_definition() -> None:
     row = rule_row("x")
-    assert row_test_key(row) == spine_test_key(SPEC, "SPY", START, END, 252)
+    assert row_test_key(row) == spine_test_key(
+        SPEC, "SPY", START, END, 252, store="home", data_id="d" * 64
+    )
     assert row_test_key({**row, "kind": "tool:monte-carlo"}) is None
 
 
@@ -126,7 +132,7 @@ def test_distinct_count_ignores_repeats_and_labelled_repeats(tmp_path: Path) -> 
 
 
 def test_repeat_never_raises_the_trials_used(tmp_path: Path) -> None:
-    current = spine_test_key(SPEC, "SPY", START, END, 252)
+    current = spine_test_key(SPEC, "SPY", START, END, 252, store="home", data_id="d" * 64)
     append_trial(tmp_path, rule_row("r1"))
     once = count(tmp_path, current)
     append_trial(tmp_path, rule_row("r2"))
@@ -175,3 +181,90 @@ def test_same_spec_run_after_a_code_change_is_a_repeat_and_adds_no_count(
     assert families[1]["available_sharpes"] == families[0]["available_sharpes"]
     rows = read_trials(tmp_path)
     assert rows[1]["repeat_of"] == first["run_id"]
+    # The label lives in the ledger row only: the stored manifest is not edited, and
+    # `alpha results show` still names the second run a repeat and the first not.
+    from alpha_cli.results_cmds import _show
+
+    second_manifest = read_manifest(run_dir(tmp_path, second["run_id"]))
+    assert "repeat" not in second_manifest["spine"]["labels"]
+    assert "repeat" in _show(tmp_path, second["run_id"])["labels"]
+    assert "repeat" not in _show(tmp_path, first["run_id"])["labels"]
+
+
+def test_other_store_or_revised_data_is_a_new_test(tmp_path: Path) -> None:
+    """Same spec, symbol, window and bar size, but other prices: never merged into one test."""
+    append_trial(tmp_path, rule_row("s1"))
+    other_store = append_trial(tmp_path, rule_row("s2", store="vendor-b"))
+    revised = append_trial(tmp_path, rule_row("s3", data_id="e" * 64))
+    for row in (other_store, revised):
+        assert "repeat" not in row["labels"]
+        assert "repeat_of" not in row
+    family = count(tmp_path)
+    assert family["same_asset_tests"] == 3
+    assert family["prior_trials"] == 3
+
+
+def test_an_error_row_of_the_same_run_never_hides_the_real_run(tmp_path: Path) -> None:
+    """A failed attempt and its successful re-run share a run id; the real run still counts."""
+    append_trial(tmp_path, rule_row("same-run", sharpe=None, labels=["error"]))
+    real = append_trial(tmp_path, rule_row("same-run"))
+    assert "repeat" not in real["labels"]
+    family = count(tmp_path)
+    assert family["prior_trials"] == 1
+    assert family["same_asset_tests"] == 1
+
+
+def test_a_labelled_repeat_counts_when_its_first_row_has_no_sharpe(tmp_path: Path) -> None:
+    append_trial(tmp_path, rule_row("n1", sharpe=None))
+    later = append_trial(tmp_path, rule_row("n2"))
+    assert later["repeat_of"] == "n1"
+    family = count(tmp_path)
+    assert family["prior_trials"] == 1
+    assert family["same_asset_tests"] == 1
+
+
+def test_counts_do_not_depend_on_ledger_order(tmp_path: Path) -> None:
+    for run_id, spec in (("o1", SPEC), ("o2", SPEC), ("o3", "b" * 64), ("o4", SPEC)):
+        append_trial(tmp_path, rule_row(run_id, spec=spec))
+    forward = count(tmp_path)
+    path = tmp_path / "ledger/trials.jsonl"
+    lines = path.read_text().splitlines(keepends=True)
+    path.write_text("".join(reversed(lines)))
+    backward = count(tmp_path)
+    for name in ("prior_trials", "same_asset_tests", "n_trials_used", "available_sharpes"):
+        assert forward[name] == backward[name], name
+
+
+def wide(home: Path, extra: list[dict[str, Any]]) -> dict[str, Any]:
+    """One ``ma_cross`` row plus same-asset rows of other rules, so the wider count is larger."""
+    rows = [rule_row("w0")] + [
+        {**rule_row(f"w{i}", spec=f"{i}" * 64), "rule": "breakout"} for i in range(1, 6)
+    ]
+    for row in [*rows, *extra]:
+        append_trial(home, row)
+    current = spine_test_key(SPEC, "SPY", START, END, 252, store="home", data_id="d" * 64)
+    result = diagnose.trials(
+        home,
+        "SPY",
+        returns(),
+        252,
+        [],
+        "ma_cross",
+        snapshot=spine_snapshot(home),
+        current_test=current,
+    )
+    return result
+
+
+def test_wider_count_and_deflated_sharpe_move_only_without_true_repeats(tmp_path: Path) -> None:
+    """The full deflation path: true repeats change nothing; another store adds one try."""
+    base = wide(tmp_path / "base", [])
+    assert base["family"]["n_trials"] < base["family"]["available_sharpes"]
+    repeats = [{**rule_row(f"r{i}", spec=f"{i}" * 64), "rule": "breakout"} for i in (1, 2, 3)]
+    repeated = wide(tmp_path / "repeated", repeats)
+    assert repeated["family"]["n_trials_used"] == base["family"]["n_trials_used"]
+    assert repeated["dsr"] == base["dsr"]
+    store = [{**rule_row("x1", spec="1" * 64, store="vendor-b"), "rule": "breakout"}]
+    other = wide(tmp_path / "other", store)
+    assert other["family"]["n_trials_used"] == base["family"]["n_trials_used"] + 1
+    assert other["dsr"] < base["dsr"]

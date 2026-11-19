@@ -254,7 +254,13 @@ def _write_run(
     snapshot = spine_snapshot(home)
     bars, ppy = prepared.bars, prepared.spec.periods_per_year
     current = spine_test_key(
-        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        idea.spec_sha256,
+        bars[0].symbol,
+        bars[0].ts.isoformat(),
+        bars[-1].ts.isoformat(),
+        ppy,
+        store=result.get("store"),
+        data_id=result.get("idea_id"),
     )
     count = count_snapshot(snapshot, idea.rule.kind, current)
     sharpes = family_sharpes(snapshot, count.family_id, ppy, current)

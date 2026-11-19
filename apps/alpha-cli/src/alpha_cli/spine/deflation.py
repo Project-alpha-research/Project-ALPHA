@@ -61,28 +61,28 @@ class TrialFamily:
 
 
 def spine_test_key(
-    spec_hash: str | None,
-    symbol: str | None,
+    spec_hash: str,
+    symbol: str,
     first_ts: str | None,
     last_ts: str | None,
     periods_per_year: int | None,
+    *,
+    store: str | None,
+    data_id: str | None,
 ) -> TestKey | None:
     """A spine run's test identity, built the way the reader maps its ledger row."""
     if not symbol:
         return None
     bar_size = "1D" if periods_per_year in _DAILY else None
-    return make_test_key(spec_hash, (symbol,), first_ts, last_ts, bar_size)
-
-
-def _record_key(record: TrialRecord) -> TestKey | None:
-    windows = record.windows
     return make_test_key(
-        record.spec_hash,
-        record.assets,
-        windows.get("data_start"),
-        windows.get("data_end"),
-        record.bar_size,
+        spec_hash, (symbol,), first_ts, last_ts, bar_size, store=store, data_id=data_id
     )
+
+
+def _record_key(snapshot: LedgerSnapshot, record: TrialRecord) -> TestKey | None:
+    """The record's test key, read from its raw ledger row (the store and data id live there)."""
+    row = snapshot.raw_rows.get((record.source_file, record.source_line))
+    return row_test_key(row) if row is not None else None
 
 
 def _distinct_tests(snapshot: LedgerSnapshot, family_id: str) -> tuple[list[TrialRecord], int]:
@@ -100,7 +100,7 @@ def _distinct_tests(snapshot: LedgerSnapshot, family_id: str) -> tuple[list[Tria
             or {"repeat", "error"}.intersection(record.labels)
         ):
             continue
-        key = _record_key(record)
+        key = _record_key(snapshot, record)
         if key is not None and key in seen:
             repeats += 1
             continue
@@ -115,8 +115,8 @@ def same_asset_tests(
 ) -> tuple[int, int, bool]:
     """Distinct scored tests on one asset (any rule), rows not counted, and if ``current`` is one.
 
-    A row is scored when it has a Sharpe and a bar size. Rows of one test key count once; a row
-    labelled repeat adds nothing; a row without a key counts as its own test.
+    A row is scored when it has a Sharpe and a bar size. Scored rows of one test key count once;
+    a row without a key counts as its own test unless it is labelled repeat (same run id).
     """
     seen: set[TestKey] = set()
     tests = repeats = 0
@@ -128,7 +128,9 @@ def same_asset_tests(
         ):
             continue
         key = row_test_key(row)
-        if "repeat" in (row.get("labels") or ()) or (key is not None and key in seen):
+        # A keyed row is matched by its key alone, so a labelled repeat whose earlier row has no
+        # Sharpe still counts once; a key-less row is a repeat only by its label (same run id).
+        if key in seen or (key is None and "repeat" in (row.get("labels") or ())):
             repeats += 1
             continue
         if key is not None:
@@ -143,7 +145,8 @@ def count_snapshot(
     """The reader's family count less same-test repeats; this run counts 0 if it repeats one."""
     family_id = f"spine:{rule_kind}"
     kept, repeats = _distinct_tests(snapshot, family_id)
-    this_run = 0 if current is not None and any(_record_key(r) == current for r in kept) else 1
+    repeated = current is not None and any(_record_key(snapshot, r) == current for r in kept)
+    this_run = 0 if repeated else 1
     return FamilyCount(
         family_id,
         trials_for_deflation(snapshot, family_id)["family_trials"] - repeats,
@@ -182,7 +185,7 @@ def family_sharpes(
     rows = [
         snapshot.raw_rows[(record.source_file, record.source_line)]
         for record in kept
-        if current is None or _record_key(record) != current
+        if current is None or _record_key(snapshot, record) != current
     ]
     return [
         row["oos_sharpe"] / math.sqrt(row["periods_per_year"])

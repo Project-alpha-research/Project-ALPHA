@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: ec84015748d99e48
+verified: 89207b624e8a7db6
 ---
 
 # Research playbook: how to work any idea
@@ -65,7 +65,7 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 | `data-health-fail` / `data-health-overridden` | say “data health fail” and “data health overridden”, give the fault and the recorded reason |
 | `all-in` | fully invested or flat; no position sizing |
 | `source-defaulted` | the asset is in more than one store; the first was used |
-| `repeat` | the same spec, asset, data window and bar size tested again (any code version) |
+| `repeat` | the same spec, asset, data window, bar size, store and data content tested again (any code version) |
 | `too-few-trades` | too few trades: under 30 closed out-of-sample trades; the reading is `too little to read` |
 | `no-diagnostics` | the diagnostic pass was skipped |
 

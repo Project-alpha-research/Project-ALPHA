@@ -50,7 +50,7 @@ Follow-up questions on a recorded rule test or judged factor replay; part of [co
   request (inputs, settings, seed, version) returns the stored file with no new row. Rows carry `tool_kind` and `look`. A setting off its
   default, or a re-rolled seed of a seeded entry, adds `non-default-params`; `alpha tool history <run_id>` lists every attempt.
   Outputs live under `diagnostics/<run_id>/<id>@v<version>-<sha8>.json`. Tool rows have a null verdict and contribute zero deflation trials.
-- `alpha results show` includes stored files, their one-sentence readings and attempt history. Cite a value by its tool id and output key, e.g. `market.attribution.beta`.
+- `alpha results show` includes stored files and attempt history. Cite a value by its tool id and output key, e.g. `market.attribution.beta`.
   Earlier metric names and stored files remain citable. Use `--tool-output <id>` for multiple outputs or any non-default setting.
   Copy the output-specific tag and settings count into the draft. The checker reads the same fact.
 - `reserved-period-seen` means the run used data on or after the reserve date. All bars used by the original run remain in the calculation.

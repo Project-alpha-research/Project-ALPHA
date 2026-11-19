@@ -19,8 +19,8 @@ recorded. The owner's AI assistant uses the catalogue. ALPHA also runs two fixed
 The owner wants "all possible test and system availability like permutation, parameter sensitivity, etc.":
 hundreds of tests, if not thousands, not a small fixed set
 ([owner, 2026-11-18](../owner-decisions-5.md#2026-11-18-the-toolbox-is-an-open-catalogue-meant-to-grow-to-hundreds-of-tests)).
-One uniform way to describe, find and run a test means adding one costs a small module and one entry, not a
-new command, card and screen. Running many tests and quoting the favourable ones is itself overfitting, so
+One uniform way to describe, find and run a test means a new one costs a small module
+and one entry. Running many tests and quoting the favourable ones is itself overfitting, so
 the record of what was run is part of the design.
 
 ## Its job in the research loop
@@ -32,7 +32,7 @@ it would not write them (a recommendation the owner has not yet confirmed,
 Kronos, the four [Monte Carlo](monte-carlo.md) methods, lookalike search and the pattern tools are
 meant to become entries too, and are never slimming targets
 ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
-The Workstation shows a rule test's stored checks, with their readings, under the Summary of its report, so the owner sees a test and its checks in one place.
+The Workstation shows a rule test's stored checks under its report Summary.
 
 ## Intended design
 

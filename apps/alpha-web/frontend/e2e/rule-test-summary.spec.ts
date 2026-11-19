@@ -9,6 +9,7 @@ test('the rule result opens first and its setup and checks expand independently'
     rule_test: { idea: null, rule_sentence: 'Hold after a new high', symbol: 'TEST', rule_params: {}, labels: [],
       diagnostics: null, diagnostics_reason: 'No diagnostic file.' },
   } }))
+  await page.route(`**/api/runs/${runId}/checks`, route => route.fulfill({ json: { run_id: runId, checks: [] } }))
   await page.route(`**/api/runs/${runId}/figures`, route => route.fulfill({ json: { run_id: runId, items: [] } }))
   await page.goto(`/#run=${runId}`)
   const summary = page.getByRole('region', { name: 'Rule test', exact: true })
@@ -18,6 +19,7 @@ test('the rule result opens first and its setup and checks expand independently'
     await expect(row.getByRole('heading', { name: period })).toBeVisible()
     await expect(row.getByText('Charts: not recorded')).toBeVisible()
   }
+  await expect(summary.getByRole('region', { name: 'Checks run on this test' })).toContainText('No checks have been run on this test yet.')
   const setup = summary.locator('details').filter({ has: page.locator('summary', { hasText: 'What was tested' }) })
   const checks = summary.locator('details').filter({ has: page.locator('summary', { hasText: 'Checks on the test itself' }) })
   await expect(setup).toHaveJSProperty('open', false)

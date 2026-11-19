@@ -20,7 +20,7 @@ docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 46403e099a784b46 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
 docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -38,13 +38,13 @@ docs/reference/invariants/rdagent.md
   verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
 
 docs/reference/invariants/web-api-reads.md
-  verified c08c41feb17fa3e0 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
 docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 64ffd06ae2f34a96 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified 6b7d60cc3123bc31 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.

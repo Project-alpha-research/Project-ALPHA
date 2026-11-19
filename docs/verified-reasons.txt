@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified a1d8056f9583ffbb on 2026-11-19: Added find, declare, results and the declared or exploratory label to the toolbox and results commands; this page's claims are unchanged.
+  verified 294355a14327d7bc on 2026-11-19: Only a smoke test line changed for the added status label; this page's claims are unchanged.
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified c10364471755eefc on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 docs/reference/invariants/cli-runs.md
-  verified 6918ad28e1896065 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified ec2d4d0908cd67e9 on 2026-11-19: Only a smoke test line changed for the added status label; this page's claims are unchanged.
 
 docs/reference/invariants/cli-toolbox.md
   verified 193166c6c6b6ea03 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.

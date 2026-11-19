@@ -13,7 +13,8 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.nightly_config import NightlyConfigError, load_config
-from alpha_cli.nightly_run import ALL, run_nightly
+from alpha_cli.nightly_record import ALL
+from alpha_cli.nightly_run import run_nightly
 from alpha_cli.nightly_status import status_facts, status_text
 from alpha_cli.nightly_steps import subprocess_runner
 from alpha_core.config import AlphaSettings

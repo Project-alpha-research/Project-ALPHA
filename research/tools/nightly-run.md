@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_cmds.py
   - apps/alpha-cli/src/alpha_cli/nightly_run.py
   - apps/alpha-cli/src/alpha_cli/nightly_status.py
-verified: 677912418279ec8f
+verified: 646843bb494848e4
 ---
 
 # Nightly run
@@ -28,7 +28,10 @@ Start from [the example](../examples/nightly.example.toml).
 - A blocking defect is a non-zero exit, a time out, bad JSON, a missing field, a `results check` disagreement or data health fail.
 - A verdict such as "not supported" is not a defect.
 - A record is `<home>/nightly/<date>-<n>/record.json` and `summary.txt`. A new run never edits an old one.
-- Ready means two full runs in a row with no blocking defect. A partial `--only` run does not count.
+- Each step says `computed`, `reused` (the command printed the `repeat` label) or `unknown`. A run is `full` only when N1, N2 and N3 all ran.
+- Ready needs the two latest runs on two different dates, each with no blocking defect, all three paths run, and a computed rule test and setup step.
+- With no new bar the rule test is `reused`: "reused only", and it does not count.
+- `status` lists 5 runs and names the missing item, (a) to (d). `--only` runs are ignored.
 - Nightly tests are counted trials. A fixed spec and an unchanged saved health report give the same test id. A repeat adds a ledger row labelled `repeat`.
 - The run reads the saved health report first. A new report changes the test id, so it computes one only when none is saved or it is out of date.
 

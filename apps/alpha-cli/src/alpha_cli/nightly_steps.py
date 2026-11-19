@@ -19,6 +19,9 @@ PASS = "pass"
 MINOR = "defect-minor"
 BLOCKING = "defect-blocking"
 NOT_RUN = "not-run"
+COMPUTED = "computed"
+REUSED = "reused"
+UNKNOWN = "unknown"
 STDERR_LINES = 3
 LINE_CHARS = 200
 
@@ -75,6 +78,7 @@ def new_step(step_id: str, scenario: str, name: str, tail: Sequence[str]) -> dic
         "name": name,
         "command": command_text(tail),
         "state": PASS,
+        "evidence": UNKNOWN,
         "exit_code": None,
         "seconds": 0.0,
         "verdict": None,
@@ -90,6 +94,17 @@ def mark(step: dict[str, Any], state: str, defect: str) -> None:
         return
     step["state"] = state
     step["defect"] = defect if step["defect"] is None or state == BLOCKING else step["defect"]
+
+
+def evidence_of(labels: Sequence[object]) -> str:
+    """`reused` when every printed label list holds `repeat`; `unknown` if a list is missing."""
+    if not labels or not all(isinstance(found, list) for found in labels):
+        return UNKNOWN
+    return (
+        REUSED
+        if all("repeat" in found for found in labels if isinstance(found, list))
+        else COMPUTED
+    )
 
 
 def not_run(

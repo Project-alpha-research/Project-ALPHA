@@ -554,7 +554,7 @@ entry_points = [
 ]
 proof_synthetic = [
   "tests/unit/test_nightly.py::test_clean_run_passes_every_step_and_writes_a_record",
-  "tests/unit/test_nightly.py::test_readiness_needs_two_clean_full_runs_in_a_row",
+  "tests/unit/test_nightly.py::test_two_computed_three_path_runs_on_two_dates_are_ready",
 ]
 proof_smoke = [
   "tests/smoke/test_nightly_smoke.py::test_nightly_rule_path_runs_the_real_commands",

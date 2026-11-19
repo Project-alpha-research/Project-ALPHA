@@ -12,6 +12,7 @@ import typer
 # entry mounts only the invoked group, so a CLI-backed read never imports unrelated engines.
 GROUPS: tuple[tuple[str, str, str], ...] = (
     ("ledger", "alpha_cli.ledger_cmds", "ledger_app"),
+    ("rdagent", "alpha_cli.rdagent_cmds", "rdagent_app"),
     ("partner", "alpha_cli.partner_cmds", "partner_app"),
     ("results", "alpha_cli.results_cmds", "results_app"),
     ("data", "alpha_cli.data_cmds", "data_app"),

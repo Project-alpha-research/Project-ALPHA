@@ -3,7 +3,7 @@ owner: project layer
 sources:
   - workers/rdagent/README.md
   - workers/rdagent/CHANGE-NOTES.md
-verified: 75f65aa0b115f01b
+verified: 949857d7112bc824
 ---
 
 # RD-Agent: dated decisions and links

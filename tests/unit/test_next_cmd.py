@@ -50,7 +50,7 @@ def test_empty_home_is_helpful_and_exits_zero(tmp_path: Path) -> None:
     assert "alpha data pull" in output
     assert "alpha test" in output
     assert "alpha setup find" in output
-    assert "factor_loop_launch.py" in output
+    assert "alpha rdagent run --dry-run" in output
     assert "profit" not in output.lower()
     assert "not advice" in output
 

@@ -939,6 +939,8 @@ see_it = [
 ]
 entry_points = [
   "cli: alpha research diagnostic native-result",
+  "cli: alpha rdagent run",
+  "cli: alpha rdagent status",
   "code: apps/alpha-cli/src/alpha_cli/native_supervisor.py",
 ]
 proof_synthetic = []
@@ -949,11 +951,11 @@ proof_smoke = [
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = [
-  "an alpha command that starts the model-connected factor loop under the native job supervisor (backlog: rdagent-factor-loop-supervision)",
+  "supervision of the factor loop as an ALPHA job under the native job supervisor (backlog: rdagent-factor-loop-supervision); `alpha rdagent run` starts it today as a plain child process",
   "an end-to-end smoke check of the factor loop through the installed programs with a scripted model route",
 ]
 state = "Partial"
-missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; new frozen universes support explicit missing days, causal membership and 30-day write-offs with a disclosed 30% haircut, and an optional store directory; a first system check on the wide store (142 pairs) found three tickers whose identity changes across a gap (LUNA reused, DREP and COCOS redenominated), which the data layer must split before that store is used; it is not yet started by alpha or supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
+missing = "RD-Agent's own factor loop now runs model-connected on real Binance bars, judged by ALPHA instead of its built-in Qlib backtest (ADR-0049), from one launcher command with a hash-pinned runtime and the gateway's call cap: by 2026-11-16 about 80 factors judged across runs, no candidate; since ADR-0055 a screened factor passes only if its top third beat its bottom third (offline this rejects 16 of the 18 earlier replays; they still count as trials), the proposer sees every idea family, and each paid call has a 180 s limit; new frozen universes support explicit missing days, causal membership and 30-day write-offs with a disclosed 30% haircut, and an optional store directory; a first system check on the wide store (142 pairs) found three tickers whose identity changes across a gap (LUNA reused, DREP and COCOS redenominated), which the data layer must split before that store is used; `alpha rdagent run` and `alpha rdagent status` now start and watch it from one config file (no retry, no daemon), but it is not yet supervised as an ALPHA job, has no end-to-end smoke check with a scripted model, the fixture and stock loops ALPHA runs still use stand-in steps, and restart after a crash is not solved"
 # owner, 2026-11-14: RD-Agent is a key component of how the project works
 triage = { card = "7", recommendation = "KEEP", owner_decision = "KEEP" }
 docs = ["docs/roadmap/rd-agent-in-alpha.md"]

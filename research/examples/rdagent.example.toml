@@ -1,0 +1,21 @@
+# Example config for `alpha rdagent run --config rdagent.toml`. Every path below is a placeholder.
+# Copy this file, change the paths, and keep the copy outside git.
+# Each key matches one argument of workers/rdagent/factor_loop_launch.py.
+
+working_directory = "/abs/path/to/Project-ALPHA"       # the checkout that holds .venv
+data_dir = "/abs/path/to/alpha-data"                   # the data store RD-Agent reads
+gateway_state = "/abs/path/to/runs/model-gateway-state" # outside git
+trial_ledger = "/abs/path/to/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl"
+rdagent_source = "/abs/path/to/rdagent-source"         # ALPHA_RDAGENT_SOURCE, from the setup script
+factor_python = "/abs/path/to/factor-runtime/bin/python" # ALPHA_FACTOR_PYTHON, from the setup script
+
+# Optional. A key left out keeps the launcher's own default.
+# universe = "/abs/path/to/universe.json"
+# funding_dir = "/abs/path/to/context-store"
+# loop_n = 2
+# discuss = true
+# discuss_wait_minutes = 30
+# on_timeout = "proceed"      # or "stop"
+# wall_seconds = 5400
+# chat_route = "codex"        # or "api" (then also api_model and both prices)
+# key_file = "/abs/path/to/placeholder.env"   # only the PATH; the command never reads it

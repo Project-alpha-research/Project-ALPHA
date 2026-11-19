@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d59fdcc62ac22bfe on 2026-11-19: validate gained one comment line only; text still correct
+  verified 214d5129edd62949 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 apps/alpha-cli/README.md
-  verified d59fdcc62ac22bfe on 2026-11-19: validate gained one comment line only; text still correct
+  verified 214d5129edd62949 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified cee72e73c28317e5 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 apps/alpha-web/README.md
-  verified 32554a7d4b0e0877 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified cee72e73c28317e5 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -47,7 +47,7 @@ docs/reference/invariants/patterns.md
   verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 docs/reference/invariants/rdagent.md
-  verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
+  verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/invariants/web-api-reads.md
   verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
@@ -56,13 +56,13 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 6b7d60cc3123bc31 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
+  verified fc0e06695fe3eaa1 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/workers.md
-  verified 38810e35f3fc1e95 on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
+  verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
@@ -101,10 +101,10 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified e90f700e6a3bf954 on 2026-11-19: Re-read after merging main: page text holds; the discussion detail moved to the worker README, which now says the reflection passes on in full
+  verified b24624ae57cd5a1c on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
-  verified e128568bea1bbca0 on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
+  verified 303d382d54a8bde4 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them
@@ -141,6 +141,9 @@ docs/reference/project/owner-decisions-5.md
 
 docs/reference/project/owner-decisions.md
   verified 9fe892a33a3d98b0 on 2026-11-19: model-routing was restructured; the log's entries are unaffected
+
+docs/reference/project/rd-agent-detail.md
+  verified 949857d7112bc824 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/reserved-period.md
   verified 81433144d9570f50 on 2026-11-19: reserved-period hold-back added to more commands; text still correct

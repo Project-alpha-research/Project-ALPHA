@@ -22,6 +22,7 @@ approval gate is before paper or live trading. Changing the research code is a d
 | [research playbook](PLAYBOOK.md) | What needs the owner | always |
 | [tool cards](tools/README.md) | — | choosing the next test, by symptom |
 | [data health card](tools/data-health.md) | — | checking stored bars before a test |
+| [RD-Agent config example](examples/rdagent.example.toml) | — | starting RD-Agent with `alpha rdagent run` |
 | [lessons](lessons/README.md) | — | before proposing a test |
 | [research integrity](../docs/reference/invariants/research-integrity.md) | Owner authority | before paper or live trading, or any owner act |
 | [what this part is for](../docs/reference/project/components/research-cases-and-approval.md) | — | why it exists; before you keep, shelve or remove it |

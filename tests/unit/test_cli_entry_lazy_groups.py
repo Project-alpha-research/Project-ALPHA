@@ -145,6 +145,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "project",
             "propfirm",
             "provider",
+            "rdagent",
             "report",
             "research",
             "results",

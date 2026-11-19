@@ -2766,6 +2766,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run Checks
+         * @description The toolbox checks stored for one rule test; read from the CLI, never computed here.
+         */
+        get: operations["run_checks_api_runs__run_id__checks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/daily-rule-evidence": {
         parameters: {
             query?: never;
@@ -12200,6 +12220,37 @@ export interface components {
             /** Years */
             years: components["schemas"]["RuleTestYear"][];
         };
+        /**
+         * RuleTestCheck
+         * @description One stored toolbox result for a rule test, or one failed attempt.
+         */
+        RuleTestCheck: {
+            /** Error */
+            error: string | null;
+            /** Labels */
+            labels: string[];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "ok" | "error";
+            /** Reading */
+            reading: string | null;
+            /** Recorded At */
+            recorded_at: string | null;
+            /** Tool */
+            tool: string;
+        };
+        /**
+         * RuleTestChecks
+         * @description Checks stored for one rule test, oldest first; empty when none were run.
+         */
+        RuleTestChecks: {
+            /** Checks */
+            checks: components["schemas"]["RuleTestCheck"][];
+            /** Run Id */
+            run_id: string;
+        };
         /** RuleTestConcentration */
         RuleTestConcentration: {
             /** Basis */
@@ -18486,6 +18537,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChartBundle"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    run_checks_api_runs__run_id__checks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleTestChecks"];
                 };
             };
             /** @description Stable, redacted Workstation error */

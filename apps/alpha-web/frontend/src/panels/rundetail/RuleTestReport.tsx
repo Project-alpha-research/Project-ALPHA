@@ -1,9 +1,10 @@
-import type { FigureCatalogueItem, RuleTest } from '../../api/types'
+import type { FigureCatalogueItem, RuleTest, RuleTestChecks } from '../../api/types'
 import { FigureCard } from '../../components/FigureCard'
 import { GLOSSARY } from '../../explain/glossary'
+import { Timestamp } from '../../util/formatTime'
 import {
-  auditRows, healthLine, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
-  testedRows, variantRows, type Cell, type RuleManifest,
+  auditRows, checkRows, healthLine, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
+  standardSetCommand, testedRows, variantRows, type Cell, type RuleManifest,
 } from '../ruleTestModel'
 
 /** A stored basis note shown as a sentence: first letter upper-case; the words are unchanged. */
@@ -40,9 +41,37 @@ interface Props {
   figures: FigureCatalogueItem[] | null
   watermark?: string | null
   figureError?: string
+  /** The stored toolbox checks: `null` while loading, a message when they could not be read, absent to omit the section. */
+  checks?: RuleTestChecks | string | null
 }
 
-export function RuleTestReport({ test, manifest, runId, runName, figures, figureError, watermark }: Props) {
+/** The toolbox checks stored for this test, one row each; the page only shows what the CLI stored. */
+function ChecksRun({ checks, runId, testLabels }: { checks: RuleTestChecks | string | null; runId: string; testLabels: readonly string[] }) {
+  const rows = typeof checks === 'object' && checks ? checkRows(checks, testLabels) : []
+  return <section aria-label="Checks run on this test">
+    <h3>Checks run on this test</h3>
+    {checks === null ? <p role="status">Loading checks…</p>
+      : typeof checks === 'string' ? <p role="alert">Could not load the checks. {checks}</p>
+      : !rows.length ? <p className="muted">No checks have been run on this test yet. To run the standard set:{' '}
+        <code className="mono">{standardSetCommand(runId)}</code></p>
+      : <table className="blotter summary-table rule-test-checks"><tbody>
+        {rows.map(row => (
+          <tr key={row.key}>
+            <td className="k">{row.name}</td>
+            <td>{row.failure ?? row.reading}
+              <span className="rule-test-chips">
+                {row.chips.map(chip => <span key={chip.text} className="chip kind" title={chip.title}>{chip.text}</span>)}
+              </span>
+              {row.chips.length > 0 && <small className="muted">{row.chips.map(chip => chip.title).join(' ')}</small>}
+            </td>
+            <td className="muted"><Timestamp value={row.when} /></td>
+          </tr>
+        ))}
+      </tbody></table>}
+  </section>
+}
+
+export function RuleTestReport({ test, manifest, runId, runName, figures, figureError, watermark, checks }: Props) {
   const diagnostics = test.diagnostics
   const flags = diagnostics?.flags ?? []
   const audit = auditRows(test)
@@ -86,6 +115,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
         </section>
       })}
       {quick && <p className="muted">{quick}</p>}
+      {checks !== undefined && <ChecksRun checks={checks} runId={runId} testLabels={test.labels} />}
       <table className="blotter summary-table">
         <caption>Worth a look</caption>
         <tbody>

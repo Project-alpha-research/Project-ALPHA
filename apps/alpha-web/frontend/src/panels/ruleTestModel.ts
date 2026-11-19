@@ -1,6 +1,6 @@
 // Formats the run's stored facts. Only the variants table subtracts two recorded scores.
 
-import type { FigureCatalogueItem, RuleTest } from '../api/types'
+import type { FigureCatalogueItem, RuleTest, RuleTestChecks } from '../api/types'
 import { GLOSSARY } from '../explain/glossary'
 import { sparseTradeStory, type RecordedManifest } from '../explain/verdictStory'
 import { isFiniteNum } from '../util/format'
@@ -36,6 +36,13 @@ const LABEL_MEANING: Record<string, string> = {
   repeat: 'An identical test was already recorded; it still counts as another trial.',
   'no-diagnostics': 'The diagnostic pass was skipped for this run.',
   error: 'The test ended with an error; unavailable numbers stay empty.',
+  'ad-hoc': 'Run on its own, not as part of a predeclared set of checks.',
+  'non-default-params': 'Run with a setting other than the default, or with another random seed.',
+  'reserved-period-seen': 'The data reaches into the reserved period, which starts on 2024-01-01.',
+  'benchmark-is-same-asset': 'The market used for comparison is the asset the rule traded.',
+  hindsight: 'Part of this result uses the whole history, which was not knowable at the time.',
+  'hindsight-disagrees': 'The hindsight split tells a different story from the split made at the time.',
+  'parameters-fit-in-sample': 'The model settings were fitted on the same history they describe.',
 }
 
 export const RULE_TEST_TITLE =
@@ -278,4 +285,53 @@ export function variantRows(test: RuleTest): VariantRow[] {
     })
   }
   return rows
+}
+
+/** Plain names of the registered checks; an id not listed here is shown as its id. */
+const CHECK_NAMES: Record<string, string> = {
+  'market.attribution': 'Market exposure',
+  'market.vol_regimes': 'Calm and turbulent markets',
+  'market.changepoints': 'When behaviour shifted',
+  'performance.downside_ratios': 'Downside-aware ratios',
+  'robustness.start_end_dates': 'Moved start and end dates',
+  'trades.side_contribution': 'Long versus short trades',
+  'trades.concentration': 'Profit without the best trades',
+  'costs.break_even': 'Break-even trading costs',
+  'resampling.sharpe_interval': 'Range for the risk-adjusted score',
+  'resampling.return_interval': 'Range for the yearly return',
+  'resampling.drawdown_distribution': 'Range for the worst drop',
+  'trades.dependence': 'Order of trade outcomes',
+  'overfit.deflated_sharpe': 'Score after counting every try',
+  'resampling.block_bootstrap_paths': 'Reshuffled return paths',
+}
+
+/** The predeclared set that runs the three checks about one recorded rule test (`toolbox/sets.py`). */
+export const STANDARD_CHECK_SET = 'market-context'
+
+export const standardSetCommand = (runId: string): string => `alpha tool run-set ${STANDARD_CHECK_SET} ${runId}`
+
+export interface CheckRow {
+  key: string
+  name: string
+  /** The stored reading, unedited; null for a failed attempt. */
+  reading: string | null
+  /** “could not run: <stored error code>”; null for a stored result. */
+  failure: string | null
+  chips: LabelChip[]
+  when: string | null
+}
+
+/**
+ * One row per stored result or failed attempt, in stored order. Nothing is computed. A label the test
+ * itself already carries is left out of the row: the test's own section explains it.
+ */
+export function checkRows(checks: RuleTestChecks, testLabels: readonly string[] = []): CheckRow[] {
+  return checks.checks.map((check, index) => ({
+    key: `${index}:${check.tool}:${check.recorded_at ?? ''}`,
+    name: CHECK_NAMES[check.tool] ?? check.tool,
+    reading: check.reading,
+    failure: check.outcome === 'error' ? `could not run: ${check.error ?? 'no error was stored'}` : null,
+    chips: labelChips(check.labels.filter(label => !testLabels.includes(label))),
+    when: check.recorded_at,
+  }))
 }

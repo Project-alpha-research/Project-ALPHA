@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: e8dd8bb18aca843d
+verified: 70b886ee3312fccb
 ---
 
 # Web run detail invariants
@@ -25,6 +25,9 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   for new runs. Old runs keep saved figures and a full-history disclosure. Missing period values read “not recorded”. A catalogue request distinguishes
   loading, failure and missing figures. Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and detail.
   Only variants subtract Sharpe scores. Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and `e2e/rule-test-summary.spec.ts`.
+- The rule-test Summary lists “Checks run on this test”: each stored toolbox result (plain name, stored reading, labels in words,
+  time) or “could not run: <stored error code>”, from GET `/api/runs/{id}/checks`. With none it quotes
+  `alpha tool run-set market-context <run_id>`. Nothing is computed in the browser. Covered by `rundetail/RuleTestChecks.test.tsx`.
 - Rule tests and Setup Lab show a non-pass data health line under the headline; old runs read “Data health: not recorded.”
 - The backtest result card is opt-in (`backtestResultCard` defaults to `false`). With malformed, legacy or failed evidence it renders as unavailable. Enforced
   by `e2e/backtest-result-card.spec.ts`.

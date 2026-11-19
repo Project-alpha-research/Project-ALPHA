@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from ._base import StrictModel
 
 
@@ -157,3 +159,23 @@ class RuleTest(StrictModel):
     diagnostics: RuleTestDiagnostics | None
     # why `diagnostics` is null
     diagnostics_reason: str | None
+
+
+class RuleTestCheck(StrictModel):
+    """One stored toolbox result for a rule test, or one failed attempt."""
+
+    tool: str
+    outcome: Literal["ok", "error"]
+    # the stored one-sentence reading; null for a failed attempt
+    reading: str | None
+    # the stored error code of a failed attempt
+    error: str | None
+    labels: list[str]
+    recorded_at: str | None
+
+
+class RuleTestChecks(StrictModel):
+    """Checks stored for one rule test, oldest first; empty when none were run."""
+
+    run_id: str
+    checks: list[RuleTestCheck]

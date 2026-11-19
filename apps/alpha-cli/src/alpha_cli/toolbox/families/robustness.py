@@ -98,6 +98,11 @@ def start_end_dates(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
 
 START_END_DATES = ToolSpec(
     id="robustness.start_end_dates",
+    answers=(
+        "Does moving the first or last date change the result?",
+        "Is the result one lucky window?",
+    ),
+    situations=("looks-too-good", "works-only-sometimes"),
     family="robustness",
     question="How sensitive were returns to moving the first and last dates?",
     needs=("stored_benchmark",),

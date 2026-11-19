@@ -1,5 +1,6 @@
 id = "net-share-issuance"
 name = "Net share issuance"
+tier = "checked"
 year_published = 2008
 market = "us-equities"
 idea = "Firms that issue new shares tend to do worse afterwards than firms that buy shares back."

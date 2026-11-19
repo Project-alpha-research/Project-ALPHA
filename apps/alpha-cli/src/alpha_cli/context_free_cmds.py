@@ -1,4 +1,4 @@
-"""Free key-less context commands: CFTC Commitments of Traders and FINRA daily short volume."""
+"""Free key-less context commands: CFTC, FINRA short volume and published factor returns."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from alpha_cli._cli_json import emit
 from alpha_cli.context_sources_cmds import _cutoff, _rows
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
-from alpha_data.context import cftc_cot, finra_short
+from alpha_data.context import cftc_cot, finra_short, osap_portfolios
 from alpha_data.context.events import as_known_events, load_events
 
 free_app = typer.Typer()
@@ -48,7 +48,11 @@ def free_listing() -> list[dict[str, Any]]:
     """Stored free context tables for `alpha context list`; read locally, no network."""
     data_dir = AlphaSettings().data_dir
     try:
-        return [*cftc_cot.describe(data_dir), *finra_short.describe(data_dir)]
+        return [
+            *cftc_cot.describe(data_dir),
+            *finra_short.describe(data_dir),
+            *osap_portfolios.describe(data_dir),
+        ]
     except (DataError, OSError) as exc:
         raise typer.BadParameter(f"{exc}. Next: re-pull the named source.") from None
 
@@ -152,3 +156,62 @@ def show_finra_short_volume(
     )
     if not json_out:
         typer.echo(finra_short.CAVEAT)
+
+
+@free_app.command("pull-osap-portfolios")
+def pull_osap_portfolios(
+    release: str = typer.Option(..., help="The source's release id, e.g. 2026.10."),
+    released: str = typer.Option(
+        ..., help="True release date, YYYY-MM-DD; not before the newest month plus one day."
+    ),
+    branch: str | None = typer.Option(None, help="Release branch if not Data-Release-<release>."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Pull one release of published long-short factor returns; no key. Never replaces a vintage."""
+    try:
+        report = osap_portfolios.pull_portfolios(
+            data_dir=AlphaSettings().data_dir,
+            release=release,
+            released=_day(released),
+            fetched_at=datetime.now(UTC),
+            branch=branch,
+        )
+    except (DataError, OSError) as exc:
+        raise _fail(exc, pull="pull-osap-portfolios") from None
+    _emit(report, json_out)
+    if not json_out:
+        typer.echo(osap_portfolios.CAVEAT)
+
+
+@free_app.command("show-osap-portfolios")
+def show_osap_portfolios(
+    as_of: str | None = typer.Option(None, help="UTC date or minute; default now."),
+    release: str | None = typer.Option(None, help="Read this vintage; default the newest known."),
+    signal: Annotated[
+        list[str] | None, typer.Option("--signal", help="Signal id; repeat. None: counts only.")
+    ] = None,
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show stored factor returns known at the cutoff, naming the vintage used."""
+    cutoff = _cutoff(as_of)
+    try:
+        used, df = osap_portfolios.read_known(
+            AlphaSettings().data_dir, as_of=cutoff, release=release
+        )
+    except (DataError, OSError) as exc:
+        raise _fail(exc, pull="pull-osap-portfolios --release <R> --released <DATE>") from None
+    shown = df.filter(pl.col("signal").is_in(signal)) if signal else df.head(0)
+    _emit(
+        dict(
+            view="as_known",
+            as_of=cutoff.isoformat(),
+            release=used,
+            unit=osap_portfolios.UNIT_NOTE,
+            known_from_rule=osap_portfolios.KNOWN_RULE,
+            caveat=osap_portfolios.CAVEAT,
+            signals=df["signal"].n_unique(),
+            months=df["month"].n_unique(),
+            rows=_rows(shown.sort(["signal", "month"])),
+        ),
+        json_out,
+    )

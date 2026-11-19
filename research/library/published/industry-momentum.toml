@@ -1,5 +1,6 @@
 id = "industry-momentum"
 name = "Industry momentum"
+tier = "checked"
 year_published = 1999
 market = "us-equities"
 idea = "Industries that did well over the past months tend to keep doing well, and this explains much of stock momentum."

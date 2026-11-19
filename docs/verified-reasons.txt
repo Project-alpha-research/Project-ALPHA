@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
+  verified fb12f4fc9f8869ac on 2026-11-20: Re-read after merging main: only the library tier field, card source line and a free context source were added here; this page's text is still correct.
 
 apps/alpha-cli/README.md
-  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
+  verified fb12f4fc9f8869ac on 2026-11-20: Re-read after merging main: only the library tier field, card source line and a free context source were added here; this page's text is still correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct

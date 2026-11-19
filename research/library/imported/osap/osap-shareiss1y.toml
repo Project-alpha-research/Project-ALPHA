@@ -1,0 +1,31 @@
+id = "osap-shareiss1y"
+name = "ShareIss1Y"
+year_published = 2008
+market = "us-equities"
+idea = "Published signal: ShareIss1Y (external financing)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Pontiff and Woodgate"
+year = 2008
+title = "not recorded in the source table"
+venue = "JF"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "ShareIss1Y"
+acronym = "ShareIs5"
+category = "external financing"
+data_category = "Accounting"
+predicted_sign = -1
+sample_start = 1970
+sample_end = 2003

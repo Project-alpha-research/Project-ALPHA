@@ -1,5 +1,6 @@
 id = "asset-growth"
 name = "Asset growth"
+tier = "checked"
 year_published = 2008
 market = "us-equities"
 idea = "Firms whose total assets grew fast have tended to earn less afterwards than firms that grew slowly."

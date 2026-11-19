@@ -1,5 +1,6 @@
 id = "accruals"
 name = "Accruals"
+tier = "checked"
 year_published = 1996
 market = "us-equities"
 idea = "Firms whose profit comes more from accounting adjustments than from cash tend to do worse afterwards."

@@ -1,0 +1,31 @@
+id = "osap-earningsforecastdisparity"
+name = "EarningsForecastDisparity"
+year_published = 2011
+market = "us-equities"
+idea = "Published signal: EarningsForecastDisparity (earnings forecast)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["analyst forecasts"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Da and Warachka"
+year = 2011
+title = "not recorded in the source table"
+venue = "JFE"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "EarningsForecastDisparity"
+acronym = "LT_ST_EPS"
+category = "earnings forecast"
+data_category = "Analyst"
+predicted_sign = -1
+sample_start = 1983
+sample_end = 2006

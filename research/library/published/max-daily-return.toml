@@ -1,5 +1,6 @@
 id = "max-daily-return"
 name = "Maximum daily return (lottery stocks)"
+tier = "checked"
 year_published = 2011
 market = "us-equities"
 idea = "Stocks with one very large daily gain in the past month have tended to earn less in the next month."

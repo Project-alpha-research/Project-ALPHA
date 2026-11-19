@@ -1,5 +1,6 @@
 id = "short-interest"
 name = "Short interest"
+tier = "checked"
 year_published = 2005
 market = "us-equities"
 idea = "Stocks with a lot of their shares sold short, and few big holders, have tended to earn less."

@@ -1,5 +1,6 @@
 id = "tactical-trend-10-month"
 name = "Ten-month moving-average timing"
+tier = "checked"
 year_published = 2007
 market = "multi"
 idea = "Hold an asset class only while its price is above its ten-month average, otherwise hold cash."

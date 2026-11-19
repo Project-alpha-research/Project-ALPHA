@@ -73,7 +73,7 @@ Binance publishes monthly files days late, and Stooq no longer answers its bot c
 - **Workspaces:** `packages/alpha-data`
 - **Capabilities:** `stock-data`, `intraday-bars`, `crypto-data`, `crypto-backfill`, `download-bookkeeping`,
   `data-health`, `data-health-on-runs`, `retained-coverage`, `crypto-snapshots`, `providers-and-jobs`, `macro-context`,
-  `filing-events`, `crypto-derivatives-context`, `positioning-short-volume-context`
+  `filing-events`, `crypto-derivatives-context`, `positioning-short-volume-context`, `published-factor-reference`
 - Code: `packages/alpha-data/src/alpha_data/`; the `alpha data` and `alpha crypto-data` commands in
   `apps/alpha-cli/`.
 - Tests: `tests/smoke/test_data_smoke.py`, `tests/smoke/test_crypto_data_smoke.py` (crypto downloads through an

@@ -1,5 +1,6 @@
 id = "crypto-size"
 name = "Crypto size effect"
+tier = "checked"
 year_published = 2022
 market = "crypto"
 idea = "Small coins by market value have tended to earn more than large coins."

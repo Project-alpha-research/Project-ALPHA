@@ -79,3 +79,16 @@ def read_trials(home: Path) -> list[dict[str, Any]]:
     with path.with_suffix(".jsonl.lock").open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_SH)
         return _history(path)
+
+
+def read_trials_readonly(home: Path) -> list[dict[str, Any]]:
+    """Read the ledger without ever creating a file: a shared lock only if the lock file exists."""
+    path = home / "ledger" / "trials.jsonl"
+    if not path.exists():
+        return []
+    lock = path.with_suffix(".jsonl.lock")
+    if not lock.exists():
+        return _history(path)
+    with lock.open("rb") as stream:
+        fcntl.flock(stream.fileno(), fcntl.LOCK_SH)
+        return _history(path)

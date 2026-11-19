@@ -85,7 +85,7 @@ STAMP = datetime(2025, 11, 19, 20, 30, 44, 507000, tzinfo=UTC)
         # Shutdown backlog: published weeks after the rule time, the stamp wins (later).
         (date(2025, 9, 30), STAMP, STAMP, "stamp"),
         # History reloaded in bulk in 2022: the stamp says nothing about publication; rule used.
-        (date(2016, 3, 1), datetime(2022, 9, 13, 14, 25, tzinfo=UTC), None, "rule"),
+        (date(2016, 3, 1), datetime(2022, 9, 13, 14, 25, tzinfo=UTC), None, "rule-only-era"),
         # A stamp before the rule time never moves the time earlier.
         (date(2024, 1, 9), datetime(2024, 1, 10, tzinfo=UTC), None, "rule"),
     ],
@@ -94,7 +94,7 @@ def test_stamp_is_used_only_when_it_is_later_and_a_live_release(
     report: date, stamp: datetime, known: datetime | None, basis: str
 ) -> None:
     rule = cftc_cot.known_from(report)
-    got, why = cftc_cot.resolve_known(rule, stamp)
+    got, why = cftc_cot.resolve_known(rule, stamp, report)
     assert (got, why) == (known or rule, basis)
     assert got >= rule
 

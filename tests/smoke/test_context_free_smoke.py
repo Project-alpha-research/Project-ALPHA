@@ -50,7 +50,7 @@ def test_context_free_local_reads(tmp_path: Path) -> None:
     )
     requests = [
         ["show-cftc-cot", "--market", "13874A", "--as-of", "2024-01-12T21:00"],
-        ["show-finra-short-volume", "--symbol", "SPY", "--as-of", "2024-01-03"],
+        ["show-finra-short-volume", "--symbol", "SPY", "--as-of", "2024-01-03T12:00"],
     ]
     for args in requests:
         result = subprocess.run(

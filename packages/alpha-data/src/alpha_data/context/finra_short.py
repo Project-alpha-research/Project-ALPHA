@@ -21,8 +21,8 @@ CAVEAT = (
     "not all exchange volume, so they understate total volume and short volume."
 )
 KNOWN_RULE = (
-    "FINRA publishes the file after the trading day. known_from is the next UTC midnight "
-    "(00:00 UTC the day after the trade date), later than the publication time."
+    "FINRA posts the file on the evening of the trading day, US Eastern. known_from is 12:00 UTC "
+    "on the next calendar day (07:00 or 08:00 Eastern), hours after any evening posting."
 )
 SCHEMA: dict[str, Any] = dict(
     symbol=pl.String,
@@ -44,7 +44,7 @@ def table_path(data_dir: Path, symbol: str) -> Path:
 
 
 def known_from(trade_date: date) -> datetime:
-    return datetime.combine(trade_date + timedelta(days=1), time(0), tzinfo=UTC)
+    return datetime.combine(trade_date + timedelta(days=1), time(12), tzinfo=UTC)
 
 
 def _volume(raw: str, field: str) -> float:

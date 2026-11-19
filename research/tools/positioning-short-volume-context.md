@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
   - packages/alpha-data/src/alpha_data/context/cftc_cot.py
   - packages/alpha-data/src/alpha_data/context/finra_short.py
-verified: 8720acc12a9706b5
+verified: 84b85f1e216fae6f
 ---
 
 # Positioning and short-volume context
@@ -23,8 +23,8 @@ uv run alpha context show-finra-short-volume --symbol SPY --as-of 2024-03-15 --j
 **How to read it**
 
 - `list` shows stored tables under `free_context`: first and last period, last `known_from`, caveat.
-- A row appears only once public. COT describes Tuesday and is known from Friday 15:30 US Eastern (later in holiday
-  weeks). FINRA volume for a day is known from 00:00 UTC the next day. Always pass `--as-of`.
+- A row appears only once public. COT describes Tuesday and is known from Friday 15:30 US Eastern (or the stamp, if later; later in holiday
+  weeks). FINRA volume for a day is known from 12:00 UTC the next calendar day. Always pass `--as-of`.
 - Nothing stored: the owner runs `alpha context pull-cftc-cot --market <code>` or `pull-finra-short-volume --symbol <T>
   --start <date> --end <date>`.
 

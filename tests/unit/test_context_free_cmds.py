@@ -83,7 +83,9 @@ def test_pull_show_list_finra_prints_the_caveat(home: Path) -> None:
     ]
     assert pulled["missing_days"] == ["2024-01-04", "2024-01-05"]
     assert "FINRA facilities only" in pulled["caveat"]
-    shown = invoke("show-finra-short-volume", "--symbol", "SPY", "--as-of", "2024-01-03", "--json")
+    shown = invoke(
+        "show-finra-short-volume", "--symbol", "SPY", "--as-of", "2024-01-03T12:00", "--json"
+    )
     assert [r["trade_date"] for r in shown["rows"]] == ["2024-01-02"]
     assert "FINRA facilities only" in shown["caveat"]
     listed = invoke("list", "--json")["free_context"]

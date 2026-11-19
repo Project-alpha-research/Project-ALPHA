@@ -28,10 +28,12 @@ KNOWN_RULE = (
     "Friday that is not a holiday. The API row also carries a system stamp (:created_at) that "
     "matches live releases to the second. known_from is the later of the rule time and that stamp "
     "(known_basis 'stamp'), except when the stamp is more than 120 days after the rule time, "
-    "which marks a bulk reload of history (2022-09-13 for rows before that month): then the rule "
-    "time is used (known_basis 'rule')."
+    "which marks a bulk reload: then the rule time is used (known_basis 'rule'). Reports as of "
+    "before 2022-09-01 carry only the bulk-reload stamp, so they use the rule time alone "
+    "(known_basis 'rule-only-era')."
 )
 _BULK_LAG = timedelta(days=120)
+RULE_ONLY_BEFORE = date(2022, 9, 1)
 SCHEMA: dict[str, Any] = dict(
     market_code=pl.String,
     market_name=pl.String,
@@ -97,8 +99,10 @@ def _stamp(record: dict[str, Any]) -> datetime:
         raise DataError(f"CFTC {_STAMP} is not a real time: {raw!r}") from None
 
 
-def resolve_known(rule: datetime, stamp: datetime) -> tuple[datetime, str]:
+def resolve_known(rule: datetime, stamp: datetime, period: date) -> tuple[datetime, str]:
     """The later of rule time and system stamp; a stamp far after the rule is a bulk reload."""
+    if period < RULE_ONLY_BEFORE:
+        return rule, "rule-only-era"  # stamps before 2022-09 are one bulk-load time, not releases
     if rule < stamp <= rule + _BULK_LAG:
         return stamp, "stamp"
     return rule, "rule"
@@ -133,7 +137,7 @@ def map_rows(records: list[Any], market_code: str) -> pl.DataFrame:
         if not isinstance(name, str) or not name.strip():
             raise DataError(f"CFTC {_NAME} must be text")
         period = _report_date(record)
-        known, basis = resolve_known(known_from(period), _stamp(record))
+        known, basis = resolve_known(known_from(period), _stamp(record), period)
         rows.append(
             dict(
                 market_code=market_code,

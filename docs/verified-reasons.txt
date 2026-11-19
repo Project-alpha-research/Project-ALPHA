@@ -43,6 +43,9 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
+docs/reference/invariants/data.md
+  verified 28a963c7faf960cf on 2026-11-19: Known-from rules changed in the context sources; text here states neither rule and stays correct.
+
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
@@ -167,7 +170,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified c50cd37bafa3e9c7 on 2026-11-19: context_cmds only gained the free-source list key and sub-commands; FRED commands unchanged
+  verified 144591a3db7946f0 on 2026-11-19: Known-from rules changed in the context sources; text here states neither rule and stays correct.
 
 research/CONTEXT.md
   verified 6175c829bcd093e4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here

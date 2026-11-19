@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
-verified: 338217eaa20cb588
+verified: 556fe34e6340391c
 ---
 
 # Data layer invariants: context data
@@ -70,10 +70,12 @@ A day or market is fetched in full before anything is stored, and offline is a c
   has no publication field, but each row carries the system stamp `:created_at`, which matches live releases to the
   second since 2022-09 (checked 2026-11-19 against 2024-2026 rows). `known_from` is the later of the rule time (Friday
   15:30 US Eastern; in a week with a US federal holiday, the next non-holiday weekday after that Friday) and the stamp,
-  and `known_basis` says which won. A stamp more than 120 days after the rule time is a bulk reload (all history before
-  2022-09 carries one stamp), so the rule time is used there. The stamp matters: the 2025 shutdown held reports of
+  and `known_basis` says which won. A stamp more than 120 days after the rule time is a bulk reload, so the rule time is used there. Reports as of
+  before 2022-09-01 carry only the bulk stamp, so they use the rule time alone (`known_basis` `rule-only-era`). A
+  missing or malformed stamp fails loud. One-off federal closures (2018-12-05, 2025-01-09) count as holidays.
+  The stamp matters: the 2025 shutdown held reports of
   30 Sep to 10 Nov 2025 until 19 Nov to 12 Dec 2025, and the rule alone would show them 2 to 6 weeks early.
-- **FINRA daily short sale volume** (consolidated file `CNMSshvol<date>.txt`). A trading day is known at 00:00 UTC on the
+- **FINRA daily short sale volume** (consolidated file `CNMSshvol<date>.txt`). A trading day is known at 12:00 UTC on the
   next calendar day, later than FINRA's publication. The host answers 403 for a day with no file (weekend, holiday); such
   days are listed as missing, not stored. The file ends with a record count that must match its rows. Volumes are
   fractional. **Caveat, stored in every table's metadata and printed by every command:** the files cover trades reported

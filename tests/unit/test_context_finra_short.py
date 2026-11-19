@@ -52,9 +52,9 @@ def pull(tmp_path: Path, served: dict[str, bytes], **kw: Any) -> dict[str, Any]:
     return finra_short.pull_short_volume(**{**args, **kw})
 
 
-def test_known_from_is_the_next_utc_midnight() -> None:
-    assert finra_short.known_from(date(2024, 1, 2)) == datetime(2024, 1, 3, tzinfo=UTC)
-    assert finra_short.known_from(date(2024, 12, 31)) == datetime(2025, 1, 1, tzinfo=UTC)
+def test_known_from_is_noon_utc_on_the_next_calendar_day() -> None:
+    assert finra_short.known_from(date(2024, 1, 2)) == datetime(2024, 1, 3, 12, tzinfo=UTC)
+    assert finra_short.known_from(date(2024, 12, 31)) == datetime(2025, 1, 1, 12, tzinfo=UTC)
 
 
 def test_map_file_values_filter_and_trailer() -> None:
@@ -66,7 +66,7 @@ def test_map_file_values_filter_and_trailer() -> None:
     assert row["short_exempt_volume"] == pytest.approx(100.0, rel=1e-9, abs=1e-12)
     assert row["total_volume"] == pytest.approx(12000000.25, rel=1e-9, abs=1e-12)
     assert row["markets"] == "B,Q,N"
-    assert row["known_from"] == datetime(2024, 1, 3, tzinfo=UTC)
+    assert row["known_from"] == datetime(2024, 1, 3, 12, tzinfo=UTC)
 
 
 def test_pull_stores_each_symbol_with_the_facility_caveat(tmp_path: Path) -> None:
@@ -77,7 +77,7 @@ def test_pull_stores_each_symbol_with_the_facility_caveat(tmp_path: Path) -> Non
     stored = load_events(path, source="finra-short-volume", schema=finra_short.SCHEMA)
     assert stored["trade_date"].to_list() == [date(2024, 1, 2), date(2024, 1, 3)]
     meta = path.with_suffix(".json")
-    assert "FINRA facilities only" in meta.read_text() and "next UTC midnight" in meta.read_text()
+    assert "FINRA facilities only" in meta.read_text() and "12:00 UTC" in meta.read_text()
 
 
 def test_early_read_cannot_see_a_late_known_row(tmp_path: Path) -> None:
@@ -90,8 +90,8 @@ def test_early_read_cannot_see_a_late_known_row(tmp_path: Path) -> None:
     evening = datetime(2024, 1, 2, 23, 59, tzinfo=UTC)  # trading day 2 Jan has ended
     assert as_known_events(table, as_of=evening).is_empty()
     assert table.filter(pl.col("trade_date") <= evening.date()).height == 1  # leaky control
-    midnight = as_known_events(table, as_of=datetime(2024, 1, 3, tzinfo=UTC))
-    assert midnight["trade_date"].to_list() == [date(2024, 1, 2)]
+    noon = as_known_events(table, as_of=datetime(2024, 1, 3, 12, tzinfo=UTC))
+    assert noon["trade_date"].to_list() == [date(2024, 1, 2)]
 
 
 def test_weekend_and_holiday_without_file_are_listed_not_fatal(tmp_path: Path) -> None:

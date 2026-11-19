@@ -35,6 +35,11 @@ def federal_holidays(year: int) -> set[date]:
     return {_observed(day) for day in fixed} | set(floating)
 
 
+# Executive-order closures (national days of mourning); the CFTC moved its release.
+EXTRA_CLOSURES = frozenset({date(2018, 12, 5), date(2025, 1, 9)})
+
+
 def is_us_federal_holiday(day: date) -> bool:
     """Includes holidays observed across a year end (1 January on a Saturday is observed 31 Dec)."""
-    return any(day in federal_holidays(year) for year in (day.year - 1, day.year, day.year + 1))
+    years = (day.year - 1, day.year, day.year + 1)
+    return day in EXTRA_CLOSURES or any(day in federal_holidays(year) for year in years)

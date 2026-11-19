@@ -1,8 +1,8 @@
 # RD-Agent worker: change notes
 
 Dated change notes moved out of [README.md](README.md) so that page stays short and current. Nothing here was deleted. Sections that other pages link
-to keep their headings. Three sections stayed in the README because they are current rules: Shortlist bookkeeping, Futures funding and Thirds and ties;
-so did Propose and discuss and the launch command.
+to keep their headings. Three sections are current rules and moved to [judge-rules.md](judge-rules.md): Shortlist bookkeeping, Futures funding and Thirds and ties;
+Propose and discuss is in [propose-and-discuss.md](propose-and-discuss.md); the launch command stays in the README.
 
 # Pinned native loop development probe
 
@@ -567,7 +567,7 @@ Spread check, idea families, universe file and call limit
 image, MLflow or conda is involved.
 
 The launch command, the files of the loop and the run folder are in [README.md](README.md#how-to-launch). Shortlist bookkeeping, Futures funding and
-Thirds and ties are in [README.md](README.md#shortlist-bookkeeping).
+Thirds and ties are in [judge-rules.md](judge-rules.md#shortlist-bookkeeping).
 
 ### Research memory (2026-11-15)
 
@@ -1146,7 +1146,7 @@ These behaviour notes were the "Intended design" of the RD-Agent project page, m
   refuses unexplained jumps across any gap of one or more missing days (consecutive daily bars are not checked). Not survivorship-free.
   Declared renamed tickers join as one instrument under the old name, with each join receipted.
   The owner supplies the break list: [identity policy](#identity-breaks-across-a-gap).
-  Optional [futures funding](README.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
+  Optional [futures funding](judge-rules.md#futures-funding) adds settlement inputs with strict UTC timing and funded-name eligibility.
 - Runs resume completed research history at a fresh round boundary; unfinished rounds are recorded as abandoned,
   never invented trials. Composite ideas inherit every identified input family; cap refusals end the run. Code failures stay counted trials but do not close
   idea families; the wrapper refuses closed-family proposals before coding and asks the proposer again, at most twice per round. Construct names alone

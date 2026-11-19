@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: 4ecc1aea1e257abe
+verified: 244b682865166137
 ---
 
 # RD-Agent worker invariants
@@ -13,8 +13,8 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 
 ## Boundary and authority
 
-- Funding inputs and eligibility: [funding policy](../../../workers/rdagent/README.md#futures-funding); thirds and ties:
-  [rule and do-not-change list](../../../workers/rdagent/README.md#thirds-and-ties).
+- Funding inputs and eligibility: [funding policy](../../../workers/rdagent/judge-rules.md#futures-funding); thirds and ties:
+  [rule and do-not-change list](../../../workers/rdagent/judge-rules.md#thirds-and-ties).
 - A development-only probe of pinned RD-Agent native loops on fixed synthetic inputs, plus the ALPHA-judged factor
   loop below. It has no public research command or production route, and no ALPHA package imports it. Every result stays synthetic,
   `not_admitted`; no scientific run id or completed D1 attempt is invented.
@@ -108,7 +108,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 
   `idea_families.py` reads named inputs (and placeholder values): unfamiliar names keep an `other:` family, symbols none; an unnamed input is unknown.
   Closed or undeclared proposals stop before coding, with two re-asks; sign mirrors share a family and past-return reversal joins momentum.
-  [Discussion](../../../workers/rdagent/README.md#propose-and-discuss) records who selected ideas. Feedback treats a drop as a choice. Only tested ideas count.
+  [Discussion](../../../workers/rdagent/propose-and-discuss.md) records who selected ideas. Feedback treats a drop as a choice. Only tested ideas count.
   Rank twins (absolute correlation 0.98) repeat same-panel trials; missing values are disclosed. Code failures never close families.
 - Human-authored rule families (`alpha_cli.rdagent_rule_family`): a preregistered spec, checked against its sha256,
   is backtested on Nautilus with reads stopping at 2023-12-31; reserved-period data aborts the whole family rather
@@ -122,7 +122,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   worker README). Ledger rows of a schema the reader does not know never stop a run: the proposer skips them with a
   counted note, and the evaluator counts each as one conservative trial (p = 1.0) and reports `ledger_unknown_rows`.
   Malformed complete lines and malformed known-schema rows still fail loud.
-- The [proposal pause and stand-in answers](../../../workers/rdagent/README.md#propose-and-discuss) (`--discuss`; a stand-in answers with `alpha
+- The [proposal pause and stand-in answers](../../../workers/rdagent/propose-and-discuss.md) (`--discuss`; a stand-in answers with `alpha
   ledger reply --as stand-in`;
   the owner rule is the [stand-in entry](../project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests))
   exchange JSON with the CLI in `discussion.py` after the family guard. Each proposer and re-ask reads choices from this run's decisions.
@@ -130,8 +130,8 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
 - The scenario checks the prepare receipt or HDF columns once. Proposal context, family closure and feedback share one parsed ledger per round, refreshed when
   size or modification time changes. Tests: `test_rdagent_read_once.py`.
 - The evaluator appends shortlist and lineage diagnostics; the worker preserves that record. Policy and regression convention:
-  [README](../../../workers/rdagent/README.md#shortlist-bookkeeping); no judging rule changes.
-- Source input columns: [README](../../../workers/rdagent/README.md#futures-funding). Feedback separates global looks from family failures; session
+  [README](../../../workers/rdagent/judge-rules.md#shortlist-bookkeeping); no judging rule changes.
+- Source input columns: [README](../../../workers/rdagent/judge-rules.md#futures-funding). Feedback separates global looks from family failures; session
   drift suggestions follow the frozen
   source. Tests: `test_rdagent_funding_columns.py`, `test_rdagent_families.py`.
 - RD-Agent remembers across runs; what it keeps and its limits are in the worker's [research
@@ -142,7 +142,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   New panels rescale redenominations, split reused tickers, join declared renamed successors and refuse unexplained gap jumps;
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and factor-specific eligibility:
-  [README](../../../workers/rdagent/README.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
+  [README](../../../workers/rdagent/judge-rules.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
 
 ## Viewer
 

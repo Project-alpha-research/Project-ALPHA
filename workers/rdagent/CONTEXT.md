@@ -23,7 +23,7 @@ No ALPHA package imports it. It has no market, inference or evidence authority.
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | launching, approving or reading a native job; its claims |
 | [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | — | changing install, gateway, loop, memory, panels or viewer |
 | [what this part is for](../../docs/reference/project/components/rd-agent.md) | — | why it exists; before you keep, shelve or remove it |
-| [worker README](README.md) | — | the file list, launching a loop, propose and discuss |
+| [worker README](README.md) | — | the file list, launching a loop |
 | [change notes](CHANGE-NOTES.md) | — | the history of a rule or a dated fix-up |
 | [RD-Agent invariants](../../docs/reference/invariants/rdagent.md) | Code map | finding a module or its tests |
 
@@ -32,7 +32,7 @@ No ALPHA package imports it. It has no market, inference or evidence authority.
 - Code and tests: [code map](../../docs/reference/invariants/rdagent.md#code-map).
 - Run `uv run python scripts/gate.py check` at the root. The worker has no CI gate component.
 - Rule profiles rebuild when core, patterns or strategies change: [install and runtimes](../../docs/reference/invariants/rdagent.md#install-and-runtimes).
-- Proposal pause, stand-in answers, funding, shortlist and thirds and ties: [README](README.md#propose-and-discuss) and the sections after it.
+- Proposal pause and stand-in answers: [propose and discuss](propose-and-discuss.md). Funding, shortlist, thirds and ties: [judge rules](judge-rules.md).
 
 ## Outputs
 

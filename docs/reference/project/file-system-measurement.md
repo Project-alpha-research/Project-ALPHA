@@ -74,6 +74,20 @@ says the web app calls the CLI as a subprocess with no exception for Setup Lab's
   and the majority core is 8 of 10. Reading cost is inside the original limit.
 - The detail of what readers missed is kept outside the repository.
 
+## Round 4 (commit 4a7e2e3b, 2026-11-19)
+
+- Strict full answers per reader: 3, 3, 2 of 10. Core full: 10, 8, 6 of 10. Majority core: 8 of 10. Wrong facts: none.
+- Median bytes read per question: about 11K, 13K and 12K (round 3: 26K, 20K, 21K).
+- The readers saw `CLAUDE.md` from before its "What to load" table was added.
+- **Verdict** against the pass mark the owner adopted on 2026-11-19
+  ([entry](owner-decisions-6.md#2026-11-19-all-features-work-together-as-one-system-four-approvals)):
+  - Passes "no wrong fact".
+  - Passes "required facts on the ideal path".
+  - Fails "every critical fact", by one item.
+  - Fails "core answers right on 9 of 10 by majority" (8 of 10).
+  - Fails the 16 KB reading limit on 2 of 10 questions; all ten pass the old 32 KB limit.
+- The detail of what readers missed is kept outside the repository.
+
 ## Pass bar
 
 - **Original bar:** at least 9 of 10 fully correct (strict), no wrong fact, median reading under 32 KB. **Round 2 fails it:** every reader had 1 of 10 strictly

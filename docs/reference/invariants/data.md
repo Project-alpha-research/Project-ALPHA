@@ -26,7 +26,7 @@ Project-wide rules live in [research integrity](research-integrity.md); this fil
   `tests/unit/test_crypto_defi_tvl_feature.py`.
 - pandas appears only in `adapters/yfinance_adapter.py` — [engineering § Polars by default](engineering.md#polars-by-default).
 - Commands live in `alpha_cli`. FRED, SEC, Binance and Bybit context stays apart from bars: [data layer](../project/components/data-layer.md).
-- Daily Binance funding uses verified source bytes and UTC `known_from` days; [RD-Agent policy](../../../workers/rdagent/README.md#futures-funding).
+- Daily Binance funding uses verified source bytes and UTC `known_from` days; [RD-Agent policy](../../../workers/rdagent/judge-rules.md#futures-funding).
 
 ## Point-in-time store
 

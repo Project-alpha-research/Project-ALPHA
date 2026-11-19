@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: 94e1a94326724cbb
+verified: a9f999eea0d69310
 ---
 
 # Toolbox
@@ -62,7 +62,7 @@ meant to become entries too, and are never slimming targets
 
 ## What is real today
 
-Fourteen checks are registered: three market descriptions, five that read a rule test's stored files, and six tests on
+Sixteen checks are registered: three market descriptions, five that read a rule test's stored files, and eight tests on
 that stored history. `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
 Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
 each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow
@@ -75,8 +75,7 @@ agent-chosen checks in the proposal, and most of the 480-entry catalogue ([STATU
 - **Capabilities:** `investigation-tools`
 - Code: `apps/alpha-cli/src/alpha_cli/toolbox/` (contract, inputs, runner, store, registry, sets, gates,
   reserve and family modules) and `apps/alpha-cli/src/alpha_cli/tool_cmds.py`.
-- Tests: `tests/unit/test_toolbox_contract.py`, `tests/unit/test_toolbox_runner.py`,
-  `tests/unit/test_toolbox_run_level_checks.py`, `tests/unit/test_toolbox_resampling_checks.py`, `tests/smoke/test_rule_tools_smoke.py`.
+- Tests: `tests/unit/test_toolbox_*.py`, `tests/smoke/test_rule_tools_smoke.py`.
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md); rules in [toolbox rules](../../invariants/cli-toolbox.md)
   and [investigation tools](../../invariants/cli-investigation-tools.md). Tool cards: `research/tools/`.
 - **Plan:** the toolbox rows of the [AI partner stage](../../../roadmap/production-scope-2.md#8-ai-partner) of the checklist.

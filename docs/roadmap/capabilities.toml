@@ -1209,7 +1209,7 @@ id = "investigation-tools"
 name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
 what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. Agent choice is not built."
 see_it = [
-  "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run trades.dependence <run_id>",
+  "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run resampling.regime_paths <run_id>", "alpha tool run resampling.student_t_paths <run_id>", "alpha tool run trades.dependence <run_id>",
   "alpha tool run overfit.deflated_sharpe <run_id>",
   "alpha tool run performance.downside_ratios <run_id>",
   "alpha tool run robustness.start_end_dates <run_id>",
@@ -1221,6 +1221,8 @@ proof_synthetic = [
   "tests/unit/test_rdagent_post_judge_checks.py::test_parity_attempts_and_cache",
   "tests/unit/test_toolbox_resampling_checks.py::test_public_function_parity",
   "tests/unit/test_toolbox_resampling_checks.py::test_planted_direction",
+  "tests/unit/test_toolbox_montecarlo_checks.py::test_agrees_with_classical_command",
+  "tests/unit/test_toolbox_montecarlo_checks.py::test_runs_on_a_factor_replay",
   "tests/unit/test_toolbox_run_level_checks.py::test_downside_ratios",
   "tests/unit/test_toolbox_run_level_checks.py::test_date_windows",
   "tests/unit/test_toolbox_run_level_checks.py::test_side_contribution",
@@ -1230,7 +1232,7 @@ proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_o
 real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs"
 needs = []
 state = "Working"
-docs = ["research/tools/resampling-checks.md", "research/tools/run-level-checks.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
+docs = ["research/tools/resampling-checks.md", "research/tools/montecarlo-checks.md", "research/tools/run-level-checks.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
 
 [[capability]]
 id = "price-lookalikes"

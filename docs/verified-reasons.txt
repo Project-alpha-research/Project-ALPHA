@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f9e49df15e422661 on 2026-11-19: Re-read after merging main: the body is main's; this branch only changes source_fingerprint ordering and toolbox inputs, which add no command, route or package boundary
+  verified 2b68ae98a71426dc on 2026-11-19: registry gained two resampling checks; this page's text is still correct
 
 apps/alpha-cli/README.md
-  verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
+  verified 2b68ae98a71426dc on 2026-11-19: registry now lists two more resampling checks; text unchanged where not edited
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
-  verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
+  verified 29ddf98ad6021f02 on 2026-11-19: only a size ceiling in the test changed by one byte; text still correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 0a60d94ad1f65dfa on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 5216b8ce89d6d555 on 2026-11-19: registry now lists two more resampling checks; text unchanged where not edited
 
 docs/reference/invariants/cli-runs.md
   verified 6c6264b15663de7e on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -89,7 +89,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
+  verified 29ddf98ad6021f02 on 2026-11-19: only a size ceiling in the test changed by one byte; text still correct
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -145,6 +145,9 @@ research/tools/diagnose-and-audit.md
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
+research/tools/montecarlo-checks.md
+  verified a37a1ca2d940a3ab on 2026-11-19: registry now lists two more resampling checks; text unchanged where not edited
+
 research/tools/price-noise.md
   verified 4f0f0986c91829f7 on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
 
@@ -176,7 +179,7 @@ workflow/CONTEXT.md
   verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 workflow/README.md
-  verified eb366577c36de56b on 2026-11-19: re-read; only routing rows and a new test were added
+  verified dd582b7d74d274c6 on 2026-11-19: only a size ceiling in the test changed by one byte; text still correct
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 349924e0fd25a759 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified d1b5fba9290140a2 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 apps/alpha-cli/README.md
   verified 349924e0fd25a759 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
@@ -38,7 +38,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 3925622dd9ec2f3f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 docs/reference/invariants/cli-runs.md
-  verified 1e46e4edb2af0d8f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified bacb8394fdca36f3 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -125,7 +125,7 @@ docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 5a01ad6dc1cda45d on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 5650474ee965761c on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -176,10 +176,10 @@ packages/alpha-data/CONTEXT.md
   verified 7417bd975a33931b on 2026-11-19: Merge of main; known-from rule changes in context sources are not stated on these pages.
 
 research/CONTEXT.md
-  verified 655b7b6a3ddfa230 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 580556a0e719097d on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/PLAYBOOK.md
-  verified 0bd594768c1fd3d6 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 00c6240217c057b3 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/README.md
   verified 7eff12b887a5adee on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
@@ -191,22 +191,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 5f92c900cc997d72 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 341393ba1500e0bd on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 38833c82200d9399 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 9072e2401a4ec1e5 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/charts.md
   verified 653fe515d9788f9b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 7eeea268b146ec5b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 7d33a3d802188626 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/diagnose-and-audit.md
-  verified cb27ea7b8e590eab on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified cb024ec0d4b793fa on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -230,13 +230,13 @@ research/tools/results-and-cite.md
   verified a806b54f7ee75c9c on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/rule-test.md
-  verified b5bedfaa81b8aee5 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified df0b39baeef02464 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 7eeea268b146ec5b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 7d33a3d802188626 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

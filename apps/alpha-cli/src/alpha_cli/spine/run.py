@@ -26,7 +26,7 @@ from alpha_cli.spine.deflation import (
 from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
-from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
 from alpha_cli.spine.reading import build_reading, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
@@ -196,6 +196,11 @@ def _execute(
             if not line.startswith("HTML report saved to:"):
                 print(line)
         print(f"HTML report saved to: {rdir / 'tearsheet.html'}")
+    # The same test again after a code change has a new run folder but is still a repeat.
+    if "repeat" not in result["labels"] and first_same_test(
+        read_trials(home), {**result, "spec_sha256": idea.spec_sha256, "kind": "rule_test"}
+    ):
+        result["labels"].append("repeat")
     result["labels"] = list(
         dict.fromkeys([*result["labels"], *manifest.get("spine", {}).get("labels", [])])
     )
@@ -249,7 +254,13 @@ def _write_run(
     snapshot = spine_snapshot(home)
     bars, ppy = prepared.bars, prepared.spec.periods_per_year
     current = spine_test_key(
-        idea.spec_sha256, bars[0].symbol, bars[0].ts.isoformat(), bars[-1].ts.isoformat(), ppy
+        idea.spec_sha256,
+        bars[0].symbol,
+        bars[0].ts.isoformat(),
+        bars[-1].ts.isoformat(),
+        ppy,
+        store=result.get("store"),
+        data_id=result.get("idea_id"),
     )
     count = count_snapshot(snapshot, idea.rule.kind, current)
     sharpes = family_sharpes(snapshot, count.family_id, ppy, current)

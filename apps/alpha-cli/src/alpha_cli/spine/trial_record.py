@@ -66,6 +66,56 @@ class TrialRecord:
     measure_clock: str | None = None
 
 
+# What was tested, independent of the code version that tested it: spec hash, assets, data window
+# start and end as used, bar size, the data store, and the content of the data (``idea_id``: the
+# spec hash with the fingerprint of the exact bars and dividends used). Two stores, or one store
+# after a price revision or a change of adjustment basis, are different tests. The one definition:
+# ledger repeat labelling, the family count (deflation) and the same-asset count all build it here.
+TestKey = tuple[str, tuple[str, ...], str | None, str | None, str | None, str | None, str | None]
+
+
+def make_test_key(
+    spec_hash: str | None,
+    assets: tuple[str, ...],
+    data_start: str | None,
+    data_end: str | None,
+    bar_size: str | None,
+    *,
+    store: str | None,
+    data_id: str | None,
+) -> TestKey | None:
+    """The test key, or None when the spec hash or the asset is missing (an unmatchable test).
+
+    A missing store or data id (rows written before they were recorded) stays None in the key, so
+    such a row never matches a row that records them.
+    """
+    if not spec_hash or not assets:
+        return None
+    return (spec_hash, assets, data_start, data_end, bar_size, store, data_id)
+
+
+def _row_bar_size(row: dict[str, Any]) -> str | None:
+    if isinstance(row.get("bar_size"), str) and row["bar_size"]:
+        return str(row["bar_size"])
+    return "1D" if row.get("periods_per_year") in (252, 365) else None
+
+
+def row_test_key(row: dict[str, Any]) -> TestKey | None:
+    """The test key of a raw spine rule-test ledger row; None for any other row or a thin one."""
+    if row.get("kind", "rule_test") != "rule_test":
+        return None
+    spec, symbol = row.get("spec_sha256"), row.get("symbol")
+    start, end = row.get("first_ts"), row.get("last_ts")
+    store, data_id = row.get("store"), row.get("idea_id")
+    if not isinstance(spec, str) or not isinstance(symbol, str):
+        return None
+    if not all(v is None or isinstance(v, str) for v in (start, end, store, data_id)):
+        return None
+    return make_test_key(
+        spec, (symbol,), start, end, _row_bar_size(row), store=store, data_id=data_id
+    )
+
+
 def _strings(value: Any) -> tuple[str, ...]:
     if not isinstance(value, (list, tuple)) or any(not isinstance(v, str) for v in value):
         raise ValueError("expected a list of strings")
@@ -146,11 +196,7 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         else (row["symbol"],)
         if row.get("symbol")
         else (),
-        bar_size=row["bar_size"]
-        if isinstance(row.get("bar_size"), str) and row["bar_size"]
-        else "1D"
-        if row.get("periods_per_year") in (252, 365)
-        else None,
+        bar_size=_row_bar_size(row),
         windows={"data_start": row.get("first_ts"), "data_end": row.get("last_ts")},
         outcome=outcome,
         raw_status=status,

@@ -111,6 +111,11 @@ def student_t_paths(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
 
 STUDENT_T_PATHS = ToolSpec(
     id="resampling.student_t_paths",
+    answers=(
+        "How bad could the drawdown get if returns have fatter tails?",
+        "What range of final return do fat-tailed histories give?",
+    ),
+    situations=("drawdown", "return-range"),
     family="resampling",
     kind="test",
     look="test",

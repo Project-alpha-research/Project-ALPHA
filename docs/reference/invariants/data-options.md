@@ -147,6 +147,9 @@ Haug, Haug and Lewis (2003, Wilmott) on its weakness. Cross-check: QuantLib 1.44
   and Lewis): one vol for S* and S misprices, most for large dividends and long expiries. The ex-date falls between nodes, so
   the last exercise before it is up to one step early. Measured at 500 steps over one year: 7.4e-3 for a 2.00 dividend 11 days
   before expiry (bound 0.02, tested), under 2e-3 for an ex-date far from expiry. Use more steps for an ex-date near expiry.
+
+## American style: greeks, implied volatility and cost
+
 - Delta and gamma from the tree's first levels (step-1 slope; change of step-2 slopes), averaged over N and N + 1. A 3% spot
   bump was 10 to 100 times worse (gamma 5.2e-3 off near a put's exercise boundary). Bumps: vol 0.01 (vega per 1.00, central),
   rate 0.005 (rho per 1.00, central), valuation instant one day (theta per calendar day, central). Same units as the closed
@@ -158,7 +161,8 @@ Haug, Haug and Lewis (2003, Wilmott) on its weakness. Cross-check: QuantLib 1.44
   [max(1e-4, 1.01 |r - q| sqrt(T / steps)), 10]; a price no representable vol gives is `implied_vol_outside_search_interval`.
 - Same safeguarded Newton with a bracket (slope by forward difference on the tree), vol tolerance 1e-9, same `low_vega` rule.
 - Time on the dev machine, pure Python plus numpy (already a dependency): one 500-step tree 5 ms (a price is two trees); one solve about 0.14 s;
-  one row with greeks about 0.2 s; 100 contracts about 21 s at 500 steps. Memory is O(steps): no steps x steps array. Pass `steps` to `solve_row` for a coarser chain.
+  one row with greeks about 0.2 s; 100 contracts about 21 s at 500 steps. Memory is O(steps): no steps x steps array.
+  Pass `steps` to `solve_row` for a coarser chain.
 - Model tag: `crr-tree-escrowed-v1;model=crr_tree;steps=<n>;r=<rate>;q=<yield>;divs=<none or iso:amount|...>;day_count=act365f;`
   `theta=per_calendar_day;vega=per_1.00_vol`. The provided slot is never overwritten.
 - Tests: tree error against Black-Scholes falls with steps (1.3e-3, 2.5e-4, 6.2e-5 at 100, 500, 2000) and stays under

@@ -12,9 +12,10 @@ from alpha_data.options.schema import (
     Trade,
     quote_labels,
 )
-from alpha_data.options.store import OptionsStore
+from alpha_data.options.store import ChainRead, OptionsStore, SnapshotsRead
 
 __all__ = [
+    "ChainRead",
     "ChainRow",
     "ChainSnapshot",
     "ContractId",
@@ -23,6 +24,7 @@ __all__ = [
     "OptionsDataError",
     "OptionsStore",
     "Quote",
+    "SnapshotsRead",
     "SyntheticAdapter",
     "Trade",
     "VolSurface",

@@ -1,8 +1,12 @@
 """Seeded synthetic chains from a known volatility surface, for tests and later solver work.
 
 No real market data. Quotes use a placeholder price shape (intrinsic value plus a time value that
-grows with the surface IV); the Black-Scholes pricer belongs to the solver build, not here. The
-surface IV is stored as the provided IV, so a later solver can be checked against it.
+grows with the surface IV). It is NOT an option model: these prices are not arbitrage-free, and no
+implied-volatility solver can recover the stored surface IV from them. Never use this fixture to
+judge a pricing or volatility method. It only tests records, storage and point-in-time reads.
+The solver build must add a fixture priced with a stated model (for example Black-Scholes at the
+surface IV) so a solver can recover the known volatility. The surface IV is stored as the provided
+IV so that later check has a target.
 """
 
 from __future__ import annotations

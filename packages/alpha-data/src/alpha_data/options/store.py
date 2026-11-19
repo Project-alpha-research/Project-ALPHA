@@ -2,7 +2,13 @@
 
 Layout: `<root>/options/<provider>/<underlying_id>/<yyyy>/<yyyymmddThhmmssZ>.parquet`, plus a
 `.json` sidecar with the content hash, row count and fetch provenance. A snapshot, once written,
-is never changed. Reads take an aware cut-off and stop at the held-back day.
+is never changed.
+
+Two read paths, as in the bars store:
+- Research reads (`snapshots_as_of`, `chain_as_of`) cut the caller's time at the held-back
+  boundary and report how many snapshots that hid. They never return data from the reserved period.
+- Forward use (`forward_chain_as_of`) reads the newest data on purpose, up to the caller's time.
+  Research-side code must never call it; `tests/unit/test_options_forward_guard.py` enforces that.
 """
 
 from __future__ import annotations
@@ -11,7 +17,8 @@ import hashlib
 import io
 import json
 import re
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -33,14 +40,30 @@ def _name(field: str, value: str) -> str:
     return value
 
 
-def _cutoff(when: datetime) -> datetime:
-    """The same held-back rule the other stores use: no read reaches the reserved day."""
+_BOUNDARY = datetime.combine(RESERVED_DAY, time.min, UTC)
+_LAST_VISIBLE = _BOUNDARY - timedelta(microseconds=1)
+
+
+def _aware(when: datetime) -> datetime:
     if when.tzinfo is None or when.utcoffset() is None:
         raise OptionsDataError("when", "cut-off must be timezone-aware")
-    utc = when.astimezone(UTC)
-    if utc.date() >= RESERVED_DAY:
-        raise OptionsDataError("when", "options read reaches the held-back period")
-    return utc
+    return when.astimezone(UTC)
+
+
+@dataclass(frozen=True)
+class SnapshotsRead:
+    """Research read result: snapshots known at the capped time, and how many the cap hid."""
+
+    snapshots: tuple[ChainSnapshot, ...]
+    held_back: int
+
+
+@dataclass(frozen=True)
+class ChainRead:
+    """Research read result: the newest visible chain (or None) and how many snapshots were hid."""
+
+    chain: ChainSnapshot | None
+    held_back: int
 
 
 class OptionsStore:
@@ -89,7 +112,12 @@ class OptionsStore:
             raise DataError(f"invalid options parquet: {path}") from None
         if meta.get("rows") != frame.height:
             raise DataError(f"options rows differ from provenance: {path}")
-        return from_frame(frame), frame
+        snapshot = from_frame(frame)
+        if snapshot.known_at.isoformat() != meta.get(
+            "known_at"
+        ) or snapshot.snapshot_ts.isoformat() != meta.get("snapshot_ts"):
+            raise DataError(f"options times differ from provenance: {path}")
+        return snapshot, frame
 
     def write(self, snapshot: ChainSnapshot, *, fetched_at: datetime, adapter_version: str) -> Path:
         """Publish one snapshot. Same content again is a no-op; changed content is refused."""
@@ -126,23 +154,39 @@ class OptionsStore:
         )
         return path
 
-    def snapshots_as_of(
-        self, provider: str, underlying_id: str, when: datetime
-    ) -> list[ChainSnapshot]:
-        """Snapshots with known_at <= when, oldest first. Later files are not opened."""
-        cutoff = _cutoff(when)
-        return [
-            self._load(path)[0]
-            for known, _, path in self._metas(provider, underlying_id)
-            if known <= cutoff
-        ]
+    def snapshots_as_of(self, provider: str, underlying_id: str, when: datetime) -> SnapshotsRead:
+        """RESEARCH read: snapshots with known_at <= min(when, last instant before the held-back
+        day), oldest first, plus the count of snapshots the cap hid. Later files are not opened."""
+        asked = _aware(when)
+        cutoff = min(asked, _LAST_VISIBLE)
+        metas = self._metas(provider, underlying_id)
+        return SnapshotsRead(
+            tuple(self._load(path)[0] for known, _, path in metas if known <= cutoff),
+            sum(1 for known, _, _ in metas if cutoff < known <= asked),
+        )
 
-    def chain_as_of(
+    def chain_as_of(self, provider: str, underlying_id: str, when: datetime) -> ChainRead:
+        """RESEARCH read: the newest snapshot visible at the capped time, with contracts listed
+        and unexpired that day. A contract expiring after the boundary is kept: its identity was
+        known then. No quote, trade or greek from the held-back period is returned."""
+        asked = _aware(when)
+        cutoff = min(asked, _LAST_VISIBLE)
+        metas = self._metas(provider, underlying_id)
+        held = sum(1 for known, _, _ in metas if cutoff < known <= asked)
+        chain = self._newest(metas, cutoff)
+        return ChainRead(chain, held)
+
+    def forward_chain_as_of(
         self, provider: str, underlying_id: str, when: datetime
     ) -> ChainSnapshot | None:
-        """The newest snapshot known at `when`, with contracts listed and unexpired that day."""
-        cutoff = _cutoff(when)
-        known = [m for m in self._metas(provider, underlying_id) if m[0] <= cutoff]
+        """FORWARD USE ONLY (paper following, "active today", display): the newest snapshot known
+        at `when`, with no held-back cap. Research code must never call this."""
+        return self._newest(self._metas(provider, underlying_id), _aware(when))
+
+    def _newest(
+        self, metas: list[tuple[datetime, datetime, Path]], cutoff: datetime
+    ) -> ChainSnapshot | None:
+        known = [m for m in metas if m[0] <= cutoff]
         if not known:
             return None
         newest = max(known, key=lambda m: (m[0], m[1]))

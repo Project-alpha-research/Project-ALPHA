@@ -183,6 +183,12 @@ class ChainRow:
         if self.computed is not None and self.computed.source != "computed":
             raise OptionsDataError("computed", "slot holds greeks whose source is not 'computed'")
 
+    @property
+    def labels(self) -> tuple[str, ...]:
+        """Every label on this row (quote shape, provider IV sentinel); they travel with the row."""
+        quote = quote_labels(self.quote) if self.quote is not None else ()
+        return quote + (self.provided.labels if self.provided is not None else ())
+
 
 @dataclass(frozen=True, kw_only=True)
 class ChainSnapshot:
@@ -222,5 +228,7 @@ class ChainSnapshot:
                 raise OptionsDataError("listed_on", f"{c.key} appears before its listing date")
             if r.quote is not None and r.quote.quote_ts > self.known_at:
                 raise OptionsDataError("quote_ts", f"{c.key} quote is after known_at")
+            if r.oi_as_of is not None and r.oi_as_of > self.known_at.date():
+                raise OptionsDataError("oi_as_of", f"{c.key} open interest is after known_at")
             if r.trade is not None and r.trade.last_ts > self.known_at:
                 raise OptionsDataError("last_ts", f"{c.key} trade is after known_at")

@@ -1302,7 +1302,7 @@ proof_synthetic = [
 real_data = "not yet confirmed; no provider is chosen and the synthetic fixture is the only source"
 needs = []
 state = "Partial"
-missing = "no provider adapter, solver, derived series, health rows or command; waits for the paid data package"
+missing = "no provider adapter, American-style pricing, derived series, health rows or command; waits for the paid data package"
 docs = ["docs/reference/project/components/options-data.md"]
 
 [[capability]]

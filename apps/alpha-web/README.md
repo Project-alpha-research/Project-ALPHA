@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: a3480c23a04bafd2
+verified: 32554a7d4b0e0877
 ---
 
 # alpha-web: code map and change loop
@@ -38,7 +38,7 @@ grants authority.
   The browser interaction spec is `e2e/rdagent-journey.spec.ts`.
   Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
-- The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`.
+- The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
 - Setup Lab (Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.

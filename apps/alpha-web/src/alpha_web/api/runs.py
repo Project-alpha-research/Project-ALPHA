@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 
 from alpha_cli import run_projection
 from alpha_core import DataError
-from alpha_web import _runs
+from alpha_web import _checks, _runs
 from alpha_web._catalog import _run_json
 from alpha_web.api._common import data_dir
 from alpha_web.api.models import (
@@ -28,6 +28,7 @@ from alpha_web.api.models import (
     OptimTrials,
     PortfolioAnalyticsResponse,
     PropfirmPaths,
+    RuleTestChecks,
     RunDetail,
     RunList,
 )
@@ -63,6 +64,16 @@ def run_detail(run_id: str) -> dict[str, Any]:
         return _runs.run_detail(run_id, data_dir=data_dir())
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/runs/{run_id}/checks", response_model=RuleTestChecks)
+def run_checks(run_id: str) -> dict[str, Any]:
+    """The toolbox checks stored for one rule test; read from the CLI, never computed here."""
+    _ensure_run(run_id)
+    try:
+        return _checks.rule_test_checks(run_id, data_dir=data_dir())
+    except (DataError, RuntimeError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @router.get("/runs/{run_id}/daily-rule-evidence", response_model=DailyRuleEvidenceResponse)

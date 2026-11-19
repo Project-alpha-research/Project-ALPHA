@@ -331,6 +331,8 @@ from .rule_test import RuleTest as RuleTest
 from .rule_test import RuleTestAuditItem as RuleTestAuditItem
 from .rule_test import RuleTestBenchmark as RuleTestBenchmark
 from .rule_test import RuleTestByYear as RuleTestByYear
+from .rule_test import RuleTestCheck as RuleTestCheck
+from .rule_test import RuleTestChecks as RuleTestChecks
 from .rule_test import RuleTestConcentration as RuleTestConcentration
 from .rule_test import RuleTestDelay as RuleTestDelay
 from .rule_test import RuleTestDiagnostics as RuleTestDiagnostics

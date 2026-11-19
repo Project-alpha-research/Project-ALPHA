@@ -1207,7 +1207,7 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 [[capability]]
 id = "investigation-tools"
 name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
-what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. Agent choice is not built."
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. A rule test's Workstation report lists the stored checks of that run with their readings, or the command to run the standard set. Agent choice is not built."
 see_it = [
   "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run trades.dependence <run_id>",
   "alpha tool run overfit.deflated_sharpe <run_id>",
@@ -1215,7 +1215,7 @@ see_it = [
   "alpha tool run robustness.start_end_dates <run_id>",
   "alpha tool run trades.side_contribution <run_id>",
   "alpha tool run trades.concentration <run_id>",
-  "alpha tool run-set market-context <run_id> --json", "alpha tool list --for <run_id> --json", "alpha tool history <run_id> --json", "alpha results show <run_id> --json"]
+  "alpha tool run-set market-context <run_id> --json", "alpha tool list --for <run_id> --json", "alpha tool history <run_id> --json", "alpha results show <run_id> --json", "Workstation: open a rule test run; Summary shows Checks run on this test"]
 entry_points = ["cli: alpha tool", "code: apps/alpha-cli/src/alpha_cli/toolbox/registry.py", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
 proof_synthetic = [
   "tests/unit/test_rdagent_post_judge_checks.py::test_parity_attempts_and_cache",
@@ -1225,8 +1225,8 @@ proof_synthetic = [
   "tests/unit/test_toolbox_run_level_checks.py::test_date_windows",
   "tests/unit/test_toolbox_run_level_checks.py::test_side_contribution",
   "tests/unit/test_toolbox_run_level_checks.py::test_concentration",
-  "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
-proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test"]
+  "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/integration/test_web_api_rule_test_checks.py::test_stored_results_are_returned_with_their_stored_reading", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
+proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test", "tests/smoke/test_web_checks_smoke.py::test_web_api_returns_the_readings_of_a_rule_tests_standard_set"]
 real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs"
 needs = []
 state = "Working"

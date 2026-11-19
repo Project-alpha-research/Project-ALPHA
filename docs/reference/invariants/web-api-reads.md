@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: 14856e29d25f4070
+verified: c08c41feb17fa3e0
 ---
 
 # Web API reads and writes invariants
@@ -45,6 +45,7 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   rule's one-sentence wording is built server-side from the stored rule and is null for an unknown rule kind. Its
   display name puts `rule test <spec name>` in the strategy slot. Every other run has `rule_test: null` and is unchanged;
   `run_context_*` keeps its meaning for all runs. Enforced by `tests/integration/test_web_api_rule_test.py`.
+- GET `/api/runs/{run_id}/checks` relays `alpha results show <run> --json` (`_checks.py`): stored tool outputs with their readings, and failed attempts from the trial ledger with their error code. The web code opens no tool output file and computes nothing. Enforced by `tests/integration/test_web_api_rule_test_checks.py`.
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.
   [ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md)

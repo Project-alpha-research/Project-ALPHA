@@ -32,6 +32,7 @@ it would not write them (a recommendation the owner has not yet confirmed,
 Kronos, the four [Monte Carlo](monte-carlo.md) methods, lookalike search and the pattern tools are
 meant to become entries too, and are never slimming targets
 ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
+The Workstation shows a rule test's stored checks, with their readings, under the Summary of its report, so the owner sees a test and its checks in one place.
 
 ## Intended design
 

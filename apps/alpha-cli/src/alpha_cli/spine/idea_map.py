@@ -13,14 +13,17 @@ def build_map(
 ) -> list[dict[str, Any]]:
     read = [r for r in runs if r["reading"] is not None and r["word"] != "fault"]
     unread = bool(runs or finds) and not read and not finds
-    studies = [s["id"] for f in finds for s in f["studies"]]
+    studies = [s["id"] for f in finds for s in f["studies"] if not s["problem"]]
     nulls = [r["id"] for r in read if r["_manifest"].get("nulls")]
     aims = [r["id"] for r in read if r["aim"] is not None]
     variants = [r["id"] for r in read if (r["reading"]["counts"].get("variants_tried") or 0) > 0]
-    rules = {str(r["tested"].get("rule")) for r in read}
-    if len(rules) > 1:
+    settings: dict[str, set[str]] = {}
+    for r in read:
+        rule = r["tested"].get("rule") or ""
+        settings.setdefault(rule.split(" (")[0], set()).add(rule)
+    if any(len(found) > 1 for found in settings.values()):
         variants = [r["id"] for r in read]
-    costs = [c["file"] for r in runs for c in r["checks"] if c["tool"] == COSTS_TOOL]
+    costs = [c["file"] for r in read for c in r["checks"] if c["tool"] == COSTS_TOOL]
     oos = [
         r["id"]
         for r in read
@@ -39,15 +42,15 @@ def build_map(
         line("examples looked at", [f["id"] for f in finds], "a setup find linked to the card"),
         line("compared with controls", studies + nulls, "a setup study, or a random-data test"),
         line("compared with a simple baseline", aims, "an aim row in a reading"),
-        line("settings checked", variants, "variants of the settings were recorded"),
-        line("costs checked", costs, "a break-even cost check"),
-        line("independent check", oos, "out-of-sample numbers are stored"),
+        line("settings checked", variants, "other settings of the rule were tried and recorded"),
+        line("costs checked", costs, "a stored break-even cost check"),
+        line("out-of-sample numbers recorded", oos, "no out-of-sample Sharpe is stored"),
         {"step": "held-back confirmation", "state": NOT_BUILT, "evidence": [], "note": ""},
         {
             "step": "followed forward on paper",
             "state": NOT_BUILT,
             "evidence": [],
-            "note": "see `alpha follow list` when it exists",
+            "note": "no follow records are read here",
         },
     ]
 
@@ -63,7 +66,7 @@ def next_steps(
         "compared with a simple baseline": test,
         "settings checked": 'alpha tool find "how sensitive are the settings"',
         "costs checked": 'alpha tool find "how much cost would remove the edge"',
-        "independent check": test,
+        "out-of-sample numbers recorded": test,
     }
     return [
         {"step": s["step"], "command": commands[s["step"]]}

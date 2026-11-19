@@ -110,7 +110,7 @@ def test_readings_and_the_fault_appear_in_order_and_none_is_dropped(tmp_path: Pa
     assert text.index(f"rule test {WEAK_RUN}") < text.index(f"rule test {FAULT_RUN}")
     assert "too little to read" in text
     assert "Fault:" in text
-    assert TOOL_WORDS in text and "[exploratory]" in text
+    assert TOOL_WORDS in " ".join(text.split()) and "[exploratory]" in text
     assert "ma_cross" in text and "SPY" in text and "2020-01-02" in text
 
 
@@ -125,7 +125,7 @@ def test_map_lines_are_true_or_false_as_the_records_say(tmp_path: Path) -> None:
     assert steps["settings checked"]["state"] == "done"
     assert steps["costs checked"]["state"] == "done"
     assert steps["costs checked"]["evidence"] == [TOOL_FILE]
-    assert steps["independent check"]["state"] == "done"
+    assert steps["out-of-sample numbers recorded"]["state"] == "done"
     assert steps["held-back confirmation"]["state"] == "not built yet"
     assert steps["followed forward on paper"]["state"] == "not built yet"
 
@@ -240,6 +240,7 @@ def test_setup_find_and_study_are_read_and_a_broken_study_is_a_fault(tmp_path: P
     assert "setup find f1" in text and "SPY, QQQ" in text
     assert "12 accepted, 1 pending, 3 set aside" in text
     assert "Too few occurrences (12) to judge." in text
+    assert text.lower().count("outcome word not shown (old wording)") == 1
     steps = {r["step"]: r for r in json.loads(_file(tmp_path, card, "--json")[1])["map"]}
     assert steps["examples looked at"]["evidence"] == ["f1"]
     assert "s1" in steps["compared with controls"]["evidence"]
@@ -282,3 +283,45 @@ def test_replaced_cards_are_counted_as_variants_and_held_back_is_disclosed(
 def test_unknown_card_is_a_plain_error(tmp_path: Path) -> None:
     code, output = _file(tmp_path, "0123456789ab")
     assert code != 0 and "0123456789ab" in output
+
+
+def test_no_file_is_created_when_the_ledger_has_no_lock_file(tmp_path: Path) -> None:
+    card = synthetic_home(tmp_path)
+    lock = tmp_path / "ledger" / "trials.jsonl.lock"
+    lock.unlink()
+    before = _snapshot(tmp_path)
+    assert _file(tmp_path, card)[0] == 0
+    assert _file(tmp_path, card, "--json")[0] == 0
+    nxt = RUNNER.invoke(app, ["next"], env={"ALPHA_DATA_DIR": str(tmp_path)})
+    assert nxt.exit_code == 0, nxt.output
+    assert not lock.exists()
+    assert _snapshot(tmp_path) == before
+
+
+def test_a_fault_counts_for_nothing_on_the_map(tmp_path: Path) -> None:
+    card = synthetic_home(tmp_path, with_runs=False)
+    broken = manifest(
+        oos_metrics={"max_drawdown": -0.1, "risk_of_ruin": 0.0},
+        spine=_spine("2020-01-02T00:00:00+00:00", "2024-06-28T00:00:00+00:00"),
+    )
+    broken["nulls"] = [{"tier": "t", "percentile": 0.5, "p_value": 0.5, "passed": True}]
+    _run_files(tmp_path, FAULT_RUN, broken)
+    (tmp_path / "runs" / FAULT_RUN / "diagnostics.json").write_text("[")
+    append_trial(
+        tmp_path, {"kind": "rule_test", "run_id": FAULT_RUN, "symbol": "SPY", "labels": []}
+    )
+    cards.note_link(tmp_path, card, "rule_test", FAULT_RUN)
+    steps = {r["step"]: r for r in json.loads(_file(tmp_path, card, "--json")[1])["map"]}
+    for name in ("compared with controls", "settings checked", "costs checked"):
+        assert steps[name]["state"] != "done", name
+    assert "Fault:" in _file(tmp_path, card)[1]
+
+
+def test_one_run_with_default_settings_is_not_yet_for_settings_checked(tmp_path: Path) -> None:
+    card = synthetic_home(tmp_path, with_runs=False)
+    _run_files(tmp_path, WEAK_RUN, manifest(spine=_spine("2020-01-02", "2024-01-02")))
+    (tmp_path / "runs" / WEAK_RUN / "diagnostics.json").write_text(json.dumps({"audit": []}))
+    append_trial(tmp_path, {"kind": "rule_test", "run_id": WEAK_RUN, "symbol": "SPY", "labels": []})
+    cards.note_link(tmp_path, card, "rule_test", WEAK_RUN)
+    steps = {r["step"]: r for r in json.loads(_file(tmp_path, card, "--json")[1])["map"]}
+    assert steps["settings checked"]["state"] == "not yet"

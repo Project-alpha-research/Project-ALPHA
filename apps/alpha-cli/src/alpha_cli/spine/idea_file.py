@@ -15,7 +15,7 @@ from alpha_cli.spine import reserve
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import read_json, read_study, tool_outputs
 from alpha_cli.spine.idea_map import DONE, build_map, next_steps
-from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.ledger import read_trials_readonly
 from alpha_cli.spine.reading import reading_word, stored_reading
 from alpha_cli.toolbox import declarations
 from alpha_core import DataError
@@ -193,7 +193,7 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
     identity = cards.resolve(home, wanted)
     card = cards.load(home, identity)
     older, newer = _chain(home, identity)
-    ledger = read_trials(home)
+    ledger = read_trials_readonly(home)
     entries: list[dict[str, Any]] = []
     for link in cards.links_of(home, identity):
         ref = link.get("ref", "")

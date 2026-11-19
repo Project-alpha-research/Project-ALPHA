@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d1b5fba9290140a2 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 33a2f30366c7daa0 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 apps/alpha-cli/README.md
-  verified 349924e0fd25a759 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 33a2f30366c7daa0 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified b4160304934ff04c on 2026-11-19: find.py gained pointers for two situations; text still correct
+  verified 3be5d37de7414cfb on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -32,13 +32,13 @@ docs/reference/invariants/cli-research.md
   verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
-  verified a86d9a330434a9b4 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 0383a0df5d41e77f on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 6a647b3ccc4ee0b7 on 2026-11-19: only more tests were added; the rules on this page are unchanged
+  verified ad11cb08cf3b6f7d on 2026-11-19: line wrapped; text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified bacb8394fdca36f3 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 1531e6bf2f9cd10f on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -131,7 +131,7 @@ docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 5650474ee965761c on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified e44d10ae38d99e17 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -182,37 +182,40 @@ packages/alpha-data/CONTEXT.md
   verified 09731268111757ce on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
 
 research/CONTEXT.md
-  verified 580556a0e719097d on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 284b2bb16bea0a8b on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/PLAYBOOK.md
-  verified 00c6240217c057b3 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified f0f814f17af76114 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/README.md
   verified 7eff12b887a5adee on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/lessons/README.md
-  verified 5c68e546521282e4 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified c30578ad48266a0d on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 341393ba1500e0bd on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 3db4d7b00d12dfb3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 9072e2401a4ec1e5 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified db61eea0adb8522b on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/charts.md
   verified 653fe515d9788f9b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 7d33a3d802188626 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified cb737d11b283b785 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/diagnose-and-audit.md
-  verified cb024ec0d4b793fa on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 1e8a8ff922c124a5 on 2026-11-19: idea file read path and map wording corrected; page text re-read
+
+research/tools/idea-card.md
+  verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -221,7 +224,7 @@ research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/price-noise.md
-  verified bf251ba22ae7dfac on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified 0c3d433d62aae157 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/random-price-null.md
   verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
@@ -233,16 +236,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified a806b54f7ee75c9c on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+  verified 73de19f6dac8ef70 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/rule-test.md
-  verified df0b39baeef02464 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified 2014d770ecc9d3de on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 7d33a3d802188626 on 2026-11-19: only a read function was added to idea_card.py; this page's statements are unchanged
+  verified cb737d11b283b785 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

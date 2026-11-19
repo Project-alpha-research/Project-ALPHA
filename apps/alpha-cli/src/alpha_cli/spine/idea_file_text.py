@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import textwrap
 from typing import Any
 
 from alpha_cli.spine import idea_card as cards
 
 SHOWN_EACH_END = 10
 CAP = 2 * SHOWN_EACH_END
+
+
+def _wrap(first: str, text: str, indent: int) -> list[str]:
+    """Wrap one stored sentence to a readable width; the words are not changed."""
+    pad = " " * indent
+    return textwrap.wrap(f"{first} {text}", 92, initial_indent=pad, subsequent_indent=pad + "  ")
 
 
 def _card(card: dict[str, Any]) -> list[str]:
@@ -33,7 +40,8 @@ def _checks(checks: list[dict[str, Any]]) -> list[str]:
     if not checks:
         return ["    Checks run on it: none recorded."]
     lines = [f"    Checks run on it: {len(checks)}."]
-    lines += [f"      {c['tool']} [{c['word']}] {c['reading']}" for c in checks]
+    for c in checks:
+        lines += _wrap(f"{c['tool']} [{c['word']}]", str(c["reading"]), 6)
     return lines
 
 
@@ -50,7 +58,7 @@ def _rule(n: int, total: int, e: dict[str, Any]) -> list[str]:
     )
     if t["held_back"]:
         lines.append(f"    Held back: {t['held_back']}")
-    lines.append(f"    Reading: {e['sentence']}")
+    lines += _wrap("Reading:", str(e["sentence"]), 4)
     lines.append(f"    Evidence word: {e['word']}")
     aim = e["aim"]
     lines.append(
@@ -83,7 +91,7 @@ def _find(n: int, total: int, e: dict[str, Any]) -> list[str]:
         if s["problem"]:
             lines.append(f"    Study {s['id']}: Fault: {s['problem']}.")
         else:
-            lines.append(f"    Study {s['id']} [{', '.join(s['labels'])}]: {s['reading']}")
+            lines += _wrap(f"Study {s['id']} [{', '.join(s['labels'])}]:", str(s["reading"]), 4)
     return lines
 
 
@@ -102,6 +110,10 @@ def _readings(entries: list[dict[str, Any]]) -> list[str]:
                 f"  {skipped} readings in between are counted but not printed. See --json."
             )
         lines += _rule(n, total, e) if e["kind"] == "rule test" else _find(n, total, e)
+    if any(
+        s["problem"] is None for e in entries if e["kind"] == "setup find" for s in e["studies"]
+    ):
+        lines.append("  Study outcome word not shown (old wording). The study sentence is shown.")
     return lines
 
 

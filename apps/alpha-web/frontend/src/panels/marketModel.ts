@@ -89,12 +89,42 @@ export function commonScale(assets: readonly MarketAsset[]): [number, number] {
   return [Math.min(100, ...all), Math.max(100, ...all)]
 }
 
+/** The drawn range: a flat range is widened so nothing divides by zero. */
+function drawRange(scale: readonly [number, number]): [number, number] {
+  return scale[1] === scale[0] ? [scale[0] - 0.5, scale[1] + 0.5] : [scale[0], scale[1]]
+}
+
+/** Where a value sits in the box, 0 at the top and 1 at the bottom. */
+export function yFraction(value: number, scale: readonly [number, number]): number {
+  const [low, high] = drawRange(scale)
+  return 1 - (value - low) / (high - low)
+}
+
 export function linePoints(series: readonly number[], scale: readonly [number, number], width: number, height: number): string {
-  const [low, high] = scale[1] === scale[0] ? [scale[0] - 0.5, scale[1] + 0.5] : scale
   const last = Math.max(series.length - 1, 1)
   return series
-    .map((value, index) => `${((index / last) * width).toFixed(2)},${(height - ((value - low) / (high - low)) * height).toFixed(2)}`)
+    .map((value, index) => `${((index / last) * width).toFixed(2)},${(yFraction(value, scale) * height).toFixed(2)}`)
     .join(' ')
+}
+
+export interface AxisTick { value: number; label: string; top: number }
+
+/** Four labelled gridlines, evenly spaced over the drawn range. `top` is a percentage from the top edge. */
+export function axisTicks(scale: readonly [number, number]): AxisTick[] {
+  const [low, high] = drawRange(scale)
+  const digits = high - low < 10 ? 1 : 0
+  return [0, 1, 2, 3].map(step => {
+    const value = high - ((high - low) * step) / 3
+    return { value, label: value.toFixed(digits), top: yFraction(value, scale) * 100 }
+  })
+}
+
+export type ScaleMode = 'shared' | 'own'
+
+export function scaleNote(mode: ScaleMode): string {
+  return mode === 'shared'
+    ? 'Scale: shared. Every tile uses one range, so an outlier stands out. 100 is the first bar of the window.'
+    : 'Scale: each its own. Every tile fills its own range, so compare shapes, not sizes. 100 is the first bar of the window.'
 }
 
 export type HoverState = 'normal' | 'hovered' | 'dimmed'

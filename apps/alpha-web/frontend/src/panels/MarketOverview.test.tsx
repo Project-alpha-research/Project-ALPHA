@@ -51,7 +51,36 @@ describe('Market view', () => {
     expect(html).toContain('highest median traded value')
     expect(html).toContain('Scanned 200 of 260 assets')
     expect(html).toContain('NEW: too few bars (12 of 90 needed)')
-    expect(html).toContain('same scale')
+    expect(html).toContain('same range')
+    expect(html).toContain('How this view is built')
+  })
+
+  it('keeps the header short and puts the explanation after the table', () => {
+    const html = render()
+    expect(html.indexOf('Data to: 2026-11-18')).toBeLessThan(html.indexOf('market-grid"'))
+    expect(html.indexOf('market-grid"')).toBeLessThan(html.indexOf('All lines'))
+    expect(html.indexOf('All lines')).toBeLessThan(html.indexOf('Stands out'))
+    expect(html.indexOf('Stands out')).toBeLessThan(html.indexOf('market-table'))
+    expect(html.indexOf('market-table')).toBeLessThan(html.indexOf('How this view is built'))
+    expect(html).toContain('<details class="market-how">')
+  })
+
+  it('states the active scale and offers the toggle', () => {
+    const html = render()
+    expect(html).toContain('Scale: shared.')
+    expect(html).toMatch(/<option value="own">each its own/)
+  })
+
+  it('shows direction by mark and by a direction attribute, never colour alone', () => {
+    const html = render()
+    expect(html).toContain('▲')
+    expect(html).toContain('▼')
+    expect(html).toContain('data-dir="up"')
+    expect(html).toContain('data-dir="down"')
+  })
+
+  it('draws a labelled axis on the all-lines chart', () => {
+    expect(render().match(/class="market-axis"[\s\S]*?<\/ul>/)?.[0].match(/<li /g)).toHaveLength(4)
   })
 
   it('lists a short Stands out summary with plain numbers', () => {

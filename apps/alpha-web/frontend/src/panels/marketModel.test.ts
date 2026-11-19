@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MarketAsset } from '../api/types'
 import {
-  fmtBarDate, WINDOWS, commonScale, differsMost, fmtPct, fmtRatio, fmtVolume, hoverState, linePoints, sortAssets,
+  fmtBarDate, WINDOWS, commonScale, differsMost, fmtPct, fmtRatio, fmtVolume, hoverState, linePoints, axisTicks, scaleNote, yFraction, sortAssets,
   standsOut, unitLabels,
 } from './marketModel'
 
@@ -93,5 +93,18 @@ describe('drawing', () => {
     expect(hoverState(null, 'A')).toBe('normal')
     expect(hoverState('A', 'A')).toBe('hovered')
     expect(hoverState('A', 'B')).toBe('dimmed')
+  })
+  it('puts high values at the top and finds four evenly spaced gridlines', () => {
+    expect(yFraction(150, [100, 150])).toBe(0)
+    expect(yFraction(100, [100, 150])).toBe(1)
+    const ticks = axisTicks([80, 110])
+    expect(ticks.map(tick => tick.label)).toEqual(['110', '100', '90', '80'])
+    expect(ticks[0].top).toBe(0)
+    expect(ticks[3].top).toBe(100)
+    expect(axisTicks([5, 5]).some(tick => tick.label.includes('NaN'))).toBe(false)
+  })
+  it('names the active scale in one line', () => {
+    expect(scaleNote('shared')).toMatch(/^Scale: shared/)
+    expect(scaleNote('own')).toMatch(/^Scale: each its own/)
   })
 })

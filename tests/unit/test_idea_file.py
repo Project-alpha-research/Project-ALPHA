@@ -192,3 +192,93 @@ def test_long_lists_are_capped_in_text_but_complete_in_json(tmp_path: Path) -> N
     assert "5 readings in between" in text
     assert text.count(": rule test ") == 20
     assert len(json.loads(_file(tmp_path, card, "--json")[1])["readings"]) == 25
+
+
+def _setup_find_and_study(home: Path, card: str, *, break_study: bool = False) -> None:
+    import hashlib
+
+    find = home / "setups" / "f1"
+    find.mkdir(parents=True)
+    manifest_doc = {
+        "idea": "a synthetic reclaim",
+        "recorded_at": "2026-11-18T09:00:00+00:00",
+        "context_bars": 30,
+        "labels": ["exploratory"],
+        "assets": [{"asset": "SPY"}, {"asset": "QQQ"}],
+    }
+    (find / "manifest.json").write_text(json.dumps(manifest_doc))
+    totals = {"accepted": 12, "pending": 1, "rejected": 3}
+    (find / "summary.json").write_text(json.dumps({"totals": totals}))
+    cards.note_link(home, card, "setup_find", "f1")
+    study = home / "setup-studies" / "s1"
+    study.mkdir(parents=True)
+    files = {}
+    summary = {
+        "reading": "Too few occurrences (12) to judge.",
+        "labels": ["exploratory"],
+        "occurrences": 12,
+        "facts": [],
+    }
+    for name, data in (
+        ("outcomes.parquet", b"x"),
+        ("summary.json", json.dumps(summary).encode()),
+        ("event-study.png", b"y"),
+    ):
+        (study / name).write_bytes(data)
+        files[name] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
+    if break_study:
+        files["outcomes.parquet"]["sha256"] = "0"
+    (study / "manifest.json").write_text(
+        json.dumps({"schema": "AlphaSetupStudyV1", "find_id": "f1", "files": files})
+    )
+
+
+def test_setup_find_and_study_are_read_and_a_broken_study_is_a_fault(tmp_path: Path) -> None:
+    card = synthetic_home(tmp_path)
+    _setup_find_and_study(tmp_path, card)
+    text = _file(tmp_path, card)[1]
+    assert "setup find f1" in text and "SPY, QQQ" in text
+    assert "12 accepted, 1 pending, 3 set aside" in text
+    assert "Too few occurrences (12) to judge." in text
+    steps = {r["step"]: r for r in json.loads(_file(tmp_path, card, "--json")[1])["map"]}
+    assert steps["examples looked at"]["evidence"] == ["f1"]
+    assert "s1" in steps["compared with controls"]["evidence"]
+    (tmp_path / "setup-studies" / "s1" / "summary.json").write_text("{}")
+    assert "the stored study could not be read" in _file(tmp_path, card)[1]
+
+
+def test_missing_and_unreadable_runs_print_as_faults_and_map_says_not_recorded(
+    tmp_path: Path,
+) -> None:
+    card = synthetic_home(tmp_path, with_runs=False)
+    cards.note_link(tmp_path, card, "rule_test", "cccccccccccccccc")
+    _run_files(tmp_path, "dddddddddddddddd", manifest())
+    (tmp_path / "runs" / "dddddddddddddddd" / "diagnostics.json").write_text("[")
+    cards.note_link(tmp_path, card, "rule_test", "dddddddddddddddd")
+    text = _file(tmp_path, card)[1]
+    assert text.count("The reading is not available.") == 2
+    assert "run folder is missing" in text and "could not be read" in text
+    steps = {r["step"]: r for r in json.loads(_file(tmp_path, card, "--json")[1])["map"]}
+    assert steps["settings checked"]["state"] == "not recorded"
+
+
+def test_replaced_cards_are_counted_as_variants_and_held_back_is_disclosed(
+    tmp_path: Path,
+) -> None:
+    old = synthetic_home(tmp_path, with_runs=False)
+    new, _ = cards.save(tmp_path, cards.IdeaCard(claim="Quiet weeks, version two.", supersedes=old))
+    doc = manifest(spine=_spine("2020-01-02", "2024-01-02"))
+    doc["reserve"] = {"reserved_start": "2025-01-01", "held_back_bars": 40}
+    _run_files(tmp_path, WEAK_RUN, doc)
+    append_trial(tmp_path, {"kind": "rule_test", "run_id": WEAK_RUN, "symbol": "SPY", "labels": []})
+    cards.note_link(tmp_path, new, "rule_test", WEAK_RUN)
+    facts = json.loads(_file(tmp_path, new, "--json")[1])
+    assert facts["card"]["supersedes"] == old and facts["counts"]["variants_of_this_idea"] == 1
+    assert "Held back 40 bars" in _file(tmp_path, new)[1]
+    assert "replaced by card" in _file(tmp_path, old)[1]
+    assert json.loads(_file(tmp_path, old, "--json")[1])["card"]["superseded_by"] == new
+
+
+def test_unknown_card_is_a_plain_error(tmp_path: Path) -> None:
+    code, output = _file(tmp_path, "0123456789ab")
+    assert code != 0 and "0123456789ab" in output

@@ -1,5 +1,6 @@
 id = "gross-profitability"
 name = "Gross profitability"
+tier = "checked"
 year_published = 2013
 market = "us-equities"
 idea = "Firms that make more gross profit for each dollar of assets have tended to beat less profitable ones."

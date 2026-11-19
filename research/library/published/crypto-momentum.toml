@@ -1,5 +1,6 @@
 id = "crypto-momentum"
 name = "Crypto momentum"
+tier = "checked"
 year_published = 2022
 market = "crypto"
 idea = "Coins that rose over the past one to four weeks have tended to keep rising for a while."

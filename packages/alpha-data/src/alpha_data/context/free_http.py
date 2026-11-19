@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -52,6 +53,31 @@ class Client:
         self._last: float | None = None
 
     def get(self, url: str, label: str) -> tuple[int, bytes]:
+        status, _, raw = self._send(url, label)
+        return status, raw
+
+    def get_following(
+        self, url: str, label: str, hosts: tuple[str, ...], hops: int = 3
+    ) -> tuple[int, bytes]:
+        """Like `get`, but follows up to `hops` redirects, only to https hosts on the allow-list.
+
+        An entry of `hosts` is an exact host name, or a suffix that starts with a dot.
+        """
+        for _ in range(hops + 1):
+            status, headers, raw = self._send(url, label)
+            if status not in (301, 302, 303, 307, 308):
+                return status, raw
+            where = next((v for k, v in headers.items() if k.lower() == "location"), "")
+            url = urllib.parse.urljoin(url, where)
+            parts = urllib.parse.urlsplit(url)
+            host = parts.hostname or ""
+            if parts.scheme != "https" or not any(
+                host == h or (h.startswith(".") and host.endswith(h)) for h in hosts
+            ):
+                raise DataError(f"{label} redirect to an unlisted host ({host or 'none'}); refused")
+        raise DataError(f"{label} redirected more than {hops} times; refused")
+
+    def _send(self, url: str, label: str) -> tuple[int, Mapping[str, str], bytes]:
         if self._last is not None:
             delay = PAUSE_SECONDS - (self._clock() - self._last)
             if delay > 0:
@@ -59,14 +85,14 @@ class Client:
         self._last = self._clock()
         send = self._transport or default_transport
         try:
-            status, _, raw = send(url, {"User-Agent": USER_AGENT}, TIMEOUT_SECONDS)
+            status, headers, raw = send(url, {"User-Agent": USER_AGENT}, TIMEOUT_SECONDS)
         except (ValueError, http.client.HTTPException, urllib.error.URLError, OSError) as exc:
             raise DataError(
                 f"{label} is offline or unreachable ({type(exc).__name__}); nothing was stored"
             ) from None
         if len(raw) > MAX_BYTES:
             raise DataError(f"{label} response exceeds 64 MiB")
-        return status, raw
+        return status, headers, raw
 
 
 def merge_without_revision(

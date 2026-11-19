@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
   - packages/alpha-data/src/alpha_data/context/cftc_cot.py
   - packages/alpha-data/src/alpha_data/context/finra_short.py
-verified: 84b85f1e216fae6f
+verified: 35e2291550db627d
 ---
 
 # Positioning and short-volume context

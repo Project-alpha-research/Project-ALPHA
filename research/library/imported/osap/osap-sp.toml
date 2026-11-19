@@ -1,0 +1,31 @@
+id = "osap-sp"
+name = "SP"
+year_published = 1996
+market = "us-equities"
+idea = "Published signal: SP (valuation)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Barbee, Mukherji and Raines"
+year = 1996
+title = "not recorded in the source table"
+venue = "FAJ"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "SP"
+acronym = "Rev2Price"
+category = "valuation"
+data_category = "Accounting"
+predicted_sign = 1
+sample_start = 1979
+sample_end = 1991

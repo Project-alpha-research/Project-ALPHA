@@ -3,7 +3,8 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/library_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/library.py
-verified: 96ab19218f163541
+  - apps/alpha-cli/src/alpha_cli/spine/library_import.py
+verified: 8c26b75e9ac84bfa
 ---
 # Library of published ideas
 
@@ -13,6 +14,7 @@ The library is a starting map, not a claim. It does not say any idea makes money
 **Command**
 ```text
 uv run alpha library list --market crypto --json
+uv run alpha library list --tier all
 uv run alpha library show <id>
 uv run alpha library card <id> --json
 ```
@@ -23,11 +25,15 @@ long a trade is held, what later research says about decay, and whether ALPHA ca
 **How to read it**
 - `list` shows every record. `--market` takes us-equities, crypto, futures or multi. Rows marked
   "private" come from the owner's own notes in `<home>/library/private/`; they are never in git.
+- `list` shows `checked` records (hand-verified). `--tier imported|all` adds the 212 facts-only records of a published
+  signal catalogue (id `osap-<name>`); the header counts each tier. Imported records give authors, year, category,
+  predicted sign and sample years only. Read the paper for the idea.
 - `show` also lists idea cards already made from the record, and how many tests are linked to each.
 - `card` writes an idea card with the idea, the mechanism and the holding time. What would disprove it and the
   baseline stay "not stated": the owner fills them. The card keeps a `source` line,
   "from library record <id>, published <year>". It is not part of the card id, so the idea text stays the owner's.
-- Nothing is tested and no ledger row is written. The same record gives the same card.
+- Nothing is tested and no ledger row is written.
+- Return series of those signals are in `alpha context show-osap-portfolios` (reference only; name the release).
 - To give an idea to RD-Agent, pass it in discussion with `alpha ledger reply --idea`. There is no other channel.
 
 **What it cannot tell you** Whether an idea works today. Published results often shrink after publication.

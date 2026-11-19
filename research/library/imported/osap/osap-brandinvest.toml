@@ -1,0 +1,31 @@
+id = "osap-brandinvest"
+name = "BrandInvest"
+year_published = 2014
+market = "us-equities"
+idea = "Published signal: BrandInvest (investment alt)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Belo, Lin and Vitorino"
+year = 2014
+title = "not recorded in the source table"
+venue = "RED"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "BrandInvest"
+acronym = "BrandInvest"
+category = "investment alt"
+data_category = "Accounting"
+predicted_sign = -1
+sample_start = 1975
+sample_end = 2010

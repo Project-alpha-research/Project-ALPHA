@@ -1608,3 +1608,17 @@ real_data = "not yet confirmed (synthetic stores only)"
 needs = []
 state = "Working"
 docs = ["research/tools/data-health.md"]
+
+[[capability]]
+id = "published-factor-reference"
+name = "Published factor catalogue and returns (reference)"
+what = "Browse 212 published predictor signals as facts-only library records, and read their published monthly long-short returns, by release, using only rows known at a UTC cutoff."
+see_it = ["uv run alpha library list --tier imported", "uv run alpha context show-osap-portfolios --as-of 2026-10-25 --signal Mom12m --json"]
+entry_points = ["cli: alpha library", "cli: alpha context"]
+proof_synthetic = ["tests/unit/test_library_osap_import.py::test_import_writes_facts_only_records_for_predictors", "tests/unit/test_context_osap_portfolios.py::test_early_read_returns_nothing_and_known_rows_appear_at_the_release", "tests/unit/test_context_osap_portfolios.py::test_a_second_release_is_a_new_vintage_and_the_first_is_untouched"]
+real_data = "confirmed 2026-11-19: release 2026.10 pulled live into a scratch home: 212 signals, 1,200 months (1926-01 to 2025-12), 175,529 returns, 1.4 MB"
+real_data_needs = "network; no key"
+needs = []
+state = "Partial"
+missing = "reference only: no check compares a strategy with these factors yet, and the research reads are not wired"
+docs = ["docs/reference/invariants/data-context.md"]

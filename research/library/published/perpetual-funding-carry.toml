@@ -1,5 +1,6 @@
 id = "perpetual-funding-carry"
 name = "Perpetual futures funding carry"
+tier = "checked"
 year_published = 2022
 market = "crypto"
 idea = "Hold the spot coin and short the perpetual future when funding is high, so that the short side receives the funding payments while funding stays positive."

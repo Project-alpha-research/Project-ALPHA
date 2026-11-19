@@ -1,5 +1,6 @@
 id = "post-earnings-announcement-drift"
 name = "Post-earnings-announcement drift"
+tier = "checked"
 year_published = 1989
 market = "us-equities"
 idea = "After a company reports earnings far above or below what was expected, its stock tends to keep moving the same way for some weeks."

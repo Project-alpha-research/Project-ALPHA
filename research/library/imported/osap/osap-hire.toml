@@ -1,0 +1,31 @@
+id = "osap-hire"
+name = "hire"
+year_published = 2014
+market = "us-equities"
+idea = "Published signal: hire (investment alt)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["other data (see the source)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Bazdresch, Belo and Lin"
+year = 2014
+title = "not recorded in the source table"
+venue = "JPE"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "hire"
+acronym = "LaborGr"
+category = "investment alt"
+data_category = "Other"
+predicted_sign = -1
+sample_start = 1965
+sample_end = 2010

@@ -1,5 +1,6 @@
 id = "moving-average-trend"
 name = "Moving-average trend rules"
+tier = "checked"
 year_published = 1992
 market = "us-equities"
 idea = "Buy when the price is above its long moving average and stay out or sell when it is below, using one century of index data."

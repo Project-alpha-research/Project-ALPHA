@@ -4,7 +4,7 @@ sources:
   - packages/alpha-data/src/alpha_data/adapters/**
   - packages/alpha-data/src/alpha_data/ingest.py
   - apps/alpha-cli/src/alpha_cli/data_cmds.py
-verified: 9a9c3c10a2f6fa40
+verified: a19c361fd4e2ee85
 ---
 
 # Data layer: free sources on the Dell and provider limits

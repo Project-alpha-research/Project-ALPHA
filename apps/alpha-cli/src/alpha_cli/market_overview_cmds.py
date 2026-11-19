@@ -139,13 +139,8 @@ def build_market_overview(data_dir: Path, *, store: str, window: int, limit: int
     }
 
 
-def market_overview_command(
-    store: str = typer.Option("1D", help="stored bar size: 1D (default), 1h, 5m, ..."),
-    window: int = typer.Option(90, help="bars shown: 30, 90 or 365"),
-    limit: int = typer.Option(15, help="how many assets (1..30)"),
-    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
-) -> None:
-    """Read-only market overview of stored bars. Market view. Not a test result."""
+def run_market_overview(store: str, window: int, limit: int, json_out: bool) -> None:
+    """Print the overview (JSON or text); a bad request becomes a CLI usage error."""
     from alpha_core.config import AlphaSettings
 
     try:

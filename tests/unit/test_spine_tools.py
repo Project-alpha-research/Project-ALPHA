@@ -377,7 +377,16 @@ def test_show_lists_outputs_and_cite_needs_a_choice_between_two(
         "market.attribution",
         "market.changepoints",
     ]
-    assert set(shown["tools"][0]) == {"tool", "id", "params", "recorded_at", "file", "labels"}
+    assert set(shown["tools"][0]) == {
+        "tool",
+        "id",
+        "params",
+        "recorded_at",
+        "file",
+        "labels",
+        "reading",
+    }
+    assert shown["tools"][0]["reading"] == own["reading"]
     assert [item["file"] for item in shown["tools"][:2]] == [own["file"], other["file"]]
     listing = json.loads(runner.invoke(app, ["results", "--json"]).stdout)
     assert [item["kind"] for item in listing["items"]] == [

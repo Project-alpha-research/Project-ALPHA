@@ -194,6 +194,7 @@ import type {
   FigureMetadata,
   RiskReport,
   RunContextV1,
+  RuleTestChecks,
   RunDetail,
   RunList,
   StrategyDef,
@@ -403,6 +404,7 @@ export const api = {
   },
   compareRuns: (runIds: string[]): Promise<RunComparison> =>
     postJSON('/api/v3/runs/compare', { run_ids: runIds }),
+  ruleTestChecks: (id: string): Promise<RuleTestChecks> => getJSON(`/api/runs/${id}/checks`),
   figures: (id: string): Promise<FigureCatalogue> => getJSON(`/api/runs/${id}/figures`),
   figureMetadata: (id: string, figureId: string, fmt: 'svg' | 'png' = 'svg'): Promise<FigureMetadata> =>
     getJSON(`/api/runs/${id}/figures/${figureId}?fmt=${fmt}`),

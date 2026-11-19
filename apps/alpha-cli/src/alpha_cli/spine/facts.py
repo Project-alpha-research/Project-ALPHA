@@ -351,7 +351,10 @@ def tool_outputs(home: Path, run_id: str) -> list[dict[str, Any]]:
             {
                 "id": path.stem.rsplit("-", 1)[1],
                 "file": relative,
-                **{key: document.get(key) for key in ("tool", "params", "recorded_at", "labels")},
+                **{
+                    key: document.get(key)
+                    for key in ("tool", "params", "recorded_at", "labels", "reading")
+                },
                 "facts": document.get("facts", []),
             }
         )

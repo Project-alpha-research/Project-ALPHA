@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { api } from '../../api/client'
-import type { FigureCatalogue, RunDetail as RunDetailData, TradeRow } from '../../api/types'
+import type { FigureCatalogue, RuleTestChecks, RunDetail as RunDetailData, TradeRow } from '../../api/types'
 import type { PanelHandleProps } from '../../context/panelHandle'
 import type { ValidateManifest } from '../../explain/types'
 import { Placeholder } from '../../components/Placeholder'
@@ -61,6 +61,7 @@ export function RunDetail(props: PanelHandleProps) {
   const [tradeState, setTradeState] = useState<TradesState>({ runId, status: 'loading' })
   const [errorState, setErrorState] = useState<RunOwned<string> | null>(null)
   const [catalogueState, setCatalogueState] = useState<RunOwned<FigureCatalogue | string> | null>(null)
+  const [checksState, setChecksState] = useState<RunOwned<RuleTestChecks | string> | null>(null)
   const [view, setView] = useState('summary')
   const [investigating, setInvestigating] = useState(false)
 
@@ -70,6 +71,7 @@ export function RunDetail(props: PanelHandleProps) {
       setDetailState(null)
       setErrorState(null)
       setCatalogueState(null)
+      setChecksState(null)
       return
     }
     let live = true
@@ -79,6 +81,7 @@ export function RunDetail(props: PanelHandleProps) {
     setErrorState(null)
     setView('summary')
     setCatalogueState(null)
+    setChecksState(null)
     api
       .figures(runId)
       .then((value) => ownsRequest() && setCatalogueState({ runId, requestId, value }))
@@ -88,6 +91,12 @@ export function RunDetail(props: PanelHandleProps) {
       .then((value) => {
         if (!ownsRequest()) return
         setDetailState({ runId, requestId, value })
+        if (value.rule_test) {
+          api
+            .ruleTestChecks(runId)
+            .then((checks) => ownsRequest() && setChecksState({ runId, requestId, value: checks }))
+            .catch((cause: unknown) => ownsRequest() && setChecksState({ runId, requestId, value: String(cause) }))
+        }
         if (value.has_trades) {
           setTradeState({ runId, status: 'loading' })
           api
@@ -114,6 +123,10 @@ export function RunDetail(props: PanelHandleProps) {
     : null
   const figureResult = catalogueState?.runId === runId && catalogueState.requestId === detailRequestId.current
     ? catalogueState.value
+    : null
+
+  const checksResult = checksState?.runId === runId && checksState.requestId === detailRequestId.current
+    ? checksState.value
     : null
 
   const catalogue = typeof figureResult === 'string' ? null : figureResult
@@ -181,7 +194,7 @@ export function RunDetail(props: PanelHandleProps) {
       case 'summary':
         if (ruleTest) return <RuleTestReport key={runId} test={ruleTest} manifest={manifest} runId={runId}
           runName={detail.display_name} figures={catalogue?.items ?? null} watermark={gateWatermark}
-          figureError={typeof figureResult === 'string' ? figureResult : undefined} />
+          figureError={typeof figureResult === 'string' ? figureResult : undefined} checks={checksResult} />
         return (
           <div className="report-summary-composition">{backtestResultCard && isBacktestRun(detail) ? <BacktestResultCard key={runId} detail={detail} runId={runId}/> : <table className="blotter summary-table">
             <caption>Summary — what this run recorded</caption>

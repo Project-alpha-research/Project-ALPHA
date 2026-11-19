@@ -210,7 +210,7 @@ def _text(facts: dict[str, Any]) -> str:
     plural = "" if ideas["cards"] == 1 else "s"
     lines.append(
         f"Idea cards: {ideas['cards']} idea card{plural}, {ideas['without_test']} with no test yet."
-        " Write one: alpha idea new."
+        " Write one: alpha idea new. See one: alpha idea file <id>."
     )
     paths = facts["paths"]
     lines += [

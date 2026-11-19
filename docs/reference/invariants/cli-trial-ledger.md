@@ -10,7 +10,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: 60e4b22f6c94f150
+verified: b4dca1c086c3d033
 ---
 
 # One trial ledger invariants

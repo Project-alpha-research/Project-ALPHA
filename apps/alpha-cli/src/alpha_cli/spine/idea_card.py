@@ -178,6 +178,11 @@ def linked_tests(home: Path, card: str) -> int:
     return sum(1 for row in _links(home) if row.get("card") == card)
 
 
+def links_of(home: Path, card: str) -> list[dict[str, str]]:
+    """The stored link rows that name this card, in the order they were written."""
+    return [row for row in _links(home) if row.get("card") == card]
+
+
 def link_fields(home: Path, card: str) -> dict[str, Any]:
     """Check a spec's card id. Returns what the run's manifest stores about the card."""
     return {"idea_card": resolve(home, card)} if card else {}

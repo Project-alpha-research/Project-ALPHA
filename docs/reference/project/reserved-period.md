@@ -8,7 +8,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: a81c1f229cf9aef2
+verified: cf917963f28ddcc3
 ---
 
 # The reserved period
@@ -36,7 +36,10 @@ Locks it out (the code refuses reserved rows or aborts):
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
 - Rule tests (`alpha test`) and setups (`alpha setup find|study|trade`): every bar and dividend read passes the cut-off 2023-12-31 (`spine/reserve.py`).
-  A bar is kept only if its date is before the reserved day, for stocks and crypto alike. The count of held-back bars comes from a timestamp-only scan.
+  `spine/reserve.py` has one boundary, `RESERVED_INSTANT` (the first instant of the reserved day). A row stamped at or after it is held back.
+  A row stamped before it is used once it is known. A daily store read keeps it by its stamp (`CUTOFF`, one microsecond before
+  the boundary). An intraday store, archive or crypto read keeps it when its interval closes by the boundary.
+  Every command applies this one rule. The count of held-back bars comes from a timestamp-only scan.
   A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence. A run with no held-back bars keeps its id.
   Exception: a split or dividend known only from the date on is never applied. A store that ends before 2024 but records such an action
   therefore gives other prices, and a new id, than before. Stores with no such action are byte-identical (the pinned run and find ids hold).
@@ -52,8 +55,10 @@ Locks it out (the code refuses reserved rows or aborts):
   Older stored runs of these commands are not rewritten and are not relabelled; only rule runs derive `reserved-period-seen`.
   The hypothesis scan holds the period back in both lanes. A run with held-back bars puts `research_cutoff`, `reserve` and the label in its frozen spec, so
   its scan id changes; the number of hypotheses counted as tried does not. Equity bars and the split or dividend known only from the date on are never
-  loaded. The crypto lane reads no row stamped on or after the date, and counts every such row (bars, funding, open interest) that the user's cut-off
-  would have admitted. A manifest replay ends at the first instant of the reserved day, so the last bar before it is kept; the count reads timestamps only.
+  loaded. The crypto lane filters inside the parquet scan, so no row stamped on or after the date reaches Python; the count reads timestamps only.
+  It counts every such row (bars, funding, open interest) that the user's cut-off would have admitted, so its record is `held_back_rows` and its
+  sentence says "rows (bars, funding and open interest)". Other commands keep `held_back_bars` and the standard sentence. A manifest replay reads
+  the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
   A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
   only when the source run did.
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
@@ -92,5 +97,6 @@ Holds nothing back (they still read bars from the date on):
 ## What is open
 
 - The commands under "Still to cover": each should hold the period back or label it. Not built. Open: archived runs scored on held-back bars before
-  this change are not relabelled; only rule runs derive `reserved-period-seen`.
+  this change are not relabelled; only rule runs derive `reserved-period-seen`. Stored hypothesis scans and backtest runs carry no last-bar
+  date in a common place, so a read-only label on display needs its own design.
 - Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.

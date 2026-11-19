@@ -154,15 +154,24 @@ def capped_cutoff(options: Mapping[str, Any]) -> datetime:
     return min(user, reserve.RESERVED_INSTANT)
 
 
-def before_reserved(frame: pl.DataFrame) -> pl.DataFrame:
-    """Drop rows stamped on or after the reserved day before any row is read in Python."""
-    dtype = frame.schema.get("timestamp")
-    if not isinstance(dtype, pl.Datetime):
-        return frame
-    stamp = pl.col("timestamp")
-    if dtype.time_zone is None:
-        stamp = stamp.dt.replace_time_zone("UTC")
-    return frame.filter(stamp < reserve.RESERVED_INSTANT)
+def read_before_reserved(path: Path) -> tuple[int, pl.DataFrame]:
+    """The artifact's full row count, and only its rows stamped before the reserved instant.
+
+    The filter runs inside the parquet scan, so no held-back row reaches Python. A timestamp
+    column that is not a datetime is left to the row check in ``merge_rows``.
+    """
+    try:
+        lazy = pl.scan_parquet(path)
+        height = int(lazy.select(pl.len()).collect().item())
+        dtype = lazy.collect_schema().get("timestamp")
+        if isinstance(dtype, pl.Datetime):
+            stamp = pl.col("timestamp")
+            if dtype.time_zone is None:
+                stamp = stamp.dt.replace_time_zone("UTC")
+            lazy = lazy.filter(stamp < reserve.RESERVED_INSTANT)
+        return height, lazy.collect()
+    except (OSError, pl.exceptions.PolarsError) as exc:
+        raise DataError("crypto screening artifact is unreadable") from exc
 
 
 def held_back_rows(data_dir: Path, spec: Mapping[str, Any]) -> int:
@@ -331,16 +340,13 @@ def crypto_panel(
         validate_identity(manifest, previous=None)
         dataset = frozen["dataset"]
         values = observations[dataset["instrument"]].setdefault(dataset["family"], {})
-        try:
-            frame = pl.read_parquet(store.bulk_root / str(manifest["artifact_key"]))
-        except (OSError, pl.exceptions.PolarsError) as exc:
-            raise DataError("crypto screening artifact is unreadable") from exc
+        height, frame = read_before_reserved(store.bulk_root / str(manifest["artifact_key"]))
         quality = CryptoQualityReportV1.from_dict(manifest["quality"])
-        if quality.row_count != frame.height:
+        if quality.row_count != height:
             raise DataError("crypto screening quality row_count differs from artifact")
         merge_rows(
             values,
-            before_reserved(frame),
+            frame,
             dataset,
             as_of=cutoff,
             row_signatures=signatures.setdefault((dataset["instrument"], dataset["family"]), {}),

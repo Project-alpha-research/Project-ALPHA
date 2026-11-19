@@ -243,7 +243,7 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         from alpha_cli._crypto_panel import freeze_crypto_inputs, held_back_rows
 
         result["crypto_inputs"] = freeze_crypto_inputs(data_dir, options)
-        held = reserve.Hold(None, reserve.CUTOFF_DATE, held_back_rows(data_dir, result))
+        held = reserve.Hold(None, reserve.CUTOFF_DATE, held_back_rows(data_dir, result), "rows")
         if held.held_back:
             result.update(held.fields())
         return result

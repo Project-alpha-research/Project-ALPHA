@@ -13,12 +13,14 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
 from alpha_core.reserve import RESERVED_DAY, RESERVED_START
 
-# The last instant of the last day before the reserved day: every read passes it as ``as_of``.
-CUTOFF_DAY = RESERVED_DAY - timedelta(days=1)
-CUTOFF_DATE = CUTOFF_DAY.isoformat()
-CUTOFF = datetime.combine(CUTOFF_DAY, time(23, 59, 59), tzinfo=UTC)
-# The first instant of the reserved day: for readers that stamp a row by when it is known.
+# The one boundary. A row stamped at or after the first instant of the reserved day is held
+# back. A row stamped before it is used once it is known, and it is known by this instant at the
+# latest when its interval closes on it (the last daily bar of the day before).
 RESERVED_INSTANT = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
+# The last instant before the boundary: for readers that keep a row when its stamp <= ``as_of``.
+CUTOFF = RESERVED_INSTANT - timedelta(microseconds=1)
+CUTOFF_DAY = CUTOFF.date()
+CUTOFF_DATE = CUTOFF_DAY.isoformat()
 HELD_BACK = "reserved-period-held-back"
 SEEN = "reserved-period-seen"
 SEEN_SENTENCE = (
@@ -32,9 +34,8 @@ def held_back_count(resolved: ResolvedAsset) -> int:
     import polars as pl
 
     path = resolved.daily_store()._bars_path(resolved.symbol)
-    start = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
     stamps = pl.scan_parquet(path).select("ts")
-    return int(stamps.filter(pl.col("ts") >= start).select(pl.len()).collect().item())
+    return int(stamps.filter(pl.col("ts") >= RESERVED_INSTANT).select(pl.len()).collect().item())
 
 
 def held_back_count_for(home: Path, asset: str) -> int:
@@ -48,10 +49,11 @@ class Hold:
     as_of: datetime | None
     research_cutoff: str | None
     held_back: int
+    unit: str = "bars"
 
     def record_fields(self) -> dict[str, Any]:
         """The hold-back record; empty when no bar was held back, so an old id stays the same."""
-        return {"reserve": record(self.held_back)} if self.held_back else {}
+        return {"reserve": record(self.held_back, self.unit)} if self.held_back else {}
 
     def identity(self) -> dict[str, Any]:
         """Run-identity keys: the cut-off, and the hold-back record only when a bar was held."""
@@ -63,13 +65,13 @@ class Hold:
 
     def note(self) -> str:
         """The one sentence, for the end of a command's last line; empty when nothing held."""
-        return f"\n{sentence(self.held_back)}" if self.held_back else ""
+        return f"\n{sentence(self.held_back, self.unit)}" if self.held_back else ""
 
     def stamp(self, manifest: dict[str, Any]) -> None:
         """Record the hold-back and its label on a manifest; nothing when no bar was held."""
         if not self.held_back:
             return
-        manifest["reserve"] = record(self.held_back)
+        manifest["reserve"] = record(self.held_back, self.unit)
         labels = list(manifest.get("labels", []))
         manifest["labels"] = [*labels, HELD_BACK] if HELD_BACK not in labels else labels
 
@@ -80,10 +82,10 @@ class Hold:
     def announce(self, *, err: bool = False) -> None:
         """Print the one sentence when bars were held back."""
         if self.held_back:
-            print(sentence(self.held_back), file=sys.stderr if err else sys.stdout)
+            print(sentence(self.held_back, self.unit), file=sys.stderr if err else sys.stdout)
 
     def say(self) -> str | None:
-        return sentence(self.held_back) if self.held_back else None
+        return sentence(self.held_back, self.unit) if self.held_back else None
 
 
 def hold(
@@ -108,10 +110,12 @@ def hold(
     from alpha_data.store import ParquetStore
     from alpha_data.timeframe import parse_timeframe, store_dir
 
-    user = _runner.parse_cutoff(as_of) if instant else _runner.parse_as_of(as_of)
-    if user is not None and user <= CUTOFF:
-        return Hold(user, as_of, 0)
     stored = parse_timeframe(timeframe)
+    # A daily reader keeps a bar by its stamp; an intraday reader keeps it once it has closed.
+    cut = CUTOFF if stored.is_daily else RESERVED_INSTANT
+    user = _runner.parse_cutoff(as_of) if instant else _runner.parse_as_of(as_of)
+    if user is not None and user <= cut:
+        return Hold(user, as_of, 0)
     root = (
         resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
         if snapshot_id is not None
@@ -120,12 +124,11 @@ def hold(
     path = ParquetStore(root)._bars_path(symbol)
     n = 0
     if path.exists():
-        start = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
-        ts = pl.col("ts") >= start
+        ts = pl.col("ts") >= RESERVED_INSTANT
         if user is not None:
             ts = ts & (pl.col("ts") <= user)
         n = int(pl.scan_parquet(path).select("ts").filter(ts).select(pl.len()).collect().item())
-    return Hold(CUTOFF, CUTOFF_DATE if n else as_of, n)
+    return Hold(cut, CUTOFF_DATE if n else as_of, n)
 
 
 def hold_many(
@@ -140,15 +143,24 @@ def hold_many(
     return Hold(holds[0].as_of if holds else CUTOFF, CUTOFF_DATE if n else as_of, n)
 
 
-def record(n: int) -> dict[str, Any]:
-    return {"reserved_start": RESERVED_START, "held_back_bars": n}
+def record(n: int, unit: str = "bars") -> dict[str, Any]:
+    """The hold-back record; ``unit`` is "rows" where funding and open interest count too."""
+    return {"reserved_start": RESERVED_START, f"held_back_{unit}": n}
 
 
-def sentence(n: int) -> str:
+def sentence(n: int, unit: str = "bars") -> str:
+    what = "rows (bars, funding and open interest)" if unit == "rows" else unit
     return (
-        f"Held back {n} bars from {RESERVED_START} on; they are kept for the owner's "
+        f"Held back {n} {what} from {RESERVED_START} on; they are kept for the owner's "
         "confirmation of an idea, so this test did not use them."
     )
+
+
+def describe(block: Mapping[str, Any]) -> str:
+    """The one sentence for a stored hold-back record, in the unit it was counted in."""
+    if "held_back_rows" in block:
+        return sentence(block["held_back_rows"], "rows")
+    return sentence(block["held_back_bars"])
 
 
 def seen(last_ts: str | datetime | None, manifest: Mapping[str, Any]) -> bool:

@@ -283,7 +283,7 @@ def test_crypto_lane_reads_no_reserved_row_and_equals_the_cut_store(
         outputs.append(json.loads(result.stdout))
     held, plain = outputs
     # Bars through 2024-02-19, funding and open interest through 2024-02-20, three symbols.
-    assert held["reserve"]["held_back_bars"] == 3 * (50 + 51 + 51)
+    assert held["reserve"]["held_back_rows"] == 3 * (50 + 51 + 51)
     assert held["labels"] == [HELD_BACK] and "reserve" not in plain
     assert_equal_results(_result_part(held), _result_part(plain))
     assert max(held["dates"]) <= RESERVED_START

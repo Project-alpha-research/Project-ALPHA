@@ -456,6 +456,7 @@ entry_points = [
 proof_synthetic = [
   "tests/unit/test_idea_card.py::test_run_and_test_ids_do_not_change_with_the_link",
   "tests/unit/test_idea_card.py::test_empty_fields_are_allowed_and_shown_as_not_stated",
+  "tests/unit/test_idea_card.py::test_adding_or_removing_the_link_is_a_repeat_not_a_new_trial",
 ]
 proof_smoke = [
   "tests/smoke/test_idea_card_smoke.py::test_the_example_card_can_be_saved_shown_and_listed",

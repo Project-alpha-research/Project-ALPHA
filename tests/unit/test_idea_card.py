@@ -191,3 +191,70 @@ def test_setup_find_keeps_its_id_and_records_the_card(
     bad.write_text('idea_card="0123456789ab"\n' + bad.read_text())
     with pytest.raises(SpineError, match="0123456789ab"):
         find.run_find(bad, home=tmp_path / "plain")
+
+
+def _linked_rule_spec(home: Path, card: str) -> IdeaSpec:
+    from alpha_data.store import ParquetStore
+
+    seed_store(home, n=400)
+    ParquetStore(home / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    spec = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    return IdeaSpec.model_validate({**spec.model_dump(mode="json"), "idea_card": card})
+
+
+def test_adding_or_removing_the_link_is_a_repeat_not_a_new_trial(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    card = _new(tmp_path)
+    linked = _linked_rule_spec(tmp_path, card)
+    plain = IdeaSpec.model_validate(linked.model_dump(mode="json"))
+    outs = [run_idea(spec, home=tmp_path, quick=True) for spec in (plain, linked, plain)]
+    assert len({out["test_id"] for out in outs}) == 1
+    ledger = (tmp_path / "ledger" / "trials.jsonl").read_text().splitlines()
+    rows = [json.loads(line) for line in ledger]
+    assert [("repeat" in row["labels"]) for row in rows] == [False, True, True]
+    # The link given on a repeat run is still recorded once, beside the stored run.
+    links = (tmp_path / "ideas" / "links.jsonl").read_text().splitlines()
+    assert [json.loads(line)["card"] for line in links] == [card]
+    assert json.loads(_cli(tmp_path, "list", "--json")[1])["cards"][0]["tested"] is True
+
+
+def test_a_run_that_fails_does_not_mark_the_card_tested(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine import run as spine_run
+
+    def broken(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("synthetic failure while storing the run")
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    card = _new(tmp_path)
+    monkeypatch.setattr(spine_run, "write_validation_run", broken)
+    out = run_idea(_linked_rule_spec(tmp_path, card), home=tmp_path, quick=True)
+    assert out["results"][0]["error"]
+    assert not (tmp_path / "ideas" / "links.jsonl").exists()
+    assert json.loads(_cli(tmp_path, "list", "--json")[1])["cards"][0]["tested"] is False
+
+
+def test_an_id_clash_is_an_error_not_an_overwrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.spine import idea_card as cards
+
+    monkeypatch.setattr(cards, "card_id", lambda card: "0123456789ab")
+    first, created = cards.save(tmp_path, cards.IdeaCard(claim="first"))
+    assert created and first == "0123456789ab"
+    with pytest.raises(SpineError, match="0123456789ab"):
+        cards.save(tmp_path, cards.IdeaCard(claim="second"))
+    assert cards.load(tmp_path, first).claim == "first"
+
+
+def test_a_path_is_never_an_id(tmp_path: Path) -> None:
+    _new(tmp_path)
+    (tmp_path / "secret.toml").write_text('claim = "outside"\n')
+    for wanted in ("../secret", "../../x", "*", "/etc/passwd"):
+        code, output = _cli(tmp_path, "show", wanted)
+        assert code != 0 and "outside" not in output

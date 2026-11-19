@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
-verified: dbd1ca30d3a5f622
+verified: d5f7619ffa691206
 ---
 
 # Command line setup invariants

@@ -324,7 +324,7 @@ def _write_run(
                     "last_ts": out.oos.oos_timestamps[-1].isoformat(),
                 },
                 **({"reserve": result["reserve"]} if result.get("reserve") else {}),
-                **idea_card.linked(home, idea.idea_card, "rule_test", prepared.identity.run_id),
+                **idea_card.link_fields(home, idea.idea_card),
             },
         },
     )
@@ -442,6 +442,8 @@ def run_idea(
         )
         result["labels"] = row["labels"]
         total = row["total_trials"]
+        if item is not None and result["error"] is None:
+            idea_card.note_link(home, idea.idea_card, "rule_test", item.identity.run_id)
         for key in ("first_ts", "last_ts", "n_bars"):
             result.pop(key)
     return {

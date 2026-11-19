@@ -2,7 +2,8 @@
 
 A card id is a short hash of the card's normalised text. A card never changes and is never
 deleted: a changed card is a new card that names the old one. A test links to a card by id; the
-link is kept out of every test identity and is recorded beside the run, not inside it.
+link is kept out of every test identity. A run first stored with a link names the card in its
+manifest; the line in `ideas/links.jsonl` is written only after a run stored its result.
 """
 
 from __future__ import annotations
@@ -84,6 +85,14 @@ def save(home: Path, card: IdeaCard) -> tuple[str, bool]:
     identity = card_id(text)
     path = _folder(home) / f"{identity}.toml"
     if path.is_file():
+        stored = load(home, identity)
+        if stored != text:
+            raise SpineError(
+                "IDEA_CARD_CLASH",
+                f"A different idea card is already stored under the id {identity}.",
+                "Nothing was written. Change a word of the card, or name the card it replaces "
+                "with `--supersedes` only when the text is new.",
+            )
         return identity, False
     path.parent.mkdir(parents=True, exist_ok=True)
     staged = path.with_suffix(f".{os.getpid()}.part")
@@ -95,8 +104,10 @@ def save(home: Path, card: IdeaCard) -> tuple[str, bool]:
 def resolve(home: Path, wanted: str) -> str:
     """Accept a full id or a unique prefix of at least four characters."""
     wanted = wanted.strip().lower()
+    if not re.fullmatch(f"[0-9a-f]{{4,{ID_LENGTH}}}", wanted):
+        raise unknown(wanted)
     found = [p.stem for p in _folder(home).glob("*.toml") if p.stem.startswith(wanted)]
-    if len(wanted) < 4 or len(found) != 1:
+    if len(found) != 1:
         raise unknown(wanted, ambiguous=len(found) > 1)
     return found[0]
 
@@ -140,11 +151,16 @@ def all_ids(home: Path) -> list[str]:
 
 
 def _links(home: Path) -> list[dict[str, str]]:
-    path = _folder(home) / LINKS_FILE
     try:
-        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-    except (OSError, ValueError):
+        lines = (_folder(home) / LINKS_FILE).read_text(encoding="utf-8").splitlines()
+    except OSError:
         return []
+    rows = []
+    for line in lines:
+        try:
+            rows.append(json.loads(line))
+        except ValueError:
+            continue
     return [row for row in rows if isinstance(row, dict)]
 
 
@@ -152,16 +168,19 @@ def tested_ids(home: Path) -> set[str]:
     return {row.get("card", "") for row in _links(home)}
 
 
-def linked(home: Path, card: str, kind: str, ref: str) -> dict[str, Any]:
-    """Check a spec's card id and note the link. Returns what to store beside the run."""
+def link_fields(home: Path, card: str) -> dict[str, Any]:
+    """Check a spec's card id. Returns what the run's manifest stores about the card."""
+    return {"idea_card": resolve(home, card)} if card else {}
+
+
+def note_link(home: Path, card: str, kind: str, ref: str) -> None:
+    """Write the link line. Call it only after the run has stored its result."""
     if not card:
-        return {}
-    identity = resolve(home, card)
-    row = {"card": identity, "kind": kind, "ref": ref}
+        return
+    row = {"card": resolve(home, card), "kind": kind, "ref": ref}
     if row not in _links(home):
         with (_folder(home) / LINKS_FILE).open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(row, sort_keys=True) + "\n")
-    return {"idea_card": identity}
 
 
 def require(home: Path, card: str) -> None:

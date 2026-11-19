@@ -149,7 +149,7 @@ def run_find(
     import polars as pl
 
     from alpha_cli.spine import reserve
-    from alpha_cli.spine.idea_card import linked, require
+    from alpha_cli.spine.idea_card import link_fields, note_link, require
     from alpha_cli.spine.setup_find import (
         _counts,
         health_find_id,
@@ -180,7 +180,6 @@ def run_find(
         )
     find_id = health_find_id(home, spec.spec_sha256, results, context_bars, record)
     identity = dict(find_id=find_id, spec_sha256=spec.spec_sha256, name=spec.setup.name)
-    card = linked(home, spec.idea_card, "setup_find", find_id)
     folder = home / "setups" / find_id
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]
     held_back = sum(r.get("held_back_bars", 0) for r in results)
@@ -249,7 +248,7 @@ def run_find(
             labels=labels,
             assets=results,
             **block,
-            **card,
+            **link_fields(home, spec.idea_card),
             files=dict(candidates="candidates.parquet", summary="summary.json", sheets=sheets),
         )
         write_text(folder / "manifest.json", json.dumps(manifest, default=str, allow_nan=False))
@@ -271,6 +270,7 @@ def run_find(
             },
         ),
     )
+    note_link(home, spec.idea_card, "setup_find", find_id)
     return dict(
         find_id=find_id,
         **({"reserve_sentence": reserve.sentence(held_back)} if held_back else {}),

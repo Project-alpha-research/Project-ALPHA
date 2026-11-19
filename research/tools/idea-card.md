@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/idea_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/idea_card.py
-verified: af3a66643102cde3
+verified: e87e0873d57da699
 ---
 # Idea card
 
@@ -27,8 +27,9 @@ signal takes to form, how long a trade is held, how often it happens, how long t
   card is a new card (`--supersedes <old id>`) and the old one stays.
 - Link a test: add `idea_card = "<id>"` to a rule-test spec (or `--idea-card <id>` on `alpha test`) or to a
   setup spec. The link is not part of the test identity, so no id, result or trial count changes.
-- The run's `manifest.json` carries the card id (`spine.idea_card` for a rule test, `idea_card` for a setup
-  find). An unknown id stops the test, and the error names it.
+- A run first stored with the link names the card in `manifest.json` (`spine.idea_card` for a rule test,
+  `idea_card` for a setup find). A card reads "linked to a test" only after a run stored its result.
+  An unknown id stops the test, and the error names it.
 - `alpha next` counts the cards and those with no test yet.
 
 **What it cannot tell you** Whether the idea is good. A card is a note written before the data was seen.

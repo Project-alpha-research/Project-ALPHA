@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-274 commands in 37 groups. Options marked (required) are
+276 commands in 38 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -297,6 +297,13 @@ Prop-firm Monte Carlo: pass/payout probabilities for a funded-trader evaluation.
 Explicit, receipted provider readiness checks.
 
 - `alpha provider check <PROVIDER_ID>` — Run one bounded check. Options: `--json`
+
+## alpha rdagent
+
+Start RD-Agent with one command and watch the run.
+
+- `alpha rdagent run` — Start the RD-Agent factor loop from rdagent.toml. Options: `--config`, `--dry-run`, `--run-id`
+- `alpha rdagent status` — Say where a run is: working, waiting for you, finished or stopped, and what to type next. Options: `--run-dir`, `--config`, `--json`
 
 ## alpha report
 

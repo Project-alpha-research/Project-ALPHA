@@ -143,8 +143,8 @@ def _paths(smallest: str | None) -> dict[str, dict[str, str]]:
         },
         "rdagent_idea": {
             "say": "Let RD-Agent propose ideas.",
-            "command": "python workers/rdagent/factor_loop_launch.py",
-            "note": "A one-line alpha command for this is planned. It does not exist yet.",
+            "command": "alpha rdagent run --dry-run",
+            "note": "Copy research/examples/rdagent.example.toml to rdagent.toml first.",
         },
     }
 
@@ -203,8 +203,7 @@ def _text(facts: dict[str, Any]) -> str:
         f"     First command: {paths['own_chart_setup']['command']} (example spec: {EXAMPLE_SPEC})",
         "  3. Let RD-Agent propose ideas.",
         "     Say: Let RD-Agent propose ideas.",
-        f"     Today it starts from `{paths['rdagent_idea']['command']}`. "
-        "A one-line alpha command is planned.",
+        f"     First command: {paths['rdagent_idea']['command']} ({paths['rdagent_idea']['note']})",
         NOTICE,
     ]
     return "\n".join(lines)

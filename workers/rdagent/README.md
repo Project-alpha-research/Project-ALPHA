@@ -32,8 +32,21 @@ RD-Agent's own factor loop (`rdagent.app.qlib_rd_loop.factor`, unmodified) runs 
 
 ## How to launch
 
+One command starts and watches a run. Copy `research/examples/rdagent.example.toml` to `rdagent.toml`, set the paths, then:
+
 ```sh
 bash scripts/setup_rdagent.sh --with-factor-runtime      # once; hash-pinned Python 3.11 runtime
+alpha rdagent run --dry-run     # shows what would start, then the exact command; starts nothing
+alpha rdagent run               # starts the launcher below; prints the run folder
+alpha rdagent status            # working, waiting for you, finished or stopped; the next command
+```
+
+The config holds only the path of the key file. The command never reads or prints the file.
+It passes no new argument: RD-Agent reads the same inputs and is judged the same way.
+
+What it runs (the launcher line, written out):
+
+```sh
 export ALPHA_RDAGENT_SOURCE=... ALPHA_FACTOR_PYTHON=...   # as printed by the setup script
 .venv/bin/python workers/rdagent/factor_loop_launch.py run \
   --data-dir /abs/alpha/data --run-dir /abs/runs/<date>-<slug> \

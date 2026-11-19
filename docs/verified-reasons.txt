@@ -8,7 +8,7 @@ apps/alpha-cli/README.md
   verified d78abbd684e38fb4 on 2026-11-19: Only the workspace routing files it lists as sources were slimmed and their rules moved to invariants pages; this page's claims still hold
 
 docs/CONTEXT.md
-  verified 8041bb08053ae94b on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
+  verified 116bd0583054770c on 2026-11-19: routing only; search and stale internals change nothing it says
 
 docs/reference/invariants/README.md
   verified 7c87af8b6fd472c6 on 2026-11-19: re-read; only routing rows and a new test were added
@@ -162,6 +162,9 @@ research/tools/sensitivity.md
 
 research/tools/walk-forward.md
   verified 6cbce43a1b909834 on 2026-11-18: validate_cmds.py only adds per-bar gross and cost columns to rule-test equity files; walk-forward folds, efficiency and the report are unchanged
+
+scripts/CONTEXT.md
+  verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says
 
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker

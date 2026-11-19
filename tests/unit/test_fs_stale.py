@@ -284,3 +284,44 @@ def test_cli_exit_codes_json_owners_and_verify(
     assert fs.main([*root, "verify", "src/a.py"]) == 2
     _commit(repo, {"docs/bad.md": _doc("unset", "missing/**")}, "bad doc")
     assert fs.main([*root, "stale"]) == 1
+
+
+def test_conflict_marked_front_matter_is_reported_and_fails_the_run(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fresh(repo)
+    conflicted = (
+        "---\nowner: data layer\nsources:\n  - src/**\n"
+        "<<<<<<< HEAD\nverified: aaaaaaaaaaaaaaaa\n=======\nverified: bbbbbbbbbbbbbbbb\n"
+        ">>>>>>> main\n---\n\n# Doc\n"
+    )
+    _commit(repo, {"docs/broken.md": conflicted}, "conflicted")
+    reports = fs_stale.stale(repo)
+    broken = next(r for r in reports if r.path == "docs/broken.md")
+    assert any(p.startswith("unreadable front matter: line") for p in broken.problems)
+    assert "merge conflict markers" in broken.problems
+    assert fs.main(["--root", str(repo), "stale"]) == 1
+    out = capsys.readouterr().out
+    assert "2 living documents checked; 0 stale; 1 with problems" in out
+    assert "PROBLEM docs/broken.md" in out and "unreadable front matter" in out
+
+
+def test_marker_lines_in_a_readable_living_document_are_reported(repo: Path) -> None:
+    _fresh(repo)
+    text = (repo / "docs/a.md").read_text(encoding="utf-8")
+    _commit(repo, {"docs/a.md": text + "<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> main\n"}, "markers")
+    [report] = fs_stale.stale(repo)
+    assert report.problems == ["merge conflict markers"]
+
+
+def test_foreign_yaml_is_skipped_and_a_clean_repo_is_unchanged(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fresh(repo)
+    foreign = "---\ntitle: [unclosed\n<<<<<<< HEAD\nname: x\n---\n\n# Other tool\n"
+    _commit(repo, {"docs/foreign.md": foreign}, "foreign yaml")
+    assert [r.path for r in fs_stale.stale(repo)] == ["docs/a.md"]
+    assert fs.main(["--root", str(repo), "stale"]) == 0
+    assert capsys.readouterr().out.splitlines() == [
+        "1 living documents checked; 0 stale; 0 with problems; 0 cannot be checked"
+    ]

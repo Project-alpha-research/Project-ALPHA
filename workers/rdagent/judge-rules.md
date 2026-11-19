@@ -12,6 +12,38 @@ verified: 8d496b5cc1fd5f45
 
 The judging rules of the RD-Agent factor loop that were part of the [worker page](README.md): shortlist bookkeeping, futures funding, and thirds and ties (with its do-not-change list). What the loop does and how to launch it stay on the worker page.
 
+## Thirds and ties
+
+The rule lives in `alpha_cli._rdagent_membership.third_weights`
+(`apps/alpha-cli/src/alpha_cli/_rdagent_membership.py`), not in the worker: `alpha_factor_judge.py` runs inside
+RD-Agent's environment, imports no ALPHA package and calls the evaluator `alpha_cli.rdagent_factor_eval` as a
+subprocess. Tests: `tests/unit/test_rdagent_ties_and_thirds.py`.
+
+Thirds use `k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
+`s/g` membership per name (s remaining slots, g tied names); portfolio weights are `(s/g)/k`.
+The spread, both replay paths and bucket reports share `_rdagent_membership.third_weights`.
+Spread returns use these membership units divided by k; replacement turnover sums positive changes
+in membership units divided by the new k, and estimated costs use that turnover. Replay targets
+use the same weights for actual fills, fees, slippage and turnover. Without ties, membership is
+exactly 0 or 1 and the old arithmetic is preserved. The legacy alternate-tie spread field equals
+`mean_spread`; displayed figures and the sign check use this same spread.
+`tie_share` is the daily mean fraction of finite names sharing a value. `boundary_tie_share` counts
+names in a tie crossing either third boundary, once per name; empty days contribute zero.
+`all_tied_day_share` retains the old fully tied-day fraction and its unchanged 5% screen guard. About
+85 funded names can be screened and give 28 names per third if all have values; breadth alone
+never grants a pass. Outcomes remain panel spot returns; clocks, cost rates, pass thresholds, deflation,
+counting and twin rules are unchanged. Price-only evaluations retain the original eligibility.
+
+Do not change without the owner:
+
+- clocks, cost rates, pass thresholds, deflation, trial counting and twin rules (all unchanged by the thirds rule);
+- the 80% coverage threshold, the five-name minimum (`MIN_NAMES`) and the 5% all-tied-day guard;
+- a nonpositive spread stays `SPREAD_FAIL`: a stricter gate, never a pass;
+- the loop never sees data on or after 2024-01-01 ([reserved period](../../docs/reference/project/reserved-period.md));
+- keep the tie diagnostics `tie_share`, `boundary_tie_share` and `all_tied_day_share`, and the legacy field `alternate_tie_order_mean_spread`, which equals `mean_spread`;
+- the instrument order never chooses a member of a tie, and the worker keeps importing no ALPHA package;
+- never weaken a bias guard or oracle to get green; run `uv run python scripts/gate.py check`.
+
 ## Shortlist bookkeeping
 
 Every new evaluation factor and its trial-ledger row records `shortlist`: true only for
@@ -79,35 +111,3 @@ finite names are needed on a decision day (the existing gap policy skips thin da
 Synthetic checks: `test_context_daily_funding.py` (poison, prefixes, intervals, absent days,
 reserved rows, checksum); `test_rdagent_funding_columns.py` (identity join, partitions, source
 selectors, coverage, price-only parity, pre-change freeze bytes and prepare frames).
-
-## Thirds and ties
-
-The rule lives in `alpha_cli._rdagent_membership.third_weights`
-(`apps/alpha-cli/src/alpha_cli/_rdagent_membership.py`), not in the worker: `alpha_factor_judge.py` runs inside
-RD-Agent's environment, imports no ALPHA package and calls the evaluator `alpha_cli.rdagent_factor_eval` as a
-subprocess. Tests: `tests/unit/test_rdagent_ties_and_thirds.py`.
-
-Thirds use `k = max(1, round(n/3))` among finite ranks. A tie group crossing a third's boundary receives
-`s/g` membership per name (s remaining slots, g tied names); portfolio weights are `(s/g)/k`.
-The spread, both replay paths and bucket reports share `_rdagent_membership.third_weights`.
-Spread returns use these membership units divided by k; replacement turnover sums positive changes
-in membership units divided by the new k, and estimated costs use that turnover. Replay targets
-use the same weights for actual fills, fees, slippage and turnover. Without ties, membership is
-exactly 0 or 1 and the old arithmetic is preserved. The legacy alternate-tie spread field equals
-`mean_spread`; displayed figures and the sign check use this same spread.
-`tie_share` is the daily mean fraction of finite names sharing a value. `boundary_tie_share` counts
-names in a tie crossing either third boundary, once per name; empty days contribute zero.
-`all_tied_day_share` retains the old fully tied-day fraction and its unchanged 5% screen guard. About
-85 funded names can be screened and give 28 names per third if all have values; breadth alone
-never grants a pass. Outcomes remain panel spot returns; clocks, cost rates, pass thresholds, deflation,
-counting and twin rules are unchanged. Price-only evaluations retain the original eligibility.
-
-Do not change without the owner:
-
-- clocks, cost rates, pass thresholds, deflation, trial counting and twin rules (all unchanged by the thirds rule);
-- the 80% coverage threshold, the five-name minimum (`MIN_NAMES`) and the 5% all-tied-day guard;
-- a nonpositive spread stays `SPREAD_FAIL`: a stricter gate, never a pass;
-- the loop never sees data on or after 2024-01-01 ([reserved period](../../docs/reference/project/reserved-period.md));
-- keep the tie diagnostics `tie_share`, `boundary_tie_share` and `all_tied_day_share`, and the legacy field `alternate_tie_order_mean_spread`, which equals `mean_spread`;
-- the instrument order never chooses a member of a tie, and the worker keeps importing no ALPHA package;
-- never weaken a bias guard or oracle to get green; run `uv run python scripts/gate.py check`.

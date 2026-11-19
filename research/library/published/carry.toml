@@ -1,5 +1,6 @@
 id = "carry"
 name = "Carry"
+tier = "checked"
 year_published = 2018
 market = "multi"
 idea = "Assets that pay more if the price stays the same, such as high-yield currencies, have tended to earn more than those that pay less."

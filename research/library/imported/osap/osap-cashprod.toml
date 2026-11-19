@@ -1,0 +1,31 @@
+id = "osap-cashprod"
+name = "CashProd"
+year_published = 2009
+market = "us-equities"
+idea = "Published signal: CashProd (profitability alt)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Chandrashekar and Rao"
+year = 2009
+title = "not recorded in the source table"
+venue = "WP"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "CashProd"
+acronym = "CashProd"
+category = "profitability alt"
+data_category = "Accounting"
+predicted_sign = -1
+sample_start = 1963
+sample_end = 2003

@@ -1,0 +1,31 @@
+id = "osap-opleverage"
+name = "OPLeverage"
+year_published = 2011
+market = "us-equities"
+idea = "Published signal: OPLeverage (other)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Novy-Marx"
+year = 2011
+title = "not recorded in the source table"
+venue = "ROF"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "OPLeverage"
+acronym = "OperLeverage"
+category = "other"
+data_category = "Accounting"
+predicted_sign = 1
+sample_start = 1963
+sample_end = 2008

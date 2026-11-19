@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
+  verified fb12f4fc9f8869ac on 2026-11-20: Re-read after merging main: only the library tier field, card source line and a free context source were added here; this page's text is still correct.
 
 apps/alpha-cli/README.md
-  verified d617550849e69568 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
+  verified fb12f4fc9f8869ac on 2026-11-20: Re-read after merging main: only the library tier field, card source line and a free context source were added here; this page's text is still correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -53,7 +53,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified a24f08da87c95bf0 on 2026-11-20: Review fixes changed tree internals (dividend discounting, tree-level delta and gamma, greeks label); these pages only route to the options module and name its files, which are unchanged
+  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -182,7 +182,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 0c1310079823e71d on 2026-11-20: Review fixes changed tree internals (dividend discounting, tree-level delta and gamma, greeks label); these pages only route to the options module and name its files, which are unchanged
+  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 research/CONTEXT.md
   verified 0272affe2a51e27f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct

@@ -1,0 +1,31 @@
+id = "osap-exclexp"
+name = "ExclExp"
+year_published = 2003
+market = "us-equities"
+idea = "Published signal: ExclExp (composite accounting)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["analyst forecasts"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Doyle, Lundholm and Soliman"
+year = 2003
+title = "not recorded in the source table"
+venue = "RAS"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "ExclExp"
+acronym = "ExcludExp"
+category = "composite accounting"
+data_category = "Analyst"
+predicted_sign = -1
+sample_start = 1988
+sample_end = 1999

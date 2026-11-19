@@ -1,5 +1,6 @@
 id = "size-effect"
 name = "Size effect"
+tier = "checked"
 year_published = 1981
 market = "us-equities"
 idea = "Small companies have tended to earn more than large ones, after adjusting for market risk."

@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 35 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 36 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -75,6 +75,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Futures positioning and short sale volume as known** — inputs only: no signal, factor or research read is wired yet; CFTC known_from for pre-2022-09 rows is a rule, not a stamp. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
 - **Crypto funding rates and open interest as known** — no pull-to-screen path or research use yet; only one Binance symbol tried; no bias guard yet for the Bybit clocks. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
+- **Published factor catalogue and returns (reference)** — reference only: no check compares a strategy with these factors yet, and the research reads are not wired. More: [docs/reference/invariants/data-context.md](docs/reference/invariants/data-context.md).
 
 Tested piece by piece inside the test suite, but not yet run from start to finish through the installed program:
 

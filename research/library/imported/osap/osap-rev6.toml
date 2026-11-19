@@ -1,0 +1,31 @@
+id = "osap-rev6"
+name = "REV6"
+year_published = 1996
+market = "us-equities"
+idea = "Published signal: REV6 (earnings forecast)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["analyst forecasts"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Chan, Jegadeesh and Lakonishok"
+year = 1996
+title = "not recorded in the source table"
+venue = "JF"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "REV6"
+acronym = "EPSrevise"
+category = "earnings forecast"
+data_category = "Analyst"
+predicted_sign = 1
+sample_start = 1977
+sample_end = 1992

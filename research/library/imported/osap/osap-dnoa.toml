@@ -1,0 +1,31 @@
+id = "osap-dnoa"
+name = "dNoa"
+year_published = 2004
+market = "us-equities"
+idea = "Published signal: dNoa (investment)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["company accounts (fundamentals)"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Hirshleifer, Hou, Teoh, Zhang"
+year = 2004
+title = "not recorded in the source table"
+venue = "JAE"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "dNoa"
+acronym = "dNoa"
+category = "investment"
+data_category = "Accounting"
+predicted_sign = -1
+sample_start = 1964
+sample_end = 2002

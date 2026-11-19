@@ -3,7 +3,8 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/library_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/library.py
-verified: 96ab19218f163541
+  - apps/alpha-cli/src/alpha_cli/spine/library_import.py
+verified: 445857b6fb8af7f7
 ---
 # Library of published ideas
 
@@ -13,6 +14,7 @@ The library is a starting map, not a claim. It does not say any idea makes money
 **Command**
 ```text
 uv run alpha library list --market crypto --json
+uv run alpha library list --tier all
 uv run alpha library show <id>
 uv run alpha library card <id> --json
 ```
@@ -21,13 +23,15 @@ A record points to a paper in our own words: the idea, why it is said to work (t
 long a trade is held, what later research says about decay, and whether ALPHA can test it today.
 
 **How to read it**
-- `list` shows every record. `--market` takes us-equities, crypto, futures or multi. Rows marked
-  "private" come from the owner's own notes in `<home>/library/private/`; they are never in git.
+- `list` shows `checked` records. `--market` takes us-equities, crypto, futures or multi. "private" rows are the owner's
+  notes in `<home>/library/private/`, never in git. `--tier imported|all` adds 212 facts-only records (id `osap-<name>`):
+  authors, year, category, sign, sample years. The header counts each tier. Read the paper for the idea.
 - `show` also lists idea cards already made from the record, and how many tests are linked to each.
 - `card` writes an idea card with the idea, the mechanism and the holding time. What would disprove it and the
   baseline stay "not stated": the owner fills them. The card keeps a `source` line,
-  "from library record <id>, published <year>". It is not part of the card id, so the idea text stays the owner's.
-- Nothing is tested and no ledger row is written. The same record gives the same card.
+  "from library record <id>, published <year>". For an imported record it says "from imported library record <id>; not
+  hand-checked", and the idea is a neutral label: edit it. It is not part of the card id, so the idea text stays the owner's.
+- Nothing is tested and no ledger row is written. Their published returns: `alpha context show-osap-portfolios`.
 - To give an idea to RD-Agent, pass it in discussion with `alpha ledger reply --idea`. There is no other channel.
 
 **What it cannot tell you** Whether an idea works today. Published results often shrink after publication.

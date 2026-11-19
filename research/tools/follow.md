@@ -31,4 +31,5 @@ start time. A journal in `forward/` records each new session. Today it only hold
 
 **What it cannot tell you** Whether the idea works. It is paper only, with no order and no advice. A factor cannot be followed yet.
 
-**Next** Wait for new bars, then `alpha follow show <follow id>`. Without an [idea card](idea-card.md), only restarts of the same test are versions; write the card first to link different tests.
+**Next** Wait for new bars, then `alpha follow show <follow id>`.
+Without an [idea card](idea-card.md), only restarts of the same test are versions. Write the card first to link different tests.

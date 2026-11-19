@@ -83,7 +83,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified 1f899137cfab7641 on 2026-11-19: after merging main: the CLI workspace page only re-gained the follow router word; this page is still correct
+  verified ad3dd029de00b90a on 2026-11-19: the CLI workspace page only shortened one router cell; this page is still correct
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

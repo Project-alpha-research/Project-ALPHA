@@ -47,10 +47,10 @@ docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
 
 docs/reference/invariants/data-options.md
-  verified 1f2a80ba816efe77 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
+  verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified daea59e90a7e7b88 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
+  verified 836fda69d0e91478 on 2026-11-19: American tree solver added in options/; text still correct
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -107,7 +107,7 @@ docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/options-data.md
-  verified 3071cf6ff0bc3133 on 2026-11-19: the invariants page only gained a heading split; this page's text is unchanged and still correct
+  verified 8fa0d09f2b49a56e on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -179,7 +179,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 09731268111757ce on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
+  verified 821d3927820d9b03 on 2026-11-19: American tree solver added in options/; text still correct
 
 research/CONTEXT.md
   verified 655b7b6a3ddfa230 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch

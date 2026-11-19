@@ -7,7 +7,9 @@ sources:
   - tests/unit/test_options_implied.py
   - tests/unit/test_options_priced_fixture.py
   - tests/unit/test_options_conventions.py
-verified: 3071cf6ff0bc3133
+  - tests/unit/test_options_american.py
+  - tests/unit/test_options_american_implied.py
+verified: 8fa0d09f2b49a56e
 ---
 
 # Options data
@@ -38,8 +40,8 @@ not signals.
   reader, and a structural guard keeps research code off it.
 - A seeded fixture adapter gives tests a chain with a known volatility surface. A provider adapter implements `OptionsAdapter`.
 - A solver turns a quote mid into implied volatility and greeks with Black-Scholes-Merton or Black-76 and stores them in the
-  `computed` slot, apart from provider values. When it cannot, it says so in a typed result (price outside the bounds,
-  American style).
+  `computed` slot, apart from provider values. American-style contracts use a binomial tree. When it cannot solve, it says
+  so in a typed result (price outside the bounds, volatility outside the search interval).
 
 ## What is real today
 
@@ -48,22 +50,14 @@ Rules: [options invariants](../../invariants/data-options.md). Everything is che
 No real option data has been read.
 
 Second build, 2026-11-19: the implied-volatility and greeks solver for European contracts, checked against published values,
-and a fixture priced by the same model so the solver recovers the known surface. American-style contracts return a typed
-"not supported yet". Still synthetic only.
+and a fixture priced by the same model so the solver recovers the known surface. Still synthetic only.
+
+Third build, 2026-11-19: American-style pricing, greeks and implied volatility on a Cox-Ross-Rubinstein tree with early
+exercise at every node and escrowed cash dividends (an approximation; see the invariants page). The solver now covers
+listed US equity and ETF options as well as European index and futures options. The fixture has an American mode
+priced by the tree. A solve costs about 0.2 s at 500 steps; a 100-contract chain about 25 s (about 4 s at 100 steps).
 
 Not built:
-- American-style pricing. Consequence: listed US equity and ETF options are American-style, so today the solver covers only
-  European-style index options and futures options. Specification for the next build:
-  - Method: Cox, Ross and Rubinstein (1979) binomial tree, u = exp(vol sqrt(dt)), d = 1/u, p = (exp((r - q) dt) - d) / (u - d),
-    with early exercise checked at every node. Discrete cash dividends by the escrowed-dividend method (spot less the present
-    value of dividends before expiry), each dividend date and amount passed explicitly.
-  - Step count: 500 steps by default, stated in the model tag; the price is the average of N and N + 1 steps to damp the
-    odd-even oscillation.
-  - Tests: with no early exercise (a call with q = 0 and no dividends) the tree matches Black-Scholes-Merton within a
-    tolerance the test justifies from the 1/steps error order, and the error falls as steps grow; the American put
-    matches published values (Hull's American put example);
-    the early-exercise premium (American minus European) is never below zero; the implied-volatility root on the tree price
-    stays monotone and bracketed.
 - Derived series, health card rows.
 - Any provider adapter, history import, security-id map and delisted-name universe. These wait for the purchase.
 - A command group. The fixture is not on any screen yet.
@@ -75,7 +69,8 @@ Not built:
 - Code: `packages/alpha-data/src/alpha_data/options/`.
 - Tests: `tests/unit/test_options_schema.py`, `tests/unit/test_options_store.py`, `tests/unit/test_options_held_back.py`,
   `tests/unit/test_options_forward_guard.py`, `tests/unit/test_options_pricing.py`, `tests/unit/test_options_implied.py`,
-  `tests/unit/test_options_priced_fixture.py`, `tests/unit/test_options_conventions.py`.
+  `tests/unit/test_options_priced_fixture.py`, `tests/unit/test_options_conventions.py`, `tests/unit/test_options_american.py`,
+  `tests/unit/test_options_american_implied.py`.
 - **Plan:** [stage 2](../../../roadmap/production-scope.md#2-data-and-context) of the checklist.
 - How to change it: [packages/alpha-data/CONTEXT.md](../../../../packages/alpha-data/CONTEXT.md).
 

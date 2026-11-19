@@ -44,8 +44,10 @@ def publication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Publication:
     out = SimpleNamespace(
         oos=SimpleNamespace(oos_timestamps=[b.ts for b in bars[10:]]),
         result=SimpleNamespace(resized_entries=0),
+        report=None,
     )
     monkeypatch.setattr(_gauntlet, "run_gauntlet", lambda *a, **kw: out)
+    monkeypatch.setattr(run, "report_to_manifest", lambda report: {})
     final = tmp_path / "runs" / identity.run_id
     result: dict[str, Any] = {
         "run_dir": str(final),

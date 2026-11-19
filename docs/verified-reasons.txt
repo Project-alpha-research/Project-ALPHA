@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d1e809e15614c56c on 2026-11-19: Merge of main; the code map is unchanged by main's additions and the free-context commands are already covered.
+  verified 349924e0fd25a759 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 apps/alpha-cli/README.md
-  verified d1e809e15614c56c on 2026-11-19: Merge of main; the code map is unchanged by main's additions and the free-context commands are already covered.
+  verified 349924e0fd25a759 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -32,10 +32,13 @@ docs/reference/invariants/cli-research.md
   verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
-  verified c10364471755eefc on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified a86d9a330434a9b4 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
+
+docs/reference/invariants/cli-rule-readings.md
+  verified 3925622dd9ec2f3f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 docs/reference/invariants/cli-runs.md
-  verified 95c69917e5449d32 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified 1e46e4edb2af0d8f on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -80,7 +83,7 @@ docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/ai-assistants.md
-  verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
+  verified 3165c91ab74dd30a on 2026-11-19: Rule tests now store and print a reading beside the old verdict; this page's text stays correct.
 
 docs/reference/project/components/command-line.md
   verified 7048fde80bcd089a on 2026-11-19: ARCHITECTURE gained two context table rows; command line page unaffected
@@ -122,7 +125,7 @@ docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified b6853a30b0960faf on 2026-11-19: Library source change is additive; this page is unaffected.
+  verified 5a01ad6dc1cda45d on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -173,13 +176,13 @@ packages/alpha-data/CONTEXT.md
   verified 7417bd975a33931b on 2026-11-19: Merge of main; known-from rule changes in context sources are not stated on these pages.
 
 research/CONTEXT.md
-  verified 75d1e966b4cb286d on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified 655b7b6a3ddfa230 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/PLAYBOOK.md
-  verified cba15a71337a9eb0 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified 0bd594768c1fd3d6 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/README.md
-  verified dcf6a0c589e7fe2d on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified 7eff12b887a5adee on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/lessons/README.md
   verified 5c68e546521282e4 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -188,22 +191,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 1d37422321998764 on 2026-11-19: Merge of main; the code map is unchanged by main's additions and the free-context commands are already covered.
+  verified 5f92c900cc997d72 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 81b94af81a04cd08 on 2026-11-19: Library source change is additive; this page is unaffected.
+  verified 38833c82200d9399 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/charts.md
-  verified fe4226b50b7cfc72 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified 653fe515d9788f9b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
+  verified 7eeea268b146ec5b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/diagnose-and-audit.md
-  verified 054db950e957b278 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified cb27ea7b8e590eab on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -224,16 +227,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 8635540968f6969b on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified a806b54f7ee75c9c on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/rule-test.md
-  verified bafef6baf5130b2c on 2026-11-19: Library source change is additive; this page is unaffected.
+  verified b5bedfaa81b8aee5 on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
+  verified 7eeea268b146ec5b on 2026-11-19: merge of main; rule-test reading text on this page was checked against the code in this branch
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

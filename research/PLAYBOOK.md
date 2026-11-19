@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: cba15a71337a9eb0
+verified: 0bd594768c1fd3d6
 ---
 
 # Research playbook: how to work any idea
@@ -66,12 +66,12 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 | `all-in` | fully invested or flat; no position sizing |
 | `source-defaulted` | the asset is in more than one store; the first was used |
 | `repeat` | a repeat of an earlier, identical test |
-| `too-few-trades` | too few trades: under 30 closed out-of-sample trades; the grade is capped at C |
+| `too-few-trades` | too few trades: under 30 closed out-of-sample trades; the reading is `too little to read` |
 | `no-diagnostics` | the diagnostic pass was skipped |
 
 - A flag (`below-benchmark`, `concentrated-profit`, ...) is an observation, never a verdict. Report every flag
   with its `detail` sentence. An audit line is `PASS`, `FLAG` or `NOT-CHECKED`; report every `FLAG` and every
-  `NOT-CHECKED`. The stored `verdict` is a letter grade from the gauntlet, not a statement that the idea works.
+  `NOT-CHECKED`. Quote the `reading` (evidence word and the aim line), never the old letter in `verdict`.
 - Trial count: say "trial N of M recorded" from `trials_total` (or `total_trials`), plus the
   sensitivity re-runs in `variants_evaluated`; cite `family_trials` for the deflation count. Report best-of-many as best-of-many.
   `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger yet: count those
@@ -90,9 +90,9 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 ```text
 $ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --asset BTC/USDT
 Test <test id> — ma_cross-50-200 (trials total: <N>)
-ASSET     RUN       VERDICT  OOS SHARPE  LABELS / ERROR
-SPY       <run id>  <grade>  <value>     all-in, dev-machine-data
-BTC/USDT  —         —        —           DataError: asset 'BTC/USDT' not found; stores searched: home
+ASSET     RUN       READING         OOS SHARPE  LABELS / ERROR
+SPY       <run id>  <evidence word> <value>     all-in, dev-machine-data
+BTC/USDT  —         —               —           DataError: asset 'BTC/USDT' not found; stores searched: home
 $ uv run alpha results cite <run id> oos_sharpe
 <value> [<run id>:oos_sharpe] (walk-forward out-of-sample returns)
 ```

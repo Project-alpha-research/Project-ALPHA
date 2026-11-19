@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-285 commands in 40 groups. Options marked (required) are
+289 commands in 40 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant

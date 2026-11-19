@@ -494,10 +494,11 @@ state = "Working"
 [[capability]]
 id = "forward-follow"
 name = "Follow a tested idea on paper (alpha follow)"
-what = "Follow a rule test or setup find forward on paper. The follow is frozen when it starts. An append-only, hash-chained journal records its sessions. A changed spec starts a new version."
-see_it = ["uv run alpha follow list", "uv run alpha follow show <follow id>", "uv run alpha follow verify <follow id>"]
+what = "Follow a rule test or setup find forward on paper. The follow is frozen when it starts. An append-only, hash-chained journal records its sessions. A changed spec starts a new version. For a rule test, `alpha follow update` books one entry per new session: the rule's numbers, a plain decision and a paper fill at the next open, with a replay check against the stored bars."
+see_it = ["uv run alpha follow list", "uv run alpha follow update <follow id>", "uv run alpha follow show <follow id>", "uv run alpha follow verify <follow id>"]
 entry_points = [
   "cli: alpha follow start",
+  "cli: alpha follow update",
   "cli: alpha follow list",
   "cli: alpha follow show",
   "cli: alpha follow verify",
@@ -507,6 +508,8 @@ proof_synthetic = [
   "tests/unit/test_follow_journal.py::test_verify_detects_a_flipped_byte",
   "tests/unit/test_follow_cmds.py::test_a_changed_spec_of_the_same_idea_is_a_new_version",
   "tests/unit/test_follow_separation.py::test_no_module_off_the_reader_list_touches_forward",
+  "tests/unit/test_follow_update.py::test_day_by_day_one_entry_per_session_and_the_fill_is_the_next_open",
+  "tests/unit/test_follow_update.py::test_no_decision_changes_when_later_bars_arrive",
 ]
 proof_smoke = [
   "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",
@@ -515,7 +518,7 @@ docs = ["docs/reference/invariants/cli-follow.md"]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"
-missing = "Build F1 only: the record and the journal. No signal and no paper trade is computed yet; no new bar is recorded."
+missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. The nightly run does not call update and downloads no bars for followed assets. No real-data run yet."
 
 [[capability]]
 id = "idea-library"

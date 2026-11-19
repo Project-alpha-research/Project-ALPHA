@@ -176,8 +176,11 @@ def check_rules(prev: Entry | None, entry: Entry) -> None:
 
 
 def _check_not_after(prev: Entry, entry: Entry) -> None:
+    # A stop, or the first session after the start, may share the last session date: a follow can
+    # start in the morning of the session it first records.
+    same_ok = entry.kind == "stop" or prev.kind == "start"
     not_after = entry.session_date < prev.session_date or (
-        entry.session_date == prev.session_date and entry.kind != "stop"
+        entry.session_date == prev.session_date and not same_ok
     )
     if not_after:
         raise _refuse(
@@ -192,7 +195,15 @@ def _check_not_after(prev: Entry, entry: Entry) -> None:
             f"Entry {entry.seq} is written earlier than entry {prev.seq}.",
             "The clock must not run backwards.",
         )
-    if entry.kind == "bar":
+    if entry.kind == "bar" and "must_write_by" in entry.payload:
+        # A market with a calendar names the next session's open (taken from the calendar).
+        if entry.written_at > _deadline(entry):
+            raise _refuse(
+                BAR_TOO_LATE,
+                f"The session of {entry.session_date} was written after the next session opened.",
+                "Write that day as `missed`. It cannot be written as a bar.",
+            )
+    elif entry.kind == "bar":
         late = (entry.written_at.date() - entry.session_date).days
         if late > MAX_BAR_LATENESS_DAYS:
             raise _refuse(
@@ -201,3 +212,11 @@ def _check_not_after(prev: Entry, entry: Entry) -> None:
                 f"A bar must be written within {MAX_BAR_LATENESS_DAYS} day of its session.",
                 "Write that day as `missed`. It cannot be written as a bar.",
             )
+
+
+def _deadline(entry: Entry) -> datetime:
+    try:
+        when = datetime.fromisoformat(str(entry.payload["must_write_by"]))
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+    return when if when.tzinfo else when.replace(tzinfo=UTC)

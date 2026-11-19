@@ -17,11 +17,17 @@ Rules
   inputs raise `OptionsDataError` naming the field.
 - The price must lie strictly inside the no-arbitrage bounds, else "no implied volatility: price
   outside no-arbitrage bounds".
-- Low confidence: the price is only known to `price_resolution` (default half a cent). That moves
-  the volatility by price_resolution / vega. Above LOW_CONFIDENCE_IV_ERROR (half a vol point) the
-  result is labelled "low_vega" and `solve_row` stores no computed block for it.
+- Low confidence, exact rule: iv_uncertainty = price_resolution / vega (vega per 1.00 of vol at
+  the solved vol). The result is "low_vega" when iv_uncertainty > LOW_CONFIDENCE_IV_ERROR (0.005,
+  half a vol point); with the default half-cent resolution that is vega < 1.0. `solve_row` stores
+  no computed block for it. Pass the quote's tick size or half-spread as price_resolution when it
+  is known.
+- Mid: a crossed, zero-width or zero-bid quote has no mid. A zero bid is never averaged.
+- Expiry time: the contract has only a date. The caller passes the exchange's expiry cut-off in UTC
+  (`expiry_time_utc`), for example the settlement-price time of the series.
 - American exercise is NOT supported yet: it returns "american_style_not_supported". No
-  approximation is invented. A binomial tree is the planned method.
+  approximation is invented. Listed US equity and ETF options are American-style, so until an
+  American method exists this solver covers European-style index options and futures options only.
 - Quotes are per unit of underlying (per share); the contract multiplier does not scale them.
 """
 
@@ -32,7 +38,13 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime, time
 from typing import Literal
 
-from alpha_data.options.pricing import OptionInputs, greeks, price_bounds
+from alpha_data.options.pricing import (
+    DAY_COUNT,
+    Conventions,
+    OptionInputs,
+    greeks,
+    price_bounds,
+)
 from alpha_data.options.schema import (
     STYLES,
     ChainRow,
@@ -47,7 +59,6 @@ IV_LOW = 1e-4
 IV_HIGH = 10.0
 DEFAULT_PRICE_RESOLUTION = 0.005
 LOW_CONFIDENCE_IV_ERROR = 0.005
-DAY_COUNT = "act365f"
 _SECONDS_PER_YEAR = 365.0 * 86400.0
 _XTOL = 1e-14
 _MAX_ITER = 200
@@ -89,11 +100,13 @@ class Mid:
 
 
 def mid_price(quote: Quote) -> Mid:
-    """(bid + ask) / 2. A crossed or zero-width quote has no mid. A zero bid is kept, labelled."""
+    """(bid + ask) / 2. A crossed, zero-width or zero-bid quote has no mid, only its label."""
     labels = quote_labels(quote)
     if labels:
         return Mid(None, labels)
-    return Mid((quote.bid + quote.ask) / 2.0, ("zero_bid",) if quote.bid == 0.0 else ())
+    if quote.bid == 0.0:
+        return Mid(None, ("zero_bid",))
+    return Mid((quote.bid + quote.ask) / 2.0, ())
 
 
 @dataclass(frozen=True)
@@ -108,6 +121,7 @@ class IvSolved:
     price: float
     model: str
     inputs: OptionInputs
+    conventions: Conventions
     greeks: Greeks | None = None
 
 
@@ -197,6 +211,7 @@ def solve_implied_vol(
         price=target_price,
         model=inp.model,
         inputs=inp,
+        conventions=g.conventions,
     )
 
 
@@ -209,7 +224,12 @@ class RowSolve:
 
 
 def model_tag(inp: OptionInputs) -> str:
-    """The stored model name: model, the inputs that were used and the conventions."""
+    """The stored model name: model, the inputs that were used and the conventions.
+
+    Format (stable, parseable): `<model>;r=<rate>;q=<yield or "forward">;day_count=act365f;`
+    `theta=per_calendar_day;vega=per_1.00_vol`. Split on ";" then on the first "="; numbers are
+    Python's shortest round-trip float text, so float(text) gives the input back exactly.
+    """
     q = "forward" if inp.dividend_yield is None else repr(inp.dividend_yield)
     return (
         f"{inp.model};r={inp.rate!r};q={q};day_count={DAY_COUNT};"

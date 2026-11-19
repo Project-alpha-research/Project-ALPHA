@@ -170,4 +170,4 @@ def test_mid_price_is_the_average_and_respects_the_labels() -> None:
     flat = mid_price(replace(q, bid=1.2))
     assert flat.value is None and flat.labels == ("zero_width",)
     zero_bid = mid_price(replace(q, bid=0.0))
-    assert zero_bid.value == pytest.approx(0.6, abs=1e-15) and zero_bid.labels == ("zero_bid",)
+    assert zero_bid.value is None and zero_bid.labels == ("zero_bid",)  # never averaged

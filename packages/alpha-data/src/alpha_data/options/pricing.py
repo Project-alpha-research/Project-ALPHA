@@ -5,7 +5,7 @@ the dividend yield (or the forward), and nothing here has a default for them.
 
 Sources
 - Black, F. and Scholes, M. (1973), "The Pricing of Options and Corporate Liabilities", Journal of
-  Political Economy 81(3): the call and put formulas, eq. (13).
+  Political Economy 81(3): the call formula (their eq. 13). The put follows by put-call parity.
 - Merton, R. C. (1973), "Theory of Rational Option Pricing", Bell Journal of Economics and
   Management Science 4(1): the same formula with a continuous dividend yield.
 - Black, F. (1976), "The pricing of commodity contracts", Journal of Financial Economics 3(1-2):
@@ -23,7 +23,7 @@ Assumptions, in plain words (all must hold for the number to mean something)
   discounts.
 - Time to expiry is in years (ACT/365 fixed, see `alpha_data.options.implied.years_between`).
 
-Conventions (the stored computed block uses these)
+Conventions (the stored computed block uses these; every result carries them in `conventions`)
 - `vega` is the derivative with respect to volatility per 1.00 (100 vol points). Divide by 100 for
   one vol point.
 - `theta` is the change in price per CALENDAR DAY (the derivative with respect to calendar time
@@ -32,6 +32,13 @@ Conventions (the stored computed block uses these)
   rho = -years * price).
 - `delta` and `gamma` are with respect to the input `underlying` (the spot for BSM, the forward for
   Black-76).
+- Converting a provider's numbers before any comparison: theta per trading day = ALPHA theta * 365
+  / 252 (if the provider uses 252 trading days); theta per year = ALPHA theta * 365; vega per vol
+  point = ALPHA vega / 100; rho per 1% of rate = ALPHA rho / 100.
+
+Edges: the price needs years > 0 and vol > 0, and vol * sqrt(years) must not be zero in floating
+point (a named error, never a division by zero). As vol or years falls to zero the price tends to
+the discounted intrinsic on the FORWARD, max(phi D (F - K), 0), not on the spot.
 """
 
 from __future__ import annotations
@@ -44,6 +51,7 @@ from alpha_data.options.schema import RIGHTS, OptionsDataError
 BSM_MODEL = "black-scholes-merton-v1"
 BLACK76_MODEL = "black-76-v1"
 KINDS = ("spot", "forward")
+DAY_COUNT = "act365f"
 _SQRT2 = math.sqrt(2.0)
 _SQRT2PI = math.sqrt(2.0 * math.pi)
 
@@ -112,9 +120,20 @@ class OptionInputs:
         return 1.0 if self.right == "C" else -1.0
 
 
+@dataclass(frozen=True, kw_only=True)
+class Conventions:
+    """The units of every greek in a result, so a provider's units are never mixed in silently."""
+
+    delta_gamma_wrt: str
+    vega: str = "per_1.00_vol"
+    theta: str = "per_calendar_day"
+    rho: str = "per_1.00_rate"
+    day_count: str = DAY_COUNT
+
+
 @dataclass(frozen=True)
 class ModelGreeks:
-    """Price and greeks at one volatility. Conventions are in the module docstring."""
+    """Price and greeks at one volatility, with their units in `conventions`."""
 
     price: float
     delta: float
@@ -122,6 +141,7 @@ class ModelGreeks:
     vega: float
     theta: float
     rho: float
+    conventions: Conventions
 
 
 def _cdf(x: float) -> float:
@@ -136,6 +156,8 @@ def _check_vol(inp: OptionInputs, vol: float) -> None:
     _finite("vol", vol, positive=True)
     if inp.years <= 0:
         raise OptionsDataError("years", "must be above zero to price an option")
+    if vol * math.sqrt(inp.years) == 0.0:
+        raise OptionsDataError("vol", "vol * sqrt(years) is zero in floating point")
 
 
 def _d1(inp: OptionInputs, vol: float) -> tuple[float, float]:
@@ -190,4 +212,5 @@ def greeks(inp: OptionInputs, vol: float) -> ModelGreeks:
         vega=d * fwd * density * sqrt_t,
         theta=theta_year / 365.0,
         rho=rho,
+        conventions=Conventions(delta_gamma_wrt=inp.kind),
     )

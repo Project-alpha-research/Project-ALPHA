@@ -7,10 +7,11 @@ No real market data. Two modes.
   Never use this mode to judge a pricing or volatility method. It only tests records, storage and
   point-in-time reads. Contracts are American-style.
 - Model-priced mode (`priced=PricedModel(rate, dividend_yield)`): every quote is centred on the
-  Black-Scholes-Merton price (`alpha_data.options.pricing`) at the surface IV, with a small fixed
-  spread. Contracts are European-style, so the model price is exact and a solver can recover the
-  surface IV from the quote mid. Time to expiry is ACT/365 from the snapshot to 21:00 UTC on the
-  expiry day. The rate and dividend yield are the explicit values in `PricedModel`.
+  Black-Scholes-Merton price (`alpha_data.options.pricing`) at the surface IV, with a symmetric
+  spread capped at half the price, so the bid is never zero. Contracts are European-style, so the
+  model price is exact and a solver can recover the surface IV from the quote mid. Time to
+  expiry is ACT/365 from the snapshot to 21:00 UTC on the expiry day. The rate and dividend
+  yield are the explicit values in `PricedModel`.
 The surface IV is stored as the provided IV in both modes so a check has a target.
 """
 
@@ -169,7 +170,7 @@ class SyntheticAdapter:
             right=right,
         )
         value = price(inp, iv)
-        half = min(max(SPREAD_FLOOR, SPREAD_FRACTION * value), value)
+        half = min(max(SPREAD_FLOOR, SPREAD_FRACTION * value), value / 2.0)  # bid stays above 0
         return value - half, value + half
 
     def contracts(self, underlying: str, start: date, end: date) -> list[ContractId]:

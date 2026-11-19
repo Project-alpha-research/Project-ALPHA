@@ -6,7 +6,8 @@ sources:
   - tests/unit/test_options_pricing.py
   - tests/unit/test_options_implied.py
   - tests/unit/test_options_priced_fixture.py
-verified: c8ea67e95c9bf122
+  - tests/unit/test_options_conventions.py
+verified: 1d6463771c0fa283
 ---
 
 # Options data
@@ -51,7 +52,18 @@ and a fixture priced by the same model so the solver recovers the known surface.
 "not supported yet". Still synthetic only.
 
 Not built:
-- American-style pricing, derived series, health card rows.
+- American-style pricing. Consequence: listed US equity and ETF options are American-style, so today the solver covers only
+  European-style index options and futures options. Specification for the next build:
+  - Method: Cox, Ross and Rubinstein (1979) binomial tree, u = exp(vol sqrt(dt)), d = 1/u, p = (exp((r - q) dt) - d) / (u - d),
+    with early exercise checked at every node. Discrete cash dividends by the escrowed-dividend method (spot less the present
+    value of dividends before expiry), each dividend date and amount passed explicitly.
+  - Step count: 500 steps by default, stated in the model tag; the price is the average of N and N + 1 steps to damp the
+    odd-even oscillation.
+  - Tests: with no early exercise (a call with q = 0 and no dividends) the tree matches Black-Scholes-Merton within a
+    tolerance the test justifies from the 1/steps error order, and the error falls as steps grow; the American put matches published values (Hull's American put example);
+    the early-exercise premium (American minus European) is never below zero; the implied-volatility root on the tree price
+    stays monotone and bracketed.
+- Derived series, health card rows.
 - Any provider adapter, history import, security-id map and delisted-name universe. These wait for the purchase.
 - A command group. The fixture is not on any screen yet.
 
@@ -62,7 +74,7 @@ Not built:
 - Code: `packages/alpha-data/src/alpha_data/options/`.
 - Tests: `tests/unit/test_options_schema.py`, `tests/unit/test_options_store.py`, `tests/unit/test_options_held_back.py`,
   `tests/unit/test_options_forward_guard.py`, `tests/unit/test_options_pricing.py`, `tests/unit/test_options_implied.py`,
-  `tests/unit/test_options_priced_fixture.py`.
+  `tests/unit/test_options_priced_fixture.py`, `tests/unit/test_options_conventions.py`.
 - **Plan:** [stage 2](../../../roadmap/production-scope.md#2-data-and-context) of the checklist.
 - How to change it: [packages/alpha-data/CONTEXT.md](../../../../packages/alpha-data/CONTEXT.md).
 
@@ -71,7 +83,8 @@ Not built:
 - Decided 2026-11-19: buy a paid data package, including options, in about a week; the provider is open.
 - Open readings in the first build: crossed and zero-width quotes are labelled rather than refused; a snapshot file is named
   by its timestamp rather than its date; the placeholder fixture mode keeps its price shape, which is not arbitrage-free
-  and must never judge a method; the model-priced mode is the one for solver tests. Theta is per calendar day, vega per 1.00 of volatility, ACT/365 fixed.
+  and must never judge a method; the model-priced mode is the one for solver tests. Theta is per calendar day, vega per 1.00 of
+  volatility, ACT/365 fixed; convert a provider's units before comparing (see the [options invariants](../../invariants/data-options.md)).
 
 ## Never
 

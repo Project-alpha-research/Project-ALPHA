@@ -26,6 +26,7 @@ import typer
 
 from alpha_cli import _runner
 from alpha_cli._cli_json import emit
+from alpha_cli.spine import reserve
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.stores import _stores, resolve_asset
 from alpha_core import DataError
@@ -160,7 +161,12 @@ class _BarsInput:
 
 def _read_bars(asset: str, home: Path) -> _BarsInput:
     resolved = resolve_asset(asset, data_dir=home)
-    bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir)
+    held = reserve.hold(resolved.symbol, data_dir=resolved.data_dir)
+    bars, snapshot_id = _runner.load_bars(
+        resolved.symbol, data_dir=resolved.data_dir, as_of=held.as_of
+    )
+    if held.say():
+        print(held.say())
     if len(bars) < 60:
         raise DataError(f"{resolved.symbol}: labels need at least 60 bars, got {len(bars)}")
     frame = pl.DataFrame(
@@ -172,7 +178,7 @@ def _read_bars(asset: str, home: Path) -> _BarsInput:
             "close": [bar.close for bar in bars],
         }
     ).with_columns(pl.col("ts").dt.convert_time_zone("UTC").dt.cast_time_unit("us"))
-    labels = ["source-defaulted"] if resolved.defaulted else []
+    labels = held.label(["source-defaulted"] if resolved.defaulted else [])
     if (bars[-1].ts - bars[0].ts).total_seconds() < 3 * 365.25 * 86400:
         labels.append("short-history")
     meta = {
@@ -184,6 +190,7 @@ def _read_bars(asset: str, home: Path) -> _BarsInput:
         "first_ts": bars[0].ts.isoformat(),
         "last_ts": bars[-1].ts.isoformat(),
         "source_fingerprint": _runner.source_fingerprint(bars),
+        **held.record_fields(),
     }
     return _BarsInput(frame, meta, labels)
 

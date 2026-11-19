@@ -36,14 +36,20 @@ def _parse_horizons(raw: str) -> tuple[int, ...]:
     return values
 
 
-def _load(asset: str, timeframe: str, home: Path) -> tuple[Any, Any, Any]:
+def _load(asset: str, timeframe: str, home: Path) -> tuple[Any, Any, Any, Any]:
     from alpha_cli import _runner
     from alpha_cli.chart_cmds import to_ohlcv
+    from alpha_cli.spine import reserve
     from alpha_cli.spine.stores import resolve_asset
 
     resolved = resolve_asset(asset, data_dir=home, timeframe=timeframe)
-    bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, timeframe=timeframe)
-    return resolved, bars, to_ohlcv(bars)
+    held = reserve.hold(resolved.symbol, data_dir=resolved.data_dir, timeframe=timeframe)
+    bars, _ = _runner.load_bars(
+        resolved.symbol, data_dir=resolved.data_dir, timeframe=timeframe, as_of=held.as_of
+    )
+    if held.say():
+        typer.echo(held.say(), err=True)
+    return resolved, bars, to_ohlcv(bars), held
 
 
 def _identity(kind: str, payload: dict[str, Any], bars: list[Any]) -> str:
@@ -354,7 +360,7 @@ def lookalike(
     steps = _parse_horizons(horizons)
     home = AlphaSettings().data_dir
     try:
-        resolved, bars, series = _load(asset, timeframe, home)
+        resolved, bars, series, held = _load(asset, timeframe, home)
         if len(series) < last:
             raise DataError(f"{resolved.symbol}: need at least {last} bars, got {len(series)}")
         threshold = (
@@ -390,7 +396,7 @@ def lookalike(
             "exclusion": last,
         }
         result_id = _identity("lookalike", settings, bars)
-        labels = _lookalike_labels(result, resolved, tuple(LABELS))
+        labels = held.label(_lookalike_labels(result, resolved, tuple(LABELS)))
         rdir = home / "lookalike" / result_id
         if (rdir / "result.json").exists():
             labels.append("repeat")
@@ -462,7 +468,7 @@ def unusual(
 
     home = AlphaSettings().data_dir
     try:
-        resolved, bars, series = _load(asset, timeframe, home)
+        resolved, bars, series, held = _load(asset, timeframe, home)
         result = novelty_score(series, window, as_of=float(series.ts[-1]))
         settings = {
             "asset": asset,
@@ -473,12 +479,14 @@ def unusual(
             "warmup": result.warmup,
         }
         result_id = _identity("unusual", settings, bars)
-        labels = [
-            f"N={result.earlier_scores} earlier windows",
-            *LABELS,
-            "unusual is not up or down",
-            *(["source-defaulted"] if resolved.defaulted else []),
-        ]
+        labels = held.label(
+            [
+                f"N={result.earlier_scores} earlier windows",
+                *LABELS,
+                "unusual is not up or down",
+                *(["source-defaulted"] if resolved.defaulted else []),
+            ]
+        )
         rdir = home / "unusual" / result_id
         facts = [
             _fact(

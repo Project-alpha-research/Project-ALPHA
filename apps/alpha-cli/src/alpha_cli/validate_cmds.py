@@ -15,6 +15,7 @@ import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _gauntlet, _runner, rules_cmds
 from alpha_cli._identity import RunIdentity
+from alpha_cli.spine import reserve
 from alpha_cli.spine.deflation import validation_family
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import Bar, DataError, bps_rate
@@ -137,18 +138,12 @@ def validate(
             "the kronos strategy"
         )
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
         bars, snapshot_id = _load_bars(
-            symbol,
-            data_dir=settings.data_dir,
-            snapshot_id=snapshot,
-            as_of=research_cutoff,
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         dividends = _load_dividends(
-            symbol,
-            data_dir=settings.data_dir,
-            snapshot_id=snapshot,
-            as_of=research_cutoff,
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(
             bars, spec, data_dir=settings.data_dir, seed=resolved_seed
@@ -170,7 +165,8 @@ def validate(
                 "command": "validate",
                 "symbol": symbol,
                 "snapshot_id": snapshot_id,
-                "research_cutoff": as_of,
+                "research_cutoff": held.research_cutoff,
+                **held.identity(),
                 **_artifacts.research_gate_override_identity(research_gate_override),
                 **vars(spec),
                 **gauntlet_knobs,
@@ -192,16 +188,19 @@ def validate(
     except DataError as exc:  # no bars, unknown strategy/null-model, train < warmup floor, etc.
         raise typer.BadParameter(str(exc)) from exc
 
+    reserved: dict[str, Any] = {}
+    held.stamp(reserved)
     rdir, _ = write_validation_run(
         settings.data_dir,
         bars,
         spec,
         out,
         identity,
-        as_of=as_of,
+        as_of=held.research_cutoff,
         research_gate_override=research_gate_override,
         forecast_meta=forecast_meta,
         tier2_mode=tier2_mode,
+        extra_manifest=reserved or None,
     )
 
     status = "PASS" if out.report.passed else "FAIL"
@@ -219,6 +218,8 @@ def validate(
         f"null pct {'/'.join(f'{n.percentile:.2f}' for n in out.report.nulls)}); "
         f"tear sheet at {rdir / 'tearsheet.html'}"
     )
+    if held.say():
+        typer.echo(held.say())
     if forecast_meta is not None:
         typer.echo(f"  kronos: cache {forecast_meta['cache_key']}, tier2 policy {tier2_mode}")
         if forecast_meta["pretrain"]["overlap"]:

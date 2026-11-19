@@ -13,6 +13,7 @@ import typer
 
 from alpha_cli import _artifacts, _mcpt, _optim, _runner, _seeds
 from alpha_cli._artifacts import sanitize
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -114,18 +115,15 @@ def grid(
         strategy_params=_runner.parse_strategy_params(strategy, param),
     )
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
         bars, snapshot_id = _load_bars(
-            symbol,
-            data_dir=settings.data_dir,
-            snapshot_id=snapshot,
-            as_of=research_cutoff,
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         dividends = _load_dividends(
             symbol,
             data_dir=settings.data_dir,
             snapshot_id=snapshot,
-            as_of=research_cutoff,
+            as_of=held.as_of,
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -141,7 +139,7 @@ def grid(
             "dsr_threshold": dsr_threshold,
             "alpha": alpha,
             "seed": resolved_seed,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
             **vars(base),
         },
@@ -186,8 +184,9 @@ def grid(
         run_id=run_id,
         symbol=symbol,
         snapshot_id=snapshot_id,
-        research_cutoff=as_of,
+        research_cutoff=held.research_cutoff,
     )
+    held.stamp(manifest)
     manifest.update(_artifacts.research_gate_override_fields(research_gate_override))
     manifest.update(identity.manifest_fields())
     _artifacts.write_manifest(rdir, manifest)
@@ -214,6 +213,8 @@ def grid(
     if result.analysis_error is not None:
         lines.append(f"  analysis failure: {result.analysis_error}")
     lines.append(f"  manifest at {rdir / 'manifest.json'}")
+    if held.say():
+        lines.append(f"  {held.say()}")
     typer.echo("\n".join(lines))
 
 
@@ -368,12 +369,12 @@ def mcpt(
         strategy_params=_runner.parse_strategy_params(strategy, param),
     )
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
         bars, snapshot_id = _load_bars(
-            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=research_cutoff
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         dividends = _load_dividends(
-            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=research_cutoff
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -386,7 +387,7 @@ def mcpt(
             "perms": perms,
             "threshold": threshold,
             "seed": resolved_seed,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
             **vars(base),
         },
@@ -417,7 +418,7 @@ def mcpt(
         "command": "optim_mcpt",
         "symbol": symbol,
         "snapshot_id": snapshot_id,
-        "research_cutoff": as_of,
+        "research_cutoff": held.research_cutoff,
         "grid": {k: list(v) for k, v in grid_axes.items()},
         "n_configs": len(result.configs),
         "configs": [dict(c) for c in result.configs],
@@ -432,6 +433,7 @@ def mcpt(
         "passed": null.passed,
         "caveat": _mcpt.CAVEAT,
     }
+    held.stamp(manifest)
     manifest = sanitize(manifest)
     manifest.update(_artifacts.research_gate_override_fields(research_gate_override))
     manifest.update(identity.manifest_fields())
@@ -444,3 +446,5 @@ def mcpt(
         f"{perms} permutations; best {best}, in-sample Sharpe {null.observed:.3f}); "
         f"overfit test only, not OOS evidence; manifest at {rdir / 'manifest.json'}"
     )
+    if held.say():
+        typer.echo(held.say())

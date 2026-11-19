@@ -14,12 +14,13 @@ import hashlib
 import json
 import os
 import re
-from datetime import UTC, date, datetime, time
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import typer
 
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -128,6 +129,7 @@ def explain_saved_rule(
 ) -> dict[str, Any]:
     """Explain the saved rule on canonical PIT bars; unavailable is never a flat signal."""
     from alpha_cli._runner import load_bars
+    from alpha_cli.spine import reserve
     from alpha_strategies.rules import (
         explain_rules,
         rule_spec_from_json,
@@ -153,8 +155,10 @@ def explain_saved_rule(
         return {**result, "error": str(exc)}
     result["rules_sha256"] = spec_sha256(spec)
     try:
-        cutoff = datetime.combine(as_of, time.max, tzinfo=UTC) if as_of else None
-        bars, _ = load_bars(symbol, data_dir=data_dir, as_of=cutoff)
+        held = reserve.hold(symbol, data_dir=data_dir, as_of=as_of.isoformat() if as_of else None)
+        bars, _ = load_bars(symbol, data_dir=data_dir, as_of=held.as_of)
+        if held.held_back:
+            result.update(labels=held.label([]), **held.record_fields())
         result["bar_ts"] = bars[-1].ts.timestamp()
         if len(bars) < spec.history:
             raise DataError(f"{len(bars)} bars stored, the rule set needs {spec.history}")
@@ -185,7 +189,10 @@ def explain(
     except ValueError as exc:
         raise typer.BadParameter("--as-of must be YYYY-MM-DD") from exc
     result = explain_saved_rule(name, symbol, data_dir=AlphaSettings().data_dir, as_of=cutoff)
-    _emit(result, json_out, f"{name} / {symbol}: {result['error'] or result['signal']}")
+    text = f"{name} / {symbol}: {result['error'] or result['signal']}"
+    if result.get("reserve"):
+        text += "\n" + reserve.sentence(result["reserve"]["held_back_bars"])
+    _emit(result, json_out, text)
 
 
 @rules_app.command("save")

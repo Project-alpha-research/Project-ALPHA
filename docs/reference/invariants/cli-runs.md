@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: a01dcf75ac4e7aa5
+verified: 48321a7ac2675286
 ---
 
 # Command line runs invariants
@@ -99,6 +99,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.
   `alpha results show` and run facts derive `reserved-period-seen` for an older run whose last bar is on or after
   2024-01-01; stored runs are never rewritten. `alpha tool` reads a held-back run only up to its `research_cutoff`.
+- `alpha optim`, `validate`, `backtest` (oos, run, portfolio, cross-sectional), `scan run`, `rules explain`, `lookalike`, `unusual`
+  and `labels barrier` hold the period back the same way (`reserve.Hold`): same cut-off, label, sentence and identity rule.
+  `scan check` is forward use and is not held back.
 - `ledger/trials.jsonl` is append-only `AlphaTrialV1` (lock file, strict JSON, fsync); `trial_index` and `total_trials` equal the 1-based line number and
   corruption fails loud. Errors count as trials with an `error` label and null unavailable metrics; the command output explains them.
 - `quick` = 20/4/4 null paths, 50 resamples. Every run carries `all-in`, `dev-machine-data`, a data-health label; defaulted sources and short history too.

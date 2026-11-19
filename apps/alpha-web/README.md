@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 77c8b7727dacdea1
+verified: bf0221022d9cbc72
 ---
 
 # alpha-web: code map and change loop

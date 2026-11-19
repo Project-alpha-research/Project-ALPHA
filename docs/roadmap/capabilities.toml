@@ -492,6 +492,32 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "forward-follow"
+name = "Follow a tested idea on paper (alpha follow)"
+what = "Follow a rule test or setup find forward on paper. The follow is frozen when it starts. An append-only, hash-chained journal records its sessions. A changed spec starts a new version."
+see_it = ["uv run alpha follow list", "uv run alpha follow show <follow id>", "uv run alpha follow verify <follow id>"]
+entry_points = [
+  "cli: alpha follow start",
+  "cli: alpha follow list",
+  "cli: alpha follow show",
+  "cli: alpha follow verify",
+  "cli: alpha follow stop",
+]
+proof_synthetic = [
+  "tests/unit/test_follow_journal.py::test_verify_detects_a_flipped_byte",
+  "tests/unit/test_follow_cmds.py::test_a_changed_spec_of_the_same_idea_is_a_new_version",
+  "tests/unit/test_follow_separation.py::test_no_module_off_the_reader_list_touches_forward",
+]
+proof_smoke = [
+  "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",
+]
+docs = ["docs/reference/invariants/cli-follow.md"]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "Build F1 only: the record and the journal. No signal and no paper trade is computed yet; no new bar is recorded."
+
+[[capability]]
 id = "idea-library"
 name = "Library of published ideas (alpha library)"
 what = "Browse a small starting map of well-known published ideas, written in our own words with the source, the claimed reason, later decay evidence and whether ALPHA can test it today, and turn one into an idea card. The owner's private notes are read from the data folder. It tests nothing."

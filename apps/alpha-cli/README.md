@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 52a5b4d6fd50fb7a
+verified: d617550849e69568
 ---
 
 # alpha-cli: code map and change loop
@@ -28,6 +28,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Rule-test reading | `spine/reading` (pure), `spine/reading_read` (stored runs); text in `test_cmds`, `results_cmds`, `next_cmds`, `nightly_run` | `test_reading_rule` |
 | Idea cards and the idea file | `idea_cmds`, `spine/idea_card` (cards under `<home>/ideas/`; the spec link is in no identity), `spine/idea_file`, `idea_map`, `idea_file_text` (read-only page per idea) | `test_idea_card`, `test_idea_file` |
 | Library of published ideas | `library_cmds`, `spine/library` (records in `research/library/published/`, private notes under `<home>/library/private/`) | `test_library` |
+| Forward follow | `follow_*` (5: `cmds`, `store`, `source`, `journal`, `chain`; writes only `<home>/forward/`; no research module may import them) | `test_follow_*`, `smoke/test_follow_smoke` |
 | Nightly real run | `nightly_*` (6: `cmds`, `config`, `run`, `steps`, `record`, `status`; runs real commands in child processes) | `test_nightly`, `smoke/test_nightly_smoke` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
 `test_suite_*` |

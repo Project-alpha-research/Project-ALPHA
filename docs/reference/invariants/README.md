@@ -50,5 +50,5 @@ verified: 6c3c833076d17fee
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |
 | [cli-native.md](cli-native.md) | native upstream lanes: RD-Agent loop, rule studies | native loops, costed rule studies |
-| [cli-paper.md](cli-paper.md) | paper trading, scheduler, provider status | `alpha paper` |
+| [cli-paper.md](cli-paper.md), [cli-follow.md](cli-follow.md) | paper trading, scheduler; paper follow journal | `alpha paper`, `alpha follow`, `forward/` |
 | [cli-assistant.md](cli-assistant.md) | advisory assistant, Codex investigations | `alpha assistant`, investigations |

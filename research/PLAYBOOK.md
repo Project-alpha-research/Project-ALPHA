@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 0bd594768c1fd3d6
+verified: ec84015748d99e48
 ---
 
 # Research playbook: how to work any idea
@@ -65,14 +65,14 @@ Labels go before numbers. Label reserved-period-seen: data on or after the 2024-
 | `data-health-fail` / `data-health-overridden` | say “data health fail” and “data health overridden”, give the fault and the recorded reason |
 | `all-in` | fully invested or flat; no position sizing |
 | `source-defaulted` | the asset is in more than one store; the first was used |
-| `repeat` | a repeat of an earlier, identical test |
+| `repeat` | the same spec, asset, data window and bar size tested again (any code version) |
 | `too-few-trades` | too few trades: under 30 closed out-of-sample trades; the reading is `too little to read` |
 | `no-diagnostics` | the diagnostic pass was skipped |
 
 - A flag (`below-benchmark`, `concentrated-profit`, ...) is an observation, never a verdict. Report every flag
   with its `detail` sentence. An audit line is `PASS`, `FLAG` or `NOT-CHECKED`; report every `FLAG` and every
   `NOT-CHECKED`. Quote the `reading` (evidence word and the aim line), never the old letter in `verdict`.
-- Trial count: say "trial N of M recorded" from `trials_total` (or `total_trials`), plus the
+- Trial count: say "ledger entry N of M" (a row number, not ideas tried) from `trials_total` (or `total_trials`), plus the
   sensitivity re-runs in `variants_evaluated`; cite `family_trials` for the deflation count. Report best-of-many as best-of-many.
   `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger yet: count those
   by hand and say so.

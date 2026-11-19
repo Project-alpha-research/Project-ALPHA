@@ -274,7 +274,7 @@ def test_counts_and_sentence_shape() -> None:
         "best_of": 6,
     }
     assert 1 <= result["sentence"].count(". ") + 1 <= 4
-    assert "Trial 3" in result["sentence"] and "6 variants" in result["sentence"]
+    assert "ledger entry 3" in result["sentence"].lower() and "6 variants" in result["sentence"]
 
 
 def test_old_manifest_without_reading_derives_one_and_old_letters_read_as_old() -> None:

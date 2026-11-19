@@ -8,7 +8,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/next_cmds.py
   - tests/unit/test_reading_rule.py
-verified: 3925622dd9ec2f3f
+verified: b8babff096809519
 ---
 
 # Command line rule-test readings invariants

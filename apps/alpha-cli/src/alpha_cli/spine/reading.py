@@ -268,7 +268,7 @@ def _sentence(
     tail = [
         part
         for part in (
-            f"Trial {counts['trial_n']} recorded" if counts["trial_n"] else "",
+            f"ledger entry {counts['trial_n']}" if counts["trial_n"] else "",
             f"family counted as {counts['family_trials']} tries" if counts["family_trials"] else "",
             f"best of {counts['best_of']} variants" if counts["best_of"] else "",
         )

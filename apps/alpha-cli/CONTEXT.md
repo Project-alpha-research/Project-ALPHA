@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 52a5b4d6fd50fb7a
+verified: d617550849e69568
 ---
 
 # alpha-cli workspace
@@ -23,7 +23,7 @@ It must never grant authority the owner did not give, and never route live capit
 | [command line runs](../../docs/reference/invariants/cli-runs.md) | — | backtest, validate, rule tests, tools, suites, nightly run |
 | [command line native](../../docs/reference/invariants/cli-native.md) | — | native fixtures and rule jobs, RD-Agent loops, `native_*` |
 | [what this part is for](../../docs/reference/project/components/command-line.md) | — | why it exists; before you keep, shelve or remove it |
-| [invariants router](../../docs/reference/invariants/README.md) | Command line | other `alpha` areas: setups, data, ml, paper, assistant |
+| [invariants router](../../docs/reference/invariants/README.md) | Command line | other areas: setups, data, ml, paper, assistant, follow |
 | [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`: adding a test; the honesty rules |
 | [alpha-cli README](README.md) | Code map | finding a module or its tests |
 

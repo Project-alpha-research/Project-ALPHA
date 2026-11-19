@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 34 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 35 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -54,6 +54,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Download and freeze stock and ETF prices** — no offline way to get prices in; snapshot, verify and as-of read are proven end to end.
 - **Intraday bars, from one minute to one hour, end to end** — proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily. More: [docs/reference/invariants/data-bar-timeframes.md](docs/reference/invariants/data-bar-timeframes.md).
 - **Reports, figures and run comparison** — the text and JSON (--json) reports are proven end to end; figures and run comparison are tested in-process only.
+- **Follow a tested idea on paper (alpha follow)** — Build F1 only: the record and the journal. No signal and no paper trade is computed yet; no new bar is recorded.. More: [docs/reference/invariants/cli-follow.md](docs/reference/invariants/cli-follow.md).
 - **Price forecasts with the Kronos model** — proved only with a stand-in model. Needs: the Kronos model files (downloaded on first use; not on this computer).
 - **Research cases from idea to decision (D0, D1, D2)** — proven up to the owner-approval boundary; a full case needs provider data and your approval.
 - **Find papers and screen their claims (R4)** — paper download tested only with a stand-in worker. Needs: the literature worker setup (not installed on this computer).

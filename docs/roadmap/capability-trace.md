@@ -58,6 +58,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `idea-card` | Four clocks on each idea: signal lookback, decision pace, holding period, execution delay |
 | `idea-library` | Verified source library: papers, books and tools checked to exist, grouped by topic, rules of thumb traced to their origin |
 | `front-door` | Every test, tool and variant counted in one ledger; the count printed on each result |
+| `forward-follow` | Paper trading: local crypto practice account or a broker practice account |
 | `nightly-run` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `monte-carlo` | Path-risk simulation in three families (a fourth, Kronos paths, runs on a stand-in) |
 | `risk-numbers` | Risk figures that state their basis (value at risk, expected shortfall) |

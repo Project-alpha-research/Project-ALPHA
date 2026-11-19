@@ -1,0 +1,19 @@
+id = "low-volatility"
+name = "Low volatility"
+year_published = 2011
+market = "us-equities"
+idea = "Calmer stocks have tended to earn as much as or more than wild ones, so a basket of calm stocks looks better per unit of risk."
+mechanism_claimed = "The authors argue that managers judged against an index prefer risky stocks, and that people like lottery-like stocks. This leaves calm stocks cheap."
+data_needed = ["daily prices for a wide stock universe"]
+direction = "long"
+holding_clock = "months"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = ""
+
+[source]
+authors = "Baker, Bradley and Wurgler"
+year = 2011
+title = "Benchmarks as limits to arbitrage: understanding the low-volatility anomaly"
+venue = "Financial Analysts Journal 67(1)"
+url = "https://doi.org/10.2469/faj.v67.n1.4"

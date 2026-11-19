@@ -1,0 +1,19 @@
+id = "value-book-to-market"
+name = "Value (book to market)"
+year_published = 1992
+market = "us-equities"
+idea = "Stocks that are cheap against their book value, and small stocks, have tended to earn more than expensive ones."
+mechanism_claimed = "The authors read it as pay for risk the market asks for. Others read it as investor error. The paper does not settle it."
+data_needed = ["accounting data: book equity", "market value"]
+direction = "long-short"
+holding_clock = "months to years"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "no - book values (fundamentals) are not held."
+notes = ""
+
+[source]
+authors = "Fama and French"
+year = 1992
+title = "The cross-section of expected stock returns"
+venue = "Journal of Finance 47(2)"
+url = "https://doi.org/10.2307/2329112"

@@ -1,0 +1,19 @@
+id = "accruals"
+name = "Accruals"
+year_published = 1996
+market = "us-equities"
+idea = "Firms whose profit comes more from accounting adjustments than from cash tend to do worse afterwards."
+mechanism_claimed = "The author says investors fixate on the profit figure and miss that adjustment-based profit fades faster."
+data_needed = ["accounting data: earnings, cash flow, assets"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "Green, Hand and Soliman (2011, Management Science 57(5), doi 10.1287/mnsc.1110.1320) report that the accruals effect has largely disappeared."
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = ""
+
+[source]
+authors = "Sloan"
+year = 1996
+title = "Do stock prices fully reflect information in accruals and cash flows about future earnings?"
+venue = "The Accounting Review 71(3)"
+url = "https://doi.org/10.2308/tar-9608042309"

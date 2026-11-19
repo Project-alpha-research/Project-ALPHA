@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 33 working, 31 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 31 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -24,6 +24,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Path-risk simulation (Monte Carlo)** — uv run alpha monte-carlo classical --from-run <run-id> (a real run is recorded)
 - **Front door (alpha next)** — uv run alpha next
 - **Idea card (alpha idea)** — uv run alpha idea new --from research/examples/idea-card.example.toml
+- **Library of published ideas (alpha library)** — uv run alpha library list
 - **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md).
 - **Risk numbers that state what they are based on (C04)** — uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis (a real run is recorded)
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)

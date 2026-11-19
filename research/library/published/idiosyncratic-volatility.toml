@@ -1,0 +1,19 @@
+id = "idiosyncratic-volatility"
+name = "Idiosyncratic volatility"
+year_published = 2006
+market = "us-equities"
+idea = "Stocks whose own price swings are large, apart from the market, have tended to earn less afterwards."
+mechanism_claimed = "The authors do not settle a cause. This is surprising, because theory suggests more risk should earn more."
+data_needed = ["daily prices for a wide stock universe and a market index"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "Bali and Cakici (2008, Journal of Financial and Quantitative Analysis 43(1), doi 10.1017/s002210900000274x) find the result depends on the choices of data and weights."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = ""
+
+[source]
+authors = "Ang, Hodrick, Xing and Zhang"
+year = 2006
+title = "The cross-section of volatility and expected returns"
+venue = "Journal of Finance 61(1)"
+url = "https://doi.org/10.1111/j.1540-6261.2006.00836.x"

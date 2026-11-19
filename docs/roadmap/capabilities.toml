@@ -1209,7 +1209,7 @@ id = "investigation-tools"
 name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
 what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. Agent choice is not built."
 see_it = [
-  "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run resampling.regime_paths <run_id>", "alpha tool run resampling.student_t_paths <run_id>", "alpha tool run trades.dependence <run_id>",
+  "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run resampling.student_t_paths <run_id>", "alpha tool run trades.dependence <run_id>",
   "alpha tool run overfit.deflated_sharpe <run_id>",
   "alpha tool run performance.downside_ratios <run_id>",
   "alpha tool run robustness.start_end_dates <run_id>",

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 2b68ae98a71426dc on 2026-11-19: registry gained two resampling checks; this page's text is still correct
+  verified 48f93e744ab8743d on 2026-11-19: No text names the Monte Carlo entries; the registry change does not alter routing
 
 apps/alpha-cli/README.md
-  verified 2b68ae98a71426dc on 2026-11-19: registry now lists two more resampling checks; text unchanged where not edited
+  verified 48f93e744ab8743d on 2026-11-19: No text names the Monte Carlo entries; the registry change does not alter routing
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct

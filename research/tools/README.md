@@ -33,7 +33,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
-| How wide is the return range, or how bad could the drop get? | [resampling checks](resampling-checks.md), [calm-and-stormy and fat-tail](montecarlo-checks.md), [path risk](path-risk.md) |
+| How wide is the return range, or how bad could the drop get? | [resampling checks](resampling-checks.md), [fat-tail histories](montecarlo-checks.md), [path risk](path-risk.md) |
 | Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
 | A picture for the owner | [charts](charts.md) (`trade_pnl` for profit by trade) |
 | Need the macro picture | [macro context](macro-context.md); `macro_window` in [diagnose and audit](diagnose-and-audit.md) |

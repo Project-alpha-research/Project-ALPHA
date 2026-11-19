@@ -3,29 +3,28 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/montecarlo.py
   - tests/unit/test_toolbox_montecarlo_checks.py
-verified: a37a1ca2d940a3ab
+verified: eaabfdadccc3a76d
 ---
 
-# Calm-and-stormy and fat-tail histories
+# Fat-tail histories
 
-**Reach for these checks when** the owner asks how bad a rule's path could get if bad spells cluster, or if rare large moves are likelier than the history shows.
+**Reach for this check when** the owner asks how bad a rule's path could get if rare large moves are likelier than a bell curve allows.
 
 | Question | Command |
 |---|---|
-| What do histories give that keep calm and stormy periods apart? | `alpha tool run resampling.regime_paths <run_id>` |
 | What do fat-tailed histories give, with rare large moves? | `alpha tool run resampling.student_t_paths <run_id>` |
 
 **How to read it**
 
-- Both give the 5th, 50th and 95th percentile final return and the one-in-20 worst drop. Compare them with the
-  [resampling checks](resampling-checks.md) and with `alpha monte-carlo classical --from-run <run_id>`.
-- The regime check draws 2,000 histories. It labels each bar calm or stormy from the swing of the run's own last 63
-  returns. The classical command uses the market's closes, so its numbers can differ. A state with too few bars gives
-  "unavailable" and a reason. Settings: `n_paths`, `regime_window`, `min_state_observations`, `min_state_transitions`.
-- The Student-t check draws 10,000 histories. Tail weight comes from the run's own returns.
-- Given the same returns, states and seed, each gives the numbers of the matching classical family.
-- They also run on an RD-Agent factor replay. They are not in the fixed set `rdagent-post-judge`.
+- It re-draws the run's past returns 10,000 times; it is not a forecast. Each bar is drawn on its own from a
+  Student-t curve fitted to the run's returns. It gives the 5th, 50th and 95th percentile final return and the
+  one-in-20 worst drop. Compare them with the [resampling checks](resampling-checks.md).
+- Given the same returns and seed, it gives the numbers of the Student-t family of
+  `alpha monte-carlo classical`. The command reads a validation run; this check reads a rule test's stored equity.
+- Between seeds, on 7,500 bars, the low end and the worst drop moved under 1% of their value and the high end about 3%.
+- It also runs on an RD-Agent factor replay. It is not in the fixed set `rdagent-post-judge`.
+- The calm-and-stormy family is not a check yet: it needs the market's closes, which a check on stored equity lacks.
 
-**What these checks cannot tell you** Every history assumes the future looks like this one. A scenario is not proof of an edge.
+**What this check cannot tell you** Every history assumes the future looks like this one. It draws bars independently, so it cannot show losing streaks. A scenario is not proof of an edge.
 
 **Next** Check [trade clustering](run-level-checks.md) or [cite](results-and-cite.md) the stored output.

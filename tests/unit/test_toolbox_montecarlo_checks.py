@@ -1,10 +1,10 @@
-"""The regime and Student-t Monte Carlo checks agree with the classical command's functions."""
+"""The Student-t Monte Carlo check agrees with the classical command's function."""
 
 import json
 import time
 import tracemalloc
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +15,6 @@ from typer.testing import CliRunner
 
 from alpha_cli._rdagent_checks import FactorTarget
 from alpha_cli._seeds import semantic_seed
-from alpha_cli.monte_carlo_cmds import _causal_regime_states
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.tool_cmds import tool_app
 from alpha_cli.toolbox import runner
@@ -23,10 +22,8 @@ from alpha_cli.toolbox.families import montecarlo
 from alpha_cli.toolbox.inputs import Inputs, resolve
 from alpha_cli.toolbox.registry import SPECS, get
 from alpha_cli.toolbox.runner import run
-from alpha_core import Bar
 from alpha_validation import (
     FloatArray,
-    regime_switching_return_paths,
     student_t_return_paths,
     summarize_path_family,
     to_returns,
@@ -37,32 +34,23 @@ from tests.unit.test_spine_tools import RUN
 from tests.unit.test_toolbox_resampling_checks import write_equity
 from tests.unit.test_toolbox_run_level_checks import END, START, stored_run
 
-REGIME = "resampling.regime_paths"
 STUDENT = "resampling.student_t_paths"
-TOOLS = (REGIME, STUDENT)
-PARAMS: dict[str, dict[str, Any]] = {
-    REGIME: {
-        "n_paths": 200,
-        "regime_window": 20,
-        "min_state_observations": 20,
-        "min_state_transitions": 10,
-    },
-    STUDENT: {"n_paths": 200},
-}
-SEEDS = {REGIME: "monte_carlo.regime", STUDENT: "monte_carlo.student_t"}
+TOOLS = (STUDENT,)
+PARAMS: dict[str, dict[str, Any]] = {STUDENT: {"n_paths": 200}}
+SEEDS = {STUDENT: "monte_carlo.student_t"}
 REFERENCE = Path(__file__).parents[1] / "fixtures/toolbox_montecarlo_checks.json"
 PEAK_BYTES = 600 * 1024 * 1024
 
 
 def sample_returns() -> FloatArray:
-    """Alternating calm and stormy spells, so both states have support."""
+    """Alternating calm and stormy spells, so the tails are fat."""
     rng = np.random.default_rng(5)
     spell = np.repeat(np.tile([0.004, 0.02], 10), 20)
     return np.asarray(rng.normal(0.0008, spell), dtype=np.float64)
 
 
 def prepare(home: Path) -> FloatArray:
-    folder = stored_run(home, REGIME)
+    folder = stored_run(home, STUDENT)
     returns = sample_returns()
     write_equity(folder, np.r_[1.0, np.cumprod(1.0 + returns)])
     return to_returns(np.r_[1.0, np.cumprod(1.0 + returns)])
@@ -70,28 +58,8 @@ def prepare(home: Path) -> FloatArray:
 
 def command_numbers(tool: str, returns: FloatArray, params: dict[str, Any], seed: int) -> Any:
     """What `alpha monte-carlo classical` does for one family, with its own functions."""
-    if tool == STUDENT:
-        paths = student_t_return_paths(returns, n_paths=params["n_paths"], seed=seed)
-    else:
-        window = params["regime_window"]
-        closes = np.r_[1.0, np.cumprod(1.0 + returns)]
-        start = datetime(2000, 1, 1, tzinfo=UTC)
-        bars = [
-            Bar(symbol="x", ts=start + timedelta(days=i), open=c, high=c, low=c, close=c, volume=0)
-            for i, c in enumerate(closes)
-        ]
-        train = window + 1 + (len(returns) - window) // 2
-        states, _, _ = _causal_regime_states(
-            bars, [b.ts for b in bars[window + 1 :]], train_size=train, window=window
-        )
-        paths = regime_switching_return_paths(
-            returns[window:],
-            states,
-            n_paths=params["n_paths"],
-            min_state_observations=params["min_state_observations"],
-            min_state_transitions=params["min_state_transitions"],
-            seed=seed,
-        ).paths
+    assert tool == STUDENT
+    paths = student_t_return_paths(returns, n_paths=params["n_paths"], seed=seed)
     s = summarize_path_family(tool, paths)
     return {
         "low": s.terminal_return_q05,
@@ -128,10 +96,8 @@ def test_reading_is_plain_and_names_the_model(tool: str, tmp_path: Path) -> None
     prepare(tmp_path)
     doc = run(tmp_path, tool, RUN, [f"{k}={v}" for k, v in PARAMS[tool].items()])
     text = doc["reading"]
-    assert "profit" not in text.lower() and "typical final return" in text
-    assert "Nine histories in ten" in text and "One in twenty" in text
-    phrase = "keeps calm and stormy periods apart" if tool == REGIME else "allows rare large moves"
-    assert phrase in text
+    assert "profit" not in text.lower() and "not a forecast" in text and "re-draws" in text
+    assert "Nine histories in ten" in text and "One in twenty" in text and "Student-t" in text
 
 
 @pytest.mark.parametrize("tool", TOOLS)
@@ -155,13 +121,6 @@ def test_short_history_is_unavailable(tool: str, tmp_path: Path) -> None:
     assert all("at least" in reason for reason in doc["reasons"].values())
 
 
-def test_thin_state_is_unavailable_with_the_reason(tmp_path: Path) -> None:
-    prepare(tmp_path)
-    doc = run(tmp_path, REGIME, RUN, ["min_state_observations=300", "regime_window=20"])
-    assert all(value is None for value in doc["values"].values())
-    assert all("could not be fitted" in reason for reason in doc["reasons"].values())
-
-
 @pytest.mark.parametrize("tool", TOOLS)
 def test_future_input_rejected(tool: str, tmp_path: Path) -> None:
     prepare(tmp_path)
@@ -181,8 +140,12 @@ def test_chunks_match_one_draw(tool: str, tmp_path: Path, monkeypatch: pytest.Mo
     compute = get(tool).compute
     assert compute is not None
     whole = compute(inputs, PARAMS[tool], None).values
-    monkeypatch.setattr(montecarlo, "PATH_CHUNK_CELLS", 7 * len(returns))
-    assert compute(inputs, PARAMS[tool], None).values == pytest.approx(whole, rel=1e-9, abs=1e-12)
+    one = command_numbers(tool, returns, PARAMS[tool], inputs.seed)
+    assert whole == pytest.approx(one, rel=1e-9, abs=1e-12)
+    for rows in (1, 7):
+        monkeypatch.setattr(montecarlo, "PATH_CHUNK_CELLS", rows * len(returns))
+        chunked = compute(inputs, PARAMS[tool], None).values
+        assert chunked == pytest.approx(one, rel=1e-9, abs=1e-12)
 
 
 def measured(tool: str, tmp_path: Path) -> tuple[int, float]:
@@ -238,8 +201,9 @@ def test_listed_and_described(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     cli = CliRunner()
     listed = json.loads(cli.invoke(tool_app, ["list", "--json"]).stdout)
-    assert len(SPECS) == len(listed) == 16
-    assert set(TOOLS) <= {row["id"] for row in listed}
+    assert len(SPECS) == len(listed) == 15
+    ids = {row["id"] for row in listed}
+    assert set(TOOLS) <= ids and "resampling.regime_paths" not in ids
     for tool in TOOLS:
         card = json.loads(cli.invoke(tool_app, ["describe", tool, "--json"]).stdout)
         assert card["id"] == tool and card["seeded"] is True

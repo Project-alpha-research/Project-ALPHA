@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: 996fcaba0f10abf7
+verified: ee1d7224911281e9
 ---
 
 # Monte Carlo
@@ -15,9 +15,10 @@ A Monte Carlo result is never proof of an edge; it measures path risk. "How bad 
 The owner counts the four as tools for RD-Agent and the assistant to use, never to be slimmed away.
 **A Monte Carlo warning pauses progression until the owner records a decision.** Each family is graded on its own and never majority-voted.
 Three families resample the strategy's own recorded returns (`alpha monte-carlo classical --from-run <run>`). The fourth, Kronos, generates
-new price bars and has run only with a stand-in model. Of the four, the toolbox exposes three on stored returns: IID empirical
-(`resampling.drawdown_distribution`), regime (`resampling.regime_paths`) and Student-t (`resampling.student_t_paths`), plus block bootstrap
-([resampling card](../../../../research/tools/resampling-checks.md)). Kronos is not a toolbox entry yet.
+new price bars and has run only with a stand-in model. Of the four, the toolbox exposes two on stored returns: IID empirical
+(`resampling.drawdown_distribution`) and Student-t (`resampling.student_t_paths`, same function and seed as the command,
+but on a rule test's stored equity), plus block bootstrap ([resampling card](../../../../research/tools/resampling-checks.md)).
+Regime is not an entry: the command labels states from market closes, and a check on stored equity has none. Nor is Kronos.
 
 ## Why it exists
 
@@ -76,7 +77,7 @@ The resampling card explains how to compare the toolbox drawdowns with the class
   ([log](../owner-decisions.md#2026-11-14-what-kronos-is-for)).
 - Decided 2026-11-18: the four methods are RD-Agent's tools, never slimming targets
   ([log](../owner-decisions-5.md#2026-11-18-kronos-the-four-monte-carlos-lookalike-and-pattern-tools-are-rd-agents-toolbox)).
-- Open: moving Kronos into the toolbox; a real-model Kronos run on the Mac.
+- Open: a regime entry once a check can read stored equity with market closes; Kronos in the toolbox; a real-model Kronos run on the Mac.
 
 ## Never
 

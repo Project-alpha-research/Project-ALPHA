@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: a9f999eea0d69310
+verified: 32f6468156299ec6
 ---
 
 # Toolbox
@@ -62,7 +62,7 @@ meant to become entries too, and are never slimming targets
 
 ## What is real today
 
-Sixteen checks are registered: three market descriptions, five that read a rule test's stored files, and eight tests on
+Fifteen checks are registered: three market descriptions, five that read a rule test's stored files, and seven tests on
 that stored history. `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
 Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
 each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow

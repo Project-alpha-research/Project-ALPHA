@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: a9f999eea0d69310
+verified: 32f6468156299ec6
 ---
 
 # Command line toolbox
@@ -18,12 +18,12 @@ tools.md). Why the toolbox exists: [toolbox](../project/components/toolbox.md).
 
 1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`costs`, `market`, `overfit`,
    `performance`, `resampling`, `robustness`, `trades`).
-2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The sixteen
+2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The fifteen
    registered ids: `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`,
    `robustness.start_end_dates`, `trades.side_contribution`, `trades.concentration`, `costs.break_even`,
    `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.drawdown_distribution`,
-   `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.regime_paths`,
-   `resampling.student_t_paths`. Named sets and their execution order live in `toolbox/sets.py`.
+   `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`.
+   Named sets and their execution order live in `toolbox/sets.py`.
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit,
    gloss), reading, caveats, cost class, seeded or not, time safety, look class, a poison test when time order
    matters, and `reference`: the test that checks its numbers.
@@ -48,19 +48,18 @@ equity; the `excess-over-equal-weight-basket` label marks the factor series.
 
 ## Registered checks
 
-Sixteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against
+Fifteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against
 full-history buy and hold, including eligible cash dividends. `market.vol_regimes` compares calm and turbulent
 markets. `market.changepoints` identifies when behaviour shifted. The named set `market-context` runs all three. Five
 more read the run's stored walk-forward files instead of replaying it: `performance.downside_ratios` (Sortino, Calmar,
 Omega, tail ratio beside the stored Sharpe), `robustness.start_end_dates` (25 windows with moved first and last dates,
 against buy and hold), `trades.side_contribution` (long versus short), `trades.concentration` (profit without the best
 trades) and `costs.break_even` (cost multiples at zero return and at buy and hold). Their
-[card](../../../research/tools/run-level-checks.md) gives the definitions. Eight tests use the same stored history. The
+[card](../../../research/tools/run-level-checks.md) gives the definitions. Seven tests use the same stored history. The
 [resampling card](../../../research/tools/resampling-checks.md) and
 [Monte Carlo card](../../../research/tools/montecarlo-checks.md) cover Sharpe and compound yearly return intervals,
-independent-return drawdowns, and final returns and drops from block-bootstrap, calm-and-stormy regime and Student-t
-redraws. The last two are available to RD-Agent but not in `rdagent-post-judge`. The regime check labels states from
-the run's own returns, not the market's closes as the classical command does. `trades.dependence` tests the order of
+independent-return drawdowns, and final returns and drops from block-bootstrap and Student-t redraws. The Student-t check
+is available to RD-Agent but not in `rdagent-post-judge`. `trades.dependence` tests the order of
 closed-trade outcomes. `overfit.deflated_sharpe` reuses the verdict's family correction on the ledger count and prior
 comparable Sharpes frozen in the run, and states that count. See the [family counting
 card](../../../research/tools/deflated-sharpe-and-trials.md).
@@ -80,6 +79,10 @@ capability on [STATUS.md](../../../STATUS.md).
 - `resampling.bar_permutation`: the run stores the observed and null scores, but the public permutation test needs
   OHLC bars and a callable that re-scores the strategy on each new permutation. There is no public validation function
   to rank the stored scores alone.
+- `resampling.regime_paths`: the classical command labels calm and stormy bars from the market's closes. A check on
+  stored equity gets no market series, and a factor replay has none. Labels from the strategy's own return swings
+  would mostly mark in-market versus flat bars, not market regimes. It waits for an input that joins stored equity
+  with the run's market closes.
 
 The RD-Agent checks replace no existing command, card or verdict. Later one-in-one-out candidates are the interval
 lines in `alpha report`, the IID drawdown summary in `alpha monte-carlo classical`, the runs z-score shown by `alpha

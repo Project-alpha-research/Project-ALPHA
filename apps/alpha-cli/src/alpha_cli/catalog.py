@@ -53,6 +53,7 @@ _SAFE_ROOTS = frozenset(
         "partner",
         "unusual",
         "ledger",
+        "next",
     }
 )
 # Governed crypto data house (ADR-0032): reads and verifications are safe; anything that

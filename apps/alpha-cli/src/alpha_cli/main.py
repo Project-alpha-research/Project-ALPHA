@@ -50,6 +50,7 @@ COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("lookalike", "alpha_cli.lookalike_cmds", "lookalike"),
     ("unusual", "alpha_cli.lookalike_cmds", "unusual"),
     ("report", "alpha_cli.report_cmds", "report"),
+    ("next", "alpha_cli.next_cmds", "next_step"),
 )
 
 
@@ -68,13 +69,16 @@ def _group(name: str, module: str, attribute: str) -> typer.Typer:
     return group
 
 
-def _root_app(groups: tuple[tuple[str, str, str], ...], *, commands: bool) -> typer.Typer:
+def _root_app(
+    groups: tuple[tuple[str, str, str], ...],
+    *,
+    commands: bool | tuple[tuple[str, str, str], ...],
+) -> typer.Typer:
     root = typer.Typer(help="Project ALPHA command-line interface.")
     for name, module, attribute in groups:
         root.add_typer(_group(name, module, attribute), name=name)
-    if commands:
-        for name, module, attribute in COMMANDS:
-            root.command(name=name)(getattr(importlib.import_module(module), attribute))
+    for name, module, attribute in COMMANDS if commands is True else (commands or ()):
+        root.command(name=name)(getattr(importlib.import_module(module), attribute))
 
     @root.callback(invoke_without_command=True)
     def _root(ctx: typer.Context) -> None:
@@ -108,8 +112,14 @@ def __getattr__(name: str) -> typer.Typer:
 def main() -> None:
     invoked = sys.argv[1] if len(sys.argv) > 1 else None
     selected = tuple(group for group in GROUPS if group[0] == invoked)
-    # Root help, completion, root commands and unknown names keep the complete app.
-    (_root_app(selected, commands=False) if selected else _full_app())()
+    only = tuple(command for command in COMMANDS if command[0] == invoked)
+    # Root help, completion, other root commands and unknown names keep the complete app.
+    if selected:
+        _root_app(selected, commands=())()
+    elif only:
+        _root_app((), commands=only)()
+    else:
+        _full_app()()
 
 
 if __name__ == "__main__":

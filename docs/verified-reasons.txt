@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 214d5129edd62949 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 211cc06d94d856b2 on 2026-11-19: m24: alpha next path 3 names alpha rdagent run; rules unchanged
 
 apps/alpha-cli/README.md
-  verified 214d5129edd62949 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 211cc06d94d856b2 on 2026-11-19: m24: alpha next path 3 names alpha rdagent run; rules unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified cee72e73c28317e5 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 4f35b886f5601b41 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 apps/alpha-web/README.md
-  verified cee72e73c28317e5 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 4f35b886f5601b41 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -56,7 +56,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified fc0e06695fe3eaa1 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 85dc3ce2debe94aa on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -77,7 +77,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified e03897d6a8ab6d9c on 2026-11-19: Re-read after merging main: main added a reading field to stored tool facts; this branch only changes which Monte Carlo entries are registered; the text stays correct
+  verified e03897d6a8ab6d9c on 2026-11-19: front-door capability claimed; the part's purpose is unchanged
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built

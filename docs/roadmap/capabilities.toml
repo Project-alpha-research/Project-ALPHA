@@ -426,6 +426,24 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "front-door"
+name = "Front door (alpha next)"
+what = "Ask where the project stands: the data held, the last five tests, ideas waiting for an answer, and three ways to start."
+see_it = ["uv run alpha next"]
+entry_points = [
+  "cli: alpha next",
+]
+proof_synthetic = [
+  "tests/unit/test_next_cmd.py::test_synthetic_home_lists_stores_and_trials_in_plain_words",
+]
+proof_smoke = [
+  "tests/smoke/test_next_smoke.py::test_next_on_an_empty_home",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Working"
+
+[[capability]]
 id = "risk-numbers"
 name = "Risk numbers that state what they are based on"
 codes = ["C04"]

@@ -68,7 +68,7 @@ class _Ctx:
         start = self.record.started_at
         days = [start.date() + timedelta(n) for n in range(15)]
         if self.calendar is not None:
-            days = sessions_between(self.calendar, days[0], days[-1])
+            days = _sessions(self.calendar, days[0], days[-1])
         return next(s for s in days if close_of(self.calendar, s) > start)
 
     def expected(self) -> list[date]:
@@ -77,16 +77,27 @@ class _Ctx:
             for n in range((self.now.date() - self.first_session).days + 1)
         ]
         if self.calendar is not None:
-            days = sessions_between(self.calendar, self.first_session, self.now.date())
+            days = _sessions(self.calendar, self.first_session, self.now.date())
         return [s for s in days if close_of(self.calendar, s) <= self.now]
 
 
+def _sessions(calendar: str, first: date, last: date) -> list[date]:
+    """The sessions of the forward window only, or a plain-words refusal outside the calendar."""
+    guard = follow_source.calendar_guard
+    with guard(calendar, last), guard(calendar, first):
+        return sessions_between(calendar, first, last)
+
+
 def close_of(calendar: str | None, session: date) -> datetime:
-    return session_close(calendar or "", session)
+    with follow_source.calendar_guard(calendar, session):
+        return session_close(calendar or "", session)
 
 
 def next_open(calendar: str | None, session: date) -> datetime:
-    return _next_open(calendar or "", session)
+    # The open after `session` is up to 14 days on: a session at the calendar's end has none.
+    guard = follow_source.calendar_guard
+    with guard(calendar, session + timedelta(14)), guard(calendar, session):
+        return _next_open(calendar or "", session)
 
 
 def _armed(replay: Replay | None, session: date) -> bool:

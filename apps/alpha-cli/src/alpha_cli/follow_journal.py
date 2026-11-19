@@ -244,7 +244,7 @@ def _check_bar_window(start: Entry | None, entry: Entry) -> None:
     try:
         closes = session_close(str(calendar), entry.session_date)
         opens = next_open(str(calendar), entry.session_date)
-    except (DataError, IndexError) as exc:
+    except (DataError, IndexError, ValueError) as exc:
         raise _refuse(
             DEADLINE_FORGED,
             f"{entry.session_date} is not a session of {calendar or 'a daily market'}: {exc}",

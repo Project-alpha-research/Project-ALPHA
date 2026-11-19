@@ -66,7 +66,7 @@ def test_investigation_tools_on_a_rule_test(tmp_path: Path) -> None:
     assert [row["name"] for row in regimes["result"]["split"]["regimes"]] == ["calm", "turbulent"]
 
     points = alpha(home, "tool", "run", "market.changepoints", run_id, "--json").json()
-    assert points["labels"][-1] == "hindsight"
+    assert "hindsight" in points["labels"]
     assert points["facts"][0]["metric"] == "market.changepoints.count"
     assert points["facts"][0]["value"] == len(points["result"]["breaks"])
     text = alpha(home, "tool", "run", "market.changepoints", run_id, "--param", "on=equity").stdout

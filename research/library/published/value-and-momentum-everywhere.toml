@@ -1,0 +1,19 @@
+id = "value-and-momentum-everywhere"
+name = "Value and momentum everywhere"
+year_published = 2013
+market = "multi"
+idea = "Cheap assets and recent winners have both tended to earn more, across stocks, bonds, currencies and commodities."
+mechanism_claimed = "The authors say the two ideas tend to lose at different times, so mixing them smooths the result. They link it to common risk."
+data_needed = ["prices and book values or yields across several markets"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none found for the multi-asset form; McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "partly - only the stock and crypto price parts can be tested; other markets are not held."
+notes = ""
+
+[source]
+authors = "Asness, Moskowitz and Pedersen"
+year = 2013
+title = "Value and momentum everywhere"
+venue = "Journal of Finance 68(3)"
+url = "https://doi.org/10.1111/jofi.12021"

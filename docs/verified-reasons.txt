@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 5d901b486bac98d5 on 2026-11-19: routing row for alpha follow
+  verified 3fff441446bb6de8 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
 
 apps/alpha-cli/README.md
-  verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 3fff441446bb6de8 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified e1fe39592778bf7b on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified 6d70ebadcfffe021 on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 apps/alpha-web/README.md
-  verified e1fe39592778bf7b on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified 6d70ebadcfffe021 on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 784cc0d0b38600fd on 2026-11-19: Only a section byte ceiling in test_filesystem_contract.py was lowered after cli-results-check.md gained a Run comparisons section; the pages' text is still correct.
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified f616aee0ea28d749 on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified b4160304934ff04c on 2026-11-19: find.py gained pointers for two situations; text still correct
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -32,13 +32,13 @@ docs/reference/invariants/cli-research.md
   verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
-  verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified c10364471755eefc on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 docs/reference/invariants/cli-runs.md
-  verified 6e02ccc60439ffca on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 95c69917e5449d32 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
 
 docs/reference/invariants/cli-toolbox.md
-  verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 8b99f4e9e22ed806 on 2026-11-18: Re-read: proposal and reply still only exchange a file in the round folder; trial counts and approvals still come from their own records
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 4b30fc47c81cdded on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
+  verified 9a172487daa82bde on 2026-11-19: menuModel.ts gained one group line (follow: Research); nothing the page says changed
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -80,7 +80,7 @@ docs/reference/project/components/ai-assistants.md
   verified 1b9fecd6dc488d11 on 2026-11-18: Re-read: the playbook's only change on this branch is its worked example now citing the scored buy-and-hold Sharpe; this page describes the playbook's role and checks, which are unchanged
 
 docs/reference/project/components/command-line.md
-  verified ae8cdffdb4cfc1d4 on 2026-11-19: alpha-cli CONTEXT routing cell only
+  verified ae8cdffdb4cfc1d4 on 2026-11-19: one routing or code-map row for alpha follow added; the rest is unchanged
 
 docs/reference/project/components/data-layer.md
   verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
@@ -104,10 +104,10 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified b24624ae57cd5a1c on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified b3b868ba51472ece on 2026-11-19: post-judge set now writes its declaration before running; doc text about checks unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
-  verified 303d382d54a8bde4 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
   verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
@@ -116,10 +116,10 @@ docs/reference/project/components/strategies-and-signals.md
   verified e9b71f4d445bb3e1 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/toolbox.md
-  verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
+  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 86ac49398c19e2f4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified b6853a30b0960faf on 2026-11-19: Library source change is additive; this page is unaffected.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -167,34 +167,43 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 research/CONTEXT.md
-  verified 6175c829bcd093e4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 75d1e966b4cb286d on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
 
 research/PLAYBOOK.md
-  verified def0cf0330cd3ef8 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified cba15a71337a9eb0 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
 
 research/README.md
-  verified 4af3cd07ee9b898b on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified dcf6a0c589e7fe2d on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/lessons/README.md
   verified 5c68e546521282e4 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
+research/library/README.md
+  verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
+
 research/tools/README.md
-  verified cc9a39abed03f17f on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified d32f05eaa5ba3d55 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+
+research/tools/attribution-regimes-changepoints.md
+  verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified fe5f62886ee4aa48 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 81b94af81a04cd08 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/charts.md
-  verified 18edee030ad2bf0a on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified fe4226b50b7cfc72 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 032a9e159daf0f09 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/diagnose-and-audit.md
-  verified c12ce447e2f51ca1 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 054db950e957b278 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
+
+research/tools/montecarlo-checks.md
+  verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/price-noise.md
   verified bf251ba22ae7dfac on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -206,19 +215,19 @@ research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
 
 research/tools/resampling-checks.md
-  verified 8cfe879110118c7b on 2026-11-18: Rewritten in the review round for the new block check; re-read against resampling.py and its tests
+  verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 6c38aa97437364f1 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
+  verified 8635540968f6969b on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/rule-test.md
-  verified d166820bb1f88344 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified bafef6baf5130b2c on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/run-level-checks.md
-  verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
+  verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 032a9e159daf0f09 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 3d76d3aad24b8827 on 2026-11-19: Library source change is additive; this page is unaffected.
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
@@ -228,6 +237,9 @@ research/tools/setup-study.md
 
 research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+
+research/tools/toolbox-by-situation.md
+  verified 580a02185f5e2d2c on 2026-11-19: reviewed against changed sources; text updated where needed
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

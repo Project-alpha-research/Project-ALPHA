@@ -1,0 +1,19 @@
+id = "betting-against-beta"
+name = "Betting against beta"
+year_published = 2014
+market = "us-equities"
+idea = "Stocks with low market beta have tended to earn more per unit of risk than high-beta stocks."
+mechanism_claimed = "The authors say investors who cannot borrow push up high-beta stocks. Low-beta stocks are left cheap."
+data_needed = ["daily prices for a wide stock universe and a market index"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "Novy-Marx and Velikov (2022, Journal of Financial Economics 143(1), doi 10.1016/j.jfineco.2021.05.023) argue that high trading costs remove much of the gain."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots). Beta is computed from daily bars."
+notes = ""
+
+[source]
+authors = "Frazzini and Pedersen"
+year = 2014
+title = "Betting against beta"
+venue = "Journal of Financial Economics 111(1)"
+url = "https://doi.org/10.1016/j.jfineco.2013.10.005"

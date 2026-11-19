@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
-verified: 6175c829bcd093e4
+verified: 75d1e966b4cb286d
 ---
 
 # Research: how any idea is tested
@@ -20,7 +20,7 @@ approval gate is before paper or live trading. Changing the research code is a d
 | [research playbook](PLAYBOOK.md) | The method | always |
 | [research playbook](PLAYBOOK.md) | The numbers rule | always |
 | [research playbook](PLAYBOOK.md) | What needs the owner | always |
-| [tool cards](tools/README.md) | — | choosing the next test, by symptom |
+| [tool cards](tools/README.md) | — | next test by symptom; [library](library/README.md) |
 | [data health card](tools/data-health.md) | — | checking stored bars before a test |
 | [RD-Agent config example](examples/rdagent.example.toml) | — | starting RD-Agent with `alpha rdagent run` |
 | [lessons](lessons/README.md) | — | before proposing a test |

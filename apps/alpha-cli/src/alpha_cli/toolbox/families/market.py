@@ -279,6 +279,11 @@ def changepoints(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
 
 ATTRIBUTION = ToolSpec(
     id="market.attribution",
+    answers=(
+        "How much of the return is just exposure to the market?",
+        "What is the beta to the benchmark?",
+    ),
+    situations=("just-the-market",),
     version=2,
     question="How much of the return comes from exposure to the benchmark?",
     needs=("run_returns", "run_bars"),
@@ -329,6 +334,8 @@ ATTRIBUTION = ToolSpec(
 
 VOL_REGIMES = ToolSpec(
     id="market.vol_regimes",
+    answers=("Does the rule earn its return in calm or turbulent markets?",),
+    situations=("calm-or-turbulent", "works-only-sometimes"),
     question="Does the rule earn its return in calm or turbulent markets?",
     needs=("run_returns", "run_bars"),
     params=(
@@ -368,6 +375,11 @@ VOL_REGIMES = ToolSpec(
 
 CHANGEPOINTS = ToolSpec(
     id="market.changepoints",
+    answers=(
+        "When did the behaviour of the rule change?",
+        "Did it work only in one stretch of the history?",
+    ),
+    situations=("behaviour-change", "works-only-sometimes"),
     question="When did the behaviour of the rule change?",
     needs=("run_returns", "run_positions"),
     params=(Param("on", str, "returns", ("returns", "equity"), "Search returns or log equity."),),

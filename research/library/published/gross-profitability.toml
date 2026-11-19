@@ -1,0 +1,19 @@
+id = "gross-profitability"
+name = "Gross profitability"
+year_published = 2013
+market = "us-equities"
+idea = "Firms that make more gross profit for each dollar of assets have tended to beat less profitable ones."
+mechanism_claimed = "The author says profitable firms often look expensive on value measures, so the premium is hidden unless profit is measured directly. He leaves the cause open."
+data_needed = ["accounting data: sales, cost of goods sold, total assets"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "no - company accounts (fundamentals) are not held."
+notes = ""
+
+[source]
+authors = "Novy-Marx"
+year = 2013
+title = "The other side of value: the gross profitability premium"
+venue = "Journal of Financial Economics 108(1)"
+url = "https://doi.org/10.1016/j.jfineco.2013.01.003"

@@ -213,23 +213,57 @@ class Report:
         }
 
 
-def living_documents(root: Path) -> dict[str, dict[str, str | list[str]]]:
-    """Tracked Markdown files whose front matter has ``owner``/``sources``/``verified``."""
+_OWNER_OR_VERIFIED = re.compile(r"^(owner|verified):", re.MULTILINE)
+_MARKER = re.compile(r"^(<<<<<<<|>>>>>>>)|^=======$", re.MULTILINE)
+_BLOCK_LINES = 60
+
+
+def _looks_like_ours(text: str) -> bool:
+    """Whether the leading ``---`` block names ``owner:`` or ``verified:`` (so it is ours)."""
+    block: list[str] = []
+    for line in text.splitlines()[1 : _BLOCK_LINES + 1]:
+        if line.strip() == "---":
+            break
+        block.append(line)
+    return _OWNER_OR_VERIFIED.search("\n".join(block)) is not None
+
+
+def scan_documents(
+    root: Path,
+) -> tuple[dict[str, dict[str, str | list[str]]], dict[str, list[str]]]:
+    """Living documents, and the problems of living-looking documents that cannot be read.
+
+    The first result maps a path to its front matter. The second maps a path to its problems:
+    front matter that names ``owner:``/``verified:`` but does not parse, and merge conflict
+    markers anywhere in a document. YAML that belongs to other tools is skipped.
+    """
     found: dict[str, dict[str, str | list[str]]] = {}
+    broken: dict[str, list[str]] = {}
     for rel in git(root, "ls-files", "-z", "--", "*.md").split("\0"):
         path = root / rel
         if not rel or not path.is_file() or path.is_symlink():
             continue
-        with path.open(encoding="utf-8") as handle:
-            if handle.readline().strip() != "---":
-                continue
+        text = path.read_text(encoding="utf-8")
+        if text.splitlines()[:1] != ["---"]:
+            continue
         try:
-            meta = front_matter(path.read_text(encoding="utf-8"))
-        except FrontMatterError:
-            continue  # Not a file-system document (other tools' YAML); the contract test owns ours.
+            meta = front_matter(text)
+        except FrontMatterError as exc:
+            if _looks_like_ours(text):
+                broken.setdefault(rel, []).append(f"unreadable front matter: {exc}")
+            if _MARKER.search(text) and _looks_like_ours(text):
+                broken[rel].append("merge conflict markers")
+            continue
         if meta is not None and "owner" in meta and "verified" in meta:
             found[rel] = meta
-    return found
+            if _MARKER.search(text):
+                broken.setdefault(rel, []).append("merge conflict markers")
+    return found, broken
+
+
+def living_documents(root: Path) -> dict[str, dict[str, str | list[str]]]:
+    """Tracked Markdown files whose front matter has ``owner``/``sources``/``verified``."""
+    return scan_documents(root)[0]
 
 
 def file_system_documents(root: Path, documents: dict[str, Any]) -> frozenset[str]:
@@ -312,9 +346,13 @@ def check_document(tree: Tree, rel: str, meta: dict[str, str | list[str]]) -> Re
 
 def stale(root: Path) -> list[Report]:
     """One report per living document, in path order."""
-    documents = living_documents(root)
+    documents, broken = scan_documents(root)
     tree = read_tree(root, documents)
-    return [check_document(tree, rel, meta) for rel, meta in sorted(documents.items())]
+    reports = {rel: check_document(tree, rel, meta) for rel, meta in documents.items()}
+    for rel, problems in broken.items():
+        report = reports.setdefault(rel, Report(rel, ""))
+        report.problems.extend(problems)
+    return [reports[rel] for rel in sorted(reports)]
 
 
 def owners(root: Path, paths: list[str]) -> dict[str, list[str]]:

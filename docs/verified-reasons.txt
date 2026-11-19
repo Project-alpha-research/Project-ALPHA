@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified e01ebb6196082043 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified b7f82514869b6b05 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
 
 apps/alpha-cli/README.md
-  verified e01ebb6196082043 on 2026-11-19: Re-read after merging main; the library additions and main's toolbox changes are both described; text still correct.
+  verified b7f82514869b6b05 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified 3b10ad54b5110d4c on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
+  verified 77c8b7727dacdea1 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
 
 apps/alpha-web/README.md
-  verified 3b10ad54b5110d4c on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
+  verified 77c8b7727dacdea1 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 81ceb4573105670d on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
+  verified 0c41474f56243ea8 on 2026-11-19: Market view changes only; after merging main this page's text is still correct
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.

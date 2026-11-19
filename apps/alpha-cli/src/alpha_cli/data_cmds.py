@@ -11,6 +11,7 @@ from typing import Annotated
 
 import typer
 
+from alpha_cli.market_overview_cmds import run_market_overview
 from alpha_cli.providers import (
     HistoricalAdapterFactory,
     historical_adapter_factories,
@@ -801,6 +802,17 @@ def universe_show(
             f"{name} as of {when}: {len(members)} members ({len(later_removed)} later removed)"
         )
         typer.echo(" ".join(members))
+
+
+@data_app.command("market-overview")
+def market_overview_command(
+    store: str = typer.Option("1D", help="stored bar size: 1D (default), 1h, 5m, ..."),
+    window: int = typer.Option(90, help="bars shown: 30, 90 or 365"),
+    limit: int = typer.Option(15, help="how many assets (1..30)"),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+) -> None:
+    """Read-only market overview of stored bars. Market view. Not a test result."""
+    run_market_overview(store, window, limit, json_out)
 
 
 @data_app.command("chart-datasets")

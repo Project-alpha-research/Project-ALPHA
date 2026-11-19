@@ -6,6 +6,7 @@ import { showsWindow, type WindowId } from './profiles'
 import type { Profile } from '../state/settings'
 import { DataManager } from '../panels/DataManager'
 import { MarketWatch } from '../panels/MarketWatch'
+import { MarketOverview } from '../panels/MarketOverview'
 import { Navigator } from '../panels/Navigator'
 import { Alerts } from '../panels/Alerts'
 import { DataPulls } from '../panels/JobMonitor'
@@ -29,6 +30,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     { id: 'data', title: 'Data & Assets', description: 'Find assets, explore charts and prepare reliable data.', panes: [
       { name: 'DataManager', title: 'Data downloads', component: DataManager },
       { name: 'MarketWatch', title: 'Watchlist', component: MarketWatch },
+      { name: 'MarketOverview', title: 'Market', component: MarketOverview },
     ] },
     { id: 'research', title: 'Research', description: 'Turn an observation into a bounded, evidence-backed research case.', panes: [] },
     { id: 'strategies', title: 'Strategies & Tests', description: 'Build rules and run tests with explicit research or sandbox context.', panes: [] },

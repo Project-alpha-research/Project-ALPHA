@@ -1137,6 +1137,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/market/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overview
+         * @description Relay ``alpha data market-overview``: the assets with the highest median traded value.
+         */
+        get: operations["overview_api_market_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ml/capabilities": {
         parameters: {
             query?: never;
@@ -7853,6 +7873,85 @@ export interface components {
             query: string;
             /** Unpaywall Email */
             unpaywall_email: string;
+        };
+        /** MarketAsset */
+        MarketAsset: {
+            /** Asset */
+            asset: string;
+            /** Bar Count */
+            bar_count: number;
+            /** Change 1 Pct */
+            change_1_pct: number;
+            /** Change 7 Pct */
+            change_7_pct: number;
+            /** Change Window Pct */
+            change_window_pct: number;
+            /** Last Bar */
+            last_bar: string;
+            /** Last Close */
+            last_close: number;
+            /** Last Volume */
+            last_volume: number;
+            /** Median Traded Value */
+            median_traded_value: number;
+            /** Series */
+            series: number[];
+            /** Series Ts */
+            series_ts: number[];
+            /** Volume Vs Median */
+            volume_vs_median: number | null;
+        };
+        /** MarketOverview */
+        MarketOverview: {
+            /** Assets */
+            assets: components["schemas"]["MarketAsset"][];
+            /** Assets In Store */
+            assets_in_store: number;
+            /** Assets Scanned */
+            assets_scanned: number;
+            /** Available Stores */
+            available_stores: string[];
+            /**
+             * Bar Unit
+             * @enum {string}
+             */
+            bar_unit: "day" | "bar";
+            /** Bars Cap */
+            bars_cap: number;
+            /** Data To */
+            data_to: string | null;
+            /** Eligible Assets */
+            eligible_assets: number;
+            /** Generated At */
+            generated_at: string;
+            /** Limit */
+            limit: number;
+            /** Scan Cap */
+            scan_cap: number;
+            /** Store */
+            store: string;
+            /** Too Few Bars */
+            too_few_bars: components["schemas"]["MarketTooFewBars"][];
+            /** Unreadable */
+            unreadable: components["schemas"]["MarketUnreadable"][];
+            /** Window */
+            window: number;
+        };
+        /** MarketTooFewBars */
+        MarketTooFewBars: {
+            /** Asset */
+            asset: string;
+            /** Bar Count */
+            bar_count: number;
+            /** Needed */
+            needed: number;
+        };
+        /** MarketUnreadable */
+        MarketUnreadable: {
+            /** Asset */
+            asset: string;
+            /** Reason */
+            reason: string;
         };
         /** MlBackendCapability */
         MlBackendCapability: {
@@ -15593,6 +15692,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    overview_api_market_overview_get: {
+        parameters: {
+            query?: {
+                store?: string;
+                window?: "30" | "90" | "365";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOverview"];
                 };
             };
             /** @description Stable, redacted Workstation error */

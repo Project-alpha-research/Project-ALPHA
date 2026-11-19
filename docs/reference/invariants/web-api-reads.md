@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: ef6a50dba1bbb599
+verified: 079a712488b955cc
 ---
 
 # Web API reads and writes invariants
@@ -48,3 +48,11 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.
   [ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md)
+
+## Market overview read
+
+- `GET /api/market/overview` relays `alpha data market-overview --json` (`api/market.py`, 120 s timeout). The CLI reads stored bars only through
+  `load_bars`, the point-in-time reader the chart uses. It writes nothing, reads no run, ledger or research result, and never uses the network. The
+  web adds no second bar reader. Caps: 200 assets per store (name order) and the newest 400 bars each (`MAX_ASSETS_SCANNED`, `MAX_BARS_READ`); windows
+  30, 90 or 365; 1 to 30 assets. "Top" assets rank by median close times volume over the window. An asset with too few bars, or one that cannot be
+  read, is listed with its reason, never dropped. Enforced by `tests/unit/test_market_overview.py` and `tests/integration/test_web_api_market.py`.

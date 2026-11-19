@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 3b10ad54b5110d4c
+verified: 77c8b7727dacdea1
 ---
 
 # alpha-web: code map and change loop
@@ -39,6 +39,9 @@ grants authority.
   Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
+- The Market screen (Data & Assets › Market) is `panels/MarketOverview.tsx` with pure helpers in `panels/marketModel.ts`. It reads `GET /api/market/overview`
+  (`api/market.py`, `api/models/market.py`), which relays `alpha data market-overview` (`apps/alpha-cli/src/alpha_cli/market_overview_cmds.py`). Browser spec: `e2e/market-overview.spec.ts`.
+  Rules: [Market data views](../../docs/reference/invariants/web-frontend.md#market-data-views), [reads](../../docs/reference/invariants/web-api-reads.md#market-overview-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.

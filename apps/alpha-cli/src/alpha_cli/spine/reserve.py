@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import sys
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
@@ -35,6 +37,105 @@ def held_back_count(resolved: ResolvedAsset) -> int:
 
 def held_back_count_for(home: Path, asset: str) -> int:
     return held_back_count(resolve_asset(asset, data_dir=home))
+
+
+@dataclass(frozen=True)
+class Hold:
+    """What the reserve does to one command's read: the cut-off to pass and what to record."""
+
+    as_of: datetime | None
+    research_cutoff: str | None
+    held_back: int
+
+    def record_fields(self) -> dict[str, Any]:
+        """The hold-back record; empty when no bar was held back, so an old id stays the same."""
+        return {"reserve": record(self.held_back)} if self.held_back else {}
+
+    def identity(self) -> dict[str, Any]:
+        """Run-identity keys: the cut-off, and the hold-back record only when a bar was held."""
+        return {"research_cutoff": self.research_cutoff, **self.record_fields()}
+
+    def fields(self) -> dict[str, Any]:
+        """Manifest keys: the identity keys, and the label when a bar was held back."""
+        return {**self.identity(), **({"labels": [HELD_BACK]} if self.held_back else {})}
+
+    def note(self) -> str:
+        """The one sentence, for the end of a command's last line; empty when nothing held."""
+        return f"\n{sentence(self.held_back)}" if self.held_back else ""
+
+    def stamp(self, manifest: dict[str, Any]) -> None:
+        """Record the hold-back and its label on a manifest; nothing when no bar was held."""
+        if not self.held_back:
+            return
+        manifest["reserve"] = record(self.held_back)
+        labels = list(manifest.get("labels", []))
+        manifest["labels"] = [*labels, HELD_BACK] if HELD_BACK not in labels else labels
+
+    def label(self, labels: list[str]) -> list[str]:
+        """The label list with the hold-back label added when bars were held back."""
+        return [*labels, HELD_BACK] if self.held_back and HELD_BACK not in labels else labels
+
+    def announce(self, *, err: bool = False) -> None:
+        """Print the one sentence when bars were held back."""
+        if self.held_back:
+            print(sentence(self.held_back), file=sys.stderr if err else sys.stdout)
+
+    def say(self) -> str | None:
+        return sentence(self.held_back) if self.held_back else None
+
+
+def hold(
+    symbol: str,
+    *,
+    data_dir: Path,
+    as_of: str | None = None,
+    snapshot_id: str | None = None,
+    timeframe: str = "1D",
+    instant: bool = False,
+) -> Hold:
+    """The cut-off a command passes to its loaders, and how many stored bars it holds back.
+
+    The earlier of the user's own cut-off and the reserve cut-off wins. The count comes from a
+    timestamp-only scan of the stored file; no price is read. A cut-off the user set that is
+    already before the reserved day holds nothing back and is recorded as the user gave it.
+    """
+    import polars as pl
+
+    from alpha_cli import _runner
+    from alpha_data.snapshot import resolve_snapshot_dir
+    from alpha_data.store import ParquetStore
+    from alpha_data.timeframe import parse_timeframe, store_dir
+
+    user = _runner.parse_cutoff(as_of) if instant else _runner.parse_as_of(as_of)
+    if user is not None and user <= CUTOFF:
+        return Hold(user, as_of, 0)
+    stored = parse_timeframe(timeframe)
+    root = (
+        resolve_snapshot_dir(data_dir / "snapshots", snapshot_id)
+        if snapshot_id is not None
+        else store_dir(data_dir, stored)
+    )
+    path = ParquetStore(root)._bars_path(symbol)
+    n = 0
+    if path.exists():
+        start = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
+        ts = pl.col("ts") >= start
+        if user is not None:
+            ts = ts & (pl.col("ts") <= user)
+        n = int(pl.scan_parquet(path).select("ts").filter(ts).select(pl.len()).collect().item())
+    return Hold(CUTOFF, CUTOFF_DATE if n else as_of, n)
+
+
+def hold_many(
+    symbols: Sequence[str],
+    data_dir: Path,
+    as_of: str | None = None,
+    snapshot_id: str | None = None,
+) -> Hold:
+    """One cut-off for a basket; the count is the sum over its symbols."""
+    holds = [hold(s, data_dir=data_dir, as_of=as_of, snapshot_id=snapshot_id) for s in symbols]
+    n = sum(h.held_back for h in holds)
+    return Hold(holds[0].as_of if holds else CUTOFF, CUTOFF_DATE if n else as_of, n)
 
 
 def record(n: int) -> dict[str, Any]:

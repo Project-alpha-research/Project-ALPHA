@@ -16,6 +16,7 @@ import numpy as np
 import typer
 
 from alpha_cli import _artifacts, _forecast_cache, _runner, rules_cmds
+from alpha_cli.spine import reserve
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.timeframe import BarTimeframe, parse_timeframe
@@ -274,18 +275,12 @@ def oos(
         strategy_params=_runner.parse_strategy_params(strategy, param),
     )
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
         bars, snapshot_id = _load_bars(
-            symbol,
-            data_dir=settings.data_dir,
-            snapshot_id=snapshot,
-            as_of=research_cutoff,
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         dividends = _load_dividends(
-            symbol,
-            data_dir=settings.data_dir,
-            snapshot_id=snapshot,
-            as_of=research_cutoff,
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         spec, forecast_meta = _forecast_cache.prepare_spec_for_engine(
             bars, spec, data_dir=settings.data_dir, seed=settings.random_seed
@@ -298,7 +293,7 @@ def oos(
             "command": "backtest_oos",
             "symbol": symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
             **vars(spec),
         },
@@ -323,7 +318,7 @@ def oos(
             "command": "backtest_oos",
             "symbol": symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": as_of,
+            **held.identity(),
             "params": vars(spec),
             "oos_semantics": "fixed_rule_evaluation_no_refit",
             "folds": [_runner.fold_manifest(fold, bars) for fold in folds],
@@ -344,6 +339,7 @@ def oos(
     )
     if forecast_meta is not None:
         manifest["forecast"] = forecast_meta
+    held.stamp(manifest)
     rdir = _artifacts.run_dir(settings.data_dir, run_id)
     _artifacts.write_run_sidecars(
         rdir,
@@ -357,6 +353,7 @@ def oos(
         f"rule OOS {symbol} (fixed parameters, no refit) -> run {run_id}: "
         f"{len(folds)} folds, {returns.size} scored sessions"
     )
+    held.announce()
 
 
 def _load_run_bars(
@@ -430,6 +427,27 @@ def _load_run_bars(
     return symbol, bars, snapshot_id, dividends, fields
 
 
+def _run_hold(
+    symbol: str,
+    data_dir: Path,
+    as_of: str | None,
+    snapshot: str | None,
+    stored: BarTimeframe,
+    manifest_id: str | None,
+) -> reserve.Hold:
+    """The run's cut-off. A bulk archive read (``--manifest-id``) is not held back yet."""
+    if manifest_id is not None:
+        return reserve.Hold(_runner.parse_cutoff(as_of), as_of, 0)
+    return reserve.hold(
+        symbol,
+        data_dir=data_dir,
+        as_of=as_of,
+        snapshot_id=snapshot,
+        timeframe=stored.canonical,
+        instant=True,
+    )
+
+
 def _annualised(
     spec: _runner.RunSpec,
     bars: list[Bar],
@@ -457,22 +475,22 @@ def _run_manifest(
     identity: Any,
     symbol: str,
     snapshot_id: str | None,
-    as_of: str | None,
+    held: reserve.Hold,
     spec: _runner.RunSpec,
     result: Any,
     research_gate_override: bool,
     timeframe_fields: dict[str, str | None],
     forecast_meta: dict[str, Any] | None,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     """The ``backtest run`` manifest; a daily run carries no timeframe fields (keys unchanged)."""
     run_id = identity.run_id
-    manifest: dict[str, object] = {
+    manifest: dict[str, Any] = {
         "schema_version": 1,
         "run_id": run_id,
         "command": "backtest_run",
         "symbol": symbol,
         "snapshot_id": snapshot_id,
-        "research_cutoff": as_of,
+        **held.fields(),
         "params": vars(spec),
         "orders": result.orders,
         "fills": result.fills,
@@ -566,12 +584,12 @@ def run(
         rules_spec=rules_spec,
     )
     try:
-        research_cutoff = _runner.parse_cutoff(as_of)
+        held = _run_hold(symbol, settings.data_dir, as_of, snapshot, stored, manifest_id)
         symbol, bars, snapshot_id, dividends, timeframe_fields = _load_run_bars(
             symbol,
             data_dir=settings.data_dir,
             snapshot=snapshot,
-            as_of=research_cutoff,
+            as_of=held.as_of,
             target=target,
             stored=stored,
             session=session,
@@ -601,7 +619,7 @@ def run(
             "command": "backtest_run",
             "symbol": symbol,
             "snapshot_id": snapshot_id,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
             **vars(spec),
             **timeframe_fields,
@@ -617,7 +635,7 @@ def run(
         identity,
         symbol,
         snapshot_id,
-        as_of,
+        held,
         spec,
         result,
         research_gate_override,
@@ -636,7 +654,7 @@ def run(
     typer.echo(
         f"backtest {symbol}{'' if target.is_daily else ' ' + target.canonical} -> run {run_id}: "
         f"{result.orders} orders, {result.fills} fills, {len(result.trades)} trades, "
-        f"final equity {result.final_equity:.2f}{warn}"
+        f"final equity {result.final_equity:.2f}{warn}{held.note()}"
     )
     if forecast_meta is not None and forecast_meta["pretrain"]["overlap"]:
         typer.secho(
@@ -714,7 +732,7 @@ def portfolio(
         halt_drawdown=halt_drawdown,
     )
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold_many(symbols, settings.data_dir, as_of, snapshot)
         result = _portfolio.run_portfolio(
             symbols,
             spec,
@@ -722,7 +740,7 @@ def portfolio(
             weighting=weighting,
             seed=resolved_seed,
             snapshot_id=snapshot,
-            as_of=research_cutoff,
+            as_of=held.as_of,
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -735,7 +753,7 @@ def portfolio(
             "weighting": weighting,
             "seed": resolved_seed,
             "snapshot_id": snapshot,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
             **vars(spec),
         },
@@ -761,17 +779,17 @@ def portfolio(
         source_run_id=run_id,
         snapshot_id=snapshot,
         snapshot_hash=snapshot_hash,
-        research_cutoff=as_of,
+        research_cutoff=held.research_cutoff,
         allocations=result.allocations,
         correlations=result.correlations,
     )
-    manifest = {
+    manifest: dict[str, Any] = {
         "schema_version": 1,
         "run_id": run_id,
         "command": "backtest_portfolio",
         "seed": resolved_seed,
         "snapshot_id": snapshot,
-        "research_cutoff": as_of,
+        **held.fields(),
         "symbols": list(result.symbols),
         "weighting": result.weighting,
         "n_periods": result.n_periods,
@@ -822,7 +840,7 @@ def portfolio(
         f"[{result.sharpe_ci.lower:.2f}, {result.sharpe_ci.upper:.2f}], "
         f"CAGR {result.metrics['cagr']:.3f}, maxDD {result.metrics['max_drawdown']:.3f}, "
         f"PSR {result.psr:.3f} over {result.n_periods} periods; "
-        f"manifest at {rdir / 'manifest.json'}"
+        f"manifest at {rdir / 'manifest.json'}{held.note()}"
     )
 
 
@@ -860,7 +878,7 @@ def cross_sectional(
     symbols = sorted(symbols)  # canonical order (see portfolio)
     resolved_seed = seed if seed is not None else settings.random_seed
     try:
-        research_cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold_many(symbols, settings.data_dir, as_of, snapshot)
         result = _cross_sectional.run_cross_sectional(
             symbols,
             data_dir=settings.data_dir,
@@ -877,7 +895,7 @@ def cross_sectional(
             periods_per_year=periods_per_year,
             seed=resolved_seed,
             snapshot_id=snapshot,
-            as_of=research_cutoff,
+            as_of=held.as_of,
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -899,7 +917,7 @@ def cross_sectional(
             "periods_per_year": periods_per_year,
             "seed": resolved_seed,
             "snapshot_id": snapshot,
-            "research_cutoff": as_of,
+            **held.identity(),
             **_artifacts.research_gate_override_identity(research_gate_override),
         },
         source_fingerprint=result.source_fingerprint,
@@ -917,13 +935,13 @@ def cross_sectional(
         returns=result.returns.tolist(),
         periods_per_year=periods_per_year,
     )
-    manifest = {
+    manifest: dict[str, Any] = {
         "schema_version": 1,
         "run_id": run_id,
         "command": "cross_sectional",
         "seed": resolved_seed,
         "snapshot_id": snapshot,
-        "research_cutoff": as_of,
+        "research_cutoff": held.research_cutoff,
         "symbols": list(result.symbols),
         "long_short": result.long_short,
         "n_long": result.n_long,
@@ -936,6 +954,7 @@ def cross_sectional(
         **_artifacts.research_gate_override_fields(research_gate_override),
         **identity.manifest_fields(),
     }
+    held.stamp(manifest)
     book = "long-short" if long_short else "long-only"
     from alpha_validation import render_returns_tearsheet
 
@@ -970,3 +989,4 @@ def cross_sectional(
         f"CAGR {result.metrics['cagr']:.3f}, PSR {result.psr:.3f} "
         f"over {result.n_periods} periods; manifest at {rdir / 'manifest.json'}"
     )
+    held.announce()

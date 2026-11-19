@@ -25,6 +25,7 @@ from typing import Any
 
 import typer
 
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -112,8 +113,14 @@ def _universe(scan: dict[str, Any], data_dir: Path) -> list[str]:
     return ParquetStore(data_dir / "store").list_symbols()
 
 
-def run_scan(scan: dict[str, Any], *, data_dir: Path, as_of: date | None) -> dict[str, Any]:
-    """Evaluate the scan's rule set on every universe symbol's point-in-time bars."""
+def run_scan(
+    scan: dict[str, Any], *, data_dir: Path, as_of: date | None, forward: bool = False
+) -> dict[str, Any]:
+    """Evaluate the scan's rule set on every universe symbol's point-in-time bars.
+
+    The reserved period is held back, except for the alert check (``forward``): that is live
+    watching of today's bars, not a test of an idea.
+    """
     from alpha_cli._runner import load_bars
     from alpha_cli.rules_cmds import load_rule_text
     from alpha_strategies.rules import (
@@ -129,7 +136,15 @@ def run_scan(scan: dict[str, Any], *, data_dir: Path, as_of: date | None) -> dic
     universe_as_of = datetime.now(tz=UTC).replace(microsecond=0).isoformat()
     rows: list[dict[str, Any]] = []
     skipped: list[dict[str, str]] = []
-    for symbol in sorted(set(_universe(scan, data_dir))):
+    names = sorted(set(_universe(scan, data_dir)))
+    held = (
+        None
+        if forward
+        else reserve.hold_many(names, data_dir=data_dir, as_of=as_of.isoformat() if as_of else None)
+    )
+    if held is not None:
+        when = held.as_of
+    for symbol in names:
         try:
             bars, _snap = load_bars(symbol, data_dir=data_dir, as_of=when)
             if len(bars) < spec.history:
@@ -171,7 +186,12 @@ def run_scan(scan: dict[str, Any], *, data_dir: Path, as_of: date | None) -> dic
         "rows": rows,
         "skipped": skipped,
         "authority": "none",
+        **({} if held is None or not held.held_back else _held_fields(held)),
     }
+
+
+def _held_fields(held: reserve.Hold) -> dict[str, Any]:
+    return {"labels": held.label([]), **held.record_fields()}
 
 
 def diff_alerts(
@@ -200,7 +220,7 @@ def diff_alerts(
 
 
 def check_scan(scan: dict[str, Any], *, data_dir: Path) -> dict[str, Any]:
-    result = run_scan(scan, data_dir=data_dir, as_of=None)
+    result = run_scan(scan, data_dir=data_dir, as_of=None, forward=True)
     state_path = _state_path(data_dir, scan["name"])
     previous: dict[str, dict[str, Any]] = {}
     if state_path.is_file():
@@ -357,6 +377,8 @@ def run(
     if json_out:
         typer.echo(json.dumps(result))
         return
+    if result.get("reserve"):
+        typer.echo(reserve.sentence(result["reserve"]["held_back_bars"]))
     for row in result["rows"]:
         typer.echo(f"{row['symbol']}: {row['signal']:+d} on {row['bar_date']}")
     for item in result["skipped"]:

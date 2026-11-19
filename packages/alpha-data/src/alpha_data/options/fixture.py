@@ -12,6 +12,10 @@ No real market data. Two modes.
   model price is exact and a solver can recover the surface IV from the quote mid. Time to
   expiry is ACT/365 from the snapshot to 21:00 UTC on the expiry day. The rate and dividend
   yield are the explicit values in `PricedModel`.
+- American model-priced mode (`PricedModel(..., american_steps=N)`): the same, but contracts are
+  American-style and the quotes are centred on the CRR tree price (`alpha_data.options.tree`)
+  with N steps and the cash dividends in `PricedModel.dividends` (none by default). The solver
+  recovers the surface IV when it uses the same steps and dividends.
 The surface IV is stored as the provided IV in both modes so a check has a target.
 """
 
@@ -28,6 +32,7 @@ from alpha_core import DataError
 from alpha_data.options.implied import years_between
 from alpha_data.options.pricing import OptionInputs, price
 from alpha_data.options.schema import ChainRow, ChainSnapshot, ContractId, Greeks, Quote
+from alpha_data.options.tree import AmericanInputs, Dividend, TreeRefused, american_price
 
 UNDERLYING = "AAA"
 PROVIDER = "fixture"
@@ -44,6 +49,8 @@ class PricedModel:
 
     rate: float
     dividend_yield: float
+    american_steps: int | None = None
+    dividends: tuple[Dividend, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -88,7 +95,7 @@ class SyntheticAdapter:
         return [UNDERLYING]
 
     def _contract(self, expiry: date, strike: Decimal, right: str) -> ContractId:
-        style = "A" if self._priced is None else "E"
+        style = "E" if self._priced is not None and self._priced.american_steps is None else "A"
         return ContractId(
             underlying_id=UNDERLYING,
             root=UNDERLYING,
@@ -160,6 +167,20 @@ class SyntheticAdapter:
     ) -> tuple[float, float]:
         """Bid and ask around the model price; the mid is the model price (spread is symmetric)."""
         assert self._priced is not None
+        expiry_ts = datetime.combine(expiry, EXPIRY_TIME_UTC, UTC)
+        if self._priced.american_steps is not None:
+            tree = american_price(
+                AmericanInputs(
+                    spot=spot, strike=float(strike), valuation_ts=ts, expiry_ts=expiry_ts,
+                    rate=self._priced.rate, dividend_yield=self._priced.dividend_yield,
+                    dividends=self._priced.dividends, right=right,
+                ),
+                iv,
+                self._priced.american_steps,
+            )  # fmt: skip
+            if isinstance(tree, TreeRefused):
+                raise DataError(tree.message)
+            return self._spread(tree)
         inp = OptionInputs(
             underlying=spot,
             kind="spot",
@@ -169,7 +190,10 @@ class SyntheticAdapter:
             dividend_yield=self._priced.dividend_yield,
             right=right,
         )
-        value = price(inp, iv)
+        return self._spread(price(inp, iv))
+
+    @staticmethod
+    def _spread(value: float) -> tuple[float, float]:
         half = min(max(SPREAD_FLOOR, SPREAD_FRACTION * value), value / 2.0)  # bid stays above 0
         return value - half, value + half
 

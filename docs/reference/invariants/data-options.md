@@ -10,7 +10,9 @@ sources:
   - tests/unit/test_options_implied.py
   - tests/unit/test_options_priced_fixture.py
   - tests/unit/test_options_conventions.py
-verified: 1f2a80ba816efe77
+  - tests/unit/test_options_american.py
+  - tests/unit/test_options_american_implied.py
+verified: 7dbbe0912fbcaad3
 ---
 
 # Data layer invariants: options
@@ -77,11 +79,13 @@ The held-back period (`alpha_core.reserve.RESERVED_DAY`, no date literal here) w
 
 ## Pricing and implied volatility
 
-Two pure-math modules, no data reads and no clock: `pricing.py` (models and greeks) and `implied.py` (day count, mid, solver).
-They live inside `alpha_data.options` so the solver can fill the row's `computed` slot. The sources are in the module docstrings.
+Pure-math modules, no data reads and no clock: `pricing.py` (closed-form models and greeks), `tree.py` and `tree_greeks.py`
+(American tree), `iv_core.py` (day count, result types, root finder), `implied.py` (mid, closed-form solver, `solve_row`) and
+`implied_american.py` (American solver). They live inside `alpha_data.options` so the solver can fill the row's `computed`
+slot. The sources are in the module docstrings.
 
 - Models: Black-Scholes-Merton (Black and Scholes 1973, the call formula; Merton 1973) for a spot with a continuous dividend yield, and
-  Black-76 (Black 1976) for a forward. European exercise only. One constant volatility, constant rate and yield.
+  Black-76 (Black 1976) for a forward. European exercise only here (American: next section). One constant volatility, constant rate and yield.
 - Inputs are explicit: spot or forward, strike, years, rate and dividend yield (None for a forward). There is no default for
   the rate or the yield. The stored model name records which were used. Its format is stable and parseable:
   `<model>;r=<rate>;q=<yield or forward>;day_count=act365f;theta=per_calendar_day;vega=per_1.00_vol`. Split on `;`, then on
@@ -110,20 +114,63 @@ They live inside `alpha_data.options` so the solver can fill the row's `computed
   or below intrinsic is always `price_outside_no_arbitrage_bounds`. A price a hair above intrinsic solves to a tiny
   volatility with very low vega, so it is labelled `low_vega` and not stored.
 - Typed outcomes, never a silent NaN: `IvSolved` or `IvUnsolved` with a reason. Reasons: `price_outside_no_arbitrage_bounds`,
-  `zero_time_to_expiry`, `american_style_not_supported`, `implied_vol_outside_search_interval`, `did_not_converge`, `no_quote`
+  `zero_time_to_expiry`, `american_style_needs_tree_inputs`, `implied_vol_outside_search_interval`, `did_not_converge`, `no_quote`
   and `no_mid`. A non-finite input raises `OptionsDataError` naming the field.
 - Low confidence, exact rule: `iv_uncertainty = price_resolution / vega` at the solved volatility (vega per 1.00). The result
   is `low_vega` when `iv_uncertainty > 0.005` (half a vol point). With the default resolution of half a cent that is vega < 1.0.
 - Computed block: `solve_row` fills only the `computed` slot (source `computed`, delta, gamma, vega, theta, iv) and only for a
   normal-confidence solve. The provided slot is never touched. A low-confidence or unsolved row comes back unchanged.
-- American style: not supported yet. It returns `american_style_not_supported`. No approximation is invented. Listed US equity
-  and ETF options are American-style, so until an American method exists the solver covers European-style index options and
-  futures options only. The specification for the next build is on the [component page](../project/components/options-data.md).
+- American style: `solve_implied_vol(style="A")` returns `american_style_needs_tree_inputs`; use `solve_row` or
+  `solve_american_implied_vol` (next section).
 
 Known-answer tests: Hull's published prices and greeks, Haug's Black-76 value, put-call parity to 1e-10, every greek against a
 central finite difference, the conventions record, the model-tag format, no mid for a zero bid, round trip of price to
 volatility (error 1.6e-14 where confidence is normal), the zero and large
 volatility limits, monotonicity, and Black-76 equal to BSM when the forward is built from the same inputs.
+
+## American style: CRR tree
+
+`tree.py`, `tree_greeks.py`, `implied_american.py`. Sources: Cox, Ross and Rubinstein (1979), Journal of Financial Economics 7(3);
+the escrowed-dividend treatment for known cash dividends as in Hull, "Options, Futures, and Other Derivatives" (binomial-tree chapter);
+Haug, Haug and Lewis (2003, Wilmott) on its weakness. Cross-check: QuantLib 1.44 escrowed finite differences, a few 1e-4 at 2000 steps.
+
+- Tree: u = exp(vol sqrt(dt)), d = 1/u, p = (exp((r - q) dt) - d) / (u - d); the node value is max(exercise, discounted
+  expectation) at every node. Price = average of the N and N + 1 step trees; default 500 steps. A step with
+  d < exp((r - q) dt) < u false (vol < |r - q| sqrt(dt)) returns `TreeRefused`, never a number.
+- Inputs are explicit: spot, strike, valuation and expiry instants (aware UTC, ACT/365 fixed), rate, continuous yield, a tuple of
+  `Dividend(ex_ts, amount)`, right, steps. No default for the rate or dividends; `solve_row` raises if an American row gets
+  `dividends=None` (pass `()`). A dividend counts only when valuation < ex-date < expiry. Present value at or above spot is an error.
+- Dividends, escrowed method: the tree runs on S* = spot less the present value of dividends in the option's life; the
+  exercise value at a node uses S* plus the dividends not yet gone ex. Escrowed amount: sum D exp(-(r - q)(t_div - t)), so the
+  forward is S exp((r - q) T) - sum D exp((r - q)(T - t_div)) (QuantLib's convention; plain present value when q = 0).
+  APPROXIMATION: the vol is the vol of S*, not of the quote; the real price jumps on the ex-date. Known weakness (Haug, Haug
+  and Lewis): one vol for S* and S misprices, most for large dividends and long expiries. The ex-date falls between nodes, so
+  the last exercise before it is up to one step early. Measured at 500 steps over one year: 7.4e-3 for a 2.00 dividend 11 days
+  before expiry (bound 0.02, tested), under 2e-3 for an ex-date far from expiry. Use more steps for an ex-date near expiry.
+
+## American style: greeks, implied volatility and cost
+
+- Delta and gamma from the tree's first levels (step-1 slope; change of step-2 slopes), averaged over N and N + 1. A 3% spot
+  bump was 10 to 100 times worse (gamma 5.2e-3 off near a put's exercise boundary). Bumps: vol 0.01 (vega per 1.00, central),
+  rate 0.005 (rho per 1.00, central), valuation instant one day (theta per calendar day, central). Same units as the closed
+  form; the `Conventions` record is shared, and the result says `method="crr_tree"` and its `steps`.
+  Noise at 500 steps against the closed form: price 2.5e-4, delta 9e-5, gamma 2.3e-5 (true 0.019), vega 2e-3, rho 0.011.
+  If a bumped tree breaks no-arbitrage, `computed` keeps the IV only and `RowSolve.labels` is `("greeks_not_available",)`.
+- Bounds: lower is the immediate exercise value (max(S - K, 0) call, max(K - S, 0) put); upper is S (call) or K (put). A price
+  at or below the exercise value, or at or above the cap, is `price_outside_no_arbitrage_bounds`. Search interval is
+  [max(1e-4, 1.01 |r - q| sqrt(T / steps)), 10]; a price no representable vol gives is `implied_vol_outside_search_interval`.
+- Same safeguarded Newton with a bracket (slope by forward difference on the tree), vol tolerance 1e-9, same `low_vega` rule.
+- Time on the dev machine, pure Python plus numpy (already a dependency): one 500-step tree 5 ms (a price is two trees); one solve about 0.14 s;
+  one row with greeks about 0.2 s; 100 contracts about 21 s at 500 steps. Memory is O(steps): no steps x steps array.
+  Pass `steps` to `solve_row` for a coarser chain.
+- Model tag: `crr-tree-escrowed-v1;model=crr_tree;steps=<n>;r=<rate>;q=<yield>;divs=<none or iso:amount|...>;day_count=act365f;`
+  `theta=per_calendar_day;vega=per_1.00_vol`. The provided slot is never overwritten.
+- Tests: tree error against Black-Scholes falls with steps (1.3e-3, 2.5e-4, 6.2e-5 at 100, 500, 2000) and stays under
+  0.1 S vol sqrt(T) / steps on a strike, expiry and vol grid; Hull's put (S 50, K 50,
+  r 10%, vol 40%, 5 months; five-step tree 4.49, recomputed here as 4.4885; converged value 4.284 from a 20,000-step separate tree);
+  early exercise before an ex-date detected; put-call inequalities; tiny-vol limits; smooth delta and gamma; monotone vol.
+- Fixture: `PricedModel(..., american_steps=N, dividends=())` makes American-style contracts priced by the tree; the solver recovers the
+  surface from them to 1e-6 at the same steps and dividends. The other fixture modes are unchanged.
 
 ## Synthetic fixture
 
@@ -138,5 +185,5 @@ The known surface IV is stored as the provided IV. No real market data or symbol
 
 ## Not here yet
 
-American-style pricing, derived series, health card rows, a provider adapter, the security-id map, delisted names,
+Derived series, health card rows, a provider adapter, the security-id map, delisted names,
 `occ_symbol`, `deliverable`, `first_seen` and `last_seen` as separate fields, put-call parity reading, and a command group.

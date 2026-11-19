@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_options_conventions.py
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
-verified: 8fa0d09f2b49a56e
+verified: 2ab39a6c14c4bbab
 ---
 
 # Options data
@@ -55,7 +55,7 @@ and a fixture priced by the same model so the solver recovers the known surface.
 Third build, 2026-11-19: American-style pricing, greeks and implied volatility on a Cox-Ross-Rubinstein tree with early
 exercise at every node and escrowed cash dividends (an approximation; see the invariants page). The solver now covers
 listed US equity and ETF options as well as European index and futures options. The fixture has an American mode
-priced by the tree. A solve costs about 0.2 s at 500 steps; a 100-contract chain about 25 s (about 4 s at 100 steps).
+priced by the tree. A solve costs about 0.14 s at 500 steps; a 100-contract chain with greeks about 21 s.
 
 Not built:
 - Derived series, health card rows.

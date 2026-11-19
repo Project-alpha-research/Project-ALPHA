@@ -18,7 +18,7 @@ Rules
   tree breaks no-arbitrage (see `min_tree_vol`), so a price there is the typed outcome
   "implied_vol_outside_search_interval" and never a clamped number.
 - Volatility tolerance 1e-9. The low-confidence rule (`iv_uncertainty = price_resolution / vega`
-  above 0.005) is the same as for European contracts; vega is the tree's finite difference.
+  above 0.005) is the same as for European contracts; vega is the tree's vol bump (`tree_vega`).
 - Time: one solve at 500 steps costs a few dozen tree prices; seconds per solve and per
   100-contract chain are in docs/reference/invariants/data-options.md.
 """
@@ -37,7 +37,7 @@ from alpha_data.options.iv_core import (
     finite,
     safeguarded_root,
 )
-from alpha_data.options.pricing import DAY_COUNT
+from alpha_data.options.pricing import DAY_COUNT, Conventions
 from alpha_data.options.schema import OptionsDataError
 from alpha_data.options.tree import (
     CRR_MODEL,
@@ -48,7 +48,7 @@ from alpha_data.options.tree import (
     american_price,
     min_tree_vol,
 )
-from alpha_data.options.tree_greeks import american_greeks
+from alpha_data.options.tree_greeks import tree_vega
 
 _XTOL = 1e-9
 _SLOPE_BUMP = 1e-3
@@ -113,20 +113,20 @@ def solve_american_implied_vol(
     if isinstance(found, str):
         return IvUnsolved(found, inp)
     vol, iterations = found
-    g = american_greeks(inp, vol, steps)
-    if isinstance(g, TreeRefused):
-        return IvUnsolved("did_not_converge", inp)
-    uncertainty = price_resolution / g.vega if g.vega > 0 else math.inf
+    vega = tree_vega(inp, vol, steps, _price(inp, vol, steps))
+    if isinstance(vega, TreeRefused):  # the vol bumps keep the tree valid; this cannot happen
+        raise OptionsDataError("vol", vega.message)
+    uncertainty = price_resolution / vega if vega > 0 else math.inf
     return IvSolved(
         iv=vol,
         confidence="low_vega" if uncertainty > LOW_CONFIDENCE_IV_ERROR else "normal",
-        vega=g.vega,
+        vega=vega,
         iv_uncertainty=uncertainty,
         iterations=iterations,
         price=target_price,
         model=american_model_tag(inp, steps),
         inputs=inp,
-        conventions=g.conventions,
+        conventions=Conventions(delta_gamma_wrt="spot"),
         method=METHOD,
         steps=steps,
     )

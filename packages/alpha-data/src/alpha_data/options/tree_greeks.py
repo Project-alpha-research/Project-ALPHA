@@ -1,11 +1,13 @@
-"""Greeks of an American option by finite differences on the CRR tree.
+"""Greeks of an American option on the CRR tree: tree levels for delta and gamma, bumps otherwise.
 
 Pure math; the tree and its assumptions are in `alpha_data.options.tree`. Every price is the
-average of the N and N + 1 step trees, and every bump re-prices the whole tree.
+average of the N and N + 1 step trees, and every bump (vol, rate, time) re-prices the whole tree.
 
 Conventions (the same as the European code; the result carries a `Conventions` record)
-- `delta` and `gamma` are with respect to the spot. Central differences, bump of 3% of spot:
-  delta = (V(S+h) - V(S-h)) / 2h, gamma = (V(S+h) - 2 V(S) + V(S-h)) / h^2.
+- `delta` and `gamma` are with respect to the spot, read from the tree's first levels
+  (`tree_price_delta_gamma`; no bump). A spot bump of 3% was 10 to 100 times less accurate: its
+  gamma was 3.1e-3 off on an 18-day call (gamma 0.089) and 5.2e-3 off on a put near the exercise
+  boundary, against under 1e-4 from the tree levels.
 - `vega` per 1.00 of volatility: central difference, bump 0.01 (one vol point), divided by 0.02.
   If the lower bump breaks the step's no-arbitrage limit, a forward difference is used instead.
 - `theta` per CALENDAR DAY: the derivative with respect to calendar time at fixed spot, taken by
@@ -15,10 +17,9 @@ Conventions (the same as the European code; the result carries a `Conventions` r
   The cash-dividend present values move with the rate; the spot and the yield are held.
 
 Expected numerical noise at 500 steps (measured against the closed form for a call with no
-dividends, S = K = 100, vol 0.2, one year): price 2.5e-4, delta 8e-4, gamma 3.5e-4 (true 0.019),
-vega 2e-3 (true 37.5), theta 1e-6 per day, rho 0.011 (true 53). Gamma is the noisiest: a bump of
-1% of spot gave errors near 0.0016 (tree-node alignment wiggle), so the bump is 3%. Tree error is of
-order 1/steps, so halving the steps roughly doubles it. A bump that makes a tree refuse (see
+dividends, S = K = 100, vol 0.2, one year): price 2.5e-4, delta 9e-5, gamma 2.3e-5 (true 0.019),
+vega 2e-3 (true 37.5), theta 1e-6 per day, rho 0.011 (true 53). Tree error is of order 1/steps,
+so halving the steps roughly doubles it. A bump that makes a tree refuse (see
 `TreeRefused`) returns the refusal instead of a number.
 """
 
@@ -35,10 +36,10 @@ from alpha_data.options.tree import (
     TreeRefused,
     american_price,
     min_tree_vol,
+    tree_price_delta_gamma,
 )
 
 BUMPS: dict[str, float] = {
-    "spot_relative": 0.03,
     "vol": 0.01,
     "rate": 0.005,
     "time_days": 1.0,
@@ -78,31 +79,42 @@ def american_greeks(
         return stop.refusal
 
 
+def tree_vega(inp: AmericanInputs, vol: float, steps: int, base: float) -> float | TreeRefused:
+    """Vega per 1.00 of vol: central bump of 0.01, forward when the lower bump breaks the tree."""
+    dv = BUMPS["vol"]
+    up = american_price(inp, vol + dv, steps)
+    if isinstance(up, TreeRefused):
+        return up
+    if vol - dv <= min_tree_vol(inp, steps):
+        return (up - base) / dv
+    down = american_price(inp, vol - dv, steps)
+    return down if isinstance(down, TreeRefused) else (up - down) / (2 * dv)
+
+
 def _bumped(inp: AmericanInputs, vol: float, steps: int) -> AmericanGreeks:
-    def px(candidate: AmericanInputs, v: float = vol) -> float:
-        out = american_price(candidate, v, steps)
+    def px(candidate: AmericanInputs) -> float:
+        out = american_price(candidate, vol, steps)
         if isinstance(out, TreeRefused):
             raise _Refused(out)
         return out
 
-    h = BUMPS["spot_relative"] * inp.spot
+    first = tree_price_delta_gamma(inp, vol, steps)
+    if isinstance(first, TreeRefused):
+        raise _Refused(first)
+    base, delta, gamma = first
+    vega = tree_vega(inp, vol, steps, base)
+    if isinstance(vega, TreeRefused):
+        raise _Refused(vega)
     day = min(BUMPS["time_days"], 0.25 * (inp.expiry_ts - inp.valuation_ts).total_seconds() / 86400)
-    dv, dr = BUMPS["vol"], BUMPS["rate"]
+    dr = BUMPS["rate"]
     shift = timedelta(days=day)
-    base = px(inp)
-    s_up, s_dn = px(replace(inp, spot=inp.spot + h)), px(replace(inp, spot=inp.spot - h))
     r_up, r_dn = px(replace(inp, rate=inp.rate + dr)), px(replace(inp, rate=inp.rate - dr))
     t_up = px(replace(inp, valuation_ts=inp.valuation_ts + shift))
     t_dn = px(replace(inp, valuation_ts=inp.valuation_ts - shift))
-    v_up = px(inp, vol + dv)
-    if vol - dv > min_tree_vol(inp, steps):
-        vega = (v_up - px(inp, vol - dv)) / (2 * dv)
-    else:
-        vega = (v_up - base) / dv
     return AmericanGreeks(
         price=base,
-        delta=(s_up - s_dn) / (2 * h),
-        gamma=(s_up - 2 * base + s_dn) / (h * h),
+        delta=delta,
+        gamma=gamma,
         vega=vega,
         theta=(t_up - t_dn) / (2 * day),
         rho=(r_up - r_dn) / (2 * dr),

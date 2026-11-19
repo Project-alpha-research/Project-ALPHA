@@ -149,6 +149,7 @@ class RowSolve:
 
     row: ChainRow
     outcome: IvSolved | IvUnsolved
+    labels: tuple[str, ...] = ()
 
 
 def model_tag(inp: OptionInputs) -> str:
@@ -175,8 +176,11 @@ def _american_row(
     if isinstance(out, IvUnsolved) or out.confidence != "normal":
         return RowSolve(row, out)
     g = american_greeks(inp, out.iv, steps)
-    if isinstance(g, TreeRefused):
-        return RowSolve(row, out)  # greeks need bumped trees; none stored, nothing guessed
+    if isinstance(g, TreeRefused):  # a bumped tree broke no-arbitrage: keep the IV, label the row
+        block = Greeks(source="computed", model=american_model_tag(inp, steps), iv=out.iv)
+        return RowSolve(
+            replace(row, computed=block), replace(out, greeks=block), ("greeks_not_available",)
+        )
     block = Greeks(
         source="computed",
         model=american_model_tag(inp, steps),
@@ -205,13 +209,18 @@ def solve_row(
     European-style contracts use the closed form. American-style contracts use the CRR tree and
     need `dividends` stated (pass `()` for none; `None` raises) and a step count (default 500,
     recorded in the model tag). A low-confidence, unsolved or mid-less row comes back unchanged
-    with the reason in `outcome`.
+    with the reason in `outcome`. If a bumped greek tree breaks no-arbitrage, `computed` holds the
+    IV only and `labels` is ("greeks_not_available",).
     """
     contract = row.contract
     expiry_ts = datetime.combine(contract.expiry, expiry_time_utc, UTC)
     american = contract.style == "A"
     if american and dividends is None:
-        raise OptionsDataError("dividends", "must be stated for an American-style contract")
+        raise OptionsDataError(
+            "dividends",
+            "must be stated for an American-style contract: pass dividends=() for none, or the "
+            "Dividend(ex_ts, amount) list; None never means no dividends",
+        )
     inp = OptionInputs(
         underlying=underlying_price,
         kind="spot",

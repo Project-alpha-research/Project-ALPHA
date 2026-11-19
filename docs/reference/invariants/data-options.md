@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_options_conventions.py
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
-verified: a0b335878dc73b1b
+verified: 7dbbe0912fbcaad3
 ---
 
 # Data layer invariants: options
@@ -131,7 +131,8 @@ volatility limits, monotonicity, and Black-76 equal to BSM when the forward is b
 ## American style: CRR tree
 
 `tree.py`, `tree_greeks.py`, `implied_american.py`. Sources: Cox, Ross and Rubinstein (1979), Journal of Financial Economics 7(3);
-the escrowed-dividend treatment as in Hull, "Options, Futures, and Other Derivatives"; Haug, Haug and Lewis (2003, Wilmott) on its limits.
+the escrowed-dividend treatment for known cash dividends as in Hull, "Options, Futures, and Other Derivatives" (binomial-tree chapter);
+Haug, Haug and Lewis (2003, Wilmott) on its weakness. Cross-check: QuantLib 1.44 escrowed finite differences, a few 1e-4 at 2000 steps.
 
 - Tree: u = exp(vol sqrt(dt)), d = 1/u, p = (exp((r - q) dt) - d) / (u - d); the node value is max(exercise, discounted
   expectation) at every node. Price = average of the N and N + 1 step trees; default 500 steps. A step with
@@ -140,22 +141,28 @@ the escrowed-dividend treatment as in Hull, "Options, Futures, and Other Derivat
   `Dividend(ex_ts, amount)`, right, steps. No default for the rate or dividends; `solve_row` raises if an American row gets
   `dividends=None` (pass `()`). A dividend counts only when valuation < ex-date < expiry. Present value at or above spot is an error.
 - Dividends, escrowed method: the tree runs on S* = spot less the present value of dividends in the option's life; the
-  exercise value at a node uses S* plus the present value of dividends not yet gone ex. APPROXIMATION: the vol is the vol of S*,
-  not of the quote; the real price jumps on the ex-date. The bias grows with the dividend size and the time to it. A node
-  before the ex-date sees the dividend; the ex-date falls between nodes, so timing is off by up to one step.
-- Greeks by finite differences on the tree. Bumps: spot 3% (delta, gamma, central), vol 0.01 (vega per 1.00, central),
+  exercise value at a node uses S* plus the dividends not yet gone ex. Escrowed amount: sum D exp(-(r - q)(t_div - t)), so the
+  forward is S exp((r - q) T) - sum D exp((r - q)(T - t_div)) (QuantLib's convention; plain present value when q = 0).
+  APPROXIMATION: the vol is the vol of S*, not of the quote; the real price jumps on the ex-date. Known weakness (Haug, Haug
+  and Lewis): one vol for S* and S misprices, most for large dividends and long expiries. The ex-date falls between nodes, so
+  the last exercise before it is up to one step early. Measured at 500 steps over one year: 7.4e-3 for a 2.00 dividend 11 days
+  before expiry (bound 0.02, tested), under 2e-3 for an ex-date far from expiry. Use more steps for an ex-date near expiry.
+- Delta and gamma from the tree's first levels (step-1 slope; change of step-2 slopes), averaged over N and N + 1. A 3% spot
+  bump was 10 to 100 times worse (gamma 5.2e-3 off near a put's exercise boundary). Bumps: vol 0.01 (vega per 1.00, central),
   rate 0.005 (rho per 1.00, central), valuation instant one day (theta per calendar day, central). Same units as the closed
   form; the `Conventions` record is shared, and the result says `method="crr_tree"` and its `steps`.
-  Noise at 500 steps against the closed form: price 2.5e-4, delta 8e-4, gamma 3.5e-4 (true 0.019), vega 2e-3, rho 0.011.
+  Noise at 500 steps against the closed form: price 2.5e-4, delta 9e-5, gamma 2.3e-5 (true 0.019), vega 2e-3, rho 0.011.
+  If a bumped tree breaks no-arbitrage, `computed` keeps the IV only and `RowSolve.labels` is `("greeks_not_available",)`.
 - Bounds: lower is the immediate exercise value (max(S - K, 0) call, max(K - S, 0) put); upper is S (call) or K (put). A price
   at or below the exercise value, or at or above the cap, is `price_outside_no_arbitrage_bounds`. Search interval is
   [max(1e-4, 1.01 |r - q| sqrt(T / steps)), 10]; a price no representable vol gives is `implied_vol_outside_search_interval`.
 - Same safeguarded Newton with a bracket (slope by forward difference on the tree), vol tolerance 1e-9, same `low_vega` rule.
-- Time on the dev machine, pure Python plus numpy (already a dependency): one 500-step tree 5 ms (a price is two trees); one solve about 0.2 s
-  (3 Newton steps); 100 contracts about 25 s at 500 steps and about 4 s at 100 steps. Pass `steps` to `solve_row` for a coarser chain.
+- Time on the dev machine, pure Python plus numpy (already a dependency): one 500-step tree 5 ms (a price is two trees); one solve about 0.14 s;
+  one row with greeks about 0.2 s; 100 contracts about 21 s at 500 steps. Memory is O(steps): no steps x steps array. Pass `steps` to `solve_row` for a coarser chain.
 - Model tag: `crr-tree-escrowed-v1;model=crr_tree;steps=<n>;r=<rate>;q=<yield>;divs=<none or iso:amount|...>;day_count=act365f;`
   `theta=per_calendar_day;vega=per_1.00_vol`. The provided slot is never overwritten.
-- Tests: tree error against Black-Scholes falls with steps (1.3e-3, 2.5e-4, 6.2e-5 at 100, 500, 2000); Hull's put (S 50, K 50,
+- Tests: tree error against Black-Scholes falls with steps (1.3e-3, 2.5e-4, 6.2e-5 at 100, 500, 2000) and stays under
+  0.1 S vol sqrt(T) / steps on a strike, expiry and vol grid; Hull's put (S 50, K 50,
   r 10%, vol 40%, 5 months; five-step tree 4.49, recomputed here as 4.4885; converged value 4.284 from a 20,000-step separate tree);
   early exercise before an ex-date detected; put-call inequalities; tiny-vol limits; smooth delta and gamma; monotone vol.
 - Fixture: `PricedModel(..., american_steps=N, dividends=())` makes American-style contracts priced by the tree; the solver recovers the

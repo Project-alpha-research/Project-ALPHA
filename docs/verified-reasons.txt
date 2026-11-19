@@ -50,7 +50,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 836fda69d0e91478 on 2026-11-19: American tree solver added in options/; text still correct
+  verified a24f08da87c95bf0 on 2026-11-20: Review fixes changed tree internals (dividend discounting, tree-level delta and gamma, greeks label); these pages only route to the options module and name its files, which are unchanged
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -179,7 +179,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 821d3927820d9b03 on 2026-11-19: American tree solver added in options/; text still correct
+  verified 0c1310079823e71d on 2026-11-20: Review fixes changed tree internals (dividend discounting, tree-level delta and gamma, greeks label); these pages only route to the options module and name its files, which are unchanged
 
 research/CONTEXT.md
   verified 284b2bb16bea0a8b on 2026-11-19: idea file read path and map wording corrected; page text re-read

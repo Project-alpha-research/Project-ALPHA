@@ -280,7 +280,7 @@ def test_greeks_match_black_scholes_where_early_exercise_never_happens() -> None
     assert ours.vega == pytest.approx(euro.vega, abs=0.02)
     assert ours.theta == pytest.approx(euro.theta, abs=1e-5)
     assert ours.rho == pytest.approx(euro.rho, abs=0.03)
-    assert set(BUMPS) >= {"spot_relative", "vol", "rate", "time_days"}
+    assert set(BUMPS) >= {"vol", "rate", "time_days"}
 
 
 def test_delta_and_gamma_are_smooth_across_a_spot_grid_with_no_sign_flips() -> None:

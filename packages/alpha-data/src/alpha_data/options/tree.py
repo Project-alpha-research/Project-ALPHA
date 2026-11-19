@@ -13,9 +13,11 @@ Sources
 - Discrete cash dividends, escrowed-dividend method: the stock is split into a risky part S* and
   the present value of the dividends still to come. The tree is built on S*; at each node the
   exercise value uses S* plus the present value of the dividends not yet paid. This is the
-  treatment in Hull, "Options, Futures, and Other Derivatives" (the binomial-tree and
-  known-dividend sections). Haug, Haug and Lewis (2003), "Back to basics: a new approach to the
-  discrete dividend problem", Wilmott Magazine, discuss its limits.
+  treatment for known cash dividends in Hull, "Options, Futures, and Other Derivatives" (the
+  binomial-tree chapter; edition and page not checked here). Haug, Haug and Lewis (2003), "Back to
+  basics: a new approach to the discrete dividend problem", Wilmott Magazine, show its weakness.
+- Cross-check: QuantLib 1.44 `FdBlackScholesVanillaEngine` with its Escrowed cash-dividend model
+  agrees to a few 1e-4 at 2000 steps (American puts and dividend calls, with and without a yield).
 
 Assumptions, in plain words (all must hold for the number to mean something)
 - One constant volatility, constant rate and constant continuous yield to expiry. Trading is
@@ -24,11 +26,17 @@ Assumptions, in plain words (all must hold for the number to mean something)
   not the volatility of the quoted stock price. This escrowed treatment is an APPROXIMATION: the
   stock jumps down by the dividend on the ex-date in reality, but here the dividends are folded
   into the starting price. For a large dividend relative to spot, or a long expiry, the value is
-  biased against the jump treatments; do not read it as exact.
-- The yield q is applied to the S* process; the cash dividends are discounted at the rate r.
+  biased against the jump treatments; do not read it as exact. Known weakness (Haug, Haug and
+  Lewis): the volatility of S* is not the volatility of S, so one volatility for both misprices,
+  most for large dividends and long expiries.
+- Escrowed amount: sum D exp(-(r - q)(t_div - t)), so the forward is the usual
+  S exp((r - q) T) - sum D exp((r - q)(T - t_div)). With q = 0 it is the plain present value.
 - A dividend counts only when valuation < ex-date < expiry. One at or before the valuation
   instant, or at or after expiry, is ignored. A node at time t sees a dividend as unpaid while its
-  ex-date is later than t, so exercise "just before the ex-date" is the node before it.
+  ex-date is later than t, so exercise "just before the ex-date" is the node before it, up to
+  one step early. Measured worst case (a 2.00 dividend on a 100 call, 11 days before a one-year
+  expiry, vol 0.25): 7.4e-3 off an 8000-step tree at 500 steps; under 2e-3 for an ex-date far
+  from expiry. Pass more steps when an ex-date is close to expiry.
 - A dividend whose present value is at or above the spot is an error (S* would be zero or less).
 - Time is ACT/365 fixed from aware-UTC instants (same rule as `years_between`).
 - No-arbitrage on a step: d < exp((r - q) dt) < u, which is 0 < p < 1. If a step violates it the
@@ -145,46 +153,82 @@ def _check_steps(steps: int) -> None:
 
 
 def _remaining_pv(
-    live: list[tuple[float, float]], rate: float, dt: float, steps: int
+    live: list[tuple[float, float]], carry: float, dt: float, steps: int
 ) -> np.ndarray:
-    """Present value at each step time of the dividends whose ex-date is still later."""
+    """Escrowed amount at each step time: sum D exp(-(r - q)(t_div - t)) over later ex-dates."""
     times = np.arange(steps + 1) * dt
     pv = np.zeros(steps + 1)
     for t_div, amount in live:
         mask = times < t_div
-        pv[mask] += amount * np.exp(-rate * (t_div - times[mask]))
+        pv[mask] += amount * np.exp(-carry * (t_div - times[mask]))
     return pv
 
 
-def crr_tree_value(inp: AmericanInputs, vol: float, steps: int) -> float | TreeRefused:
-    """One tree of exactly `steps` steps (no averaging)."""
+Levels = list[tuple[np.ndarray, np.ndarray]]
+
+
+def _induct(inp: AmericanInputs, vol: float, steps: int) -> Levels | TreeRefused:
+    """Backward induction with O(steps) arrays. (values, stock prices) for levels 0, 1 and 2."""
     _check_steps(steps)
     _finite("vol", vol, positive=True)
     years = inp.years
     if years <= 0:
         raise OptionsDataError("years", "must be above zero to price an option")
     live = inp.live_dividends()
-    pv_all = sum(a * math.exp(-inp.rate * t) for t, a in live)
+    carry = inp.rate - inp.dividend_yield
+    pv_all = sum(a * math.exp(-carry * t) for t, a in live)
     if pv_all >= inp.spot:
         raise OptionsDataError("dividends", "present value of dividends must be below the spot")
     dt = years / steps
     sd = vol * math.sqrt(dt)
-    up, down, growth = math.exp(sd), math.exp(-sd), math.exp((inp.rate - inp.dividend_yield) * dt)
+    up, down, growth = math.exp(sd), math.exp(-sd), math.exp(carry * dt)
     if not down < growth < up:
         return TreeRefused(steps, up, down, growth)
     prob = (growth - down) / (up - down)
     disc = math.exp(-inp.rate * dt)
     base = inp.spot - pv_all
-    pv_left = _remaining_pv(live, inp.rate, dt, steps)
+    pv_left = _remaining_pv(live, carry, dt, steps)
     phi = inp.sign
     j = np.arange(steps + 1)
     node = base * np.exp((2 * j - steps) * sd)
     values = np.maximum(phi * (node - inp.strike), 0.0)
+    levels: Levels = []
     for i in range(steps - 1, -1, -1):
         values = disc * (prob * values[1:] + (1.0 - prob) * values[:-1])
-        node = base * np.exp((2 * j[: i + 1] - i) * sd)
-        values = np.maximum(values, phi * (node + pv_left[i] - inp.strike))
-    return float(values[0])
+        stock = base * np.exp((2 * j[: i + 1] - i) * sd) + pv_left[i]
+        values = np.maximum(values, phi * (stock - inp.strike))
+        if i <= 2:
+            levels.insert(0, (values, stock))
+    return levels
+
+
+def crr_tree_value(inp: AmericanInputs, vol: float, steps: int) -> float | TreeRefused:
+    """One tree of exactly `steps` steps (no averaging)."""
+    levels = _induct(inp, vol, steps)
+    return levels if isinstance(levels, TreeRefused) else float(levels[0][0][0])
+
+
+def tree_price_delta_gamma(
+    inp: AmericanInputs, vol: float, steps: int
+) -> tuple[float, float, float] | TreeRefused:
+    """Price, delta and gamma from the first tree levels, averaged over the N and N + 1 trees.
+
+    delta = (V_u - V_d) / (S_u - S_d) at step 1; gamma is the change of the step-2 slopes over half
+    the step-2 spread (Hull, the binomial-tree greeks). They are taken one or two steps after the
+    valuation instant, an error of order 1/steps like the price.
+    """
+    out: list[tuple[float, float, float]] = []
+    for n in (steps, steps + 1):
+        levels = _induct(inp, vol, n)
+        if isinstance(levels, TreeRefused):
+            return levels
+        (v0, _), (v1, s1), (v2, s2) = levels
+        slope_dn = (v2[1] - v2[0]) / (s2[1] - s2[0])
+        slope_up = (v2[2] - v2[1]) / (s2[2] - s2[1])
+        out.append((float(v0[0]), (v1[1] - v1[0]) / (s1[1] - s1[0]),
+                    (slope_up - slope_dn) / (0.5 * (s2[2] - s2[0]))))  # fmt: skip
+    (p0, d0, g0), (p1, d1, g1) = out
+    return float(0.5 * (p0 + p1)), float(0.5 * (d0 + d1)), float(0.5 * (g0 + g1))
 
 
 def american_price(

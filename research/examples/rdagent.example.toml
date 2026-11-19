@@ -1,21 +1,29 @@
 # Example config for `alpha rdagent run --config rdagent.toml`. Every path below is a placeholder.
 # Copy this file, change the paths, and keep the copy outside git.
-# Each key matches one argument of workers/rdagent/factor_loop_launch.py.
+# Each key has the name of one option of workers/rdagent/factor_loop_launch.py (`--loop-n` is
+# `loop_n`). A key left out puts nothing on the command line: the launcher's own default applies.
 
-working_directory = "/abs/path/to/Project-ALPHA"       # the checkout that holds .venv
-data_dir = "/abs/path/to/alpha-data"                   # the data store RD-Agent reads
-gateway_state = "/abs/path/to/runs/model-gateway-state" # outside git
+working_directory = "/abs/path/to/Project-ALPHA"            # the checkout that holds .venv
+data_dir = "/abs/path/to/alpha-data"                        # --data-dir
+gateway_data_dir = "/abs/path/to/runs/model-gateway-state"  # --gateway-data-dir, outside git
 trial_ledger = "/abs/path/to/runs/rdagent-trial-ledger/rdagent-factor-trials.jsonl"
 rdagent_source = "/abs/path/to/rdagent-source"         # ALPHA_RDAGENT_SOURCE, from the setup script
 factor_python = "/abs/path/to/factor-runtime/bin/python" # ALPHA_FACTOR_PYTHON, from the setup script
 
-# Optional. A key left out keeps the launcher's own default.
+# Optional. The values shown are examples, not the launcher's defaults.
 # universe = "/abs/path/to/universe.json"
 # funding_dir = "/abs/path/to/context-store"
-# loop_n = 2
+# loop_n = 3
 # discuss = true
-# discuss_wait_minutes = 30
-# on_timeout = "proceed"      # or "stop"
-# wall_seconds = 5400
-# chat_route = "codex"        # or "api" (then also api_model and both prices)
+# discuss_wait_minutes = 20
+# discuss_on_timeout = "stop"     # or "proceed"
+# wall_seconds = 10800
+# chat_route = "api"              # or "codex" or "fake"; "api" also needs api_model and both prices
+# api_model = "provider/model-name"
+# api_price_in_per_mtok = 0.0
+# api_price_out_per_mtok = 0.0
+# api_openrouter = true
 # key_file = "/abs/path/to/placeholder.env"   # only the PATH; the command never reads it
+# Also accepted, same names as the launcher: memory_dir, no_memory, coder_max_loop, run_max_calls,
+# embedding_route, provider_embed_model, provider_embed_usd_per_mtok, accept_unhonoured,
+# no_router_session, api_timeout, provider_retries, coding_reasoning_tokens, family_switch_after.

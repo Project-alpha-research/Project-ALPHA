@@ -37,16 +37,18 @@ def _loop_n(run: Path) -> int | None:
 
 
 def _usage(run: Path, folders: list[Path]) -> tuple[Any, Any, Any]:
-    """Calls used, calls cap and dollars spent, from what the run stored; None when not stored."""
+    """Calls used, calls cap and dollars spent, as the run stored them; None when not stored.
+
+    Spend is read only from the receipt, which the launcher writes when the run ends.
+    """
     receipt = _json(run / "receipt.json")
     this_run = (receipt.get("gateway_status") or {}).get("this_run") or {}
     used = this_run.get("counted_calls", this_run.get("calls"))
-    usage = receipt.get("discussion_usage") or {}
-    cap = usage.get("chat_cap")
+    cap = (receipt.get("discussion_usage") or {}).get("chat_cap")
     spent = this_run.get("usd")
     if used is None and folders:
         left = _json(folders[0] / "proposal.json").get("remaining") or {}
-        used = left.get("chat_used")
+        used, cap = left.get("chat_used"), left.get("chat_cap")
     return used, cap, spent
 
 
@@ -63,7 +65,10 @@ def _state(run: Path, status: dict[str, Any], folders: list[Path]) -> tuple[str,
 
 
 def read_status(run: Path) -> dict[str, Any]:
-    """Stable keys; values are None when the run folder does not store them."""
+    """Stable keys; values are None when the run folder does not store them.
+
+    `round` is the number as the worker stores it, counted from 0 (folder `round-0`).
+    """
     if not (run / "launch-command.json").is_file():
         raise NotARunFolder(f"{run} is not an RD-Agent run folder (it has no launch record).")
     status = _json(run / "discussion" / "status.json")
@@ -82,7 +87,7 @@ def read_status(run: Path) -> dict[str, Any]:
         "run_dir": str(run),
         "state": state,
         "state_words": STATE_WORDS[state],
-        "round": number + 1 if isinstance(number, int) else None,
+        "round": number if isinstance(number, int) else None,
         "rounds_total": status.get("rounds_total") or _loop_n(run),
         "calls_used": used,
         "calls_cap": cap,
@@ -93,14 +98,18 @@ def read_status(run: Path) -> dict[str, Any]:
 
 
 def status_text(value: dict[str, Any]) -> str:
+    unknown = "not yet known"
     lines = [value["state_words"]]
     if value["reason"]:
         lines.append(f"Why: {value['reason']}")
     if value["round"] is not None:
-        lines.append(f"Round {value['round']} of {value['rounds_total'] or 'an unknown number'}.")
-    if value["calls_used"] is not None:
-        cap = f" of {value['calls_cap']}" if value["calls_cap"] is not None else ""
-        spend = f", ${value['usd_spent']:.2f} spent" if value["usd_spent"] is not None else ""
-        lines.append(f"Model calls so far: {value['calls_used']}{cap}{spend}.")
+        total = value["rounds_total"] or "an unknown number"
+        number = value["round"]
+        lines.append(f"Round {number + 1} of {total}. Its folder is discussion/round-{number}.")
+    used, cap, spent = value["calls_used"], value["calls_cap"], value["usd_spent"]
+    calls = unknown if used is None else f"{used}" + (f" of {cap}" if cap is not None else "")
+    lines.append(f"Model calls so far: {calls}.")
+    money = f"${spent:.2f}" if spent is not None else f"{unknown} (written when the run ends)"
+    lines.append(f"Dollars spent: {money}.")
     lines += [f"Run folder: {value['run_dir']}", f"Next: {value['next_command']}"]
     return "\n".join(lines)

@@ -19,10 +19,11 @@ from alpha_cli._cli_json import emit
 from alpha_cli.rdagent_run_config import (
     RdagentConfig,
     RdagentConfigError,
+    check_run_id,
     child_command,
     child_environment,
     launcher_argv,
-    launcher_limits,
+    limits_text,
     load_config,
     next_run,
     runs_root,
@@ -40,13 +41,13 @@ def _plain(config: RdagentConfig, argv: list[str], run_dir: Path) -> str:
         f"  data folder: {config.data_dir}",
         f"  universe file: {config.universe or 'the launcher default'}",
         f"  run folder: {run_dir}",
-        f"  loops: {config.loop_n}",
+        f"  loops: {config.loop_n if config.loop_n is not None else 'the launcher default'}",
         f"  asks you before coding: {'yes' if config.discuss else 'no'}",
         f"  model route: {route}",
         f"  key file (its contents are never read here): {config.key_file or 'none'}",
-        "Limits, as the launcher and gateway hold them today:",
-        *[f"  {name}: {value}" for name, value in launcher_limits(config).items()],
-        "The exact command:",
+        "Limits:",
+        *[f"  {line}" for line in limits_text(config)],
+        "The exact command (with a key file, it starts inside bash after the file is loaded):",
         f"  cd {shlex.quote(str(config.working_directory))} && {shlex.join(argv)}",
     ]
     return "\n".join(lines)
@@ -69,7 +70,11 @@ def run(
     """Start the RD-Agent factor loop from rdagent.toml. --dry-run shows it without starting."""
     settings = _load(config)
     default_id, default_dir = next_run(settings, datetime.now(UTC).date())
-    chosen = run_id or default_id
+    try:
+        chosen = check_run_id(run_id) if run_id else default_id
+    except RdagentConfigError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
     run_dir = runs_root(settings) / chosen if run_id else default_dir
     argv = launcher_argv(settings, run_dir, chosen)
     if dry_run:
@@ -92,7 +97,9 @@ def run(
 
 @rdagent_app.command("status")
 def status(
-    run_dir: Annotated[Path | None, typer.Option("--run-dir", help="Default: newest run.")] = None,
+    run_dir: Annotated[
+        Path | None, typer.Option("--run-dir", help="Default: the last run.")
+    ] = None,
     config: CONFIG = Path("rdagent.toml"),
     json_out: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
@@ -100,11 +107,11 @@ def status(
     folder = run_dir
     if folder is None:
         root = runs_root(_load(config))
-        runs = sorted(root.glob("*")) if root.is_dir() else []
-        if not runs:
+        records = list(root.glob("*/launch-command.json")) if root.is_dir() else []
+        if not records:
             typer.echo(f"No RD-Agent run was found in {root}.", err=True)
             raise typer.Exit(2)
-        folder = runs[-1]
+        folder = max(records, key=lambda record: record.stat().st_mtime_ns).parent
     try:
         value = read_status(folder)
     except NotARunFolder as error:

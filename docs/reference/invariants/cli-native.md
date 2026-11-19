@@ -11,7 +11,7 @@ sources:
   - tests/unit/test_native_*.py
   - tests/unit/test_daily_rule_*.py
   - tests/unit/test_daily_native_*.py
-verified: cf4e3b262c28f01f
+verified: 802c31b3ac77f10b
 ---
 
 # Command line native invariants
@@ -24,8 +24,11 @@ project-wide rule is [research integrity § Models and isolated workers](researc
 ## Starting a factor loop
 
 - `alpha rdagent run` only builds the argument list `factor_loop_launch.py` already accepts and starts that launcher as a
-  child. It sets no prompt, memory, threshold, cap or rule, and no retry. `tests/unit/test_rdagent_run_command.py` pins the
-  list to the README launch line, element by element.
+  child. It sets no prompt, memory, threshold, cap or rule, and no retry. Each launcher option has one config key of
+  the same name; a key left out puts nothing on the line, so the launcher's default applies.
+  `tests/unit/test_rdagent_run_command.py` checks every launcher option has a key, rebuilds the owner's launch element
+  by element, and parses the list with the launcher's own parser.
+- The dry run prints a limit only when the config passes it on; otherwise it says the launcher or gateway sets it.
 - The config holds only the key file's path. The path goes to the child in an environment variable, never in the command
   text; the command never reads, prints or stores the file. `alpha rdagent status` only reads the run folder.
 

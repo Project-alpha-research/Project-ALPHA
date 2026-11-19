@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/controls.py
-verified: 7c8608a3bfdb6243
+verified: da0a35c7496f5a91
 ---
 
 # Walk-forward (out of sample)

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 84e2b02d828447f4 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified 3ea688297b2fdb8c on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 apps/alpha-cli/README.md
-  verified 84e2b02d828447f4 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified 3ea688297b2fdb8c on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -44,7 +44,7 @@ docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/patterns.md
-  verified f19fbfb7aa49de8d on 2026-11-19: reserved-period hold-back added to more commands; this page's text is still correct
+  verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 docs/reference/invariants/rdagent.md
   verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
@@ -62,7 +62,7 @@ docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/workers.md
-  verified fbca5b44d08df8a7 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified 38810e35f3fc1e95 on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
@@ -212,7 +212,7 @@ research/tools/sensitivity.md
   verified ae3e6677256bbf6d on 2026-11-19: reserved-period hold-back added to more commands; text still correct
 
 research/tools/walk-forward.md
-  verified 7c8608a3bfdb6243 on 2026-11-19: reserved-period hold-back added to more commands; this page's text is still correct
+  verified da0a35c7496f5a91 on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

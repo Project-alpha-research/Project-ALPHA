@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 3d76d3aad24b8827
+verified: 7eeea268b146ec5b
 ---
 
 # Deflated Sharpe and trial counting
@@ -30,8 +30,8 @@ uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 - `alpha optim grid` sweeps declared settings and prints the best one with its deflated Sharpe, `PBO` (the
   probability that the in-sample winner is below the middle out of sample; high is bad), and the `SPA` and
   `RC` p-values (is the best better than no skill, allowing for the search).
-- Fewer than 30 closed OOS trades: `too-few-trades` accompanies Sharpe probabilities and grade;
-  numbers remain visible, but the grade cannot exceed C (inconclusive). Noise copies count as no trial.
+- Fewer than 30 closed OOS trades: `too-few-trades` accompanies Sharpe probabilities and the reading;
+  numbers remain visible, and the reading says `too little to read`. Noise copies count as no trial.
 **What it cannot tell you**
 - Trials nobody recorded: `alpha validate`, `alpha optim` and `alpha backtest` runs are not in the ledger; count them by hand, say the true number is higher.
 - `alpha ledger summary` and `families` count every recorded try (rule tests, tools, RD-Agent) read-only and group related variants; the effective number

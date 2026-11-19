@@ -27,6 +27,7 @@ from alpha_cli.nightly_steps import (
     run_step,
     stderr_tail,
 )
+from alpha_cli.spine.reading import old_grade_text, reading_word
 
 ALL = ("N1", "N2", "N3")
 
@@ -36,7 +37,15 @@ def _ok(step: dict[str, Any]) -> bool:
 
 
 def _grades(results: list[dict[str, Any]]) -> str:
-    return ", ".join(f"{r.get('asset')} {r.get('verdict')}" for r in results)
+    return ", ".join(f"{r.get('asset')} {_word(r)}" for r in results)
+
+
+def _word(result: dict[str, Any]) -> str:
+    """The reading word of one asset; a result with only a letter says so."""
+    found = result.get("reading")
+    if isinstance(found, dict):
+        return reading_word(found)
+    return old_grade_text(result.get("verdict"))
 
 
 def _health(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:

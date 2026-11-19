@@ -848,12 +848,9 @@ class AlphaFactorHypothesisGen(QlibFactorHypothesisGen):
 
     def prepare_context(self, trace: Any) -> tuple[dict[str, Any], bool]:
         prepare = self.bounded_history or self.upstream_history
-        discussed = os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
-        if discussed:
-            trace = FamilyGuard.discussion_tools().hypotheses.discussion_history(trace)
         context, flag = prepare(trace)
         append_swing_context(context, os.environ.get("ALPHA_FACTOR_TRIAL_LEDGER"))
-        if discussed:
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
             context["hypothesis_and_feedback"] += FamilyGuard.discussion_tools().run_choices(
                 Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
             )
@@ -883,22 +880,18 @@ class AlphaFactorFeedback(Experiment2Feedback):
             "earlier text saying otherwise is out of date"
         )
         scenario += "\n" + family_permissions(closed_families(), include_counts=True)
-        discussed = os.environ.get("ALPHA_FACTOR_DISCUSS") == "1"
-        hypothesis = exp.hypothesis
-        if discussed:
-            tools = FamilyGuard.discussion_tools()
-            if tools.hypotheses.discussion_excluded_ideas(getattr(exp, "discussion", {})):
-                hypothesis = tools.hypotheses.built_hypothesis(hypothesis, exp.sub_tasks)
         system = T("scenarios.qlib.prompts:factor_feedback_generation.system").r(scenario=scenario)
         user = T("scenarios.qlib.prompts:factor_feedback_generation.user").r(
-            hypothesis_text=hypothesis.hypothesis,
+            hypothesis_text=exp.hypothesis.hypothesis,
             task_details=[
                 task.get_task_information_and_implementation_result() for task in exp.sub_tasks
             ],
             combined_result=exp.stdout,
         )
-        if discussed:
-            user += tools.feedback_block(Path(os.environ["ALPHA_FACTOR_RUN_DIR"]))
+        if os.environ.get("ALPHA_FACTOR_DISCUSS") == "1":
+            user += FamilyGuard.discussion_tools().feedback_block(
+                Path(os.environ["ALPHA_FACTOR_RUN_DIR"])
+            )
         reply = APIBackend().build_messages_and_create_chat_completion(
             user_prompt=user,
             system_prompt=system,

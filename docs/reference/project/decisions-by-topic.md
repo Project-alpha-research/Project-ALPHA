@@ -6,15 +6,16 @@ sources:
   - docs/reference/project/owner-decisions-3.md
   - docs/reference/project/owner-decisions-4.md
   - docs/reference/project/owner-decisions-5.md
-verified: 832650b9b4867cf3
+  - docs/reference/project/owner-decisions-6.md
+verified: b276e6f193f1da10
 ---
 
 # Owner decisions by topic
 
 Find a decision by its topic. The middle column is the gist; the entry has the owner's words, the reason and what it governs.
-Five volumes hold the log: [volume 1](owner-decisions.md),
-[volume 2](owner-decisions-2.md), [volume 3](owner-decisions-3.md), [volume 4](owner-decisions-4.md) and
-[volume 5](owner-decisions-5.md) (the newest; new entries go there). When an entry is added, add its row here.
+Six volumes hold the log: [volume 1](owner-decisions.md),
+[volume 2](owner-decisions-2.md), [volume 3](owner-decisions-3.md), [volume 4](owner-decisions-4.md),
+[volume 5](owner-decisions-5.md) and [volume 6](owner-decisions-6.md) (the newest; new entries go there). When an entry is added, add its row here.
 
 ## The project and its purpose
 
@@ -48,6 +49,7 @@ Five volumes hold the log: [volume 1](owner-decisions.md),
 | Confirmation, build sandbox, subject matter | One-shot confirmation (not built); a limited Codex sandbox widening; named Codex models | [vol. 4][e21] |
 | RD-Agent chooses tests but does not write them | Fixed checks run after the verdict. Agent choice is still a recommendation | [vol. 5][e22] |
 | The orchestrator's plan: discussable RD-Agent | Paths are ways of working; later RD-Agent shows each refusal's reason and discusses ideas | [vol. 4][e23] |
+| Never reduce RD-Agent's capability | The research loop keeps its full context; token cuts are for development overhead only | [vol. 6][e52] |
 
 ## Tools, Kronos, Monte Carlo
 
@@ -148,3 +150,4 @@ Five volumes hold the log: [volume 1](owner-decisions.md),
 [e49]: owner-decisions-4.md#2026-11-18-open-owner-decisions-listed-in-one-place
 [e50]: owner-decisions-5.md#2026-11-18-text-the-owner-reads-follows-simplified-technical-english
 [e51]: owner-decisions-5.md#2026-11-19-claude-agents-build-until-the-codex-subscription-returns-the-file-system-comes-first
+[e52]: owner-decisions-6.md#2026-11-19-never-reduce-rd-agents-capability-to-save-tokens-or-cost

@@ -195,8 +195,9 @@ from the owner-action routes.
 - Every proposer, including the experiment writer and both steps of a re-ask, sees this run’s drop reasons, revision notes
   and notes to the agent. The fixed data warning precedes one JSON line, newest first, with a 4,000-character cap and a
   count of older choices left out. Feedback sees only the names you dropped, in the same kind of block, with a fixed
-  instruction to assess built ideas and avoid variants of drops. When a round leaves out a dropped idea, feedback and
-  later prompts use the built ideas' names and descriptions in place of the original round hypothesis.
+  instruction to assess built ideas and avoid variants of drops. The agent's reflection (its hypothesis, observations,
+  evaluation, new hypothesis and reason) is always passed on in full, also after a drop
+  ([owner](../../docs/reference/project/owner-decisions-6.md#2026-11-19-never-reduce-rd-agents-capability-to-save-tokens-or-cost)).
   ALPHA's verdict stays the decision. A name you dropped is shown as "Not offered again" if proposed again: not a failed
   try, no trial row. Only your reply can drop. To build it after all, add it as your own with `--idea`.
 - A dropped idea is never built: no trial row, no family failure, no look. Dropping is only
@@ -282,8 +283,8 @@ The RD-Agent project page keeps one dated line for each of these. The reasons ar
   ([plan](../../docs/reference/project/owner-decisions-4.md#2026-11-18-orchestrators-plan-the-paths-are-ways-of-working-and-rd-agent-becomes-discussable),
   [owner](../../docs/reference/project/owner-decisions-5.md#2026-11-18-the-agent-is-a-collaborator-never-a-black-box)).
   Built: the optional [proposal pause](README.md#propose-and-discuss) on the command line. The trader answers by
-  number or name before coding. Each proposer receives the trader's choices for the run. Feedback gets the built
-  hypotheses and the names the trader dropped. Re-asks disclose their cost. The decision explains changes, choices the
+  number or name before coding. Each proposer receives the trader's choices for the run. Feedback gets the full
+  round hypothesis and the names the trader dropped. Re-asks disclose their cost. The decision explains changes, choices the
   agent made for the trader, and the recorded result for each built idea. Not built: the pause on the Workstation
   screen, overriding an automatic refusal, honesty checks as labels.
 - Decided 2026-11-18: the run view uses the approved journey layout

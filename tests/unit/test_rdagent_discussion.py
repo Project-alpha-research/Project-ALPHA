@@ -1016,7 +1016,7 @@ def test_revision_uses_gate_contract(
         assert decision["replacements"][0]["uses_gate"] is bool(gate)
 
 
-def test_revision_quotes_current_dropped_name_in_the_data_block(
+def test_revision_keeps_the_hypothesis_and_names_the_drop_in_the_data_block(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     sent, _, built = revise_with_note(
@@ -1027,8 +1027,10 @@ def test_revision_quotes_current_dropped_name_in_the_data_block(
         drop_season=True,
     )
     before, data = sent["messages"][1]["content"].split(discussion.USER_DATA + "\n", 1)
-    assert "Retained funding hypothesis." in before
-    assert "Season" not in before and "dropped hypothesis text" not in before
+    # The round's full hypothesis reaches the revision request as before; the drop is named
+    # only in the data block, with no separate list of dropped names.
+    assert "Retained funding hypothesis." in before and "Season: dropped hypothesis text." in before
+    assert "Dropped proposal names" not in before
     assert json.loads(data.splitlines()[0])["dropped"] == {"0": {"name": "Season"}}
     assert [task.factor_name for task in built.sub_tasks] == ["Carry"]
 
@@ -1096,20 +1098,21 @@ def test_last_tries_use_open_distinct_ledger_counts(
     assert decision.index("has failed 2 of 3 tries") < decision.index("Results are not ready")
 
 
-def test_dropped_hypothesis_does_not_reach_model_history(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def reflection_prompts(
+    root: Path, monkeypatch: pytest.MonkeyPatch, reply: dict[str, Any]
+) -> tuple[str, list[str]]:
+    """Run one discussed round, then return the feedback prompt and later history contexts."""
     from workers.rdagent.research_memory import ProposalHistory
 
-    ns, guard, loop, exp, _ = fixture_round(tmp_path, monkeypatch)
-    universe_run(tmp_path, monkeypatch)
+    root.mkdir()
+    ns, guard, loop, exp, _ = fixture_round(root, monkeypatch)
+    universe_run(root, monkeypatch)
     monkeypatch.delenv("ALPHA_FACTOR_TRIAL_LEDGER")
-    folder = tmp_path / "discussion/round-0"
-    exp.hypothesis.hypothesis = "Season: dropped hypothesis text. Funding: original text."
-    exp.hypothesis.reason = "Season: dropped hypothesis reason."
-    exp.sub_tasks[0].description = "Retained funding hypothesis.\n" + exp.sub_tasks[0].description
-    exp.sub_tasks[0].get_task_information_and_implementation_result = lambda: "Built funding task"
-    reply = choose(Funding={"action": "accept"}, Season={"action": "drop", "reason": "private"})
+    folder = root / "discussion/round-0"
+    exp.hypothesis.hypothesis = "Season: seasonal hypothesis text. Funding: funding text."
+    exp.hypothesis.reason = "Season and Funding reason."
+    for task in exp.sub_tasks:
+        task.get_task_information_and_implementation_result = lambda: "Built task"
     monkeypatch.setattr(
         time, "sleep", lambda _: (folder / "reply.json").write_text(json.dumps(reply))
     )
@@ -1120,23 +1123,32 @@ def test_dropped_hypothesis_does_not_reach_model_history(
     fb.scen = SimpleNamespace(get_scenario_all_desc=lambda: "scenario")
     backend = Mock()
     backend.build_messages_and_create_chat_completion.return_value = json.dumps(
-        {"New Hypothesis": "Season variant", "Reasoning": "dropped hypothesis reason"}
+        {
+            "Observations": "Funding ranked coins weakly.",
+            "Feedback for Hypothesis": "Season adds little.",
+            "New Hypothesis": "Try a Season variant.",
+            "Reasoning": "The full reflection.",
+        }
     )
     ns["APIBackend"] = lambda: backend
     ns["T"] = lambda name: SimpleNamespace(r=lambda **kw: kw.get("hypothesis_text", "system"))
     feedback = fb.generate_feedback(exp, SimpleNamespace(hist=[]))
+    assert backend.build_messages_and_create_chat_completion.call_count == 1
     prompt = backend.build_messages_and_create_chat_completion.call_args.kwargs["user_prompt"]
-    assert "Retained funding hypothesis." in prompt
-    assert "Do not suggest a variant of a dropped proposal." in prompt
-    assert "Season" not in prompt.split(discussion.USER_DATA, 1)[0]
-    assert json.loads(prompt.split(discussion.USER_DATA + "\n")[1].splitlines()[0])["dropped"] == [
-        {"round": 0, "name": "Season"}
-    ]
 
     def render(trace: Any) -> tuple[dict[str, str], bool]:
         old, result = trace.hist[-1]
-        text = f"{old.hypothesis.hypothesis} {old.hypothesis.reason} {result.new_hypothesis}"
-        return {"hypothesis_and_feedback": text, "last_hypothesis_and_feedback": text}, True
+        text = " | ".join(
+            (
+                old.hypothesis.hypothesis,
+                old.hypothesis.reason,
+                result.observations,
+                result.hypothesis_evaluation,
+                result.new_hypothesis,
+                result.reason,
+            )
+        )
+        return {"hypothesis_and_feedback": text}, True
 
     loop.trace = SimpleNamespace(hist=[(exp, feedback)])
     gen = ns["AlphaFactorHypothesisGen"]()
@@ -1144,10 +1156,38 @@ def test_dropped_hypothesis_does_not_reach_model_history(
     converter = ProposalHistory(
         lambda h, t: render(t), 0, "panel", component="experiment", closed_families=lambda: set()
     )
-    for context in (gen.prepare_context(loop.trace)[0], converter("current", loop.trace)[0]):
-        for value in context.values():
-            before = value.split(discussion.USER_DATA, 1)[0]
-            assert "Retained funding hypothesis." in before
-            assert "Season" not in before and "dropped hypothesis" not in before
-    assert exp.hypothesis.hypothesis.startswith("Season")
-    assert feedback.new_hypothesis == "Season variant"
+    contexts = [gen.prepare_context(loop.trace)[0], converter("current", loop.trace)[0]]
+    return prompt, [context["hypothesis_and_feedback"] for context in contexts]
+
+
+def test_reflection_reaches_later_prompts_after_a_drop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    kept = reflection_prompts(
+        tmp_path / "kept",
+        monkeypatch,
+        choose(Funding={"action": "accept"}, Season={"action": "accept"}),
+    )
+    dropped = reflection_prompts(
+        tmp_path / "dropped",
+        monkeypatch,
+        choose(Funding={"action": "accept"}, Season={"action": "drop", "reason": "private"}),
+    )
+    # The feedback step reads the round's full hypothesis; only the drop block is added.
+    head = discussion.FEEDBACK_INSTRUCTION
+    assert dropped[0].split(head)[0] == kept[0].split(head)[0]
+    assert dropped[0].startswith("Season: seasonal hypothesis text. Funding: funding text.")
+    assert "Do not suggest a variant of a dropped proposal." in dropped[0]
+    assert json.loads(dropped[0].split(discussion.USER_DATA + "\n")[1].splitlines()[0])[
+        "dropped"
+    ] == [{"round": 0, "name": "Season"}]
+    # Later proposer and experiment prompts carry the same reflection, byte for byte.
+    reflection = (
+        "Season: seasonal hypothesis text. Funding: funding text. | Season and Funding reason. | "
+        "Funding ranked coins weakly.\n | Season adds little. | Try a Season variant. | "
+        "The full reflection."
+    )
+    for with_drop, without_drop in zip(dropped[1], kept[1], strict=True):
+        assert with_drop.startswith(reflection) and without_drop.startswith(reflection)
+        cut = discussion.DISCUSSION_INSTRUCTION
+        assert with_drop.split(cut)[0] == without_drop.split(cut)[0]

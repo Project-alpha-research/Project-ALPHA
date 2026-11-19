@@ -150,7 +150,7 @@ Each step needs the owner's approval before the next starts.
 Any recommendation to shelve, delete or cut the scope of a part must first cite that part's
 component file (its "Why it exists" and "Never" sections) and the
 [owner decisions log](owner-decisions.md) (volumes [2](owner-decisions-2.md), [3](owner-decisions-3.md),
-[4](owner-decisions-4.md) and [5](owner-decisions-5.md)). If the two disagree with the recommendation, say so and ask
+[4](owner-decisions-4.md), [5](owner-decisions-5.md) and [6](owner-decisions-6.md)). If the two disagree with the recommendation, say so and ask
 the owner; do not decide. A part being uninstalled, skipped in tests or unfinished is a task to finish, not a
 reason to shelve it. Kronos, the four Monte Carlos, lookalike search and the chart-pattern code are RD-Agent's
 tools: never slimming targets ([owner, 2026-11-18][tools-entry]).

@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: 5ce96aafd26aa7fb
+verified: 4ecc1aea1e257abe
 ---
 
 # RD-Agent worker invariants
@@ -126,7 +126,7 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   ledger reply --as stand-in`;
   the owner rule is the [stand-in entry](../project/owner-decisions-5.md#2026-11-18-stand-in-user-while-ideas-are-throwaway-tests))
   exchange JSON with the CLI in `discussion.py` after the family guard. Each proposer and re-ask reads choices from this run's decisions.
-  Feedback gets drop names and built hypotheses. The worker records revision notes, re-ask costs and times from each reply. Tests: `test_rdagent_discussion*`.
+  Reflections pass on in full, plus drop names. The worker records revision notes, re-ask costs and times from each reply. Tests: `test_rdagent_discussion*`.
 - The scenario checks the prepare receipt or HDF columns once. Proposal context, family closure and feedback share one parsed ledger per round, refreshed when
   size or modification time changes. Tests: `test_rdagent_read_once.py`.
 - The evaluator appends shortlist and lineage diagnostics; the worker preserves that record. Policy and regression convention:

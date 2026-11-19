@@ -9,7 +9,7 @@ verified: 9def06fde73f407c
 
 Continues the [owner decisions log](owner-decisions.md), [volume 2](owner-decisions-2.md),
 [volume 3](owner-decisions-3.md) and [volume 4](owner-decisions-4.md); the rules for entries are in
-the first. New entries are appended at the end of this file. Every entry below was said on
+the first. This volume is full: new entries go in [volume 6](owner-decisions-6.md). Every entry below was said on
 2026-11-18 and written down the same day; several repeat or extend a point in volume 4 so that the
 part that owns it can link to one clear entry.
 

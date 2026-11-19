@@ -94,7 +94,7 @@ other files link to it.
 - Every ADR file is linked from the index table in `docs/adr/README.md`, its one listing. Enforced by
   `tests/unit/test_repo_awareness_drift.py` through `scripts/harness_awareness.py::adr_drift`.
 - When the owner says something directional, a decision entry (date, decision, reason, what it changes) lands
-  in [the newest decisions volume](../project/owner-decisions-5.md) in the same pull request as the work it
+  in [the newest decisions volume](../project/owner-decisions-6.md) in the same pull request as the work it
   changes, or in a documentation pull request the same day; an idea considered but not decided goes in
   [ideas and things considered](../project/ideas-and-considered.md).
 

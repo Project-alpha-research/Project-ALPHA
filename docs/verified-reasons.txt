@@ -26,10 +26,10 @@ docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/rdagent.md
-  verified c813d3b1258247e2 on 2026-11-19: Re-read after merging main's split: discussion still records who selected ideas, feedback treats a drop as a choice, only tested ideas count
+  verified 4ecc1aea1e257abe on 2026-11-19: Re-read after merging main: the discussion line says reflections pass on in full; boundaries, caps and counting unchanged
 
 docs/reference/invariants/workers.md
-  verified f51c0836aedfde0e on 2026-11-19: worker README gained notes moved from the project page; the shared worker rules are unchanged
+  verified 93a1a6a1a66f426c on 2026-11-19: Re-read after merging main: restoring the full reflection in discussion prompts changes no worker boundary
 
 docs/reference/model-routing.md
   verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
@@ -65,7 +65,7 @@ docs/reference/project/components/qlib.md
   verified c8d6e8f9164c213b on 2026-11-18: the document it names (workers/qlib/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
 docs/reference/project/components/rd-agent.md
-  verified bffc795bed285109 on 2026-11-19: Re-read after the worker CONTEXT line was shortened; the page text still holds
+  verified e90f700e6a3bf954 on 2026-11-19: Re-read after merging main: page text holds; the discussion detail moved to the worker README, which now says the reflection passes on in full
 
 docs/reference/project/components/strategies-and-signals.md
   verified 8b6a4adc279bb86c on 2026-11-18: the routing files it names have the same text as when PR 271 last edited this page; the fingerprint now counts them

@@ -9,6 +9,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.nightly_status import last_night_line
 from alpha_cli.spine import idea_card
 from alpha_cli.spine.stores import _stores
 from alpha_core.config import AlphaSettings
@@ -160,6 +161,7 @@ def collect(home: Path) -> dict[str, Any]:
         )
     notes.append("Decisions waiting are not shown: no local status data is read.")
     return {
+        "last_night": last_night_line(home),
         "stores": stores,
         "recent_trials": _trial_facts(home),
         "waiting": _waiting_facts(home),
@@ -170,7 +172,8 @@ def collect(home: Path) -> dict[str, Any]:
 
 
 def _text(facts: dict[str, Any]) -> str:
-    lines = ["What is here"]
+    lines = [facts["last_night"]] if facts["last_night"] else []
+    lines.append("What is here")
     if not facts["stores"]:
         lines.append("  " + facts["notes"][1])
     for s in facts["stores"]:

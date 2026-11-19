@@ -43,6 +43,7 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("strategy-candidate", "alpha_cli.strategy_candidate_cmds", "strategy_candidate_app"),
     ("labels", "alpha_cli.labels_cmds", "labels_app"),
     ("idea", "alpha_cli.idea_cmds", "idea_app"),
+    ("nightly", "alpha_cli.nightly_cmds", "nightly_app"),
 )
 COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("diagnose", "alpha_cli.results_cmds", "diagnose_run"),

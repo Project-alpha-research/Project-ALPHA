@@ -121,6 +121,9 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
     if root == "rdagent":
         # `run` starts a paid loop; only the read-only `status` is safe from the launcher.
         return "safe" if len(argv) > 1 and argv[1] == "status" else "owner_only"
+    if root == "nightly":
+        # `run` may start the paid RD-Agent loop when its config names one, so it is owner-only.
+        return "safe" if len(argv) > 1 and argv[1] == "status" else "owner_only"
     if root == "context":
         return (
             "safe"

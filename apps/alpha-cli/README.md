@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 43118cbe7314b788
+verified: 77d15d75882d1b86
 ---
 
 # alpha-cli: code map and change loop
@@ -25,7 +25,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Rule tests, tools, setups | `{test,results,tool,partner,setup}_cmds`, `spine/`, `toolbox/` | `test_{spine,setup,toolbox}_*`, `test_contact_*`,
 `test_look*` |
 | Front door | `next_cmds` (read-only; reuses `spine/stores`, `spine/trial_reader`, `rdagent_discussion`) | `test_next_cmd`, `smoke/test_next_smoke` |
-| Idea cards | `idea_cmds`, `spine/idea_card` (cards under `<home>/ideas/`; the spec link is in no identity) | `test_idea_card` |
+| Nightly real run | `nightly_*` (6: `cmds`, `config`, `run`, `steps`, `record`, `status`; runs real commands in child processes) | `test_nightly`, `smoke/test_nightly_smoke` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
 `test_suite_*` |
 | Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |

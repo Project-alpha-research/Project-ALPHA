@@ -22,5 +22,5 @@ def test_next_on_an_empty_home(tmp_path: Path) -> None:
     )
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
-    assert sorted(report) == ["ideas", "notes", "paths", "recent_trials", "stores", "waiting"]
+    assert sorted(report) == ["ideas", "last_night", "notes", "paths", "recent_trials", "stores", "waiting"]
     assert report["stores"] == [] and not (tmp_path / "home").exists()

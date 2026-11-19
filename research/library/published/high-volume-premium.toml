@@ -1,5 +1,6 @@
 id = "high-volume-premium"
 name = "High-volume return premium"
+tier = "checked"
 year_published = 2001
 market = "us-equities"
 idea = "Stocks that trade at unusually high volume for a day or a week tend to earn more in the following month."

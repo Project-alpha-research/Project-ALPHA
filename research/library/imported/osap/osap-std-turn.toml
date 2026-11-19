@@ -1,0 +1,31 @@
+id = "osap-std-turn"
+name = "std_turn"
+year_published = 2001
+market = "us-equities"
+idea = "Published signal: std_turn (liquidity)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["trading volume and liquidity"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Chordia, Subra, Anshuman"
+year = 2001
+title = "not recorded in the source table"
+venue = "JFE"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "std_turn"
+acronym = "TurnovVol"
+category = "liquidity"
+data_category = "Trading"
+predicted_sign = -1
+sample_start = 1966
+sample_end = 1995

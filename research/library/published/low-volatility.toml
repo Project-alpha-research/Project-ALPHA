@@ -1,5 +1,6 @@
 id = "low-volatility"
 name = "Low volatility"
+tier = "checked"
 year_published = 2011
 market = "us-equities"
 idea = "Calmer stocks have tended to earn as much as or more than wild ones, so a basket of calm stocks looks better per unit of risk."

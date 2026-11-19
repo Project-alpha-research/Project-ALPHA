@@ -58,7 +58,7 @@ def test_every_public_record_passes_the_schema() -> None:
         record = library.load_record(path)
         assert record.id == path.stem
         assert record.source.url.startswith("https://")
-        assert 1960 <= record.year_published <= 2026
+        assert record.year_published is not None and 1960 <= record.year_published <= 2026
         assert len(record.idea) <= 300 and len(record.mechanism_claimed) <= 500
 
 

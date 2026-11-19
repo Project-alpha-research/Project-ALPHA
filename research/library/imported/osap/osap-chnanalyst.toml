@@ -1,0 +1,31 @@
+id = "osap-chnanalyst"
+name = "ChNAnalyst"
+year_published = 2008
+market = "us-equities"
+idea = "Published signal: ChNAnalyst (earnings event)"
+mechanism_claimed = "not stated here; see the paper"
+data_needed = ["analyst forecasts"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none recorded"
+can_test_today = "unknown - the data needed is listed; it was not checked against what is held."
+notes = "Facts imported from the Open Source Cross-Sectional Asset Pricing signal table, release 2026.10."
+tier = "imported"
+
+[source]
+authors = "Scherbina"
+year = 2008
+title = "not recorded in the source table"
+venue = "ROF"
+url = "https://openassetpricing.com/SignalDoc-Browser.html"
+
+[imported]
+project = "Open Source Cross-Sectional Asset Pricing"
+release = "2026.10"
+source_id = "ChNAnalyst"
+acronym = "ChNAnalyst"
+category = "earnings event"
+data_category = "Analyst"
+predicted_sign = -1
+sample_start = 1982
+sample_end = 2005

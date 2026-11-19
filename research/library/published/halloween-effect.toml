@@ -1,5 +1,6 @@
 id = "halloween-effect"
 name = "Halloween effect (sell in May)"
+tier = "checked"
 year_published = 2002
 market = "multi"
 idea = "Stock returns have tended to be higher from November to April than from May to October, in many countries."

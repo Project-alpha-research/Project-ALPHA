@@ -1,5 +1,6 @@
 id = "cross-sectional-momentum"
 name = "Cross-sectional momentum"
+tier = "checked"
 year_published = 1993
 market = "us-equities"
 idea = "Stocks that did best over the past three to twelve months tend to beat the worst ones over the next few months."

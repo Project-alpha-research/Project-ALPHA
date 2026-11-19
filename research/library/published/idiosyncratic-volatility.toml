@@ -1,5 +1,6 @@
 id = "idiosyncratic-volatility"
 name = "Idiosyncratic volatility"
+tier = "checked"
 year_published = 2006
 market = "us-equities"
 idea = "Stocks whose own price swings are large, apart from the market, have tended to earn less afterwards."

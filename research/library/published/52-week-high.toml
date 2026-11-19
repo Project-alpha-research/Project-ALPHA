@@ -1,5 +1,6 @@
 id = "52-week-high"
 name = "52-week high"
+tier = "checked"
 year_published = 2004
 market = "us-equities"
 idea = "Stocks trading close to their highest price of the past year have tended to beat stocks far below it."

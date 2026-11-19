@@ -1,5 +1,6 @@
 id = "turn-of-the-month"
 name = "Turn of the month"
+tier = "checked"
 year_published = 1987
 market = "us-equities"
 idea = "Stock returns have tended to be higher around the turn of the calendar month than in the middle of it."

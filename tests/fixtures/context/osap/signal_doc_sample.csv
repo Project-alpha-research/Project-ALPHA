@@ -1,0 +1,6 @@
+Acronym,Cat.Signal,Predictability in OP,Signal Rep Quality,Authors,Year,LongDescription,Journal,Cat.Form,Cat.Data,Cat.Economic,SampleStartYear,SampleEndYear,Acronym2,Evidence Summary,Key Table in OP,Test in OP,Sign,Return,T-Stat,Stock Weight,LS Quantile,Quantile Filter,Portfolio Period,Start Month,Filter,Notes,Detailed Definition,GScholarCites202509
+SynthAccrual,Predictor,1_clear,,Doe,1999,Synthetic SynthAccrual,JF,continuous,Accounting,accruals,1970,1995,SynAcc,,,,-1.0,0.5,4.0,EW,,,,,,,"Synthetic text, with a comma, that must never be copied.",10.0
+SynthMom,Predictor,1_clear,,Roe and Poe,2005,Synthetic SynthMom,JFE,continuous,Price,momentum,1980,2000,SynMom,,,,1.0,0.5,4.0,EW,,,,,,,"Synthetic text, with a comma, that must never be copied.",10.0
+SynthOption,Predictor,1_clear,,Smith,2010,Synthetic SynthOption,,continuous,Options,volatility,1996,2008,SynOpt,,,,1.0,0.5,4.0,EW,,,,,,,"Synthetic text, with a comma, that must never be copied.",10.0
+SynthPlacebo,Placebo,1_clear,,Lee,2001,Synthetic SynthPlacebo,WP,continuous,Price,other,1990,2000,SynPla,,,,1.0,0.5,4.0,EW,,,,,,,"Synthetic text, with a comma, that must never be copied.",10.0
+SynthDropped,Drop,1_clear,,Kim,2002,Synthetic SynthDropped,WP,continuous,Price,other,1990,2000,SynDro,,,,,0.5,4.0,EW,,,,,,,"Synthetic text, with a comma, that must never be copied.",10.0

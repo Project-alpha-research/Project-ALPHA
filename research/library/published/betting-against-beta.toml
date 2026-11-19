@@ -1,5 +1,6 @@
 id = "betting-against-beta"
 name = "Betting against beta"
+tier = "checked"
 year_published = 2014
 market = "us-equities"
 idea = "Stocks with low market beta have tended to earn more per unit of risk than high-beta stocks."

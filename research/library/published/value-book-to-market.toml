@@ -1,5 +1,6 @@
 id = "value-book-to-market"
 name = "Value (book to market)"
+tier = "checked"
 year_published = 1992
 market = "us-equities"
 idea = "Stocks that are cheap against their book value, and small stocks, have tended to earn more than expensive ones."

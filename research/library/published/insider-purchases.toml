@@ -1,5 +1,6 @@
 id = "insider-purchases"
 name = "Insider purchases"
+tier = "checked"
 year_published = 2001
 market = "us-equities"
 idea = "Stocks that company insiders buy in the open market have tended to do better than stocks they sell."

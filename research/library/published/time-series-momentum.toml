@@ -1,5 +1,6 @@
 id = "time-series-momentum"
 name = "Time-series momentum"
+tier = "checked"
 year_published = 2012
 market = "multi"
 idea = "An asset that rose over the past year tends to keep rising next month, and one that fell tends to keep falling, judged against its own past."

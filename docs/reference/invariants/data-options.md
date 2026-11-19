@@ -79,6 +79,7 @@ The held-back period (`alpha_core.reserve.RESERVED_DAY`, no date literal here) w
 
 Two pure-math modules, no data reads and no clock: `pricing.py` (models and greeks) and `implied.py` (day count, mid, solver).
 They live inside `alpha_data.options` so the solver can fill the row's `computed` slot. The sources are in the module docstrings.
+
 - Models: Black-Scholes-Merton (Black and Scholes 1973, the call formula; Merton 1973) for a spot with a continuous dividend yield, and
   Black-76 (Black 1976) for a forward. European exercise only. One constant volatility, constant rate and yield.
 - Inputs are explicit: spot or forward, strike, years, rate and dividend yield (None for a forward). There is no default for
@@ -97,6 +98,8 @@ They live inside `alpha_data.options` so the solver can fill the row's `computed
   provider); vega per vol point = ALPHA vega / 100; rho per 1% = ALPHA rho / 100. Never compare unconverted numbers.
 - Edges: pricing needs years > 0 and vol > 0, and vol * sqrt(years) must not be zero in floating point (a named error).
   As vol or time falls to zero the price tends to the discounted intrinsic on the forward, max(phi D (F - K), 0).
+## Mid price and implied-volatility solver
+
 - Mid price: `mid_price(quote)` is (bid + ask) / 2. A crossed, zero-width or zero-bid quote has no mid and returns its label
   (`crossed`, `zero_width`, `zero_bid`). A zero bid is never averaged; `solve_row` returns `no_mid` for it.
 - Solver: safeguarded Newton with a bracket (bisection fallback) on volatility in [0.0001, 10.0]. A true volatility outside
@@ -118,7 +121,8 @@ They live inside `alpha_data.options` so the solver can fill the row's `computed
   futures options only. The specification for the next build is on the [component page](../project/components/options-data.md).
 
 Known-answer tests: Hull's published prices and greeks, Haug's Black-76 value, put-call parity to 1e-10, every greek against a
-central finite difference, the conventions record, the model-tag format, no mid for a zero bid, round trip of price to volatility (error 1.6e-14 where confidence is normal), the zero and large
+central finite difference, the conventions record, the model-tag format, no mid for a zero bid, round trip of price to
+volatility (error 1.6e-14 where confidence is normal), the zero and large
 volatility limits, monotonicity, and Black-76 equal to BSM when the forward is built from the same inputs.
 
 ## Synthetic fixture

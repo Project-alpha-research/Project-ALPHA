@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_options_implied.py
   - tests/unit/test_options_priced_fixture.py
   - tests/unit/test_options_conventions.py
-verified: 1d6463771c0fa283
+verified: 3071cf6ff0bc3133
 ---
 
 # Options data
@@ -60,7 +60,8 @@ Not built:
   - Step count: 500 steps by default, stated in the model tag; the price is the average of N and N + 1 steps to damp the
     odd-even oscillation.
   - Tests: with no early exercise (a call with q = 0 and no dividends) the tree matches Black-Scholes-Merton within a
-    tolerance the test justifies from the 1/steps error order, and the error falls as steps grow; the American put matches published values (Hull's American put example);
+    tolerance the test justifies from the 1/steps error order, and the error falls as steps grow; the American put
+    matches published values (Hull's American put example);
     the early-exercise premium (American minus European) is never below zero; the implied-volatility root on the tree price
     stays monotone and bracketed.
 - Derived series, health card rows.

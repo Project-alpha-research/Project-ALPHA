@@ -104,7 +104,7 @@ docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/options-data.md
-  verified 1d6463771c0fa283 on 2026-11-19: line wrapping in the fixture docstring and a test comment; the documented rules are unchanged
+  verified 3071cf6ff0bc3133 on 2026-11-19: the invariants page only gained a heading split; this page's text is unchanged and still correct
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it

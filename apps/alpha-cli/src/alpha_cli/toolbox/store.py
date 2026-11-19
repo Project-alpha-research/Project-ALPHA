@@ -8,7 +8,7 @@ import json
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -79,6 +79,7 @@ def publish(
     labels: list[str],
     settings: list[dict[str, Any]],
     elapsed: float,
+    written_at: datetime,
 ) -> dict[str, Any]:
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -102,7 +103,7 @@ def publish(
         "elapsed_seconds": elapsed,
         "run_id": target.run_id,
         "test_id": target.manifest["spine"].get("test_id"),
-        "recorded_at": datetime.now(UTC).isoformat(),
+        "recorded_at": written_at.isoformat(),
         "labels": labels,
         "basis": result.basis,
         "values": result.values,

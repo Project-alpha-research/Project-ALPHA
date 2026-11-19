@@ -10,6 +10,7 @@ from string import Formatter
 from typing import TYPE_CHECKING, Any, Literal
 
 from alpha_cli.toolbox.gates import GATES
+from alpha_cli.toolbox.situations import Situation
 
 if TYPE_CHECKING:
     from numpy.random import Generator
@@ -87,6 +88,8 @@ class ToolSpec:
     caveats: tuple[str, ...]
     reference: str
     compute: Callable[[Inputs, dict[str, Any], Generator | None], Result] | None
+    answers: tuple[str, ...] = ()
+    situations: tuple[Situation, ...] = ()
     version: int = 1
     kind: Literal["diagnostic", "test", "control", "gate"] = "diagnostic"
     family: str = "market"

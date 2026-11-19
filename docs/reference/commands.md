@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-282 commands in 40 groups. Options marked (required) are
+286 commands in 40 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -468,11 +468,15 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 Discover and run investigation tools.
 
+- `alpha tool declare <RUN_ID>` — Record which checks you chose before seeing their results. Options: `--set`, `--tools`, `--why`, `--json`
 - `alpha tool describe <TOOL_ID>` — Read a tool's question, inputs, parameters, outputs and caveats. Options: `--json`
+- `alpha tool find <WORDS>` — Find checks from plain words: what each answers, its cost and the command to run it. Options: `--json`
 - `alpha tool history <TARGET>` — List successful, failed and unfinished attempts in ledger order. Options: `--json`
 - `alpha tool list` — Find tools by target, question, family or kind. Options: `--for`, `--search`, `--family`, `--kind`, `--json`
+- `alpha tool results <RUN_ID>` — List the stored check results of a run, each marked declared or exploratory. Options: `--json`
 - `alpha tool run <TOOL_ID> <TARGET>` — Run one tool with repeatable key=value parameters. Options: `--param`, `--seed`, `--json`
 - `alpha tool run-set <NAME> <TARGET>` — Run each member of a predeclared set and report every outcome. Options: `--json`
+- `alpha tool situations` — List each situation with its checks, cheapest first. Options: `--json`, `--markdown`
 
 ## alpha unusual
 

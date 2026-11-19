@@ -57,6 +57,11 @@ def downside_ratios(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
 
 DOWNSIDE_RATIOS = ToolSpec(
     id="performance.downside_ratios",
+    answers=(
+        "How large is the return relative to the downside risk?",
+        "How deep was the drawdown compared with the return?",
+    ),
+    situations=("risk-adjusted", "drawdown"),
     family="performance",
     question="How large was the return relative to downside risk?",
     needs=("stored_equity",),
@@ -142,6 +147,8 @@ def side_contribution(inputs: Inputs, params: dict[str, Any], rng: Generator | N
 
 SIDE_CONTRIBUTION = ToolSpec(
     id="trades.side_contribution",
+    answers=("Did the long or the short trades earn the profit?",),
+    situations=("long-vs-short",),
     family="trades",
     question="How much did long and short trades each contribute?",
     needs=("run_trades",),
@@ -217,6 +224,11 @@ def concentration(inputs: Inputs, params: dict[str, Any], rng: Generator | None)
 
 CONCENTRATION = ToolSpec(
     id="trades.concentration",
+    answers=(
+        "Does the profit come from a handful of trades?",
+        "What is left without the best trades?",
+    ),
+    situations=("lucky-trades", "few-trades", "looks-too-good"),
     family="trades",
     question="How much after-cost profit remains without the best trades?",
     needs=("run_trades",),

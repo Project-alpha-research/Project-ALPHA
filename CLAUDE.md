@@ -23,7 +23,8 @@ decisions. Python 3.12 with uv; there is no hosting, no distribution and no live
   [capital](docs/reference/invariants/research-integrity.md#no-live-capital)
 - UI, MCP, model output, account state and passing checks confer no authority; infer no approvals.
   [Rule](docs/reference/invariants/research-integrity.md#owner-authority)
-- Obey the layered import DAG (`uv run lint-imports`); web and MCP call `alpha_cli` as a subprocess.
+- Obey the layered import DAG (`uv run lint-imports`); web and MCP call `alpha_cli` as a subprocess,
+  except bounded read-only reads of stored files ([Setup Lab](docs/reference/invariants/web-api-reads.md#reads-and-writes)).
   [DAG](docs/reference/invariants/engineering.md#import-layers),
   [subprocess](docs/reference/invariants/engineering.md#subprocess-boundary)
 - Never weaken bias guards, oracles or the guarded `tests/holdout/` path to make a change pass.
@@ -37,16 +38,29 @@ decisions. Python 3.12 with uv; there is no hosting, no distribution and no live
 
 - One check: `uv run python scripts/gate.py check`.
 - Loop: branch → check → commit (`type(scope): summary`) → pull request → CI green → merge commit.
-  CI on the pull request is the merge gate ([ADR-0039](docs/adr/0039-ci-is-the-merge-gate.md)).
+  CI on the pull request is the merge gate; `ci-ok` is the one required check
+  ([ADR-0039](docs/adr/0039-ci-is-the-merge-gate.md)).
 - Text the owner reads (replies, reports, screen labels, pull-request summaries) follows Simplified
   Technical English (ASD-STE100) about 80% of the way: answer first; short sentences; one idea per
   sentence; one name for one thing; active voice; steps as numbered lists.
 
-## Start here
+## What to load
 
-Start at [`CONTEXT.md`](CONTEXT.md): it routes your task to one workspace, whose `CONTEXT.md`
-names exactly what to read (Claude Code also loads it when you open a file in that workspace).
-Why each part exists and what the owner decided: the [project layer](docs/reference/project/overview.md).
-Each fact has one home, listed in `CONTEXT.md`: update that document, never copy the fact.
-`uv run python scripts/fs.py orient` lists the areas, `fs.py search "words"` finds documents,
+Start at [`CONTEXT.md`](CONTEXT.md). It routes the task to one workspace `CONTEXT.md`. Read that
+file's always rows, then only the rows your task matches. Stop when you have what you need; then
+open the code. Each fact has one home ([list](docs/README.md#one-home-per-fact)): update it, never copy it.
+
+| Task | Start at | Do NOT load |
+|---|---|---|
+| Change package, worker or app code | that workspace's `CONTEXT.md` | other workspaces; whole rule pages |
+| RD-Agent loop or judge | `workers/rdagent/CONTEXT.md` | `CHANGE-NOTES.md`; other workers |
+| An `alpha` command or toolbox check | `apps/alpha-cli/CONTEXT.md` | `cli-*` pages your rows do not name |
+| A Workstation screen | `apps/alpha-web/CONTEXT.md` | backend rule pages for a display-only change |
+| Tests or guards | `tests/CONTEXT.md` | — |
+| Docs or this file system | `docs/CONTEXT.md` | `docs/archive/`; `docs/work/` of other tasks |
+| What a part is for; what the owner decided | [project layer](docs/reference/project/overview.md) | rule pages; code |
+| Test a trading idea | `research/CONTEXT.md` | code |
+| Build, review or land a change | `workflow/CONTEXT.md` | stages you are not in |
+
+Tools: `uv run python scripts/fs.py orient` lists the areas, `fs.py search "words"` finds documents,
 `fs.py stale` lists documents whose sources changed since they were verified.

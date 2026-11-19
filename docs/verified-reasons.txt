@@ -31,8 +31,11 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/workers.md
   verified 93a1a6a1a66f426c on 2026-11-19: Re-read after merging main: restoring the full reflection in discussion prompts changes no worker boundary
 
+docs/reference/model-routing-codex.md
+  verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
+
 docs/reference/model-routing.md
-  verified 6720541c8834fa7f on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it

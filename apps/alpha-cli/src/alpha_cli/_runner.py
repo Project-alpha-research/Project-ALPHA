@@ -19,7 +19,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -258,10 +258,13 @@ def load_bars(
             # is stamped 00:00 UTC on its session date but is known only at the session close.
             from alpha_data.sessions import bar_known_at
 
+            # Only a bar of the last days can still be open; older bars ask no calendar.
+            recent = as_of - timedelta(days=7)
             bars = [
                 bar
                 for bar in bars
-                if bar_known_at(bar.ts, timeframe=stored, calendar=calendar) <= as_of
+                if bar.ts < recent
+                or bar_known_at(bar.ts, timeframe=stored, calendar=calendar) <= as_of
             ]
     else:
         reader = PointInTimeReader(store, actions, timeframe=stored, calendar=calendar)

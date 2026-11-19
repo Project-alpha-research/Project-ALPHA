@@ -1,0 +1,19 @@
+id = "short-term-reversal"
+name = "Short-term reversal"
+year_published = 1990
+market = "us-equities"
+idea = "Stocks that fell over the past month tend to bounce back the next month, and last month's winners tend to give back some."
+mechanism_claimed = "The common reading is that it pays for supplying liquidity to sellers and buyers who need to trade fast. Prices then drift back."
+data_needed = ["daily prices for a wide stock universe", "volume"]
+direction = "long-short"
+holding_clock = "days to weeks"
+decay_evidence = "Avramov, Chordia and Goyal (2006, Journal of Finance 61(5), doi 10.1111/j.1540-6261.2006.01060.x) find it is strongest in illiquid, high-turnover stocks, where trading costs are high."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = "Costs matter more here than for slower ideas."
+
+[source]
+authors = "Jegadeesh"
+year = 1990
+title = "Evidence of predictable behavior of security returns"
+venue = "Journal of Finance 45(3)"
+url = "https://doi.org/10.1111/j.1540-6261.1990.tb05110.x"

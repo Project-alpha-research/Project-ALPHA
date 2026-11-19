@@ -1,0 +1,19 @@
+id = "tactical-trend-10-month"
+name = "Ten-month moving-average timing"
+year_published = 2007
+market = "multi"
+idea = "Hold an asset class only while its price is above its ten-month average, otherwise hold cash."
+mechanism_claimed = "The author says it cuts deep losses by stepping aside in long downtrends. It is a practitioner paper, not a theory paper."
+data_needed = ["monthly prices for a few asset classes"]
+direction = "long"
+holding_clock = "months"
+decay_evidence = "none found; a short practitioner paper that later work seldom tests under costs."
+can_test_today = "partly - ETF daily bars can stand in for the asset classes."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Faber"
+year = 2007
+title = "A quantitative approach to tactical asset allocation"
+venue = "Journal of Wealth Management 9(4)"
+url = "https://doi.org/10.3905/jwm.2007.674809"

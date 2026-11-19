@@ -1,0 +1,19 @@
+id = "industry-momentum"
+name = "Industry momentum"
+year_published = 1999
+market = "us-equities"
+idea = "Industries that did well over the past months tend to keep doing well, and this explains much of stock momentum."
+mechanism_claimed = "The authors find the effect after removing industry moves is weaker. They offer slow spread of industry news as one reading."
+data_needed = ["daily prices with an industry label for each stock"]
+direction = "long-short"
+holding_clock = "weeks to months"
+decay_evidence = "none found for this exact rule; McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "partly - daily bars are held; industry labels may need to be added by the owner."
+notes = ""
+
+[source]
+authors = "Moskowitz and Grinblatt"
+year = 1999
+title = "Do industries explain momentum?"
+venue = "Journal of Finance 54(4)"
+url = "https://doi.org/10.1111/0022-1082.00146"

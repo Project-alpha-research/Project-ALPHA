@@ -168,6 +168,11 @@ def tested_ids(home: Path) -> set[str]:
     return {row.get("card", "") for row in _links(home)}
 
 
+def linked_tests(home: Path, card: str) -> int:
+    """How many stored test links name this card (one line per linked run)."""
+    return sum(1 for row in _links(home) if row.get("card") == card)
+
+
 def link_fields(home: Path, card: str) -> dict[str, Any]:
     """Check a spec's card id. Returns what the run's manifest stores about the card."""
     return {"idea_card": resolve(home, card)} if card else {}

@@ -1,0 +1,19 @@
+id = "max-daily-return"
+name = "Maximum daily return (lottery stocks)"
+year_published = 2011
+market = "us-equities"
+idea = "Stocks with one very large daily gain in the past month have tended to earn less in the next month."
+mechanism_claimed = "The authors say some investors pay too much for lottery-like stocks with a chance of a big jump."
+data_needed = ["daily prices for a wide stock universe"]
+direction = "long-short"
+holding_clock = "weeks to months"
+decay_evidence = "McLean and Pontiff (2016, Journal of Finance 71(1), doi 10.1111/jofi.12365) report that, across many published stock characteristics, average returns were lower after publication than in the original sample."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Bali, Cakici and Whitelaw"
+year = 2011
+title = "Maxing out: stocks as lotteries and the cross-section of expected returns"
+venue = "Journal of Financial Economics 99(2)"
+url = "https://doi.org/10.1016/j.jfineco.2010.08.014"

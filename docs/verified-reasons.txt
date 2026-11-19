@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified ba050a938743e483 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 apps/alpha-cli/README.md
   verified 77d15d75882d1b86 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 3b10ad54b5110d4c on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 apps/alpha-web/README.md
-  verified f79740cfc20f8453 on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 3b10ad54b5110d4c on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-results-check.md
   verified 8aa10ddaff88d166 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 6e02ccc60439ffca on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified c0dca89e3d8454f8 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
@@ -59,7 +59,7 @@ docs/reference/invariants/web-api.md
   verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 25f6d8651e3fb73c on 2026-11-19: merge of main (nightly run) into the idea-card branch; both features' text kept, no claim changed
+  verified 81ceb4573105670d on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 docs/reference/invariants/web-run-detail.md
   verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
@@ -107,7 +107,7 @@ docs/reference/project/components/rd-agent.md
   verified b24624ae57cd5a1c on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
-  verified 303d382d54a8bde4 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
   verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
@@ -119,7 +119,7 @@ docs/reference/project/components/toolbox.md
   verified 7fe49bd4ab2f725f on 2026-11-19: Re-read after merging main (#306 Monte Carlo toolbox checks) into the reserve hold-back; both sides kept; text still correct.
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 86ac49398c19e2f4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified f2bc2dd18cb4c215 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -170,7 +170,7 @@ research/CONTEXT.md
   verified 6175c829bcd093e4 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
 
 research/PLAYBOOK.md
-  verified def0cf0330cd3ef8 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 618467da96ef50fc on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/README.md
   verified 4af3cd07ee9b898b on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
@@ -182,16 +182,16 @@ research/tools/README.md
   verified cc9a39abed03f17f on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
 
 research/tools/benchmark-and-drawdowns.md
-  verified fe5f62886ee4aa48 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified d53227fa17d63e9e on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/tools/charts.md
   verified 18edee030ad2bf0a on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 032a9e159daf0f09 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 00108826e1d9c320 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/tools/diagnose-and-audit.md
-  verified c12ce447e2f51ca1 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 1e65e43c46dd8b01 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/tools/inverted-signal-control.md
   verified 0122e8d3870a446d on 2026-11-18: Re-read after merging main: the body text combines this branch's period and dividend wording with main's break-even wording without conflict; both tools now read either stored buy-and-hold kind, and nothing in this text names one
@@ -212,13 +212,13 @@ research/tools/results-and-cite.md
   verified 6c38aa97437364f1 on 2026-11-19: Change only adds a reading field to alpha results show tools entries and a read-only web route; this document's text stays correct.
 
 research/tools/rule-test.md
-  verified d166820bb1f88344 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified eed54676edae8a7a on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/tools/run-level-checks.md
   verified d0e1833405780507 on 2026-11-19: Merge of the rule-test numbers change: its buy-and-hold kinds touch only the benchmark tools; the six new entries read only scored equity and trades; texts from both sides re-read and kept
 
 research/tools/sensitivity.md
-  verified 032a9e159daf0f09 on 2026-11-19: merge of main into the idea-card branch; main's text kept, the idea-card link adds no identity, output or command here
+  verified 00108826e1d9c320 on 2026-11-19: the idea-card reader gained one counting function and a library module and a menu line were added; this page's claims are unchanged
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-281 commands in 40 groups. Options marked (required) are
+284 commands in 41 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -187,6 +187,14 @@ Read all recorded trials through one unchanged-ledger view.
 - `alpha ledger reply` — Answer RD-Agent's proposal. Options: `--run-dir (required)`, `--as (required)`, `--accept`, `--drop`, `--revise`, `--idea`, `--note`
 - `alpha ledger show <TRIAL_ID>` — Show a record, its raw row and a fresh evidence hash check. Options: `--rdagent-ledger`, `--json`
 - `alpha ledger summary` — Summarise mapped trials, unknown rows and missing sources. Options: `--rdagent-ledger`, `--json`
+
+## alpha library
+
+Browse published ideas and turn one into an idea card.
+
+- `alpha library card <RECORD_ID>` — Make an idea card from a record. Options: `--json`
+- `alpha library list` — List the records. Options: `--market`, `--json`
+- `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike
 

@@ -1,0 +1,19 @@
+id = "turn-of-the-month"
+name = "Turn of the month"
+year_published = 1987
+market = "us-equities"
+idea = "Stock returns have tended to be higher around the turn of the calendar month than in the middle of it."
+mechanism_claimed = "The paper reports the pattern. Later work points to month-end cash flows, but the paper gives no firm cause."
+data_needed = ["daily index or stock prices"]
+direction = "long"
+holding_clock = "days"
+decay_evidence = "Schwert (2003, Handbook of the Economics of Finance, vol 1B, doi 10.1016/s1574-0102(03)01024-0) reports that several calendar effects weakened after publication; whether this one did is a."
+can_test_today = "yes - daily index and stock bars are held. Holding is short, so costs matter."
+notes = "citation to check for decay of this exact effect."
+
+[source]
+authors = "Ariel"
+year = 1987
+title = "A monthly effect in stock returns"
+venue = "Journal of Financial Economics 18(1)"
+url = "https://doi.org/10.1016/0304-405x(87)90066-3"

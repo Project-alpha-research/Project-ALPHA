@@ -1,0 +1,19 @@
+id = "carry"
+name = "Carry"
+year_published = 2018
+market = "multi"
+idea = "Assets that pay more if the price stays the same, such as high-yield currencies, have tended to earn more than those that pay less."
+mechanism_claimed = "The authors say carry is pay for bearing risk that shows up in bad times, such as crashes. They show the pattern across asset classes."
+data_needed = ["futures prices or yields across asset classes"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "none found; the authors show losses in crises."
+can_test_today = "partly - crypto funding rates are held; currency and bond futures data are not."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Koijen, Moskowitz, Pedersen and Vrugt"
+year = 2018
+title = "Carry"
+venue = "Journal of Financial Economics 127(2)"
+url = "https://doi.org/10.1016/j.jfineco.2017.11.002"

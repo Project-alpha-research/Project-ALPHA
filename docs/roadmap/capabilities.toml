@@ -466,6 +466,29 @@ needs = []
 state = "Working"
 
 [[capability]]
+id = "idea-library"
+name = "Library of published ideas (alpha library)"
+what = "Browse a small starting map of well-known published ideas, written in our own words with the source, the claimed reason, later decay evidence and whether ALPHA can test it today, and turn one into an idea card. The owner's private notes are read from the data folder. It tests nothing."
+see_it = ["uv run alpha library list", "uv run alpha library show time-series-momentum", "uv run alpha library card short-term-reversal"]
+entry_points = [
+  "cli: alpha library list",
+  "cli: alpha library show",
+  "cli: alpha library card",
+]
+proof_synthetic = [
+  "tests/unit/test_library.py::test_every_public_record_passes_the_schema",
+  "tests/unit/test_library.py::test_an_unknown_key_fails_the_schema",
+  "tests/unit/test_library.py::test_the_private_overlay_is_read_and_marked",
+  "tests/unit/test_library.py::test_card_fills_the_card_and_writes_nothing_else",
+]
+proof_smoke = [
+  "tests/smoke/test_library_smoke.py::test_a_library_record_becomes_an_idea_card",
+]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Working"
+
+[[capability]]
 id = "nightly-run"
 name = "Nightly real run (alpha nightly)"
 what = "Prove each night that the rule path and the setup path still work on the data stored here, and say when it is ready: two clean full runs in a row."

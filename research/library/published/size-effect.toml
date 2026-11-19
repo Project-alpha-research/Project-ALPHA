@@ -1,0 +1,19 @@
+id = "size-effect"
+name = "Size effect"
+year_published = 1981
+market = "us-equities"
+idea = "Small companies have tended to earn more than large ones, after adjusting for market risk."
+mechanism_claimed = "The paper reports the pattern and offers no firm cause. Later work says small stocks are costly to trade and carry other risks."
+data_needed = ["daily prices and market value for a wide stock universe"]
+direction = "long-short"
+holding_clock = "months"
+decay_evidence = "Schwert (2003, Handbook of the Economics of Finance, vol 1B, doi 10.1016/s1574-0102(03)01024-0) reports that the size effect faded after it became well known."
+can_test_today = "partly - daily bars are held; market value needs shares outstanding, which may not be held."
+notes = ""
+
+[source]
+authors = "Banz"
+year = 1981
+title = "The relationship between return and market value of common stocks"
+venue = "Journal of Financial Economics 9(1)"
+url = "https://doi.org/10.1016/0304-405x(81)90018-0"

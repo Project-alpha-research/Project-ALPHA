@@ -1,0 +1,19 @@
+id = "insider-purchases"
+name = "Insider purchases"
+year_published = 2001
+market = "us-equities"
+idea = "Stocks that company insiders buy in the open market have tended to do better than stocks they sell."
+mechanism_claimed = "The authors say insiders know more about the firm. Purchases carry more signal than sales, which are often for personal reasons."
+data_needed = ["insider transaction filings with dates", "daily prices"]
+direction = "long"
+holding_clock = "months"
+decay_evidence = "none found Trades are public with a delay, so only the filing date may be used."
+can_test_today = "partly - the SEC filings reader has insider trades as filed; check its coverage and dates first."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Lakonishok and Lee"
+year = 2001
+title = "Are insider trades informative?"
+venue = "Review of Financial Studies 14(1)"
+url = "https://doi.org/10.1093/rfs/14.1.79"

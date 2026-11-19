@@ -1,0 +1,19 @@
+id = "high-volume-premium"
+name = "High-volume return premium"
+year_published = 2001
+market = "us-equities"
+idea = "Stocks that trade at unusually high volume for a day or a week tend to earn more in the following month."
+mechanism_claimed = "The authors say a volume jump draws attention, and more buyers then follow."
+data_needed = ["daily prices and volume for a wide stock universe"]
+direction = "long"
+holding_clock = "weeks"
+decay_evidence = "none found."
+can_test_today = "yes - daily bars for US stocks are held (Yahoo and Alpaca snapshots)."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Gervais, Kaniel and Mingelgrin"
+year = 2001
+title = "The high-volume return premium"
+venue = "Journal of Finance 56(3)"
+url = "https://doi.org/10.1111/0022-1082.00349"

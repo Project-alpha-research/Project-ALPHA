@@ -1,0 +1,19 @@
+id = "halloween-effect"
+name = "Halloween effect (sell in May)"
+year_published = 2002
+market = "multi"
+idea = "Stock returns have tended to be higher from November to April than from May to October, in many countries."
+mechanism_claimed = "The paper offers no firm cause. It looks at holidays and other ideas and finds none that explains it."
+data_needed = ["monthly or daily index prices for many countries"]
+direction = "long"
+holding_clock = "months"
+decay_evidence = "none found."
+can_test_today = "yes - index and ETF daily bars are held, but the history is one sample of few years."
+notes = "citation to check: later decay work on this exact idea."
+
+[source]
+authors = "Bouman and Jacobsen"
+year = 2002
+title = "The Halloween indicator, 'Sell in May and go away': another puzzle"
+venue = "American Economic Review 92(5)"
+url = "https://doi.org/10.1257/000282802762024683"

@@ -84,6 +84,13 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   card puts one plain sentence first, then the numbers, then a closed "How this check works" disclosure that holds the method and
   the long reading. No card is coloured good or bad. The one classification is in [command line readings](cli-rule-
   readings.md#report-cite-and-the-gates).
+- The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
+  grade as "retired".
+- Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).
+- `explain/bands.ts`, `explain/verdictStory.ts` and `util/verdict.ts` are no longer used by a screen. Their deletion is a separate step.
+
+## Gates check charts
+
 - Each Gates card also shows one small chart of that run's own recorded data, between the plain sentence and the numbers
   (`rundetail/walkForwardModel.ts`, `checkChartModel.ts`, `nullChartModel.ts`, `WalkForward.tsx`, `CheckCharts.tsx`, `NullChart.tsx`).
   The browser draws; it computes nothing. Walk-forward: the price carries the meaning. One shaded band per fold's tested period
@@ -107,10 +114,6 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   input reads "Chart not available: <what is not recorded>"; a read that fails or takes over 20 s reads as missing, never
   "Loading chart…" for ever. Each chart has an `aria-label` with the same facts. Covered by `walkForwardModel.test.ts`,
   `checkChartModel.test.ts`, `nullChartModel.test.ts`, `CheckCharts.test.tsx` and `e2e/check-charts.spec.ts`.
-- The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
-  grade as "retired".
-- Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).
-- `explain/bands.ts`, `explain/verdictStory.ts` and `util/verdict.ts` are no longer used by a screen. Their deletion is a separate step.
 
 ## Workstation recorded fields
 

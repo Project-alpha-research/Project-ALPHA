@@ -26,8 +26,8 @@ def followed_counts(home: Path) -> dict[str, Any] | None:
     """Counts of active follows by group, or None when nothing is followed."""
     try:
         facts = follow_today.build(home, CLOCK())
-    except (SpineError, JournalRefusal) as exc:
-        return {"active": None, "error": str(exc)}
+    except (SpineError, JournalRefusal):
+        return {"active": None}  # a count and nothing else: no journal text passes this door
     if not facts["followed"]:
         return None
     by = {g["key"]: g["count"] for g in facts["groups"]}

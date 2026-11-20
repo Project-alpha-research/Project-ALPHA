@@ -69,6 +69,8 @@ def _verify(
     ]
     step = new_step(f"N4.verify.{follow}", "N4", f"follow verify {follow}", tail)
     got = run_step(runner, step, tail, config.step_timeout, required=("ok", "entries", "head"))
+    if old is None:
+        step["note"] = "no earlier anchor: this night's count and head become the first"
     if got is not None and got.get("ok") is not True:
         broke = got.get("first_break") or {}
         mark(

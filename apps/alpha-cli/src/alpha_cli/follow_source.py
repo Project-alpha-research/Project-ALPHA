@@ -84,8 +84,24 @@ def setup_find_source(home: Path, find_id: str) -> Source:
     )
 
 
+def rule_words(rule: object) -> str:
+    """A frozen rule in plain words, such as `50/200-day average cross`. Empty when unknown."""
+    if not isinstance(rule, dict) or not isinstance(rule.get("kind"), str):
+        return ""
+    if rule["kind"] == "ma_cross" and {"fast", "slow"} <= rule.keys():
+        return f"{rule['fast']}/{rule['slow']}-day average cross"
+    params = ", ".join(
+        f"{k.replace('_', ' ')} {v}"
+        for k, v in sorted(rule.items())
+        if k != "kind" and isinstance(v, (int, float, str)) and not isinstance(v, bool)
+    )
+    kind = rule["kind"].replace("_", " ")
+    return f"{kind} rule ({params})" if params else f"{kind} rule"
+
+
 def source_name(home: Path, kind: str, source_id: str) -> str:
-    """The name of a followed test or find, or its id when the stored files cannot say."""
+    """A followed test or find in plain words, with its id in brackets. The id alone when the
+    stored files cannot say more. A test shows its frozen rule and parameters."""
     try:
         if kind == "rule_test":
             from alpha_cli.run_store import find_run_dir
@@ -94,10 +110,11 @@ def source_name(home: Path, kind: str, source_id: str) -> str:
             raw = json.loads((folder / "spec.json").read_text(encoding="utf-8")) if folder else {}
         else:
             raw = json.loads((home / "setups" / source_id / "manifest.json").read_text("utf-8"))
-        name = raw.get("name") if isinstance(raw, dict) else None
     except (OSError, ValueError):
-        name = None
-    return str(name) if isinstance(name, str) and name.strip() else source_id
+        raw = {}
+    raw = raw if isinstance(raw, dict) else {}
+    name = rule_words(raw.get("rule")) or str(raw.get("name") or "").strip()
+    return f"{name} [{source_id}]" if name else source_id
 
 
 def latest_bar_hashes(home: Path, assets: list[str]) -> dict[str, str]:

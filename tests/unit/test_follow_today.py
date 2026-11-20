@@ -143,3 +143,32 @@ def test_next_prints_one_followed_line_only_when_follows_exist(tmp_path: Path) -
     code, out = _cli(tmp_path, command="next")
     assert out.count("Followed on paper") == 1 and line in out
     assert json.loads(_cli(tmp_path, "--json", command="next")[1])["followed"]["active"] == 5
+
+
+def test_a_follow_two_sessions_behind_is_shown_behind_not_as_nothing(tmp_path: Path) -> None:
+    fx.seed(tmp_path)
+    old = fx.start(tmp_path, "AAA", run_id="a" * 16)
+    fx.add(tmp_path, old, D17)  # the newest closed session is D19: this entry is 2 sessions old
+    facts = follow_today.build(tmp_path, fx.NOW)
+    row = facts["rows"][0]
+    assert row["group"] == "late_or_missed" and row["sessions_ago"] == 2 and row["behind"]
+    out = follow_today.text(facts)
+    assert "Behind it: 1 of 1" in out and "NOTHING TODAY" not in out and "2 sessions ago" in out
+
+
+def test_without_an_idea_card_the_row_shows_the_rule_in_words_and_keeps_the_id(
+    tmp_path: Path,
+) -> None:
+    from alpha_cli.follow_source import rule_words
+
+    assert rule_words({"kind": "ma_cross", "fast": 50, "slow": 200}) == "50/200-day average cross"
+    assert rule_words({"kind": "breakout", "window": 20}) == "breakout rule (window 20)"
+    assert rule_words(None) == ""
+
+
+def test_the_count_facade_passes_counts_only(tmp_path: Path) -> None:
+    _world(tmp_path)
+    counts = followed_counts(tmp_path)
+    assert counts is not None
+    assert set(counts) == {"active", "new_signal", "open_position", "late_or_missed"}
+    assert all(isinstance(v, int) for v in counts.values())

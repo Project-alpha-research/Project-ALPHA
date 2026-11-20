@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified dd83acb3f7ee50ff on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
+  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 apps/alpha-cli/README.md
-  verified dd83acb3f7ee50ff on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
+  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
 
 docs/reference/invariants/cli-follow.md
-  verified 1c14b6bf23cdd9aa on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
+  verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified c73a8f27192ce963 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified a8c884021d8ddfab on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
+  verified af278a9aaa2327fa on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed

@@ -340,7 +340,7 @@ def test_refresh_is_off_by_default_and_each_store_kind_has_its_pull_form() -> No
         "--start",
         "2015-01-02",
         "--end",
-        "2026-11-20",
+        "2026-11-19",
     ]
     assert config(Path("/dev/shm/ft/x")).refresh_followed is False
 
@@ -394,3 +394,98 @@ def test_a_run_without_n4_selected_is_partial_and_status_gives_the_timing_rule(
     out = status_text(status_facts(tmp_path, Path("nightly.toml")))
     assert "after the exchange close" in out and "before the next open" in out
     assert "may be wrong for your timezone" in out and "N4" in out
+
+
+def _truncate_history(home: Path, follow: str, keep: int) -> None:
+    """Cut the journal below an earlier count and make the stored head agree with the cut."""
+    folder = home / "forward" / follow
+    lines = [json.loads(x) for x in (folder / "journal.jsonl").read_text().splitlines()][:keep]
+    (folder / "journal.jsonl").write_text(
+        "".join(json.dumps(e, sort_keys=True) + "\n" for e in lines)
+    )
+    (folder / "head.json").write_text(
+        json.dumps({"entries": keep, "head": lines[-1]["entry_hash"]})
+    )
+
+
+def test_first_night_has_no_alarm_growth_is_quiet_and_a_cut_below_the_old_count_alarms(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "home"
+    world = World(home, -0.2, BUY_AND_SELL)
+    follow = world.start()
+    now = [world.close_of(0)]
+    monkeypatch.setattr(follow_cmds, "CLOCK", lambda: now[0])
+    cfg = config(tmp_path)
+    days = (date(2026, 11, 19), date(2026, 11, 20), date(2026, 11, 23))
+    for k, day in enumerate(days):
+        world.grow()
+        now[0] = world.close_of(k)
+        record = run_nightly(cfg, home, _bridge(home), only=("N4",), today=day)
+        step = next(s for s in record["steps"] if s["id"] == f"N4.verify.{follow}")
+        assert record["blocking"] == 0 and step["state"] == "pass"
+        assert ("no earlier anchor" in str(step["note"])) is (k == 0)
+    _truncate_history(home, follow, keep=2)
+    plain = CLI.invoke(app, ["follow", "verify", follow], env={"ALPHA_DATA_DIR": str(home)})
+    assert plain.exit_code == 0  # a shorter chain with its own head is self-consistent
+    world.grow()
+    now[0] = world.close_of(3)
+    record = run_nightly(cfg, home, _bridge(home), only=("N4",), today=date(2026, 11, 24))
+    assert states(record)[f"N4.verify.{follow}"] == "defect-blocking"
+    assert record["follow_heads"][follow]["entries"] == 4  # the old anchor stays
+
+
+def test_the_secret_in_stderr_never_reaches_the_record(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    _store(home, ["CCC"])
+    stderr = (
+        "failed apikey=XYZ; key=XYZ; Authorization: Bearer XYZ; Authorization: Token XYZ; "
+        'api_key": "XYZ"; url?token=XYZ&x=1; secret: XYZ'
+    )
+    runner = FakeRunner(
+        {
+            "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
+            "data pull": Outcome(2, "", stderr, 1, False),
+        }
+    )
+    record = _refresh(tmp_path, runner)
+    assert "XYZ" not in json.dumps(record) and "[removed]" in json.dumps(record)
+
+
+def test_a_provider_that_revises_old_bars_is_a_minor_defect_with_the_first_date(
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "home"
+    _store(home, ["CCC"])
+
+    def revise(tail: list[str]) -> Outcome:
+        bars = ParquetStore(home / "store")
+        frame = bars.read_bars("CCC")
+        bars.write_bars(
+            "CCC",
+            frame.with_columns(
+                pl.when(pl.col("ts").dt.day() >= 3)
+                .then(pl.col("close") * 0.5)
+                .otherwise(pl.col("close"))
+                .alias("close")
+            ),
+        )
+        return Outcome(0, "pulled", "", 1, False)
+
+    runner = FakeRunner(
+        {"follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}), "data pull": revise}
+    )
+    record = _refresh(tmp_path, runner)
+    assert states(record)["N0.pull.CCC"] == "defect-minor" and record["blocking"] == 0
+    assert (
+        "the provider revised history for CCC: first changed bar 2026-11-03 (close)"
+        in json.dumps(record)
+    )
+    _store(home, ["CCC"])  # an unchanged pull is quiet
+    quiet = FakeRunner(
+        {
+            "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
+            "data pull": Outcome(0, "pulled", "", 1, False),
+        }
+    )
+    assert states(_refresh(tmp_path, quiet))["N0.pull.CCC"] == "pass"

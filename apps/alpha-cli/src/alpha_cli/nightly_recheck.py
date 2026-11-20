@@ -28,7 +28,12 @@ from alpha_cli.nightly_steps import (
 from alpha_cli.spine.reading import old_grade_text, reading_word
 from alpha_cli.spine.recheck_compare import MISMATCH_EXIT
 
-CODE_CHANGED = "The code changed since the stored result; a code change altered a stored result."
+CODE_CHANGED = (
+    "The code changed since the stored run. That does not excuse the difference: the same test "
+    "must give the same result."
+)
+CODE_UNCHANGED = "The code is the same as for the stored run."
+CODE_NOT_RECORDED = "Whether the code changed since the stored result is not recorded."
 
 
 def _word(result: dict[str, Any]) -> str:
@@ -46,7 +51,9 @@ def _defect(name: str, block: dict[str, Any]) -> str:
     )
     if more > 1:
         text += f" {more} differences in all."
-    return text + (f" {CODE_CHANGED}" if block.get("code_changed") else "")
+    changed = block.get("code_changed")
+    code = CODE_CHANGED if changed is True else CODE_UNCHANGED if changed is False else None
+    return f"{text} {code or CODE_NOT_RECORDED}"
 
 
 def _recheck_note(name: str, block: dict[str, Any]) -> dict[str, Any]:
@@ -124,7 +131,9 @@ def rule_test(config: NightlyConfig, runner: Runner) -> tuple[dict[str, Any], li
         elif block.get("match") is None:
             waiting.append(asset)
         else:
-            results[asset], flags[asset] = row, block.get("computed") and block.get("match")
+            # Only a recheck that matched is "computed"; a mismatch is blocking, never "reused".
+            matched = block.get("computed") is True and block.get("match") is True
+            results[asset], flags[asset] = row, True if matched else None
     if waiting and step["state"] != BLOCKING:
         normal = new_step("N1.test", "N1", "rule test", [*base, "--json"])
         ran = run_step(

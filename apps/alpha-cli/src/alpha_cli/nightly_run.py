@@ -71,9 +71,8 @@ def _health(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
 def _diagnose(config: NightlyConfig, runner: Runner, asset: str, run_id: str) -> dict[str, Any]:
     tail = ["diagnose", run_id, "--json"]
     step = new_step(f"N1.diagnose.{asset}", "N1", f"diagnose {asset}", tail)
-    payload = run_step(
-        runner, step, tail, config.step_timeout, required=("audit", "flags", "labels")
-    )
+    # `labels` is printed only for a run with too few trades: it is optional, not required.
+    payload = run_step(runner, step, tail, config.step_timeout, required=("audit", "flags"))
     step["ids"] = {"run_id": run_id}
     audit = payload.get("audit") if payload else None
     unchecked = [

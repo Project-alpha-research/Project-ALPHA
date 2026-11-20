@@ -17,8 +17,9 @@ from alpha_cli.main import app
 from alpha_cli.nightly_config import NightlyConfig
 from alpha_cli.nightly_run import run_nightly
 from alpha_cli.nightly_steps import Outcome
-from alpha_cli.spine import setup_study
+from alpha_cli.spine import setup_recheck, setup_study
 from alpha_cli.spine.ledger import read_trials
+from alpha_cli.spine.setup_exits import trades_frame
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 
@@ -105,6 +106,28 @@ def test_setup_drift_is_named_and_exits_four(
     code, found = _json(["setup", "study", find, "--recheck"])
     assert code == 4 and found["recheck"]["match"] is False
     assert found["recheck"]["differences"][0]["field"] == "summary.horizons.5.pooled.mean"
+    assert _listing(home) == before
+
+
+def test_one_different_trade_row_is_a_difference_with_the_same_count(
+    home: Path, find: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The summary is unchanged; one value of the per-trade table differs."""
+    assert _json(["setup", "trade", find])[0] == 0
+    real = trades_frame
+
+    def drifted(rows: Any) -> pl.DataFrame:
+        frame: pl.DataFrame = real(rows)
+        column = next(n for n, t in frame.schema.items() if t == pl.Float64)
+        return frame.with_columns(pl.col(column) * 1.01)
+
+    monkeypatch.setattr(setup_recheck, "trades_frame", drifted)
+    before = _listing(home)
+    code, found = _json(["setup", "trade", find, "--recheck"])
+    assert code == 4 and found["recheck"]["match"] is False
+    fields = [d["field"] for d in found["recheck"]["differences"]]
+    assert fields and all(f.startswith("trades.parquet.columns.") for f in fields)
+    assert found["recheck"]["code_changed"] is None
     assert _listing(home) == before
 
 

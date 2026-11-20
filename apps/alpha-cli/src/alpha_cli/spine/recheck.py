@@ -9,6 +9,9 @@ nothing and says so.
 
 from __future__ import annotations
 
+import contextlib
+import dataclasses
+import io
 import tempfile
 import time
 from dataclasses import replace
@@ -31,29 +34,75 @@ from alpha_cli.spine.trial_record import TestKey, row_test_key
 __all__ = ["MISMATCH_EXIT", "NOTHING", "recheck_idea"]
 
 NOTHING = "no stored result to compare with"
+DATA_CHANGED = (
+    "no stored result for this data: the stored bars changed since the last stored run of this "
+    "test, so there is nothing to compare with"
+)
+OTHER_SETTINGS = (
+    "no stored result with the same settings: the stored runs of this test used other engine "
+    "settings (--quick, --seed or no diagnostics), so there is nothing to compare with"
+)
 SHOWN = 10
+ENGINE_LABELS = ("quick", "no-diagnostics")
+# Not settings of the result: the worker count; `tier2_mode` is not recorded in the manifest.
+NOT_SETTINGS = ("max_workers", "tier2_mode")
+
+
+def _settings(knobs: _gauntlet.GauntletParams, labels: list[str]) -> dict[str, Any]:
+    """The engine settings a stored run must share: the gauntlet knobs and the engine labels."""
+    found = {f.name: getattr(knobs, f.name) for f in dataclasses.fields(knobs)}
+    for name in NOT_SETTINGS:
+        found.pop(name, None)
+    found["labels"] = sorted(set(ENGINE_LABELS) & set(labels))
+    return found
+
+
+def _stored_settings(manifest: dict[str, Any], wanted: dict[str, Any]) -> dict[str, Any]:
+    metadata = manifest.get("metadata") or {}
+    found = {name: metadata.get(name) for name in wanted if name != "labels"}
+    labels = (manifest.get("spine") or {}).get("labels") or []
+    return {**found, "labels": sorted(set(ENGINE_LABELS) & set(labels))}
 
 
 def _stored_run(
-    home: Path, rows: list[dict[str, Any]], key: TestKey | None
-) -> tuple[str, int] | None:
-    """The newest non-error stored run of this test key, and the index of the ledger row that
-    first recorded that run (the ledger it was computed with is every row before it)."""
+    home: Path,
+    rows: list[dict[str, Any]],
+    key: TestKey | None,
+    wanted: dict[str, Any],
+    same_asset: tuple[str, str, str | None],
+) -> tuple[str, int] | str:
+    """The newest non-error stored run of this test key with the same engine settings, and the
+    index of the ledger row that first recorded that run (the ledger it was computed with is
+    every row before it). Otherwise the reason there is nothing to compare with."""
+    same_key = False
     for row in reversed(rows):
         run_id = row.get("run_id")
+        manifest = _artifacts.run_dir(home, str(run_id)) / "manifest.json"
         if (
             key is None
             or row_test_key(row) != key
             or "error" in (row.get("labels") or ())
             or not isinstance(run_id, str)
-            or not (_artifacts.run_dir(home, run_id) / "manifest.json").is_file()
+            or not manifest.is_file()
         ):
+            continue
+        same_key = True
+        if _stored_settings(read_json(manifest), wanted) != wanted:
             continue
         first = next(
             r for r in rows if r.get("run_id") == run_id and "error" not in (r.get("labels") or ())
         )
         return run_id, int(first["trial_index"])
-    return None
+    if same_key:
+        return OTHER_SETTINGS
+    if any(
+        row_test_key(row) is not None
+        and (row.get("spec_sha256"), row.get("symbol"), row.get("store")) == same_asset
+        and "error" not in (row.get("labels") or ())
+        for row in rows
+    ):
+        return DATA_CHANGED
+    return NOTHING
 
 
 def _earlier_ledger(home: Path, scratch: Path, upto: int) -> None:
@@ -73,22 +122,28 @@ def _compute(
     stored: tuple[str, int],
 ) -> dict[str, Any]:
     run_id, index = stored
+    current = prepared.identity.execution_fingerprint
+    # The stored run id seeds the price-noise copies: the same seed, so the same test again,
+    # even when the code (and so a new run id) changed.
+    prepared = replace(prepared, identity=replace(prepared.identity, run_id=run_id))
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="alpha-recheck-") as name:
         scratch = Path(name)
         _earlier_ledger(home, scratch, index)
-        result["run_dir"] = str(_artifacts.run_dir(scratch, prepared.identity.run_id))
-        write_run(
-            idea,
-            prepared,
-            home,
-            scratch,
-            knobs,
-            "recheck",
-            result,
-            snapshot=spine_snapshot(scratch),
-            figures=False,
-        )
+        result["run_dir"] = str(_artifacts.run_dir(scratch, run_id))
+        # The report library names the scratch folder, which is gone afterwards: keep it quiet.
+        with contextlib.redirect_stdout(io.StringIO()):
+            write_run(
+                idea,
+                prepared,
+                home,
+                scratch,
+                knobs,
+                "recheck",
+                result,
+                snapshot=spine_snapshot(scratch),
+                figures=False,
+            )
         old = _artifacts.run_dir(home, run_id)
         compared = compare_runs(old, Path(result["run_dir"]))
     then = read_json(old / "manifest.json").get("execution_fingerprint")
@@ -100,7 +155,7 @@ def _compute(
         "bit_identical": compared.bit_identical,
         "differences": compared.differences[:SHOWN],
         "differences_total": len(compared.differences),
-        "code_changed": then != prepared.identity.execution_fingerprint,
+        "code_changed": then != current,
     }
 
 
@@ -148,10 +203,16 @@ def recheck_idea(
                 store=result["store"],
                 data_id=result["idea_id"],
             )
-            stored = _stored_run(home, rows, key)
+            stored = _stored_run(
+                home,
+                rows,
+                key,
+                _settings(knobs, result["labels"]),
+                (idea.spec_sha256, result["symbol"], result["store"]),
+            )
             result["recheck"] = (
-                _nothing(NOTHING)
-                if stored is None
+                _nothing(stored)
+                if isinstance(stored, str)
                 else _compute(idea, prepared, home, knobs, result, stored)
             )
         except SpineError:

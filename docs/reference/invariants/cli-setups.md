@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 42ca623acbf52176
+verified: 677438cb29863fd7
 ---
 
 # Command line setup invariants
@@ -45,8 +45,9 @@ Rules for `alpha setup find`, `alpha setup study` and `alpha setup trade`. Other
 - `summary.json` keeps `outcome` as written and adds `evidence`; an old summary is read through its old word, noted once.
   No rule version, id, seed or stored number changed.
 - `setup study|trade|find` print `executed`: `true` if computed this time, `false` if the stored result came back (`repeat` label).
-  `setup study|trade <find_id> --recheck` computes again with `compute_study`/`compute_trade` and compares the summary with the
-  stored one (not `labels`, `facts`, `total_trials`, `data_health`). It writes no ledger row or file; exit 4 on a difference.
+  `setup study|trade <find_id> --recheck` computes again with `compute_study`/`compute_trade` and compares the summary and every
+  row of the stored table with the stored ones (not `facts`, `total_trials`, `data_health`, `data-health-*` labels).
+  It writes no ledger row or file; exit 4 on a difference. A changed stored file fails its hash check first.
 - One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).
 ## Setup trade
 - `alpha setup trade FIND_ID` shares verified find inputs; missing/empty exits raise `SPEC_HAS_NO_EXIT`. [Details](../../../research/tools/setup-trade.md).

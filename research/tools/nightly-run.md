@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_cmds.py
   - apps/alpha-cli/src/alpha_cli/nightly_run.py
   - apps/alpha-cli/src/alpha_cli/nightly_status.py
-verified: 960387f7b415a023
+verified: 2e4d6ed6f1fc54c5
 ---
 
 # Nightly run

@@ -167,5 +167,12 @@ def test_numbers_within_tolerance_match_but_are_not_bit_identical() -> None:
     assert [d["field"] for d in far.differences] == ["m.a", "m.n"]
     assert far.differences[0]["stored"] == 1.0
     gone = diff_trees({"a": [1, 2]}, {"a": [1]}, "m")
-    assert gone.differences == [{"field": "m.a[1]", "stored": 2, "recomputed": None}]
+    assert gone.differences == [{"field": "m.a.length", "stored": 2, "recomputed": 1}]
+    # Missing never reads as a match: not on one side, and not as None on the other.
+    one_side = diff_trees({"a": None}, {}, "m")
+    assert one_side.differences == [{"field": "m.a", "stored": None, "recomputed": "<missing>"}]
+    nan = float("nan")
+    assert diff_trees({"a": nan}, {"a": nan}, "m").differences == []
+    assert [d["field"] for d in diff_trees({"a": nan}, {"a": None}, "m").differences] == ["m.a"]
+    assert [d["field"] for d in diff_trees({"a": True}, {"a": 1}, "m").differences] == ["m.a"]
     assert TOLERANCE == 0.0

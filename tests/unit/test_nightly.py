@@ -535,20 +535,35 @@ def test_a_mismatch_is_blocking_and_names_the_field(tmp_path: Path) -> None:
     assert step["state"] == "defect-blocking"
     assert step["defect"] == (
         "The same test gave a different result for SPY: manifest.oos_metrics.sharpe stored 1.0, "
-        "recomputed 2.0."
+        "recomputed 2.0. The code is the same as for the stored run."
     )
     assert step_of(record, "N1.diagnose.SPY")["state"] == "not-run"
     changed = run(tmp_path / "b", FakeRunner({"test": rule_reply(differs(True))}))
     defect = step_of(changed, "N1.test")["defect"]
-    assert (
-        "The code changed since the stored result; a code change altered a stored result" in defect
-    )
+    assert "The code changed since the stored run. That does not excuse the difference" in defect
+    # A mismatch ran the engine: it is never "reused" (the engine did not run).
+    assert step_of(record, "N1.test")["evidence"] == "unknown"
+
+
+def test_a_clean_diagnose_without_labels_is_not_a_defect(tmp_path: Path) -> None:
+    clean = ok({"audit": [{"check": "a", "status": "PASS"}], "flags": []})
+    record = run(tmp_path / "a", FakeRunner({"diagnose": clean}))
+    assert step_of(record, "N1.diagnose.SPY")["state"] == "pass"
+    broken = run(tmp_path / "b", FakeRunner({"diagnose": ok({"flags": []})}))
+    assert "left out: audit" in str(step_of(broken, "N1.diagnose.SPY")["defect"])
 
 
 def test_a_setup_mismatch_is_blocking(tmp_path: Path) -> None:
     record = run(tmp_path, FakeRunner({"setup study": setup_reply("study_id", differs(False))}))
     assert step_of(record, "N2.study")["state"] == "defect-blocking"
-    assert "The same test gave a different result" in step_of(record, "N2.study")["defect"]
+    defect = str(step_of(record, "N2.study")["defect"])
+    assert "The same test gave a different result" in defect
+    differed = differs(False)
+    differed["code_changed"] = None
+    again = run(tmp_path / "b", FakeRunner({"setup study": setup_reply("study_id", differed)}))
+    words = str(step_of(again, "N2.study")["defect"])
+    assert words.endswith("Whether the code changed since the stored result is not recorded.")
+    assert "same as" not in words and "unchanged" not in words
 
 
 def test_two_matched_rechecks_on_two_dates_are_ready_and_a_mismatch_is_not(

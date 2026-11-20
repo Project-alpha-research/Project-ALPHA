@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/recheck*.py
   - tests/unit/test_nightly*.py
   - tests/unit/test_recheck*.py
-verified: 7f5fb9c98549f7b4
+verified: f2aa65efff65a727
 ---
 
 # Command line nightly run invariants
@@ -29,8 +29,11 @@ verified: 7f5fb9c98549f7b4
   The step keeps a note. A recheck is not a trial: no ledger row, no run folder.
 - A match is `computed`. The record keeps `seconds` and `code_changed` for the rule test.
 - A difference is a blocking defect: "the same test gave a different result", with the field and both numbers.
-  These numbers are the system's own check, not an idea's result. If `code_changed` is true the text adds that the code changed
-  since the stored result and that a code change altered a stored result.
+  These numbers are the system's own check, not an idea's result. The text then says the code changed since the stored run
+  (and that this does not excuse the difference), the code is the same, or (setups, `code_changed: null`) it is not recorded.
+  A mismatch step has `evidence: unknown`, never `reused`: the engine ran, but nothing was proven.
+- A recheck that could not run (exit code other than 0 or 4, timeout, no JSON, an asset error) is blocking and never `computed`.
+- `N1.diagnose` needs `audit` and `flags`. `labels` is optional: `alpha diagnose` prints it only for a too-few-trades run.
 - Each step's `evidence` is `computed`, `reused` or `unknown`. It is read from the `executed` field of the command's JSON,
   never from the `repeat` label: `repeat` means the same test by key, even when the engine ran again. Old records read `unknown`.
 

@@ -10,7 +10,7 @@ sources:
   - tests/bias_guards/test_pit_*.py
   - tests/bias_guards/test_source_future_poison.py
   - tests/bias_guards/test_universe_survivorship.py
-verified: 0f1c00b49be8cf32
+verified: b8a07c28590d972a
 ---
 
 # Data layer invariants
@@ -103,6 +103,11 @@ provider → immutable receipt → candidate → quality gate → canonical Parq
 - Immutable receipt, candidate and quarantine directories may be republished only with identical bytes.
 - Provenance v2 embeds `DatasetIdentity` and `FetchReceipt`; three-field legacy provenance stays readable.
   `DatasetIdentity` accepts raw-price datasets at any bar timeframe: [bar timeframes](data-bar-timeframes.md).
+
+## Freeze before replace
+
+Every pull freezes the stored series first, reuses an identical snapshot and reports what it changed:
+[freeze before replace](data-freeze-before-replace.md).
 
 ## Snapshots
 

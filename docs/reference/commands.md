@@ -112,11 +112,11 @@ Data ingestion, snapshots, and integrity.
 - `alpha data first-bar <SYMBOL>` — Report when SYMBOL was first listed on a CCXT exchange (read-only; needs network). Options: `--source`, +2 more
 - `alpha data health <ASSET>` — Check daily bars for adjustment, timestamp, gap and survivorship faults. Options: `--universe`, `--stored`, `--json`
 - `alpha data market-overview` — Read-only market overview of stored bars. Options: `--store`, `--window`, `--limit`, `--json`
-- `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +7 more
+- `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +8 more
 - `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`, +1 more
 - `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`, `--timeframe`
 - `alpha data snapshot <SNAPSHOT_ID> <SYMBOLS>` — Freeze the current store for SYMBOLS into an immutable, hashed snapsh… Options: `--source`, +2 more
-- `alpha data snapshots` — List every immutable snapshot's manifest summary in deterministic id order. Options: `--json`
+- `alpha data snapshots` — List every immutable snapshot's manifest summary in deterministic id order. Options: `--json`, `--with-content`
 - `alpha data source-status <SYMBOL>` — Show canonical provenance and pending candidate/quarantine receipts for SYMBOL. Options: `--json`, `--timeframe`
 - `alpha data symbols` — List every symbol with stored bars (the workstation's symbol picker reads this). Options: `--json`, `--with-actions`, `--timeframe`
 - `alpha data ticker <SYMBOL>` — Report SYMBOL's current last-trade price on a CCXT venue (read-only; needs network). Options: `--source`, `--exchange`, +1 more

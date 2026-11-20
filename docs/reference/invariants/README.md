@@ -12,7 +12,7 @@ verified: e8c675fcdb6fe821
 | [documentation.md](documentation.md) | rules for documents under docs/ | adding or changing a document |
 | [testing.md](testing.md) | test layout, markers, tiers, sweeps | adding or moving tests |
 | [core.md](core.md) | alpha_core: domain values, errors, settings | editing alpha-core |
-| [data.md](data.md) | alpha_data: storage, readers, receipts, snapshots | editing alpha-data |
+| [data.md](data.md), [data-freeze-before-replace.md](data-freeze-before-replace.md) | alpha_data: storage, snapshots, pull freeze | editing alpha-data |
 | [data-crypto.md](data-crypto.md) | alpha_data crypto: storage, identity, offline Bybit context | editing crypto storage or identity |
 | [data-context.md](data-context.md) | alpha_data context: macro series, SEC filings, derivatives | editing context data |
 | [data-options.md](data-options.md) | alpha_data options: chain records, point-in-time store, fixture | editing options data |

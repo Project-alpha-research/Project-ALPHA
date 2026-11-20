@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 6cfd714ca56087b1 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
+  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
 
 apps/alpha-cli/README.md
-  verified 6cfd714ca56087b1 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
+  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -52,11 +52,14 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
+docs/reference/invariants/data-freeze-before-replace.md
+  verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
+
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified b8a07c28590d972a on 2026-11-20: A pipeline test now expects the loud RestoreFailed error that names the repair command; the page already states that behaviour.
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -194,7 +197,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified 3fbe94346180dd08 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels

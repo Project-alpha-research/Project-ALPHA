@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -32,8 +33,8 @@ def test_validate_writes_manifest_and_tearsheet(
     result = runner.invoke(app, ["validate", "SPY", *_ARGS])
     assert result.exit_code == 0, result.output
     assert "validate SPY" in result.output
-    assert "PASS" in result.output or "FAIL" in result.output
-    assert "Verdict" in result.output  # the A-F grade is echoed alongside PASS/FAIL
+    assert "PASS" not in result.output and "FAIL" not in result.output
+    assert re.search(r"-> run [0-9a-f]{16}: reading .+ \(old grade: [A-F]\)", result.output)
 
     (rdir,) = list((tmp_path / "runs").iterdir())
     assert (rdir / "tearsheet.html").exists()

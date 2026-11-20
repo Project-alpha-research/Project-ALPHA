@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified a1db0a920229285f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 5b51eb7aafb16a8e on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -149,7 +149,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified ea58b986de190f92 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified d72e60fe5a1181b8 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -203,10 +203,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified f529d61f31fdcecc on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified a7e3e3cf4bc5891d on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/PLAYBOOK.md
-  verified a8188fad23efab3f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 8316dad88957bf48 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/README.md
   verified 26fdc1c8d5483641 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -218,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified b7c3368f1a6e93fe on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 0deb55853234b37a on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 68bf5df94f417ea5 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified c1278fbaf42dbb1e on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 577bf55b79269e0e on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified cbb4c847763353a8 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/diagnose-and-audit.md
-  verified b68510558afffab4 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 8f985cb1f67b55f4 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -257,7 +257,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified 87d09a6d2dff222f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 3917c740f14da4e9 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -269,13 +269,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 32291768dffca09f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified e7f5c705ddfbe194 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 577bf55b79269e0e on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified cbb4c847763353a8 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
@@ -290,7 +290,7 @@ research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
-  verified 80b0def9a654fdb4 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
+  verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

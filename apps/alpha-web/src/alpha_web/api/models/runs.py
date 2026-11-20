@@ -48,6 +48,8 @@ class RunListItem(StrictModel):
     snapshot_hash: str | None
     passed: bool | None
     verdict: str | None
+    # The evidence word a new run stored in its reading (or "fault"); null for an older run.
+    evidence: str | None
     # spec §15 / ADR-0026: EXPLORATORY marker for runs launched under a research-gate override
     research_gate_watermark: str | None
     run_context_kind: Literal["governed_project", "standalone_sandbox", "legacy_context_unknown"]

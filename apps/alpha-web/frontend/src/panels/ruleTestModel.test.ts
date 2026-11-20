@@ -159,9 +159,9 @@ describe('rule-test report model', () => {
 
   it('maps audit statuses onto the existing chip tones without a grade', () => {
     expect(auditRows(test).map((row) => [row.id, row.check, row.status, row.chip])).toEqual([
-      ['fills-after-decisions', 'Did each trade follow its decision?', 'PASS', 'pass'],
-      ['enough-trades', 'Were there enough closed trades?', 'FLAG', 'warn'],
-      ['artifacts-intact', 'Did the saved files pass verification?', 'NOT-CHECKED', 'kind'],
+      ['fills-after-decisions', 'Did each trade follow its decision?', 'sound', 'pass'],
+      ['enough-trades', 'Were there enough closed trades?', 'flag', 'warn'],
+      ['artifacts-intact', 'Were the saved files verified as unchanged?', 'not checked', 'kind'],
     ])
   })
 
@@ -220,8 +220,8 @@ describe('rule-test report section', () => {
     const html = renderToStaticMarkup(createElement(RuleTestReport, { test, runId: 'fixture', manifest: {}, figures: [] }))
     expect(html).toContain('Long while the 50-day average is above the 200-day average')
     expect(html).toContain('Strategy Sharpe 0.73 is below buy-and-hold Sharpe 0.784.')
-    expect(html).toContain('<span class="chip warn">FLAG</span>')
-    expect(html).toContain('<span class="chip kind">NOT-CHECKED</span>')
+    expect(html).toContain('<span class="chip warn">flag</span>')
+    expect(html).toContain('<span class="chip kind">not checked</span>')
     expect(html).not.toContain('LEGACY_CONTEXT_UNKNOWN')
     expect(html).toContain('Full-sample engine re-runs on the same loaded bars.')
   })

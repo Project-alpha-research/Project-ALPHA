@@ -45,3 +45,18 @@ test('switching setup runs removes the previous result before the next response'
   release()
   await expect(page.getByRole('heading', { name: 'Another synthetic setup', exact: true })).toBeVisible()
 })
+
+test('Setup Lab shows the evidence word with its scale and the family line, never an outcome word', async ({ page }) => {
+  await preparePage(page)
+  const study = { run_id: 'e'.repeat(16), rule_version: 'setup-study-2', summary: { occurrences: 41, outcome: 'not supported', evidence: 'not clear of chance',
+    reading: 'After this setup the average 5-bar return was 0.41% after costs.' }, rows: [], figure: { name: 'event-study.png', png: null },
+  labels: ['exploratory'], trial_indices: [2], reading: { evidence: 'not clear of chance', old_wording: true, family_position: 2, family_count: 3 } }
+  await page.route('**/api/setup/runs', route => route.fulfill({ json: { items: [run] } }))
+  await page.route(`**/api/setup/runs/${run.find_id}`, route => route.fulfill({ json: { ...detail, studies: [study] } }))
+  await page.goto('/#page=research&pane=SetupLabPanel')
+  const section = page.getByRole('region', { name: 'Recorded event study' })
+  await expect(section.getByRole('heading', { name: 'Evidence strength: not clear of chance (old wording)' })).toBeVisible()
+  await expect(section.locator('[aria-current="step"]')).toHaveText('not clear of chance')
+  await expect(section.getByText('Setup study 2 of 3 recorded for this idea.')).toBeVisible()
+  await expect(section).not.toContainText(/\b(supported|rejected|inconclusive|verdict)\b/i)
+})

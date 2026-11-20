@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: a220681609de5f5b
+verified: c61baf0d188a06ed
 ---
 
 # Setup Lab
@@ -54,6 +54,8 @@ capabilities on [STATUS.md](../../../../STATUS.md) and the tool cards for [find]
 
 ### To change this screen
 
+- Each study and trade shows a reading block: its evidence word with a four-step scale,
+  the stored sentence and its place in the idea's family; old records say "(old wording)".
 - Files: the panel `apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx` and its model `setupLabModel.ts` (registered in `shell/documents.ts`); the
   backend `apps/alpha-web/src/alpha_web/api/setup_runs.py` with `_setup_runs.py`.
 - The routes (`GET /api/setup/runs` and `/{find_id}`) read stored files directly through `_setup_runs` (bounded, allowlisted, no `alpha` subprocess, unlike most

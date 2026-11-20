@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getJSON } from '../api/client'
+import { SetupReadingBlock } from '../components/ReadingBlock'
 import type { components } from '../api/generated'
 import { Timestamp } from '../util/formatTime'
 import { healthLine } from './ruleTestModel'
@@ -104,6 +105,18 @@ function DataHealth({ summary }: { summary: Row }) {
   return line && <p>{line}</p>
 }
 
+/** The stored summary without its old outcome word: the evidence word above replaces it on this screen. */
+function withoutOutcome(summary: Row): Row {
+  return Object.fromEntries(Object.entries(summary).filter(([name]) => name !== 'outcome'))
+}
+
+function OutcomeReading({ outcome, kind, summary }: { outcome: Outcome; kind: 'study' | 'trade'; summary: Row }) {
+  const found = outcome.reading
+  const sentence = typeof summary.reading === 'string' ? summary.reading : null
+  return <SetupReadingBlock kind={kind} sentence={sentence} evidence={found?.evidence ?? null} oldWording={found?.old_wording ?? false}
+    position={found?.family_position ?? null} count={found?.family_count ?? null} />
+}
+
 function Study({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) {
   const summary = object(outcome.summary)
   const rows = curveRows(summary.curve)
@@ -114,14 +127,14 @@ function Study({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) {
     <p>Study identifier: {outcome.run_id} · Trial indices: {stored(outcome.trial_indices)}</p>
     <TrialLabels labels={outcome.trial_labels} explanations={detail.label_explanations} shownAbove={outcome.labels} />
     <p>Rule version: {stored(outcome.rule_version)}</p>
-    <p>{stored(summary.reading)}</p>
+    <OutcomeReading outcome={outcome} kind="study" summary={summary} />
     <Figure figure={outcome.figure} title="Average path after a match against the stored baseline" />
     <p>Returns are fractions after costs. The baseline is the recorded ordinary-date comparison; the band is the recorded random-date range.</p>
     {rows.length ? <details><summary>Values behind the figure (every bar)</summary><Table caption="Recorded average path and comparison values" rows={rows} columns={[
       ['bar', 'Bars after entry'], ['mean', 'Average path'], ['drift', 'Stored baseline'],
       ['lower', 'Random dates, lower bound'], ['upper', 'Random dates, upper bound'],
     ]} /></details> : <p>Average path and baseline: not recorded</p>}
-    <details><summary>Stored study summary, horizons and limitations</summary><Fields value={summary} explanations={detail.label_explanations} /></details>
+    <details><summary>Stored study summary, horizons and limitations</summary><Fields value={withoutOutcome(summary)} explanations={detail.label_explanations} /></details>
   </section>
 }
 
@@ -135,15 +148,16 @@ function Trades({ outcome, detail }: { outcome: Outcome; detail: SetupDetail }) 
     <p>Trade run identifier: {outcome.run_id} · Trial indices: {stored(outcome.trial_indices)}</p>
     <TrialLabels labels={outcome.trial_labels} explanations={detail.label_explanations} shownAbove={outcome.labels} />
     <p>Rule version: {stored(outcome.rule_version)}</p>
-    <p>{stored(summary.basis)}</p><p>{stored(summary.reading)}</p>
-    <p>Stop: the protective exit. Target: the declared profit exit. Time: the holding limit. Other recorded exit reasons stay visible.</p>
+    <p>{stored(summary.basis)}</p>
+    <OutcomeReading outcome={outcome} kind="trade" summary={summary} />
+    <p>Stop: the protective exit. Target: the declared exit level in the trade’s favour. Time: the holding limit. Other recorded exit reasons stay visible.</p>
     {outcome.rows === null ? <p>Trade rows: not recorded</p> : outcome.rows.length === 0 ? <p>No trades recorded.</p>
       : <Table caption="Every recorded trade, including skipped and unfinished entries" columns={TRADE_COLUMNS} rows={outcome.rows} />}
     <p aria-label="Recorded trade totals">Total completed trades: {stored(pooled.trades)} · Mean return after costs: <Value name="net_return" value={pooled.mean} /> · Total return: not recorded</p>
     <h4>Cost rule</h4><p>Basis points (bps) are hundredths of one percent. Values below are the recorded per-asset cost assumptions.</p>
     <Fields value={summary.costs} explanations={detail.label_explanations} />
     <Figure figure={outcome.figure} title="Recorded trade results and random-date comparison" />
-    <details><summary>Stored trade summary and limitations</summary><Fields value={summary} explanations={detail.label_explanations} /></details>
+    <details><summary>Stored trade summary and limitations</summary><Fields value={withoutOutcome(summary)} explanations={detail.label_explanations} /></details>
   </section>
 }
 

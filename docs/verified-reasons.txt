@@ -20,7 +20,7 @@ docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
-  verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
+  verified 64d36b9afce08cc1 on 2026-11-20: Reflowed and re-linked wording only; the statements are unchanged and still correct.
 
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
@@ -50,7 +50,7 @@ docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/invariants/cli-trial-ledger.md
-  verified b4dca1c086c3d033 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
+  verified c9f7b42d7a12c19e on 2026-11-20: Reflowed and re-linked wording only; the statements are unchanged and still correct.
 
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
@@ -146,7 +146,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
+  verified 64d36b9afce08cc1 on 2026-11-20: Reflowed and re-linked wording only; the statements are unchanged and still correct.
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -284,7 +284,7 @@ workflow/CONTEXT.md
   verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 workflow/README.md
-  verified 0763dcbf21f00e1d on 2026-11-19: Invariants page split into sections; routing unchanged.
+  verified 03d50797667e1e7b on 2026-11-20: Reflowed and re-linked wording only; the statements are unchanged and still correct.
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

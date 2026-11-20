@@ -8,7 +8,7 @@ sources:
   - tests/integration/test_data_pull_freeze_cli.py
   - tests/unit/test_data_pull_freeze_attacks.py
   - packages/alpha-data/src/alpha_data/pipeline.py
-verified: 1a43a3d2ada23be0
+verified: 5efe89cf0d49bb54
 ---
 
 # Freeze before replace

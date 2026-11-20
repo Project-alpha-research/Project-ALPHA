@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: fac522123feb76b8
+verified: 91a23fece9fa0375
 ---
 
 # Command line toolbox
@@ -16,13 +16,13 @@ tools.md). Why the toolbox exists: [toolbox](../project/components/toolbox.md).
 
 ## Adding a check
 
-1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`costs`, `market`, `overfit`,
+1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`context`, `costs`, `market`, `overfit`,
    `performance`, `resampling`, `robustness`, `trades`).
-2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The fifteen
+2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The sixteen
    registered ids: `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`,
    `robustness.start_end_dates`, `trades.side_contribution`, `trades.concentration`, `costs.break_even`,
    `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.drawdown_distribution`,
-   `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`.
+   `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `context.published_factors`.
    Named sets and their execution order live in `toolbox/sets.py`.
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit,
    gloss), reading, caveats, cost class, seeded or not, time safety, look class, a poison test when time order
@@ -48,7 +48,7 @@ equity; the `excess-over-equal-weight-basket` label marks the factor series.
 
 ## Registered checks
 
-Fifteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against
+Sixteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against
 full-history buy and hold, including eligible cash dividends. `market.vol_regimes` compares calm and turbulent
 markets. `market.changepoints` identifies when behaviour shifted. The named set `market-context` runs all three. Five
 more read the run's stored walk-forward files instead of replaying it: `performance.downside_ratios` (Sortino, Calmar,
@@ -63,6 +63,25 @@ is available to RD-Agent but not in `rdagent-post-judge`. `trades.dependence` te
 closed-trade outcomes. `overfit.deflated_sharpe` reuses the verdict's family correction on the ledger count and prior
 comparable Sharpes frozen in the run, and states that count. See the [family counting
 card](../../../research/tools/deflated-sharpe-and-trials.md).
+
+`context.published_factors` sets a run's complete calendar-month returns beside the stored monthly long-short returns
+of published US stock signals (source `osap-portfolios`): a joint reading on seven fixed well-known factors, and a
+separate search across all signals marked exploratory. It never gives a pass or fail. It does not apply to assets that
+are not US stocks or ETFs by the stored dataset identity. See the
+[card](../../../research/tools/published-factors.md).
+
+## Descriptive reference reads
+
+A check that only describes a past result, and is never an input to a strategy, may read reference series for the
+test's own period although those series became public later (owner, 2026-11-20). Its result carries the label
+`reference-series-known-later` and the sentence "The reference factors were published as a data set after this test's
+period. This is a description of the result made later, not something the strategy could have used." Strategy inputs
+keep the strict known-at rule. The one read helper is `read_reference_for_period` in `toolbox/reference.py`. It takes
+the newest stored vintage and names it, never returns a month at or after the held-back date, and never returns a month
+whose end is after the run's last scored date. Only a descriptive hindsight diagnostic may declare the
+`reference_factors` input, and the runner labels each of its results. `tests/unit/test_reference_read_structural_guard.py`
+fails if any other module imports the helper's module or names the helper, under any alias; `toolbox/inputs.py` may
+import only the vintage fingerprint for the cache key.
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a
 reason. Commands: `alpha tool list` (filter by `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`,

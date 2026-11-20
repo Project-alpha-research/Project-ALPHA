@@ -33,7 +33,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md), [break-even cost](run-level-checks.md) |
 | "Is this just the market going up?" | [inverted-signal control](inverted-signal-control.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
-| "Is it just the market?" | [benchmark and drawdowns](benchmark-and-drawdowns.md) |
+| "Is it just the market?", "a known published factor?" | [benchmark and drawdowns](benchmark-and-drawdowns.md), [published factors](published-factors.md) |
 | Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
 | How wide is the return range, or how deep the drop? | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md) |
 | Why a judged RD-Agent idea stopped | [one idea’s journey](rdagent-journey.md) |
@@ -47,7 +47,7 @@ Say "not available yet" and name the gap; never invent the output. Planned, not 
 
 - regime detection with models refitted only on the past (today's regime parameters are fitted in sample),
   and change-point detection known on the day (today's change points are hindsight);
-- factor attribution for size and momentum (market or one asset works today); capacity and size-aware costs (flat basis points today);
+- factor attribution beyond the fixed published set; capacity and size-aware costs (flat basis points today);
 - an event calendar (scheduled releases and earnings dates); a lessons search and counted variants;
 - short selling, position sizing and intraday bars in the rule test (long or flat, all-in, daily bars);
 - the planned plain verbs that would wrap these tools (get, idea, vary, learn, promote): none is a

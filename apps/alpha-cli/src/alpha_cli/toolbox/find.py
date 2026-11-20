@@ -145,6 +145,7 @@ INPUT_WORDS: dict[InputKind, str] = {
     "factor_panel": "a stored factor panel",
     "run_set": "several stored runs together",
     "asset_bars": "the price bars of another asset",
+    "reference_factors": "the stored published factor returns (a later-published data set)",
 }
 
 

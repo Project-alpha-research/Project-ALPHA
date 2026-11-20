@@ -2,13 +2,13 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified dccc6cf6e4c41b03 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 68fe54d47b0fc7a2 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
 
 apps/alpha-cli/README.md
-  verified dccc6cf6e4c41b03 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 68fe54d47b0fc7a2 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
 
 apps/alpha-mcp/CONTEXT.md
-  verified a7254ea05609ff29 on 2026-11-20: reviewed against the freeze-before-replace change; the page's own claims are unchanged
+  verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
   verified cb51a11b4db4c805 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
@@ -22,20 +22,14 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified e8c675fcdb6fe821 on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
 
-docs/reference/invariants/cli-crypto-data.md
-  verified 700c7d74ffe52b49 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
-
 docs/reference/invariants/cli-follow.md
-  verified ad417707e7b1518d on 2026-11-20: reviewed against the freeze-before-replace change; the page's own claims are unchanged
+  verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 23b19345f24a881d on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
-
-docs/reference/invariants/cli-paper.md
-  verified f5bdbbebc8a92622 on 2026-11-20: reviewed against the freeze-before-replace change; the page's own claims are unchanged
 
 docs/reference/invariants/cli-research.md
   verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
@@ -47,37 +41,25 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified ba410c97051538cd on 2026-11-20: reviewed against the freeze-before-replace change; the page's own claims are unchanged
+  verified 8378ba0213d578bb on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
-
-docs/reference/invariants/data-bar-timeframes.md
-  verified 7a147b4f4ea3633a on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
-
-docs/reference/invariants/data-free-sources.md
-  verified d87efdf01acee600 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
-
-docs/reference/invariants/data-freeze-before-replace.md
-  verified 1aa89c0fb815cd25 on 2026-11-20: test file only changed; claims unchanged
 
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 1f167b4fc94f5485 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
-
-docs/reference/invariants/mcp.md
-  verified 1c5c6923ba029be7 on 2026-11-20: reviewed against the freeze-before-replace change; the page's own claims are unchanged
 
 docs/reference/invariants/patterns.md
   verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
@@ -125,7 +107,7 @@ docs/reference/project/components/command-line.md
   verified 29f44436e948e189 on 2026-11-20: merge of main; the follow commands and their rules on this page were checked against this branch
 
 docs/reference/project/components/data-layer.md
-  verified d1c3a536e0695e17 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified f60d4e662a64bb91 on 2026-11-18: re-read after review edits; the health section matches the command and report as built
 
 docs/reference/project/components/delivery-and-agent-tooling.md
   verified 96caf59a75017db3 on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
@@ -161,7 +143,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 6e50723dd06584df on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
 docs/reference/project/components/toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/project/components/validation-and-evidence.md
   verified 5b5ad43ef89ac24d on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -212,7 +194,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 1c7fa486debcb44f on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
@@ -244,9 +226,6 @@ research/tools/benchmark-and-drawdowns.md
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
-research/tools/data-health.md
-  verified 56023cf679950505 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
-
 research/tools/deflated-sharpe-and-trials.md
   verified 2700a5238549f3de on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
@@ -270,6 +249,9 @@ research/tools/nightly-run.md
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+
+research/tools/published-factors.md
+  verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
   verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
@@ -302,7 +284,7 @@ research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/toolbox-by-situation.md
-  verified 580a02185f5e2d2c on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 0c170e67999d429a on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

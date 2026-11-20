@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/situations.py
   - apps/alpha-cli/src/alpha_cli/toolbox/find.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/*.py
-verified: 580a02185f5e2d2c
+verified: 0c170e67999d429a
 ---
 
 # Toolbox checks, by situation
@@ -14,11 +14,10 @@ Start from your situation, in plain words: `alpha tool find "<words>"` ranks the
 A check gives a reading in context, never a pass or fail. Any check may run at any time, also on one part of an idea.
 
 Choose checks before you see results when you can: `alpha tool declare <run_id> --set <name>`.
-The result is then marked `declared`. Otherwise it is marked `exploratory`. Nothing is refused.
-`alpha tool results <run_id>` shows the counts.
+The result is then marked `declared`, otherwise `exploratory`. Nothing is refused. `alpha tool results <run_id>` shows the counts.
 <!-- situations:begin -->
-- The result looks too good: `robustness.start_end_dates`, `trades.concentration`, `resampling.sharpe_interval`, `resampling.drawdown_distribution`,
-  `overfit.deflated_sharpe`
+- The result looks too good: `robustness.start_end_dates`, `trades.concentration`, `context.published_factors`, `resampling.sharpe_interval`,
+  `resampling.drawdown_distribution`, `overfit.deflated_sharpe`
 - The result looks too good after many tries: `overfit.deflated_sharpe`
 - Big drawdown, or how deep the drop could get: `performance.downside_ratios`, `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`,
   `resampling.student_t_paths`
@@ -31,10 +30,11 @@ The result is then marked `declared`. Otherwise it is marked `exploratory`. Noth
 - Wins and losses cluster or alternate: `trades.dependence`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `costs.break_even`
-- Is this just the market going up: `market.attribution`, `costs.break_even`
+- Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`
 - Return compared with the risk taken: `performance.downside_ratios`
 - Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.
 - Would a slightly different data feed change the answer: No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.
+- Is this just a known published factor: `context.published_factors`
 <!-- situations:end -->
 
 Rule: [toolbox rules](../../docs/reference/invariants/cli-toolbox.md#finding-checks-and-recording-the-plan).

@@ -11,7 +11,7 @@ from alpha_cli.spine.errors import SpineError, tool_error
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.stores import _stores
 from alpha_cli.toolbox import declarations, inputs, store
-from alpha_cli.toolbox.contract import ToolSpec
+from alpha_cli.toolbox.contract import REFERENCE_LABEL, ToolSpec
 from alpha_cli.toolbox.registry import get
 
 
@@ -109,7 +109,9 @@ def run(
                 else semantic_seed(seed, file)
             )
             rng = default_rng(effective_seed) if spec.seeded else None
-            result = spec.compute(inputs.Inputs(series, market, effective_seed), settings, rng)
+            result = spec.compute(
+                inputs.Inputs(series, market, effective_seed, home), settings, rng
+            )
             written_at = now()
             # The one place a result is written: it is declared only if chosen before this moment.
             declared = declarations.status(home, target, tool_id, set_name, written_at)
@@ -120,6 +122,7 @@ def run(
                         *base["labels"],
                         *series.reserve_labels(),
                         *result.labels,
+                        *([REFERENCE_LABEL] if "reference_factors" in spec.needs else []),
                         declared,
                     ]
                 )

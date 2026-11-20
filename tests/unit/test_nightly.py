@@ -53,6 +53,7 @@ class FakeRunner:
 def _happy() -> dict[str, Reply]:
     run = {"asset": "SPY", "run_id": "r1", "verdict": "C", "error": None, "labels": ["quick"]}
     return {
+        "follow list": ok({"follows": []}),
         "next": ok({"stores": [], "recent_trials": [], "paths": {}, "waiting": {}, "notes": []}),
         "data health": ok({"symbol": "SPY", "verdict": "pass", "checks": []}),
         "test": ok({"test_id": "t1", "trials_total": 3, "results": [run]}),

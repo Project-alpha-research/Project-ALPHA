@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 5c2c67c7f59090f4 on 2026-11-20: Follow update now skips calendar lookups for warm-up bars and refuses out-of-range dates in words; this page's rules are unchanged
+  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 apps/alpha-cli/README.md
-  verified 5c2c67c7f59090f4 on 2026-11-20: Follow update now skips calendar lookups for warm-up bars and refuses out-of-range dates in words; this page's rules are unchanged
+  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 6c3c833076d17fee on 2026-11-19: Invariants page split into sections; routing unchanged.
 
 docs/reference/invariants/cli-follow.md
-  verified 79d1619c5c82724a on 2026-11-20: calendar range sentence added; code only reformatted
+  verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -38,10 +38,10 @@ docs/reference/invariants/cli-results-check.md
   verified b7d30ef3e2484569 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified c95595a7c5e135ff on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified c73a8f27192ce963 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified de5d0feaaf793bbd on 2026-11-20: Follow update now skips calendar lookups for warm-up bars and refuses out-of-range dates in words; this page's rules are unchanged
+  verified af278a9aaa2327fa on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
@@ -218,7 +218,7 @@ research/tools/diagnose-and-audit.md
   verified c48efd7ea1bfb32a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/follow.md
-  verified f54a89035577d58c on 2026-11-20: Follow update calendar lookups are now bounded to the forward window; this page states no calendar rule that changed
+  verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
@@ -230,7 +230,7 @@ research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/nightly-run.md
-  verified 646843bb494848e4 on 2026-11-20: Cosmetic edit only; the page matches the code.
+  verified 4f6aa0e464b24bbd on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct

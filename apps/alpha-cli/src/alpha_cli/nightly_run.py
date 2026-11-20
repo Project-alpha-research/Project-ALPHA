@@ -1,7 +1,9 @@
 """`alpha nightly run`: the golden paths, one real command at a time, on the stored data.
 
 N1 is the rule path, N2 the setup path, N3 the RD-Agent path (off until `rdagent_config` is
-set). Each step is the installed command in a child process. A failed step does not stop the
+set). N0 (opt-in) refreshes the stored bars of followed assets; N4 updates every followed idea
+and is run only when one is followed (`nightly_follow`). Each step is the installed command in a
+child process. A failed step does not stop the
 independent steps after it; steps that need it are marked "not run".
 """
 
@@ -14,7 +16,8 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.nightly_config import NightlyConfig
-from alpha_cli.nightly_record import ALL, N3_STUB, build_record, new_folder, write_record
+from alpha_cli.nightly_follow import follow_steps
+from alpha_cli.nightly_record import N3_STUB, build_record, new_folder, selected, write_record
 from alpha_cli.nightly_steps import (
     BLOCKING,
     MINOR,
@@ -267,11 +270,12 @@ def run_nightly(
     today: date | None = None,
 ) -> dict[str, Any]:
     """Run the chosen paths, write the record in a new dated folder and return it."""
-    wanted = tuple(name for name in ALL if only is None or name in only)
+    wanted = selected(only, config.refresh_followed)
     day = today or datetime.now(UTC).date()
     folder, number = new_folder(home, day)
     paths = {"N1": rule_path, "N2": setup_path, "N3": rdagent_path}
-    steps = [step for name in wanted for step in paths[name](config, runner)]
-    record = build_record(steps, wanted, day, number, config.source)
+    steps = [step for name in wanted if name in paths for step in paths[name](config, runner)]
+    later, follows, heads = follow_steps(config, home, runner, wanted, day)
+    record = build_record(steps + later, wanted, day, number, config.source, follows, heads)
     write_record(folder, record)
     return record

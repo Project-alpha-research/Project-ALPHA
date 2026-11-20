@@ -21,6 +21,7 @@ class NightlyConfig:
     post_tools: tuple[str, ...] = ()
     rdagent_config: Path | None = None
     rdagent_timeout: float = 14400.0
+    refresh_followed: bool = False  # N0: pull fresh bars for followed assets only
     source: Path | None = None  # the file this was read from; not a setting
 
 
@@ -33,6 +34,7 @@ KEYS = (
     "post_tools",
     "rdagent_config",
     "rdagent_timeout_seconds",
+    "refresh_followed",
 )
 
 
@@ -76,6 +78,9 @@ def load_config(path: Path) -> NightlyConfig:
     quick = table.get("quick", False)
     if not isinstance(quick, bool):
         raise NightlyConfigError("`quick` must be true or false.")
+    refresh = table.get("refresh_followed", False)
+    if not isinstance(refresh, bool):
+        raise NightlyConfigError("`refresh_followed` must be true or false.")
     rdagent = table.get("rdagent_config")
     return NightlyConfig(
         assets=assets,
@@ -86,5 +91,6 @@ def load_config(path: Path) -> NightlyConfig:
         post_tools=_strings(table.get("post_tools", []), "post_tools"),
         rdagent_config=_file(rdagent, "rdagent_config", base) if rdagent else None,
         rdagent_timeout=_seconds(table, "rdagent_timeout_seconds", 14400.0),
+        refresh_followed=refresh,
         source=path.resolve(),
     )

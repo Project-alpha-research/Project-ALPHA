@@ -25,10 +25,12 @@ READER_REASONS = {
     "follow_replay.py": "F2: replays the frozen rule with the rule test's engine step",
     "follow_book.py": "F2: the paper account arithmetic that goes into each entry",
     "follow_show.py": "F2: prints the last entries and the paper equity of a follow",
+    "follow_today.py": "F3: reads every journal to build the what-is-active-today view",
+    "follow_counts.py": "F3: the one-line count `alpha next` prints, through follow_today",
 }
 READERS = frozenset(CLI + name for name in READER_REASONS)
 STORE_IMPORT = re.compile(
-    r"follow_(store|chain|journal|source|update|update_check|replay|book|show)\b"
+    r"follow_(store|chain|journal|source|update|update_check|replay|book|show|today)\b"
 )
 FORWARD_PATH = re.compile(
     r"""/\s*["']forward["']|["']forward/|/forward/|(Path|joinpath)\([^)\n]*["']forward["']"""
@@ -116,4 +118,27 @@ def test_the_guard_fails_on_a_forbidden_import_in_a_research_module() -> None:
         f"{CLI}spine/run.py: names the follow store",
         f"{CLI}today_page.py: names the follow store",
         "workers/rdagent/loop.py: opens a path under forward/",
+    ]
+
+
+def test_next_and_the_nightly_modules_are_not_readers_and_pass_the_guard() -> None:
+    files = sources()
+    quiet = (
+        "next_cmds.py",
+        "nightly_run.py",
+        "nightly_steps.py",
+        "nightly_record.py",
+        "nightly_status.py",
+        "nightly_follow.py",
+        "nightly_refresh.py",
+        "nightly_config.py",
+        "nightly_cmds.py",
+    )
+    for name in quiet:
+        assert CLI + name in files and CLI + name not in READERS
+        assert violations({CLI + name: files[CLI + name]}) == []
+    assert "follow_counts" in files[CLI + "next_cmds.py"]
+    assert "follow_today" not in files[CLI + "next_cmds.py"].replace("follow_counts", "")
+    assert violations({f"{CLI}next_cmds.py": "from alpha_cli.follow_today import build\n"}) == [
+        f"{CLI}next_cmds.py: names the follow store"
     ]

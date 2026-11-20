@@ -13,7 +13,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.nightly_config import NightlyConfigError, load_config
-from alpha_cli.nightly_record import ALL
+from alpha_cli.nightly_record import ORDER
 from alpha_cli.nightly_run import run_nightly
 from alpha_cli.nightly_status import status_facts, status_text
 from alpha_cli.nightly_steps import subprocess_runner
@@ -29,7 +29,7 @@ def run(
     config: CONFIG = Path("nightly.toml"),
     only: Annotated[
         str | None,
-        typer.Option("--only", help="Comma list of N1,N2,N3. A partial run is not full."),
+        typer.Option("--only", help="Comma list of N1,N2,N3,N4,N0. A partial run is not full."),
     ] = None,
     json_out: JSON = False,
 ) -> None:
@@ -37,8 +37,8 @@ def run(
     chosen = (
         tuple(part.strip().upper() for part in only.split(",") if part.strip()) if only else None
     )
-    if chosen is not None and (not chosen or not set(chosen) <= set(ALL)):
-        typer.echo(f"--only takes names from {', '.join(ALL)}.", err=True)
+    if chosen is not None and (not chosen or not set(chosen) <= set(ORDER)):
+        typer.echo(f"--only takes names from {', '.join(ORDER)}.", err=True)
         raise typer.Exit(2)
     try:
         settings = load_config(config)

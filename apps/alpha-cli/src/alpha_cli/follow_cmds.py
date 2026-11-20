@@ -11,7 +11,7 @@ from typing import Annotated, Any
 
 import typer
 
-from alpha_cli import follow_show, follow_source, follow_update
+from alpha_cli import follow_show, follow_source, follow_today, follow_update
 from alpha_cli import follow_store as store
 from alpha_cli._cli_json import emit
 from alpha_cli.follow_journal import JournalRefusal
@@ -164,7 +164,11 @@ def show(
 
 @follow_app.command("verify")
 def verify(
-    follow_id: Annotated[str, typer.Argument(help="Follow id or prefix.")], json_out: JSON = False
+    follow_id: Annotated[str, typer.Argument(help="Follow id or prefix.")],
+    entry: Annotated[
+        int, typer.Option("--entry", help="Also print the hash of this entry number.")
+    ] = 0,
+    json_out: JSON = False,
 ) -> None:
     """Recompute the hash chain. Exit 1 at the first break."""
     home = AlphaSettings().data_dir
@@ -181,6 +185,12 @@ def verify(
         "head": report.head,
         "first_break": None if broken is None else broken._asdict(),
     }
+    if entry and broken is None:
+        found = store.entries_of(home, identity)
+        facts["at_entry"] = {
+            "seq": entry,
+            "entry_hash": found[entry - 1].entry_hash if 0 < entry <= len(found) else None,
+        }
     text = (
         f"Journal of follow {identity} (paper) is intact: {report.entries} entries, "
         f"head {report.head}."
@@ -191,6 +201,13 @@ def verify(
     emit(facts, json_out=json_out, fallback=text)
     if broken is not None:
         raise typer.Exit(1)
+
+
+@follow_app.command("today")
+def today(json_out: JSON = False) -> None:
+    """What is active today: one row per active follow, grouped. Reads journals only."""
+    facts = follow_today.build(AlphaSettings().data_dir, _clock())
+    emit(facts, json_out=json_out, fallback=follow_today.text(facts))
 
 
 @follow_app.command("stop")

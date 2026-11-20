@@ -12,7 +12,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/next_cmds.py
   - tests/unit/test_reading_rule.py
-verified: c95595a7c5e135ff
+verified: c73a8f27192ce963
 ---
 
 # Command line rule-test readings invariants

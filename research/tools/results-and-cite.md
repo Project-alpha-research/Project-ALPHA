@@ -6,9 +6,8 @@ sources:
 verified: 7e5f93f047b1cea7
 ---
 # Results and cite
-**Reach for it when** quoting a stored run or checking what was tried. **Commands** `alpha results --symbol SPY --limit 50 --json`,
-`alpha results show <run_id> --json`, `alpha results cite <run_id> <metric>`, `alpha results compare <run_id> <run_id>`, `alpha results check <file>`.
-**How to read it** Show leads with [data health](data-health.md). Cite copies value, source, basis; `--tool-output <id>` picks one; name non-default settings.
+**Reach for it when** quoting a run or checking what was tried. **Commands** `alpha results show <run_id> --json`, `alpha results cite <run_id> <metric>`,
+`alpha results compare <run_id> <run_id>`, `alpha results check <file>`. **How to read it** Cite copies value, source, basis; `--tool-output <id>` picks one.
 - `tradable_total_return`, `tradable_cagr`, `tradable_sharpe`, `tradable_max_drawdown`, `tradable_trades`, `tradable_benchmark_total_return`,
   `tradable_benchmark_cagr`, `tradable_benchmark_sharpe`, `tradable_benchmark_max_drawdown`, `scored_total_return`, `scored_cagr`, `scored_sharpe`,
   `scored_max_drawdown`, `scored_trades`, `scored_benchmark_total_return`, `scored_benchmark_cagr`, `scored_benchmark_sharpe`, `scored_benchmark_max_drawdown`,
@@ -36,5 +35,6 @@ verified: 7e5f93f047b1cea7
   `performance.downside_ratios.sortino`, `performance.downside_ratios.calmar`, `performance.downside_ratios.omega`, `performance.downside_ratios.tail_ratio`,
   `performance.downside_ratios.sharpe`, `setup_occurrences`, `setup_mean_net_return`, `setup_median_net_return`, `setup_hit_rate`, `setup_excess_over_drift`,
   `setup_random_date_p`, `resampling.block_bootstrap_paths.low`, `resampling.block_bootstrap_paths.median`, `resampling.block_bootstrap_paths.high`,
-  `resampling.block_bootstrap_paths.drop_q95`, `resampling.sharpe_interval.point`, `resampling.sharpe_interval.lower`, `resampling.sharpe_interval.upper`.
+  `resampling.block_bootstrap_paths.drop_q95`, `resampling.sharpe_interval.point`, `resampling.sharpe_interval.lower`, `resampling.sharpe_interval.upper`,
+  `context.published_factors.explained_share`, `context.published_factors.sentence`.
 **What it cannot tell you** `cite` never computes (a gap is `null` + reason); no logic check. **Next** No row: say "not tested"; offer a [test](rule-test.md).

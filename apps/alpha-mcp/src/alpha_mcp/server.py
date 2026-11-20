@@ -28,9 +28,16 @@ from alpha_cli.catalog import strategy_params as catalog_strategy_params
 from alpha_cli.run_store import valid_run_id
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
-from alpha_mcp import _control, _invoke, _runs, _types, spine_tools
+from alpha_mcp import _control, _invoke, _runs, _types, front_door_tools, spine_tools
 
-mcp = FastMCP("alpha")
+mcp = FastMCP(
+    "alpha",
+    instructions=(
+        "Call next_step first: it says where the project stands and what can be done now. "
+        "Then use tool_find to pick a check from a plain question, idea_file to read one idea, "
+        "and follows_today to see what is active. Results are research records, not advice."
+    ),
+)
 
 _MAX_OPTIONS: Final = 32
 _MAX_OPTION_VALUE_LENGTH: Final = 256
@@ -1401,6 +1408,7 @@ def compare_runs(run_ids: list[str]) -> _types.RunComparisonOut:
 
 
 spine_tools.register(mcp)
+front_door_tools.register(mcp)
 
 
 def main() -> None:

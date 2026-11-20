@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 3eb52eac4ae6342c
+verified: 249fe77d00c94a15
 ---
 
 # alpha-cli: code map and change loop

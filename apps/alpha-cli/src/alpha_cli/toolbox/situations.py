@@ -19,6 +19,7 @@ Situation = Literal[
     "risk-adjusted",
     "out-of-sample",
     "data-doubt",
+    "known-factor",
 ]
 
 # Tag -> the plain words an owner would use. Wording follows research/tools/README.md.
@@ -39,4 +40,5 @@ SITUATIONS: dict[Situation, str] = {
     "risk-adjusted": "Return compared with the risk taken",
     "out-of-sample": "Does it hold up out of sample",
     "data-doubt": "Would a slightly different data feed change the answer",
+    "known-factor": "Is this just a known published factor",
 }

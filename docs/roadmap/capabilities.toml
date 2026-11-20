@@ -788,13 +788,14 @@ missing = "tested in a browser against a test server only; no end-to-end smoke c
 id = "ai-tools-connection"
 name = "Let an AI assistant use ALPHA's tools"
 codes = ["MCP"]
-what = "Connect an AI assistant so it can run ALPHA commands, including the main research path (rule test, checks, results, trial ledger, data health); it can suggest and run, but never approve."
+what = "Connect an AI assistant so it can run ALPHA commands, including the main research path (rule test, checks, results, trial ledger, data health) and the front door (where the project stands, idea cards, the library, finding a check, what is active today, nightly status); it can suggest and run, but never approve."
 see_it = ["uv run alpha-mcp (started by an MCP-capable AI client)"]
 entry_points = ["script: alpha-mcp"]
 proof_synthetic = [
   "tests/integration/test_mcp_server.py::test_backtest_run_tool_returns_a_manifest",
   "tests/integration/test_research_mcp.py::test_research_mcp_capture_propose_status_and_report_round_trip",
   "tests/integration/test_mcp_server.py::test_spine_rule_test_then_ledger_summary_reads_the_new_row",
+  "tests/integration/test_mcp_front_door.py::test_next_step_on_an_empty_home",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
@@ -1397,7 +1398,7 @@ docs = ["docs/reference/invariants/cli-runs.md"]
 [[capability]]
 id = "investigation-tools"
 name = "Investigation tools for rule tests and fixed checks on RD-Agent replays"
-what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. A rule test's Workstation report lists the stored checks of that run with their readings, or the command to run the standard set. Find a check from a plain question with alpha tool find, list checks by situation, and record which checks were chosen before their results (declared) so the rest show as exploratory. Agent choice is not built."
+what = "Ask of a recorded rule test how much of its return is market exposure, whether it earns only in calm or turbulent markets, and when its behaviour shifted. Inspect stored downside ratios, date windows, trade sides and profit concentration. Test return uncertainty, alternate drawdowns, trade streaks and family-deflated Sharpe. RD-Agent feedback and journey step 7 show the fixed post-verdict checks on each shown replay. A rule test's Workstation report lists the stored checks of that run with their readings, or the command to run the standard set. Compare a rule test with well-known published factors, as a reading in context. Find a check from a plain question with alpha tool find, list checks by situation, and record which checks were chosen before their results (declared) so the rest show as exploratory. Agent choice is not built."
 see_it = [
   "alpha tool find \"how bad could drawdown get\"", "alpha tool situations", "alpha tool declare <run_id> --set market-context", "alpha tool results <run_id> --json",
   "alpha tool run resampling.sharpe_interval <run_id>", "alpha tool run resampling.student_t_paths <run_id>", "alpha tool run trades.dependence <run_id>",
@@ -1406,6 +1407,7 @@ see_it = [
   "alpha tool run robustness.start_end_dates <run_id>",
   "alpha tool run trades.side_contribution <run_id>",
   "alpha tool run trades.concentration <run_id>",
+  "alpha tool run context.published_factors <run_id>",
   "alpha tool run-set market-context <run_id> --json", "alpha tool list --for <run_id> --json", "alpha tool history <run_id> --json", "alpha results show <run_id> --json", "Workstation: open a rule test run; Summary shows Checks run on this test"]
 entry_points = ["cli: alpha tool", "code: apps/alpha-cli/src/alpha_cli/toolbox/registry.py", "code: packages/alpha-validation/src/alpha_validation/attribution.py", "code: packages/alpha-validation/src/alpha_validation/regimes.py", "code: packages/alpha-validation/src/alpha_validation/changepoints.py"]
 proof_synthetic = [
@@ -1418,15 +1420,18 @@ proof_synthetic = [
   "tests/unit/test_toolbox_run_level_checks.py::test_date_windows",
   "tests/unit/test_toolbox_run_level_checks.py::test_side_contribution",
   "tests/unit/test_toolbox_run_level_checks.py::test_concentration",
+  "tests/unit/test_toolbox_published_factors.py::test_known_answer_planted_factor",
+  "tests/unit/test_toolbox_published_factors.py::test_held_back_months_are_never_read",
+  "tests/unit/test_reference_read_structural_guard.py::test_only_descriptive_entries_use_the_reference_read",
   "tests/unit/test_toolbox_find.py::test_drawdown_question_finds_the_drawdown_entries",
   "tests/unit/test_toolbox_declarations.py::test_declared_before_the_result_is_marked_declared",
   "tests/unit/test_toolbox_declarations.py::test_values_and_result_ids_do_not_depend_on_a_declaration",
   "tests/unit/test_spine_tools.py::test_attribution_is_stored_outside_the_run_and_counted", "tests/integration/test_web_api_rule_test_checks.py::test_stored_results_are_returned_with_their_stored_reading", "tests/unit/test_regimes.py::test_a_bar_cannot_change_its_own_causal_label", "tests/unit/test_changepoints.py::test_two_planted_mean_shifts_are_found"]
 proof_smoke = ["tests/smoke/test_rule_tools_smoke.py::test_investigation_tools_on_a_rule_test", "tests/smoke/test_web_checks_smoke.py::test_web_api_returns_the_readings_of_a_rule_tests_standard_set"]
-real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs"
+real_data = "market tools only, development machine: SPY and BTC/USDT 50/200 moving-average runs on 2026-11-16 (labelled dev-machine-data); run-level and RD-Agent checks verified on synthetic runs; published factors read once on a copy of a US ETF rule-test run (2026-11-20, read-only)"
 needs = []
 state = "Working"
-docs = ["research/tools/resampling-checks.md", "research/tools/montecarlo-checks.md", "research/tools/run-level-checks.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
+docs = ["research/tools/resampling-checks.md", "research/tools/montecarlo-checks.md", "research/tools/run-level-checks.md", "research/tools/published-factors.md", "docs/reference/project/components/validation-and-evidence.md", "docs/reference/invariants/cli-investigation-tools.md"]
 
 [[capability]]
 id = "price-lookalikes"

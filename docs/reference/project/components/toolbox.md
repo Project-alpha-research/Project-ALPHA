@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: fac522123feb76b8
+verified: 91a23fece9fa0375
 ---
 
 # Toolbox
@@ -62,8 +62,9 @@ The Workstation report shows a rule test's stored checks.
 
 ## What is real today
 
-Fifteen checks are registered: three market descriptions, five that read a rule test's stored files, and seven tests on
-that stored history. `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
+Sixteen checks are registered: three market descriptions, five that read a rule test's stored files, seven tests on
+that stored history, and one that sets a run beside published factors ([rule](../../invariants/cli-toolbox.md#descriptive-reference-reads)).
+`alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
 `find`, `situations` and `declare` ([how](../../invariants/cli-toolbox.md#finding-checks-and-recording-the-plan))
 help choose and record checks. Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
 each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow
@@ -74,13 +75,12 @@ agent-chosen checks in the proposal, and most of the 480-entry catalogue ([STATU
 
 - **Workspaces:** none (inside the command-line workspace `apps/alpha-cli`, owned by [command line](command-line.md)).
 - **Capabilities:** `investigation-tools`
-- Code: `apps/alpha-cli/src/alpha_cli/toolbox/` (contract, inputs, runner, store, registry, sets, gates,
-  reserve and family modules) and `apps/alpha-cli/src/alpha_cli/tool_cmds.py`.
+- Code: `apps/alpha-cli/src/alpha_cli/toolbox/` (contract, inputs, runner, store, registry,
+  sets, reference, families) and `tool_cmds.py`.
 - Tests: `tests/unit/test_toolbox_*.py`, `tests/smoke/test_rule_tools_smoke.py`.
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md); rules in [toolbox rules](../../invariants/cli-toolbox.md)
   and [investigation tools](../../invariants/cli-investigation-tools.md). Tool cards: `research/tools/`.
 - **Plan:** the toolbox rows of the [AI partner stage](../../../roadmap/production-scope-2.md#8-ai-partner) of the checklist.
-- Example card: [market family](../../../../research/tools/attribution-regimes-changepoints.md).
 
 ## Decisions and open questions
 

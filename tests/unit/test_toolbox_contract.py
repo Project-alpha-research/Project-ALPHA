@@ -63,7 +63,14 @@ def _check_reading(spec: ToolSpec, doc: dict[str, Any], home: Path) -> None:
         parts.append(literal)
         if key is not None:
             value = doc["values"][key]
-            parts.append("unavailable" if value is None else format(value, fmt or ""))
+            text = "unavailable" if value is None else format(value, fmt or "")
+            # Published-factor sentences carry per-factor and search numbers that are stored in
+            # the result details, not as separate facts: their text is quoted as code.
+            parts.append(
+                f"`{text}`"
+                if spec.id == "context.published_factors" and key in ("sentence",)
+                else text
+            )
             if isinstance(value, (int, float)):
                 parts.append(f" [{RUN}:{spec.id}.{key}]")
     diagnostics = home / "runs" / RUN / "diagnostics.json"
@@ -88,7 +95,11 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
             series, positions=tuple(i // 25 % 2 == 0 for i in range(len(series.dates)))
         )
         monkeypatch.setattr(inputs, "load_run", lambda home, run_id, result=series: result)
-        if set(spec.needs) & inputs.STORED_FILES.keys():
+        if spec.id == "context.published_factors":
+            from tests.unit.published_factors_support import planted_home
+
+            planted_home(home, weights={"Mom12m": 0.5})
+        elif set(spec.needs) & inputs.STORED_FILES.keys():
             from tests.unit.test_toolbox_resampling_checks import TOOLS, prepare_sample
             from tests.unit.test_toolbox_run_level_checks import stored_run
 
@@ -101,8 +112,9 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
         assert set(doc["values"]) == {output.key for output in spec.outputs}
         assert doc["elapsed_seconds"] < {"instant": 5, "seconds": 60, "minutes": 900}[spec.cost]
         results.append(doc["result"])
-        if spec.id in BASELINE:
-            _assert_close(doc["result"], REFERENCE[BASELINE[spec.id]], spec.id)
+        pinned = {**BASELINE, "context.published_factors": "context.published_factors|planted|"}
+        if spec.id in pinned:
+            _assert_close(doc["result"], REFERENCE[pinned[spec.id]], spec.id)
         _check_reading(spec, doc, home)
         if not spec.seeded:
             break

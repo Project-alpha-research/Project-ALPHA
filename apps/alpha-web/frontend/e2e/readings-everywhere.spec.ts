@@ -32,6 +32,9 @@ async function openRun(page: Page, manifest: Record<string, unknown>): Promise<v
     run_id: runId, kind: 'runs', display_name: 'Synthetic validate', manifest, has_trades: false, rule_test: null,
   } }))
   await page.route(`**/api/runs/${runId}/figures`, route => route.fulfill({ json: { run_id: runId, items: [] } }))
+  // The Gates charts read these two; an old run has neither.
+  await page.route(`**/api/runs/${runId}/nulls`, route => route.fulfill({ status: 404, json: { detail: 'no null distributions for this run' } }))
+  await page.route('**/api/candles/**', route => route.fulfill({ status: 404, json: { detail: 'no bars' } }))
   await page.route('**/api/risk/scenario**', route => route.fulfill({ json: {
     run_id: runId, confidence: 0.95, provenance: { metric_basis: null }, scenarios: [
       { name: 'baseline', sharpe: 0.62, annual_vol: 0.14, max_drawdown: -0.18, value_at_risk: -0.012, expected_shortfall: -0.018, total_return: 0.42 },

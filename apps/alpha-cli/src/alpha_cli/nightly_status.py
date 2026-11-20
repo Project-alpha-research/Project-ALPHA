@@ -18,13 +18,16 @@ from alpha_cli.nightly_steps import COMPUTED, REUSED, UNKNOWN
 
 RULE = (
     "Ready needs the two latest full-attempt runs to be on two different dates, each with no "
-    "blocking defect, all three paths run, a computed rule test and a computed setup step. "
+    "blocking defect, all three paths run, a rule test that was computed (a recheck: computed "
+    "again and compared with the stored result, and the two matched; or the first run of the "
+    "test) and a computed setup step. "
     "When any idea is followed, the follow update (N4) is a fourth path and must run too; "
     "when nothing is followed it is not run and not required."
 )
 NEED_DATA = (
-    "The run needs fresh bars to count; pull data before it, or set `refresh_followed = true` "
-    "to pull new bars for the assets of followed ideas only (step N0)."
+    "The run does not need new bars to count: the rule test is the same test every night, so the "
+    "run computes it again and compares it with the stored result. To pull new bars for the "
+    "assets of followed ideas only, set `refresh_followed = true` (step N0)."
 )
 TIMING = (
     "Timing: for a daily stock follow to be on time, the nightly run must start after the "
@@ -112,7 +115,10 @@ def _why_not(row: dict[str, Any]) -> list[tuple[str, str]]:
             )
         )
     if row["rule_test"] != COMPUTED:
-        why = {REUSED: "no new data that night: the rule test was answered from the stored result"}
+        why = {
+            REUSED: "the engine did not run: the rule test was answered from the stored result "
+            "and not computed again"
+        }
         kind = "reused only" if row["reused_only"] else "has no computed rule test"
         how = why.get(row["rule_test"], "the rule test evidence is unknown")
         found.append(("d", f"Run {name} {kind}: {how}."))
@@ -129,9 +135,11 @@ def readiness(records: list[dict[str, Any]]) -> dict[str, Any]:
     (c) both ran all three paths N1, N2 and N3 (an N3 stub is not run), and N4 (the follow
     update) too when the record says an idea was followed. N4 is a fourth path required only if
     follows exist; with none it is "not run: nothing is followed" and does not count against it;
-    (d) both have a `computed` rule-test step and a `computed` setup step; a run where
-    everything was reused is "reused only" and does not qualify. Old records with no `evidence`
-    read as `unknown` and never qualify. Partial `--only` runs are ignored.
+    (d) both have a `computed` rule-test step and a `computed` setup step. `computed` means the
+    engine ran and either the first run of the test finished or a recheck (computed again and
+    compared with the stored result) matched; a mismatch is a blocking defect, so (b) fails. A run
+    where everything was reused is "reused only" and does not qualify. Old records with no
+    `evidence` read as `unknown` and never qualify. Partial `--only` runs are ignored.
     """
     last = [r for r in records if not _partial(r)][-2:]
     rows = [_row(r) for r in last]

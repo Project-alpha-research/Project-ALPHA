@@ -38,7 +38,7 @@ verified: e8c675fcdb6fe821
 ## Command line
 | file | owns | load when |
 |---|---|---|
-| [cli-runs.md](cli-runs.md) | run composition and publication | `alpha run` and published runs |
+| [cli-runs.md](cli-runs.md), [cli-nightly.md](cli-nightly.md) | runs, publication; the nightly run | `alpha run`, `alpha nightly` |
 | [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |

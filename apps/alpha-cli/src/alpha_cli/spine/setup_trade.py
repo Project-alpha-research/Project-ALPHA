@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -266,15 +266,27 @@ def _publish(
     )
 
 
-def _run(
+@dataclass(frozen=True)
+class Inputs:
+    """What a trade test reads: the stored find, the bars it may use and the health record."""
+
+    folder: Path
+    manifest: dict[str, Any]
+    spec: Any
+    bars: dict[str, Any]
+    warmup: int
+    record: dict[str, Any]
+    trade_id: str
+    control_seed: str
+
+
+def read_inputs(
     find_id: str,
     home: Path,
     check_data: bool,
     accept_bad_data: str | None,
     report_time: datetime | None,
-) -> dict[str, Any]:
-    import polars as pl
-
+) -> Inputs:
     folder, manifest, spec = load_find(home, find_id)
     if spec.exit is None or not any(spec.exit.model_dump(exclude={"direction"}).values()):
         raise SpineError(
@@ -291,43 +303,64 @@ def _run(
         report_time=report_time,
     )
     trade_id, control_seed = outcome_ids(manifest, TRADE_RULE_VERSION, record)
+    return Inputs(folder, manifest, spec, bars, warmup, record, trade_id, control_seed)
+
+
+def compute_trade(home: Path, item: Inputs) -> tuple[dict[str, Any], list[Any]]:
+    """The summary and trade rows, computed from the stored find. Writes nothing."""
+    import polars as pl
+
+    spec, manifest, bars, warmup = item.spec, item.manifest, item.bars, item.warmup
+    direction = spec.exit.direction
+    other = "short" if direction == "long" else "long"
+    costs, cost_labels = asset_costs(home, list(bars), direction=direction)
+    prepared = {
+        a: prepare_exits(spec, s, carry_per_day=daily_carry(costs[a])) for a, s in bars.items()
+    }
+    charges = {a: round_trip(c) for a, c in costs.items()}
+    rows = trade_candidates(
+        pl.read_parquet(item.folder / "candidates.parquet").to_dicts(), prepared, charges
+    )
+    cache = {
+        a: {
+            p: simulate(s, p + 1, charges[a]) for p in range(max(warmup, s.warmup), len(s.bars) - 1)
+        }
+        for a, s in prepared.items()
+    }
+    reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
+    summary = _summary(
+        spec, manifest, rows, cache, item.trade_id, item.control_seed, costs, cost_labels, reason
+    )
+    control_costs, control_labels = asset_costs(home, list(bars), direction=other)
+    summary["controls"]["opposite_direction"] = _opposite_control(
+        rows, prepared, control_costs, other, control_labels
+    )
+    reserve.carry_to_outcome(summary, manifest)
+    summary["data_health"] = item.record
+    summary["labels"] = [
+        label for label in summary["labels"] if not label.startswith("data-health-")
+    ] + health_labels(item.record)
+    summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
+    return summary, rows
+
+
+def _run(
+    find_id: str,
+    home: Path,
+    check_data: bool,
+    accept_bad_data: str | None,
+    report_time: datetime | None,
+) -> dict[str, Any]:
+    item = read_inputs(find_id, home, check_data, accept_bad_data, report_time)
+    trade_id, manifest, record = item.trade_id, item.manifest, item.record
     destination = home / "setup-trades" / trade_id
-    if (destination / "manifest.json").exists():
+    executed = not (destination / "manifest.json").exists()
+    if not executed:
         summary = read_study(destination)
         summary["labels"] = [*summary["labels"], "repeat"]
         summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
     else:
-        direction = spec.exit.direction
-        other = "short" if direction == "long" else "long"
-        costs, cost_labels = asset_costs(home, list(bars), direction=direction)
-        prepared = {
-            a: prepare_exits(spec, s, carry_per_day=daily_carry(costs[a])) for a, s in bars.items()
-        }
-        charges = {a: round_trip(c) for a, c in costs.items()}
-        rows = trade_candidates(
-            pl.read_parquet(folder / "candidates.parquet").to_dicts(), prepared, charges
-        )
-        cache = {
-            a: {
-                p: simulate(s, p + 1, charges[a])
-                for p in range(max(warmup, s.warmup), len(s.bars) - 1)
-            }
-            for a, s in prepared.items()
-        }
-        reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
-        summary = _summary(
-            spec, manifest, rows, cache, trade_id, control_seed, costs, cost_labels, reason
-        )
-        control_costs, control_labels = asset_costs(home, list(bars), direction=other)
-        summary["controls"]["opposite_direction"] = _opposite_control(
-            rows, prepared, control_costs, other, control_labels
-        )
-        reserve.carry_to_outcome(summary, manifest)
-        summary["data_health"] = record
-        summary["labels"] = [
-            label for label in summary["labels"] if not label.startswith("data-health-")
-        ] + health_labels(record)
-        summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
+        summary, rows = compute_trade(home, item)
         add_study_trial_fact(home, summary)
         _publish(destination, summary, rows, manifest)
     primary = summary["pooled"]
@@ -363,6 +396,7 @@ def _run(
         **extras(home, "setup_trade", summary, trade_id),
         "folder": str(destination),
         "trials_total": ledger["total_trials"],
+        "executed": executed,
     }
 
 

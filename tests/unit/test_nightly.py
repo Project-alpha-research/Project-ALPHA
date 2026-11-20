@@ -50,21 +50,83 @@ class FakeRunner:
         raise AssertionError(f"no fake reply for: {line}")
 
 
-def _happy() -> dict[str, Reply]:
+NOTHING = {
+    "compared_with": None,
+    "computed": False,
+    "match": None,
+    "reason": "no stored result to compare with",
+}
+
+
+def matched(**more: Any) -> dict[str, Any]:
+    block = {
+        "compared_with": "r1",
+        "computed": True,
+        "seconds": 9.5,
+        "match": True,
+        "bit_identical": True,
+        "differences": [],
+        "differences_total": 0,
+        "code_changed": False,
+    }
+    return {**block, **more}
+
+
+def differs(code_changed: bool) -> dict[str, Any]:
+    found = [{"field": "manifest.oos_metrics.sharpe", "stored": 1.0, "recomputed": 2.0}]
+    return matched(match=False, differences=found, differences_total=1, code_changed=code_changed)
+
+
+def rule_reply(
+    block: dict[str, Any] | None = None, *, executed: bool = True, rows: list[Any] | None = None
+) -> Callable[[list[str]], Outcome]:
+    """`alpha test`: the recheck answer with `block`, or the normal answer (`executed`)."""
     run = {"asset": "SPY", "run_id": "r1", "verdict": "C", "error": None, "labels": ["quick"]}
+
+    def reply(tail: list[str]) -> Outcome:
+        if "--recheck" in tail:
+            row = {**run, "executed": (block or NOTHING)["computed"], "recheck": block or NOTHING}
+            body = {"recheck": True, "trials_total": 3, "results": [row]}
+            return Outcome(
+                4 if block and block["match"] is False else 0, json.dumps(body), "", 0.3, False
+            )
+        listed = rows if rows is not None else [{**run, "executed": executed}]
+        return ok({"test_id": "t1", "trials_total": 3, "results": listed})
+
+    return reply
+
+
+def setup_reply(
+    key: str, block: dict[str, Any] | None = None, *, executed: bool = True
+) -> Callable[[list[str]], Outcome]:
+    """`alpha setup study|trade`: the recheck answer or the normal answer."""
+
+    def reply(tail: list[str]) -> Outcome:
+        if "--recheck" in tail:
+            body = {"find_id": "f1", key: "x1", "executed": (block or NOTHING)["computed"]}
+            body["recheck"] = block or NOTHING
+            return Outcome(
+                4 if block and block["match"] is False else 0, json.dumps(body), "", 0.3, False
+            )
+        return ok({key: "x1", "outcome": "inconclusive", "executed": executed, "labels": []})
+
+    return reply
+
+
+def _happy() -> dict[str, Reply]:
     return {
         "follow list": ok({"follows": []}),
         "next": ok({"stores": [], "recent_trials": [], "paths": {}, "waiting": {}, "notes": []}),
         "data health": ok({"symbol": "SPY", "verdict": "pass", "checks": []}),
-        "test": ok({"test_id": "t1", "trials_total": 3, "results": [run]}),
+        "test": rule_reply(),
         "diagnose": ok({"audit": [{"check": "a", "status": "PASS"}], "flags": [], "labels": []}),
         "results cite": text("1.5 [r1:oos_sharpe] (basis) [quick]"),
         "results check": ok({"ok": True, "problems": [], "warnings": []}),
-        "setup find": ok({"find_id": "f1", "totals": {"events": 4}, "labels": ["exploratory"]}),
-        "setup study": ok(
-            {"study_id": "s1", "outcome": "not supported", "labels": ["exploratory"]}
+        "setup find": ok(
+            {"find_id": "f1", "totals": {"events": 4}, "labels": ["exploratory"], "executed": True}
         ),
-        "setup trade": ok({"trade_id": "tr1", "outcome": "inconclusive", "labels": []}),
+        "setup study": setup_reply("study_id"),
+        "setup trade": setup_reply("trade_id"),
         "results show": ok({"runs": [{"id": "tr1"}], "failed": []}),
     }
 
@@ -129,15 +191,22 @@ def test_timeout_is_blocking(tmp_path: Path) -> None:
 def test_bad_json_and_missing_field_are_blocking(tmp_path: Path) -> None:
     bad = FakeRunner({"next": Outcome(0, "not json at all", "", 0.1, False)})
     assert states(run(tmp_path / "a", bad))["N1.next"] == "defect-blocking"
-    missing = FakeRunner({"setup study": ok({"study_id": "s1"})})
+    missing = FakeRunner(
+        {
+            "setup study": lambda t: ok(
+                {"study_id": "s1", "recheck": NOTHING} if "--recheck" in t else {"study_id": "s1"}
+            )
+        }
+    )
     record = run(tmp_path / "b", missing)
     assert states(record)["N2.study"] == "defect-blocking"
     assert "outcome" in record["defects"][0]["text"]
 
 
 def test_a_not_supported_verdict_is_not_a_defect(tmp_path: Path) -> None:
-    rejected = {"test_id": "t1", "trials_total": 1, "results": [_result(verdict="F")]}
-    runner = FakeRunner({"test": ok(rejected), "setup study": ok(_study("not supported"))})
+    runner = FakeRunner(
+        {"test": rule_reply(rows=[_result(verdict="F")]), "setup study": _study("not supported")}
+    )
     record = run(tmp_path, runner)
     assert record["blocking"] == 0 and record["minor"] == 0
     study = next(s for s in record["steps"] if s["id"] == "N2.study")
@@ -145,16 +214,29 @@ def test_a_not_supported_verdict_is_not_a_defect(tmp_path: Path) -> None:
 
 
 def _result(verdict: str = "C", error: object = None) -> dict[str, Any]:
-    return {"asset": "SPY", "run_id": "r1", "verdict": verdict, "error": error, "labels": []}
+    return {
+        "asset": "SPY",
+        "run_id": "r1",
+        "verdict": verdict,
+        "error": error,
+        "labels": [],
+        "executed": True,
+    }
 
 
-def _study(outcome: str) -> dict[str, Any]:
-    return {"study_id": "s1", "outcome": outcome}
+def _study(outcome: str) -> Callable[[list[str]], Outcome]:
+    nothing = setup_reply("study_id")
+
+    def reply(tail: list[str]) -> Outcome:
+        if "--recheck" in tail:
+            return nothing(tail)
+        return ok({"study_id": "s1", "outcome": outcome, "executed": True})
+
+    return reply
 
 
 def test_asset_error_inside_a_test_is_blocking(tmp_path: Path) -> None:
-    broken = {"test_id": "t1", "trials_total": 1, "results": [_result(error={"code": "X"})]}
-    record = run(tmp_path, FakeRunner({"test": ok(broken)}))
+    record = run(tmp_path, FakeRunner({"test": rule_reply(rows=[_result(error={"code": "X"})])}))
     assert states(record)["N1.test"] == "defect-blocking"
 
 
@@ -313,7 +395,8 @@ def test_all_reused_runs_are_reused_only_reason_d(tmp_path: Path) -> None:
     verdict = _verdict(tmp_path)
     assert verdict["missing"] == ["d"]
     assert "reused only" in verdict["reasons"][0]
-    assert "no new data that night" in verdict["reasons"][0]
+    assert "no new data" not in verdict["reasons"][0]
+    assert "the engine did not run" in verdict["reasons"][0]
     assert verdict["recent"][-1]["reused_only"] is True
 
 
@@ -353,7 +436,7 @@ def test_status_prints_runs_and_exactly_what_is_missing(tmp_path: Path) -> None:
     text_out = status_text(status_facts(tmp_path, Path("nightly.toml")))
     assert "2026-11-19-1" in text_out and "reused only" in text_out
     assert "Ready: no." in text_out and "(d)" in text_out
-    assert "pull data before it" in text_out
+    assert "does not need new bars" in text_out
     _record(tmp_path, "2026-11-20-1")
     _record(tmp_path, "2026-11-21-1")
     assert "Ready: yes." in status_text(status_facts(tmp_path, Path("nightly.toml")))
@@ -382,29 +465,112 @@ def _evidence(record: dict[str, Any]) -> dict[str, str]:
     return {step["id"]: step["evidence"] for step in record["steps"]}
 
 
-def test_steps_say_computed_or_reused_from_what_the_commands_print(tmp_path: Path) -> None:
+def test_steps_say_computed_or_reused_from_the_executed_field_not_the_label(
+    tmp_path: Path,
+) -> None:
     fresh = _evidence(run(tmp_path / "a", FakeRunner()))
     assert fresh["N1.test"] == fresh["N2.find"] == fresh["N2.study"] == "computed"
     assert fresh["N1.next"] == "unknown"
-    again = {"labels": ["quick", "repeat"]}
-    repeat = _result()
-    repeat["labels"] = again["labels"]
-    listed = {"test_id": "t1", "trials_total": 3, "results": [repeat]}
+    served = {**_result(), "labels": ["quick"], "executed": False}
     runner = FakeRunner(
         {
-            "test": ok(listed),
-            "setup find": ok({"find_id": "f1", "totals": {}, "labels": ["repeat"]}),
+            "test": rule_reply(rows=[served]),
+            "setup find": ok({"find_id": "f1", "totals": {}, "labels": [], "executed": False}),
         }
     )
     record = run(tmp_path / "b", runner)
     assert _evidence(record)["N1.test"] == "reused"
     assert _evidence(record)["N2.find"] == "reused"
     assert (
-        "N1.test: worked, reused the stored result (repeat)"
+        "N1.test: worked, the stored result was returned (the engine did not run)"
         in (tmp_path / "b" / "home" / "nightly" / f"{record['date']}-1" / "summary.txt").read_text()
     )
+    # A `repeat` label with `executed: true` is a recomputed test: it reads as computed.
+    labelled = {**_result(), "labels": ["quick", "repeat"], "executed": True}
+    again = run(tmp_path / "d", FakeRunner({"test": rule_reply(rows=[labelled])}))
+    assert _evidence(again)["N1.test"] == "computed"
     silent = FakeRunner({"setup find": ok({"find_id": "f1", "totals": {}})})
     assert _evidence(run(tmp_path / "c", silent))["N2.find"] == "unknown"
+
+
+def step_of(record: dict[str, Any], step_id: str) -> dict[str, Any]:
+    return next(s for s in record["steps"] if s["id"] == step_id)
+
+
+def test_first_night_runs_the_normal_test_once_after_nothing_to_compare(tmp_path: Path) -> None:
+    runner = FakeRunner()
+    record = run(tmp_path, runner)
+    step = step_of(record, "N1.test")
+    tests = [c for c in runner.calls if c[0] == "test"]
+    assert [("--recheck" in c) for c in tests] == [True, False]
+    assert step["evidence"] == "computed" and step["note"].startswith("No stored result")
+    assert step["state"] == "pass" and record["blocking"] == 0
+
+
+def test_a_matching_recheck_is_computed_and_records_seconds_and_code_changed(
+    tmp_path: Path,
+) -> None:
+    replies: dict[str, Reply] = {
+        "test": rule_reply(matched(code_changed=True)),
+        "setup study": setup_reply("study_id", matched(code_changed=None)),
+        "setup trade": setup_reply("trade_id", matched(code_changed=None)),
+    }
+    runner = FakeRunner(replies)
+    record = run(tmp_path, runner)
+    step = step_of(record, "N1.test")
+    assert step["state"] == "pass" and step["evidence"] == "computed"
+    assert step["recheck"][0]["seconds"] == 9.5 and step["recheck"][0]["code_changed"] is True
+    assert [c for c in runner.calls if c[0] == "test"] == [
+        ["test", str(tmp_path / "rule.toml"), "--recheck", "--json"]
+    ]
+    assert step_of(record, "N2.study")["evidence"] == "computed"
+    assert record["blocking"] == 0
+    summary = (tmp_path / "home" / "nightly" / f"{record['date']}-1" / "summary.txt").read_text()
+    assert "computed again and matched the stored result" in summary
+
+
+def test_a_mismatch_is_blocking_and_names_the_field(tmp_path: Path) -> None:
+    record = run(tmp_path / "a", FakeRunner({"test": rule_reply(differs(False))}))
+    step = step_of(record, "N1.test")
+    assert step["state"] == "defect-blocking"
+    assert step["defect"] == (
+        "The same test gave a different result for SPY: manifest.oos_metrics.sharpe stored 1.0, "
+        "recomputed 2.0."
+    )
+    assert step_of(record, "N1.diagnose.SPY")["state"] == "not-run"
+    changed = run(tmp_path / "b", FakeRunner({"test": rule_reply(differs(True))}))
+    defect = step_of(changed, "N1.test")["defect"]
+    assert (
+        "The code changed since the stored result; a code change altered a stored result" in defect
+    )
+
+
+def test_a_setup_mismatch_is_blocking(tmp_path: Path) -> None:
+    record = run(tmp_path, FakeRunner({"setup study": setup_reply("study_id", differs(False))}))
+    assert step_of(record, "N2.study")["state"] == "defect-blocking"
+    assert "The same test gave a different result" in step_of(record, "N2.study")["defect"]
+
+
+def test_two_matched_rechecks_on_two_dates_are_ready_and_a_mismatch_is_not(
+    tmp_path: Path,
+) -> None:
+    cfg = config(tmp_path, rdagent_config=tmp_path / "r.toml")
+    (tmp_path / "r.toml").write_text("")
+    good: dict[str, Reply] = {
+        "rdagent run": text("done"),
+        "rdagent status": ok({"state": "finished"}),
+        "test": rule_reply(matched()),
+        "setup study": setup_reply("study_id", matched()),
+        "setup trade": setup_reply("trade_id", matched()),
+    }
+    home = tmp_path / "home"
+    for day in (date(2026, 11, 19), date(2026, 11, 20)):
+        run_nightly(cfg, home, FakeRunner(good), today=day)
+    assert readiness(read_records(home))["ready"] is True
+    bad = {**good, "test": rule_reply(differs(True))}
+    run_nightly(cfg, home, FakeRunner(bad), today=date(2026, 11, 21))
+    verdict = readiness(read_records(home))
+    assert verdict["ready"] is False and "b" in verdict["missing"]
 
 
 def test_real_runs_on_two_dates_become_ready_and_one_date_does_not(tmp_path: Path) -> None:

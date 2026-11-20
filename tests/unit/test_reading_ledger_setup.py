@@ -368,7 +368,7 @@ PINNED: dict[str, dict[str, Any]] = {
 def digest(summary: dict[str, Any]) -> str:
     import hashlib
 
-    skip = {"folder", "trials_total", "family", "evidence", "old_wording"}
+    skip = {"folder", "trials_total", "family", "evidence", "old_wording", "executed"}
     body = {k: v for k, v in summary.items() if k not in skip}
     return hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode()).hexdigest()[:16]
 

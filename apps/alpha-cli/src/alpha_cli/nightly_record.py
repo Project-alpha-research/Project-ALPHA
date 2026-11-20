@@ -137,8 +137,15 @@ def _step_line(step: dict[str, Any]) -> str:
         return f"  {step['id']}: {step['note']}"
     word = {PASS: "worked", MINOR: "worked with a warning", BLOCKING: "FAILED"}[step["state"]]
     verdict = f" Verdict word: {step['verdict']}." if step["verdict"] else ""
-    reused = ", no new bar" if step["scenario"] == "N0" else ", reused the stored result (repeat)"
-    how = {COMPUTED: ", computed", REUSED: reused}
+    reused = (
+        ", no new bar"
+        if step["scenario"] == "N0"
+        else ", the stored result was returned (the engine did not run)"
+    )
+    again = (
+        ", computed again and matched the stored result" if step.get("recheck") else ", computed"
+    )
+    how = {COMPUTED: again, REUSED: reused}
     mode = how.get(str(step.get("evidence")), "")
     return f"  {step['id']}: {word}{mode} ({step['seconds']} s).{verdict}"
 

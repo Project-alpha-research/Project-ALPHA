@@ -7,14 +7,14 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_trade_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 8aaeeb4688f76db2
+verified: 79fdb5424a86f8c9
 ---
 # Setup trade
 
 **Reach for it when** the recorded matches are right and the question includes stops or targets.
-
 ```text
 uv run alpha setup trade <find_id> --json
+uv run alpha setup trade <find_id> --recheck --json   # no write; exit 4 if it differs
 uv run alpha results cite <trade_id> setup_trade_mean_net_return --json
 ```
 **How to read it** in Workstation → Research → Setup Lab

@@ -468,8 +468,8 @@ Rule scans over stored symbols and their deduplicated alerts.
 Find every match of a chart setup.
 
 - `alpha setup find <SPEC>` — Record every match and draw contact sheets ending at the entry open. Options: `--asset`, `--context-bars`, `--max-sheets`, +3 more
-- `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--check-data`, +2 more
-- `alpha setup trade <FIND_ID>` — Trade recorded occurrences with their exits and matched controls; one counted test. Options: `--check-data`, +2 more
+- `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--check-data`, +3 more
+- `alpha setup trade <FIND_ID>` — Trade recorded occurrences with their exits and matched controls; one counted test. Options: `--check-data`, +3 more
 
 ## alpha strategy-candidate
 
@@ -490,7 +490,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +9 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +10 more
 
 ## alpha tool
 

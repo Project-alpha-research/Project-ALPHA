@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: e34dd9ebda51dfe9
+verified: 751264b4db0e1c6c
 ---
 
 # Command line rule-test readings invariants
@@ -71,6 +71,25 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - RD-Agent wording unchanged for now: RD-Agent rows keep their old words, and the proposer's ledger text is byte-identical
   (a test pins it). That is a separate change.
 - `--outcome` takes an evidence word or an old word; both match, and the help text says so.
+
+## Recheck
+
+- `alpha test <spec> --recheck [--json]` computes each asset again with the current code and data, then compares it with the stored
+  result of the same test key (`row_test_key`: spec hash, asset, store, data fingerprint, window, bar size). "Recheck" means
+  "computed again and compared with the stored result". It is a system check, not a trial and not a new observation.
+- It calls the normal `prepare_asset` and `write_run` into a scratch folder that is removed afterwards. The ledger it reads is
+  the ledger as it was before the stored run, so trial counts match. It writes no ledger row, run folder, manifest or figure.
+  `--check-data` is refused with it (a health report is a file). Held-back period, point-in-time reads and data health are as in a normal run.
+- Compared: manifest `oos_metrics`, `cis`, `dsr`, `verdict`, `cpcv`, `nulls`, `outcomes`, `passed`, `folds`, counts, the reading's
+  measures, counts, evidence word and aim rows, the diagnostics' trial counts and sensitivity, the equity series (end value and
+  every point), the trade count and the `quick` label. Integers, words and labels are equal. Floats are equal within `rel=1e-9, abs=1e-12`:
+  the engine is meant to be bit-deterministic, and the tolerance only allows another summation order. `bit_identical` says if every float was equal.
+- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed}`. `code_changed` is true
+  when the stored run's execution fingerprint differs from now. With nothing stored: `computed: false, match: null`, nothing is
+  computed or created, and the text says to run the test once first. Exit 0 on a match or nothing to compare; exit 4 on a difference.
+- Normal results also carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger.
+  `repeat` still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for the setup tests
+  (summary compared, ledger count and labels left out; `code_changed` is null). Setup find reports `executed` only.
 
 ## Idea file
 

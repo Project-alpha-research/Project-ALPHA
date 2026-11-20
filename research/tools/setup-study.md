@@ -7,16 +7,16 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: ef540a51229e9a10
+verified: 76e77122d86b4702
 ---
 # Setup study
 
 **Reach for it when** a recorded setup find has the intended matches and the owner wants to
 measure what followed each separate occurrence against ordinary dates.
-
 **Commands**
 ```text
 uv run alpha setup study <find_id> --json
+uv run alpha setup study <find_id> --recheck --json   # no write; exit 4 if it differs
 uv run alpha results cite <study_id> setup_mean_net_return --json
 ```
 **See stored results:** Workstation → Research → Setup Lab.

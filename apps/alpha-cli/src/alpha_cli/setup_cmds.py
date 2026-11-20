@@ -184,14 +184,13 @@ def run_find(
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]
     held_back = sum(r.get("held_back_bars", 0) for r in results)
     block = {"reserve": reserve.record(held_back)} if held_back else {}
-    labels.extend(health_labels(record))
-    labels += sorted({label for r in results for label in r["labels"]})
-    if (folder / "manifest.json").exists():
+    labels += [*health_labels(record), *sorted({label for r in results for label in r["labels"]})]
+    executed = not (folder / "manifest.json").exists()
+    if not executed:
         summary = json.loads((folder / "summary.json").read_text())
         manifest = json.loads((folder / "manifest.json").read_text())
         labels = [*summary["labels"], "repeat"]
-        sheets = manifest["files"]["sheets"]
-        context_bars = manifest["context_bars"]
+        sheets, context_bars = manifest["files"]["sheets"], manifest["context_bars"]
     else:
         combined = pl.concat(candidates)
         totals = {
@@ -279,11 +278,48 @@ def run_find(
         labels=labels,
         context_bars=context_bars,
         trials_total=ledger["total_trials"],
+        executed=executed,
         totals=summary["totals"],
         assets=json.loads(json.dumps(results, default=str)),
         sheets=[str((folder / s).relative_to(home)) for s in sheets],
         facts=[{**f, "labels": labels} for f in summary["facts"]],
     )
+
+
+def _recheck(
+    kind: str, find_id: str, check_data: bool, accept_bad_data: str | None, json_out: bool
+) -> None:
+    """Computed again and compared with the stored result. Writes no ledger row or file."""
+    from alpha_cli.spine.recheck_compare import MISMATCH_EXIT
+    from alpha_cli.spine.setup_recheck import recheck_study, recheck_trade
+
+    try:
+        if check_data:
+            raise SpineError(
+                "BAD_OPTION",
+                "--recheck cannot be used with --check-data: a health report writes a file, "
+                "and a recheck writes nothing.",
+                "Run alpha data health first, then the command with --recheck.",
+            )
+        with redirect_stdout(sys.stderr if json_out else sys.stdout):
+            run = recheck_study if kind == "study" else recheck_trade
+            output = run(find_id, home=AlphaSettings().data_dir, accept_bad_data=accept_bad_data)
+    except SpineError as exc:
+        fail(exc, json_out)
+    found = output["recheck"]
+    if found["match"] is None:
+        words = f"{found['reason']}. Run `alpha setup {kind} {find_id}` once first."
+    elif found["match"]:
+        words = f"Computed again in {found['seconds']:.1f} s: the same result as the stored one."
+    else:
+        words = f"Computed again: a different result ({found['differences_total']} differences)."
+        words += "".join(
+            f"\n  {d['field']}: stored {d['stored']}, recomputed {d['recomputed']}"
+            for d in found["differences"]
+        )
+    emit(output, json_out=json_out, fallback=words)
+    if found["match"] is False:
+        raise typer.Exit(MISMATCH_EXIT)
 
 
 @setup_app.command("study")
@@ -297,12 +333,21 @@ def study_command(
         "--accept-bad-data",
         help="Proceed after a failed health check for this run. Give a reason.",
     ),
+    recheck: bool = typer.Option(
+        False,
+        "--recheck",
+        help="Compute again and compare with the stored result. Writes nothing. "
+        "Exit 4 if the two differ.",
+    ),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """Measure forward returns and honest controls; record one exploratory trial."""
     from alpha_cli.spine.setup_study import run_study
     from alpha_cli.spine.setup_trade_figure import study_text
 
+    if recheck:
+        _recheck("study", find_id, check_data, accept_bad_data, json_out)
+        return
     try:
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_study(
@@ -331,12 +376,21 @@ def trade_command(
         "--accept-bad-data",
         help="Proceed after a failed health check for this run. Give a reason.",
     ),
+    recheck: bool = typer.Option(
+        False,
+        "--recheck",
+        help="Compute again and compare with the stored result. Writes nothing. "
+        "Exit 4 if the two differ.",
+    ),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """Trade recorded occurrences with their exits and matched controls; one counted test."""
     from alpha_cli.spine.setup_trade import run_trade
     from alpha_cli.spine.setup_trade_figure import trade_text
 
+    if recheck:
+        _recheck("trade", find_id, check_data, accept_bad_data, json_out)
+        return
     try:
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_trade(

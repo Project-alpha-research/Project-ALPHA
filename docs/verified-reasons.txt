@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
+  verified f8b0382a482106c6 on 2026-11-20: nightly refresh freezes first; this text is still correct
 
 apps/alpha-cli/README.md
-  verified 810fe674a3dd2eec on 2026-11-20: N0 revised-history message names columns; text otherwise correct
+  verified f8b0382a482106c6 on 2026-11-20: nightly refresh now freezes first; this text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified c73a8f27192ce963 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified af278a9aaa2327fa on 2026-11-20: N0 revised-history message names columns; text otherwise correct
+  verified 762ae0b567677732 on 2026-11-20: N0 freezes a followed asset before the pull; the nightly description here is unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed

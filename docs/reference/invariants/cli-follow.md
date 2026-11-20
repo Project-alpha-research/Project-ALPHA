@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 28ea5c965f28eef0
+verified: e97999a87d944fc3
 ---
 
 # Command line follow invariants
@@ -172,9 +172,14 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   The command comes from the store's provenance (`ccxt:<exchange>`, `yfinance`, `stooq`, `tiingo`, `alpaca` with its identity), from
   the first stored bar. It ends at the newest closed day: the run's UTC date for `yfinance` (exclusive end) and `ccxt` (live candle
   dropped); the day before it for `stooq`, `tiingo`, `alpaca`. A forming bar is never asked for. A named store gets `ALPHA_DATA_DIR=<folder>`.
+- Before each pull, N0 runs `alpha data snapshot n0-<UTC time>-<asset> <symbol> --source ...` for that asset only (a child command; the
+  id is in the record). It freezes the bars and the corporate actions, with the pull's source options. If it fails, the pull for that
+  asset is not run and the step is the blocking defect "could not freeze <asset> before the refresh". Other assets go on.
+  A snapshot is kept even when nothing was revised: it is the proof. No old snapshot is ever deleted or rewritten.
 - The refresh re-downloads the whole series: a pull replaces the symbol's bars and keeps no old copy (receipt sources also keep their
   receipts). So N0 compares every old bar with the new one. A changed or missing old bar is the minor defect "the provider revised
-  history for <asset>: first changed bar <date> (<columns>)". No price is printed. No key is read, printed or logged; stderr is scrubbed.
+  history for <asset>: first changed bar <date> (<columns>)", and it names the snapshot that holds the earlier series and
+  the command to list it (`alpha data snapshots`). No price is printed. No key is read, printed or logged; stderr is scrubbed.
   A failed pull is a minor defect; N4 then writes `late` or `missed`.
 - Evidence: a newer last bar after the pull is `computed`; the same last bar is `reused` ("no new bar"); unreadable is `unknown`.
 

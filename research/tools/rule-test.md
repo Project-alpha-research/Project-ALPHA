@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: fed007fd1913f1a4
+verified: 5c63d1ef8545f529
 ---
 
 # Rule test

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: 87d09a6d2dff222f
+verified: 3917c740f14da4e9
 ---
 
 # Random-price null

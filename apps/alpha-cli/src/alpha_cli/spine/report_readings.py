@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.run_store import read_manifest
 from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.reading import reading_word, stored_reading
 
@@ -55,6 +56,14 @@ def reading_line(manifest: Mapping[str, Any]) -> str | None:
     return f"reading: {word}{old}{_caveat(verdict)}"
 
 
+def run_reading_text(run_dir: Path) -> str:
+    """``<word> (old grade: X)`` for a stored run: the reading a command prints after writing it."""
+    manifest = read_manifest(run_dir)
+    manifest["__dir"] = str(run_dir)
+    line = reading_line(manifest)
+    return line.removeprefix("reading: ") if line else "not recorded"
+
+
 def null_line(tier: Mapping[str, Any]) -> str:
     """One null tier: its numbers, what share of random runs did as well, the old level."""
     level = _f(tier.get("threshold"))
@@ -63,6 +72,29 @@ def null_line(tier: Mapping[str, Any]) -> str:
         f"p={_f(tier.get('p_value'))} (random data did as well in {_pct(tier.get('p_value'))} "
         f"of draws; {OLD_LEVEL}: {level})"
     )
+
+
+def monte_carlo_lines(manifest: Mapping[str, Any]) -> list[str]:
+    """The family count, then one line per family: stored percentiles and the share below zero."""
+    families = manifest.get("families")
+    if not isinstance(families, list):
+        family = manifest.get("family")
+        families = [family] if isinstance(family, Mapping) else []
+    lines = [f"Monte Carlo families: {len(manifest.get('families') or [])}"]
+    for family in (f for f in families if isinstance(f, Mapping)):
+        loss = family.get("loss_probability")
+        loss = loss if isinstance(loss, Mapping) else {}
+        lines.append(
+            f"family[{family.get('family')}]: paths={family.get('n_paths')} "
+            f"median_terminal={_f(family.get('terminal_return_q50'))} "
+            f"terminal_5th={_f(family.get('terminal_return_q05'))} "
+            f"terminal_95th={_f(family.get('terminal_return_q95'))} "
+            f"drawdown_median={_f(family.get('maximum_drawdown_q50'))} "
+            f"drawdown_q95={_f(family.get('maximum_drawdown_q95'))} "
+            f"paths_below_zero={_f(loss.get('point'))} "
+            f"[{_f(loss.get('lower'))}, {_f(loss.get('upper'))}]"
+        )
+    return lines
 
 
 def _walk_forward(manifest: Mapping[str, Any]) -> str:

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/research_cmds.py
-verified: 5bf508387d49a5dc
+verified: 932c69a82c9e24f3
 ---
 
 # Research: how any idea is tested

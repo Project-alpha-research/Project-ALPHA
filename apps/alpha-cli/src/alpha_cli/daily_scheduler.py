@@ -21,7 +21,7 @@ from alpha_core import DataError
 from alpha_core.atomic import write_text
 from alpha_data.adapters.base import FetchReceipt
 from alpha_data.adapters.tiingo_adapter import TiingoAdapter
-from alpha_data.pipeline import stage_and_promote
+from alpha_data.pull_store import pull_into_store
 from alpha_data.snapshot import create_snapshot, snapshot_manifest_hash, verify_snapshot
 from alpha_data.store import ParquetStore
 
@@ -320,9 +320,17 @@ def execute_cycle(
             currency=item.currency,
         )
         result = adapter.fetch(item.provider_symbol, item.history_start, session)
-        promoted = stage_and_promote(store, result, authoritative_source="tiingo")
         if result.receipt is None:
             raise DataError("daily Tiingo cycle lacks a fetch receipt")
+        promoted = pull_into_store(  # freezes the series it replaces, then promotes
+            store,
+            data_dir / "snapshots",
+            result,
+            source="tiingo",
+            adapter_version=result.receipt.adapter_version,
+            parser_version=result.receipt.parser_version,
+            now=datetime.now(UTC),
+        )
         create_snapshot(
             store,
             data_dir / "snapshots",

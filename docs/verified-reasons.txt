@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 96b8aaa100d428e3 on 2026-11-20: Re-read after merging main: wording unchanged by readings-everywhere
+  verified 2b22b89e76ae171c on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 apps/alpha-cli/README.md
-  verified 96b8aaa100d428e3 on 2026-11-20: Re-read after merging main: wording unchanged by readings-everywhere
+  verified 2b22b89e76ae171c on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -26,7 +26,7 @@ docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 2c508e8e6bd4ea60 on 2026-11-20: Re-read after merging main: wording unchanged by readings-everywhere
+  verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 8378ba0213d578bb on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified a1db0a920229285f on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -52,11 +52,14 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
+docs/reference/invariants/data-freeze-before-replace.md
+  verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
+
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified b8a07c28590d972a on 2026-11-20: A pipeline test now expects the loud RestoreFailed error that names the repair command; the page already states that behaviour.
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -83,10 +86,10 @@ docs/reference/invariants/web-api.md
   verified 6098cb454691d1fd on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/reference/invariants/web-frontend.md
-  verified 2fa8f1b4312ec2e4 on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
+  verified 9617d6e389debdbc on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 docs/reference/invariants/web-run-detail.md
-  verified 7614f54c171788a6 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified a6410e620bf28a6e on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -194,7 +197,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified 3fbe94346180dd08 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels

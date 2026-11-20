@@ -565,7 +565,8 @@ def test_explicit_rollback_recovers_after_interrupted_promotion(
     write_actions = store.write_actions
     monkeypatch.setattr(pipeline, "_restore_promotion_backup", interrupted)
     monkeypatch.setattr(store, "write_actions", fail_write)
-    with pytest.raises(OSError, match="simulated process interruption"):
+    # A failed restore is loud and names the repair command; reads refuse until it runs.
+    with pytest.raises(pipeline.RestoreFailed, match="rollback-promotion AAPL --acknowledge"):
         stage_and_promote(store, result, authoritative_source="tiingo")
     assert store.promotion_pending("AAPL")
 

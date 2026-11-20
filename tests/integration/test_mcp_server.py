@@ -8,6 +8,7 @@ filesystem read tools, and the FastMCP registration.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -413,9 +414,9 @@ def test_data_pull_dates_are_canonical_valid_and_ordered(
 
     monkeypatch.setattr(_invoke, "run_alpha", unexpected_subprocess)
     with pytest.raises(ValueError, match="YYYY-MM-DD"):
-        server.data_pull("SPY", start="20260719")
+        server.data_pull("SPY", start="20260719", end="2026-07-20")
     with pytest.raises(ValueError, match="valid YYYY-MM-DD"):
-        server.data_pull("SPY", start="2026-02-30")
+        server.data_pull("SPY", start="2026-02-30", end="2026-07-20")
     with pytest.raises(ValueError, match="on or before"):
         server.data_pull("SPY", start="2026-07-20", end="2026-07-19")
 
@@ -627,3 +628,39 @@ def test_spine_rule_test_then_ledger_summary_reads_the_new_row(
     assert after != before
     rows = spine_tools.ledger_history(kind=None, asset="SPY", limit=5)
     assert "SPY" in str(rows)
+
+
+def test_data_pull_cannot_be_called_without_dates_and_relays_the_pull_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tool = next(t for t in anyio.run(server.mcp.list_tools) if t.name == "data_pull")
+    assert {"symbol", "start", "end"} <= set(tool.inputSchema["required"])
+    words = " ".join((tool.description or "").split())
+    assert "first freezes the current one as a snapshot" in words
+    assert "never deletes snapshots" in words
+    without_end = {"symbol": "SPY", "start": "2026-01-01"}
+    with pytest.raises(TypeError, match="end"):
+        server.data_pull(**without_end)
+    calls: list[list[str]] = []
+    answer = {"snapshot": {"id": "pull-x-SPY", "reused": False}, "bars_added": {"count": 2}}
+
+    def fake(args: list[str], *, data_dir: Path, run_type: str | None) -> dict[str, object]:
+        calls.append(args)
+        return {"stdout": json.dumps(answer)}
+
+    monkeypatch.setattr(_invoke, "run_alpha", fake)
+    assert server.data_pull("SPY", start="2026-01-01", end="2026-02-01") == answer
+    assert calls == [
+        [
+            "data",
+            "pull",
+            "SPY",
+            "--source",
+            "yfinance",
+            "--start",
+            "2026-01-01",
+            "--end",
+            "2026-02-01",
+            "--json",
+        ]
+    ]  # the same `alpha data pull` path, so the freeze applies

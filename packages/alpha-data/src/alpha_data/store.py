@@ -57,14 +57,14 @@ class ParquetStore:
     def _require_stable(self, symbol: str) -> None:
         if self.promotion_pending(symbol):
             raise DataError(
-                f"canonical data for {symbol!r} has an interrupted promotion; "
-                "run the explicit data repair workflow"
+                f"canonical data for {symbol!r} has an interrupted promotion; restore the old "
+                f"bytes with: alpha data rollback-promotion {symbol} --acknowledge"
             )
 
-    def write_bars(self, symbol: str, df: pl.DataFrame) -> Path:
-        """Write bars for symbol. REPLACES the symbol's data wholesale (no append/merge).
+    def check_bars(self, symbol: str, df: pl.DataFrame) -> None:
+        """Fail loud, without writing, when ``df`` could not be stored as bars for ``symbol``.
 
-        Fails loud on duplicate or tz-naive timestamps: every downstream positional read (the PIT
+        Duplicate or tz-naive timestamps are refused: every downstream positional read (the PIT
         firewall, the feed's session math) assumes one tz-aware row per session, and a silent
         duplicate would surface much later as an inexplicable off-by-one.
         """
@@ -76,6 +76,18 @@ class ParquetStore:
             raise DataError(f"bars for {symbol} need a tz-aware ts column, got {ts_dtype}")
         if df["ts"].n_unique() != df.height:
             raise DataError(f"bars for {symbol} contain duplicate timestamps")
+
+    def series_paths(self, symbol: str) -> tuple[Path, Path, Path]:
+        """The bars, actions and provenance files of ``symbol`` (any of them may be absent)."""
+        return self._bars_path(symbol), self._actions_path(symbol), self._provenance_path(symbol)
+
+    def write_bars(self, symbol: str, df: pl.DataFrame) -> Path:
+        """Write bars for symbol. REPLACES the symbol's data wholesale (no append/merge).
+
+        A downloaded series is replaced only through ``alpha_data.pull_store``, which freezes the
+        stored series first.
+        """
+        self.check_bars(symbol, df)
         path = self._bars_path(symbol)
         path.parent.mkdir(parents=True, exist_ok=True)
         # atomic wholesale replace: a crash mid-write must never destroy the only stored copy

@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: e97999a87d944fc3
+verified: 20caec04a878080f
 ---
 
 # Command line follow invariants
@@ -172,16 +172,16 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   The command comes from the store's provenance (`ccxt:<exchange>`, `yfinance`, `stooq`, `tiingo`, `alpaca` with its identity), from
   the first stored bar. It ends at the newest closed day: the run's UTC date for `yfinance` (exclusive end) and `ccxt` (live candle
   dropped); the day before it for `stooq`, `tiingo`, `alpaca`. A forming bar is never asked for. A named store gets `ALPHA_DATA_DIR=<folder>`.
-- Before each pull, N0 runs `alpha data snapshot n0-<UTC time>-<asset> <symbol> --source ...` for that asset only (a child command; the
-  id is in the record). It freezes the bars and the corporate actions, with the pull's source options. If it fails, the pull for that
-  asset is not run and the step is the blocking defect "could not freeze <asset> before the refresh". Other assets go on.
-  A snapshot is kept even when nothing was revised: it is the proof. No old snapshot is ever deleted or rewritten.
-- The refresh re-downloads the whole series: a pull replaces the symbol's bars and keeps no old copy (receipt sources also keep their
-  receipts). So N0 compares every old bar with the new one. A changed or missing old bar is the minor defect "the provider revised
-  history for <asset>: first changed bar <date> (<columns>)", and it names the snapshot that holds the earlier series and
-  the command to list it (`alpha data snapshots`). No price is printed. No key is read, printed or logged; stderr is scrubbed.
-  A failed pull is a minor defect; N4 then writes `late` or `missed`.
-- Evidence: a newer last bar after the pull is `computed`; the same last bar is `reused` ("no new bar"); unreadable is `unknown`.
+- N0 runs `alpha data pull ... --json`. The pull freezes the stored series first ([freeze before replace](data-freeze-before-replace.md)),
+  reuses an identical snapshot, and prints the snapshot id and the counts of bars added, removed and revised. N0 reads that JSON; it runs
+  no snapshot command and compares no bars itself. Exit code 3 means the freeze failed and nothing was replaced: the blocking defect
+  "could not freeze <asset> before the refresh" for that asset. Exit code 4 means a failed replace could not put the old bytes
+  back; reads of that asset refuse until the named repair runs: the blocking defect "the refresh of <asset> broke its stored series".
+  Other assets go on. No snapshot is ever deleted or rewritten.
+- A revised or dropped old bar is the minor defect "the provider revised history for <asset>: first changed bar <date> (<columns>)". It
+  names the snapshot that holds the earlier series and the command to list it (`alpha data snapshots`). No price is printed. No key is
+  read, printed or logged; stderr is scrubbed. Any other failed pull is a minor defect; N4 then writes `late` or `missed`.
+- Evidence: a pull that added bars is `computed`; one that added none is `reused` ("no new bar"); a result N0 cannot read is a minor defect.
 
 ## Commands
 - `follow list`, `show`, `verify` and `today` are safe reads. `follow start`, `update` and `stop` are owner-only in the generic launcher.

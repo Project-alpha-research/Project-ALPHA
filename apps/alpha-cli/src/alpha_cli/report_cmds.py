@@ -21,7 +21,7 @@ import typer
 
 from alpha_cli.artifact_contract import verify_manifest_artifacts
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest
-from alpha_cli.spine.report_readings import gate_lines, monte_carlo_lines, null_line, reading_line
+from alpha_cli.spine.report_readings import gate_lines, null_line, reading_line
 from alpha_core.config import AlphaSettings
 
 _DAILY_RULE_COMMANDS = frozenset(
@@ -216,8 +216,27 @@ def report(
             f"max-dd ${_fmt(rules.get('max_drawdown'))}"
         )
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
-        for text in monte_carlo_lines(manifest):
-            typer.echo(text)
+        typer.echo(f"Monte Carlo families: {len(manifest.get('families') or [])}")
+        families = manifest.get("families")
+        if not isinstance(families, list):
+            family = manifest.get("family")
+            families = [family] if isinstance(family, dict) else []
+        for family in families:
+            if not isinstance(family, dict):
+                continue
+            # stored percentiles and the share of paths below zero with its range: no risk letter
+            loss = family.get("loss_probability")
+            loss = loss if isinstance(loss, dict) else {}
+            typer.echo(
+                f"family[{family.get('family')}]: paths={family.get('n_paths')} "
+                f"median_terminal={_fmt(family.get('terminal_return_q50'))} "
+                f"terminal_5th={_fmt(family.get('terminal_return_q05'))} "
+                f"terminal_95th={_fmt(family.get('terminal_return_q95'))} "
+                f"drawdown_median={_fmt(family.get('maximum_drawdown_q50'))} "
+                f"drawdown_q95={_fmt(family.get('maximum_drawdown_q95'))} "
+                f"paths_below_zero={_fmt(loss.get('point'))} "
+                f"[{_fmt(loss.get('lower'))}, {_fmt(loss.get('upper'))}]"
+            )
     line = reading_line(manifest)
     if line:
         typer.echo(line)

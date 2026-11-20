@@ -19,7 +19,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 5c848a58d2070601
+verified: aaec7b260e62406c
 ---
 
 # Command line rule-test readings invariants
@@ -108,7 +108,7 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 
 | Gate | Class | `alpha report` line |
 |---|---|---|
-| `walk_forward_oos` | FACT | sound (the Workstation says "computed": the check could run) with the Sharpe; fault if it could not be computed; not checked if absent |
+| `walk_forward_oos` | FACT | sound with the Sharpe (the Workstation says "computed"); fault if it could not be computed; not checked if absent |
 | `randomized_price_null` | STAT | share of random runs that did as well, per tier; old level 0.95 |
 | `bootstrap_ci` | STAT | the Sharpe interval; it includes zero, is above zero or is below zero |
 | `deflated_sharpe` | STAT | the deflated Sharpe and the number of tries counted; old level 0.95 |
@@ -117,8 +117,8 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - Standard trading terms stay: profit factor (gross gains divided by gross losses), P&L, realized profit, take-profit. The rule is to never promise
   or imply profit. The word scans look for promise phrases (will profit, profitable, make money, guaranteed), not the bare word.
 - The drawdown, ruin, Sharpe and sample-size bands of the old grade are TASTE or STAT levels of the grade itself. No screen or line prints them as a result.
-- `alpha validate` prints `-> run <id>: reading <word> (old grade: X) (OOS Sharpe ..., null pct ...)`; the PASS/FAIL word and the "Verdict X (edge/...)" text are gone
-  (`run_reading_text`). Still printing PASS/FAIL, no reading available to them yet: `alpha backtest` locked holdout (`backtest_cmds.py` line 221, a Sharpe against the
-  declared minimum) and `alpha optim` (`optim_cmds.py` lines 196 and 444, the optimisation gates and the in-sample null). A later change gives them a reading.
+- Still printing PASS/FAIL, with no reading wired in yet: `alpha validate` (`validate_cmds.py` line 206 onward, with "Verdict X (edge/...)"),
+  the `alpha backtest` locked holdout (`backtest_cmds.py` line 221) and `alpha optim` (`optim_cmds.py` lines 196 and 444). A later change
+  gives them a reading. It must also lower two grandfathered function sizes in the code-size baseline, which this change may not edit.
   A prop-firm challenge is passed or failed by its own rules; "pass probability" stays.
 - The HTML tear sheet is written by `alpha_validation/tearsheet.py` and still prints the old PASS/FAIL words. It is not changed here.

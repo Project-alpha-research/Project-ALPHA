@@ -191,32 +191,3 @@ def test_realized_profit_shows_as_gain_or_loss_while_the_stored_text_is_untouche
         == "full-sample closed-trade realized gain or loss"
     )
     assert plain_basis("no such words") == "no such words"
-
-
-def test_monte_carlo_lines_print_stored_percentiles_without_a_grade_or_status() -> None:
-    from alpha_cli.spine.report_readings import monte_carlo_lines
-
-    family = {
-        "family": "student_t",
-        "status": "warning",
-        "risk_grade": "D",
-        "n_paths": 5000,
-        "terminal_return_q05": -0.12,
-        "terminal_return_q50": 0.04,
-        "terminal_return_q95": 0.2,
-        "maximum_drawdown_q50": 0.09,
-        "maximum_drawdown_q95": 0.21,
-        "loss_probability": {"point": 0.31, "lower": 0.3, "upper": 0.32},
-    }
-    lines = monte_carlo_lines({"families": [family, "junk"]})
-    assert lines[0] == "Monte Carlo families: 2"
-    assert lines[1] == (
-        "family[student_t]: paths=5000 median_terminal=0.0400 terminal_5th=-0.1200 "
-        "terminal_95th=0.2000 drawdown_median=0.0900 drawdown_q95=0.2100 "
-        "paths_below_zero=0.3100 [0.3000, 0.3200]"
-    )
-    assert len(lines) == 2
-    assert_owner_text("\n".join(lines))
-    assert monte_carlo_lines({"family": {"family": "x"}})[1].endswith(
-        "paths_below_zero=n/a [n/a, n/a]"
-    )

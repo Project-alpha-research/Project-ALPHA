@@ -18,7 +18,6 @@ from alpha_cli._identity import RunIdentity
 from alpha_cli.spine import reserve
 from alpha_cli.spine.deflation import validation_family
 from alpha_cli.spine.errors import SpineError, fail
-from alpha_cli.spine.report_readings import run_reading_text
 from alpha_core import Bar, DataError, bps_rate
 from alpha_core.config import AlphaSettings
 from alpha_validation import FloatArray, render_tearsheet_html, report_to_manifest
@@ -204,10 +203,18 @@ def validate(
         extra_manifest=reserved or None,
     )
 
+    status = "PASS" if out.report.passed else "FAIL"
     sharpe = out.report.oos_metrics["sharpe"]
+    v = out.report.verdict
+    grade = (
+        f"Verdict {v.overall} "
+        f"(edge {v.edge}/robustness {v.robustness}/risk {v.risk}/sample {v.sample}), "
+        if v is not None
+        else ""
+    )
     typer.echo(
-        f"validate {symbol} -> run {run_id}: reading {run_reading_text(rdir)} "
-        f"(OOS Sharpe {sharpe:.3f}, "
+        f"validate {symbol} -> run {run_id}: {status} "
+        f"({grade}OOS Sharpe {sharpe:.3f}, "
         f"null pct {'/'.join(f'{n.percentile:.2f}' for n in out.report.nulls)}); "
         f"tear sheet at {rdir / 'tearsheet.html'}"
     )

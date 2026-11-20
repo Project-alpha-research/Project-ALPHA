@@ -1,5 +1,8 @@
-"""N0 (opt-in): pull fresh stored bars for the assets of followed ideas, and only those.
+"""N0 (opt-in): freeze, then pull, stored bars for the assets of followed ideas, and only those.
 
+Before each pull the asset's stored bars and corporate actions are frozen by the installed
+`alpha data snapshot` command (a child process). If that fails, the pull for that asset is not run:
+a blocking defect, so nothing is replaced without a frozen copy. The snapshot id is in the record.
 Each pull is the installed `alpha data pull` command in a child process, with the arguments the
 owner would type. This module does no network and reads no key: the child uses the environment of
 the nightly process, exactly as when the owner runs it. A pull replaces the symbol's whole series,
@@ -16,7 +19,7 @@ from __future__ import annotations
 import re
 import shlex
 from collections.abc import Sequence
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +27,12 @@ import polars as pl
 
 from alpha_cli.nightly_config import NightlyConfig
 from alpha_cli.nightly_steps import (
+    BLOCKING,
     COMPUTED,
     MINOR,
+    NOT_RUN,
     REUSED,
+    Outcome,
     Runner,
     alpha_argv,
     mark,
@@ -123,59 +129,121 @@ def _plan(home: Path, asset: str, end: date) -> tuple[list[str], Path | None]:
     )
 
 
+def snapshot_tail(asset: str, pull: Sequence[str], stamp: datetime) -> tuple[str, list[str]]:
+    """The snapshot id and the `alpha data snapshot` arguments for the asset a pull is about to
+    replace. The id holds the run's UTC time, so a second run on the same day never collides.
+    The source options are those of the pull, because the command checks the stored provenance."""
+    name = re.sub(r"[^A-Za-z0-9_-]+", "-", pull[2]).strip("-") or "asset"
+    snap_id = f"n0-{stamp:%Y%m%dT%H%M%S}-{name}"
+    options = list(pull[3:-4])
+    kept: list[str] = []
+    for index, word in enumerate(options):
+        if word in {"--source", "--exchange"} and index + 1 < len(options):
+            kept += [word, options[index + 1]]
+    return snap_id, ["data", "snapshot", snap_id, pull[2], *kept]
+
+
+def _child(
+    runner: Runner, step: dict[str, Any], tail: Sequence[str], other: Path | None, timeout: float
+) -> Outcome:
+    """Run one child command (in a named store when `other` is set) and fill the step's command,
+    exit code and seconds."""
+    argv = alpha_argv(tail)
+    step["command"] = "alpha " + shlex.join(tail)
+    if other is not None:
+        argv = ["env", f"ALPHA_DATA_DIR={other}", *argv]
+        step["command"] = f"ALPHA_DATA_DIR={shlex.quote(str(other))} {step['command']}"
+    out = runner(argv, timeout)
+    step["exit_code"], step["seconds"] = out.exit_code, round(out.seconds, 2)
+    return out
+
+
+def _failure(out: Outcome, timeout: float) -> str | None:
+    """Plain words for a failed child command, scrubbed; None when it succeeded."""
+    if out.timed_out:
+        return f"timed out after {timeout:g} seconds"
+    if out.exit_code != 0:
+        return f"exit code {out.exit_code}. {_scrub(stderr_tail(out.stderr))}".rstrip()
+    return None
+
+
+def _freeze(
+    config: NightlyConfig,
+    runner: Runner,
+    asset: str,
+    tail: list[str],
+    other: Path | None,
+    stamp: datetime,
+) -> tuple[dict[str, Any], str | None]:
+    """Freeze the asset's stored bars and actions. Returns the step and the snapshot id, or None
+    for the id when the freeze failed (a blocking defect: nothing may be replaced unfrozen)."""
+    snap_id, snap = snapshot_tail(asset, tail, stamp)
+    step = new_step(f"N0.freeze.{asset}", "N0", f"freeze bars {asset}", snap)
+    step["ids"] = {"snapshot": snap_id}
+    failed = _failure(_child(runner, step, snap, other, config.step_timeout), config.step_timeout)
+    if failed is None:
+        return step, snap_id
+    mark(step, BLOCKING, f"could not freeze {asset} before the refresh: {failed}")
+    return step, None
+
+
+def _revision_words(
+    asset: str, changed: tuple[date, list[str]], snap_id: str, other: Path | None
+) -> str:
+    listing = "alpha data snapshots"
+    if other is not None:
+        listing = f"ALPHA_DATA_DIR={shlex.quote(str(other))} {listing}"
+    return (
+        f"the provider revised history for {asset}: first changed bar {changed[0]} "
+        f"({', '.join(changed[1])}). The earlier series is kept in snapshot {snap_id}; "
+        f"list it with `{listing}`"
+    )
+
+
 def refresh_assets(
-    config: NightlyConfig, home: Path, runner: Runner, assets: Sequence[str], end: date
+    config: NightlyConfig,
+    home: Path,
+    runner: Runner,
+    assets: Sequence[str],
+    end: date,
+    now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """One pull per asset. `assets` holds the assets of followed ideas only."""
+    """One freeze, then one pull, per asset. `assets` holds the assets of followed ideas only."""
     if not assets:
         return [
             not_run(
                 "N0.stub", "N0", "refresh bars", ["data", "pull"], "not run: nothing is followed"
             )
         ]
-    steps = []
+    stamp = now or datetime.now(UTC)
+    steps: list[dict[str, Any]] = []
     for asset in assets:
         step = new_step(f"N0.pull.{asset}", "N0", f"refresh bars {asset}", ["data", "pull", asset])
-        steps.append(step)
         try:
             tail, other = _plan(home, asset, end)
         except (ValueError, DataError) as exc:
+            steps.append(step)
             mark(step, MINOR, f"no fresh bars for {asset}: {exc}")
             continue
-        argv = alpha_argv(tail)
-        step["command"] = "alpha " + shlex.join(tail)
-        if other is not None:
-            argv = ["env", f"ALPHA_DATA_DIR={other}", *argv]
-            step["command"] = f"ALPHA_DATA_DIR={shlex.quote(str(other))} {step['command']}"
+        frozen, snap_id = _freeze(config, runner, asset, tail, other, stamp)
+        steps += [frozen, step]
+        if snap_id is None:
+            step["state"], step["note"] = NOT_RUN, f"not run: {asset} could not be frozen first"
+            continue
+        step["ids"] = {"snapshot": snap_id}
         old = _bars(home, asset)
         before = _span(old)
-        out = runner(argv, config.step_timeout)
-        step["exit_code"], step["seconds"] = out.exit_code, round(out.seconds, 2)
-        if out.timed_out:
-            mark(
-                step,
-                MINOR,
-                f"no fresh bars for {asset}: timed out after {config.step_timeout:g} seconds",
-            )
-        elif out.exit_code != 0:
-            words = _scrub(stderr_tail(out.stderr))
-            mark(
-                step,
-                MINOR,
-                f"no fresh bars for {asset}: exit code {out.exit_code}. {words}".rstrip(),
-            )
-        else:
-            fresh = _bars(home, asset)
-            after = _span(fresh)
-            if before and after:
-                step["evidence"] = COMPUTED if after[1] > before[1] else REUSED
-                step["note"] = None if after[1] > before[1] else "no new bar"
-            changed = first_revised(old, fresh) if old is not None and fresh is not None else None
-            if changed is not None:
-                mark(
-                    step,
-                    MINOR,
-                    f"the provider revised history for {asset}: first changed bar {changed[0]} "
-                    f"({', '.join(changed[1])})",
-                )
+        out = _child(runner, step, tail, other, config.step_timeout)
+        failed = _failure(out, config.step_timeout)
+        if failed is not None:
+            mark(step, MINOR, f"no fresh bars for {asset}: {failed}")
+            continue
+        fresh = _bars(home, asset)
+        after = _span(fresh)
+        if before and after:
+            step["evidence"] = COMPUTED if after[1] > before[1] else REUSED
+            step["note"] = None if after[1] > before[1] else "no new bar"
+        changed = first_revised(old, fresh) if old is not None and fresh is not None else None
+        if changed is not None:
+            mark(step, MINOR, _revision_words(asset, changed, snap_id, other))
     return steps

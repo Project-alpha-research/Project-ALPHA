@@ -232,7 +232,12 @@ def test_pearson_output_states_its_assumption_and_keys() -> None:
     assert out["n"] == 12
     assert out["assumption"].startswith("independent pairs, roughly bivariate normal")
     assert "serial correlation makes the interval too narrow" in out["assumption"]
+    assert out["assumption"].endswith(
+        "interval assumes independent pairs (no effective-N adjustment)"
+    )
     assert "Spearman" not in out["assumption"]
+    spearman = correlation_interval(x, np.sin(x), method="spearman")["assumption"]
+    assert spearman.endswith("with the Fisher interval, an approximation that is slightly narrow")
     assert (
         "Spearman: Pearson on average ranks"
         in correlation_interval(x, np.sin(x), method="spearman")["assumption"]

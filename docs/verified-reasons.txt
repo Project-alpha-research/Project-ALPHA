@@ -80,10 +80,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified b1eab352c6727b12 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
+  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-api.md
-  verified 00cfd54c31d889e6 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
+  verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
   verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail

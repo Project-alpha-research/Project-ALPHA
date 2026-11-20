@@ -500,6 +500,7 @@ entry_points = [
   "cli: alpha follow start",
   "cli: alpha follow update",
   "cli: alpha follow list",
+  "cli: alpha follow today",
   "cli: alpha follow show",
   "cli: alpha follow verify",
   "cli: alpha follow stop",
@@ -510,6 +511,8 @@ proof_synthetic = [
   "tests/unit/test_follow_separation.py::test_no_module_off_the_reader_list_touches_forward",
   "tests/unit/test_follow_update.py::test_day_by_day_one_entry_per_session_and_the_fill_is_the_next_open",
   "tests/unit/test_follow_update.py::test_no_decision_changes_when_later_bars_arrive",
+  "tests/unit/test_follow_today.py::test_rows_are_grouped_in_order_with_readings_and_age",
+  "tests/unit/test_follow_today.py::test_today_writes_nothing",
 ]
 proof_smoke = [
   "tests/smoke/test_follow_smoke.py::test_an_empty_home_lists_no_follows_and_a_factor_is_refused",
@@ -518,7 +521,7 @@ docs = ["docs/reference/invariants/cli-follow.md"]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"
-missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. The nightly run does not call update and downloads no bars for followed assets. No real-data run yet."
+missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet."
 
 [[capability]]
 id = "idea-library"
@@ -555,6 +558,8 @@ entry_points = [
 proof_synthetic = [
   "tests/unit/test_nightly.py::test_clean_run_passes_every_step_and_writes_a_record",
   "tests/unit/test_nightly.py::test_two_computed_three_path_runs_on_two_dates_are_ready",
+  "tests/unit/test_nightly_follow.py::test_a_rewritten_journal_and_head_break_the_third_anchor",
+  "tests/unit/test_nightly_follow.py::test_n4_is_required_only_when_follows_exist",
 ]
 proof_smoke = [
   "tests/smoke/test_nightly_smoke.py::test_nightly_rule_path_runs_the_real_commands",

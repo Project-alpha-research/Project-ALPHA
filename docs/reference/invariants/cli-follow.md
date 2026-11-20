@@ -11,21 +11,27 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_replay.py
   - apps/alpha-cli/src/alpha_cli/follow_book.py
   - apps/alpha-cli/src/alpha_cli/follow_show.py
+  - apps/alpha-cli/src/alpha_cli/follow_today.py
+  - apps/alpha-cli/src/alpha_cli/follow_counts.py
+  - apps/alpha-cli/src/alpha_cli/nightly_follow.py
+  - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 79d1619c5c82724a
+verified: e97999a87d944fc3
 ---
 
 # Command line follow invariants
 
 Rules for `alpha follow`. A tested idea is followed on paper as new bars arrive. Options are in the
 [command reference](../commands.md#alpha-follow). F1: the frozen record and the journal. F2: `follow update` for a followed
-rule test (below). A followed setup or factor cannot be updated yet. Every screen of text says "paper".
+rule test (below). F3: `follow today` and the nightly steps N4 and N0 (below).
+A followed setup or factor cannot be updated yet. Every screen of text says "paper".
 
 ## Separation (the integrity rule)
 - `<data_dir>/forward/` is one-way. Research writes nothing there and reads nothing from there.
 - Only the modules on the explicit `READERS` list in `tests/unit/test_follow_separation.py` may name the follow store
-  modules or open a path under `forward/`. Today that is the ten `follow_*.py` modules, each with a one-line reason in `READER_REASONS`.
-  A new reader (the nightly step, a Today page) is added on purpose, in review.
+  modules or open a path under `forward/`. Today that is the twelve `follow_*.py` modules, each with a one-line reason in `READER_REASONS`.
+  A new reader (a Today page) is added on purpose, in review.
+  The nightly modules and `next_cmds.py` are not readers: they call `alpha follow ...` as child commands, or `follow_counts`.
 - The guard reads source text under `apps/*/src`, `packages/*/src` and `workers/`. It also fails on the store's file names
   (`journal.jsonl`, `follow.toml`), `FOLLOW_DIR`, `AlphaFollowV1`, a name glued from parts (`"for" "ward"`), and a module that
   lists every folder of the data directory (`home` or `data_dir` with `iterdir`, `rglob`, `os.walk`, `copytree`, or a `glob` that starts with `*`).
@@ -103,7 +109,8 @@ Each refusal is a typed error with a stable code and plain words.
   and the next append stores the head again. More than one entry ahead of the head is `FOLLOW_TRUNCATED`.
 - An entry with `written_at` later than the verifier's clock is `FOLLOW_WRITTEN_AHEAD`. A follow folder with a record and
   no start entry is `FOLLOW_NO_START`. A journal from another follow is `FOLLOW_WRONG_FOLDER`.
-- Not covered: the journal and `head.json` rewritten together. A later build also stores each head in the nightly status.
+- Not covered by `verify` alone: the journal and `head.json` rewritten together. The third anchor (below) catches it.
+- `verify --entry N` also prints the hash of entry N (`at_entry`). The nightly run uses it.
 - Not covered: this is not an external timestamp. The threat is an accidental back-fill, not a forger.
 
 ## Repair
@@ -141,8 +148,43 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   session whose stored bars hash differently. The journal is never rewritten. The paper book stays as recorded.
 - `missed` and `late` entries are compared on bars only. An engine change shows as `agrees = false`, never as a silent new number.
 
+## Today (F3)
+- `follow today [--json]` reads the journals only. It computes no decision, calls no engine and writes nothing (a test lists the
+  home before and after). Stopped follows are left out.
+- One row per active follow, in groups: NEW SIGNAL (the newest entry is an order for the next open), OPEN PAPER POSITION,
+  NOTHING TODAY, LATE OR MISSED (newest entry `late` or `missed`, no entry for the newest closed session, or an unreadable journal), WAITING.
+- A row has the idea's name (the card sentence, else the test's name), the asset, the decision in words, the rule's readings, the paper
+  position and equity change, the session date and its age ("as of the close of D; 1 session ago").
+- The header gives the newest closed session per market (the calendar sealed in the start entry; no calendar: 00:00 UTC) and how many
+  follows are behind it. JSON keys: `as_of`, `groups`, `rows`, `behind` (also `markets`, `followed`).
+- `alpha next` adds one line when follows exist. It calls `follow_counts` only; `next_cmds.py` is not a reader.
+- `today` is a safe read in the generic launcher. `follow update` stays owner-only.
+
+## Nightly (N4, N0)
+- N4 runs `alpha follow update --all --json`, then `follow today --json`, then `follow verify <id> --json` per follow.
+  It runs only when a follow is active. With none it is "not run: nothing is followed" and is not a path.
+  Blocking: non-zero exit, time out, bad JSON, a failed `verify`, the third anchor. Minor: a late or missed newest entry, a replay that
+  does not agree. A decision such as "would sell" is never a defect.
+- Third anchor: each record keeps, per follow, the entry count and chain head from `verify`. The next night, entry N of the journal
+  must still have the old hash, else the blocking defect "journal history changed since the last nightly record".
+  A cut below the old count is the same defect. The first night has no earlier anchor: no alarm; the step says so.
+- N0 (`refresh_followed = true`, default off) runs `alpha data pull` once per asset of an active follow, before N4. Never another asset.
+  The command comes from the store's provenance (`ccxt:<exchange>`, `yfinance`, `stooq`, `tiingo`, `alpaca` with its identity), from
+  the first stored bar. It ends at the newest closed day: the run's UTC date for `yfinance` (exclusive end) and `ccxt` (live candle
+  dropped); the day before it for `stooq`, `tiingo`, `alpaca`. A forming bar is never asked for. A named store gets `ALPHA_DATA_DIR=<folder>`.
+- Before each pull, N0 runs `alpha data snapshot n0-<UTC time>-<asset> <symbol> --source ...` for that asset only (a child command; the
+  id is in the record). It freezes the bars and the corporate actions, with the pull's source options. If it fails, the pull for that
+  asset is not run and the step is the blocking defect "could not freeze <asset> before the refresh". Other assets go on.
+  A snapshot is kept even when nothing was revised: it is the proof. No old snapshot is ever deleted or rewritten.
+- The refresh re-downloads the whole series: a pull replaces the symbol's bars and keeps no old copy (receipt sources also keep their
+  receipts). So N0 compares every old bar with the new one. A changed or missing old bar is the minor defect "the provider revised
+  history for <asset>: first changed bar <date> (<columns>)", and it names the snapshot that holds the earlier series and
+  the command to list it (`alpha data snapshots`). No price is printed. No key is read, printed or logged; stderr is scrubbed.
+  A failed pull is a minor defect; N4 then writes `late` or `missed`.
+- Evidence: a newer last bar after the pull is `computed`; the same last bar is `reused` ("no new bar"); unreadable is `unknown`.
+
 ## Commands
-- `follow list`, `show` and `verify` are safe reads. `follow start`, `update` and `stop` are owner-only in the generic launcher.
+- `follow list`, `show`, `verify` and `today` are safe reads. `follow start`, `update` and `stop` are owner-only in the generic launcher.
 - `follow show` prints the record, the entries by kind, the last five entries with their readings, the paper equity numbers
   and the newest replay check. It says "waiting for its first new bar" while only `start` exists.
 - `follow list` shows one state per follow: new signal, open paper position, nothing today, or late or missed.

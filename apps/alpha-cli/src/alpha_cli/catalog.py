@@ -134,7 +134,7 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
         )
     if root == "follow":
         # Reads are safe; start and stop write under `forward/`, so they are owner-only.
-        reads = {"list", "show", "verify"}
+        reads = {"list", "show", "verify", "today"}
         return "safe" if len(argv) > 1 and argv[1] in reads else "owner_only"
     if root == "strategy-candidate":
         # `run` publishes immutable run artifacts, so it needs a server-verified run context.

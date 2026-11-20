@@ -26,3 +26,9 @@ step_timeout_seconds = 1800
 # Set this to that rdagent.toml and the run calls `alpha rdagent run --config <file>` unchanged.
 # rdagent_config = "rdagent.toml"
 # rdagent_timeout_seconds = 14400
+
+# Off by default. true pulls new stored bars (`alpha data pull`) for the assets of followed ideas ONLY,
+# before the follow update. It passes no key: the pull uses the environment of the nightly process.
+# Each asset is frozen first with `alpha data snapshot` (about 0.3 MB for 30 years of daily bars);
+# if that fails, the pull is not run. Snapshots are never deleted by the nightly run.
+# refresh_followed = true

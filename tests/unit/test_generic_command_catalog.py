@@ -48,6 +48,8 @@ def test_empty_generic_command_is_unknown() -> None:
         (["follow", "list"], "safe"),
         (["follow", "show", "x"], "safe"),
         (["follow", "verify", "x"], "safe"),
+        (["follow", "today"], "safe"),
+        (["follow", "update", "--all"], "owner_only"),
         (["follow", "start"], "owner_only"),
         (["follow", "stop", "x"], "owner_only"),
         (["follow"], "owner_only"),

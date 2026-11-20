@@ -18,10 +18,20 @@ from alpha_cli.nightly_steps import COMPUTED, REUSED, UNKNOWN
 
 RULE = (
     "Ready needs the two latest full-attempt runs to be on two different dates, each with no "
-    "blocking defect, all three paths run, a computed rule test and a computed setup step."
+    "blocking defect, all three paths run, a computed rule test and a computed setup step. "
+    "When any idea is followed, the follow update (N4) is a fourth path and must run too; "
+    "when nothing is followed it is not run and not required."
 )
 NEED_DATA = (
-    "The run needs fresh bars to count; pull data before it or enable the follow update (planned)."
+    "The run needs fresh bars to count; pull data before it, or set `refresh_followed = true` "
+    "to pull new bars for the assets of followed ideas only (step N0)."
+)
+TIMING = (
+    "Timing: for a daily stock follow to be on time, the nightly run must start after the "
+    "exchange close and after your data provider has that day's bar, and before the next open. "
+    "The crontab time above (02:17 on this computer's clock) may be wrong for your timezone: "
+    "check it against that rule. Crypto bars close at 00:00 UTC; a night run writes after the "
+    "next one opens."
 )
 CRON_TIME = "17 2 * * *"
 FOLDER = re.compile(r"(\d{4}-\d{2}-\d{2})-(\d+)")
@@ -44,10 +54,12 @@ def read_records(home: Path) -> list[dict[str, Any]]:
 
 
 def _partial(record: dict[str, Any]) -> bool:
-    """A `--only` run. Records from before `paths_run` say so with `full: false`."""
+    """A `--only` run. Records from before `paths_run` say so with `full: false`. A record that
+    has `follows` must also have selected N4; older ones need N1, N2 and N3 only."""
     if "paths_run" not in record:
         return record.get("full") is not True
-    return sorted(record.get("scenarios") or []) != sorted(ALL)
+    need = {*ALL, *(("N4",) if "follows" in record else ())}
+    return not need <= set(record.get("scenarios") or [])
 
 
 def _evidence(record: dict[str, Any], ids: tuple[str, ...]) -> list[str]:
@@ -61,7 +73,9 @@ def _row(record: dict[str, Any]) -> dict[str, Any]:
     ]
     ran = record.get("paths_run")
     rule, setup = _evidence(record, ("N1.test",)), _evidence(record, SETUP_STEPS)
+    follows = record.get("follows")
     return {
+        "follows": follows if isinstance(follows, int) else None,
         "run": f"{record.get('date')}-{record.get('run_number')}",
         "date": record.get("date"),
         "paths_run": ran if isinstance(ran, list) else None,
@@ -81,7 +95,7 @@ def _why_not(row: dict[str, Any]) -> list[tuple[str, str]]:
     if row["blocking"] != 0:
         found.append(("b", f"Run {name} has a blocking defect."))
     ran = row["paths_run"]
-    if ran is None or sorted(ran) != sorted(ALL):
+    if ran is None or not set(ALL) <= set(ran):
         left = [SCENARIOS[n] for n in ALL if n not in (ran or [])]
         say = (
             "was written before paths were recorded"
@@ -89,6 +103,14 @@ def _why_not(row: dict[str, Any]) -> list[tuple[str, str]]:
             else f"left off: {', '.join(left)}"
         )
         found.append(("c", f"Run {name} did not run all three paths ({say})."))
+    if row["follows"] and "N4" not in (ran or []):
+        found.append(
+            (
+                "c",
+                f"Run {name} did not run the follow update (N4) "
+                f"while {row['follows']} idea(s) are followed.",
+            )
+        )
     if row["rule_test"] != COMPUTED:
         why = {REUSED: "no new data that night: the rule test was answered from the stored result"}
         kind = "reused only" if row["reused_only"] else "has no computed rule test"
@@ -104,7 +126,9 @@ def readiness(records: list[dict[str, Any]]) -> dict[str, Any]:
 
     READY needs the two most recent non-partial runs to satisfy all four:
     (a) they fall on two different UTC dates; (b) neither has a blocking defect;
-    (c) both ran all three paths N1, N2 and N3 (an N3 stub is not run);
+    (c) both ran all three paths N1, N2 and N3 (an N3 stub is not run), and N4 (the follow
+    update) too when the record says an idea was followed. N4 is a fourth path required only if
+    follows exist; with none it is "not run: nothing is followed" and does not count against it;
     (d) both have a `computed` rule-test step and a `computed` setup step; a run where
     everything was reused is "reused only" and does not qualify. Old records with no `evidence`
     read as `unknown` and never qualify. Partial `--only` runs are ignored.
@@ -191,5 +215,6 @@ def status_text(facts: dict[str, Any]) -> str:
         "Schedule it yourself. This command installs nothing. One crontab line:",
         f"  {facts['crontab_line']}",
         NEED_DATA,
+        TIMING,
     ]
     return "\n".join(lines)

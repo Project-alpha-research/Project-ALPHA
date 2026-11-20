@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -12,11 +13,81 @@ from alpha_cli._cli_json import emit
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
 from alpha_cli.spine.reading import reading_word
+from alpha_cli.spine.recheck import MISMATCH_EXIT, recheck_idea
 from alpha_cli.spine.run import run_idea
-from alpha_cli.spine.spec import load_spec
+from alpha_cli.spine.spec import IdeaSpec, load_spec
 from alpha_cli.spine.stores import _stores
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+
+
+def _recheck_lines(output: dict[str, Any]) -> list[str]:
+    lines = []
+    for result in output["results"]:
+        found, asset = result["recheck"], result["asset"]
+        if result["error"]:
+            lines.append(f"{asset}: {result['error']}")
+        elif found["match"] is None:
+            lines.append(
+                f"{asset}: {found['reason']}. Run `alpha test <spec>` once first; "
+                "a recheck never creates the stored result."
+            )
+        else:
+            code = "the code changed since" if found["code_changed"] else "the code is the same as"
+            if found["match"]:
+                exact = "bit for bit" if found["bit_identical"] else "within the tolerance"
+                head = f"the same result, {exact}"
+            else:
+                head = f"a different result ({found['differences_total']} differences)"
+            lines.append(
+                f"{asset}: computed again in {found['seconds']:.1f} s and compared with run "
+                f"{found['compared_with']}: {head}; {code} the stored run."
+            )
+            lines.extend(
+                f"  {d['field']}: stored {d['stored']}, recomputed {d['recomputed']}"
+                for d in found["differences"]
+            )
+    return lines
+
+
+def _recheck(
+    parsed: IdeaSpec,
+    settings: AlphaSettings,
+    quick: bool,
+    accept_bad_data: str | None,
+    check_data: bool,
+    json_out: bool,
+) -> None:
+    """`recheck`: computed again and compared with the stored result. Never writes."""
+    if check_data:
+        fail(
+            SpineError(
+                "BAD_OPTION",
+                "--recheck cannot be used with --check-data: a health report writes a file, "
+                "and a recheck writes nothing.",
+                "Run alpha data health first, then alpha test --recheck.",
+            ),
+            json_out,
+        )
+    with redirect_stdout(sys.stderr if json_out else sys.stdout):
+        output = recheck_idea(
+            parsed,
+            home=settings.data_dir,
+            seed=settings.random_seed,
+            quick=quick,
+            accept_bad_data=accept_bad_data,
+        )
+    if all(result["error"] is not None for result in output["results"]):
+        fail(
+            test_error(
+                "; ".join(result["error"] for result in output["results"]),
+                list(_stores(settings.data_dir)),
+            ),
+            json_out,
+        )
+    emit(output, json_out=json_out, fallback="\n".join(_recheck_lines(output)))
+    if any(r["recheck"]["match"] is False for r in output["results"]):
+        raise typer.Exit(MISMATCH_EXIT)
 
 
 def test_rule(
@@ -43,6 +114,12 @@ def test_rule(
         "--accept-bad-data",
         help="Proceed after a failed health check for this run. Give a reason.",
     ),
+    recheck: bool = typer.Option(
+        False,
+        "--recheck",
+        help="Compute the test again and compare it with the stored result. Writes nothing. "
+        "Exit 4 if the two differ.",
+    ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Test a long/flat trading rule on several assets and record every trial."""
@@ -59,6 +136,9 @@ def test_rule(
             fee_bps=fee_bps,
             slippage_bps=slippage_bps,
         )
+        if recheck:
+            _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
+            return
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_idea(
                 parsed,
@@ -102,4 +182,6 @@ def test_rule(
             lines.append(result["reading"]["sentence"])
         if result.get("data_health"):
             lines.append(health_sentence(result["data_health"]))
+        if not result.get("executed", True) and result["run_id"]:
+            lines.append("The engine did not run: the stored run for this test was returned.")
     emit(output, json_out=json_out, fallback="\n".join(lines))

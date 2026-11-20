@@ -19,7 +19,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 2ff07d85c616f5bc
+verified: 116a65532c20e237
 ---
 
 # Command line rule-test readings invariants
@@ -74,6 +74,30 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - RD-Agent wording unchanged for now: RD-Agent rows keep their old words, and the proposer's ledger text is byte-identical
   (a test pins it). That is a separate change.
 - `--outcome` takes an evidence word or an old word; both match, and the help text says so.
+
+## Recheck
+
+- `alpha test <spec> --recheck [--json]` computes each asset again with the current code and data, then compares it with the newest
+  stored non-error run of the same test key (`row_test_key`: spec hash, asset, store, data fingerprint, window, bar size) and the
+  same engine settings (`--quick`, seed, gauntlet knobs, no-diagnostics). "Recheck" means "computed again and compared with the
+  stored result". It is a system check, not a trial and not a new observation.
+- It calls the normal `prepare_asset` and `write_run` into a scratch folder that is removed afterwards, also on a crash. It uses
+  the stored run id (it seeds the price-noise copies) and the ledger rows before the first row of the stored run, so the trial
+  counts are the stored run's. It writes no ledger row, run folder, manifest, figure or lock file. `--check-data` is refused with
+  it (a health report is a file). Held-back period, point-in-time reads and data health are as in a normal run.
+- Compared: every field of the manifest, the diagnostics and `spec.json`, and every value of every parquet table (trades, folds,
+  fills, equity). Left out: the code fingerprints (reported as `code_changed`), the health record and `data-health-*` labels,
+  `spine.test_id`, file bytes (`sha256`, `size_bytes`), the HTML report, and the folder named in a "no macro data" detail.
+  A field or file on one side only is a difference. Integers, words and labels are equal. Floats are equal within
+  `rel=1e-9, abs=1e-12` (another summation order); `bit_identical` says if every float was equal. Two NaN are equal.
+- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed}`. `code_changed` is true
+  when the stored run's execution fingerprint differs from now; it never excuses a difference. With nothing to compare with:
+  `computed: false, match: null`, nothing is computed or created, and `reason` says why (nothing stored; the stored bars
+  changed; only other engine settings stored). Exit 0 on a match or nothing to compare; exit 4 on a difference.
+- Normal results also carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger
+  or any identity hash. `repeat` still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for
+  the setup tests: the summary and every row of the stored table compared; ledger count, health record, health labels and facts
+  left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
 
 ## Idea file
 

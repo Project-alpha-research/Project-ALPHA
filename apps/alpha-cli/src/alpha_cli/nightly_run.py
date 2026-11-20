@@ -17,6 +17,7 @@ from typing import Any
 
 from alpha_cli.nightly_config import NightlyConfig
 from alpha_cli.nightly_follow import follow_steps
+from alpha_cli.nightly_recheck import rule_test, setup_run
 from alpha_cli.nightly_record import N3_STUB, build_record, new_folder, selected, write_record
 from alpha_cli.nightly_steps import (
     BLOCKING,
@@ -31,23 +32,11 @@ from alpha_cli.nightly_steps import (
     run_step,
     stderr_tail,
 )
-from alpha_cli.spine.reading import old_grade_text, reading_word, setup_evidence_of
+from alpha_cli.spine.reading import old_grade_text, setup_evidence_of
 
 
 def _ok(step: dict[str, Any]) -> bool:
     return step["state"] in (PASS, MINOR)
-
-
-def _grades(results: list[dict[str, Any]]) -> str:
-    return ", ".join(f"{r.get('asset')} {_word(r)}" for r in results)
-
-
-def _word(result: dict[str, Any]) -> str:
-    """The reading word of one asset; a result with only a letter says so."""
-    found = result.get("reading")
-    if isinstance(found, dict):
-        return reading_word(found)
-    return old_grade_text(result.get("verdict"))
 
 
 def setup_word(payload: dict[str, Any]) -> str:
@@ -79,33 +68,11 @@ def _health(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
     return steps
 
 
-def _rule_test(
-    config: NightlyConfig, runner: Runner
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    tail = ["test", str(config.rule_spec), *(["--quick"] if config.quick else []), "--json"]
-    step = new_step("N1.test", "N1", "rule test", tail)
-    payload = run_step(runner, step, tail, config.step_timeout, required=("test_id", "results"))
-    results: list[dict[str, Any]] = []
-    if payload is not None and _ok(step):
-        listed = payload["results"]
-        results = [r for r in listed if isinstance(r, dict)] if isinstance(listed, list) else []
-        step["ids"] = {"test_id": payload["test_id"]}
-        step["evidence"] = evidence_of([r.get("labels") for r in results])
-        step["verdict"] = _grades(results)
-        if not results:
-            mark(step, BLOCKING, f"`{step['command']}` returned no result rows.")
-        for row in results:
-            if row.get("error") or not row.get("run_id"):
-                mark(step, BLOCKING, f"The test for {row.get('asset')} failed: {row.get('error')}.")
-    return step, results
-
-
 def _diagnose(config: NightlyConfig, runner: Runner, asset: str, run_id: str) -> dict[str, Any]:
     tail = ["diagnose", run_id, "--json"]
     step = new_step(f"N1.diagnose.{asset}", "N1", f"diagnose {asset}", tail)
-    payload = run_step(
-        runner, step, tail, config.step_timeout, required=("audit", "flags", "labels")
-    )
+    # `labels` is printed only for a run with too few trades: it is optional, not required.
+    payload = run_step(runner, step, tail, config.step_timeout, required=("audit", "flags"))
     step["ids"] = {"run_id": run_id}
     audit = payload.get("audit") if payload else None
     unchecked = [
@@ -184,7 +151,7 @@ def rule_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
         runner, nxt, next_tail, config.step_timeout, required=("stores", "recent_trials", "paths")
     )
     steps = [nxt, *_health(config, runner)]
-    test, rows = _rule_test(config, runner)
+    test, rows = rule_test(config, runner)
     steps.append(test)
     good = {str(r["asset"]): r for r in rows if r.get("run_id") and not r.get("error")}
     names = [str(r.get("asset")) for r in rows] or list(config.assets)
@@ -220,14 +187,14 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
             not_run(f"N2.{key}", "N2", name, [name], wait.format("N2.find")) for key, name in names
         ]
     find_id = str(found["find_id"])
-    find["ids"], find["evidence"] = {"find_id": find_id}, evidence_of([found.get("labels")])
+    find["ids"], find["evidence"] = {"find_id": find_id}, evidence_of([found.get("executed")])
     study = new_step("N2.study", "N2", "setup study", (t := ["setup", "study", find_id, "--json"]))
-    studied = run_step(runner, study, t, config.step_timeout, required=("study_id", "outcome"))
+    studied = setup_run(runner, study, t[:3], config.step_timeout, ("study_id", "outcome"))
     if studied and _ok(study):
-        study["ids"], study["verdict"] = {"study_id": studied["study_id"]}, setup_word(studied)
-        study["evidence"] = evidence_of([studied.get("labels")])
+        study["ids"] = {"study_id": studied["study_id"]}
+        study["verdict"] = study["verdict"] or setup_word(studied)
     trade = new_step("N2.trade", "N2", "setup trade", (t := ["setup", "trade", find_id, "--json"]))
-    traded = run_step(runner, trade, t, config.step_timeout, required=("trade_id", "outcome"))
+    traded = setup_run(runner, trade, t[:3], config.step_timeout, ("trade_id", "outcome"))
     steps += [study, trade]
     if not (traded and _ok(trade)):
         return [
@@ -236,8 +203,8 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
                 "N2.readback", "N2", "results show", ["results", "show"], wait.format("N2.trade")
             ),
         ]
-    trade["ids"], trade["verdict"] = {"trade_id": traded["trade_id"]}, setup_word(traded)
-    trade["evidence"] = evidence_of([traded.get("labels")])
+    trade["ids"] = {"trade_id": traded["trade_id"]}
+    trade["verdict"] = trade["verdict"] or setup_word(traded)
     tail = ["results", "show", str(traded["trade_id"]), "--json"]
     back = new_step("N2.readback", "N2", "results show", tail)
     shown = run_step(runner, back, tail, config.step_timeout, required=("runs", "failed"))

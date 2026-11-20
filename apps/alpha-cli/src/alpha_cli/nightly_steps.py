@@ -96,15 +96,13 @@ def mark(step: dict[str, Any], state: str, defect: str) -> None:
     step["defect"] = defect if step["defect"] is None or state == BLOCKING else step["defect"]
 
 
-def evidence_of(labels: Sequence[object]) -> str:
-    """`reused` when every printed label list holds `repeat`; `unknown` if a list is missing."""
-    if not labels or not all(isinstance(found, list) for found in labels):
+def evidence_of(executed: Sequence[object]) -> str:
+    """`computed` when the engine ran for every result, `reused` when a stored result was
+    returned for any; `unknown` when a result does not say. Reads the `executed` field of the
+    command output, never the `repeat` label."""
+    if not executed or not all(isinstance(found, bool) for found in executed):
         return UNKNOWN
-    return (
-        REUSED
-        if all("repeat" in found for found in labels if isinstance(found, list))
-        else COMPUTED
-    )
+    return COMPUTED if all(executed) else REUSED
 
 
 def not_run(

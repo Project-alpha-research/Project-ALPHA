@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -252,15 +253,27 @@ def _older_rule_study(home: Path, find_id: str) -> bool:
     )
 
 
-def _run(
+@dataclass(frozen=True)
+class Inputs:
+    """What a study reads: the stored find, the bars it may use and the health record."""
+
+    folder: Path
+    manifest: dict[str, Any]
+    spec: Any
+    bars: dict[str, Any]
+    warmup: int
+    record: dict[str, Any]
+    study_id: str
+    control_seed: str
+
+
+def read_inputs(
     find_id: str,
     home: Path,
     check_data: bool,
     accept_bad_data: str | None,
     report_time: datetime | None,
-) -> dict[str, Any]:
-    import polars as pl
-
+) -> Inputs:
     folder, manifest, spec = load_find(home, find_id)
     if spec.study is None:
         raise SpineError(
@@ -278,33 +291,63 @@ def _run(
         report_time=report_time,
     )
     study_id, control_seed = outcome_ids(manifest, STUDY_RULE_VERSION, record)
+    return Inputs(folder, manifest, spec, bars, warmup, record, study_id, control_seed)
+
+
+def compute_study(home: Path, find_id: str, item: Inputs) -> tuple[dict[str, Any], Any]:
+    """The summary and outcomes of a study, computed from the stored find. Writes nothing."""
+    import polars as pl
+
+    spec, manifest, bars = item.spec, item.manifest, item.bars
+    candidates = pl.read_parquet(item.folder / "candidates.parquet")
+    costs, cost_labels = asset_costs(home, list(bars))
+    cost = {a: round_trip(c) for a, c in costs.items()}
+    outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
+    summary = _summarise(
+        spec,
+        manifest,
+        candidates,
+        bars,
+        item.warmup,
+        item.study_id,
+        item.control_seed,
+        outcomes,
+        costs,
+    )
+    summary["labels"].extend(cost_labels)
+    if _older_rule_study(home, find_id):
+        # Same find, different cost assumption: a new look, so it counts as a trial.
+        summary["labels"].append("remeasured-new-cost-rule")
+        summary["reading"] += (
+            " This re-measures an earlier study of the same find under the new per-asset"
+            " cost rule; it counts as one more look, not a new idea."
+        )
+    reserve.carry_to_outcome(summary, manifest)
+    summary["data_health"] = item.record
+    summary["labels"] = [
+        label for label in summary["labels"] if not label.startswith("data-health-")
+    ] + health_labels(item.record)
+    summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
+    return summary, outcomes
+
+
+def _run(
+    find_id: str,
+    home: Path,
+    check_data: bool,
+    accept_bad_data: str | None,
+    report_time: datetime | None,
+) -> dict[str, Any]:
+    item = read_inputs(find_id, home, check_data, accept_bad_data, report_time)
+    study_id, spec, manifest, record = item.study_id, item.spec, item.manifest, item.record
     destination = home / "setup-studies" / study_id
-    if (destination / "manifest.json").exists():
+    executed = not (destination / "manifest.json").exists()
+    if not executed:
         summary = read_study(destination)
         summary["labels"] = [*summary["labels"], "repeat"]
         summary["facts"] = [{**f, "labels": summary["labels"]} for f in summary["facts"]]
     else:
-        candidates = pl.read_parquet(folder / "candidates.parquet")
-        costs, cost_labels = asset_costs(home, list(bars))
-        cost = {a: round_trip(c) for a, c in costs.items()}
-        outcomes = _outcomes(candidates, bars, sorted(set(spec.study.horizons)), cost)
-        summary = _summarise(
-            spec, manifest, candidates, bars, warmup, study_id, control_seed, outcomes, costs
-        )
-        summary["labels"].extend(cost_labels)
-        if _older_rule_study(home, find_id):
-            # Same find, different cost assumption: a new look, so it counts as a trial.
-            summary["labels"].append("remeasured-new-cost-rule")
-            summary["reading"] += (
-                " This re-measures an earlier study of the same find under the new per-asset"
-                " cost rule; it counts as one more look, not a new idea."
-            )
-        reserve.carry_to_outcome(summary, manifest)
-        summary["data_health"] = record
-        summary["labels"] = [
-            label for label in summary["labels"] if not label.startswith("data-health-")
-        ] + health_labels(record)
-        summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
+        summary, outcomes = compute_study(home, find_id, item)
         add_study_trial_fact(home, summary)
         _publish(destination, summary, outcomes, spec, manifest)
     primary = summary["horizons"][str(spec.study.primary)]["pooled"]
@@ -328,6 +371,7 @@ def _run(
         **extras(home, "setup_study", summary, study_id),
         "folder": str(destination),
         "trials_total": ledger["total_trials"],
+        "executed": executed,
     }
 
 

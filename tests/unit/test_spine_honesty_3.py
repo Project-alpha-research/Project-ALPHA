@@ -362,7 +362,7 @@ def test_run_id_hashing_inputs_are_unchanged(
         return original(payload, source_fingerprint=source_fingerprint)
 
     monkeypatch.setattr(_runner, "run_identity_for", record_payload)
-    prepared = spine_run._prepare(idea, "SPY", tmp_path, knobs, result)
+    prepared = spine_run.prepare_asset(idea, "SPY", tmp_path, knobs, result)
     assert captured.pop("data_health")["verdict"] == "unchecked"
     assert "data-health-unchecked" in captured["labels"]
     captured["labels"] = [label for label in captured["labels"] if label != "data-health-unchecked"]

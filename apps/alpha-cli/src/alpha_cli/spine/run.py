@@ -30,7 +30,7 @@ from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
 from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
-from alpha_cli.spine.trial_reader import spine_snapshot
+from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run
 from alpha_core import Bar, CorporateAction, DataError
 from alpha_data.timeframe import DAILY
@@ -114,7 +114,7 @@ class Prepared:
     identity: RunIdentity
 
 
-def _prepare(
+def prepare_asset(
     idea: IdeaSpec,
     asset: str,
     home: Path,
@@ -184,13 +184,15 @@ def _execute(
     result: dict[str, Any],
 ) -> None:
     rdir = Path(result["run_dir"])
-    if (rdir / "manifest.json").exists():
+    # `repeat` means the same test as an earlier one; `executed` says the engine ran this time.
+    result["executed"] = not (rdir / "manifest.json").exists()
+    if not result["executed"]:
         manifest = _artifacts.read_manifest(rdir)
         result["labels"].append("repeat")
     else:
         printed = io.StringIO()
         with staged_run(result) as staged_home, contextlib.redirect_stdout(printed):
-            manifest = _write_run(idea, prepared, home, staged_home, knobs, test_id, result)
+            manifest = write_run(idea, prepared, home, staged_home, knobs, test_id, result)
         # The report library names the staging folder; say only where the run really is.
         for line in printed.getvalue().splitlines():
             if not line.startswith("HTML report saved to:"):
@@ -238,7 +240,7 @@ def _execute(
         )
 
 
-def _write_run(
+def write_run(
     idea: IdeaSpec,
     prepared: Prepared,
     home: Path,
@@ -246,12 +248,17 @@ def _write_run(
     knobs: _gauntlet.GauntletParams,
     test_id: str,
     result: dict[str, Any],
+    *,
+    snapshot: LedgerSnapshot | None = None,
+    figures: bool = True,
 ) -> dict[str, Any]:
+    """Run the gauntlet and publish into ``staged_home``. A recheck gives the ledger as it was
+    and no figures (the figure cache lives in the home)."""
     rdir = Path(result["run_dir"])
     if not prepared.dividends:
         result["labels"].append("benchmark-price-only")
     # One point-in-time ledger read per run: the verdict and the diagnostics count the same rows.
-    snapshot = spine_snapshot(home)
+    snapshot = snapshot if snapshot is not None else spine_snapshot(home)
     bars, ppy = prepared.bars, prepared.spec.periods_per_year
     current = spine_test_key(
         idea.spec_sha256,
@@ -348,11 +355,48 @@ def _write_run(
             },
         },
     )
-    if manifest["spine"]["periods"]:
+    if manifest["spine"]["periods"] and figures:
         from alpha_cli.figures_cmds import store_rule_figures
 
         store_rule_figures(rdir, manifest, home)
     return manifest
+
+
+def new_result(asset: str, *, quick: bool, no_diagnose: bool) -> dict[str, Any]:
+    """The empty result of one asset, before anything is computed."""
+    result: dict[str, Any] = dict.fromkeys(
+        (
+            "symbol",
+            "store",
+            "source",
+            "run_id",
+            "run_dir",
+            "periods_per_year",
+            "verdict",
+            "reading",
+            "oos_sharpe",
+            "benchmark_sharpe",
+            "dsr",
+            "error",
+            "first_ts",
+            "last_ts",
+            "n_bars",
+        )
+    )
+    result.update(
+        asset=asset,
+        labels=[
+            "all-in",
+            "dev-machine-data",
+            *(["quick"] if quick else []),
+            *(["no-diagnostics"] if no_diagnose else []),
+        ],
+        flags=[],
+        facts=[],
+        variants_evaluated=0,
+        executed=False,
+    )
+    return result
 
 
 def run_idea(
@@ -376,40 +420,10 @@ def run_idea(
     results: list[dict[str, Any]] = []
     prepared: list[Prepared | None] = []
     for asset in idea.assets:
-        result: dict[str, Any] = dict.fromkeys(
-            (
-                "symbol",
-                "store",
-                "source",
-                "run_id",
-                "run_dir",
-                "periods_per_year",
-                "verdict",
-                "reading",
-                "oos_sharpe",
-                "benchmark_sharpe",
-                "dsr",
-                "error",
-                "first_ts",
-                "last_ts",
-                "n_bars",
-            )
-        )
-        result.update(
-            asset=asset,
-            labels=[
-                "all-in",
-                "dev-machine-data",
-                *(["quick"] if quick else []),
-                *(["no-diagnostics"] if no_diagnose else []),
-            ],
-            flags=[],
-            facts=[],
-            variants_evaluated=0,
-        )
+        result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
         try:
             prepared.append(
-                _prepare(
+                prepare_asset(
                     idea,
                     asset,
                     home,
@@ -458,7 +472,7 @@ def run_idea(
                 **{
                     key: value
                     for key, value in result.items()
-                    if key not in {"asset", "run_dir", "error", "facts", "reading"}
+                    if key not in {"asset", "run_dir", "error", "facts", "reading", "executed"}
                 },
             },
         )

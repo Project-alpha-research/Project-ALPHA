@@ -33,7 +33,7 @@ async function openRun(page: Page, manifest: Record<string, unknown>): Promise<v
   } }))
   await page.route(`**/api/runs/${runId}/figures`, route => route.fulfill({ json: { run_id: runId, items: [] } }))
   await page.route('**/api/risk/scenario**', route => route.fulfill({ json: {
-    run_id: runId, confidence: 0.95, scenarios: [
+    run_id: runId, confidence: 0.95, provenance: { metric_basis: null }, scenarios: [
       { name: 'baseline', sharpe: 0.62, annual_vol: 0.14, max_drawdown: -0.18, value_at_risk: -0.012, expected_shortfall: -0.018, total_return: 0.42 },
       { name: 'vol x1.5', sharpe: 0.6, annual_vol: 0.21, max_drawdown: -0.27, value_at_risk: -0.018, expected_shortfall: -0.027, total_return: 0.55 },
     ],

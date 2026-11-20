@@ -106,4 +106,5 @@ def test_legacy_driver_preserves_selection_exclusions_and_score_floor(tmp_path: 
     assert entry["kill_rate"] == 0.25 and entry["required"] == 0.9
     assert entry["tool"] == "mutmut==2.5.1"
     assert entry["excluded_tests"] == ["tests/unit/test_layout.py::test_layout"]
-    assert len(commands) == 3
+    # two clean runs (the second, with the exclusion applied, finds nothing new), mutmut, export
+    assert len(commands) == 4

@@ -154,6 +154,7 @@ def stage_mutation_tree(root: Path, modules: list[str], staging: Path) -> list[s
 
 
 _MUTATION_PYTEST_ARGS = ["-p", "no:cacheprovider", "-q", "-x"]
+_PREFLIGHT_ROUNDS = 4  # clean runs before mutmut; each may reveal tests the last one hid
 
 
 def staging_only_failures(output: str) -> list[str]:
@@ -170,6 +171,31 @@ def staging_only_failures(output: str) -> list[str]:
         elif line.startswith("ERROR "):
             args += ["--ignore", line[len("ERROR ") :].split(" - ", 1)[0].split("::", 1)[0]]
     return args
+
+
+def settle_exclusions(
+    run: gate.EnvRunner, preflight: list[str], staging: Path, timeout: float
+) -> tuple[list[str], float]:
+    """Repeat the staged clean run with its exclusions applied until it names nothing new.
+
+    Ignoring one test file can turn a test that imported it into a collection error that only
+    the next run shows. At most ``_PREFLIGHT_ROUNDS`` runs; returns (exclusions, seconds).
+    """
+    excluded: list[str] = []
+    seconds = 0.0
+    for _ in range(_PREFLIGHT_ROUNDS):
+        ok, round_seconds, output = run(
+            [*preflight[:-1], *excluded, preflight[-1]], cwd=staging, timeout=timeout
+        )
+        seconds += round_seconds
+        found = [] if ok else staging_only_failures(output)
+        known = set(zip(excluded[::2], excluded[1::2], strict=True))
+        fresh = [pair for pair in zip(found[::2], found[1::2], strict=True) if pair not in known]
+        if not fresh:
+            break
+        for option, target in dict.fromkeys(fresh):
+            excluded += [option, target]
+    return excluded, seconds
 
 
 def mutation_kill_rate(stats: dict[str, Any]) -> float:
@@ -289,11 +315,11 @@ def mutate(
         try:
             stage_mutation_tree(root, [rel], staging)
             entry: dict[str, Any] = {}
-            # staged clean run: exclude tests that fail only because of the flattened layout
+            # staged clean run: exclude tests that fail only because of the flattened layout;
+            # it repeats until it names nothing new (see settle_exclusions)
             preflight = ["uv", "run", "--project", str(root), "pytest", "-q", "-rfE"]
             preflight += ["-p", "no:cacheprovider", "--continue-on-collection-errors", "tests"]
-            pre_ok, pre_seconds, pre_out = run(preflight, cwd=staging, timeout=timeout)
-            excluded = [] if pre_ok else staging_only_failures(pre_out)
+            excluded, pre_seconds = settle_exclusions(run, preflight, staging, timeout)
             if excluded:
                 entry["excluded_tests"] = sorted({t.split("[", 1)[0] for t in excluded[1::2]})
                 pyproject_path = staging / "pyproject.toml"

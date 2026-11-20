@@ -64,6 +64,15 @@ docs/reference/invariants/patterns.md
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
+docs/reference/invariants/testing.md
+  verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
+
+docs/reference/invariants/validation-factor-statistics.md
+  verified 29fbabfa2cb71320 on 2026-11-20: tests added that pin whole error messages and the stated assumption text; the rules are unchanged
+
+docs/reference/invariants/validation.md
+  verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
+
 docs/reference/invariants/web-api-reads.md
   verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
@@ -183,6 +192,9 @@ docs/work/CONTEXT.md
 
 packages/alpha-data/CONTEXT.md
   verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+
+packages/alpha-validation/CONTEXT.md
+  verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
   verified 0272affe2a51e27f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct

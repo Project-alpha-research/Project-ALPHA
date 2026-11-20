@@ -22,6 +22,7 @@ STORED = {
     "file": "diagnostics/abcd00000000beef/market.vol_regimes@v1-1a2b3c4d.json",
     "labels": ["ad-hoc", "reserved-period-seen"],
     "reading": READING,
+    "status": "exploratory",
 }
 FAILED = {
     "kind": "tool:market.attribution",
@@ -30,6 +31,13 @@ FAILED = {
     "error_code": "UNKNOWN_ASSET",
     "labels": ["ad-hoc"],
     "recorded_at": "2026-11-19T09:00:00+00:00",
+}
+RUN_READING = {"schema": "AlphaReadingV1", "sentence": "A relayed sentence.", "checks": []}
+COUNTS = {
+    "total": 1,
+    "declared": 0,
+    "exploratory": 1,
+    "text": "1 check run on this result: 0 declared, 1 exploratory",
 }
 ATTEMPT = {**FAILED, "outcome": "attempted", "recorded_at": "2026-11-19T08:59:00+00:00"}
 OK_ROW = {**STORED, "kind": "tool:market.vol_regimes", "outcome": "ok"}
@@ -60,7 +68,16 @@ def test_stored_results_are_returned_with_their_stored_reading(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     calls: list[list[str]] = []
-    shown: dict[str, Any] = {"runs": [{"tools": [STORED], "tool_history": [ATTEMPT, OK_ROW]}]}
+    shown: dict[str, Any] = {
+        "runs": [
+            {
+                "tools": [STORED],
+                "tool_history": [ATTEMPT, OK_ROW],
+                "reading": RUN_READING,
+                "tool_counts": COUNTS,
+            }
+        ]
+    }
     body = _client(tmp_path, monkeypatch, shown, calls).get(f"/api/runs/{RUN_ID}/checks").json()
     assert calls == [["results", "show", RUN_ID, "--json"]]
     assert body == {
@@ -73,8 +90,11 @@ def test_stored_results_are_returned_with_their_stored_reading(
                 "error": None,
                 "labels": ["ad-hoc", "reserved-period-seen"],
                 "recorded_at": "2026-11-19T10:00:00+00:00",
+                "status": "exploratory",
             }
         ],
+        "reading": RUN_READING,
+        "counts": COUNTS,
     }
 
 
@@ -84,7 +104,7 @@ def test_no_stored_results_is_an_empty_list(
     shown: dict[str, Any] = {"runs": [{"tools": [], "tool_history": []}]}
     response = _client(tmp_path, monkeypatch, shown).get(f"/api/runs/{RUN_ID}/checks")
     assert response.status_code == 200
-    assert response.json() == {"run_id": RUN_ID, "checks": []}
+    assert response.json() == {"run_id": RUN_ID, "checks": [], "reading": None, "counts": None}
 
 
 def test_a_tool_error_row_is_shown_as_an_error_in_time_order(
@@ -100,6 +120,16 @@ def test_a_tool_error_row_is_shown_as_an_error_in_time_order(
     ]
     assert body["checks"][0]["error"] == "UNKNOWN_ASSET"
     assert body["checks"][0]["reading"] is None
+    assert body["checks"][0]["status"] is None
+
+
+def test_a_malformed_reading_or_count_is_dropped_not_guessed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bad_counts = {"total": "1", "declared": 0, "exploratory": 1, "text": "x"}
+    shown: dict[str, Any] = {"runs": [{"reading": "text", "tool_counts": bad_counts}]}
+    body = _client(tmp_path, monkeypatch, shown).get(f"/api/runs/{RUN_ID}/checks").json()
+    assert body["reading"] is None and body["counts"] is None
 
 
 def test_unknown_run_is_404_and_a_cli_failure_is_422(

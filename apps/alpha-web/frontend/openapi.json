@@ -24166,6 +24166,17 @@
             ],
             "title": "Recorded At"
           },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
           "tool": {
             "title": "Tool",
             "type": "string"
@@ -24182,6 +24193,36 @@
         "title": "RuleTestCheck",
         "type": "object"
       },
+      "RuleTestCheckCounts": {
+        "additionalProperties": false,
+        "description": "The CLI's own count of the stored results, with its sentence.",
+        "properties": {
+          "declared": {
+            "title": "Declared",
+            "type": "integer"
+          },
+          "exploratory": {
+            "title": "Exploratory",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "declared",
+          "exploratory",
+          "text"
+        ],
+        "title": "RuleTestCheckCounts",
+        "type": "object"
+      },
       "RuleTestChecks": {
         "additionalProperties": false,
         "description": "Checks stored for one rule test, oldest first; empty when none were run.",
@@ -24192,6 +24233,28 @@
             },
             "title": "Checks",
             "type": "array"
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuleTestCheckCounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reading": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading"
           },
           "run_id": {
             "title": "Run Id",
@@ -26363,6 +26426,16 @@
             "title": "Labels",
             "type": "array"
           },
+          "reading": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SetupReading"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "rows": {
             "anyOf": [
               {
@@ -26447,6 +26520,57 @@
           "trial_indices"
         ],
         "title": "SetupOutcome",
+        "type": "object"
+      },
+      "SetupReading": {
+        "additionalProperties": false,
+        "description": "How a stored study or trade reads: an evidence word and its place in the setup's family.",
+        "properties": {
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "family_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Count"
+          },
+          "family_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Position"
+          },
+          "old_wording": {
+            "title": "Old Wording",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence",
+          "old_wording",
+          "family_position",
+          "family_count"
+        ],
+        "title": "SetupReading",
         "type": "object"
       },
       "SetupRun": {

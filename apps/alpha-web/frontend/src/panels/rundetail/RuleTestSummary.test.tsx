@@ -49,12 +49,12 @@ describe('rule-test Summary', () => {
     expect(html).toContain('<small>no idea text was saved with this run</small>')
   })
 
-  it('puts caveats below their values and distinguishes the grade sample from the full history', () => {
+  it('puts caveats below their values and distinguishes the scored sample from the full history', () => {
     const html = render()
     expect(tile(html, 'Total return after costs')).toMatch(/12\.5%.*[Ee]xploratory/)
     expect(tile(html, 'Return per year')).toMatch(/6\.0%.*three years/)
     expect(tile(html, 'Worst drop')).toMatch(/-14\.0%.*three years/)
-    expect(tile(html, 'Closed trades')).toMatch(/35.*walk-forward.*dimensions alone would give B.*held at C.*only 4 closed trades/)
+    expect(tile(html, 'Closed trades')).toMatch(/35.*Only 4 closed trades.*walk-forward.*too few to judge/)
     expect(tile(html, 'Buy-and-hold return')).toMatch(/20\.0%.*development machine/)
     expect(html).toMatch(/Risk-adjusted score \(Sharpe\).*0\.750.*1\.200.*Quick mode/)
   })

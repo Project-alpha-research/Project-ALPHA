@@ -25,6 +25,18 @@ class SetupFigure(StrictModel):
     png: str | None
 
 
+class SetupReading(StrictModel):
+    """How a stored study or trade reads: an evidence word and its place in the setup's family."""
+
+    # one of three evidence words; null when the stored outcome word is not one this reads
+    evidence: str | None
+    # true when only the old outcome word was stored (its mapped phrase is shown as old wording)
+    old_wording: bool
+    # ledger rows of this kind on the same idea text, and this run's place among them
+    family_position: int | None
+    family_count: int | None
+
+
 class SetupOutcome(StrictModel):
     run_id: str
     rule_version: str | None
@@ -34,6 +46,7 @@ class SetupOutcome(StrictModel):
     labels: list[str]
     trial_indices: list[int] | None
     trial_labels: dict[str, list[str]] | None = None
+    reading: SetupReading | None = None
 
 
 class SetupRunDetail(StrictModel):

@@ -1369,10 +1369,10 @@ docs = ["docs/reference/project/components/options-data.md"]
 [[capability]]
 id = "rule-test"
 name = "Test a trading rule on several assets with one command"
-what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger."
+what = "Turn an idea spec into long/flat rule tests, visible run artifacts and an ordered trial ledger. The Workstation report opens with a reading block (fact checks, a sentence, evidence strength, the aim, measures, counts), never a grade."
 see_it = ["uv run alpha test spec.toml --quick --json", "Workstation: Results, open the run's Report"]
 entry_points = ["cli: alpha test", "panel: apps/alpha-web/frontend/src/panels/rundetail/RuleTestReport.tsx"]
-proof_synthetic = ["tests/unit/test_spine_spec.py::test_run_records_errors_and_continues", "tests/unit/test_reserve_holdback.py::test_rule_test_and_tool_read_no_held_back_bar"]
+proof_synthetic = ["tests/unit/test_spine_spec.py::test_run_records_errors_and_continues", "tests/integration/test_web_api_reading.py::test_a_new_run_reaches_the_client_with_its_stored_reading", "tests/unit/test_reserve_holdback.py::test_rule_test_and_tool_read_no_held_back_bar"]
 proof_smoke = ["tests/smoke/test_rule_test_smoke.py::test_rule_test_records_two_assets"]
 real_data = "not yet confirmed; development-machine results are labelled"
 needs = []

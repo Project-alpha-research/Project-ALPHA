@@ -15,6 +15,7 @@ from typing import Any
 import polars as pl
 
 from alpha_core.reserve import RESERVED_START
+from alpha_web._setup_reading import reading_of
 from alpha_web.api.models.setup_runs import (
     SetupFigure,
     SetupOutcome,
@@ -267,6 +268,7 @@ def _outcomes(
                 figure=_figure(figure_name, data[figure_name]),
                 trial_indices=_indices(ledger, kind, folder.name),
                 trial_labels=_trial_labels(ledger, kind, folder.name),
+                reading=reading_of(summary, ledger, kind, folder.name),
             )
         )
     return result

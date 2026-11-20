@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: 7614f54c171788a6
+verified: 5b4efefeaa946d4e
 ---
 
 # Web run detail invariants
@@ -43,6 +43,21 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - Setup Lab is Research → Setup Lab (`SetupLabPanel`, both profiles): GET routes only, each response bound to the selected find. Stored figures have value
   tables. Trade return and initial risk display as percentages beside direction and R. The timeline keeps rejected matches grey. Values round only; no curve
   or total is calculated. Unstored parts say "not recorded". Tests: `SetupLabPanel.test.tsx`, `setupLabModel.test.ts`, `e2e/setup-lab.spec.ts`.
+
+## Reading block
+
+- The rule-test Summary and Setup Lab show a reading block, never a letter grade, "supported", "rejected" or
+  "inconclusive" (`components/ReadingBlock.tsx`, `panels/readingModel.ts`).
+- Order: fact checks, the stored sentence, evidence strength (a four-step scale in neutral tokens, the current step
+  named and marked, the `because` facts), against the aim (relation words and a range picture of the 95% interval
+  with the aim as a tick), measures, counts, footer.
+- A fault replaces the block: "Fault: ... Fix this first. No reading." Its numbers sit behind a closed disclosure.
+- A run with no reading and an old letter says "graded <letter> under the old rules", muted.
+- The reading comes from the checks request, as the CLI states it. The browser derives nothing.
+- Tool results show a declared or exploratory chip and the CLI's count line.
+- Setup Lab shows the evidence word and scale, the stored sentence and "Setup study K of N recorded for this idea".
+  Old records add "(old wording)". The old outcome word is hidden.
+- Covered by `ReadingBlock.test.tsx`, `readingScan.test.tsx` and `e2e/reading-block.spec.ts`.
 
 ## Workstation recorded fields
 

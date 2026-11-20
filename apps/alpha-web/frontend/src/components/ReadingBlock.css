@@ -1,0 +1,26 @@
+.reading-block { display: flex; flex-direction: column; gap: var(--pad-sm); margin: 0 0 var(--pad); padding: var(--pad); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 4px; max-width: 64rem; }
+.reading-block h4 { margin: 0 0 var(--pad-sm); font-size: var(--font-size); }
+.reading-part { margin: 0; }
+.reading-sentence { margin: 0; font-size: 1.15em; line-height: 1.4; max-width: 60ch; }
+.reading-checks { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; }
+.reading-checks li { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-dim); }
+.reading-checks strong { color: var(--ink); }
+.reading-icon { flex: none; }
+.reading-scale { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; max-width: 40rem; }
+.reading-scale li { display: flex; flex-direction: column; gap: 3px; color: var(--muted); }
+.reading-step-bar { display: block; height: 8px; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--panel); }
+.reading-step-name { font-size: 0.9em; overflow-wrap: anywhere; }
+.reading-scale li[data-current='true'] { color: var(--ink); font-weight: 700; }
+.reading-scale li[data-current='true'] .reading-step-bar { height: 12px; background: var(--ink); border-color: var(--ink); outline: 2px solid var(--accent); outline-offset: 1px; }
+.reading-because, .reading-counts { margin: var(--pad-sm) 0 0; padding-left: 1.2em; }
+.reading-aim { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--pad-sm); }
+.reading-aim p { margin: 0 0 4px; }
+.reading-range-track { position: relative; height: 18px; border-bottom: 1px solid var(--line-strong); max-width: 40rem; }
+.reading-range-bar { position: absolute; top: 5px; height: 8px; background: var(--accent); opacity: 0.55; border: 1px solid var(--accent); border-radius: 2px; }
+.reading-range-tick { position: absolute; top: 0; bottom: 0; width: 0; border-left: 3px solid var(--ink); }
+.reading-range-observed { position: absolute; top: 6px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); }
+.reading-measures { max-width: 100%; }
+.reading-measures td { white-space: normal; vertical-align: top; }
+.reading-fault { border-left: 6px solid var(--gold); border-color: var(--line-strong); border-left-color: var(--gold); }
+.reading-fault .reading-sentence { font-size: 1.2em; }
+.reading-fault details { margin-top: var(--pad-sm); }

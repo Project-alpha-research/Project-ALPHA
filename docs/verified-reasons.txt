@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified cb51a11b4db4c805 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified 6412c1632ed46c21 on 2026-11-20: docstring wording only in a source; text already correct
 
 apps/alpha-web/README.md
-  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
+  verified 6412c1632ed46c21 on 2026-11-20: docstring wording only in a source; text already correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -77,13 +77,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
+  verified d597b8b951c3a91e on 2026-11-20: docstring wording only in a source; text already correct
 
 docs/reference/invariants/web-api.md
-  verified f0f5f80574c76c03 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified 4b4d440e421a05c3 on 2026-11-20: docstring wording only in a source; text already correct
 
 docs/reference/invariants/web-frontend.md
-  verified 70b93826df280038 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
+  verified 971324d5f7d70108 on 2026-11-20: reading block added; no rule on routes, chrome or theme here changed
 
 docs/reference/invariants/web-run-detail.md
   verified 7614f54c171788a6 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.

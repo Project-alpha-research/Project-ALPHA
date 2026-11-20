@@ -296,3 +296,33 @@ def test_reserved_period_labels_are_explained() -> None:
         "This run used data from 2024-01-01 on, before that data was held back. "
         "It is not a fresh test on that period."
     )
+
+
+def test_a_stored_outcome_reads_as_evidence_with_its_place_in_the_family(tmp_path: Path) -> None:
+    find_fixture(tmp_path)
+    folder = outcome_fixture(tmp_path, "study")
+    summary = json.loads((folder / "summary.json").read_text())
+    summary |= {"idea": "Volume spike", "outcome": "not supported", "evidence": "some evidence"}
+    write_json(folder / "summary.json", summary)
+    manifest = json.loads((folder / "manifest.json").read_text())
+    data = (folder / "summary.json").read_bytes()
+    manifest["files"]["summary.json"] = {
+        "size": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+    write_json(folder / "manifest.json", manifest)
+    rows = [
+        {"kind": "setup_study", "study_id": "z" * 16, "idea": "volume SPIKE", "labels": []},
+        {"kind": "setup_study", "study_id": STUDY, "idea": "Volume spike", "labels": []},
+    ]
+    (tmp_path / "ledger").mkdir()
+    (tmp_path / "ledger/trials.jsonl").write_text(
+        "".join(
+            json.dumps(row | {"schema": "AlphaTrialV1", "trial_index": i, "total_trials": i}) + "\n"
+            for i, row in enumerate(rows, 1)
+        )
+    )
+    found = _setup_runs.read_run(tmp_path, FIND).studies[0].reading
+    assert found is not None
+    assert (found.evidence, found.old_wording) == ("some evidence", False)
+    assert (found.family_position, found.family_count) == (2, 2)

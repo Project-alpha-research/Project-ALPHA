@@ -72,7 +72,7 @@ export function Risk({ manifest, runId }: { manifest: ValidateManifest; runId: s
                   <td className="mono">{s.name}</td>
                   <td className="num">{fmtNum(s.sharpe, 2)}</td>
                   <td className="num">{fmtPct(s.annual_vol, 1)}</td>
-                  <td className="num neg">{fmtPct(s.max_drawdown, 1)}</td>
+                  <td className="num">{fmtPct(s.max_drawdown, 1)}</td>
                   <td className="num">{fmtPct(s.value_at_risk, 2)}</td>
                   <td className="num">{fmtPct(s.expected_shortfall, 2)}</td>
                   <td className={`num${s.total_return < 0 ? ' neg' : ''}`}>{fmtPct(s.total_return, 1)}</td>

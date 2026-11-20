@@ -98,9 +98,9 @@ export function optimSuggestions(m: OptimManifest): Suggestion[] {
 
   if (m.passed) {
     out.push({
-      title: 'Sweep verdict clean — validate the winner as a single run',
+      title: 'The sweep checks hold — validate the winner as a single run',
       why:
-        `DSR, PBO, and SPA all pass, so the best config earned its rank. The full gauntlet on ` +
+        `DSR, PBO, and SPA all held at their levels, so the best config earned its rank. The full gauntlet on ` +
         `that config (fresh seed, single-trial) is the natural next step before sizing it.`,
       action: symbol ? { command: 'validate', args: `${symbol} ${flags}`.trim() } : undefined,
     })
@@ -116,9 +116,9 @@ export function optimSuggestions(m: OptimManifest): Suggestion[] {
     }
     if (m.dsr && m.dsr.passed === false) {
       out.push({
-        title: 'Best config fails deflation — the family may be too large for the edge',
+        title: 'Best config is below the deflation level — the family may be too large for the edge',
         why:
-          `The winner's Sharpe does not clear what the best of ${m.dsr.n_trials ?? m.n_configs} ` +
+          `The winner's Sharpe is below what the best of ${m.dsr.n_trials ?? m.n_configs} ` +
           `random trials would show. Either the underlying edge is too small, or the same search ` +
           `on a longer sample would separate skill from luck.`,
       })

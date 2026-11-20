@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/risk_cmds.py
-verified: c408fee1546057ca
+verified: f192068ff2e63fcf
 ---
 
 # Path risk: how bad could it get

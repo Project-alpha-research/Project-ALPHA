@@ -12,6 +12,7 @@ import type { PageId } from '../shell/workflowModel'
 import { symbolFitsProfile } from '../shell/profiles'
 import type { WindowId } from '../shell/profiles'
 import { getSettings, setSettings } from '../state/settings'
+import { paletteHint } from '../panels/readingModel'
 import { shortId } from '../util/format'
 
 interface Props {
@@ -180,8 +181,7 @@ export function CommandPalette({ functions, onNavigate, open, onClose, documents
                   >
                     <span className="mono">{shortId(r.run_id)}</span>
                     <span className="hint">
-                      {r.kind} · {r.label ?? '—'}
-                      {r.verdict ? ` · ${r.verdict}` : ''}
+                      {paletteHint(r)}
                     </span>
                   </Command.Item>
                 ))}

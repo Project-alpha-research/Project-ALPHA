@@ -1,5 +1,6 @@
-/** Recorded projections only: never infer a return, benchmark, fee total or verdict. */
+/** Recorded projections only: never infer a return, benchmark or fee total, and never print a grade or a gate result. */
 import type { NativeTearSheetProjection } from '../api/types'
+import { manifestWord } from './readingModel'
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
 const number = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
 const display = (value: unknown, unit = '') => number(value) ? `${value}${unit}` : typeof value === 'string' && value ? value : 'Not recorded'
@@ -24,8 +25,7 @@ export function edgeReviewRows(manifest: Record<string, unknown>, native: Native
     { label: 'Trade count', value: number(manifest.n_trades) ? display(manifest.n_trades) : trade?.available ? display(trade.value) : trade?.unavailable_reason ?? 'Not recorded' },
     { label: 'Benchmark', value: native?.benchmark_available && benchmark?.available ? display(benchmark.benchmark_kind) : benchmark?.unavailable_reason ?? 'Not recorded' },
     { label: 'Benchmark final normalized equity', value: native?.benchmark_available && benchmark?.available ? display(benchmark.benchmark_equity) : 'Not recorded' },
-    { label: 'Validation verdict', value: display(object(manifest.verdict).overall ?? manifest.verdict) },
-    { label: 'Recorded gate result', value: typeof manifest.passed === 'boolean' ? manifest.passed ? 'Passed' : 'Failed' : 'Not recorded' },
+    { label: 'Reading', value: manifestWord(manifest)?.text ?? 'Not recorded' },
     { label: 'Deflated Sharpe', value: display(number(manifest.dsr) ? manifest.dsr : object(manifest.dsr).dsr) },
   ]
 }

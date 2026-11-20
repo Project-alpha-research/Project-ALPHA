@@ -100,6 +100,7 @@ describe('summary rows', () => {
     expect(byLabel['Verdict']).toBeUndefined()
     expect(byLabel['Win rate']).toBe('not recorded')
     expect(byLabel['Profit factor']).toBe('not recorded')
+    expect(rows.find((row) => row.label === 'Profit factor')?.hint).toBe('gross gains divided by gross losses')
     expect(byLabel['Exposure']).toBe('not recorded')
     expect(byLabel['Max drawdown date']).toBe('not recorded')
     expect(rows.some((row) => /NaN|undefined|null/.test(row.value))).toBe(false)

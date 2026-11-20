@@ -201,7 +201,7 @@ export function RunDetail(props: PanelHandleProps) {
             <tbody>
               {summaryRows(manifest as Record<string, unknown>).map((row) => (
                 <tr key={row.label}>
-                  <td className="k">{row.label}</td>
+                  <td className="k">{row.label}{row.hint ? <span className="muted"> · {row.hint}</span> : null}</td>
                   <td className="mono">{row.value}</td>
                 </tr>
               ))}

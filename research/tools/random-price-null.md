@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: e08b545d32b9a3c1
+verified: 87d09a6d2dff222f
 ---
 
 # Random-price null
@@ -22,10 +22,9 @@ uv run alpha optim mcpt <SYMBOL> --strategy ma_crossover --grid fast=20,50 --gri
 **How to read it**
 
 - `alpha report` prints three lines, `null[returns_level]`, `null[full_engine]` and `null[bar_permutation]`,
-  each with `percentile` (the share of random-price paths the strategy beat), a p-value and `PASS` or `FAIL`.
-  A pass needs the percentile at or above the threshold (0.95 unless changed). `gate[randomized_price_null]`
-  is the combined line.
-- A `FAIL` says the result is within what chance produces on these bars. Report it as that, plainly.
+  each with `percentile` (the share of random-price paths the strategy beat), a p-value and the share of random draws that did as well.
+  The old grade used 0.95 for the percentile; the line shows it muted. `gate[randomized_price_null]` is the combined line.
+- A high share of random draws that did as well says the result is within what chance produces on these bars. Report it as that, plainly.
 - A `quick` run uses very few random paths (20, 4 and 4): its percentiles are coarse. Re-run without `--quick`
   before leaning on them.
 - `alpha optim mcpt` asks the same of a whole parameter sweep: it re-optimises on shuffled bars. Its own output

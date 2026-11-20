@@ -140,7 +140,7 @@ see_it = [
   "uv run alpha data pull SPY --source alpaca --asset-class etf --timeframe 5m --start 2026-08-03 --end 2026-11-13",
   "uv run alpha data candles SPY --timeframe 1h --from-timeframe 5m --json",
   "uv run alpha backtest run SPY --timeframe 5m --strategy breakout --param window=12, then uv run alpha report <run>",
-  "Workstation: Run Browser lists intraday runs with their bar size (M5, H1)",
+  "Workstation: the Navigator lists the intraday run, and its report opens from there",
 ]
 entry_points = [
   "cli: alpha data pull",

@@ -2,16 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
+  verified cc9ebcd08f075238 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
 
 apps/alpha-cli/README.md
-  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
+  verified cc9ebcd08f075238 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified a3ae7d4e6fde8b7e on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
+  verified 51f98632c5537d58 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
 
 apps/alpha-web/README.md
   verified a3ae7d4e6fde8b7e on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
@@ -20,7 +20,7 @@ docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
-  verified e8c675fcdb6fe821 on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
+  verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 8378ba0213d578bb on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified a1db0a920229285f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -86,10 +86,10 @@ docs/reference/invariants/web-api.md
   verified 6098cb454691d1fd on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/reference/invariants/web-frontend.md
-  verified 2fa8f1b4312ec2e4 on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
+  verified eaf30770f1d738d5 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
 
 docs/reference/invariants/web-run-detail.md
-  verified 7614f54c171788a6 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified a6410e620bf28a6e on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -149,7 +149,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 5b5ad43ef89ac24d on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified ea58b986de190f92 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -158,7 +158,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified e8c675fcdb6fe821 on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
+  verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -203,10 +203,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 1e45fb34394a6d86 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified f529d61f31fdcecc on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/PLAYBOOK.md
-  verified 00998304b0f5eed8 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified a8188fad23efab3f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/README.md
   verified 26fdc1c8d5483641 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -218,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 97bdea73787c4c09 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified b7c3368f1a6e93fe on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 129dca7f884bc920 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 68bf5df94f417ea5 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 2700a5238549f3de on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 577bf55b79269e0e on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/diagnose-and-audit.md
-  verified fdce1caa2af6ac35 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified b68510558afffab4 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -257,7 +257,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified 87d09a6d2dff222f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -269,13 +269,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified c74807ea37d7d0b8 on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 32291768dffca09f on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 2700a5238549f3de on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 577bf55b79269e0e on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
@@ -290,7 +290,7 @@ research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
-  verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct
+  verified 80b0def9a654fdb4 on 2026-11-20: re-read after the command-line text went back to its earlier state; claims still hold
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says
@@ -302,7 +302,7 @@ workflow/CONTEXT.md
   verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
 
 workflow/README.md
-  verified d2104c89249c9c8e on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
+  verified bb945d1901fa6d5f on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 workflow/stages/03-build/CONTEXT.md
   verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

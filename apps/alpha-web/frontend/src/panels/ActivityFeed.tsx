@@ -3,9 +3,10 @@
 
 
 import { Placeholder } from '../components/Placeholder'
-import { AREA_TEXT, useActivity, type ActivityEvent } from '../state/activity'
+import { AREA_TEXT, useActivity, type ActivityEvent, type ConnectionState } from '../state/activity'
 import { fmtTime, shortId } from '../util/format'
 import { openRunDetail } from './actions'
+import { runWord } from './readingModel'
 import type { PanelHandleProps } from '../context/panelHandle'
 
 const EVENT_LABEL: Record<ActivityEvent['type'], string> = {
@@ -18,6 +19,11 @@ const EVENT_LABEL: Record<ActivityEvent['type'], string> = {
   store_changed: 'DSK',
 }
 
+function RunWord({ run }: { run: NonNullable<ActivityEvent['run']> }) {
+  const word = runWord(run.evidence, run.verdict)
+  return word ? <span className={word.old ? 'muted' : undefined}>{word.text}</span> : null
+}
+
 function eventTone(t: ActivityEvent['type']): string {
   if (t === 'run_added') return 'good'
   if (t === 'job_failed') return 'bad'
@@ -27,7 +33,11 @@ function eventTone(t: ActivityEvent['type']): string {
 
 export function ActivityFeed(_props: PanelHandleProps) {
   const { feed, connection } = useActivity()
+  return <ActivityFeedView feed={feed} connection={connection} />
+}
 
+/** The feed itself. A run shows its evidence word, muted for an old grade; never a grade or a gate result. */
+export function ActivityFeedView({ feed, connection }: { feed: ActivityEvent[]; connection: ConnectionState }) {
   return (
     <div className="panel">
       <div className="panel-toolbar">
@@ -57,12 +67,7 @@ export function ActivityFeed(_props: PanelHandleProps) {
                     <span className="mono">{shortId(e.run.run_id)}</span>
                     <span className="chip kind">{e.run.kind}</span>
                     <span className="mono">{e.run.label ?? ''}</span>
-                    {e.run.verdict ? <span className={`verdict g-${e.run.verdict}`}>{e.run.verdict}</span> : null}
-                    {e.run.passed !== null && e.run.passed !== undefined ? (
-                      <span className={`chip ${e.run.passed ? 'pass' : 'fail'}`}>
-                        {e.run.passed ? 'PASS' : 'FAIL'}
-                      </span>
-                    ) : null}
+                    <RunWord run={e.run} />
                   </>
                 ) : e.job ? (
                   <span className="mono feed-cmd">{e.job.command}</span>

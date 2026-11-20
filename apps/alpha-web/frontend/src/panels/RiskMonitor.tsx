@@ -1,6 +1,6 @@
 import { Timestamp } from '../util/formatTime'
 // Risk — stress a run's realized returns under vol-scaling and tail-shock scenarios and see how
-// Sharpe / vol / drawdown / VaR / CVaR move. Follows the linked run (selected in the Run Browser).
+// Sharpe / vol / drawdown / VaR / CVaR move. Follows the linked run (selected in the Navigator).
 
 import { useEffect, useState } from 'react'
 

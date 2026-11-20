@@ -3,15 +3,15 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: 7e5f93f047b1cea7
+verified: 5c685dd43d159d86
 ---
 # Results and cite
 **Reach for it when** quoting a run or checking what was tried. **Commands** `alpha results show <run_id> --json`, `alpha results cite <run_id> <metric>`,
-`alpha results compare <run_id> <run_id>`, `alpha results check <file>`. **How to read it** Cite copies value, source, basis; `--tool-output <id>` picks one.
+`compare <a> <b>`, `check <file>`. **How to read it** Cite copies value, source, basis; `--tool-output <id>` picks one. `verdict` shows the evidence word.
 - `tradable_total_return`, `tradable_cagr`, `tradable_sharpe`, `tradable_max_drawdown`, `tradable_trades`, `tradable_benchmark_total_return`,
   `tradable_benchmark_cagr`, `tradable_benchmark_sharpe`, `tradable_benchmark_max_drawdown`, `scored_total_return`, `scored_cagr`, `scored_sharpe`,
   `scored_max_drawdown`, `scored_trades`, `scored_benchmark_total_return`, `scored_benchmark_cagr`, `scored_benchmark_sharpe`, `scored_benchmark_max_drawdown`,
-  `data_period`, `traded_period`, `verdict`, `oos_sharpe`, `dsr`, `psr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
+  `data_period`, `traded_period`, `verdict`, `evidence`, `oos_sharpe`, `dsr`, `psr`, `full_sample_total_return`, `full_sample_cagr`, `full_sample_sharpe`,
   `full_sample_max_drawdown`, `benchmark_total_return`, `benchmark_cagr`, `benchmark_sharpe`, `benchmark_max_drawdown`, `resized_entries`, `trades`, `exposure`,
   `top_1_profit_share`, `top_3_profit_share`, `delay_base_sharpe`, `delayed_sharpe`, `total_trials`, `family_trials`, `trial_dsr`, `variants_evaluated`,
   `inverted_sharpe`, `inverted_sharpe_se`, `inverted_total_return`, `inverted_trades`, `inverted_label`, `wfe`, `wfe_fold_count`, `price_noise_median_sharpe`,

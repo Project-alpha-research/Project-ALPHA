@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/data_health.py
   - apps/alpha-cli/src/alpha_cli/_data_health.py
   - apps/alpha-cli/src/alpha_cli/data_cmds.py
-verified: 56023cf679950505
+verified: 15eb8e01ffc5b8bb
 ---
 
 # Daily data health

@@ -517,23 +517,8 @@ def _promote_candidate(
     actions = candidate.read_actions(symbol)
     if before_replace is not None:
         before_replace()  # the pull freezes the series it is about to replace; a failure stops here
-    backup_root = _create_promotion_backup(
-        store,
-        symbol=symbol,
-        provider=provider,
-        receipt_id=receipt_id,
-    )
-    store.begin_promotion(
-        symbol,
-        {
-            "schema_version": 1,
-            "provider": provider,
-            "receipt_id": receipt_id,
-            "approved_repair": approved_repair,
-            "backup": str(backup_root.relative_to(store.root)),
-        },
-    )
-    try:
+
+    def write() -> None:
         store.write_bars(symbol, bars)
         store.write_actions(symbol, actions)
         store.write_provenance(
@@ -544,12 +529,10 @@ def _promote_candidate(
             identity=identity,
             receipt=receipt,
         )
-    except BaseException:
-        _restore_promotion_backup(store, symbol=symbol, backup_root=backup_root)
-        store.finish_promotion(symbol)
-        raise
-    else:
-        store.finish_promotion(symbol)
+
+    replace_series(
+        store, symbol, provider=provider, backup_id=receipt_id, write=write, repair=approved_repair
+    )
     return IngestOutcome(
         status="promoted",
         provider=provider,
@@ -557,6 +540,63 @@ def _promote_candidate(
         symbol=symbol,
         quality_path=candidate_root / "quality.json",
     )
+
+
+class RestoreFailed(DataError):
+    """A replace failed and putting the old bytes back failed too; reads of the symbol refuse."""
+
+
+def replace_series(
+    store: ParquetStore,
+    symbol: str,
+    *,
+    provider: str,
+    backup_id: str,
+    write: Callable[[], None],
+    repair: bool = False,
+    keep_backup: bool = True,
+    held_in: str = "",
+) -> None:
+    """Replace the canonical files of ``symbol`` by ``write`` under a fail-closed marker.
+
+    The old bytes are first copied to an immutable promotion backup. While the marker exists every
+    read of the symbol refuses, so a crash never leaves a silent mix of old and new files. A failed
+    ``write`` puts the old bytes back; if that fails too, the marker stays and RestoreFailed names
+    the backup and the repair command. ``keep_backup=False`` drops the backup after success (the
+    caller holds the old series elsewhere, named in ``held_in``).
+    """
+    backup_root = _create_promotion_backup(
+        store, symbol=symbol, provider=provider, receipt_id=backup_id
+    )
+    store.begin_promotion(
+        symbol,
+        {
+            "schema_version": 1,
+            "provider": provider,
+            "receipt_id": backup_id,
+            "approved_repair": repair,
+            "backup": str(backup_root.relative_to(store.root)),
+        },
+    )
+    try:
+        write()
+    except BaseException as exc:
+        try:
+            _restore_promotion_backup(store, symbol=symbol, backup_root=backup_root)
+        except BaseException as again:
+            raise RestoreFailed(
+                f"replacing the stored {symbol} failed ({exc}) and putting the old bytes back "
+                f"failed too ({again}). Every read of {symbol} now refuses. The old series is in "
+                f"{backup_root}{held_in}. Restore it with: "
+                f"alpha data rollback-promotion {symbol} --acknowledge"
+            ) from again
+        store.finish_promotion(symbol)
+        if not keep_backup:
+            shutil.rmtree(backup_root, ignore_errors=True)
+        raise
+    store.finish_promotion(symbol)
+    if not keep_backup:
+        shutil.rmtree(backup_root, ignore_errors=True)
 
 
 def _create_promotion_backup(

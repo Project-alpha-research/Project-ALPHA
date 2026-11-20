@@ -51,10 +51,8 @@ SCAN = [
 ]
 # Pinned before the reserved period was held back in the scan: a store with no bar from the
 # reserved day on keeps its result and its frozen inputs (the code hashes are left out).
-# The inputs digest was re-pinned once when new manifests gained `content_sha256`: the manifest
-# bytes, and so the snapshot hash among the inputs, changed. The result digest did not move.
 PINNED_PRE_RESULT = "dc9436f022aea1c10d0209d806834da05e5f99555405054c17cbfbd47f1c80b1"
-PINNED_PRE_INPUTS = "fe8e82080ae9f0279afec6181ea9b44ac2bb81b34f251dbceca772a4c7096b7a"
+PINNED_PRE_INPUTS = "475596025090f0bb5623dd7f20baeef3bb2dab1e6857334ac7f8c43ec84e5079"
 PINNED_PRE_ARCHIVE_RUN = "8a7424386db8ec4a"
 
 

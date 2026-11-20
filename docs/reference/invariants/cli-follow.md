@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: ad417707e7b1518d
+verified: 20caec04a878080f
 ---
 
 # Command line follow invariants
@@ -175,7 +175,9 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
 - N0 runs `alpha data pull ... --json`. The pull freezes the stored series first ([freeze before replace](data-freeze-before-replace.md)),
   reuses an identical snapshot, and prints the snapshot id and the counts of bars added, removed and revised. N0 reads that JSON; it runs
   no snapshot command and compares no bars itself. Exit code 3 means the freeze failed and nothing was replaced: the blocking defect
-  "could not freeze <asset> before the refresh" for that asset. Other assets go on. No snapshot is ever deleted or rewritten.
+  "could not freeze <asset> before the refresh" for that asset. Exit code 4 means a failed replace could not put the old bytes
+  back; reads of that asset refuse until the named repair runs: the blocking defect "the refresh of <asset> broke its stored series".
+  Other assets go on. No snapshot is ever deleted or rewritten.
 - A revised or dropped old bar is the minor defect "the provider revised history for <asset>: first changed bar <date> (<columns>)". It
   names the snapshot that holds the earlier series and the command to list it (`alpha data snapshots`). No price is printed. No key is
   read, printed or logged; stderr is scrubbed. Any other failed pull is a minor defect; N4 then writes `late` or `missed`.

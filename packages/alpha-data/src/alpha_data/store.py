@@ -57,8 +57,8 @@ class ParquetStore:
     def _require_stable(self, symbol: str) -> None:
         if self.promotion_pending(symbol):
             raise DataError(
-                f"canonical data for {symbol!r} has an interrupted promotion; "
-                "run the explicit data repair workflow"
+                f"canonical data for {symbol!r} has an interrupted promotion; restore the old "
+                f"bytes with: alpha data rollback-promotion {symbol} --acknowledge"
             )
 
     def check_bars(self, symbol: str, df: pl.DataFrame) -> None:

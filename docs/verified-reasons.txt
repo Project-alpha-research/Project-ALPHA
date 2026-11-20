@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 68fe54d47b0fc7a2 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 4b2dc7b49911970c on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 apps/alpha-cli/README.md
-  verified 68fe54d47b0fc7a2 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
+  verified 4b2dc7b49911970c on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -21,6 +21,9 @@ docs/CONTEXT.md
 
 docs/reference/invariants/README.md
   verified e8c675fcdb6fe821 on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
+
+docs/reference/invariants/cli-crypto-data.md
+  verified 487a29c0d0eb0e39 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
@@ -41,7 +44,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 8378ba0213d578bb on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+  verified 2bd45d316a460c8d on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -52,11 +55,17 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
+docs/reference/invariants/data-bar-timeframes.md
+  verified 177c97a0eb8fbb49 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+
+docs/reference/invariants/data-free-sources.md
+  verified e86cc34d087822e5 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified cda0440bb2af68e6 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -194,7 +203,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
+  verified 737f3927a3c29108 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
@@ -225,6 +234,9 @@ research/tools/benchmark-and-drawdowns.md
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+
+research/tools/data-health.md
+  verified 15eb8e01ffc5b8bb on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 research/tools/deflated-sharpe-and-trials.md
   verified 2700a5238549f3de on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged

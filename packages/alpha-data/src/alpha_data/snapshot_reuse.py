@@ -1,8 +1,10 @@
 """Content hash of one frozen symbol, and the listing of existing snapshots built on it.
 
-The hash covers the bars, actions and provenance bytes of one symbol. A snapshot whose symbol
-hashes like that symbol's most recent snapshot is not written again. Old manifests carry no hash:
-they are never matched and never rewritten.
+The hash covers the bars, actions and provenance bytes of one symbol. It is computed from the
+three file digests every manifest already holds, so it is never stored: manifests keep the exact
+bytes they had before reuse existed, and the manifest hash that run identity reads is unchanged.
+A stored symbol that hashes like its most recent snapshot is not frozen again (the pull first
+verifies that snapshot's files). No manifest is ever rewritten.
 """
 
 from __future__ import annotations
@@ -49,19 +51,16 @@ def read_manifests(snaps_root: Path) -> list[tuple[Path, bytes, dict[str, Any]]]
     return found
 
 
-def latest_snapshot_of(
-    snaps_root: Path, symbol: str, timeframe: str
-) -> tuple[str, str | None] | None:
-    """(snapshot id, content hash or None for an old manifest) of the most recent snapshot that
-    holds ``symbol`` at ``timeframe``; None when there is none."""
-    best: tuple[str, str, str | None] | None = None
+def latest_snapshot_of(snaps_root: Path, symbol: str, timeframe: str) -> tuple[str, str] | None:
+    """(snapshot id, content hash) of the most recent snapshot that holds ``symbol`` at
+    ``timeframe``; None when there is none."""
+    best: tuple[str, str, str] | None = None
     for _, _, manifest in read_manifests(snaps_root):
         symbols = manifest.get("symbols")
         entry = symbols.get(symbol) if isinstance(symbols, dict) else None
         if not isinstance(entry, dict) or manifest.get("timeframe", "1D") != timeframe:
             continue
-        held = entry.get("content_sha256")
-        held = held if held == content_hash(entry) else None  # never trust a hash the digests deny
+        held = content_hash(entry)  # from the digests; the files are verified before reuse
         key = (str(manifest.get("created_at")), str(manifest.get("snapshot_id")))
         if best is None or key > best[:2]:
             best = (*key, held)
@@ -76,8 +75,8 @@ def shared_content(
     for _, _, manifest in manifests:
         symbols = manifest.get("symbols")
         for symbol, entry in (symbols if isinstance(symbols, dict) else {}).items():
-            held = entry.get("content_sha256") if isinstance(entry, dict) else None
-            if isinstance(held, str):
+            if isinstance(entry, dict):
+                held = content_hash(entry)
                 groups.setdefault((symbol, held), []).append(str(manifest.get("snapshot_id")))
     return {key: ids for key, ids in groups.items() if len(ids) > 1}
 

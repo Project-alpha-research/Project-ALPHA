@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from alpha_core import DataError
-from alpha_data.snapshot_reuse import content_hash
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import parse_timeframe
 
@@ -166,7 +165,6 @@ def _copy_snapshot_files(
                 shutil.copy2(provenance_src, provenance_dst)
                 entry["provenance_sha256"] = _sha256(provenance_dst)
                 entry["provenance_file"] = f"provenance/{provenance_rel.as_posix()}"
-            entry["content_sha256"] = content_hash(entry)
             sym_manifest[sym] = entry
     return sym_manifest
 

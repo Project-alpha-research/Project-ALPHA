@@ -137,25 +137,18 @@ def test_an_identical_repull_leaves_the_stored_files_and_the_fingerprint_unchang
     assert run_identity_for({"x": 1}, source_fingerprint=fingerprint()).run_id == identity.run_id
 
 
-def test_old_manifests_without_a_content_hash_are_never_matched_or_rewritten(
-    tmp_path: Path,
-) -> None:
+def test_old_manifests_are_matched_by_their_digests_and_never_rewritten(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path / "store")
     _pull(store, _result(_bars([2, 3, 4])))
     first = _pull(store, _result(_bars([2, 3, 4])))
     assert first.snapshot_id is not None
     manifest = tmp_path / "snapshots" / first.snapshot_id / "manifest.json"
-    data = json.loads(manifest.read_text())
-    for entry in data["symbols"].values():
-        entry.pop("content_sha256")
-    manifest.write_text(json.dumps(data, indent=2, sort_keys=True))
+    assert "content_sha256" not in manifest.read_text()  # manifests keep their old shape
     old_bytes = manifest.read_bytes()
     second = _pull(store, _result(_bars([2, 3, 4])), at=datetime(2026, 11, 22, tzinfo=UTC))
-    assert second.snapshot_id is not None
-    assert second.snapshot_id != first.snapshot_id and not second.reused
+    assert second.snapshot_id == first.snapshot_id and second.reused
     assert manifest.read_bytes() == old_bytes
     verify_snapshot(manifest.parent)
-    verify_snapshot(tmp_path / "snapshots" / second.snapshot_id)
 
 
 def test_data_that_fails_validation_changes_neither_store_nor_snapshots(tmp_path: Path) -> None:
@@ -184,20 +177,27 @@ def test_a_failed_freeze_stops_the_pull_before_any_write(
         raise DataError("disk full")
 
     monkeypatch.setattr(pull_store, "create_snapshot", broken)
-    with pytest.raises(FreezeRefused, match="disk full") as info:
+    with pytest.raises(FreezeRefused, match="disk full"):
         _pull(store, _result(_bars([2, 3, 4, 5])))
-    assert not info.value.older_adapter
     assert _bytes(store) == held
 
 
-def test_an_older_adapter_version_is_refused_and_nothing_changes(tmp_path: Path) -> None:
+def test_a_series_from_an_older_adapter_is_frozen_under_its_own_versions(tmp_path: Path) -> None:
     store = ParquetStore(tmp_path / "store")
     _pull(store, _result(_bars([2, 3, 4])), version="1")
     held = _bytes(store)
-    with pytest.raises(FreezeRefused) as info:
-        _pull(store, _result(_bars([2, 3, 4, 5])), version="2")
-    assert info.value.older_adapter
-    assert _bytes(store) == held and _snaps(store) == []
+    report = _pull(store, _result(_bars([2, 3, 4, 5])), version="2")
+    assert report.snapshot_id is not None and report.older_versions == "fake adapter 1 / parser 1"
+    snap = tmp_path / "snapshots" / report.snapshot_id
+    verify_snapshot(snap)
+    assert json.loads((snap / "manifest.json").read_text())["adapter_version"] == "1"
+    assert (snap / "provenance" / "AAA.json").read_bytes() == held["provenance/AAA.json"]
+    assert any("fake adapter 1 / parser 1" in line for line in report.lines())
+    assert store.read_provenance("AAA") == {
+        "source": "fake",
+        "adapter_version": "2",
+        "parser_version": "1",
+    }
 
 
 @pytest.mark.parametrize("failing", ["write_actions", "write_provenance"])
@@ -233,9 +233,11 @@ def test_a_crash_in_the_first_ever_pull_leaves_nothing_behind(
     assert _bytes(store) == {}
 
 
-def test_the_content_hash_is_in_the_manifest_and_covers_bars_actions_and_provenance(
+def test_the_content_hash_is_computed_from_the_three_digests_of_the_manifest(
     tmp_path: Path,
 ) -> None:
+    from alpha_data.snapshot_reuse import content_hash
+
     store = ParquetStore(tmp_path / "store")
     _pull(store, _result(_bars([2, 3, 4]), [_split()]))
     report = _pull(store, _result(_bars([2, 3, 4]), [_split()]))
@@ -246,4 +248,5 @@ def test_the_content_hash_is_in_the_manifest_and_covers_bars_actions_and_provena
     entry = manifest["symbols"]["AAA"]
     parts = ("bars_sha256", "actions_sha256", "provenance_sha256")
     joined = "\n".join(f"{name}:{entry[name]}" for name in parts)
-    assert entry["content_sha256"] == hashlib.sha256(joined.encode()).hexdigest()
+    assert content_hash(entry) == hashlib.sha256(joined.encode()).hexdigest()
+    assert "content_sha256" not in entry

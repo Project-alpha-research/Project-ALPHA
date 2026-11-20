@@ -134,6 +134,7 @@ def _failure(out: Outcome, timeout: float) -> str | None:
 
 
 FREEZE_FAILED = 3  # `alpha data pull` exit code: the stored series could not be frozen
+RESTORE_FAILED = 4  # `alpha data pull` exit code: a failed replace could not put the old bytes back
 
 
 def _revision_words(asset: str, report: dict[str, Any], other: Path | None) -> str | None:
@@ -189,6 +190,9 @@ def refresh_assets(
         failed = _failure(out, config.step_timeout)
         if failed is not None and out.exit_code == FREEZE_FAILED and not out.timed_out:
             mark(step, BLOCKING, f"could not freeze {asset} before the refresh: {failed}")
+            continue
+        if failed is not None and out.exit_code == RESTORE_FAILED and not out.timed_out:
+            mark(step, BLOCKING, f"the refresh of {asset} broke its stored series: {failed}")
             continue
         if failed is not None:
             mark(step, MINOR, f"no fresh bars for {asset}: {failed}")

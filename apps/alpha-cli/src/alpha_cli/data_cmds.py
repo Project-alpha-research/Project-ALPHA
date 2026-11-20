@@ -20,7 +20,11 @@ from alpha_cli.providers import (
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.adapters.base import DataAdapter
-from alpha_data.pipeline import promote_quarantined, rollback_interrupted_promotion
+from alpha_data.pipeline import (
+    RestoreFailed,
+    promote_quarantined,
+    rollback_interrupted_promotion,
+)
 from alpha_data.pull_store import FreezeRefused, pull_into_store
 from alpha_data.snapshot import (
     create_snapshot,
@@ -29,7 +33,7 @@ from alpha_data.snapshot import (
     snapshot_timeframe,
     verify_snapshot,
 )
-from alpha_data.snapshot_reuse import read_manifests, shared_content, total_bytes
+from alpha_data.snapshot_reuse import content_hash, read_manifests, shared_content, total_bytes
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
@@ -272,11 +276,7 @@ def _refuse_unfrozen(
 ) -> NoReturn:
     """Say plainly that nothing was replaced and what to do next; exit 3 (a freeze failure)."""
     again = f"alpha data pull {symbol} --source {source} --start {start} --end {end}"
-    step = (
-        "No safe command exists today."
-        if exc.older_adapter
-        else f"Fix that, then run the same pull again: {again}"
-    )
+    step = f"Fix that, then run the same pull again: {again}"
     typer.echo(
         f"cannot replace the stored {symbol}: it could not be frozen first. {exc.reason}. "
         f"Nothing was changed. {step}",
@@ -363,6 +363,9 @@ def pull(
         )
     except FreezeRefused as exc:  # nothing was replaced; a distinct exit code tells the nightly
         _refuse_unfrozen(exc, symbol, source, start, end)
+    except RestoreFailed as exc:  # reads of the symbol now refuse; exit 4 is blocking
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(4) from exc
     except DataError as exc:  # expected domain failure (no data, anti-bot gate, bad vendor row)
         raise typer.BadParameter(str(exc)) from exc
     if json_out:
@@ -725,15 +728,15 @@ def snapshots(
         held = symbols_entry if isinstance(symbols_entry, dict) else {}
         held_content = {
             name: {
-                "sha256": entry["content_sha256"],
+                "sha256": content_hash(entry),
                 "shared_with": [
                     other
-                    for other in shared.get((name, entry["content_sha256"]), [])
+                    for other in shared.get((name, content_hash(entry)), [])
                     if other != manifest.get("snapshot_id")
                 ],
             }
             for name, entry in sorted(held.items())
-            if isinstance(entry, dict) and isinstance(entry.get("content_sha256"), str)
+            if isinstance(entry, dict)
         }
         rows.append(
             {

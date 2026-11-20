@@ -553,6 +553,27 @@ def test_a_freeze_that_fails_is_blocking_for_that_asset_only(tmp_path: Path) -> 
     assert states(record)["N0.pull.BBB"] == "pass" and record["blocking"] == 1
 
 
+def test_a_replace_that_could_not_be_undone_is_blocking_for_that_asset_only(
+    tmp_path: Path,
+) -> None:
+    home = tmp_path / "home"
+    _store(home, ["AAA", "BBB"])
+
+    def pull(tail: list[str]) -> Outcome:
+        if tail[2] == "AAA":
+            return Outcome(4, "", "putting the old bytes back failed too", 1, False)
+        return pull_result()
+
+    runner = FakeRunner(
+        {"follow list": ok({"follows": [{**ROW, "assets": ["AAA", "BBB"]}]}), "data pull": pull}
+    )
+    record = _refresh(tmp_path, runner)
+    assert states(record)["N0.pull.AAA"] == "defect-blocking"
+    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.pull.AAA")
+    assert text.startswith("the refresh of AAA broke its stored series")
+    assert states(record)["N0.pull.BBB"] == "pass" and record["blocking"] == 1
+
+
 def test_a_pull_result_that_cannot_be_read_is_a_minor_defect(tmp_path: Path) -> None:
     home = tmp_path / "home"
     _store(home, ["CCC"])

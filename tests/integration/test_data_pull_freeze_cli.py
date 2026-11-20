@@ -101,7 +101,7 @@ def test_a_repeat_pull_reuses_the_snapshot_and_adds_no_disk(tmp_path: Path) -> N
     first = json.loads(out)["snapshot"]
     code, out = _pull("--json")
     again = json.loads(out)["snapshot"]
-    assert code == 0 and again == {"id": first["id"], "reused": True}
+    assert code == 0 and again == {"id": first["id"], "reused": True, "older_versions": None}
     assert len(list((tmp_path / "snapshots").iterdir())) == 1
 
 
@@ -116,16 +116,18 @@ def test_a_bad_bar_stops_the_pull_with_nothing_changed(tmp_path: Path) -> None:
     assert not (tmp_path / "snapshots").exists()
 
 
-def test_an_older_adapter_pull_is_refused_with_exit_3_and_changes_nothing(tmp_path: Path) -> None:
+def test_an_older_adapter_series_is_frozen_under_its_versions_then_replaced(
+    tmp_path: Path,
+) -> None:
     _pull()
-    store = tmp_path / "store"
-    held = {p: p.read_bytes() for p in store.rglob("*") if p.is_file()}
+    held = (tmp_path / "store" / "bars" / "AAA.parquet").read_bytes()
     _Feed.version = "2"
     try:
-        code, out = _pull()
+        code, out = _pull("--json")
     finally:
         _Feed.version = "1"
-    assert code == 3 and "could not be frozen first" in out and "Nothing was changed" in out
-    assert "no safe path today" in out
-    assert {p: p.read_bytes() for p in store.rglob("*") if p.is_file()} == held
-    assert not (tmp_path / "snapshots").exists()
+    snap = json.loads(out)["snapshot"]
+    assert code == 0 and snap["older_versions"] is not None and not snap["reused"]
+    frozen = tmp_path / "snapshots" / snap["id"]
+    assert (frozen / "bars" / "AAA.parquet").read_bytes() == held
+    assert runner.invoke(app, ["data", "verify", snap["id"]]).exit_code == 0

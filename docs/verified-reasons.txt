@@ -64,6 +64,9 @@ docs/reference/invariants/patterns.md
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
+docs/reference/invariants/testing.md
+  verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
+
 docs/reference/invariants/validation-factor-statistics.md
   verified 255cff550fd8a283 on 2026-11-20: test files edited for typing only; text unchanged
 

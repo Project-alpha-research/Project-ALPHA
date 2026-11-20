@@ -29,7 +29,8 @@ Two statistics for the published-factor check, in `alpha_validation`. They add m
 
 - `correlation_interval(x, y, *, method="pearson")`: Fisher z interval, two-sided normal p, at least 4 pairs.
   `|r| = 1` returns `r = +-1`, interval `[r, r]`, `p = 0`, `edge = "perfect_correlation"`. Spearman uses
-  average ranks and the same interval (slightly narrow: Fieller, Hartley and Pearson 1957 give about `1.06 / (n - 3)`). The interval assumes independent pairs; there is no effective-N adjustment.
+  average ranks and the same interval. That is slightly narrow: Fieller, Hartley and Pearson (1957) give
+  about `1.06 / (n - 3)`. The interval assumes independent pairs; there is no effective-N adjustment.
 
 ## What they must never be used for
 

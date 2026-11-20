@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 70b93826df280038
+verified: 780d2235d79b591c
 ---
 
 # Web frontend invariants
@@ -81,6 +81,19 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   (`panels/marketModel.differsMost`); it is neutral, never a good or bad colour. Tiles and rows are buttons that open the single-asset chart
   (`actions.openStoredMarket`). Colour is never the only signal. Enforced by `src/panels/MarketOverview.test.tsx`, `marketModel.test.ts`,
   `e2e/market-overview.spec.ts`.
+
+## Today screen
+
+- The Today screen (Research › Today, pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.
+  A selected card loads `GET /api/follow/{id}`. It computes nothing: decisions, readings, paper figures and the replay check
+  are shown as the command gives them.
+- It says `Paper only. Forward use; not research. Not advice.` Groups run NEW SIGNAL, OPEN PAPER POSITION, NOTHING TODAY,
+  LATE OR MISSED, then WAITING. An empty group is one muted line. A behind or late card carries an icon and words,
+  never colour alone. Up and down use ▲▼ as the Market view does.
+- It has no buy or sell button and starts, updates or stops no follow. An empty list shows
+  `alpha follow start --test <run id>` and `alpha results list`.
+- The equity chart plots the entries `follow show` returns (newest 5): percent since the start, a dashed zero line,
+  and a table below. Enforced by `src/panels/FollowToday.test.tsx`, `followTodayModel.test.ts`, `e2e/follow-today.spec.ts`.
 
 ## Workstation themes and readability
 

@@ -7812,6 +7812,662 @@
         "title": "FirstBar",
         "type": "object"
       },
+      "FollowEntryRow": {
+        "properties": {
+          "equity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity Pct"
+          },
+          "fills": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "readings": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Readings",
+            "type": "object"
+          },
+          "replay_agrees": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Agrees"
+          },
+          "session": {
+            "title": "Session",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session",
+          "kind",
+          "words",
+          "fills",
+          "readings"
+        ],
+        "title": "FollowEntryRow",
+        "type": "object"
+      },
+      "FollowGroup": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "count"
+        ],
+        "title": "FollowGroup",
+        "type": "object"
+      },
+      "FollowMarket": {
+        "properties": {
+          "calendar": {
+            "title": "Calendar",
+            "type": "string"
+          },
+          "newest_closed_session": {
+            "title": "Newest Closed Session",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calendar",
+          "newest_closed_session"
+        ],
+        "title": "FollowMarket",
+        "type": "object"
+      },
+      "FollowPaper": {
+        "properties": {
+          "entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Price"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "equity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity Pct"
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "title": "FollowPaper",
+        "type": "object"
+      },
+      "FollowPaperSummary": {
+        "properties": {
+          "closed_trades": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed Trades"
+          },
+          "entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Price"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "equity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity Pct"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees"
+          },
+          "highest": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highest"
+          },
+          "largest_fall_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largest Fall Pct"
+          },
+          "lowest": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lowest"
+          },
+          "marked_sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marked Sessions"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "title": "FollowPaperSummary",
+        "type": "object"
+      },
+      "FollowRecord": {
+        "properties": {
+          "assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "card_id": {
+            "title": "Card Id",
+            "type": "string"
+          },
+          "follow_id": {
+            "title": "Follow Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "paper_account_percent": {
+            "title": "Paper Account Percent",
+            "type": "number"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "spec_sha256": {
+            "title": "Spec Sha256",
+            "type": "string"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string"
+          },
+          "supersedes": {
+            "title": "Supersedes",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "follow_id",
+          "kind",
+          "source_id",
+          "assets",
+          "card_id",
+          "paper_account_percent",
+          "started_at",
+          "version",
+          "spec_sha256",
+          "supersedes"
+        ],
+        "title": "FollowRecord",
+        "type": "object"
+      },
+      "FollowReplay": {
+        "properties": {
+          "agrees": {
+            "title": "Agrees",
+            "type": "boolean"
+          },
+          "checked": {
+            "title": "Checked",
+            "type": "integer"
+          },
+          "differences": {
+            "items": {
+              "$ref": "#/components/schemas/FollowReplayDifference"
+            },
+            "title": "Differences",
+            "type": "array"
+          }
+        },
+        "required": [
+          "agrees",
+          "checked",
+          "differences"
+        ],
+        "title": "FollowReplay",
+        "type": "object"
+      },
+      "FollowReplayDifference": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "session": {
+            "title": "Session",
+            "type": "string"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session",
+          "what",
+          "detail"
+        ],
+        "title": "FollowReplayDifference",
+        "type": "object"
+      },
+      "FollowRow": {
+        "properties": {
+          "as_of_text": {
+            "title": "As Of Text",
+            "type": "string"
+          },
+          "asset": {
+            "title": "Asset",
+            "type": "string"
+          },
+          "behind": {
+            "title": "Behind",
+            "type": "boolean"
+          },
+          "calendar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar"
+          },
+          "card_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Id"
+          },
+          "decision": {
+            "title": "Decision",
+            "type": "string"
+          },
+          "entry_kind": {
+            "title": "Entry Kind",
+            "type": "string"
+          },
+          "follow_id": {
+            "title": "Follow Id",
+            "type": "string"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paper": {
+            "$ref": "#/components/schemas/FollowPaper"
+          },
+          "readings": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Readings",
+            "type": "object"
+          },
+          "session_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Date"
+          },
+          "sessions_ago": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessions Ago"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          }
+        },
+        "required": [
+          "follow_id",
+          "group",
+          "name",
+          "asset",
+          "decision",
+          "entry_kind",
+          "as_of_text",
+          "behind",
+          "readings",
+          "paper"
+        ],
+        "title": "FollowRow",
+        "type": "object"
+      },
+      "FollowShow": {
+        "properties": {
+          "entries": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Entries",
+            "type": "object"
+          },
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "long_at_start": {
+            "title": "Long At Start",
+            "type": "boolean"
+          },
+          "paper": {
+            "$ref": "#/components/schemas/FollowPaperSummary"
+          },
+          "reading": {
+            "title": "Reading",
+            "type": "string"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/FollowEntryRow"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "record": {
+            "$ref": "#/components/schemas/FollowRecord"
+          },
+          "replay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowReplay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "stop_reason": {
+            "title": "Stop Reason",
+            "type": "string"
+          },
+          "waiting_for_first_bar": {
+            "title": "Waiting For First Bar",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "record",
+          "state",
+          "entries",
+          "head",
+          "recent",
+          "paper",
+          "reading",
+          "long_at_start",
+          "waiting_for_first_bar",
+          "stop_reason"
+        ],
+        "title": "FollowShow",
+        "type": "object"
+      },
+      "FollowToday": {
+        "properties": {
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "behind": {
+            "title": "Behind",
+            "type": "integer"
+          },
+          "followed": {
+            "title": "Followed",
+            "type": "integer"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/FollowGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "markets": {
+            "items": {
+              "$ref": "#/components/schemas/FollowMarket"
+            },
+            "title": "Markets",
+            "type": "array"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          },
+          "paper": {
+            "title": "Paper",
+            "type": "boolean"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/FollowRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "paper",
+          "followed",
+          "behind",
+          "markets",
+          "groups",
+          "rows",
+          "notice"
+        ],
+        "title": "FollowToday",
+        "type": "object"
+      },
       "ForecastHistoryBar": {
         "additionalProperties": false,
         "properties": {
@@ -30087,6 +30743,82 @@
         "summary": "Review Evidence",
         "tags": [
           "development"
+        ]
+      }
+    },
+    "/api/follow/today": {
+      "get": {
+        "description": "Relay ``alpha follow today --json``: one row per active follow, in groups.",
+        "operationId": "today_api_follow_today_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowToday"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Today",
+        "tags": [
+          "follow"
+        ]
+      }
+    },
+    "/api/follow/{follow_id}": {
+      "get": {
+        "description": "Relay ``alpha follow show <id> --json``; the id is checked as 4 to 12 hex first.",
+        "operationId": "show_api_follow__follow_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "follow_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-f]{4,12}$",
+              "title": "Follow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowShow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Show",
+        "tags": [
+          "follow"
         ]
       }
     },

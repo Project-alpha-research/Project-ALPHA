@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: bf0221022d9cbc72
+verified: cb51a11b4db4c805
 ---
 
 # alpha-web: code map and change loop
@@ -42,6 +42,9 @@ grants authority.
 - The Market screen (Data & Assets › Market) is `panels/MarketOverview.tsx` with pure helpers in `panels/marketModel.ts`. It reads `GET /api/market/overview`
   (`api/market.py`, `api/models/market.py`), which relays `alpha data market-overview` (`apps/alpha-cli/src/alpha_cli/market_overview_cmds.py`). Browser spec: `e2e/market-overview.spec.ts`.
   Rules: [Market data views](../../docs/reference/invariants/web-frontend.md#market-data-views), [reads](../../docs/reference/invariants/web-api-reads.md#market-overview-read).
+- The Today screen (Research › Today) is `panels/FollowToday.tsx` with helpers in `panels/followTodayModel.ts`. It reads `GET /api/follow/today` and
+  `GET /api/follow/{id}` (`api/follow.py`, `api/models/follow.py`), which relay `alpha follow today|show`. Browser spec: `e2e/follow-today.spec.ts`.
+  Rules: [Today screen](../../docs/reference/invariants/web-frontend.md#today-screen), [reads](../../docs/reference/invariants/web-api-reads.md#follow-today-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.

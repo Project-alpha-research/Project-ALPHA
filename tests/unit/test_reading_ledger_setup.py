@@ -25,8 +25,11 @@ from tests.unit.test_trial_record import mapped, spine
 RUNNER = CliRunner()
 BANNED = re.compile(r"\b(supported|rejected|inconclusive|pass|fail|profit)\b", re.IGNORECASE)
 OLD_PHRASE = re.compile(r"graded [A-F] under the old rules")
-# A lone capital A to F, but not the article that starts a sentence ("A result of ...").
-LETTER = re.compile(r"(?<![\w'./-])[A-F](?![\w'./-])(?! [a-z])")
+# A lone capital A to F. Only the article that starts a sentence ("A result of ...") is spared:
+# at a line start or after ". ", and followed by one space and a lower-case word. "SPY  A  1.2",
+# "SPY\tA" and "graded A under" are all caught.
+LETTER = re.compile(r"(?<![\w'./-])[A-F](?![\w'./-])")
+ARTICLE = re.compile(r"(?:^|(?<=[.!?:] ))A(?= [a-z])", re.MULTILINE)
 WORDS = list(reading.WORDS)
 OLD_SETUP = ("inconclusive", "not supported", "supported (exploratory, not confirmed)")
 
@@ -37,7 +40,8 @@ def clean(text: str) -> str:
 
 def assert_owner_text(text: str) -> None:
     assert not BANNED.search(text), BANNED.search(text)
-    assert not LETTER.search(clean(text)), LETTER.search(clean(text))
+    text = ARTICLE.sub("", clean(text))
+    assert not LETTER.search(text), LETTER.search(text)
 
 
 # ---------- ledger: mapping on read ----------
@@ -410,8 +414,9 @@ def test_setup_text_has_an_evidence_word_a_family_count_and_no_verdict_words(
         assert_owner_text(text)
         assert "Evidence strength: some evidence." in text
         assert "not corrected for the number of setup variants tried" in text
-        assert f"Setup {noun} 1 of 1 on this setup's family." in text
-        assert "random-date figure after counting 1 " in text.lower()
+        assert f"Setup {noun} 1 of 1 recorded for this idea." in text
+        assert f"random-date figure adjusted for the 1 {noun} recorded" in text.lower()
+        assert "Variants saved under another idea text are not counted." in text
     json_out = RUNNER.invoke(
         app, ["setup", "study", find_id, "--json"], env={"ALPHA_DATA_DIR": str(home)}
     )
@@ -426,7 +431,7 @@ def test_the_family_figure_is_the_validated_benjamini_hochberg_value(
     run_text(home, "study", first)
     second = support.make_find(home, horizon=3)["find_id"]
     text = run_text(home, "study", second)
-    assert "Setup study 2 of 2 on this setup's family." in text
+    assert "Setup study 2 of 2 recorded for this idea." in text
     ps = [
         json.loads(line)["random_date_p"]
         for line in (home / "ledger/trials.jsonl").read_text().splitlines()
@@ -434,8 +439,11 @@ def test_the_family_figure_is_the_validated_benjamini_hochberg_value(
     ]
     assert len(ps) == 2
     q = float(benjamini_hochberg(ps).qvalues[1])
-    assert f"random-date figure after counting 2 studies of this setup: {q:.2%}" in text.lower()
-    assert f"before counting: {ps[1]:.2%}" in text
+    assert (
+        "random-date figure adjusted for the 2 studies recorded for this idea "
+        f"(false-discovery method): {q:.2%}"
+    ) in text.lower()
+    assert f"unadjusted: {ps[1]:.2%}" in text
 
 
 def test_without_every_stored_p_value_the_figure_says_not_adjusted(lab: tuple[Path, str]) -> None:
@@ -455,8 +463,8 @@ def test_without_every_stored_p_value_the_figure_says_not_adjusted(lab: tuple[Pa
         },
     )
     text = run_text(home, "study", find_id)
-    assert "not adjusted for the 2 studies tried" in text
-    assert "Setup study 2 of 2 on this setup's family." in text
+    assert "not adjusted for the 2 studies recorded" in text
+    assert "Setup study 2 of 2 recorded for this idea." in text
     assert_owner_text(text)
 
 

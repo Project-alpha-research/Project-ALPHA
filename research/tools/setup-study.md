@@ -29,7 +29,7 @@ uv run alpha results cite <study_id> setup_mean_net_return --json
 - Compare mean net return with drift and 2,000 spaced random-date samples (figure: grey band, dashed drift).
 - Under 30 complete occurrences the word is `too little to read`. Overlapping outcomes and disagreeing halves are labels,
   not evidence to omit. Never say `clear of chance`: the p-value is not corrected for the setup variants tried.
-- Quote the evidence word, "Setup study K of N" and the random-date figure after counting N studies (or "not adjusted").
+- Quote the evidence word, "Setup study K of N" and the adjusted random-date figure; other idea texts are not counted.
 - Each study counts one trial; a repeat is labelled `repeat`. A held-back find passes its label on; a find that used reserved bars is refused.
 
 The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)

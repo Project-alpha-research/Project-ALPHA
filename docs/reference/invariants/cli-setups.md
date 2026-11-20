@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 3ce9c18e487a4a04
+verified: fb4e0f308004ca88
 ---
 
 # Command line setup invariants
@@ -37,8 +37,11 @@ Rules for `alpha setup find`, `alpha setup study` and `alpha setup trade`. Other
 - Words: the study prints `too little to read` (under 30 occurrences), `not clear of chance` or `some evidence` (p ≤ 0.05, positive excess,
   agreeing halves). The words live in `spine/reading.py`. Never `clear of chance`: the p-value is not corrected for the setup variants tried,
   and the text says so.
-  The text adds "Setup study K of N on this setup's family" and a random-date figure after counting N studies (`benjamini_hochberg` over the stored
-  p of every counted study in the family), or "not adjusted for the N studies tried" when one stored p is missing.
+  The text adds "Setup study K of N recorded for this idea" and the random-date figure "adjusted for the N studies recorded for this idea
+  (false-discovery method)": the `benjamini_hochberg` q over the stored p of every counted study of that kind and idea text.
+  That q is the lowest false-discovery rate at which this study would still be picked; for the smallest p it is p × N.
+  Repeats count once. A missing stored p, or a run not in the family, prints "not adjusted".
+  The family is matched by idea text (case and spacing ignored), so the text always adds "Variants saved under another idea text are not counted."
 - `summary.json` keeps `outcome` as written and adds `evidence`; an old summary is read through its old word, noted once.
   No rule version, id, seed or stored number changed.
 - One counted trial; repeats append an uncounted row. [Family rules](cli-trial-ledger.md); [controls and limits](../../../research/tools/setup-study.md).

@@ -12,10 +12,8 @@ from typing import Any
 from alpha_cli._rdagent_stability import plain_name, recorded_status, status_reason
 from alpha_cli.spine.reading import (
     LEGACY_SETUP_OUTCOMES,
-    NOT_CLEAR,
     OLD_SETUP_OUTCOMES,
-    SOME,
-    TOO_LITTLE,
+    SETUP_WORDS,
     WORDS,
     old_grade_text,
 )
@@ -134,9 +132,6 @@ def _strings(value: Any) -> tuple[str, ...]:
     if not isinstance(value, (list, tuple)) or any(not isinstance(v, str) for v in value):
         raise ValueError("expected a list of strings")
     return tuple(value)
-
-
-SETUP_WORDS = (TOO_LITTLE, NOT_CLEAR, SOME)
 
 
 def _rule_words(row: dict[str, Any], status: Any, machine: str) -> tuple[str, str | None]:

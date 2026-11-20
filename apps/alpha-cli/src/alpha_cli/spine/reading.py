@@ -61,6 +61,9 @@ OLD_SETUP_OUTCOMES = {
     "supported (exploratory, not confirmed)": SOME,
 }
 LEGACY_SETUP_OUTCOMES = {word: old for old, word in OLD_SETUP_OUTCOMES.items()}
+# A setup study or trade reads with these three only: its p-value is not corrected for the
+# variants tried, so the top word is never one of them.
+SETUP_WORDS = (TOO_LITTLE, NOT_CLEAR, SOME)
 RELATIONS = ("above the aim", "below the aim", "within the uncertainty of the aim")
 AIM_BASIS = (
     "buy-and-hold Sharpe over the same scored days ({price}, no costs) against the strategy's "
@@ -348,6 +351,6 @@ def ledger_fields(found: Mapping[str, Any] | None) -> dict[str, str | None]:
 def setup_evidence_of(summary: Mapping[str, Any]) -> tuple[str, bool]:
     """A stored setup study or trade as an evidence word, and True when only the old word exists."""
     word = summary.get("evidence")
-    if isinstance(word, str) and word in WORDS:
+    if isinstance(word, str) and word in SETUP_WORDS:
         return word, False
     return OLD_SETUP_OUTCOMES[str(summary["outcome"])], True

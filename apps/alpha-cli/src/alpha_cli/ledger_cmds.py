@@ -30,6 +30,13 @@ from alpha_core.config import AlphaSettings
 ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-ledger view.")
 RD = Annotated[Path | None, typer.Option("--rdagent-ledger", help="RD-Agent ledger path.")]
 JSON = Annotated[bool, typer.Option("--json")]
+OUTCOME = Annotated[
+    str | None,
+    typer.Option(
+        help="An evidence word (e.g. 'some evidence') or an old word (supported, rejected, "
+        "inconclusive, error, 'not supported'); both match, so old scripts keep working."
+    ),
+]
 NOTICE = "Read-only view; the ledgers themselves are unchanged."
 # Where the RD-Agent factor loop's shared ledger lives beside the data directory (the
 # `--trial-ledger` path every real run has used): read when `ledger/sources.toml` is absent.
@@ -195,7 +202,7 @@ def list_trials(
     kind: str | None = None,
     family: str | None = None,
     asset: str | None = None,
-    outcome: str | None = None,
+    outcome: OUTCOME = None,
     source: str | None = None,
     limit: int = 50,
     rdagent_ledger: RD = None,

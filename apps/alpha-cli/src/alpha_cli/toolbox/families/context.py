@@ -10,6 +10,8 @@ from alpha_cli.toolbox.published_parts import (
     BASIS,
     CAUTION,
     FIXED,
+    INFERRED,
+    INFERRED_LABEL,
     MONTHLY,
     NOT_STOCKS,
     NOT_US,
@@ -30,12 +32,14 @@ if TYPE_CHECKING:
     from alpha_cli.toolbox.inputs import Inputs
 
 
-def _typed(branch: str, sentence: str, details: dict[str, Any]) -> Result:
+def _typed(
+    branch: str, sentence: str, details: dict[str, Any], labels: tuple[str, ...] = ()
+) -> Result:
     values: dict[str, Value] = dict.fromkeys(NUMBERS)
     reasons = dict.fromkeys(NUMBERS, sentence)
     values["sentence"] = sentence
     return Result(
-        values, reasons, labels=(LABEL,), basis=BASIS, details={"branch": branch, **details}
+        values, reasons, labels=(LABEL, *labels), basis=BASIS, details={"branch": branch, **details}
     )
 
 
@@ -46,13 +50,15 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
     from alpha_validation.factor_attribution import factor_attribution, min_observations
 
     home, target = inputs.data_home, inputs.stored
-    asset_class = us_asset_class(home, target)
+    asset_class, basis = us_asset_class(home, target)
+    extra = (INFERRED_LABEL,) if basis == "calendar" else ()
     if asset_class not in {"stock", "etf"}:
         branch, sentence = (
             ("unknown-asset", UNKNOWN) if asset_class is None else ("not-applicable", NOT_US)
         )
         return _typed(branch, sentence, {"periods_per_year": MONTHLY})
     fund = f" {NOT_STOCKS}" if asset_class == "etf" else ""
+    fund += f" {INFERRED}" if basis == "calendar" else ""
     monthly = scored_monthly(home, target)
     reference = read_reference_for_period(
         home, first_day=monthly.first_day, last_day=monthly.last_day
@@ -81,9 +87,11 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
         "months_needed": need,
         "reference_rule": SENTENCE,
     }
+    if basis == "calendar":
+        details["asset_kind_basis"] = basis
     if len(used) < need:
         text = f"Cannot read: too few months to read ({len(used)} of {need} needed)."
-        return _typed("too-few-months", text, details)
+        return _typed("too-few-months", text, details, extra)
     names = [name for name, _ in FIXED]
     matrix = np.column_stack([[by_signal[name][m] for m in used] for name in names])
     found = search(strategy, used, by_signal, years)
@@ -100,9 +108,10 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
                 "cannot-read",
                 "Cannot read: factors too similar in this period.",
                 details,
+                extra,
             )
         text = f"{ONE_AT_A_TIME} Each one is in the details. {CAUTION}{fund} {found['sentence']}"
-        return _typed("collinear-singles", text, details)
+        return _typed("collinear-singles", text, details, extra)
     labels = dict(FIXED)
     factors = [
         {
@@ -129,7 +138,7 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
         "explained_share": fit["r_squared"],
         "sentence": sentence,
     }
-    return Result(values, {}, labels=(LABEL,), basis=BASIS, details=details)
+    return Result(values, {}, labels=(LABEL, *extra), basis=BASIS, details=details)
 
 
 def _fraction(key: str, label: str, gloss: str) -> Output:
@@ -166,6 +175,7 @@ PUBLISHED_FACTORS = ToolSpec(
     ),
     reference="tests/unit/test_toolbox_published_factors.py::test_known_answer_planted_factor",
     compute=published_factors,
+    version=2,
     time_safety="hindsight",
     poison_test="tests/unit/test_toolbox_published_factors.py::test_held_back_months_are_never_read",
 )

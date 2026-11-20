@@ -154,6 +154,7 @@ def stage_mutation_tree(root: Path, modules: list[str], staging: Path) -> list[s
 
 
 _MUTATION_PYTEST_ARGS = ["-p", "no:cacheprovider", "-q", "-x"]
+_PREFLIGHT_ROUNDS = 4  # clean runs before mutmut; each may reveal tests the last one hid
 
 
 def staging_only_failures(output: str) -> list[str]:
@@ -289,11 +290,27 @@ def mutate(
         try:
             stage_mutation_tree(root, [rel], staging)
             entry: dict[str, Any] = {}
-            # staged clean run: exclude tests that fail only because of the flattened layout
+            # staged clean run: exclude tests that fail only because of the flattened layout.
+            # It repeats with the exclusions applied, because ignoring one test file can turn
+            # a test that imported it into a collection error that only the next run shows.
             preflight = ["uv", "run", "--project", str(root), "pytest", "-q", "-rfE"]
             preflight += ["-p", "no:cacheprovider", "--continue-on-collection-errors", "tests"]
-            pre_ok, pre_seconds, pre_out = run(preflight, cwd=staging, timeout=timeout)
-            excluded = [] if pre_ok else staging_only_failures(pre_out)
+            excluded: list[str] = []
+            pre_seconds = 0.0
+            for _ in range(_PREFLIGHT_ROUNDS):
+                pre_ok, round_seconds, pre_out = run(
+                    [*preflight[:-1], *excluded, "tests"], cwd=staging, timeout=timeout
+                )
+                pre_seconds += round_seconds
+                found = [] if pre_ok else staging_only_failures(pre_out)
+                known = set(zip(excluded[::2], excluded[1::2], strict=True))
+                fresh = [
+                    pair for pair in zip(found[::2], found[1::2], strict=True) if pair not in known
+                ]
+                if not fresh:
+                    break
+                for option, target in dict.fromkeys(fresh):
+                    excluded += [option, target]
             if excluded:
                 entry["excluded_tests"] = sorted({t.split("[", 1)[0] for t in excluded[1::2]})
                 pyproject_path = staging / "pyproject.toml"

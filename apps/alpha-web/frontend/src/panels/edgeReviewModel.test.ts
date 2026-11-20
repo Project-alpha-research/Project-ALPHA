@@ -12,9 +12,9 @@ describe('recorded edge review', () => {
   it.each([0.72, { dsr: 0.72 }])('reads scalar and nested recorded DSR: %j', dsr => {
     expect(edgeReviewRows({ dsr }, null).find(row => row.label === 'Deflated Sharpe')?.value).toBe('0.72')
   })
-  it('does not convert missing or nonfinite metrics into zero or verdicts', () => {
+  it('does not convert missing or nonfinite metrics into zero or a grade', () => {
     const rows = edgeReviewRows({ metrics: { total_return: Infinity } }, null)
     expect(rows.find(row => row.label === 'Portfolio return')?.value).toBe('Not recorded')
-    expect(rows.find(row => row.label === 'Validation verdict')?.value).toBe('Not recorded')
+    expect(rows.find(row => row.label === 'Reading')?.value).toBe('Not recorded')
   })
 })

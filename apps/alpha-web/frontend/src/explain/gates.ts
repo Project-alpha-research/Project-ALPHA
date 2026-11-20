@@ -1,5 +1,9 @@
-// Gate stories: turn each validation gate's numbers into an explanation in both voices.
+// Gate stories: turn each validation check's numbers into an explanation in both voices.
 // Pure functions over the manifest — no fetches, no DOM — so the whole module unit-tests in node.
+// A check is a FACT check (is the test valid: a state word, sound / fault / not checked) or a STAT
+// check (how strong is the evidence: numbers, the plain comparison, and the level the old grade used,
+// shown muted). Nothing here says passed or failed, and no card is coloured good or bad. The classes
+// have one home: docs/reference/invariants/cli-rule-readings.md.
 
 import { fmtNum, fmtPct, isFiniteNum as finite } from '../util/format'
 import type {
@@ -9,15 +13,15 @@ import type {
   FoldRow,
   GateStory,
   NullTierRow,
-  Tone,
   ValidateManifest,
 } from './types'
 
-function tone(passed: boolean | null, warn = false): Tone {
-  if (passed === null) return 'info'
-  if (passed) return warn ? 'warn' : 'good'
-  return 'bad'
-}
+const OLD = 'The level used by the old grade: '
+type Fixed = Pick<GateStory, 'kind' | 'state' | 'oldLevel' | 'tone'>
+const stat = (level: string | null): Fixed => ({ kind: 'stat', state: null, oldLevel: level === null ? null : OLD + level, tone: 'info' })
+const fact = (passed: boolean | null): Fixed => ({
+  kind: 'fact', state: passed === null ? 'not-checked' : passed ? 'sound' : 'fault', oldLevel: null, tone: 'info',
+})
 
 // ---- gate: walk_forward_oos ----------------------------------------------------------------
 
@@ -34,7 +38,7 @@ export function walkForwardStory(m: ValidateManifest): GateStory {
     `The strategy traded ${folds.length} out-of-sample windows in sequence — a total of ` +
     `${nOos.toLocaleString()} sessions (~${fmtNum(years, 1)} years) it never saw during warmup. ` +
     `Stitched together they earn an annualized Sharpe of ${fmtNum(sharpe)}. ` +
-    `${positive} of ${graded} windows were profitable on a risk-adjusted basis` +
+    `${positive} of ${graded} windows had a positive Sharpe` +
     (graded < folds.length ? ` (${folds.length - graded} flat windows carry no Sharpe)` : '') +
     `. Consistency across windows matters more than the average: an edge that only lived in one ` +
     `regime shows up here as a few great folds drowning many flat ones.`
@@ -46,16 +50,16 @@ export function walkForwardStory(m: ValidateManifest): GateStory {
     tests:
       'Is there any out-of-sample performance to talk about? The series is split into rolling ' +
       'train/test windows (train = warmup only — nothing refits); the concatenated test windows ' +
-      'form the single OOS stream every other gate judges.',
+      'form the single OOS stream every other check reads. This is a fact check: it is sound when a finite OOS Sharpe was produced.',
     stats: [
       { label: 'OOS Sharpe', value: fmtNum(sharpe), term: 'sharpe' },
       { label: 'Folds', value: String(folds.length), term: 'walk_forward' },
-      { label: 'Profitable folds', value: `${positive}/${graded}` },
+      { label: 'Folds above zero', value: `${positive}/${graded}` },
       { label: 'OOS sessions', value: nOos.toLocaleString() },
     ],
     terse: `OOS Sharpe ${fmtNum(sharpe)} over ${folds.length} folds (${positive}/${graded} positive), n=${nOos}.`,
     narrative,
-    tone: tone(passed),
+    ...fact(passed),
   }
 }
 
@@ -73,7 +77,7 @@ export function nullStory(m: ValidateManifest): GateStory {
     t
       ? `${label}: the observed Sharpe ${fmtNum(t.observed)} lands at the ` +
         `${fmtPct(t.percentile, 1)} percentile of ${t.n_paths.toLocaleString()} no-edge paths ` +
-        `(p = ${fmtNum(t.p_value, 3)}) — ${t.passed ? 'clears' : 'fails'} the ${fmtPct(t.threshold, 0)} bar. `
+        `(p = ${fmtNum(t.p_value, 3)}): random data did as well in ${fmtPct(t.p_value, 1)} of draws. `
       : ''
 
   const engineTiers = [t2, t3].filter((t): t is NullTierRow => t !== null)
@@ -86,18 +90,18 @@ export function nullStory(m: ValidateManifest): GateStory {
     tierLine(t3, 'Tier 3 (real engine, the OOS bars permuted)')
   if (flagged) {
     narrative +=
-      `Tier 1 failed but was demoted to advisory: its close-fill convention diverges from the ` +
-      `engine's t+1-open fills by ${fmtNum(t1?.convention_divergence)} Sharpe (tolerance ` +
-      `exceeded) while Tier 2 — the honest simulation — passed. Read this as a surrogate ` +
-      `fidelity problem, not evidence of luck.`
+      `Tier 1 is marked advisory: its close-fill convention differs from the engine's ` +
+      `t+1-open fills by ${fmtNum(t1?.convention_divergence)} Sharpe (more than the stated ` +
+      `tolerance) while Tier 2, the honest simulation, held. Read this as a limit of the ` +
+      `surrogate, not as evidence of luck.`
   } else if (passed === false) {
     narrative +=
-      `A fail here is the single most important red flag this platform produces: whatever the ` +
-      `equity curve looks like, paths with NO edge performed comparably, so the result is ` +
-      `indistinguishable from luck on this symbol and period.` +
-      (vetoed.length ? ` The ${vetoed.join(' and ')} engine tier${vetoed.length === 1 ? '' : 's'} vetoed the gate; an engine tier is never excused.` : '')
+      `Random paths with NO edge did about as well as the strategy in more than ` +
+      `${fmtPct(1 - (t1?.threshold ?? t2?.threshold ?? 0.95), 0)} of draws, whatever the equity curve looks like, ` +
+      `so on this symbol and period the result cannot be told apart from luck.` +
+      (vetoed.length ? ` An engine tier is never set aside.` : '')
   } else if (passed) {
-    narrative += `Random prices could not match this performance — the edge survives its luck test.`
+    narrative += `Random prices rarely matched this performance: in every tier the share of random runs that did as well was small.`
   }
 
   const stats: GateStory['stats'] = []
@@ -123,24 +127,23 @@ export function nullStory(m: ValidateManifest): GateStory {
     )
   }
 
-  const t = flagged && passed ? tone(true, true) : tone(passed)
   return {
     gate: 'randomized_price_null',
     title: 'Randomized-price null (the luck test)',
     passed,
     tests:
-      'Could pure luck explain the performance? The strategy must beat the 95th percentile of ' +
-      'synthetic no-edge price paths in EVERY tier: a fast returns-level surrogate (1,000 paths), ' +
+      'Could pure luck explain the performance? The strategy is compared with synthetic no-edge ' +
+      'price paths in every tier: a fast returns-level surrogate (1,000 paths), ' +
       'the real engine on synthetic OHLCV (64 paths), and the real engine on permutations of the ' +
-      'out-of-sample bars themselves (64 paths). An engine-tier fail is never excused.',
+      'out-of-sample bars themselves (64 paths). The number to read is the share of random runs that did as well.',
     stats,
     terse:
-      `T1 ${t1 ? `${fmtPct(t1.percentile, 0)} pct${t1.passed ? '✓' : '✗'}` : '—'} · ` +
-      `T2 ${t2 ? `${fmtPct(t2.percentile, 0)} pct${t2.passed ? '✓' : '✗'}` : '—'}` +
-      (t3 ? ` · T3 ${fmtPct(t3.percentile, 0)} pct${t3.passed ? '✓' : '✗'}` : '') +
-      (flagged ? ' · T1 demoted (low fidelity)' : ''),
+      `T1 ${t1 ? `${fmtPct(t1.percentile, 0)} pct` : '—'} · ` +
+      `T2 ${t2 ? `${fmtPct(t2.percentile, 0)} pct` : '—'}` +
+      (t3 ? ` · T3 ${fmtPct(t3.percentile, 0)} pct` : '') +
+      (flagged ? ' · T1 advisory (low fidelity)' : ''),
     narrative,
-    tone: t,
+    ...stat(`each tier at the ${fmtPct(t1?.threshold ?? t2?.threshold ?? 0.95, 0)} percentile or higher`),
   }
 }
 
@@ -155,8 +158,8 @@ export function ciStory(m: ValidateManifest): GateStory {
     ? `Resampling the OOS returns 2,000 times (block bootstrap, BCa-corrected) puts the Sharpe's ` +
       `${fmtPct(ci.confidence, 0)} confidence interval at [${fmtNum(ci.lower)}, ${fmtNum(ci.upper)}] ` +
       `around a point estimate of ${fmtNum(ci.point)}. ` +
-      (passed
-        ? `Even the pessimistic lower bound is positive — the edge is not an artifact of one lucky stretch.`
+      (ci.lower !== null && ci.lower > 0
+        ? `Even the pessimistic lower bound is above zero, so the Sharpe does not rest on one lucky stretch.`
         : straddles
           ? `The interval straddles zero: the data cannot rule out that the true Sharpe is negative. ` +
             `This usually means the sample is too short for the edge's size — more history shrinks ` +
@@ -170,7 +173,7 @@ export function ciStory(m: ValidateManifest): GateStory {
     passed,
     tests:
       'How sure are we of the Sharpe itself? A stationary block bootstrap resamples the OOS ' +
-      'stream and the gate demands the BCa interval\'s lower bound stay above zero.',
+      'stream; the number to read is whether the BCa interval includes zero.',
     stats: ci
       ? [
           { label: 'Sharpe', value: fmtNum(ci.point), term: 'sharpe' },
@@ -180,10 +183,10 @@ export function ciStory(m: ValidateManifest): GateStory {
         ]
       : [],
     terse: ci
-      ? `Sharpe ${fmtNum(ci.point)} ∈ [${fmtNum(ci.lower)}, ${fmtNum(ci.upper)}] @ ${fmtPct(ci.confidence, 0)} — lower ${passed ? '> 0 ✓' : '≤ 0 ✗'}`
+      ? `Sharpe ${fmtNum(ci.point)} ∈ [${fmtNum(ci.lower)}, ${fmtNum(ci.upper)}] @ ${fmtPct(ci.confidence, 0)} — the interval ${ci.lower !== null && ci.lower > 0 ? 'is above zero' : straddles ? 'includes zero' : 'is not above zero'}`
       : 'no CI',
     narrative,
-    tone: tone(passed),
+    ...stat('lower end above 0'),
   }
 }
 
@@ -202,9 +205,9 @@ export function dsrStory(m: ValidateManifest): GateStory {
           `equals PSR. `
         : `Deflating for ${d.n_trials} trials (expected best-by-luck Sharpe ` +
           `${fmtNum(d.expected_max_sharpe)}) leaves DSR ${fmtNum(d.dsr, 4)}. `) +
-      (passed
-        ? `Above the ${fmtNum(d.threshold, 2)} bar: the Sharpe is statistically distinguishable from noise.`
-        : `Below the ${fmtNum(d.threshold, 2)} bar: on this sample size, the observed Sharpe is ` +
+      (d.dsr !== null && d.dsr >= d.threshold
+        ? `At or above ${fmtNum(d.threshold, 2)}, the Sharpe is statistically distinguishable from noise.`
+        : `Below ${fmtNum(d.threshold, 2)}, on this sample size the observed Sharpe is ` +
           `not yet statistically separable from zero.`)
     : 'No DSR block in this manifest.'
 
@@ -214,20 +217,19 @@ export function dsrStory(m: ValidateManifest): GateStory {
     passed,
     tests:
       'Is the Sharpe statistically real, net of sample noise (and of selection when many ' +
-      'configurations were tried)? Requires DSR ≥ threshold (default 0.95).',
+      'configurations were tried)? The number to read is the deflated Sharpe.',
     stats: d
       ? [
           { label: 'PSR', value: fmtNum(d.psr, 4), term: 'psr' },
           { label: 'DSR', value: fmtNum(d.dsr, 4), term: 'dsr' },
           { label: 'Trials', value: String(d.n_trials) },
-          { label: 'Threshold', value: fmtNum(d.threshold, 2) },
-        ]
+                  ]
       : [],
     terse: d
-      ? `PSR ${fmtNum(d.psr, 3)}${single ? ' (=DSR, single trial)' : ` · DSR ${fmtNum(d.dsr, 3)} @ ${d.n_trials} trials`} ${passed ? '≥' : '<'} ${fmtNum(d.threshold, 2)}`
+      ? `PSR ${fmtNum(d.psr, 3)}${single ? ' (=DSR, single trial)' : ` · DSR ${fmtNum(d.dsr, 3)} @ ${d.n_trials} trials`}`
       : 'no DSR',
     narrative,
-    tone: tone(passed),
+    ...stat(d ? fmtNum(d.threshold, 2) : null),
   }
 }
 
@@ -242,10 +244,10 @@ export function cpcvStory(m: ValidateManifest): GateStory {
       `${c.n_folds} purged, embargoed fold combinations and scores each. Mean fold Sharpe ` +
       `${fmtNum(c.mean_sharpe)} (σ ${fmtNum(c.std_sharpe)}), with ${fmtPct(c.frac_positive, 0)} of ` +
       `folds positive. ` +
-      (passed
-        ? `The edge is not an artifact of one particular ordering of history.`
-        : `A negative mean across combinations says the single walk-forward path flattered the ` +
-          `strategy — under re-orderings the edge disappears.`)
+      (c.mean_sharpe !== null && c.mean_sharpe > 0
+        ? `The mean is above zero, so the Sharpe does not rest on one particular ordering of history.`
+        : `A mean at or below zero across combinations says the single walk-forward path flattered ` +
+          `the strategy: under re-orderings the Sharpe disappears.`)
     : 'No CPCV block in this manifest.'
 
   return {
@@ -254,7 +256,7 @@ export function cpcvStory(m: ValidateManifest): GateStory {
     passed,
     tests:
       'Does the edge survive re-orderings of history? The OOS stream is recombined into many ' +
-      'purged train/test group combinations; the gate wants the mean fold Sharpe > 0.',
+      'purged train/test group combinations; the number to read is the mean fold Sharpe.',
     stats: c
       ? [
           { label: 'Folds', value: String(c.n_folds), term: 'cpcv' },
@@ -267,7 +269,7 @@ export function cpcvStory(m: ValidateManifest): GateStory {
       ? `${c.n_folds} folds: mean ${fmtNum(c.mean_sharpe)} ± ${fmtNum(c.std_sharpe)}, ${fmtPct(c.frac_positive, 0)} positive`
       : 'no CPCV',
     narrative,
-    tone: tone(passed),
+    ...stat('mean fold Sharpe above 0'),
   }
 }
 

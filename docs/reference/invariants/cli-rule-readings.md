@@ -10,13 +10,16 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/run.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
+  - apps/alpha-cli/src/alpha_cli/report_cmds.py
+  - apps/alpha-cli/src/alpha_cli/spine/report_readings.py
+  - tests/unit/test_report_readings.py
   - apps/alpha-cli/src/alpha_cli/next_cmds.py
   - tests/unit/test_reading_rule.py
   - apps/alpha-cli/src/alpha_cli/spine/trial_record.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: e34dd9ebda51dfe9
+verified: 6f6cc6a44f6c6ec8
 ---
 
 # Command line rule-test readings invariants
@@ -90,3 +93,26 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   - Held-back confirmation and following forward on paper read `not built yet`. The forward-use code is not read.
 - Text caps at 20 readings: the first 10 and last 10 print, the middle is counted. `--json` carries all.
 - Text for the owner never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit". A scan test holds this.
+
+## Report, cite and the gates
+
+- `alpha report <run>` prints `reading: <word> (old grade: X)` for a gauntlet run: the stored reading's word, or one derived from the stored
+  numbers, with the old letter muted after it. A manifest with a grade but no numbers prints `reading: not recorded (old grade: X)`.
+  The lines `verdict: PASS/FAIL`, `grade:`, `null[...] -> PASS/FAIL` and `gate[...]: PASS/FAIL` are gone. Manifest and `--json` keep every field.
+- A Monte Carlo family prints its stored percentiles and the share of paths below zero: no risk grade, no stage status word.
+- `alpha results cite <run> verdict` prints the evidence word, then `(old grade: X)`, on one line. `--json` keeps the letter.
+  `cite <run> evidence` gives the word alone (`fault` for a fault; derived for an old run). Both are in `spine/facts.py`.
+- A stored basis that says "realized profit" is shown as "realized gain or loss" by `plain_basis`. No stored file is rewritten.
+- The gate classes below are the one home. A FACT gate keeps a state word. A STAT gate shows its numbers and the plain comparison,
+  then the old level, muted, as "the level used by the old grade". A TASTE level is only a number, against the aim when one exists.
+
+| Gate | Class | `alpha report` line |
+|---|---|---|
+| `walk_forward_oos` | FACT | sound with the Sharpe; fault if it could not be computed; not checked if absent |
+| `randomized_price_null` | STAT | share of random runs that did as well, per tier; old level 0.95 |
+| `bootstrap_ci` | STAT | the Sharpe interval; it includes zero, is above zero or is below zero |
+| `deflated_sharpe` | STAT | the deflated Sharpe and the number of tries counted; old level 0.95 |
+| `cpcv_oos` | STAT | mean Sharpe across folds and the share of folds above zero |
+
+- The drawdown, ruin, Sharpe and sample-size bands of the old grade are TASTE or STAT levels of the grade itself. No screen or line prints them as a result.
+- The HTML tear sheet is written by `alpha_validation/tearsheet.py` and still prints the old PASS/FAIL words. It is not changed here.

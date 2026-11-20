@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/validate_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/controls.py
-verified: 78c4f3dcfd78c7c2
+verified: 80b0def9a654fdb4
 ---
 
 # Walk-forward (out of sample)
@@ -22,8 +22,8 @@ uv run alpha validate <SYMBOL> --strategy ma_crossover --param fast=50 --param s
 
 **How to read it**
 - `alpha report` prints `walk-forward: <n> OOS folds`, the out-of-sample metrics, `CI[sharpe]` (a bootstrap
-  range: a range that includes zero means the Sharpe is not distinguishable from nothing), the letter grade
-  with its edge, robustness, risk and sample parts, and one `gate[...]` line per test, `PASS` or `FAIL`.
+  range: a range that includes zero means the Sharpe is not distinguishable from nothing), `reading:` (the
+  evidence word, then the old letter muted), and one `gate[...]` line per test with its numbers and a plain comparison.
 - The `fold_sharpe` chart shows each slice. One strong slice carrying the rest is a finding; say so.
 - Few folds means little evidence, whatever the Sharpe. Two folds is a first look, not a result.
 **Efficiency**: `alpha diagnose <run_id>` stores `wfe`: per fold, out-of-sample CAGR over the full-sample

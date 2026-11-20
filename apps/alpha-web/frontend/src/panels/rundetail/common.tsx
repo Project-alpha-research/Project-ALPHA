@@ -4,10 +4,12 @@
 
 import type { ReactNode } from 'react'
 
+import { StateIcon } from '../../components/StateIcon'
 import { Term } from '../../components/Term'
-import type { Explained, StatChip, Suggestion } from '../../explain/types'
+import type { Explained, GateStory, StatChip, Suggestion } from '../../explain/types'
 import { useSettings } from '../../state/settings'
 import { asNum, fmtNum, fmtPct } from '../../util/format'
+import { STATE_WORDS } from '../readingModel'
 import type { Dict } from './commonUtils'
 
 export function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
@@ -93,17 +95,18 @@ export function StatChips({ stats }: { stats: StatChip[] }) {
   )
 }
 
-/** Any Explained story as a card: tone border, PASS/FAIL chip, stats, and the active voice. */
+/**
+ * Any Explained story as a card: stats and the active voice. A fact check keeps its state word beside its title (the icon and
+ * the word, never colour alone). A statistic shows its numbers; the level the old grade used is one muted line. Never passed or failed.
+ */
 export function ExplainCard({
   story,
   title,
-  passed,
   stats = [],
   tests,
 }: {
-  story: Explained
+  story: Explained & Partial<Pick<GateStory, 'state' | 'oldLevel'>>
   title: string
-  passed?: boolean | null
   stats?: StatChip[]
   tests?: string
 }) {
@@ -111,12 +114,16 @@ export function ExplainCard({
   return (
     <div className={`explain-card tone-${story.tone}`}>
       <div className="explain-head">
-        {passed !== null && passed !== undefined ? (
-          <span className={`chip ${passed ? 'pass' : 'fail'}`}>{passed ? 'PASS' : 'FAIL'}</span>
+        {story.state ? (
+          <span className="explain-state" data-state={story.state}>
+            <StateIcon state={story.state} />
+            <strong>{STATE_WORDS[story.state]}</strong>
+          </span>
         ) : null}
         <span className="explain-title">{title}</span>
       </div>
       <StatChips stats={stats} />
+      {story.oldLevel ? <p className="muted explain-old-level">{story.oldLevel}</p> : null}
       {explain === 'narrative' ? (
         <>
           {tests ? <p className="explain-tests">{tests}</p> : null}

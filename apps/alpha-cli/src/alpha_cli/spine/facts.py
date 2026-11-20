@@ -9,13 +9,15 @@ from typing import Any
 
 from alpha_cli.spine import reserve
 from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.reading import reading_word, stored_reading
 from alpha_cli.toolbox.registry import ALIASES, METRIC_OUTPUTS
 
 # Public vocabulary: one plain-English meaning per metric.
 METRICS = {
     "data_period": "First and last loaded bar.",
     "traded_period": "First and last stored equity point.",
-    "verdict": "The stored validation verdict.",
+    "verdict": "The evidence word of the stored reading; the old letter grade stays in the JSON.",
+    "evidence": "The evidence word of the stored reading, or fault; derived for an old run.",
     "oos_sharpe": "Sharpe of walk-forward out-of-sample returns.",
     "psr": "Probabilistic Sharpe of walk-forward out-of-sample returns.",
     "dsr": "The gauntlet's Sharpe probability; its stored trial_basis states the family count.",
@@ -79,6 +81,7 @@ METRIC_UNITS = {
     "data_period": "other",
     "traded_period": "other",
     "verdict": "other",
+    "evidence": "other",
     "oos_sharpe": "ratio",
     "dsr": "fraction",
     "psr": "fraction",
@@ -161,6 +164,7 @@ _FIELDS = {
     "wfe": ("diagnostics.json", "walk_forward_efficiency.wfe", _WFE_BASIS),
     "wfe_fold_count": ("diagnostics.json", "walk_forward_efficiency.fold_count", _WFE_BASIS),
     "verdict": ("manifest.json", "verdict.overall", "walk-forward validation gauntlet"),
+    "evidence": ("manifest.json", "reading.evidence.word", "walk-forward validation gauntlet"),
     "oos_sharpe": ("manifest.json", "oos_metrics.sharpe", "walk-forward out-of-sample returns"),
     "dsr": ("manifest.json", "dsr.dsr", "walk-forward validation gauntlet"),
     "psr": ("manifest.json", "dsr.psr", "walk-forward validation gauntlet"),
@@ -184,12 +188,12 @@ _FIELDS = {
             (
                 "top_1_profit_share",
                 "concentration.top_1",
-                "full-sample closed-trade realized profit",
+                "full-sample closed-trade realized gain or loss",
             ),
             (
                 "top_3_profit_share",
                 "concentration.top_3",
-                "full-sample closed-trade realized profit",
+                "full-sample closed-trade realized gain or loss",
             ),
             ("delay_base_sharpe", "delay.base_sharpe", "returns-level approximation"),
             ("delayed_sharpe", "delay.delayed_sharpe", "returns-level approximation"),
@@ -210,7 +214,8 @@ _FIELDS = {
 _FACT_PERIOD = {
     **dict.fromkeys(("data_period", "trades", "exposure"), "full_history"),
     **dict.fromkeys(
-        ("traded_period", "oos_sharpe", "dsr", "psr", "verdict", "resized_entries"), "scored"
+        ("traded_period", "oos_sharpe", "dsr", "psr", "verdict", "evidence", "resized_entries"),
+        "scored",
     ),
     **dict.fromkeys(
         (name for name in _FIELDS if name.startswith(("full_sample_", "benchmark_"))),
@@ -235,6 +240,11 @@ for _period in ("tradable", "scored"):
 
 # A positive drawdown magnitude in prose needs a word such as "drawdown of".
 NEGATIVE_BY_CONVENTION = frozenset(name for name in _FIELDS if name.endswith("max_drawdown"))
+
+
+def plain_basis(text: str) -> str:
+    """Display wording of a stored basis: realized gain or loss; stored text stays as written."""
+    return text.replace("realized profit", "realized gain or loss")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -318,6 +328,12 @@ def build_facts(rdir: Path) -> list[dict[str, Any]]:
                 "reason": reason if value is None else None,
             }
         )
+    manifest = documents["manifest.json"]
+    if isinstance(manifest.get("reading") or manifest.get("oos_metrics"), dict):
+        word = reading_word(stored_reading(manifest, documents["diagnostics.json"]))
+        for fact in facts:
+            if fact["metric"] == "evidence":
+                fact.update(value=word, reason=None)
     return facts
 
 

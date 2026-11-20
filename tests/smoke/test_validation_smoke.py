@@ -39,6 +39,6 @@ def test_validation_verdict_is_stored_and_read_back(data_home: Path, tmp_path: P
 
     report = alpha(home, "report", run_id).stdout
     assert f"run {run_id}  validate  [SPY]" in report
-    assert f"verdict: {verdict}" in report
-    assert f"grade: {grade} " in report
+    assert f"(old grade: {grade})" in report
+    assert "verdict:" not in report
     assert "gate[walk_forward_oos]:" in report

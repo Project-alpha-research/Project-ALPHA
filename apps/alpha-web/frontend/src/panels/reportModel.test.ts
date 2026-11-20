@@ -99,7 +99,7 @@ describe('summary rows', () => {
     expect(byLabel['Reading']).toBe('graded PASS under the old rules')
     expect(byLabel['Verdict']).toBeUndefined()
     expect(byLabel['Win rate']).toBe('not recorded')
-    expect(byLabel['Profit factor']).toBe('not recorded')
+    expect(byLabel['Gain-to-loss ratio']).toBe('not recorded')
     expect(byLabel['Exposure']).toBe('not recorded')
     expect(byLabel['Max drawdown date']).toBe('not recorded')
     expect(rows.some((row) => /NaN|undefined|null/.test(row.value))).toBe(false)

@@ -349,7 +349,7 @@ def _report_text(
         if caveat.startswith(("Causal states:", "One state holds"))
     ]
     rows = "\n".join(
-        f"| {row.family} | {row.status} | {row.risk_grade} | "
+        f"| {row.family} | {row.status} | "
         f"{row.terminal_return_q50:.6f} | {row.maximum_drawdown_q95:.6f} | "
         f"{row.ruin_probability.point:.6f} |"
         for row in summaries
@@ -360,9 +360,9 @@ def _report_text(
         "sequencing, causal volatility regimes, and a fitted heavy-tailed marginal model?\n\n"
         f"Source validation run: `{source_run_id}`. Paths per family: {n_paths}. "
         f"OOS horizon: {horizon}.\n\n"
-        "| Family | Status | Risk grade | Median terminal return | "
+        "| Family | Status | Median terminal return | "
         "95th percentile max drawdown | Ruin probability |\n"
-        "|---|---:|---:|---:|---:|---:|\n"
+        "|---|---:|---:|---:|---:|\n"
         f"{rows}\n\n"
         f"Regime states: {' '.join(regime_caveats)}\n\n"
         "Interpretation: these simulations measure path and scenario risk. They do not establish "
@@ -403,7 +403,7 @@ def _echo_family_lines(
             typer.echo(f"  {row.family}: not estimable; {row.caveats[0]}")
         else:
             typer.echo(
-                f"  {row.family}: {row.status}/{row.risk_grade} "
+                f"  {row.family}: {row.status} "
                 f"median terminal {row.terminal_return_q50:+.4f} "
                 f"(5%-95% {row.terminal_return_q05:+.4f} to {row.terminal_return_q95:+.4f}), "
                 f"drawdown median {row.maximum_drawdown_q50:.4f} "
@@ -654,7 +654,7 @@ def classical(
 
     typer.echo(
         f"monte-carlo classical -> run {identity.run_id}: "
-        + ", ".join(f"{row.family}={row.status}/{row.risk_grade}" for row in summaries)
+        + ", ".join(f"{row.family}={row.status}" for row in summaries)
         + f"; manifest at {rdir / 'manifest.json'}"
     )
     _echo_family_lines(summaries, regime_caveats)
@@ -938,7 +938,7 @@ def kronos(
             "canonical engine portfolio?\n\n"
             f"Source validation run: `{from_run}`. Forecast evaluation run: "
             f"`{forecast_eval_run}`. Paths: {paths}. OOS account-return horizon: "
-            f"{source_horizon}. Status: {summary.status}; risk grade: {summary.risk_grade}.\n\n"
+            f"{source_horizon}. Status: {summary.status}.\n\n"
             "Interpretation: Kronos is a calibrated stochastic generator, not a market oracle. "
             "Signals are recomputed from each synthetic OHLCV path; observed signals are never "
             "replayed. Weak calibration is a review warning, not automatic rejection.\n\n"
@@ -973,6 +973,6 @@ def kronos(
 
     typer.echo(
         f"monte-carlo kronos -> run {identity.run_id}: "
-        f"{summary.status}/{summary.risk_grade}, {paths} full-engine paths; "
+        f"{summary.status}, {paths} full-engine paths; "
         f"manifest at {rdir / 'manifest.json'}"
     )

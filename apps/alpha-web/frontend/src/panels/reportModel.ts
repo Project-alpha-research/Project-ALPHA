@@ -5,7 +5,7 @@
 
 import type { FigureCatalogueItem, TradeRow } from '../api/types'
 import { asNum, asStr, isFiniteNum } from '../util/format'
-import { runWord } from './readingModel'
+import { manifestWord } from './readingModel'
 
 export interface ReportLeaf {
   id: string
@@ -106,7 +106,7 @@ const METRIC_LABELS: [string, string][] = [
   ['sharpe', 'Sharpe'],
   ['max_drawdown', 'Max drawdown'],
 ]
-const NOT_RECORDED = ['Win rate', 'Profit factor', 'Exposure', 'Max drawdown date']
+const NOT_RECORDED = ['Win rate', 'Gain-to-loss ratio', 'Exposure', 'Max drawdown date']
 
 const obj = (v: unknown): Record<string, unknown> | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
@@ -117,6 +117,24 @@ const money = (v: unknown): string | null =>
   isFiniteNum(v)
     ? v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : null
+
+const pct1 = (v: unknown): string | null => (isFiniteNum(v) ? `${(v * 100).toFixed(1)}%` : null)
+
+/** One Monte Carlo family as its stored percentiles in plain words; no letter and no stage word. */
+function monteCarloFamilyText(family: Record<string, unknown>): string {
+  const loss = obj(family.loss_probability)
+  const range = pct1(loss?.lower) && pct1(loss?.upper) ? ` (95% range ${pct1(loss?.lower)} to ${pct1(loss?.upper)})` : ''
+  const parts = [
+    isFiniteNum(family.n_paths) ? `${family.n_paths.toLocaleString('en-US')} paths` : null,
+    pct1(family.terminal_return_q50) && `median final return ${pct1(family.terminal_return_q50)}`,
+    pct1(family.terminal_return_q05) && `5th percentile ${pct1(family.terminal_return_q05)}`,
+    pct1(family.terminal_return_q95) && `95th percentile ${pct1(family.terminal_return_q95)}`,
+    pct1(family.maximum_drawdown_q50) && `median largest fall ${pct1(family.maximum_drawdown_q50)}`,
+    pct1(family.maximum_drawdown_q95) && `largest fall at the 95th percentile ${pct1(family.maximum_drawdown_q95)}`,
+    pct1(loss?.point) && `share of paths ending below zero ${pct1(loss?.point)}${range}`,
+  ]
+  return parts.filter(Boolean).join(' · ') || 'not recorded'
+}
 
 /** Key/value rows from what the manifest recorded, in reading order; nothing is derived. */
 export function summaryRows(manifest: Record<string, unknown>): SummaryRow[] {
@@ -143,9 +161,12 @@ export function summaryRows(manifest: Record<string, unknown>): SummaryRow[] {
   const oos = obj(manifest.oos_metrics) ?? {}
   for (const [key, label] of METRIC_LABELS) push(label, ratio(metrics[key] ?? oos[key]))
   push('Deflated Sharpe', ratio(obj(manifest.dsr)?.dsr))
-  const word = runWord(asStr(obj(obj(manifest.reading)?.evidence)?.word), obj(manifest.verdict)?.overall ?? manifest.verdict)
-  push('Reading', word?.text ?? null)
-  if (typeof manifest.passed === 'boolean') push('Passed', manifest.passed ? 'yes' : 'no')
+  push('Reading', manifestWord(manifest)?.text ?? null)
+  const families = Array.isArray(manifest.families) ? manifest.families : manifest.family ? [manifest.family] : []
+  for (const family of families) {
+    const row = obj(family)
+    if (row && asStr(row.family)) push(`Monte Carlo · ${asStr(row.family)}`, monteCarloFamilyText(row))
+  }
   for (const label of NOT_RECORDED) push(label, 'not recorded')
   return rows
 }

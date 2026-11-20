@@ -35,6 +35,11 @@ describe('navigatorModel', () => {
     expect([...NAVIGATOR_GROUPS]).toEqual(['Strategies', 'Backtests', 'Research cases', 'Data', 'Scripts', 'Paper sandbox'])
   })
 
+  it('never colours a run good or bad from its stored gate flag', () => {
+    const groups = tree({ runs: [run('aaaaaaaa11111111', 'crypto', 'BTC/USDT', true), run('bbbbbbbb22222222', 'crypto', 'BTC/USDT', false)] })
+    expect(groups.find((group) => group.label === 'Backtests')!.leaves.map((leaf) => leaf.tone)).toEqual(['none', 'none'])
+  })
+
   it('files backtests by the server market field only, never by symbol text', () => {
     const runs = [
       run('aaaaaaaa11111111', 'crypto', 'BTC/USDT', true),
@@ -44,7 +49,7 @@ describe('navigatorModel', () => {
     ]
     const backtests = tree({ runs }).find((group) => group.label === 'Backtests')!
     expect(backtests.leaves.map((leaf) => leaf.id)).toEqual(['run:aaaaaaaa11111111'])
-    expect(backtests.leaves[0]).toMatchObject({ label: 'Run aaaa', sub: 'aaaaaaaa', tone: 'ok', action: { kind: 'run', runId: 'aaaaaaaa11111111' } })
+    expect(backtests.leaves[0]).toMatchObject({ label: 'Run aaaa', sub: 'aaaaaaaa', tone: 'none', action: { kind: 'run', runId: 'aaaaaaaa11111111' } })
     expect(backtests.unknown.map((leaf) => leaf.id)).toEqual(['run:cccccccc33333333'])
     const equities = navigatorTree({ profile: 'equities', showAll: false, runs, projects: [], strategies: [], sessions: [], storage: READY })
     expect(equities[1].leaves.map((leaf) => leaf.id)).toEqual(['run:bbbbbbbb22222222'])

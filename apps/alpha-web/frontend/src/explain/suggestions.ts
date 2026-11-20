@@ -21,7 +21,7 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
   const dd = m.oos_metrics?.max_drawdown ?? null
   const overlap = (m.forecast as { pretrain?: { overlap?: boolean } } | undefined)?.pretrain?.overlap
 
-  // --- luck test failed: the most important signal on the platform ---
+  // --- the luck test did not separate the strategy from random data ---
   if (nullGate && !nullGate.passed && !(t1?.flagged_low_fidelity && t2?.passed && t3?.passed !== false)) {
     out.push({
       title: 'The edge is indistinguishable from luck here — change something structural',
@@ -29,10 +29,10 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
         `Random no-edge prices matched the strategy (T1 ${fmtPct(t1?.percentile ?? null, 0)}, ` +
         `T2 ${fmtPct(t2?.percentile ?? null, 0)}` +
         (t3 ? `, T3 ${fmtPct(t3.percentile, 0)}` : '') +
-        ` percentile — every tier needs > 95%). Parameter ` +
-        `tweaks rarely fix a luck-level result; a different signal family, holding period, or ` +
-        `universe usually does. Single-name momentum often fails exactly this way while a ` +
-        `diversified basket of the same signal passes.`,
+        ` percentile; the level used by the old grade was 95% in every tier). Parameter ` +
+        `tweaks rarely change a luck-level result; a different signal family, holding period, or ` +
+        `universe usually does. Single-name momentum often reads this way while a ` +
+        `diversified basket of the same signal does not.`,
       action: symbol
         ? { command: 'backtest portfolio', args: `${symbol} SPY QQQ TLT GLD --strategy ${strategy || 'ts_momentum'}` }
         : undefined,
@@ -41,11 +41,11 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
 
   if (t1?.flagged_low_fidelity) {
     out.push({
-      title: 'Tier-1 fail was demoted — trust Tier 2, but know why',
+      title: 'Tier 1 is advisory here — trust Tier 2, but know why',
       why:
         `The fast surrogate fills at the close while the engine fills next open; on this run the ` +
-        `two conventions diverge by ${fmtNum(t1.convention_divergence, 3)} Sharpe (tolerance ` +
-        `exceeded), so Tier 1's fail is advisory. The honest engine tiers passed. High ` +
+        `two conventions diverge by ${fmtNum(t1.convention_divergence, 3)} Sharpe (more than the tolerance), ` +
+        `so Tier 1 is advisory. The honest engine tiers held. High ` +
         `turnover amplifies this bias — a slower rebalance would shrink the divergence itself.`,
     })
   }
@@ -69,8 +69,8 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
     out.push({
       title: `Only ${fmtNum(nOos, 0)} OOS observations — extend the sample`,
       why:
-        `Below ~500 observations every statistic here has wide error bars (sample grade caps at ` +
-        `${nOos < 250 ? 'D' : 'C'}). Longer history, or smaller test windows with more folds, ` +
+        `Below ~500 observations every statistic here has wide error bars, and under 100 the reading ` +
+        `is too little to read. Longer history, or smaller test windows with more folds, ` +
         `raises the count without touching the strategy.`,
     })
   }
@@ -89,7 +89,7 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
     out.push({
       title: `Max drawdown ${fmtPct(Math.abs(dd), 0)} — beyond most mandates`,
       why:
-        `Drawdowns past 35% grade D-or-worse and are where compounding math turns against you ` +
+        `Drawdowns past 35% are where compounding math turns against you ` +
         `(a 40% loss needs +67% back). Vol-target lower or diversify the book.`,
     })
   }
@@ -105,10 +105,10 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
     })
   }
 
-  // --- passing run: the constructive next steps ---
+  // --- every stored gate held: the constructive next steps ---
   if (m.passed) {
     out.push({
-      title: 'All gates passed — now try to break it',
+      title: 'The checks hold up here — now try to break it',
       why:
         `The single-config result is real by every test here. Next stresses, in order: a ` +
         `parameter sweep with overfitting controls (does the edge live on a plateau or a ` +
@@ -120,10 +120,10 @@ export function suggestions(m: ValidateManifest): Suggestion[] {
     })
   } else if (out.length === 0) {
     out.push({
-      title: 'Gates failed without a single dominant cause — read the gate cards',
+      title: 'No single check explains a weak reading — read the five checks',
       why:
-        `No one signal explains the fail; check which gates missed and by how much. Marginal ` +
-        `misses across several gates usually mean a thin edge on a thin sample.`,
+        `No one number explains it; read each check and how far it sits from the level used by ` +
+        `the old grade. Small gaps across several checks usually mean a thin edge on a thin sample.`,
     })
   }
 

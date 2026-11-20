@@ -69,7 +69,8 @@ function runLeaf(run: RunListItem): NavigatorLeaf {
     id: `run:${run.run_id}`,
     label: run.display_name,
     sub: run.run_id.slice(0, 8),
-    tone: run.passed === true ? 'ok' : run.passed === false ? 'bad' : 'none',
+    // A run is never coloured good or bad: its reading is a word in the run list, not a mark in the tree.
+    tone: 'none',
     action: { kind: 'run', runId: run.run_id },
   }
 }

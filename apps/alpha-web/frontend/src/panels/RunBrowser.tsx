@@ -2,7 +2,6 @@
 // store change (whoever caused it — UI, CLI, Claude via MCP). Search + kind filter + sortable
 // columns; click selects + broadcasts, Enter/double-click/⏎ button opens the run story.
 
-import type { ColumnDef } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 
 import { api } from '../api/client'
@@ -11,11 +10,9 @@ import { DataTable } from '../components/DataTable'
 import { Placeholder } from '../components/Placeholder'
 import { setLinked } from '../context/linked'
 import { useActivityField } from '../state/activity'
-import { fmtTime, shortId } from '../util/format'
 import { openRunDetail } from './actions'
-import { researchGateWatermark } from './researchGateModel'
 import { runKindMatches } from './runBrowserModel'
-import { runWord } from './readingModel'
+import { runBrowserColumns } from './runBrowserColumns'
 import type { PanelHandleProps } from '../context/panelHandle'
 
 const KINDS = ['all', 'runs', 'optim', 'portfolio', 'cross_sectional', 'propfirm', 'forecast']
@@ -74,93 +71,7 @@ export function RunBrowser(props: PanelHandleProps) {
     [allowedKinds, defaultCommand, items, kind],
   )
 
-  const columns = useMemo<ColumnDef<RunListItem, unknown>[]>(
-    () => [
-      {
-        header: 'Run',
-        accessorKey: 'run_id',
-        cell: (c) => shortId(c.row.original.run_id),
-        meta: { className: 'id' },
-      },
-      {
-        header: 'Kind',
-        accessorKey: 'kind',
-        cell: (c) => <span className="chip kind">{c.row.original.kind}</span>,
-      },
-      {
-        header: 'Command',
-        accessorKey: 'command',
-        // a rule test (`alpha test`) reads as what it is, not as the engine command it ran
-        cell: (c) => (c.row.original.rule_test_labels ? 'rule test' : c.row.original.command ?? '—'),
-        meta: { className: 'mono' },
-      },
-      {
-        header: 'Label',
-        accessorKey: 'label',
-        cell: (c) => {
-          // spec §15 / ADR-0026: relay the permanent research-gate override marker on the row
-          const watermark = researchGateWatermark(c.row.original)
-          return (
-            <>
-              {c.row.original.label ?? '—'}
-              {watermark ? (
-                <span
-                  className="chip warn rg-watermark"
-                  title="Launched under an owner research-gate override (spec §15, ADR-0026)"
-                >
-                  {watermark}
-                </span>
-              ) : null}
-            </>
-          )
-        },
-        meta: { className: 'mono' },
-      },
-      {
-        header: 'Reading',
-        accessorKey: 'evidence',
-        cell: (c) => {
-          const word = runWord(c.row.original.evidence, c.row.original.verdict)
-          return word ? <span className={word.old ? 'muted' : undefined}>{word.text}</span> : <span className="muted">—</span>
-        },
-      },
-      {
-        header: 'Result',
-        accessorKey: 'passed',
-        cell: (c) =>
-          c.row.original.passed === null ? (
-            <span className="muted">—</span>
-          ) : (
-            <span className={`chip ${c.row.original.passed ? 'pass' : 'fail'}`}>
-              {c.row.original.passed ? 'PASS' : 'FAIL'}
-            </span>
-          ),
-      },
-      {
-        header: 'Updated',
-        accessorKey: 'mtime',
-        cell: (c) => fmtTime(c.row.original.mtime),
-        meta: { className: 'num' },
-      },
-      {
-        id: 'open',
-        header: '',
-        cell: (c) => (
-          <button
-            className="btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              openRunDetail(c.row.original.run_id)
-            }}
-          >
-            open ⏎
-          </button>
-        ),
-        enableSorting: false,
-      },
-    ],
-    [],
-  )
+  const columns = useMemo(() => runBrowserColumns(), [])
 
   function selectRow(run: RunListItem): void {
     setSelected(run.run_id)

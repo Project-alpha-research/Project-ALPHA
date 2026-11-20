@@ -1137,7 +1137,6 @@ CRAM_MIN_PROSE_LINES = 10
 CRAM_CEILINGS: dict[str, int] = {
     "docs/reference/invariants/cli-runs.md": 51,
     "docs/reference/invariants/data-crypto.md": 12,
-    "docs/reference/invariants/web-frontend.md": 31,
     "docs/reference/invariants/web-run-detail.md": 18,
     "docs/reference/project/file-system-measurement.md": 14,
 }

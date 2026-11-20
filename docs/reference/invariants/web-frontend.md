@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 2fa8f1b4312ec2e4
+verified: 8d46343701adf536
 ---
 
 # Web frontend invariants
@@ -35,11 +35,9 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - Never label local confirmation as verified physical presence. [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
 - The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the server and never grants anything.
   Selecting a project confers no research authority either.
-- `explain/bands.ts` mirrors the grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py` so the UI can explain a grade. The persisted
-  manifest verdict is always authoritative; band changes must stay mirrored. The named `applyTradeCountCap` step mirrors the spine's `too-few-trades` cap: A/B
-  become C, C/D/F stay, and GPA is capped at 2. Stories use recorded labels and closed-trade counts (`fewer than 30` if absent), explaining the dimensions'
-  uncapped grade without replacing the stored grade or claiming C/D/F were lowered. Drift is caught by `src/explain/explain.test.ts`, including synthetic
-  capped copies of manifest fixtures.
+- `explain/bands.ts` still mirrors the old grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py`, but no screen uses it
+  (owner decision 2026-11-19: readings, not grades; see [web run detail](web-run-detail.md#readings-in-the-remaining-places)). The persisted
+  manifest verdict stays for machines. Its drift guard in `src/explain/explain.test.ts` stays until the files are deleted in one separate step.
 - The Market Watch live ticker is display only: never stored, never read by anything else.
 
 ## Shell and navigation

@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { RunListItem } from '../api/types'
+import { toastDetail } from '../panels/readingModel'
 import { useActivity } from '../state/activity'
 import { shortId } from '../util/format'
 
@@ -33,9 +34,9 @@ export function Toasts({ onOpenRun }: { onOpenRun: (runId: string) => void }) {
         next.push({
           id: e.seq,
           title: `run ${shortId(r.run_id)} · ${r.kind}`,
-          detail: `${r.label ?? ''}${r.verdict ? ` — verdict ${r.verdict}` : ''}${r.passed === false ? ' — FAILED gates' : r.passed === true ? ' — passed' : ''}`,
+          detail: toastDetail(r),
           runId: r.run_id,
-          tone: r.passed === false ? 'bad' : 'good',
+          tone: 'info',
         })
       } else if (e.type === 'job_failed' && e.job) {
         next.push({

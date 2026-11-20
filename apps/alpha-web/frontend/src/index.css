@@ -1474,6 +1474,16 @@ textarea.field:focus {
   gap: 8px;
   margin-bottom: 6px;
 }
+.explain-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+}
+.explain-old-level {
+  margin: 4px 0 0;
+  font-size: 0.9em;
+}
 .explain-title {
   font-weight: 600;
   font-size: var(--font-size);
@@ -4344,6 +4354,7 @@ textarea.field:focus {
 .summary-table { max-width: 640px; margin: var(--pad); }
 .summary-table caption { text-align: left; padding: 0 0 var(--pad-sm); font-size: var(--font-size); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .summary-table td.k { color: var(--muted); width: 40%; }
+.report-summary-composition .summary-table td { white-space: normal; vertical-align: top; }
 
 .figure-scroll { overflow-y: auto; padding: var(--pad) var(--pad) 40vh; min-height: 0; }
 .figure-section { scroll-margin-top: var(--pad); }

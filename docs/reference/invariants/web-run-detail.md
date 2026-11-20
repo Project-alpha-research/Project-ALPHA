@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: a5298b00719c2675
+verified: c35dbae5c418d195
 ---
 
 # Web run detail invariants
@@ -60,6 +60,23 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - Setup Lab shows the evidence word and scale, the stored sentence and "Setup study K of N recorded for this idea".
   Old records add "(old wording)". The old outcome word is hidden.
 - Covered by `ReadingBlock.test.tsx`, `readingScan.test.tsx` and `e2e/reading-block.spec.ts`.
+
+## Readings in the remaining places
+
+- No screen shows a letter grade, a PASS or FAIL result, "passed", "verdict" or a good or bad colour for a run. The JSON fields `verdict`,
+  `passed` and `overall` stay for machines. The words come from `panels/readingModel.ts`: `runWord`, `manifestWord`, `toastDetail`, `paletteHint`.
+  The browser re-derives no word.
+- A run in a list shows its evidence word, else "graded X under the old rules", muted: the run browser columns (`runBrowserColumns.tsx`, no result
+  column), Pipeline (`PipelineLatest`), the activity feed (`ActivityFeedView`), toasts, the command palette and the Library tree (no colour).
+- Summary has a "Reading" row and no "Passed" row. The edge review has a "Reading" row and no verdict or gate-result row. A Monte Carlo run adds
+  one row per family: stored percentiles in words, no letter and no stage word.
+- Gates tab (`explain/gates.ts`, `Gates.tsx`, `ExplainCard`): each check is a FACT (walk-forward: the icon and "sound", "fault" or "not checked")
+  or a STAT (the numbers and the plain comparison, such as "the interval includes zero" or "random data did as well in 3.0% of draws"). A STAT card
+  adds one muted line: "The level used by the old grade: X". No card is coloured good or bad. The one classification is in
+  [command line readings](cli-rule-readings.md#report-cite-and-the-gates).
+- The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old grade as "retired".
+- Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).
+- `explain/bands.ts`, `explain/verdictStory.ts` and `util/verdict.ts` are no longer used by a screen. Their deletion is a separate step.
 
 ## Workstation recorded fields
 

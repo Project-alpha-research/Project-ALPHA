@@ -1,21 +1,12 @@
 import './ReadingBlock.css'
+import { StateIcon } from './StateIcon'
 import {
-  aimSentence, aimSourceLine, BASIS_HINT, countLines, EVIDENCE_STEPS, evidenceStep, faultText, MEASURE_HINTS, num2, rangePicture,
-  type AimRow, type AlphaReading, type CheckState, type ReadingMeasure,
+  aimSentence, aimSourceLine, BASIS_HINT, countLines, EVIDENCE_STEPS, evidenceStep, faultText, MEASURE_HINTS, num2, rangePicture, STATE_WORDS,
+  type AimRow, type AlphaReading, type ReadingMeasure,
 } from '../panels/readingModel'
 
 const FOOTER = 'A reading describes the evidence. It is not advice and not an approval.'
-const STATE_WORDS: Record<CheckState, string> = { sound: 'sound', fault: 'fault', 'not-checked': 'not checked' }
 const OLD_LETTER = /^[A-F]$/
-
-function StateIcon({ state }: { state: CheckState }) {
-  // Three shapes, so the state never rests on colour: a ticked circle, a triangle, a dashed circle.
-  return <svg className="reading-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-    {state === 'sound' && <><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M5 8.3 7.2 10.5 11 5.7" fill="none" stroke="currentColor" strokeWidth="1.5" /></>}
-    {state === 'fault' && <><path d="M8 1.8 14.6 13.8H1.4Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M8 6v3.6M8 11.2v1" stroke="currentColor" strokeWidth="1.5" /></>}
-    {state === 'not-checked' && <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2.4 2.4" />}
-  </svg>
-}
 
 /** The four steps of evidence strength as a small picture. The current step is filled, outlined and named. */
 export function EvidenceScale({ word }: { word: string | null }) {

@@ -2,7 +2,7 @@
 
 import type { FigureCatalogueItem, RuleTest, RuleTestChecks } from '../api/types'
 import { GLOSSARY } from '../explain/glossary'
-import { sparseTradeStory, type RecordedManifest } from '../explain/verdictStory'
+import type { RecordedManifest } from '../explain/verdictStory'
 import { isFiniteNum } from '../util/format'
 
 export const NOT_RECORDED = 'not recorded'
@@ -132,16 +132,19 @@ const CHECK_LABELS: Record<string, string> = {
   'enough-trades': 'Were there enough closed trades?',
   'benchmark-present': 'Was there a buy-and-hold comparison?',
   'history-length': 'Did the test cover at least three years?',
-  'artifacts-intact': 'Did the saved files pass verification?',
+  'artifacts-intact': 'Were the saved files verified as unchanged?',
   'quick-run': 'Did the test use the full set of checks?',
   'variants-counted': 'Did the trial count include the other settings tested?',
 }
+
+// The fact checks of the audit read with the reading block's own check words. The meaning is unchanged.
+const AUDIT_WORDS: Record<string, string> = { PASS: 'sound', FLAG: 'flag', 'NOT-CHECKED': 'not checked' }
 
 export function auditRows(test: RuleTest): AuditRow[] {
   return (test.diagnostics?.audit ?? []).map((item) => ({
     id: item.check,
     check: CHECK_LABELS[item.check] ?? item.check.replaceAll('-', ' '),
-    status: item.status,
+    status: AUDIT_WORDS[item.status] ?? item.status,
     chip: item.status === 'PASS' ? 'pass' : item.status === 'FLAG' ? 'warn' : 'kind',
     detail: item.detail,
   }))
@@ -173,6 +176,8 @@ export function healthLine(health?: { verdict?: unknown; sentence?: unknown } | 
 
 export type RuleManifest = RecordedManifest & {
   data_health?: { verdict: string; sentence: string }
+  /** The old letter grade of a run recorded before readings; shown only as "graded <letter> under the old rules". */
+  verdict?: { overall?: unknown; labels?: readonly string[] }
   spine?: { periods?: Partial<Record<SummaryPeriod, PeriodResult>> }
 }
 
@@ -205,6 +210,14 @@ export function summaryFigures(items: FigureCatalogueItem[], period?: SummaryPer
   return wanted.flatMap(id => items.filter(item => item.figure_id === id && item.available))
 }
 
+/** Says a run had too few closed trades in its scored periods; a count, never a grade. */
+function sparseNote(manifest: RuleManifest, labels: readonly string[]): string | null {
+  const flagged = [manifest.labels, manifest.spine?.labels, manifest.verdict?.labels, labels].some(set => set?.includes('too-few-trades'))
+  if (!flagged) return null
+  const count = isFiniteNum(manifest.n_trades) ? `Only ${manifest.n_trades}` : 'Fewer than 30'
+  return `${count} closed trades in the walk-forward test periods held back for scoring, which is too few to judge.`
+}
+
 export function summaryNumbers(test: RuleTest, manifest: RuleManifest, watermark?: string | null, period: SummaryPeriod = 'tradable') {
   const row = manifest.spine?.periods?.[period]
   const full = row?.strategy
@@ -213,9 +226,7 @@ export function summaryNumbers(test: RuleTest, manifest: RuleManifest, watermark
   const flagged = (id: string) => test.diagnostics?.audit.some(check => check.check === id && check.status === 'FLAG')
   const short = labels.includes('short-history') || flagged('history-length') ? LABEL_MEANING['short-history'] : null
   const data = labels.includes('dev-machine-data') ? LABEL_MEANING['dev-machine-data'] : null
-  const cap = sparseTradeStory({ ...manifest, labels: [...(manifest.labels ?? []), ...labels] })
-  const tradeCaveat = cap ? `The grade counts trades in the walk-forward test periods held back for scoring. ${cap}`
-    : flagged('enough-trades') ? LABEL_MEANING['too-few-trades'] : null
+  const tradeCaveat = sparseNote(manifest, labels) ?? (flagged('enough-trades') ? LABEL_MEANING['too-few-trades'] : null)
   return [
     { label: 'Total return after costs', gloss: GLOSSARY.total_return.short,
       value: pct(full?.total_return, full?.reasons?.total_return),
@@ -318,7 +329,14 @@ export interface CheckRow {
   /** “could not run: <stored error code>”; null for a stored result. */
   failure: string | null
   chips: LabelChip[]
+  /** The declared or exploratory word the command line stored with the result; null for a failed attempt. */
+  status: LabelChip | null
   when: string | null
+}
+
+const STATUS_MEANING: Record<string, string> = {
+  declared: 'This check was named before its result was seen.',
+  exploratory: 'This check was not named before its result was seen.',
 }
 
 /**
@@ -331,7 +349,8 @@ export function checkRows(checks: RuleTestChecks, testLabels: readonly string[] 
     name: CHECK_NAMES[check.tool] ?? check.tool,
     reading: check.reading,
     failure: check.outcome === 'error' ? `could not run: ${check.error ?? 'no error was stored'}` : null,
-    chips: labelChips(check.labels.filter(label => !testLabels.includes(label))),
+    chips: labelChips(check.labels.filter(label => !testLabels.includes(label) && !(label in STATUS_MEANING))),
+    status: check.status ? { text: check.status, title: STATUS_MEANING[check.status] ?? `The command line stored the word “${check.status}”.` } : null,
     when: check.recorded_at,
   }))
 }

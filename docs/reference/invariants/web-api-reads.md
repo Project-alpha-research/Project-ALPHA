@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: fc22620b50e4eabb
+verified: 05fc07020b0c20b5
 ---
 
 # Web API reads and writes invariants
@@ -48,6 +48,22 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 - The `/api/ml` models accept the Alpha158 feature recipe v3 (`MlUpstreamAlpha158`, all 158 upstream Qlib columns, processors
   `qlib_processors_v3`) next to v1 and v2; the API only relays what the Qlib worker recorded.
   [ADR-0042](../../adr/0042-qlib-worker-delegates-data-layer-to-upstream.md)
+
+## Reading reads
+
+- GET `/api/runs/{id}/checks` carries the run's `reading` (`AlphaReadingV1`) and the CLI's `counts` line, both from
+  `alpha results show --json`. The reading is stored for a new run and derived by the CLI for an old one.
+- Each check carries the CLI's `status` (declared or exploratory). Nothing is derived here
+  ([test](../../../tests/integration/test_web_api_reading.py)).
+- Setup Lab: each outcome carries `reading` (`_setup_reading.py`): its evidence word, or the old word mapped to it
+  with `old_wording`, and its place among ledger rows of the same kind and idea.
+- The web copies the three old-word mappings and counts ledger rows for the family place. No read-only CLI command returns
+  them for one setup outcome (`alpha setup study` writes a new record). Drift tests that fail when the CLI changes:
+  `tests/unit/test_web_setup_reading.py`. Follow-up: a read-only `alpha setup show <id> --json` returning evidence, family
+  place and the family-adjusted line; then the copies go.
+- The family-adjusted figure is the CLI's alone. The screen says so in one muted line.
+- `RunListItem.evidence` is the evidence word (or `fault`) a new run stored in its manifest `reading`; null for an older run.
+  The list relays it and works nothing out.
 
 ## Market overview read
 

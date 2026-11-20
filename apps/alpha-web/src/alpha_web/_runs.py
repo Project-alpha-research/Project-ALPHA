@@ -463,6 +463,24 @@ def market_of(manifest: dict[str, Any]) -> str:
     return "unknown"
 
 
+def _stored_evidence(reading: Any) -> str | None:
+    """The evidence word a new run stored in its reading, or ``fault`` as the ledger writes it.
+
+    Relayed, never worked out: a run without a stored reading gives ``None``.
+    """
+    if not isinstance(reading, dict):
+        return None
+    evidence = reading.get("evidence")
+    word = evidence.get("word") if isinstance(evidence, dict) else None
+    if isinstance(word, str):
+        return word
+    checks = reading.get("checks")
+    faulted = isinstance(checks, list) and any(
+        isinstance(c, dict) and c.get("state") == "fault" for c in checks
+    )
+    return "fault" if faulted else None
+
+
 def run_record(kind: str, run_id: str, *, data_dir: Path) -> dict[str, Any]:
     """One run's browser record — THE shared shape of ``/api/runs`` index items and the activity
     stream's ``run_added``/``run_updated`` payloads (the SPA consumes both as ``RunListItem``).
@@ -498,6 +516,7 @@ def run_record(kind: str, run_id: str, *, data_dir: Path) -> dict[str, Any]:
         "snapshot_hash": manifest.get("snapshot_hash"),
         "passed": manifest.get("passed"),
         "verdict": verdict.get("overall") if isinstance(verdict, dict) else None,
+        "evidence": _stored_evidence(manifest.get("reading")),
         # spec §15 / ADR-0026: the permanent EXPLORATORY marker on runs launched under an
         # owner research-gate override; None for every unmarked run.
         "research_gate_watermark": research_gate_watermark(manifest),

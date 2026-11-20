@@ -1,7 +1,9 @@
 import type { FigureCatalogueItem, RuleTest, RuleTestChecks } from '../../api/types'
 import { FigureCard } from '../../components/FigureCard'
+import { ReadingBlock } from '../../components/ReadingBlock'
 import { GLOSSARY } from '../../explain/glossary'
 import { Timestamp } from '../../util/formatTime'
+import { parseReading } from '../readingModel'
 import {
   auditRows, checkRows, healthLine, dateRange, labelChips, NOT_RECORDED, pct, quickCaveat, ratio, summaryFigures, summaryHeadline, summaryNumbers,
   standardSetCommand, testedRows, variantRows, type Cell, type RuleManifest,
@@ -54,12 +56,14 @@ function ChecksRun({ checks, runId, testLabels }: { checks: RuleTestChecks | str
       : typeof checks === 'string' ? <p role="alert">Could not load the checks. {checks}</p>
       : !rows.length ? <p className="muted">No checks have been run on this test yet. To run the standard set:{' '}
         <code className="mono">{standardSetCommand(runId)}</code></p>
-      : <table className="blotter summary-table rule-test-checks"><tbody>
+      : <><p className="muted">{typeof checks === 'object' ? checks.counts?.text : null}</p>
+        <table className="blotter summary-table rule-test-checks"><tbody>
         {rows.map(row => (
           <tr key={row.key}>
             <td className="k">{row.name}</td>
             <td>{row.failure ?? row.reading}
               <span className="rule-test-chips">
+                {row.status && <span className="chip kind rule-test-status-chip" title={row.status.title}>{row.status.text}</span>}
                 {row.chips.map(chip => <span key={chip.text} className="chip kind" title={chip.title}>{chip.text}</span>)}
               </span>
               {row.chips.length > 0 && <small className="muted">{row.chips.map(chip => chip.title).join(' ')}</small>}
@@ -67,8 +71,16 @@ function ChecksRun({ checks, runId, testLabels }: { checks: RuleTestChecks | str
             <td className="muted"><Timestamp value={row.when} /></td>
           </tr>
         ))}
-      </tbody></table>}
+      </tbody></table></>}
   </section>
+}
+
+/** The run's reading, relayed with its checks: loading while they load, the old letter when no reading came. */
+function Reading({ checks, manifest, labels }: { checks: RuleTestChecks | string | null; manifest: RuleManifest; labels: readonly string[] }) {
+  if (checks === null) return <p role="status" className="muted">Loading the reading…</p>
+  const reading = typeof checks === 'object' ? parseReading(checks.reading) : null
+  const letter = manifest.verdict?.overall
+  return <ReadingBlock reading={reading} oldLetter={typeof letter === 'string' ? letter : null} labels={labels} />
 }
 
 export function RuleTestReport({ test, manifest, runId, runName, figures, figureError, watermark, checks }: Props) {
@@ -81,6 +93,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
   return (
     <section className="rule-test" aria-label="Rule test">
       <h2>{summaryHeadline(test, manifest.spine?.periods?.tradable)}</h2>
+      {checks !== undefined && <Reading checks={checks} manifest={manifest} labels={test.labels} />}
       {health && <p>{health}</p>}
       <small>data from {dateRange(test.first_ts, test.last_ts)}</small>
       {(['tradable', 'scored'] as const).map(period => {
@@ -125,7 +138,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
               {FLAG_LABELS[flag.flag] && <td>{flag.detail}</td>}
             </tr>
           ))}
-          {!flags.length && <tr><td className="muted">{diagnostics ? 'The diagnostic pass flagged nothing.'
+          {!flags.length && <tr><td className="muted">{diagnostics ? 'The diagnostic checks flagged nothing.'
             : test.diagnostics_reason ?? 'Diagnostics not recorded.'}</td></tr>}
         </tbody>
       </table>

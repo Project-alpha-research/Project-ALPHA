@@ -458,7 +458,8 @@ def mcpt(
         f"optim {symbol} -> run {run_id}: in-sample MCPT p {null.p_value:.3f}, percentile "
         f"{null.percentile:.2f} is {side} {threshold:g} over {perms} permutations; best {best}, "
         f"in-sample Sharpe {null.observed:.3f}. The level used by the old grade: percentile at "
-        f"least {threshold:g}. Overfit test only, not OOS evidence; manifest at {rdir / 'manifest.json'}"
+        f"least {threshold:g}. Overfit test only, not OOS evidence; "
+        f"manifest at {rdir / 'manifest.json'}"
     )
     if held.say():
         typer.echo(held.say())

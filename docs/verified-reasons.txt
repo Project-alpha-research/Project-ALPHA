@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 900f2daed18519d5 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified 8ec094e685aebd68 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 apps/alpha-cli/README.md
-  verified 900f2daed18519d5 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified 8ec094e685aebd68 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -38,7 +38,7 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 116a65532c20e237 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 1a94e96a0de552f0 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/reference/invariants/cli-runs.md
   verified e3887eb6a4ebd833 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -230,7 +230,7 @@ research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified fd9c065cc11c087d on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified e41df52a46324777 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 research/tools/diagnose-and-audit.md
   verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
@@ -257,7 +257,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified 8880dc93e506111e on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified 1f535e46d8eec552 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -275,7 +275,7 @@ research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified fd9c065cc11c087d on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified e41df52a46324777 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

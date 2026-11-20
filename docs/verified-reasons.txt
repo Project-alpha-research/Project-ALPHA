@@ -65,7 +65,7 @@ docs/reference/invariants/data-free-sources.md
   verified d87efdf01acee600 on 2026-11-20: reviewed against the freeze-before-replace change; claims unchanged
 
 docs/reference/invariants/data-freeze-before-replace.md
-  verified de5ae16dc460b70e on 2026-11-20: new page: the freeze-before-replace rule, written with the change
+  verified 1aa89c0fb815cd25 on 2026-11-20: test file only changed; claims unchanged
 
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers

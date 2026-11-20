@@ -151,6 +151,7 @@ def test_old_manifests_without_a_content_hash_are_never_matched_or_rewritten(
     manifest.write_text(json.dumps(data, indent=2, sort_keys=True))
     old_bytes = manifest.read_bytes()
     second = _pull(store, _result(_bars([2, 3, 4])), at=datetime(2026, 11, 22, tzinfo=UTC))
+    assert second.snapshot_id is not None
     assert second.snapshot_id != first.snapshot_id and not second.reused
     assert manifest.read_bytes() == old_bytes
     verify_snapshot(manifest.parent)

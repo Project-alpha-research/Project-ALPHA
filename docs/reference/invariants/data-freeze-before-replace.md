@@ -6,7 +6,7 @@ sources:
   - packages/alpha-data/src/alpha_data/series_diff.py
   - tests/unit/test_data_pull_freeze.py
   - tests/integration/test_data_pull_freeze_cli.py
-verified: de5ae16dc460b70e
+verified: 1aa89c0fb815cd25
 ---
 
 # Freeze before replace

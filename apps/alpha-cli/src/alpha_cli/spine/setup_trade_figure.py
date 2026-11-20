@@ -5,6 +5,8 @@ from __future__ import annotations
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
 
+from alpha_cli.spine.setup_reading import owner_lines
+
 if TYPE_CHECKING:
     from alpha_research.figures.theme import Theme
 
@@ -200,7 +202,7 @@ def _controls_panel(axes: Any, primary: dict[str, Any], theme: Theme) -> None:
 
 def trade_text(output: dict[str, Any]) -> str:
     row = output["pooled"]
-    lines = [output["reading"], output.get("basis", ""), "measure\tvalue"]
+    lines = [output["reading"], *owner_lines(output), output.get("basis", ""), "measure\tvalue"]
     for title, field, percent in (
         ("trades", "trades", False),
         ("mean", "mean", True),
@@ -260,7 +262,7 @@ def trade_text(output: dict[str, Any]) -> str:
 
 
 def study_text(output: dict[str, Any]) -> str:
-    lines = [output["reading"]]
+    lines = [output["reading"], *owner_lines(output)]
     primary = str(output["primary_horizon"])
     for group, keys in (
         ("Primary horizon", [primary]),

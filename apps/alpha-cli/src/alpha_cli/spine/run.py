@@ -27,7 +27,7 @@ from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
-from alpha_cli.spine.reading import build_reading, stored_reading
+from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import spine_snapshot
@@ -454,6 +454,7 @@ def run_idea(
                 "rule": idea.rule.kind,
                 "params": idea.rule.params,
                 "costs": idea.costs.model_dump(),
+                **ledger_fields(result.get("reading")),
                 **{
                     key: value
                     for key, value in result.items()

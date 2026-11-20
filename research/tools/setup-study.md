@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 3bf380359d19bf43
+verified: ef540a51229e9a10
 ---
 # Setup study
 
@@ -25,11 +25,11 @@ uv run alpha results cite <study_id> setup_mean_net_return --json
   horizon is tested; others say "also looked at, not tested" and carry `not-primary`.
 - Lead with complete separate occurrences beside matching days. Entry is the recorded next open;
   each horizon ends at its bar close, with [per-asset costs](setup-trade.md) on both sides.
-  Rule version 2 uses these costs; old studies read with `older-cost-rule`, and re-studying their
-  find is labelled `remeasured-new-cost-rule` and counts as one more look (say so to the owner).
+  Old studies read with `older-cost-rule`; re-studying one is `remeasured-new-cost-rule`: one more look.
 - Compare mean net return with drift and 2,000 spaced random-date samples (figure: grey band, dashed drift).
-- Under 30 complete occurrences, overlapping outcomes and disagreeing halves are labels, not
-  evidence to omit; each half meets controls from its own years.
+- Under 30 complete occurrences the word is `too little to read`. Overlapping outcomes and disagreeing halves are labels,
+  not evidence to omit. Never say `clear of chance`: the p-value is not corrected for the setup variants tried.
+- Quote the evidence word, "Setup study K of N" and the adjusted random-date figure; other idea texts are not counted.
 - Each study counts one trial; a repeat is labelled `repeat`. A held-back find passes its label on; a find that used reserved bars is refused.
 
 The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)

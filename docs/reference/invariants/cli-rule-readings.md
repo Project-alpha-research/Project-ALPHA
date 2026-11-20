@@ -12,7 +12,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/next_cmds.py
   - tests/unit/test_reading_rule.py
-verified: c73a8f27192ce963
+  - apps/alpha-cli/src/alpha_cli/spine/trial_record.py
+  - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
+  - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
+  - tests/unit/test_reading_ledger_setup.py
+verified: e34dd9ebda51dfe9
 ---
 
 # Command line rule-test readings invariants
@@ -48,9 +52,25 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   "Fault: ... Fix this first. No reading." Fact checks stay hard.
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
-- `--json` keeps `verdict` and adds `reading`. The ledger row and its outcome words still come from the letter; the next change moves them.
+- `--json` keeps `verdict` and adds `reading`.
 - A run id hashes every `alpha_cli` source byte, so any edit moves it. `tests/unit/test_reading_rule.py` holds that input fixed and
   proves the reading changes no id.
+
+## Ledger words
+
+- A new rule-test ledger row adds `evidence` (the reading's word, or `fault`) and `aim_relation` (or null) to every field it had.
+  An error row carries both as null. The letter stays in `verdict`; machines still read it. No stored row is rewritten.
+- On read, `TrialRecord.outcome` is the owner word: the row's `evidence`; for an old row with only a letter,
+  "graded <letter> under the old rules". `machine_outcome` keeps the old four-way word and `raw_status` the letter, in `--json` only.
+  `alpha ledger` text never prints the letter. `--outcome` still accepts the old machine words.
+- Counting reads none of this. `counts_for_deflation`, the labels `repeat` and `error`, `make_test_key`, `row_test_key`, the
+  same-asset count and `n_trials_used` never read an outcome word. `tests/unit/test_reading_ledger_setup.py` runs them on
+  a ledger with and without the new fields and requires equal results.
+- A setup row reads the same way: its `evidence` word, or its old word mapped to the evidence word it came from, with the note
+  "recorded under the old wording". The reader accepts the three old words and the three new ones.
+- RD-Agent wording unchanged for now: RD-Agent rows keep their old words, and the proposer's ledger text is byte-identical
+  (a test pins it). That is a separate change.
+- `--outcome` takes an evidence word or an old word; both match, and the help text says so.
 
 ## Idea file
 

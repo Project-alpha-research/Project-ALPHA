@@ -68,7 +68,7 @@ docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
 docs/reference/invariants/validation-factor-statistics.md
-  verified 255cff550fd8a283 on 2026-11-20: test files edited for typing only; text unchanged
+  verified f35a8888355de2d0 on 2026-11-20: tests added that pin whole error messages, output keys, residual_std and the condition number; the rules are unchanged
 
 docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels

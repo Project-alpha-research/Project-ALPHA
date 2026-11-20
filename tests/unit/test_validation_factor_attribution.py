@@ -286,14 +286,94 @@ def test_bad_inputs_fail_loud() -> None:
         call(x, x)
     with pytest.raises(DataError, match="periods_per_year"):
         call(y, x, ppy=0)
-    with pytest.raises(DataError, match="strategy"):
+    with pytest.raises(DataError, match="^the strategy returns do not vary, so there is nothing"):
         call(np.full(100, 0.01), x)
     flat = x.copy()
     flat[:, 1] = 0.02
-    with pytest.raises(DataError, match="'b'"):
+    with pytest.raises(DataError, match="^factor 'b' does not vary, so its beta is undefined$"):
         call(y, flat)
-    with pytest.raises(DataError, match="at least one"):
+    with pytest.raises(DataError, match="^factor attribution needs at least one factor$"):
         call(y, np.zeros((100, 0)), [])
+
+
+def test_error_messages_are_whole_sentences() -> None:
+    # Anchored matches: a message must say what is wrong, not merely contain a word.
+    y, x = _data(100, 2, seed=7)
+    with pytest.raises(
+        DataError, match=r"^strategy must be one-dimensional, got shape \(100, 2\)$"
+    ):
+        factor_attribution(x, x, periods_per_year=PPY, factor_names=["a", "b"])
+    with pytest.raises(DataError, match="^factors contains a missing or infinite value$"):
+        bad = x.copy()
+        bad[0, 0] = np.nan
+        factor_attribution(y, bad, periods_per_year=PPY, factor_names=["a", "b"])
+    with pytest.raises(DataError, match="^periods_per_year must be at least 1, got 0$"):
+        factor_attribution(y, x, periods_per_year=0, factor_names=["a", "b"])
+    with pytest.raises(DataError, match="^factor_names has 1 names for 2 factors$"):
+        factor_attribution(y, x, periods_per_year=PPY, factor_names=["a"])
+    with pytest.raises(DataError, match=r"^duplicate factor names: \['a', 'a'\]$"):
+        factor_attribution(y, x, periods_per_year=PPY, factor_names=["a", "a"])
+    with pytest.raises(
+        DataError, match="^strategy and factors must have equal length, got 99 and 100$"
+    ):
+        factor_attribution(y[:-1], x, periods_per_year=PPY, factor_names=["a", "b"])
+    with pytest.raises(DataError, match="^2 factors need at least 36 observations, got 30$"):
+        factor_attribution(y[:30], x[:30], periods_per_year=PPY, factor_names=["a", "b"])
+
+
+def test_one_period_per_year_is_allowed() -> None:
+    y, x = _data(100, 1, seed=5)
+    out = factor_attribution(y, x, periods_per_year=1, factor_names=["a"])
+    assert out["alpha_annual"] == pytest.approx(out["alpha_per_period"], abs=1e-15)
+
+
+def test_output_keys_counts_residual_std_and_condition_number() -> None:
+    n, k = 150, 3
+    y, x = _data(n, k, seed=14)
+    out = factor_attribution(y, x, periods_per_year=PPY, factor_names=_names(k))
+    assert set(out) == {
+        "alpha_per_period",
+        "alpha_annual",
+        "alpha_se",
+        "alpha_t",
+        "alpha_p",
+        "alpha_edge",
+        "alpha_ci95_per_period",
+        "alpha_ci95_annual",
+        "factors",
+        "r_squared",
+        "adj_r_squared",
+        "n",
+        "k",
+        "hac_lags",
+        "residual_std",
+        "condition_number",
+        "basis",
+    }
+    assert set(out["factors"][0]) == {"name", "beta", "se", "t", "p", "edge", "ci95"}
+    assert [row["name"] for row in out["factors"]] == _names(k)
+    assert (out["n"], out["k"], out["hac_lags"]) == (150, 3, 4)
+    assert out["alpha_edge"] is None
+    assert "Newey-West" in out["basis"] and "unit-length" in out["basis"]
+    design = np.column_stack([np.ones(n), x])
+    resid = y - design @ np.linalg.lstsq(design, y, rcond=None)[0]
+    assert out["residual_std"] == pytest.approx(
+        math.sqrt(float(resid @ resid) / (n - k - 1)), rel=1e-12
+    )
+    scaled = design / np.sqrt((design**2).sum(axis=0))
+    sing = np.linalg.svd(scaled, compute_uv=False)
+    assert out["condition_number"] == pytest.approx(sing[0] / sing[-1], rel=1e-10)
+    assert fa.MAX_CONDITION_NUMBER == 30.0
+
+
+def test_collinearity_with_the_constant_names_the_constant_and_spares_the_rest() -> None:
+    # A factor that is almost a constant is collinear with the intercept, not with factor 'c'.
+    y, x = _data(200, 2, seed=8)
+    rng = np.random.default_rng(10)
+    nearly_flat = 1.0 + rng.normal(0.0, 1e-5, 200)
+    design = np.column_stack([x[:, 0], nearly_flat, x[:, 1]])
+    with pytest.raises(DataError, match=r"exceeds 30.0; columns involved: \['constant', 'b'\]$"):
+        factor_attribution(y, design, periods_per_year=PPY, factor_names=["a", "b", "c"])
 
 
 def test_same_inputs_same_outputs_and_no_global_random_state() -> None:

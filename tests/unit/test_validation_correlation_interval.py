@@ -203,3 +203,45 @@ def test_same_inputs_same_outputs_and_no_global_random_state() -> None:
     two = correlation_interval(x, y)
     assert one == two
     assert np.array_equal(before, np.random.get_state(legacy=False)["state"]["key"])
+
+
+def test_error_messages_are_whole_sentences() -> None:
+    # Anchored matches: a message must say what is wrong, not merely contain a word.
+    good = [1.0, 2.0, 3.0, 4.0, 6.0]
+    with pytest.raises(DataError, match="^method must be 'pearson' or 'spearman', got 'kendall'$"):
+        correlation_interval(good, good, method="kendall")
+    with pytest.raises(DataError, match=r"^x must be one-dimensional, got shape \(5, 2\)$"):
+        correlation_interval(np.ones((5, 2)), good)
+    with pytest.raises(DataError, match="^y contains a missing or infinite value$"):
+        correlation_interval(good, [1.0, float("nan"), 3.0, 4.0, 5.0])
+    with pytest.raises(DataError, match="^x and y must have equal length, got 5 and 4$"):
+        correlation_interval(good, good[:-1])
+    with pytest.raises(DataError, match="^a correlation interval needs at least 4 pairs, got 3$"):
+        correlation_interval(good[:3], good[:3])
+    with pytest.raises(
+        DataError, match="^a series does not vary, so its correlation is undefined$"
+    ):
+        correlation_interval([2.0] * 5, good)
+
+
+def test_pearson_output_states_its_assumption_and_keys() -> None:
+    x = np.arange(12.0)
+    out = correlation_interval(x, np.sin(x))
+    assert set(out) == {"r", "z", "se_z", "ci95", "p", "edge", "n", "method", "assumption"}
+    assert out["method"] == "pearson"
+    assert out["n"] == 12
+    assert out["assumption"].startswith("independent pairs, roughly bivariate normal")
+    assert "serial correlation makes the interval too narrow" in out["assumption"]
+    assert "Spearman" not in out["assumption"]
+    assert (
+        "Spearman: Pearson on average ranks"
+        in correlation_interval(x, np.sin(x), method="spearman")["assumption"]
+    )
+
+
+def test_near_perfect_correlation_is_not_the_edge() -> None:
+    # r = 0.999999 is finite in z: an ordinary interval, not the |r| = 1 edge (bound 1e-12).
+    x, y = _pair_with_r(0.999999, 40, seed=3)
+    out = correlation_interval(x, y)
+    assert out["edge"] is None
+    assert out["z"] == pytest.approx(math.atanh(0.999999), rel=1e-6)

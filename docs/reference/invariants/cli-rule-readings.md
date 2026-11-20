@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 6ba18383ceaa46ba
+verified: 83882dc512daaaea
 ---
 
 # Command line rule-test readings invariants

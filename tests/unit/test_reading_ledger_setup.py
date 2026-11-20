@@ -339,7 +339,7 @@ def test_no_setup_study_is_ever_clear_of_chance() -> None:
 
 
 # Ids and numbers measured on origin/main with the same seeded synthetic setups.
-PINNED = {
+PINNED: dict[str, dict[str, Any]] = {
     "lift": dict(
         find="d03490186ae11b2f",
         study="e186fcb8683fb87d",

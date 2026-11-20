@@ -6,7 +6,6 @@ Self-contained (it imports only product packages) so one script can run it on tw
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -68,10 +67,3 @@ def make_find(home: Path, *, idea: str = "Volume spike", horizon: int = HORIZON)
     path = home / f"spec-{hashlib.sha256(idea.encode()).hexdigest()[:6]}-{horizon}.toml"
     path.write_text(spec_text(idea, horizon=horizon))
     return setup_cmds.run_find(path, home=home)
-
-
-def stored_numbers(folder: Path) -> dict[str, Any]:
-    """The stored summary without the added `evidence` key: what must not move."""
-    summary = json.loads((folder / "summary.json").read_text())
-    summary.pop("evidence", None)
-    return summary

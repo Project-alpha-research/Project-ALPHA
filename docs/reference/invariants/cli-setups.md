@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: b979035a00fec05f
+verified: 3ce9c18e487a4a04
 ---
 
 # Command line setup invariants

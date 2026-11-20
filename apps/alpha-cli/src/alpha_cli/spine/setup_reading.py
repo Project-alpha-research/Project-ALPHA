@@ -37,12 +37,10 @@ def family_context(home: Path, kind: str, idea: str, run_id: str) -> dict[str, A
     ids = [raw.get("run_id") for raw in raws]
     position = ids.index(run_id) + 1 if run_id in ids else len(ids)
     values = [raw.get("random_date_p") for raw in raws]
+    numbers = [float(v) for v in values if isinstance(v, (int, float)) and not isinstance(v, bool)]
     adjusted = None
-    complete = bool(values) and all(
-        isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
-    )
-    if complete:
-        adjusted = float(benjamini_hochberg([float(v) for v in values]).qvalues[position - 1])
+    if numbers and len(numbers) == len(values):  # every counted study has its stored p
+        adjusted = float(benjamini_hochberg(numbers).qvalues[position - 1])
     own = values[position - 1] if 0 < position <= len(values) else None
     return {
         "kind": kind,

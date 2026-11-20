@@ -22,7 +22,7 @@ verified: e8c675fcdb6fe821
 | [patterns.md](patterns.md) | alpha_patterns: pattern geometry, indicators | editing alpha-patterns |
 | [strategies.md](strategies.md) | alpha_strategies: signals, sizing, rule specs | editing alpha-strategies |
 | [backtest.md](backtest.md) | alpha_backtest: Nautilus harness, fees, results | editing alpha-backtest |
-| [validation.md](validation.md) | alpha_validation: statistics and gate semantics | editing alpha-validation |
+| [validation.md](validation.md), [validation-factor-statistics.md](validation-factor-statistics.md) | alpha_validation rules | editing alpha-validation |
 | [research.md](research.md) | alpha_research: phase primitives | editing alpha-research |
 | [forecast.md](forecast.md) | alpha_forecast: Kronos facade, quantile signal | editing alpha-forecast |
 | [study.md](study.md) | alpha_study: study contracts, authority projections | editing alpha-study |

@@ -365,6 +365,85 @@ class TestQuantRigorTooling:
         assert entry["kill_rate"] == round(1 / 47, 4)
         assert 5400.0 in seen_timeouts
 
+    def test_mutate_repeats_the_clean_run_until_exclusions_settle(self, repo: Path) -> None:
+        # Ignoring one staged test file can turn a test that imported it into a collection
+        # error. Only a second clean run, with the first exclusions applied, shows that.
+        rel = self._quant_module(repo, body="def value(): return 1\n")
+        (repo / "packages/alpha-validation/src/alpha_validation/__init__.py").write_text("")
+        (repo / "tests").mkdir()
+        (repo / "pyproject.toml").write_text("[tool.pytest.ini_options]\nmarkers = []\n")
+        clean_runs: list[list[str]] = []
+        outputs = [
+            "ERROR tests/unit/test_a.py - FileNotFoundError: x\n"
+            "FAILED tests/unit/test_b.py::test_one - AssertionError\n",
+            "ERROR tests/unit/test_b.py - FileNotFoundError: y\n",
+        ]
+        configs: list[str] = []
+
+        def runner(cmd: list[str], **kwargs: Any) -> tuple[bool, float, str]:
+            if "pytest" in cmd:
+                clean_runs.append(cmd)
+                done = len(clean_runs) > len(outputs)
+                return (done, 1.0, "" if done else outputs[len(clean_runs) - 1])
+            if cmd[-1] == "run":
+                configs.append((Path(kwargs["cwd"]) / "pyproject.toml").read_text())
+            return (False, 0.0, "")
+
+        _, report = harness_quant.mutate(repo, [rel], runner=runner)
+        assert len(clean_runs) == 3
+        assert "--ignore" not in clean_runs[0]
+        assert clean_runs[1][-1] == "tests" and "tests/unit/test_a.py" in clean_runs[1]
+        assert "tests/unit/test_b.py" in clean_runs[2]
+        entry = report["modules"][rel]
+        assert entry["excluded_tests"] == [
+            "tests/unit/test_a.py",
+            "tests/unit/test_b.py",
+            "tests/unit/test_b.py::test_one",
+        ]
+        # mutmut gets every exclusion, including the one only the second clean run found
+        assert configs and configs[0].count("tests/unit/test_b.py") == 2
+        assert entry["seconds"] >= 3.0
+
+    def test_mutate_stops_repeating_when_a_clean_run_finds_nothing_new(self, repo: Path) -> None:
+        rel = self._quant_module(repo, body="def value(): return 1\n")
+        (repo / "packages/alpha-validation/src/alpha_validation/__init__.py").write_text("")
+        (repo / "tests").mkdir()
+        (repo / "pyproject.toml").write_text("[tool.pytest.ini_options]\nmarkers = []\n")
+        clean_runs = 0
+
+        def runner(cmd: list[str], **kwargs: Any) -> tuple[bool, float, str]:
+            nonlocal clean_runs
+            if "pytest" in cmd:
+                clean_runs += 1
+                return (False, 1.0, "ERROR tests/unit/test_a.py - FileNotFoundError: x\n")
+            return (False, 0.0, "")
+
+        harness_quant.mutate(repo, [rel], runner=runner)
+        assert clean_runs == 2  # the second run names nothing new, so no third run
+
+    def test_mutate_still_blocks_when_the_clean_runs_never_settle(self, repo: Path) -> None:
+        # Every clean run names a new failing file: the rounds stop at the cap, mutmut still
+        # runs and fails, and the module is unavailable, which blocks under require_measured.
+        rel = self._quant_module(repo, body="def value(): return 1\n")
+        (repo / "packages/alpha-validation/src/alpha_validation/__init__.py").write_text("")
+        (repo / "tests").mkdir()
+        (repo / "pyproject.toml").write_text("[tool.pytest.ini_options]\nmarkers = []\n")
+        clean_runs = 0
+
+        def runner(cmd: list[str], **kwargs: Any) -> tuple[bool, float, str]:
+            nonlocal clean_runs
+            if "pytest" in cmd:
+                clean_runs += 1
+                return (False, 1.0, f"ERROR tests/unit/test_{clean_runs}.py - ImportError: x\n")
+            return (False, 0.0, "failed to collect stats")
+
+        code, report = harness_quant.mutate(repo, [rel], runner=runner, require_measured=True)
+        assert clean_runs == harness_quant._PREFLIGHT_ROUNDS == 4
+        assert code != 0
+        entry = report["modules"][rel]
+        assert entry["status"].startswith("unavailable:")
+        assert entry["excluded_tests"] == [f"tests/unit/test_{i}.py" for i in range(1, 5)]
+
     def test_mutate_runs_mutmut_with_single_threaded_accelerate(self, repo: Path) -> None:
         # mutmut isolates each mutant with os.fork(); Apple's Accelerate BLAS is not fork-safe
         # once its thread pool exists, so every mutant reaching numpy/scipy linear algebra is

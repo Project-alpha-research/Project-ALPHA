@@ -14,7 +14,7 @@ sources:
   - scripts/claude_hooks.py
   - pyproject.toml
   - .semgrep/alpha.yml
-verified: a8b90257013c919f
+verified: 51ba1e868da16b2f
 ---
 
 # Testing invariants
@@ -157,6 +157,8 @@ isolated workers keep their own suites. Tests must never read the guarded
   2,983 of 15,066 `alpha_research` mutants). The staged tree also carries `docs/` and all of `scripts/`
   so tests reading them run; a test that still fails only in staging is excluded, recorded in the
   report and printed in the job log, and a failing sweep job prints its error and log tails.
+  The clean run before mutmut repeats with its exclusions applied (at most four times): ignoring one
+  test file can break a test that imported it, and only the next clean run shows that.
 - `gate.py semgrep`: fail-closed Semgrep through `scripts/semgrep_runner.py`, which pins `SEMGREP_VERSION` and
   checks the installed version before every scan, with `.semgrep/alpha.yml` over
   `packages`, `apps`, `scripts` and `tests` (`--changed` for changed files). Rules ban silent `except: pass`,

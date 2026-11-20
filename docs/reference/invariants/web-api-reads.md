@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: 079a712488b955cc
+verified: fc22620b50e4eabb
 ---
 
 # Web API reads and writes invariants
@@ -56,3 +56,10 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   web adds no second bar reader. Caps: 200 assets per store (name order) and the newest 400 bars each (`MAX_ASSETS_SCANNED`, `MAX_BARS_READ`); windows
   30, 90 or 365; 1 to 30 assets. "Top" assets rank by median close times volume over the window. An asset with too few bars, or one that cannot be
   read, is listed with its reason, never dropped. Enforced by `tests/unit/test_market_overview.py` and `tests/integration/test_web_api_market.py`.
+
+## Follow today read
+
+- `GET /api/follow/today` and `GET /api/follow/{id}` relay `alpha follow today|show --json` as a subprocess (`api/follow.py`, 30 s timeout). The web
+  backend never opens the `forward/` folder ([guard](../../../tests/unit/test_follow_separation.py)). The id must match 4 to 12 lowercase hex characters
+  before any command is built. A command failure is a 409 with its text; a timeout is a 504. No route starts, updates or stops a follow.
+  Enforced by `tests/unit/test_web_follow_routes.py` and `tests/integration/test_web_api_follow.py`.

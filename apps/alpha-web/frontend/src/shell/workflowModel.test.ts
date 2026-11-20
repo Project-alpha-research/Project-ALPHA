@@ -17,7 +17,7 @@ describe('workflow navigation', () => {
         if (profile === 'equities' && ['funding', 'open-interest', 'onchain', 'dex', 'crowding'].includes(doc.id)) continue
         for (const pane of doc.panes) expect(panes).toContain(pane.name)
       }
-      expect(panes).toEqual(expect.arrayContaining(['DataManager', 'MarketWatch', 'MarketOverview', 'Navigator', 'Alerts', 'DataPulls']))
+      expect(panes).toEqual(expect.arrayContaining(['DataManager', 'MarketWatch', 'MarketOverview', 'FollowToday', 'Navigator', 'Alerts', 'DataPulls']))
     }
   })
   it('round trips page links and retains legacy run links', () => {

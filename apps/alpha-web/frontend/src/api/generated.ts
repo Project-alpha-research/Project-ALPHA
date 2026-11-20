@@ -966,6 +966,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/follow/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today
+         * @description Relay ``alpha follow today --json``: one row per active follow, in groups.
+         */
+        get: operations["today_api_follow_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/follow/{follow_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Show
+         * @description Relay ``alpha follow show <id> --json``; the id is checked as 4 to 12 hex first.
+         */
+        get: operations["show_api_follow__follow_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/investigations": {
         parameters: {
             query?: never;
@@ -7142,6 +7182,201 @@ export interface components {
             symbol: string;
             /** Timeframe */
             timeframe: string;
+        };
+        /** FollowEntryRow */
+        FollowEntryRow: {
+            /** Equity Pct */
+            equity_pct?: number | null;
+            /** Fills */
+            fills: {
+                [key: string]: unknown;
+            }[];
+            /** Kind */
+            kind: string;
+            /** Readings */
+            readings: {
+                [key: string]: number;
+            };
+            /** Replay Agrees */
+            replay_agrees?: boolean | null;
+            /** Session */
+            session: string;
+            /** Words */
+            words: string;
+        };
+        /** FollowGroup */
+        FollowGroup: {
+            /** Count */
+            count: number;
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+        };
+        /** FollowMarket */
+        FollowMarket: {
+            /** Calendar */
+            calendar: string;
+            /** Newest Closed Session */
+            newest_closed_session: string;
+        };
+        /** FollowPaper */
+        FollowPaper: {
+            /** Entry Price */
+            entry_price?: number | null;
+            /** Equity */
+            equity?: number | null;
+            /** Equity Pct */
+            equity_pct?: number | null;
+            /** Open */
+            open?: boolean | null;
+            /** Units */
+            units?: number | null;
+        };
+        /** FollowPaperSummary */
+        FollowPaperSummary: {
+            /** Closed Trades */
+            closed_trades?: number | null;
+            /** Entry Price */
+            entry_price?: number | null;
+            /** Equity */
+            equity?: number | null;
+            /** Equity Pct */
+            equity_pct?: number | null;
+            /** Fees */
+            fees?: number | null;
+            /** Highest */
+            highest?: number | null;
+            /** Largest Fall Pct */
+            largest_fall_pct?: number | null;
+            /** Lowest */
+            lowest?: number | null;
+            /** Marked Sessions */
+            marked_sessions?: number | null;
+            /** Start */
+            start?: number | null;
+            /** Units */
+            units?: number | null;
+        };
+        /** FollowRecord */
+        FollowRecord: {
+            /** Assets */
+            assets: string[];
+            /** Card Id */
+            card_id: string;
+            /** Follow Id */
+            follow_id: string;
+            /** Kind */
+            kind: string;
+            /** Paper Account Percent */
+            paper_account_percent: number;
+            /** Source Id */
+            source_id: string;
+            /** Spec Sha256 */
+            spec_sha256: string;
+            /** Started At */
+            started_at: string;
+            /** Supersedes */
+            supersedes: string;
+            /** Version */
+            version: number;
+        };
+        /** FollowReplay */
+        FollowReplay: {
+            /** Agrees */
+            agrees: boolean;
+            /** Checked */
+            checked: number;
+            /** Differences */
+            differences: components["schemas"]["FollowReplayDifference"][];
+        };
+        /** FollowReplayDifference */
+        FollowReplayDifference: {
+            /** Detail */
+            detail: string;
+            /** Session */
+            session: string;
+            /** What */
+            what: string;
+        };
+        /** FollowRow */
+        FollowRow: {
+            /** As Of Text */
+            as_of_text: string;
+            /** Asset */
+            asset: string;
+            /** Behind */
+            behind: boolean;
+            /** Calendar */
+            calendar?: string | null;
+            /** Card Id */
+            card_id?: string | null;
+            /** Decision */
+            decision: string;
+            /** Entry Kind */
+            entry_kind: string;
+            /** Follow Id */
+            follow_id: string;
+            /** Group */
+            group: string;
+            /** Kind */
+            kind?: string | null;
+            /** Name */
+            name: string;
+            paper: components["schemas"]["FollowPaper"];
+            /** Readings */
+            readings: {
+                [key: string]: number;
+            };
+            /** Session Date */
+            session_date?: string | null;
+            /** Sessions Ago */
+            sessions_ago?: number | null;
+            /** Started At */
+            started_at?: string | null;
+        };
+        /** FollowShow */
+        FollowShow: {
+            /** Entries */
+            entries: {
+                [key: string]: number;
+            };
+            /** Head */
+            head: string;
+            /** Long At Start */
+            long_at_start: boolean;
+            paper: components["schemas"]["FollowPaperSummary"];
+            /** Reading */
+            reading: string;
+            /** Recent */
+            recent: components["schemas"]["FollowEntryRow"][];
+            record: components["schemas"]["FollowRecord"];
+            replay?: components["schemas"]["FollowReplay"] | null;
+            /** State */
+            state: string;
+            /** Stop Reason */
+            stop_reason: string;
+            /** Waiting For First Bar */
+            waiting_for_first_bar: boolean;
+        };
+        /** FollowToday */
+        FollowToday: {
+            /** As Of */
+            as_of: string;
+            /** Behind */
+            behind: number;
+            /** Followed */
+            followed: number;
+            /** Groups */
+            groups: components["schemas"]["FollowGroup"][];
+            /** Markets */
+            markets: components["schemas"]["FollowMarket"][];
+            /** Notice */
+            notice: string;
+            /** Paper */
+            paper: boolean;
+            /** Rows */
+            rows: components["schemas"]["FollowRow"][];
         };
         /** ForecastHistoryBar */
         ForecastHistoryBar: {
@@ -15306,6 +15541,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceRecord"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    today_api_follow_today_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowToday"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    show_api_follow__follow_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                follow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowShow"];
                 };
             };
             /** @description Stable, redacted Workstation error */

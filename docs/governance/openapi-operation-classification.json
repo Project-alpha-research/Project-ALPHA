@@ -408,6 +408,20 @@
     },
     {
       "method": "GET",
+      "mode": "automatic",
+      "operation_id": "today_api_follow_today_get",
+      "path": "/api/follow/today",
+      "reason": "Safe read exercised against an isolated temporary store."
+    },
+    {
+      "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "show_api_follow__follow_id__get",
+      "path": "/api/follow/{follow_id}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
+      "method": "GET",
       "mode": "fixture_backed",
       "operation_id": "listing_api_investigations_get",
       "path": "/api/investigations",

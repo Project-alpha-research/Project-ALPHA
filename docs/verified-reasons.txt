@@ -11,7 +11,7 @@ apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
 
 apps/alpha-web/CONTEXT.md
-  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
+  verified cb51a11b4db4c805 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
 
 apps/alpha-web/README.md
   verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
@@ -77,13 +77,13 @@ docs/reference/invariants/web-api-reads.md
   verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
 
 docs/reference/invariants/web-api.md
-  verified 6450efff0c234991 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified f0f5f80574c76c03 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
 
 docs/reference/invariants/web-frontend.md
   verified 70b93826df280038 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
 
 docs/reference/invariants/web-run-detail.md
-  verified 3d1fcf5acb501da8 on 2026-11-19: Change adds a read-only checks section and route; this document's text stays correct.
+  verified 7614f54c171788a6 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged

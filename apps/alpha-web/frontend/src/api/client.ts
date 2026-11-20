@@ -96,6 +96,8 @@ import type {
   AgentBrief,
   Candles,
   MarketOverview,
+  FollowToday,
+  FollowShow,
   ChartOverlays,
   RuleList,
   RuleRecord,
@@ -474,6 +476,8 @@ export const api = {
   symbols: (): Promise<{ symbols: string[] }> => getJSON('/api/symbols'),
   marketOverview: (store: string, window: number, limit = 15): Promise<MarketOverview> =>
     getJSON(`/api/market/overview?${new URLSearchParams({ store, window: String(window), limit: String(limit) })}`),
+  followToday: (): Promise<FollowToday> => getJSON('/api/follow/today'),
+  followShow: (id: string): Promise<FollowShow> => getJSON(`/api/follow/${encodeURIComponent(id)}`),
   firstBar: (symbol: string, exchange: string): Promise<FirstBar> =>
     getJSON(
       `/api/data/first-bar?symbol=${encodeURIComponent(symbol)}&exchange=${encodeURIComponent(exchange)}`,

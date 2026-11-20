@@ -90,11 +90,11 @@ def test_reference_read_limits(tmp_path: Path) -> None:
     assert got.vintage == "2026.10"
     # (b) nothing at or after the held-back boundary, December 2023 is still before it.
     assert max(months) == date(2023, 12, 31)
-    # (c) nothing after the run's own data end: June 2022 is the last month of this run.
+    # (c) no month ending after the last day: June 2022 ends after 15 June, so May is last.
     early = read_reference_for_period(
         tmp_path, first_day=date(2012, 1, 2), last_day=date(2022, 6, 15)
     )
-    assert max(early.rows["month"].to_list()) == date(2022, 6, 30)
+    assert max(early.rows["month"].to_list()) == date(2022, 5, 31)
     assert min(early.rows["month"].to_list()) == date(2012, 1, 31)
 
 

@@ -31,6 +31,8 @@ InputKind = Literal[
     "reference_factors",
 ]
 Value = float | str | None
+# Every result built from the "reference_factors" input carries this label (the runner adds it).
+REFERENCE_LABEL = "reference-series-known-later"
 
 
 @dataclass(frozen=True)
@@ -109,6 +111,10 @@ class ToolSpec:
             raise ValueError("gate must be frozen, stored and parameter-free")
         if self.look == "search" and self.evaluations is None:
             raise ValueError("search requires evaluations")
+        if "reference_factors" in self.needs and (
+            (self.kind, self.look, self.time_safety) != ("diagnostic", "describe", "hindsight")
+        ):
+            raise ValueError("reference factors are for descriptive hindsight diagnostics only")
         if self.time_safety != "order_free" and not self.poison_test:
             raise ValueError("ordered inputs require a poison test")
         keys = {o.key for o in self.outputs}

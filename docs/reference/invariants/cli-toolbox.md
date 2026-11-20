@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: 2e8bd9127eae3cee
+verified: 91a23fece9fa0375
 ---
 
 # Command line toolbox
@@ -78,8 +78,10 @@ test's own period although those series became public later (owner, 2026-11-20).
 period. This is a description of the result made later, not something the strategy could have used." Strategy inputs
 keep the strict known-at rule. The one read helper is `read_reference_for_period` in `toolbox/reference.py`. It takes
 the newest stored vintage and names it, never returns a month at or after the held-back date, and never returns a month
-after the month of the run's last data day. `tests/unit/test_reference_read_structural_guard.py` fails if any module
-outside the toolbox entry imports or calls it (strategies, engine, rule-test run, Setup Lab, hypothesis scan, RD-Agent).
+whose end is after the run's last scored date. Only a descriptive hindsight diagnostic may declare the
+`reference_factors` input, and the runner labels each of its results. `tests/unit/test_reference_read_structural_guard.py`
+fails if any other module imports the helper's module or names the helper, under any alias; `toolbox/inputs.py` may
+import only the vintage fingerprint for the cache key.
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a
 reason. Commands: `alpha tool list` (filter by `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`,

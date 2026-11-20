@@ -24,7 +24,16 @@ BASIS = (
 )
 CAUTION = (
     "A clear exposure to a factor is not evidence of an edge, a low explained share does not "
-    "show an edge either, and the ranges are too narrow when months are few."
+    "show an edge either, and the ranges are too narrow when months are few. The published factor "
+    "returns are paper portfolios before trading costs."
+)
+NOT_STOCKS = (
+    "This run trades a US fund. If the fund holds no stocks, for a bond or commodity fund these "
+    "stock factors mean little."
+)
+ONE_AT_A_TIME = (
+    "The factors are too similar in this period to read together, so each factor is read alone, "
+    "one factor at a time; these exposures overlap and must not be added up."
 )
 NOT_US = (
     "Not applicable: these reference factors are US stock factors, and the stored data for "
@@ -79,26 +88,35 @@ def search(
         except DataError:
             continue
         rows.append({"signal": signal, "published_year": years[signal], **ci})
+    excluded = len(by_signal) - len(rows)
+    label = f"search across all {len(rows)} — exploratory"
+    left = f" ({excluded} left out: missing months or no variation)" if excluded else ""
+    found: dict[str, Any] = {
+        "label": label,
+        "statement": SEARCH_STATEMENT,
+        "compared": len(rows),
+        "excluded": excluded,
+        "top": [],
+    }
+    if not rows:
+        found["sentence"] = f"No signal could be compared{left}."
+        return found
     adjusted = benjamini_hochberg([row["p"] for row in rows]).qvalues.tolist()
     for row, q in zip(rows, adjusted, strict=True):
         row["q"] = float(q)
     top = sorted(rows, key=lambda row: (-abs(row["r"]), row["signal"]))[:3]
-    label = f"search across all {len(by_signal)} — exploratory"
     shown = "; ".join(
-        f"{row['signal']} (published {row['published_year']}) r {row['r']:.2f}, 95% range "
-        f"{row['ci95'][0]:.2f} to {row['ci95'][1]:.2f}, adjusted p {row['q']:.3f}"
+        f"{row['signal']} (published {row['published_year']}) r {row['r']:.2f}"
+        + (" (a perfect correlation)" if row["edge"] == "perfect_correlation" else "")
+        + f", 95% range {row['ci95'][0]:.2f} to {row['ci95'][1]:.2f}, adjusted p {row['q']:.3f}"
         for row in top
     )
-    return {
-        "label": label,
-        "statement": SEARCH_STATEMENT,
-        "compared": len(rows),
-        "top": [
-            {k: row[k] for k in ("signal", "published_year", "r", "ci95", "p", "q", "n", "edge")}
-            for row in top
-        ],
-        "sentence": f"{label[0].upper()}{label[1:]}: {shown}. {SEARCH_STATEMENT}",
-    }
+    found["top"] = [
+        {k: row[k] for k in ("signal", "published_year", "r", "ci95", "p", "q", "n", "edge")}
+        for row in top
+    ]
+    found["sentence"] = f"{label[0].upper()}{label[1:]}{left}: {shown}. {SEARCH_STATEMENT}"
+    return found
 
 
 def singles(strategy: list[float], matrix: Any, names: list[str]) -> list[dict[str, Any]]:

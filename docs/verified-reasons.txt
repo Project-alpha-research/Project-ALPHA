@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 9a4959204bb2d95e on 2026-11-20: Text still correct; the toolbox gained one entry and its inputs.
+  verified 249fe77d00c94a15 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 apps/alpha-cli/README.md
-  verified 9a4959204bb2d95e on 2026-11-20: Text still correct; the toolbox gained one entry and its inputs.
+  verified 249fe77d00c94a15 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -26,7 +26,7 @@ docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 23b19345f24a881d on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -47,7 +47,7 @@ docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -143,7 +143,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 6e50723dd06584df on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
 docs/reference/project/components/toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/project/components/validation-and-evidence.md
   verified 5b5ad43ef89ac24d on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -250,6 +250,9 @@ research/tools/nightly-run.md
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
+research/tools/published-factors.md
+  verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+
 research/tools/random-price-null.md
   verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
 
@@ -281,7 +284,7 @@ research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/toolbox-by-situation.md
-  verified 580a02185f5e2d2c on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 0c170e67999d429a on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

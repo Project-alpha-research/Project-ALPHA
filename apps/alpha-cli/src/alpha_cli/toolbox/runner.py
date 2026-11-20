@@ -11,7 +11,7 @@ from alpha_cli.spine.errors import SpineError, tool_error
 from alpha_cli.spine.ledger import append_trial
 from alpha_cli.spine.stores import _stores
 from alpha_cli.toolbox import declarations, inputs, store
-from alpha_cli.toolbox.contract import ToolSpec
+from alpha_cli.toolbox.contract import REFERENCE_LABEL, ToolSpec
 from alpha_cli.toolbox.registry import get
 
 
@@ -122,6 +122,7 @@ def run(
                         *base["labels"],
                         *series.reserve_labels(),
                         *result.labels,
+                        *([REFERENCE_LABEL] if "reference_factors" in spec.needs else []),
                         declared,
                     ]
                 )

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - tests/unit/test_toolbox_*.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
-verified: 2e8bd9127eae3cee
+verified: 91a23fece9fa0375
 ---
 
 # Toolbox

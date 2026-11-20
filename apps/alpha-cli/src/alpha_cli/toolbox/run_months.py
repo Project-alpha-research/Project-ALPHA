@@ -89,14 +89,17 @@ def bar_dates(home: Path, target: Target) -> list[date]:
     return [stamp.date() for stamp in stamps["ts"].sort().to_list()]
 
 
-def us_stock_identity(home: Path, target: Target) -> bool | None:
-    """True for a US stock or ETF by the stored dataset identity; None when none is recorded."""
+def us_asset_class(home: Path, target: Target) -> str | None:
+    """ "stock" or "etf" for a US listing by the stored dataset identity, "other" for anything else,
+    None when no identity is recorded."""
     resolved = _resolved(home, target)
     provenance = resolved.daily_store().read_provenance(target.manifest["metadata"]["symbol"])
     dataset = provenance.get("dataset") if provenance else None
     if not isinstance(dataset, dict):
         return None
-    return dataset.get("asset_class") in US_ASSET_CLASSES and dataset.get("venue") == "US"
+    kind = dataset.get("asset_class")
+    us = kind in US_ASSET_CLASSES and dataset.get("venue") == "US"
+    return str(kind) if us else "other"
 
 
 def scored_monthly(home: Path, target: Target) -> MonthlyReturns:

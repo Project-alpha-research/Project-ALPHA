@@ -11,8 +11,10 @@ from alpha_cli.toolbox.published_parts import (
     CAUTION,
     FIXED,
     MONTHLY,
+    NOT_STOCKS,
     NOT_US,
     NUMBERS,
+    ONE_AT_A_TIME,
     UNKNOWN,
     exposures,
     search,
@@ -20,7 +22,7 @@ from alpha_cli.toolbox.published_parts import (
     singles,
 )
 from alpha_cli.toolbox.reference import LABEL, SENTENCE, read_reference_for_period
-from alpha_cli.toolbox.run_months import scored_monthly, us_stock_identity
+from alpha_cli.toolbox.run_months import scored_monthly, us_asset_class
 
 if TYPE_CHECKING:
     from numpy.random import Generator
@@ -44,15 +46,16 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
     from alpha_validation.factor_attribution import factor_attribution, min_observations
 
     home, target = inputs.data_home, inputs.stored
-    identity = us_stock_identity(home, target)
-    if identity is not True:
+    asset_class = us_asset_class(home, target)
+    if asset_class not in {"stock", "etf"}:
         branch, sentence = (
-            ("not-applicable", NOT_US) if identity is False else ("unknown-asset", UNKNOWN)
+            ("unknown-asset", UNKNOWN) if asset_class is None else ("not-applicable", NOT_US)
         )
         return _typed(branch, sentence, {"periods_per_year": MONTHLY})
+    fund = f" {NOT_STOCKS}" if asset_class == "etf" else ""
     monthly = scored_monthly(home, target)
     reference = read_reference_for_period(
-        home, first_day=monthly.first_day, last_day=target.last_ts.date()
+        home, first_day=monthly.first_day, last_day=monthly.last_day
     )
     by_signal, years = series_by_signal(reference.rows)
     absent = [name for name, _ in FIXED if name not in by_signal]
@@ -98,11 +101,7 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
                 "Cannot read: factors too similar in this period.",
                 details,
             )
-        text = (
-            f"The factors are too similar in this period to read together ({exc}). Each factor "
-            "alone is in the details; the exposures overlap and cannot be added. "
-            + found["sentence"]
-        )
+        text = f"{ONE_AT_A_TIME} Each one is in the details. {CAUTION}{fund} {found['sentence']}"
         return _typed("collinear-singles", text, details)
     labels = dict(FIXED)
     factors = [
@@ -124,7 +123,7 @@ def published_factors(inputs: Inputs, params: dict[str, Any], rng: Generator | N
         f"{fit['adj_r_squared']:.0%}). "
         f"The part not explained by them is {fit['alpha_per_period']:.2%} a month (95% range "
         f"{low:.2%} to {high:.2%}), or {fit['alpha_annual']:.1%} a year, over {fit['n']} months. "
-        f"{exposures(factors)} {CAUTION} {found['sentence']}"
+        f"{exposures(factors)} {CAUTION}{fund} {found['sentence']}"
     )
     values: dict[str, Value] = {
         "explained_share": fit["r_squared"],

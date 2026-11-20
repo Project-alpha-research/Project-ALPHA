@@ -50,6 +50,19 @@ def _parse_axes(axes: list[str] | None) -> dict[str, list[float]]:
     return grid
 
 
+def _selection_line(result: _optim.OptimResult, dsr_threshold: float, alpha: float) -> str:
+    """Selection numbers with the plain comparison, then the levels of the old grade."""
+    assert result.dsr is not None and result.pbo is not None
+    assert result.spa is not None and result.reality_check is not None
+    side = "at least" if result.dsr.dsr >= dsr_threshold else "below"
+    return (
+        f"  deflated Sharpe {result.dsr.dsr:.3f} is {side} {dsr_threshold:g}; "
+        f"PBO {result.pbo.pbo:.3f}; SPA p {result.spa.p_value:.3f}; "
+        f"RC p {result.reality_check.p_value:.3f}. The level used by the old grade: "
+        f"deflated Sharpe at least {dsr_threshold:g}, PBO at most 0.5, SPA p at most {alpha:g}."
+    )
+
+
 @optim_app.command()
 def grid(
     symbol: str,
@@ -191,10 +204,9 @@ def grid(
     manifest.update(identity.manifest_fields())
     _artifacts.write_manifest(rdir, manifest)
 
-    verdict = "PASS" if result.passed else "FAIL"
     lines = [
-        f"optim {symbol} -> run {run_id}: {verdict} over {result.n_configs} declared configs "
-        f"({result.n_successful_configs} successful)"
+        f"optim {symbol} -> run {run_id}: {result.n_configs} declared configs "
+        f"({result.n_successful_configs} successful)",
     ]
     if result.best_config is not None and result.best_sharpe is not None:
         best = ", ".join(f"{key}={value:g}" for key, value in result.best_config)
@@ -205,10 +217,11 @@ def grid(
         and result.spa is not None
         and result.reality_check is not None
     ):
+        # The line states the numbers and the plain comparison. The old grade's levels are
+        # named after them, not applied: the manifest still carries `passed` for machines.
+        # `--dsr-threshold` and `--alpha` still set the levels that field uses.
         lines.append(
-            f"  deflated Sharpe {result.dsr.dsr:.3f} "
-            f"(>= {dsr_threshold}? {result.dsr.passed}); PBO {result.pbo.pbo:.3f}; "
-            f"SPA p {result.spa.p_value:.3f}; RC p {result.reality_check.p_value:.3f}"
+            _selection_line(result, dsr_threshold, alpha),
         )
     if result.analysis_error is not None:
         lines.append(f"  analysis failure: {result.analysis_error}")
@@ -440,11 +453,12 @@ def mcpt(
     _artifacts.write_manifest(rdir, manifest)
 
     best = ", ".join(f"{key}={value:g}" for key, value in result.observed_config)
+    side = "at least" if null.percentile >= threshold else "below"
     typer.echo(
-        f"optim {symbol} -> run {run_id}: {'PASS' if null.passed else 'FAIL'} "
-        f"(in-sample MCPT p {null.p_value:.3f}, percentile {null.percentile:.2f} over "
-        f"{perms} permutations; best {best}, in-sample Sharpe {null.observed:.3f}); "
-        f"overfit test only, not OOS evidence; manifest at {rdir / 'manifest.json'}"
+        f"optim {symbol} -> run {run_id}: in-sample MCPT p {null.p_value:.3f}, percentile "
+        f"{null.percentile:.2f} is {side} {threshold:g} over {perms} permutations; best {best}, "
+        f"in-sample Sharpe {null.observed:.3f}. The level used by the old grade: percentile at "
+        f"least {threshold:g}. Overfit test only, not OOS evidence; manifest at {rdir / 'manifest.json'}"
     )
     if held.say():
         typer.echo(held.say())

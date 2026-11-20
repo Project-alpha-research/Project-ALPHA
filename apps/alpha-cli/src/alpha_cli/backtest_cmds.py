@@ -47,6 +47,22 @@ def _holdout_date(value: str, label: str) -> date:
     return parsed
 
 
+def _holdout_line(
+    symbol: str, run_id: str, sharpe: float | None, sessions: int, min_sharpe: float
+) -> str:
+    """The locked-holdout line: the number, the plain comparison and the level of the old grade."""
+    if sharpe is None:
+        found = f"Sharpe unavailable over {sessions} sessions."
+    else:
+        side = "at or above" if sharpe >= min_sharpe else "below"
+        found = (
+            f"Sharpe {sharpe:.3f} over {sessions} sessions is {side} {min_sharpe:g}, "
+            "the minimum Sharpe set for this run."
+        )
+    old = f"The level used by the old grade: Sharpe at least {min_sharpe:g}."
+    return f"locked holdout {symbol} -> run {run_id}: {found} {old}"
+
+
 @backtest_app.command()
 def holdout(
     symbol: str,
@@ -218,11 +234,11 @@ def holdout(
         trace_result=scoped,
         periods_per_year=periods_per_year,
     )
-    verdict = "PASS" if passed else "FAIL"
-    typer.echo(
-        f"locked holdout {symbol} -> run {run_id}: {verdict}, "
-        f"Sharpe {sharpe if sharpe is not None else 'unavailable'} over {len(equity)} sessions"
-    )
+    line = _holdout_line(symbol, run_id, sharpe, len(equity), min_sharpe)
+    # The line states the number and the plain comparison.
+    # The old grade's level is named after them, not applied: the manifest keeps `passed`
+    # for machines, and `--min-sharpe` still sets the level that field uses.
+    typer.echo(line)
 
 
 @backtest_app.command()

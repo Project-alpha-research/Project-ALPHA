@@ -69,7 +69,7 @@ def test_optim_cli_publishes_ledger_when_only_one_config_succeeds(
     )
 
     assert result.exit_code == 0, result.output
-    assert "FAIL over 2 declared configs (1 successful)" in result.output
+    assert "2 declared configs (1 successful)" in result.output
     (rdir,) = list((tmp_path / "optim").iterdir())
     manifest = json.loads((rdir / "manifest.json").read_text())
     assert manifest["passed"] is False
@@ -133,7 +133,7 @@ def test_optim_cli_publishes_machine_readable_result_when_every_config_fails(
     )
 
     assert result.exit_code == 0, result.output
-    assert "FAIL over 2 declared configs (0 successful)" in result.output
+    assert "2 declared configs (0 successful)" in result.output
     (rdir,) = list((tmp_path / "optim").iterdir())
     manifest = json.loads((rdir / "manifest.json").read_text())
     assert manifest["analysis_status"] == "failed"

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/tool_cmds.py
   - apps/alpha-cli/src/alpha_cli/_rdagent_checks.py
   - tests/unit/test_toolbox_*.py
-verified: 91a23fece9fa0375
+verified: a4d03b98723d2851
 ---
 
 # Command line toolbox
@@ -82,6 +82,14 @@ whose end is after the run's last scored date. Only a descriptive hindsight diag
 `reference_factors` input, and the runner labels each of its results. `tests/unit/test_reference_read_structural_guard.py`
 fails if any other module imports the helper's module or names the helper, under any alias; `toolbox/inputs.py` may
 import only the vintage fingerprint for the cache key.
+
+A descriptive reading that applies only to US stocks and funds decides this from the stored dataset identity. Older
+stores record no identity, only the source name. For them `us_asset_class` in `toolbox/run_months.py` infers a
+US-listed stock or fund when the source is a stock source (`EQUITY_PROVIDERS`) and every stored bar date is a session
+of the US equity calendar (XNYS). The result carries the label `asset-kind-inferred-from-calendar` and the sentence
+"This data set does not record what kind of asset it is. It was traded on a US stock exchange calendar, so it is
+treated as a US-listed stock or fund." The fund caution is always printed for it. A crypto source is not applicable;
+anything else is "cannot tell". The ticker text is never read. The entry's version is part of the result's key.
 
 Each stored file's hash is part of the result's key, and a value that cannot be measured is "unavailable" with a
 reason. Commands: `alpha tool list` (filter by `--for <run>`, `--search`, `--family`, `--kind`), `describe`, `run`,

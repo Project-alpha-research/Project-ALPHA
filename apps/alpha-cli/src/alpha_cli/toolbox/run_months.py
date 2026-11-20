@@ -89,17 +89,42 @@ def bar_dates(home: Path, target: Target) -> list[date]:
     return [stamp.date() for stamp in stamps["ts"].sort().to_list()]
 
 
-def us_asset_class(home: Path, target: Target) -> str | None:
-    """ "stock" or "etf" for a US listing by the stored dataset identity, "other" for anything else,
-    None when no identity is recorded."""
+def us_asset_class(home: Path, target: Target) -> tuple[str | None, str]:
+    """The asset kind and what it rests on: ("stock" | "etf" | "other" | None, basis).
+
+    1. A stored dataset identity decides alone (basis "identity").
+    2. Legacy provenance carries only the source name, so the kind is inferred (basis "calendar")
+       when the source is an equity source and every stored bar date is a session of the US
+       equity calendar (XNYS; XNAS has the same session days). A 24/7 market has weekend bars and
+       fails this. The ticker text is never read. The inferred kind is "etf", so the fund
+       caution is always printed.
+    3. A crypto source is "other"; anything else is None (cannot tell).
+    """
+    from alpha_cli.spine.setup_costs import CRYPTO_PROVIDERS, EQUITY_PROVIDERS
+
     resolved = _resolved(home, target)
     provenance = resolved.daily_store().read_provenance(target.manifest["metadata"]["symbol"])
     dataset = provenance.get("dataset") if provenance else None
-    if not isinstance(dataset, dict):
-        return None
-    kind = dataset.get("asset_class")
-    us = kind in US_ASSET_CLASSES and dataset.get("venue") == "US"
-    return str(kind) if us else "other"
+    if isinstance(dataset, dict):
+        kind = dataset.get("asset_class")
+        us = kind in US_ASSET_CLASSES and dataset.get("venue") == "US"
+        return (str(kind) if us else "other"), "identity"
+    if not provenance:
+        return None, "none"
+    parts = set(str(provenance["source"]).lower().split(":"))
+    if parts & CRYPTO_PROVIDERS:
+        return "other", "none"
+    days = bar_dates(home, target)
+    if parts & EQUITY_PROVIDERS and days and set(days) <= set(_us_sessions(days[0], days[-1])):
+        return "etf", "calendar"
+    return None, "none"
+
+
+def _us_sessions(first: date, last: date) -> list[date]:
+    from alpha_data.sessions import daily_session_closes
+
+    # Unlike sessions_between, this builds the calendar from the first date, so old bars work.
+    return sorted(daily_session_closes("XNYS", first, last))
 
 
 def scored_monthly(home: Path, target: Target) -> MonthlyReturns:

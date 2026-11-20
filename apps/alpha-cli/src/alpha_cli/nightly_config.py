@@ -21,6 +21,7 @@ class NightlyConfig:
     post_tools: tuple[str, ...] = ()
     rdagent_config: Path | None = None
     rdagent_timeout: float = 14400.0
+    source: Path | None = None  # the file this was read from; not a setting
 
 
 KEYS = (
@@ -85,4 +86,5 @@ def load_config(path: Path) -> NightlyConfig:
         post_tools=_strings(table.get("post_tools", []), "post_tools"),
         rdagent_config=_file(rdagent, "rdagent_config", base) if rdagent else None,
         rdagent_timeout=_seconds(table, "rdagent_timeout_seconds", 14400.0),
+        source=path.resolve(),
     )

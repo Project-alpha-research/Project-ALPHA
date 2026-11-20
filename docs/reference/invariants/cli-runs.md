@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 79af434cb54de18f
+verified: de5d0feaaf793bbd
 ---
 
 # Command line runs invariants
@@ -193,6 +193,8 @@ Moved to [cli-setups.md § Setup trade](cli-setups.md#setup-trade).
 - Nightly tests are counted trials like any other. The run never hides a label and never passes `--accept-bad-data`.
 - Data health reads the saved report first (`--stored`). A new report changes the test identity,
   so it is computed only when none is saved or it is out of date.
-- "Ready" means two full runs in a row with no blocking defect. A partial `--only` run never counts and never breaks the streak.
+- Each step has `evidence`: `computed`, `reused` (the command printed `repeat`) or `unknown`; old records read `unknown` and are never rewritten.
+  A record has `paths_run` (N3 off is not run); `full` needs all three paths.
+- `nightly_status.readiness` decides "ready": two latest non-partial runs, two UTC dates, no blocking defect, all paths, computed work.
 - The command installs no schedule. It prints one crontab line. N3 runs only when `rdagent_config` is set.
   It calls `alpha rdagent run --config <file>` unchanged and adds no cap.

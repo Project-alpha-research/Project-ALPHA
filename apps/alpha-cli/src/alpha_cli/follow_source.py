@@ -6,12 +6,20 @@ on purpose, as `alpha scan check` does; a research command never takes this path
 
 from __future__ import annotations
 
+import importlib
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
-from alpha_core import DataError
+from alpha_cli.spine.spec import IdeaSpec
+from alpha_core import Bar, DataError
+
+# A daily bar is known by the close of its session day; days older than this need no lookup.
+KNOWN_MARGIN = timedelta(days=7)
 
 
 def refuse(code: str, message: str, next_step: str) -> SpineError:
@@ -95,3 +103,113 @@ def latest_bar_hashes(home: Path, assets: list[str]) -> dict[str, str]:
             ) from exc
         hashes[asset] = source_fingerprint([bars[-1]])
     return hashes
+
+
+def frozen_idea(home: Path, source_id: str, spec_sha256: str) -> IdeaSpec:
+    """The stored spec of a followed rule test. Refused unless it still has the frozen hash."""
+    from alpha_cli.run_store import find_run_dir
+
+    folder = find_run_dir(home, source_id)
+    raw: dict[str, Any] = {}
+    idea: IdeaSpec | None = None
+    found = ""
+    try:
+        if folder is None:
+            raise ValueError("the run folder is gone")
+        raw = json.loads((folder / "spec.json").read_text(encoding="utf-8"))
+        idea = IdeaSpec.model_validate({k: v for k, v in raw.items() if k != "spec_sha256"})
+        found = idea.spec_sha256
+    except (OSError, ValueError, TypeError) as exc:
+        found = f"unreadable ({type(exc).__name__})"
+    if idea is None or found != spec_sha256 or raw.get("spec_sha256") != spec_sha256:
+        raise refuse(
+            "FOLLOW_SPEC_CHANGED",
+            f"The stored spec of rule test {source_id} no longer matches the frozen hash "
+            f"{spec_sha256[:12]}. Its source changed or is gone.",
+            "Do not edit stored runs. Start a new follow from a rule test that still verifies.",
+        )
+    return idea
+
+
+def forward_bars(home: Path, asset: str, now: datetime) -> tuple[list[Bar], str | None]:
+    """The stored bars of `asset` known at `now`, and the market calendar (None: trades daily).
+
+    Forward use reads up to the clock on purpose, as `follow start` does. A bar counts only once
+    it has closed: `as_of=now` plus an explicit `bar_known_at` check. A research command never
+    takes this path, and no research cut-off helper is changed.
+    """
+    from alpha_cli import _runner
+    from alpha_cli.spine.stores import resolve_asset
+    from alpha_data.sessions import bar_known_at
+    from alpha_data.timeframe import DAILY
+
+    resolved = resolve_asset(asset, data_dir=home)
+    try:
+        bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=now)
+    except DataError as exc:
+        raise refuse(
+            "FOLLOW_NO_BARS",
+            f"Cannot read stored bars for {asset}: {exc}",
+            "Store bars for the asset first.",
+        ) from exc
+    calendar = market_calendar(home, asset) or None
+    # Only a bar of the last days can still be open. Older warm-up bars need no calendar lookup.
+    recent = now - KNOWN_MARGIN
+    with calendar_guard(calendar, now.date()):
+        known = [
+            b
+            for b in bars
+            if b.ts < recent or bar_known_at(b.ts, timeframe=DAILY, calendar=calendar) <= now
+        ]
+    return known, calendar
+
+
+def calendar_range(calendar: str) -> tuple[date, date]:
+    """The first and last session the exchange calendar `calendar` supports."""
+    xcals = importlib.import_module("exchange_calendars")
+    found = xcals.get_calendar(calendar)
+    return found.first_session.date(), found.last_session.date()
+
+
+@contextmanager
+def calendar_guard(calendar: str | None, day: date) -> Iterator[None]:
+    """Turn a calendar lookup outside the library's range into a plain-words refusal."""
+    try:
+        yield
+    except (ValueError, DataError) as exc:
+        if calendar is None:
+            raise
+        first, last = calendar_range(calendar)
+        if first <= day <= last:
+            raise
+        raise refuse(
+            "FOLLOW_CALENDAR_RANGE",
+            f"the market calendar {calendar} has no sessions for {day}; "
+            f"supported range {first} to {last}",
+            "Follow a market the calendar covers, or update the exchange-calendars library.",
+        ) from exc
+
+
+def market_calendar(home: Path, asset: str) -> str:
+    """The exchange calendar of the stored daily bars of `asset`; "" for a market that trades
+    every day. `follow start` seals it in the start entry: only that sets the journal deadlines."""
+    from alpha_cli import _runner
+    from alpha_cli.spine.stores import resolve_asset
+    from alpha_data.timeframe import DAILY
+
+    resolved = resolve_asset(asset, data_dir=home)
+    try:
+        found = _runner._bar_store(
+            resolved.symbol,
+            data_dir=resolved.data_dir,
+            snapshot_id=None,
+            stored=DAILY,
+            session=None,
+        )[1]
+    except DataError as exc:
+        raise refuse(
+            "FOLLOW_NO_BARS",
+            f"Cannot read stored bars for {asset}: {exc}",
+            "Store bars for the asset first.",
+        ) from exc
+    return str(found or "")

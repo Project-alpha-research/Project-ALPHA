@@ -11,7 +11,7 @@ apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified ede5985947d74476 on 2026-11-20: routing unchanged; frontend sources gained Gates charts
+  verified 91c14de2f0adf148 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
 
 apps/alpha-web/README.md
   verified ede5985947d74476 on 2026-11-20: added Gates chart code map line
@@ -80,10 +80,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified d597b8b951c3a91e on 2026-11-20: docstring wording only in a source; text already correct
+  verified b1eab352c6727b12 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
 
 docs/reference/invariants/web-api.md
-  verified 6098cb454691d1fd on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
+  verified 00cfd54c31d889e6 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
 
 docs/reference/invariants/web-frontend.md
   verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail

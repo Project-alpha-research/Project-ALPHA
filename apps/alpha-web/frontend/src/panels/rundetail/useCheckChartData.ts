@@ -12,11 +12,24 @@ interface Owned<T> {
   read: Read<T>
 }
 
+const READ_LIMIT_MS = 20_000
+
+/** Rejects when `load` has not answered in `ms`, so a chart never waits forever. */
+export function withTimeout<T>(load: () => Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('the read did not answer in time')), ms)
+    load().then(
+      (value) => { clearTimeout(timer); resolve(value) },
+      (error: unknown) => { clearTimeout(timer); reject(error) },
+    )
+  })
+}
+
 function useOwned<T>(load: () => Promise<T>): Read<T> {
   const [owned, setOwned] = useState<Owned<T> | null>(null)
   useEffect(() => {
     let live = true
-    load().then(
+    withTimeout(load, READ_LIMIT_MS).then(
       (value) => live && setOwned({ load, read: { state: 'ready', value } }),
       () => live && setOwned({ load, read: { state: 'missing' } }),
     )
@@ -29,15 +42,18 @@ const day = (iso: unknown): string | null => (typeof iso === 'string' && /^\d{4}
 
 /**
  * The asset's stored daily bars between the run's own first and last recorded dates (`GET /api/candles`, the
- * point-in-time read, cut at the run's last date, so nothing after the run's window is asked for or drawn).
- * Resolves null when the run does not name its asset, dates or home store.
+ * point-in-time read, cut at the run's last date, or its research cutoff when that is earlier, so nothing after the run's
+ * window is asked for or drawn). Resolves null when the run does not name its asset, dates or home store.
  */
 export function loadBars(manifest: ValidateManifest): Promise<PriceBar[] | null> {
   const metadata = (manifest.metadata ?? {}) as Record<string, unknown>
   const spine = (manifest as { spine?: { store?: unknown } }).spine
   const symbol = typeof metadata.symbol === 'string' ? metadata.symbol : null
   const start = day(metadata.first_ts)
-  const end = day(metadata.last_ts)
+  // A run held back from the reserved period names its research cutoff; never ask past it, whatever the last date says.
+  const lastDay = day(metadata.last_ts)
+  const cutoff = day(manifest.research_cutoff)
+  const end = lastDay && cutoff && cutoff < lastDay ? cutoff : lastDay
   const homeStore = spine?.store === undefined || spine.store === 'home'
   if (!symbol || !start || !end || !homeStore) return Promise.resolve(null)
   const query = `?${new URLSearchParams({ start, end }).toString()}`

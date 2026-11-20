@@ -8,11 +8,14 @@ import { useMemo, type ReactNode } from 'react'
 
 import { gateStories } from '../../explain/gates'
 import type { ValidateManifest } from '../../explain/types'
-import { ChartNote, CpcvView, DsrView, IntervalView, NotAvailable, WalkForwardView } from './CheckCharts'
-import { ciChart, cpcvChart, dsrChart, walkForwardChart, type Chart } from './checkChartModel'
+import { ChartNote, NotAvailable } from './chartParts'
+import { CpcvView, DsrView, IntervalView } from './CheckCharts'
+import { ciChart, cpcvChart, dsrChart, type Chart } from './checkChartModel'
 import { nullCharts, missingDraws } from './nullChartModel'
 import { NullView } from './NullChart'
 import { useCheckChartData } from './useCheckChartData'
+import { WalkForwardView } from './WalkForward'
+import { walkForwardChart } from './walkForwardModel'
 import { ExplainCard, Section } from './common'
 
 function show<T>(model: Chart<T>, view: (chart: T & { status: 'ok' }) => ReactNode): ReactNode {

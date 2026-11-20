@@ -1,11 +1,12 @@
-// Pure model for the randomized-price chart: one histogram of the stored random-run Sharpes per
-// tier, with this strategy's recorded Sharpe marked. The draws are the run's own `nulls.parquet`
+// Pure model for the randomized-price chart: one picture of the stored random-run Sharpes per tier,
+// with this strategy's recorded Sharpe marked. From 20 draws up it is a histogram; below that it is one
+// tick per draw on a number line, because a few bars would only look like a shape that is not there. The draws are the run's own `nulls.parquet`
 // values; the share of random runs that did as well is the recorded p-value, not a recount.
 
 import { fmtNum, fmtPct, isFiniteNum as finite } from '../../util/format'
 import type { NullTiers } from '../../api/types'
 import type { ValidateManifest } from '../../explain/types'
-import { frac, type NotRecorded } from './checkChartModel'
+import { frac, scaleOf, type NotRecorded } from './checkChartModel'
 
 export interface Bins {
   edges: number[]
@@ -27,12 +28,23 @@ export function histogramBins(values: readonly number[], nBins: number, include?
   return { edges: Array.from({ length: nBins + 1 }, (_, i) => lo + i * width), counts }
 }
 
+/** Fewer draws than this are drawn one by one, not binned. */
+export const STRIP_BELOW = 20
+
 export interface NullTierChart {
   tier: string
+  /** The plain name of the tier. */
   title: string
+  /** "20 random series". */
+  detail: string
   nDraws: number
-  /** Bar heights, 0..1 of the tallest bar. */
+  mode: 'histogram' | 'strip'
+  /** Bar heights, 0..1 of the tallest bar (histogram only). */
   heights: number[]
+  /** One position per draw, 0..1 of the drawn range (strip only). */
+  ticks: number[]
+  /** "only 4 random series: a rough picture" for a strip. */
+  roughNote: string | null
   /** This strategy's Sharpe, as a fraction 0..1 of the drawn range. */
   marker: number
   observed: number
@@ -62,16 +74,19 @@ export function nullCharts(manifest: ValidateManifest, draws: NullTiers | null):
       skipped.push(row.tier)
       continue
     }
-    const bins = histogramBins(stats, Math.max(8, Math.min(24, Math.ceil(Math.sqrt(stats.length)))), row.observed)
-    const top = Math.max(...bins.counts)
-    const low = bins.edges[0]
-    const high = bins.edges[bins.edges.length - 1]
     const share = finite(row.p_value) ? row.p_value : null
-    const title = `${TIER_NAMES[row.tier] ?? row.tier}, ${stats.length} random series`
+    const strip = stats.length < STRIP_BELOW
+    const bins = strip ? null : histogramBins(stats, Math.max(8, Math.min(24, Math.ceil(Math.sqrt(stats.length)))), row.observed)
+    const [low, high] = bins ? [bins.edges[0], bins.edges[bins.edges.length - 1]] : scaleOf([...stats, row.observed], false)
+    const top = bins ? Math.max(...bins.counts) : 1
+    const title = TIER_NAMES[row.tier] ?? row.tier
+    const detail = `${stats.length} random series`
+    const rough = strip ? `only ${stats.length} random series: a rough picture` : null
     tiers.push({
-      tier: row.tier, title, nDraws: stats.length, heights: bins.counts.map((n) => n / top), marker: frac(row.observed, low, high),
-      observed: row.observed, low, high, shareAsGood: share,
-      summary: `${title}: this strategy ${fmtNum(row.observed)}` + (share === null ? '' : `; random data did as well in ${fmtPct(share, 1)} of draws`),
+      tier: row.tier, title, detail, nDraws: stats.length, mode: strip ? 'strip' : 'histogram',
+      heights: bins ? bins.counts.map((n) => n / top) : [], ticks: strip ? stats.map((v) => frac(v, low, high)) : [], roughNote: rough,
+      marker: frac(row.observed, low, high), observed: row.observed, low, high, shareAsGood: share,
+      summary: `${title}, ${rough ?? detail}: this strategy ${fmtNum(row.observed)}` + (share === null ? '' : `; random data did as well in ${fmtPct(share, 1)} of draws`),
     })
   }
   if (!tiers.length) return { status: 'not-recorded', reason: missingDraws }

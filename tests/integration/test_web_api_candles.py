@@ -73,3 +73,21 @@ def test_candles_include_low_volume_paper_order_and_fill_markers(
     assert marker["event_type"] == "fill"
     assert marker["execution_mode"] == "ibkr_paper"
     assert marker["exact_ts"] == int(event_time.timestamp())
+
+
+def test_candles_cut_at_the_runs_last_date_never_returns_a_later_or_held_back_bar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The Gates charts ask for ``end`` = the run's last date (or its research cutoff, if earlier)."""
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    seed_store(tmp_path, symbol="SPY", n=1500)  # daily bars from 2020-01-01 into 2024-02
+    client = TestClient(create_app())
+    whole = client.get("/api/candles/SPY").json()["bars"]
+    held_back = datetime(2024, 1, 1, tzinfo=UTC).timestamp()
+    assert any(bar["t"] >= held_back for bar in whole)  # the store does reach the held-back period
+    for end, last in (("2023-12-31", datetime(2023, 12, 31, tzinfo=UTC)), ("2022-06-30", datetime(2022, 6, 30, tzinfo=UTC))):
+        body = client.get("/api/candles/SPY", params={"start": "2020-01-01", "end": end}).json()
+        times = [bar["t"] for bar in body["bars"]]
+        assert times and max(times) <= last.timestamp() + 86_399
+        assert all(t < held_back for t in times)
+        assert max(times) >= last.timestamp() - 3 * 86_400  # the window is full, not trimmed short

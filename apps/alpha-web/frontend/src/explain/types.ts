@@ -95,6 +95,8 @@ export interface ValidateManifest {
   forecast?: Record<string, unknown>
   /** `fixed_rule_evaluation_no_refit` (train is warm-up) or `fold_by_fold_refit`. */
   oos_semantics?: string
+  /** The last day a held-back run was allowed to read; absent on runs that saw everything. */
+  research_cutoff?: string | null
 }
 
 // ---- optim / portfolio / propfirm / forecast manifests ------------------------------------

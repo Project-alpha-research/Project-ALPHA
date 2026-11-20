@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: 80bd084013111523
+verified: 9786180e431c542e
 ---
 
 # Web run detail invariants
@@ -85,16 +85,27 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   the long reading. No card is coloured good or bad. The one classification is in [command line readings](cli-rule-
   readings.md#report-cite-and-the-gates).
 - Each Gates card also shows one small chart of that run's own recorded data, between the plain sentence and the numbers
-  (`rundetail/checkChartModel.ts`, `nullChartModel.ts`, `CheckCharts.tsx`, `NullChart.tsx`). The browser draws; it computes nothing.
-  Walk-forward: the asset's price over the fold dates (`folds[].*_ts`), bands for the training window and each tested window, and
-  the recorded out-of-sample Sharpe on each tested band. The training band reads "warm-up window: rules fixed, nothing re-tuned"
-  when `oos_semantics` is `fixed_rule_evaluation_no_refit`, "rules tuned here" for `fold_by_fold_refit`, else "training window".
-  A fold whose own training dates run past its tested start shows a labelled "tuned and tested periods overlap" band. Price is
-  `GET /api/candles` for the run's symbol, from its first to its last recorded date: nothing after the run's window is asked for.
-  Null: one histogram per tier from `GET /api/runs/{id}/nulls`, the recorded Sharpe marked, the recorded p-value as the share.
-  Bootstrap: zero, the interval bar and the point. Deflated Sharpe: two bars in Sharpe per trading period. Cross-validation: the
-  recorded mean and spread only; per-split Sharpes are not stored. Missing or non-finite input reads "Chart not available:
-  <what is not recorded>", never an empty chart. Each chart has an `aria-label` with the same facts. Covered by
+  (`rundetail/walkForwardModel.ts`, `checkChartModel.ts`, `nullChartModel.ts`, `WalkForward.tsx`, `CheckCharts.tsx`, `NullChart.tsx`).
+  The browser draws; it computes nothing. Walk-forward: the price carries the meaning. One shaded band per fold's tested period
+  (`folds[].test_*_ts`), two alternating tints, a divider between folds, and the fold's out-of-sample Sharpe in the band when it
+  fits (else on hover or focus). Price before the first band is unshaded, "before the first test". Under the price is a staircase,
+  one row per fold: that fold's own warm-up (hatched) then its tested part. With more than 8 folds it shows the first 3 and last
+  2 rows, "… N folds in total" and a "show all folds" button; the bands stay for all folds. The hatch reads "warm-up: rules fixed,
+  nothing re-tuned" for `oos_semantics` `fixed_rule_evaluation_no_refit` (with the sentence "The rules never change in this test"),
+  "rules tuned here" for `fold_by_fold_refit`, else "training window". A fold whose own training dates run past its tested start
+  shows a labelled "tuned and tested periods overlap" mark. Axes: three price ticks, year ticks, both end dates.
+  Price is `GET /api/candles` for the run's symbol from its first date to its last recorded date, or its `research_cutoff` when
+  that is earlier: nothing after the run's window or inside the held-back period is asked for (`useCheckChartData.test.ts`,
+  `tests/integration/test_web_api_candles.py`). The legend says the bars are those stored now; the run's own bars are not saved.
+  With no stored bars the bands and staircase still draw and the note reads "price not available: no stored bars for <symbol>".
+  Null: per tier from `GET /api/runs/{id}/nulls`, plain tier name first, the recorded Sharpe marked, the recorded p-value as the
+  share. A tier with 20 or more draws is a histogram; with fewer it is one tick per draw and says "only N random series: a rough
+  picture". Tiers share one size, at most 160 px tall. Bootstrap: zero, the interval bar and the point. Deflated Sharpe: two bars
+  on one scale, both "per trading period"; the yearly figure in brackets only when the run recorded `periods_per_year` (times the
+  square root of it), and the line "The deflated Sharpe (x) is a probability from 0 to 1, not a Sharpe ratio." Cross-validation:
+  the recorded mean and spread ("mean ± one standard deviation") only; per-split Sharpes are not stored. Missing or non-finite
+  input reads "Chart not available: <what is not recorded>"; a read that fails or takes over 20 s reads as missing, never
+  "Loading chart…" for ever. Each chart has an `aria-label` with the same facts. Covered by `walkForwardModel.test.ts`,
   `checkChartModel.test.ts`, `nullChartModel.test.ts`, `CheckCharts.test.tsx` and `e2e/check-charts.spec.ts`.
 - The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
   grade as "retired".

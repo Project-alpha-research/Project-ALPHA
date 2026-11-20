@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: 66b44627b531091f
+verified: bf33bea5db3d34af
 ---
 
 # Web frontend invariants
@@ -111,6 +111,8 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - Never resample, aggregate or substitute bars in the browser. An interval needs a compatible recorded native source; there is no automatic venue or market
   substitution.
 - Archive, run and snapshot contexts never silently fall back to canonical stored bars. A run without a recorded price snapshot cannot borrow current candles.
+  The one exception is the small walk-forward chart on the Gates tab: it draws the bars stored now, cut at the run's last date,
+  and its legend says the run's own bars were not saved.
   Archive charts stay separate from strategy context.
 - In `ChartWorkspace` (at most four panels) only the primary panel follows canonical market navigation. Comparison panels stay pinned, and changing a panel's
   source never changes canonical research context.

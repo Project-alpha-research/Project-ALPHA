@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: 9aaffa62fa4404ac
+verified: 80bd084013111523
 ---
 
 # Web run detail invariants
@@ -84,6 +84,18 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   card puts one plain sentence first, then the numbers, then a closed "How this check works" disclosure that holds the method and
   the long reading. No card is coloured good or bad. The one classification is in [command line readings](cli-rule-
   readings.md#report-cite-and-the-gates).
+- Each Gates card also shows one small chart of that run's own recorded data, between the plain sentence and the numbers
+  (`rundetail/checkChartModel.ts`, `nullChartModel.ts`, `CheckCharts.tsx`, `NullChart.tsx`). The browser draws; it computes nothing.
+  Walk-forward: the asset's price over the fold dates (`folds[].*_ts`), bands for the training window and each tested window, and
+  the recorded out-of-sample Sharpe on each tested band. The training band reads "warm-up window: rules fixed, nothing re-tuned"
+  when `oos_semantics` is `fixed_rule_evaluation_no_refit`, "rules tuned here" for `fold_by_fold_refit`, else "training window".
+  A fold whose own training dates run past its tested start shows a labelled "tuned and tested periods overlap" band. Price is
+  `GET /api/candles` for the run's symbol, from its first to its last recorded date: nothing after the run's window is asked for.
+  Null: one histogram per tier from `GET /api/runs/{id}/nulls`, the recorded Sharpe marked, the recorded p-value as the share.
+  Bootstrap: zero, the interval bar and the point. Deflated Sharpe: two bars in Sharpe per trading period. Cross-validation: the
+  recorded mean and spread only; per-split Sharpes are not stored. Missing or non-finite input reads "Chart not available:
+  <what is not recorded>", never an empty chart. Each chart has an `aria-label` with the same facts. Covered by
+  `checkChartModel.test.ts`, `nullChartModel.test.ts`, `CheckCharts.test.tsx` and `e2e/check-charts.spec.ts`.
 - The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
   grade as "retired".
 - Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).

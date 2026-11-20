@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 51f98632c5537d58 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
+  verified ede5985947d74476 on 2026-11-20: routing unchanged; frontend sources gained Gates charts
 
 apps/alpha-web/README.md
-  verified a3ae7d4e6fde8b7e on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
+  verified ede5985947d74476 on 2026-11-20: added Gates chart code map line
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -86,10 +86,10 @@ docs/reference/invariants/web-api.md
   verified 6098cb454691d1fd on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/reference/invariants/web-frontend.md
-  verified eaf30770f1d738d5 on 2026-11-20: re-read after the validate and report line helpers moved to report_readings.py; claims still hold
+  verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail
 
 docs/reference/invariants/web-run-detail.md
-  verified a6410e620bf28a6e on 2026-11-20: Re-read after merging main: still correct beside the readings-everywhere change
+  verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged

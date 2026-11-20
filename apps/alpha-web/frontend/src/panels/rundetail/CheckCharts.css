@@ -1,0 +1,33 @@
+/* Small annotated charts on the Gates cards. Theme tokens only, so light, dim and dark all read. */
+.check-chart { margin: 0 0 8px; }
+.check-chart-scroll { overflow-x: auto; max-width: 100%; }
+.check-chart svg { display: block; font-family: inherit; font-size: 11px; }
+.check-chart text { fill: var(--ink); }
+.check-chart .cc-dim { fill: var(--ink-dim); }
+.check-chart .cc-axis { stroke: var(--muted); stroke-width: 1; }
+.check-chart .cc-zero { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
+.check-chart .cc-price { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.check-chart .cc-test { fill: var(--accent); fill-opacity: 0.2; }
+.check-chart .cc-test-strip { fill: var(--accent); fill-opacity: 0.5; stroke: var(--accent); stroke-width: 1; }
+.check-chart .cc-warm { stroke: var(--muted); stroke-width: 1; }
+.check-chart .cc-overlap { fill: var(--gold); fill-opacity: 0.55; stroke: var(--gold); stroke-width: 1; }
+.check-chart .cc-bar { fill: var(--accent); fill-opacity: 0.35; stroke: var(--accent); stroke-width: 1.5; }
+.check-chart .cc-hist { fill: var(--muted); fill-opacity: 0.55; }
+.check-chart .cc-mark { stroke: var(--accent); stroke-width: 2; }
+.check-chart .cc-dot { fill: var(--ink); stroke: var(--panel-2); stroke-width: 2; }
+.check-chart .cc-luck { fill: var(--muted); fill-opacity: 0.6; }
+.check-chart .cc-self { fill: var(--accent); fill-opacity: 0.6; }
+.check-chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 0; padding: 0; list-style: none; color: var(--ink-dim); font-size: 0.9em; }
+.check-chart-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.check-chart-swatch { width: 14px; height: 10px; border: 1px solid var(--muted); display: inline-block; }
+.check-chart-swatch.test { background: color-mix(in srgb, var(--accent) 50%, var(--panel-2)); border-color: var(--accent); }
+.check-chart-swatch.warm { background: repeating-linear-gradient(45deg, var(--muted) 0 1px, var(--panel-2) 1px 4px); }
+.check-chart-swatch.warn { background: color-mix(in srgb, var(--gold) 55%, var(--panel-2)); border-color: var(--gold); }
+.check-chart-warning { margin: 4px 0 0; color: var(--ink); font-size: 0.95em; }
+.check-chart-missing { margin: 0 0 8px; font-size: 0.95em; }
+.check-chart-tiers { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.check-chart-tier { flex: 1 1 190px; max-width: 300px; margin: 0; }
+.check-chart-tier figcaption { color: var(--ink-dim); font-size: 0.9em; }
+.check-chart-rows { display: flex; flex-direction: column; gap: 6px; }
+.check-chart-row-label { color: var(--ink); font-size: 0.95em; margin: 0; }
+.check-chart .cc-halo { paint-order: stroke; stroke: var(--panel-2); stroke-width: 3px; stroke-linejoin: round; }

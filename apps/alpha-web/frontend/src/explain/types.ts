@@ -18,6 +18,11 @@ export interface FoldRow {
   oos_return: number | null
   oos_sharpe: number | null
   oos_cagr: number | null
+  /** ISO dates the run recorded for this fold (new runs only). */
+  train_start_ts?: string
+  train_end_ts?: string
+  test_start_ts?: string
+  test_end_ts?: string
 }
 
 export interface NullTierRow {
@@ -88,6 +93,8 @@ export interface ValidateManifest {
   verdict?: VerdictBlock
   passed?: boolean
   forecast?: Record<string, unknown>
+  /** `fixed_rule_evaluation_no_refit` (train is warm-up) or `fold_by_fold_refit`. */
+  oos_semantics?: string
 }
 
 // ---- optim / portfolio / propfirm / forecast manifests ------------------------------------

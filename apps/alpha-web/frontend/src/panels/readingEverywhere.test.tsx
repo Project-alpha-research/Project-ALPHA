@@ -76,11 +76,11 @@ describe('the Monte Carlo risk readings', () => {
 describe('the Gates tab', () => {
   it.each([['validate-a', validateA], ['validate-b', validateB], ['validate-d', validateD]])('reads %s as numbers and fact checks', (_name, manifest) => {
     for (const shaped of [manifest, { ...manifest, reading: SOME }]) {
-      assertOwnerText(renderToStaticMarkup(<Gates manifest={shaped as unknown as ValidateManifest} />))
+      assertOwnerText(renderToStaticMarkup(<Gates manifest={shaped as unknown as ValidateManifest} runId="abcd00000000beef" />))
     }
   })
   it('keeps one fact check as a state word and shows the old level muted on the statistical ones', () => {
-    const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} />)
+    const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} runId="abcd00000000beef" />)
     expect(html).toContain('>computed<')
     expect(html).not.toContain('>sound<')
     expect(html).toContain('computed means the check could run; it does not say the result is good')
@@ -89,7 +89,7 @@ describe('the Gates tab', () => {
     expect(html).not.toContain('class="chip fail"')
   })
   it('puts the one-sentence plain reading first and the method inside a closed disclosure', () => {
-    const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} />)
+    const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} runId="abcd00000000beef" />)
     expect(html.match(/<details class="explain-how">/g)?.length).toBe(5)
     expect(html.match(/How this check works/g)?.length).toBe(5)
     expect(html).not.toMatch(/<details[^>]* open/)

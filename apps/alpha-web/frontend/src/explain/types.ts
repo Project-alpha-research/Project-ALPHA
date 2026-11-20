@@ -203,6 +203,8 @@ export interface GateStory extends Explained {
   state: 'sound' | 'fault' | 'not-checked' | null
   /** The level the old grade used, in words, shown muted; null when none applies. */
   oldLevel: string | null
+  /** One plain sentence that reads the numbers, shown first. A missing input reads "not computed: <reason>". */
+  plain: string
   /** What this gate tests, independent of this run's numbers (teaching text). */
   tests: string
   stats: StatChip[]

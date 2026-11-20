@@ -1480,6 +1480,23 @@ textarea.field:focus {
   gap: 5px;
   color: var(--ink);
 }
+.explain-plain {
+  margin: 0 0 8px;
+  font-size: var(--font-size);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.explain-state-hint {
+  font-size: 0.85em;
+}
+.explain-how {
+  margin-top: 8px;
+}
+.explain-how summary {
+  cursor: pointer;
+  color: var(--muted);
+}
 .explain-old-level {
   margin: 4px 0 0;
   font-size: 0.9em;

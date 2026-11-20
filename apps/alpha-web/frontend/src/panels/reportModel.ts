@@ -97,6 +97,8 @@ export function reportTree(input: ReportTreeInput): ReportGroup[] {
 export interface SummaryRow {
   label: string
   value: string
+  /** A short plain explanation of a standard metric name, shown muted after the label. */
+  hint?: string
 }
 
 const METRIC_LABELS: [string, string][] = [
@@ -106,7 +108,9 @@ const METRIC_LABELS: [string, string][] = [
   ['sharpe', 'Sharpe'],
   ['max_drawdown', 'Max drawdown'],
 ]
-const NOT_RECORDED = ['Win rate', 'Gain-to-loss ratio', 'Exposure', 'Max drawdown date']
+const NOT_RECORDED = ['Win rate', 'Profit factor', 'Exposure', 'Max drawdown date']
+
+const METRIC_HINTS: Record<string, string> = { 'Profit factor': 'gross gains divided by gross losses' }
 
 const obj = (v: unknown): Record<string, unknown> | null =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
@@ -167,7 +171,7 @@ export function summaryRows(manifest: Record<string, unknown>): SummaryRow[] {
     const row = obj(family)
     if (row && asStr(row.family)) push(`Monte Carlo · ${asStr(row.family)}`, monteCarloFamilyText(row))
   }
-  for (const label of NOT_RECORDED) push(label, 'not recorded')
+  for (const label of NOT_RECORDED) rows.push({ label, value: 'not recorded', ...(METRIC_HINTS[label] ? { hint: METRIC_HINTS[label] } : {}) })
   return rows
 }
 

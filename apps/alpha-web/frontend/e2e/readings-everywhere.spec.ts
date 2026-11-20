@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { SOME } from '../src/panels/__fixtures__/readings'
+import { BANNED } from '../src/panels/__fixtures__/scanWords'
 import { preparePage } from './support/workstationHarness'
 
 // Synthetic API responses check presentation only; no market evidence is used. The manifest is the unit-test fixture
@@ -8,7 +9,6 @@ import { preparePage } from './support/workstationHarness'
 const manifestFile = new URL('../src/explain/__fixtures__/validate-b.json', import.meta.url)
 const validate = JSON.parse(readFileSync(manifestFile, 'utf8')) as Record<string, unknown>
 const runId = 'e'.repeat(16)
-const BANNED = /\b(supported|rejected|inconclusive|pass|passed|fail|failed|profit|verdict|grade|graded)\b/i
 const ALLOWED = /the level used by the old grade|old grade|graded [A-Z]+ under the old rules/gi
 const LETTER = /(?<![\w'./-])[A-F](?![\w'./-])/
 const ARTICLE = /(?:^|(?<=[.!?:] ))A(?= [A-Za-z])/gm
@@ -59,7 +59,8 @@ for (const [style, manifest] of [['an old run (letter only)', validate], ['a new
       assertOwnerText(summary)
       const gates = await leafText(page, 'Gates')
       expect(gates).toMatch(/the five checks behind the reading/i)
-      expect(gates).toContain('sound')
+      expect(gates).toContain('computed')
+      expect(gates).toContain('How this check works')
       expect(gates).toMatch(/The level used by the old grade/)
       assertOwnerText(gates)
       assertOwnerText(await leafText(page, 'Stress test'))
@@ -76,7 +77,7 @@ test('a gate card never takes a good or bad colour and keeps its fact check as a
   const colours = await cards.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).borderLeftColor))
   expect(new Set(colours).size).toBe(1)
   const state = cards.first().locator('.explain-state')
-  await expect(state).toHaveText('sound')
+  await expect(state).toHaveText('computed')
   await expect(state.locator('svg')).toBeVisible()
 })
 

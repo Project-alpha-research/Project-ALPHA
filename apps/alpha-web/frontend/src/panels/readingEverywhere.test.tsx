@@ -1,9 +1,7 @@
-import type { ColumnDef } from '@tanstack/react-table'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { RunListItem } from '../api/types'
-import { DataTable } from '../components/DataTable'
 import { GLOSSARY } from '../explain/glossary'
 import { gateStories } from '../explain/gates'
 import { suggestions } from '../explain/suggestions'
@@ -14,17 +12,16 @@ import validateD from '../explain/__fixtures__/validate-d-kronos.json'
 import { ActivityFeedView } from './ActivityFeed'
 import { edgeReviewRows } from './edgeReviewModel'
 import { PipelineLatest } from './Pipeline'
-import { runBrowserColumns } from './runBrowserColumns'
 import { paletteHint, toastDetail } from './readingModel'
 import { summaryRows } from './reportModel'
 import { Gates } from './rundetail/Gates'
 import { ExplainCard } from './rundetail/common'
 import { SOME } from './__fixtures__/readings'
+import { BANNED } from './__fixtures__/scanWords'
 import type { ActivityEvent } from '../state/activity'
 
 // Owner-facing words that left these screens, and a lone letter grade. The owner's phrase for the old level ("the level used by
 // the old grade"), the retired-grade glossary name and the muted old-rules line are taken out before the scan.
-const BANNED = /\b(supported|rejected|inconclusive|pass|passed|fail|failed|profit|verdict|grade|graded)\b/i
 const ALLOWED = /the level used by the old grade|old grade|graded [A-Z]+ under the old rules/gi
 const LETTER = /(?<![\w'./-])[A-F](?![\w'./-])/
 const ARTICLE = /(?:^|(?<=[.!?:] ))A(?= [A-Za-z])/gm
@@ -45,17 +42,6 @@ const runs: [string, RunListItem][] = [
   ['a new run with an evidence word', { ...base, evidence: 'some evidence', verdict: 'B', passed: false } as RunListItem],
   ['a fault', { ...base, evidence: 'fault', verdict: 'F', passed: false } as RunListItem],
 ]
-
-describe('the run browser', () => {
-  it.each(runs)('shows the reading and no result column for %s', (_name, run) => {
-    const columns = runBrowserColumns() as ColumnDef<RunListItem, unknown>[]
-    expect(columns.map(column => column.header)).not.toContain('Result')
-    expect(columns.map(column => column.header)).toContain('Reading')
-    const html = renderToStaticMarkup(<DataTable data={[run]} columns={columns} />)
-    assertOwnerText(html)
-    expect(html).toContain(run.evidence ?? 'under the old rules')
-  })
-})
 
 describe('the Summary table', () => {
   it.each([[validateA], [validateB], [validateD]])('has no Passed row and no grade word, old style and new style', manifest => {
@@ -95,10 +81,34 @@ describe('the Gates tab', () => {
   })
   it('keeps one fact check as a state word and shows the old level muted on the statistical ones', () => {
     const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} />)
-    expect(html).toContain('>sound<')
+    expect(html).toContain('>computed<')
+    expect(html).not.toContain('>sound<')
+    expect(html).toContain('computed means the check could run; it does not say the result is good')
     expect(html).toMatch(/the level used by the old grade/i)
     expect(html).not.toContain('class="chip pass"')
     expect(html).not.toContain('class="chip fail"')
+  })
+  it('puts the one-sentence plain reading first and the method inside a closed disclosure', () => {
+    const html = renderToStaticMarkup(<Gates manifest={validateB as unknown as ValidateManifest} />)
+    expect(html.match(/<details class="explain-how">/g)?.length).toBe(5)
+    expect(html.match(/How this check works/g)?.length).toBe(5)
+    expect(html).not.toMatch(/<details[^>]* open/)
+    expect(html.indexOf('class="explain-plain"')).toBeLessThan(html.indexOf('class="stat-chips"'))
+    expect(html).toMatch(/Random data did as well in [\d.]+% to [\d.]+% of draws/)
+    for (const story of gateStories(validateB as unknown as ValidateManifest)) {
+      expect(html).toContain(story.tests.slice(0, 40))
+      expect(html).toContain(story.narrative.slice(0, 40).replaceAll("'", '&#x27;'))
+    }
+  })
+  it('shows only fact checks with a state word and says not computed when a statistic has no input', () => {
+    const stories = gateStories({ outcomes: [] } as unknown as ValidateManifest)
+    expect(stories.map(story => story.kind)).toEqual(['fact', 'stat', 'stat', 'stat', 'stat'])
+    for (const story of stories.slice(1)) {
+      expect(story.state).toBeNull()
+      expect(story.plain).toMatch(/^not computed: .+/)
+      expect(story.oldLevel).toBeNull()
+    }
+    expect(stories[0].state).toBe('not-checked')
   })
   it('never colours a gate card good or bad', () => {
     for (const story of gateStories(validateB as unknown as ValidateManifest)) expect(story.tone).toBe('info')

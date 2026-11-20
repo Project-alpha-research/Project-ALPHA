@@ -105,7 +105,7 @@ export function ExplainCard({
   stats = [],
   tests,
 }: {
-  story: Explained & Partial<Pick<GateStory, 'state' | 'oldLevel'>>
+  story: Explained & Partial<Pick<GateStory, 'state' | 'oldLevel' | 'plain'>>
   title: string
   stats?: StatChip[]
   tests?: string
@@ -117,18 +117,21 @@ export function ExplainCard({
         {story.state ? (
           <span className="explain-state" data-state={story.state}>
             <StateIcon state={story.state} />
-            <strong>{STATE_WORDS[story.state]}</strong>
+            <strong>{story.state === 'sound' ? 'computed' : STATE_WORDS[story.state]}</strong>
           </span>
         ) : null}
         <span className="explain-title">{title}</span>
+        {story.state === 'sound' ? <span className="muted explain-state-hint">computed means the check could run; it does not say the result is good</span> : null}
       </div>
+      {explain === 'narrative' && story.plain ? <p className="explain-plain">{story.plain}</p> : null}
       <StatChips stats={stats} />
       {story.oldLevel ? <p className="muted explain-old-level">{story.oldLevel}</p> : null}
       {explain === 'narrative' ? (
-        <>
+        <details className="explain-how">
+          <summary>How this check works</summary>
           {tests ? <p className="explain-tests">{tests}</p> : null}
           <p className="explain-narrative">{story.narrative}</p>
-        </>
+        </details>
       ) : (
         <p className="explain-terse mono">{story.terse}</p>
       )}

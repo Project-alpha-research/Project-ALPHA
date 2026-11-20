@@ -40,6 +40,16 @@ describe('navigatorModel', () => {
     expect(groups.find((group) => group.label === 'Backtests')!.leaves.map((leaf) => leaf.tone)).toEqual(['none', 'none'])
   })
 
+  it('shows the evidence word after the short id, the muted old letter for an old run, and no pass or fail', () => {
+    const runs = [
+      { ...run('aaaaaaaa11111111', 'crypto', 'BTC/USDT', true), evidence: 'some evidence', verdict: 'B' },
+      { ...run('bbbbbbbb22222222', 'crypto', 'BTC/USDT', false), evidence: null, verdict: 'C' },
+    ]
+    const leaves = tree({ runs }).find((group) => group.label === 'Backtests')!.leaves
+    expect(leaves.map((leaf) => leaf.sub)).toEqual(['aaaaaaaa · some evidence', 'bbbbbbbb · graded C under the old rules'])
+    expect(JSON.stringify(leaves)).not.toMatch(/\b(pass|fail)/i)
+  })
+
   it('files backtests by the server market field only, never by symbol text', () => {
     const runs = [
       run('aaaaaaaa11111111', 'crypto', 'BTC/USDT', true),

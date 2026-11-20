@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: a6410e620bf28a6e
+verified: 9aaffa62fa4404ac
 ---
 
 # Web run detail invariants
@@ -66,13 +66,14 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - No screen shows a letter grade, a PASS or FAIL result, "passed", "verdict" or a good or bad colour for a run. The JSON fields `verdict`,
   `passed` and `overall` stay for machines. The words come from `panels/readingModel.ts`: `runWord`, `manifestWord`, `toastDetail`, `paletteHint`.
   The browser re-derives no word.
-- A run in a list shows its evidence word, else "graded X under the old rules", muted: the run browser columns (`runBrowserColumns.tsx`, no result
-  column), Pipeline (`PipelineLatest`), the activity feed (`ActivityFeedView`), toasts, the command palette and the Library tree (no colour).
+- A run in a list shows its evidence word, else "graded X under the old rules", muted: the Navigator run list (`navigatorModel.ts`: the word after the short id, no
+  result column), Pipeline (`PipelineLatest`), the activity feed (`ActivityFeedView`), toasts, the command palette.
 - Summary has a "Reading" row and no "Passed" row. The edge review has a "Reading" row and no verdict or gate-result row. A Monte Carlo run adds
   one row per family: stored percentiles in words, no letter and no stage word.
-- Gates tab (`explain/gates.ts`, `Gates.tsx`, `ExplainCard`): each check is a FACT (walk-forward: the icon and "sound", "fault" or "not checked")
-  or a STAT (the numbers and the plain comparison, such as "the interval includes zero" or "random data did as well in 3.0% of draws"). A STAT card
-  adds one muted line: "The level used by the old grade: X". No card is coloured good or bad. The one classification is in
+- Gates tab (`explain/gates.ts`, `Gates.tsx`, `ExplainCard`): each check is a FACT (walk-forward: the icon and "computed", "fault" or "not checked", with the
+  hint "computed means the check could run; it does not say the result is good") or a STAT (the numbers and the plain comparison, such as "the interval includes zero" or "random data did as well in 3.0% of draws"). A STAT card
+  adds one muted line: "The level used by the old grade: X". A STAT with no input reads "not computed: <reason>" and no old level. Each card puts one plain
+  sentence first, then the numbers, then a closed "How this check works" disclosure that holds the method and the long reading. No card is coloured good or bad. The one classification is in
   [command line readings](cli-rule-readings.md#report-cite-and-the-gates).
 - The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old grade as "retired".
 - Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).

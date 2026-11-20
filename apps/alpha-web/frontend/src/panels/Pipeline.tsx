@@ -216,7 +216,7 @@ export function Pipeline(_props: PanelHandleProps) {
           </div>
         ) : linked.runId ? null : (
           <Placeholder>
-            Select a run (Run Browser or Activity) to see rule-based next steps for it here.
+            Select a run (Navigator or Activity) to see rule-based next steps for it here.
           </Placeholder>
         )}
       </div>

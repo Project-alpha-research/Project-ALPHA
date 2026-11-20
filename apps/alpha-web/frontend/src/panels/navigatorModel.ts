@@ -8,6 +8,7 @@ import type { Profile } from '../state/settings'
 import { profile as manifest } from '../shell/profiles'
 import type { StorageRow } from './dataManagerModel'
 import { venueLabel as providerLabel } from './marketWatchModel'
+import { runWord } from './readingModel'
 
 export const NAVIGATOR_GROUPS = [
   'Strategies',
@@ -65,11 +66,12 @@ function file<T extends { market: 'crypto' | 'equities' | 'unknown' }>(
 }
 
 function runLeaf(run: RunListItem): NavigatorLeaf {
+  const word = runWord(run.evidence, run.verdict)
   return {
     id: `run:${run.run_id}`,
     label: run.display_name,
-    sub: run.run_id.slice(0, 8),
-    // A run is never coloured good or bad: its reading is a word in the run list, not a mark in the tree.
+    sub: word ? `${run.run_id.slice(0, 8)} · ${word.text}` : run.run_id.slice(0, 8),
+    // A run is never coloured good or bad: its reading is the word after its id.
     tone: 'none',
     action: { kind: 'run', runId: run.run_id },
   }

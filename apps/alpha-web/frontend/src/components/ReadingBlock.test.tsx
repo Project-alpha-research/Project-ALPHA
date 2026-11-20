@@ -42,9 +42,9 @@ describe('the reading block', () => {
     expect(html).toContain('below the aim')
     expect(html).toContain('Default aim: beat buy-and-hold')
     expect(html).toContain('role="img"')
-    expect(html).toContain('the aim 1.55 is outside this range')
+    expect(html).toContain('the aim 1.55; below the aim')
     expect(render(WITHIN)).toContain('within the uncertainty of the aim')
-    expect(render(WITHIN)).toContain('the aim 0.90 is inside this range')
+    expect(render(WITHIN)).toContain('the aim 0.90; within the uncertainty of the aim')
     expect(render(CLEAR)).toContain('Aim from the idea card')
     expect(render(CLEAR)).toContain('above the aim')
   })
@@ -107,6 +107,7 @@ describe('Setup Lab reading block', () => {
     expect(html).toContain(props.sentence)
     expect(html).toContain('Setup study 2 of 3 recorded for this idea.')
     expect(html).not.toContain('(old wording)')
+    expect(html).toContain('The figure adjusted for the number of studies is shown by <code class="mono">alpha setup study</code>.')
     expect(html).toContain('A reading describes the evidence. It is not advice and not an approval.')
   })
   it('marks an old record as old wording', () => {
@@ -118,5 +119,17 @@ describe('Setup Lab reading block', () => {
     const html = renderToStaticMarkup(<SetupReadingBlock sentence={null} kind="trade" evidence={null} oldWording={false} position={null} count={null} />)
     expect(html).toContain('No evidence word was recorded.')
     expect(html).not.toContain('Setup trade')
+    expect(html).not.toContain('adjusted for the number')
+  })
+  it('adds a plain-words hint to every measure and explains the basis once', () => {
+    const html = render(SOME)
+    expect(html).toContain('Sharpe after allowing for the number of ideas tried')
+    expect(html).toContain('Trades that were opened and later closed')
+    expect(html).toContain('tested on later days than the rule learned from')
+    expect(html).toContain('Exact basis as stored')
+  })
+  it('keeps the default aim line to two short sentences', () => {
+    const line = render(SOME).match(/Default aim:[^<]*/)?.[0] ?? ''
+    expect(line.split('. ').length).toBe(2)
   })
 })

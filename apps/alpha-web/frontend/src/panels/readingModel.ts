@@ -106,7 +106,6 @@ export interface RangePicture {
   right: number
   aim: number
   observed: number | null
-  aimInside: boolean
 }
 
 /** Where the strategy's 95% range, the aim and the observed value sit on one line; null without a usable range. */
@@ -121,7 +120,6 @@ export function rangePicture(row: AimRow): RangePicture | null {
   return {
     left: place(low), right: place(high), aim: place(row.aim),
     observed: row.observed === null ? null : place(row.observed),
-    aimInside: row.aim >= low && row.aim <= high,
   }
 }
 
@@ -134,7 +132,8 @@ export function aimSentence(row: AimRow, source: AimSource): string {
 }
 
 export function aimSourceLine(source: AimSource): string {
-  return source === 'default' ? 'Default aim: beat buy-and-hold'
+  return source === 'default'
+    ? 'Default aim: beat buy-and-hold over the same days, with no costs. The aim’s own uncertainty is not included.'
     : source === 'card' ? 'Aim from the idea card' : 'No aim was recorded for this reading.'
 }
 
@@ -146,4 +145,22 @@ export function countLines(counts: ReadingCounts, labels: readonly string[]): st
     counts.best_of ? `Best of ${counts.best_of} variants` : '',
     labels.includes('repeat') ? 'A repeat of an earlier test; it still counts as another try' : '',
   ].filter(Boolean)
+}
+
+/** One plain-words hint per measure the command line names. Words only; no number is read from here. */
+export const MEASURE_HINTS: Record<string, string> = {
+  'out-of-sample Sharpe': 'Return for each unit of risk, on days the rule was not tuned on',
+  'deflated Sharpe': 'Sharpe after allowing for the number of ideas tried',
+  'Sharpe before counting trials': 'Sharpe without allowing for the number of ideas tried',
+  'cross-validated mean Sharpe': 'Average over many re-splits of the test period',
+  'maximum drawdown': 'The largest fall from a peak',
+  'closed trades': 'Trades that were opened and later closed',
+}
+/** What the stored basis words mean, shown once under the table. */
+export const BASIS_HINT = '“Walk-forward out-of-sample, after costs” means: tested on later days than the rule learned from, with trading costs taken off.'
+
+/** What a run list or summary row says for a run: its stored evidence word, else its old grade (a letter or an old word), muted by the caller. */
+export function runWord(evidence: string | null | undefined, letter: unknown): { text: string; old: boolean } | null {
+  if (evidence) return { text: evidence, old: false }
+  return typeof letter === 'string' && letter.trim() ? { text: `graded ${letter} under the old rules`, old: true } : null
 }

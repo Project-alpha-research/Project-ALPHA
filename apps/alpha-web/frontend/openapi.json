@@ -25654,6 +25654,17 @@
             "title": "Display Name",
             "type": "string"
           },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
@@ -25825,6 +25836,7 @@
           "snapshot_hash",
           "passed",
           "verdict",
+          "evidence",
           "research_gate_watermark",
           "run_context_kind",
           "run_context_project_id",

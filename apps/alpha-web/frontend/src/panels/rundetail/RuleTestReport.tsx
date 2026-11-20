@@ -138,7 +138,7 @@ export function RuleTestReport({ test, manifest, runId, runName, figures, figure
               {FLAG_LABELS[flag.flag] && <td>{flag.detail}</td>}
             </tr>
           ))}
-          {!flags.length && <tr><td className="muted">{diagnostics ? 'The diagnostic pass flagged nothing.'
+          {!flags.length && <tr><td className="muted">{diagnostics ? 'The diagnostic checks flagged nothing.'
             : test.diagnostics_reason ?? 'Diagnostics not recorded.'}</td></tr>}
         </tbody>
       </table>

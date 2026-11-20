@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: d597b8b951c3a91e
+verified: 05fc07020b0c20b5
 ---
 
 # Web API reads and writes invariants
@@ -57,8 +57,13 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   ([test](../../../tests/integration/test_web_api_reading.py)).
 - Setup Lab: each outcome carries `reading` (`_setup_reading.py`): its evidence word, or the old word mapped to it
   with `old_wording`, and its place among ledger rows of the same kind and idea.
-- The family-adjusted figure is the CLI's alone and is not shown here.
-  Drift tests: `tests/unit/test_web_setup_reading.py`.
+- The web copies the three old-word mappings and counts ledger rows for the family place. No read-only CLI command returns
+  them for one setup outcome (`alpha setup study` writes a new record). Drift tests that fail when the CLI changes:
+  `tests/unit/test_web_setup_reading.py`. Follow-up: a read-only `alpha setup show <id> --json` returning evidence, family
+  place and the family-adjusted line; then the copies go.
+- The family-adjusted figure is the CLI's alone. The screen says so in one muted line.
+- `RunListItem.evidence` is the evidence word (or `fault`) a new run stored in its manifest `reading`; null for an older run.
+  The list relays it and works nothing out.
 
 ## Market overview read
 

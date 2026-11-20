@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: 5b4efefeaa946d4e
+verified: a5298b00719c2675
 ---
 
 # Web run detail invariants
@@ -52,6 +52,8 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   named and marked, the `because` facts), against the aim (relation words and a range picture of the 95% interval
   with the aim as a tick), measures, counts, footer.
 - A fault replaces the block: "Fault: ... Fix this first. No reading." Its numbers sit behind a closed disclosure.
+- Each measure has a plain-words hint, and the default aim line is two short sentences. The audit rows read sound, flag or
+  not checked. The run list and the Summary "Reading" row show the stored word, else the old grade, muted.
 - A run with no reading and an old letter says "graded <letter> under the old rules", muted.
 - The reading comes from the checks request, as the CLI states it. The browser derives nothing.
 - Tool results show a declared or exploratory chip and the CLI's count line.

@@ -48,6 +48,16 @@ describe('the rule-test report screen', () => {
     expect(report(checks(null))).toContain('graded C under the old rules')
     assertOwnerText(report('HTTP 500'))
   })
+  it('shows the audit rows of the fact checks as sound, flag or not checked, never pass or fail', () => {
+    const audited = { ...test, diagnostics: { flags: [], audit: [
+      { check: 'fills-after-decisions', status: 'PASS', detail: '0 of 9 fills lack an earlier decision.' },
+      { check: 'enough-trades', status: 'FLAG', detail: '4 closed trades; threshold 30.' },
+      { check: 'artifacts-intact', status: 'NOT-CHECKED', detail: 'Not verified yet.' },
+    ] } } as unknown as RuleTest
+    const html = renderToStaticMarkup(<RuleTestReport test={audited} manifest={oldRun} runId="abcd00000000beef" figures={[]} checks={checks(SOME)} />)
+    assertOwnerText(html)
+    for (const word of ['>sound<', '>flag<', '>not checked<']) expect(html).toContain(word)
+  })
   it('catches a lone letter grade and the banned words (the scan is live)', () => {
     expect(() => assertOwnerText('<td>SPY</td><td>C</td>')).toThrow()
     expect(() => assertOwnerText('<p>This idea is supported.</p>')).toThrow()

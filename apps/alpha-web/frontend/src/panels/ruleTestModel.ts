@@ -132,16 +132,19 @@ const CHECK_LABELS: Record<string, string> = {
   'enough-trades': 'Were there enough closed trades?',
   'benchmark-present': 'Was there a buy-and-hold comparison?',
   'history-length': 'Did the test cover at least three years?',
-  'artifacts-intact': 'Did the saved files pass verification?',
+  'artifacts-intact': 'Were the saved files verified as unchanged?',
   'quick-run': 'Did the test use the full set of checks?',
   'variants-counted': 'Did the trial count include the other settings tested?',
 }
+
+// The fact checks of the audit read with the reading block's own check words. The meaning is unchanged.
+const AUDIT_WORDS: Record<string, string> = { PASS: 'sound', FLAG: 'flag', 'NOT-CHECKED': 'not checked' }
 
 export function auditRows(test: RuleTest): AuditRow[] {
   return (test.diagnostics?.audit ?? []).map((item) => ({
     id: item.check,
     check: CHECK_LABELS[item.check] ?? item.check.replaceAll('-', ' '),
-    status: item.status,
+    status: AUDIT_WORDS[item.status] ?? item.status,
     chip: item.status === 'PASS' ? 'pass' : item.status === 'FLAG' ? 'warn' : 'kind',
     detail: item.detail,
   }))

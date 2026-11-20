@@ -12928,6 +12928,8 @@ export interface components {
             command: string | null;
             /** Display Name */
             display_name: string;
+            /** Evidence */
+            evidence: string | null;
             /** Kind */
             kind: string;
             /** Label */

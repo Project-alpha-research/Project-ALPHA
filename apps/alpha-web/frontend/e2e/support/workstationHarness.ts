@@ -1175,6 +1175,7 @@ const WATERMARKED_RUN_ITEM: components['schemas']['RunListItem'] = {
   snapshot_hash: null,
   passed: null,
   verdict: null,
+  evidence: null,
   research_gate_watermark: RESEARCH_GATE_WATERMARK,
   run_context_kind: 'governed_project',
   run_context_project_id: 'project-overridden',
@@ -1672,6 +1673,7 @@ const LIBRARY_RUN = {
   mtime: 1_700_000_000,
   passed: null,
   verdict: null,
+  evidence: null,
 }
 
 export const HEAVY_LIBRARY_RUN: components['schemas']['RunListItem'] = {
@@ -1687,6 +1689,7 @@ export const HEAVY_LIBRARY_RUN: components['schemas']['RunListItem'] = {
   snapshot_hash: 'f'.repeat(64),
   passed: null,
   verdict: null,
+  evidence: null,
   research_gate_watermark: null,
   run_context_kind: 'standalone_sandbox',
   run_context_project_id: null,

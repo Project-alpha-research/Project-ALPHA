@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CLEAR, FAULT, NO_AIM, SOME } from './__fixtures__/readings'
 import {
-  aimSentence, aimSourceLine, countLines, EVIDENCE_STEPS, evidenceStep, faultText, parseReading, rangePicture,
+  aimSentence, aimSourceLine, countLines, runWord, MEASURE_HINTS, EVIDENCE_STEPS, evidenceStep, faultText, parseReading, rangePicture,
 } from './readingModel'
 
 describe('parseReading', () => {
@@ -39,24 +39,35 @@ describe('evidence scale', () => {
 })
 
 describe('against the aim', () => {
-  it('puts the tick outside the bar when the aim is above the interval', () => {
-    const picture = rangePicture(parseReading(SOME)!.aim.rows[0])!
-    expect(picture.aimInside).toBe(false)
+  // The picture is to scale: the four values span the line with a tenth of the span as padding at each end.
+  // The expected positions are worked by hand for each case (percent from the left edge).
+  const row = (aim: number, observed: number | null, interval: [number, number], relation: string) => ({ measure: 'm', aim, observed, interval, relation })
+  const near = (value: number | null, expected: number) => expect(value).toBeCloseTo(expected, 3)
+
+  it('draws the tick inside the bar when the aim is within the range', () => {
+    const picture = rangePicture(row(0.9, 0.75, [0.1, 1.4], 'within the uncertainty of the aim'))!
+    near(picture.left, 8.3333); near(picture.right, 91.6667); near(picture.aim, 59.6154); near(picture.observed, 50)
+  })
+  it('draws the tick right of the bar when the aim is above the range', () => {
+    const picture = rangePicture(row(1.55, 0.75, [0.1, 1.4], 'below the aim'))!
+    near(picture.left, 8.3333); near(picture.right, 83.046); near(picture.aim, 91.6667); near(picture.observed, 45.6897)
     expect(picture.aim).toBeGreaterThan(picture.right)
-    expect(picture.left).toBeGreaterThanOrEqual(0)
-    expect(picture.aim).toBeLessThanOrEqual(100)
   })
-  it('puts the tick inside the bar when the aim is within the interval', () => {
-    const row = { measure: 'm', aim: 0.9, observed: 0.75, interval: [0.1, 1.4] as [number, number], relation: 'within the uncertainty of the aim' }
-    const picture = rangePicture(row)!
-    expect(picture.aimInside).toBe(true)
-    expect(picture.aim).toBeGreaterThan(picture.left)
-    expect(picture.aim).toBeLessThan(picture.right)
-  })
-  it('puts the tick left of the bar when the aim is below the interval', () => {
-    const picture = rangePicture(parseReading(CLEAR)!.aim.rows[0])!
+  it('draws the tick left of the bar when the aim is below the range', () => {
+    const picture = rangePicture(row(0.2, 0.9, [0.5, 1.5], 'above the aim'))!
+    near(picture.left, 27.5641); near(picture.right, 91.6667); near(picture.aim, 8.3333); near(picture.observed, 53.2051)
     expect(picture.aim).toBeLessThan(picture.left)
-    expect(picture.aimInside).toBe(false)
+  })
+  it('draws the bar and tick without a dot when no observed value was stored', () => {
+    const picture = rangePicture(row(0.9, null, [0.1, 1.4], 'within the uncertainty of the aim'))!
+    expect(picture.observed).toBeNull()
+    near(picture.aim, 59.6154)
+  })
+  it('uses the stored fixtures: one above the range, one below', () => {
+    const above = rangePicture(parseReading(SOME)!.aim.rows[0])!
+    expect(above.aim).toBeGreaterThan(above.right)
+    const below = rangePicture(parseReading(CLEAR)!.aim.rows[0])!
+    expect(below.aim).toBeLessThan(below.left)
   })
   it('draws nothing without an interval', () => {
     expect(rangePicture({ measure: 'm', aim: 1, observed: 1, interval: null, relation: 'above the aim' })).toBeNull()
@@ -66,7 +77,7 @@ describe('against the aim', () => {
     const row = parseReading(SOME)!.aim.rows[0]
     expect(aimSentence(row, 'default')).toBe('Out-of-sample Sharpe 0.75 against buy-and-hold 1.55')
     expect(aimSentence(row, 'card')).toBe('Out-of-sample Sharpe 0.75 against the aim 1.55')
-    expect(aimSourceLine('default')).toBe('Default aim: beat buy-and-hold')
+    expect(aimSourceLine('default')).toBe('Default aim: beat buy-and-hold over the same days, with no costs. The aim’s own uncertainty is not included.')
     expect(aimSourceLine('card')).toBe('Aim from the idea card')
     expect(aimSourceLine('none')).toBe('No aim was recorded for this reading.')
     expect(parseReading(NO_AIM)!.aim.rows).toEqual([])
@@ -79,5 +90,20 @@ describe('counts', () => {
     expect(countLines(counts, [])).toEqual(['Ledger entry 3', 'Family counted as 6 tries', 'Best of 6 variants'])
     expect(countLines(counts, ['repeat'])).toContain('A repeat of an earlier test; it still counts as another try')
     expect(countLines({ trial_n: null, family_trials: null, best_of: null, variants_tried: null, family_id: null }, [])).toEqual([])
+  })
+})
+
+describe('words for a run in a list', () => {
+  it('shows the stored evidence word, else the old letter, else nothing', () => {
+    expect(runWord('some evidence', 'B')).toEqual({ text: 'some evidence', old: false })
+    expect(runWord('fault', 'B')).toEqual({ text: 'fault', old: false })
+    expect(runWord(null, 'C')).toEqual({ text: 'graded C under the old rules', old: true })
+    expect(runWord(undefined, 'PASS')).toEqual({ text: 'graded PASS under the old rules', old: true })
+    expect(runWord(undefined, '')).toBeNull()
+    expect(runWord(null, null)).toBeNull()
+  })
+  it('has a plain-words hint for every measure the command line names', () => {
+    expect(MEASURE_HINTS['deflated Sharpe']).toBe('Sharpe after allowing for the number of ideas tried')
+    expect(MEASURE_HINTS['cross-validated mean Sharpe']).toBe('Average over many re-splits of the test period')
   })
 })

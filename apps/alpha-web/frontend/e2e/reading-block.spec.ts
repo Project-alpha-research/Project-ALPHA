@@ -32,7 +32,7 @@ test('the report shows a reading with its checks, scale, aim picture and counts,
   await expect(block.getByRole('list', { name: 'Evidence strength scale, four steps' }).getByRole('listitem')).toHaveCount(4)
   await expect(block.getByText('Out-of-sample Sharpe 0.75 against buy-and-hold 1.55')).toBeVisible()
   await expect(block.getByText('below the aim', { exact: true })).toBeVisible()
-  await expect(block.getByRole('img', { name: /95% range 0\.10 to 1\.40; the aim 1\.55 is outside this range/ })).toBeVisible()
+  await expect(block.getByRole('img', { name: /95% range 0\.10 to 1\.40; the aim 1\.55; below the aim/ })).toBeVisible()
   await expect(block.getByRole('table', { name: 'Measures' }).or(block.getByRole('region', { name: 'Measures' }))).toBeVisible()
   await expect(block.getByText('Ledger entry 3')).toBeVisible()
   await expect(block.getByText('A reading describes the evidence. It is not advice and not an approval.')).toBeVisible()
@@ -61,3 +61,22 @@ test('an old run with a letter and no reading says so in muted text', async ({ p
   await expect(block).toContainText('graded C under the old rules')
   await expect(block.getByText('Evidence strength')).toHaveCount(0)
 })
+
+const BANNED = /\b(supported|rejected|inconclusive|pass|fail|profit|verdict|grade)\b/i
+
+for (const [name, reading] of [['a reading', SOME], ['a fault', FAULT]] as const) {
+  test(`in the dark theme ${name} keeps the same words and none of the banned ones`, async ({ page }) => {
+    await openReport(page, reading)
+    await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('dark')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    const report = page.getByRole('region', { name: 'Rule test', exact: true })
+    await expect(report.getByText(/Fault: a fill came|Evidence strength: some evidence/).first()).toBeVisible()
+    const text = (await report.innerText()).replace(/graded [A-F] under the old rules/g, '')
+    expect(text.match(BANNED)?.[0]).toBeUndefined()
+    if (reading === SOME) {
+      const step = report.locator('[aria-current="step"] .reading-step-bar')
+      const colours = await step.evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el.closest('.reading-block')!).backgroundColor])
+      expect(colours[0]).not.toBe(colours[1])
+    }
+  })
+}

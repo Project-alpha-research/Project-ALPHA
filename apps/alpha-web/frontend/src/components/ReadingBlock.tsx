@@ -1,6 +1,6 @@
 import './ReadingBlock.css'
 import {
-  aimSentence, aimSourceLine, countLines, EVIDENCE_STEPS, evidenceStep, faultText, num2, rangePicture,
+  aimSentence, aimSourceLine, BASIS_HINT, countLines, EVIDENCE_STEPS, evidenceStep, faultText, MEASURE_HINTS, num2, rangePicture,
   type AimRow, type AlphaReading, type CheckState, type ReadingMeasure,
 } from '../panels/readingModel'
 
@@ -42,8 +42,7 @@ function RangePicture({ row }: { row: AimRow }) {
   const picture = rangePicture(row)
   if (!picture || !row.interval) return null
   const [low, high] = row.interval
-  const where = picture.aimInside ? 'inside' : 'outside'
-  const label = `${row.measure}: 95% range ${num2(low)} to ${num2(high)}; the aim ${num2(row.aim)} is ${where} this range`
+  const label = `${row.measure}: 95% range ${num2(low)} to ${num2(high)}; the aim ${num2(row.aim)}; ${row.relation}`
   return <div className="reading-range">
     <div className="reading-range-track" role="img" aria-label={label}>
       <span className="reading-range-bar" style={{ left: `${picture.left}%`, width: `${picture.right - picture.left}%` }} />
@@ -63,7 +62,7 @@ function Aim({ reading }: { reading: AlphaReading }) {
       <RangePicture row={row} />
     </li>)}</ul> : null}
     <p className="muted">{aimSourceLine(source)}</p>
-    {basis && <small className="muted">{basis}</small>}
+    {basis && <details className="muted"><summary>Exact basis as stored</summary><small>{basis}</small></details>}
   </section>
 }
 
@@ -78,10 +77,14 @@ function Measures({ rows }: { rows: ReadingMeasure[] }) {
     <table className="blotter summary-table reading-measures"><thead><tr>
       <th scope="col">Measure</th><th scope="col" className="r">Value</th><th scope="col">95% range</th><th scope="col">Basis</th>
     </tr></thead><tbody>{rows.map(row => <tr key={row.name}>
-      <td className="k">{row.name}</td><td className="num mono">{text(row)}</td>
+      <td className="k" title={MEASURE_HINTS[row.name]}>{row.name}</td><td className="num mono">{text(row)}</td>
       <td className="mono">{row.interval ? `${num2(row.interval[0])} to ${num2(row.interval[1])}` : 'none'}</td>
       <td className="muted">{row.basis ?? 'not recorded'}</td>
     </tr>)}</tbody></table>
+    <ul className="reading-legend muted">
+      {rows.filter(row => MEASURE_HINTS[row.name]).map(row => <li key={row.name}><strong>{row.name}</strong>: {MEASURE_HINTS[row.name]}.</li>)}
+      <li>{BASIS_HINT}</li>
+    </ul>
   </section>
 }
 
@@ -155,6 +158,7 @@ export function SetupReadingBlock({ kind, evidence, oldWording, sentence, positi
     </section> : <p className="muted">No evidence word was recorded.</p>}
     {sentence && <p className="reading-sentence">{sentence}</p>}
     {family && <p>{family}</p>}
+    {evidence && <p className="muted">The figure adjusted for the number of {plural} is shown by <code className="mono">alpha setup {kind}</code>.</p>}
     <small className="muted">{FOOTER}</small>
   </section>
 }

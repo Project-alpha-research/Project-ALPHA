@@ -15,6 +15,7 @@ import { fmtTime, shortId } from '../util/format'
 import { openRunDetail } from './actions'
 import { researchGateWatermark } from './researchGateModel'
 import { runKindMatches } from './runBrowserModel'
+import { runWord } from './readingModel'
 import type { PanelHandleProps } from '../context/panelHandle'
 
 const KINDS = ['all', 'runs', 'optim', 'portfolio', 'cross_sectional', 'propfirm', 'forecast']
@@ -116,14 +117,12 @@ export function RunBrowser(props: PanelHandleProps) {
         meta: { className: 'mono' },
       },
       {
-        header: 'Verdict',
-        accessorKey: 'verdict',
-        cell: (c) =>
-          c.row.original.verdict ? (
-            <span className={`verdict g-${c.row.original.verdict}`}>{c.row.original.verdict}</span>
-          ) : (
-            <span className="muted">—</span>
-          ),
+        header: 'Reading',
+        accessorKey: 'evidence',
+        cell: (c) => {
+          const word = runWord(c.row.original.evidence, c.row.original.verdict)
+          return word ? <span className={word.old ? 'muted' : undefined}>{word.text}</span> : <span className="muted">—</span>
+        },
       },
       {
         header: 'Result',

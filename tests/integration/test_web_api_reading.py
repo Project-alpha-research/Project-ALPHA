@@ -84,3 +84,13 @@ def test_an_old_run_gets_a_reading_derived_by_the_command_line(home: Path, run_i
     assert derived is not None and derived["schema"] == "AlphaReadingV1"
     assert derived["evidence"]["word"] in WORDS
     assert derived == json.loads(original)["reading"]
+
+
+def _listed(run_id: str) -> dict[str, Any]:
+    items = TestClient(create_app()).get("/api/runs").json()["items"]
+    return next(item for item in items if item["run_id"] == run_id)
+
+
+def test_the_run_list_relays_the_stored_evidence_word(home: Path, run_id: str) -> None:
+    stored = json.loads((home / "runs" / run_id / "manifest.json").read_text())["reading"]
+    assert _listed(run_id)["evidence"] == stored["evidence"]["word"]

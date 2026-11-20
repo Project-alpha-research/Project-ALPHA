@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/context.py
   - apps/alpha-cli/src/alpha_cli/toolbox/reference.py
   - packages/alpha-validation/src/alpha_validation/factor_attribution.py
-verified: a5ffcba587102f16
+verified: e1fd9aceca0d9f21
 ---
 
 # Published factors
@@ -23,14 +23,14 @@ uv run alpha tool describe context.published_factors
 - The run's scored returns become calendar-month returns, complete months only. The months used are listed.
 - Seven fixed factors, chosen in code: momentum, short-term reversal, size, book-to-market, low beta, profitability,
   asset growth (`Mom12m`, `STreversal`, `Size`, `BM`, `Beta`, `OperProf`, `AssetGrowth`). Each shows its published year.
-- `context.published_factors.explained_share` is the share of month-to-month variation that moves with them. The part
-  they do not explain is shown per month and per year with a 95% range.
+- `context.published_factors.explained_share` is the share of month-to-month variation that moves with them. The rest has a 95% range.
 - A second part, labelled "search across all N - exploratory", names the three closest of the N signals compared, with
   a p-value adjusted over all N. Picking three of many is a search; its range assumes independent months.
 - Under 80 months, or an asset that is not a US stock or fund: a typed reading, no numbers. Factors too similar:
   one factor at a time; these exposures overlap and must not be added up.
+- Older stores: a stock source with only US-session bar dates is read as a US stock or fund, labelled `asset-kind-inferred-from-calendar`.
 - Every result is labelled `reference-series-known-later`: the factors were published after the test's period.
-  The rule: [descriptive reference reads](../../docs/reference/invariants/cli-toolbox.md#descriptive-reference-reads).
+  Rule: [descriptive reference reads](../../docs/reference/invariants/cli-toolbox.md#descriptive-reference-reads).
 
 **What it cannot tell you**
 

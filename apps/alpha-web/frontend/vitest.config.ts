@@ -32,6 +32,7 @@ export default defineConfig({
         'src/panels/governanceModel.ts',
         'src/panels/marketWatchModel.ts',
         'src/panels/marketModel.ts',
+        'src/panels/followTodayModel.ts',
         'src/panels/navigatorModel.ts',
         'src/shell/statusModel.ts',
         'src/shell/profiles.ts',

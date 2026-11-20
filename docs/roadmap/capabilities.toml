@@ -524,6 +524,30 @@ state = "Partial"
 missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet."
 
 [[capability]]
+id = "follow-today-screen"
+name = "Today screen for followed ideas"
+what = "See what is active today among the ideas followed on paper: cards in four groups plus waiting, and for one card the paper equity path, the last entries and the replay check. It only shows; it places no order."
+see_it = [
+  "Workstation: Research › Today",
+  "uv run alpha follow today --json",
+]
+entry_points = [
+  "api: GET /api/follow/today",
+  "api: GET /api/follow/{follow_id}",
+  "panel: apps/alpha-web/frontend/src/panels/FollowToday.tsx",
+]
+proof_synthetic = [
+  "tests/unit/test_web_follow_routes.py::test_today_relays_the_command_and_keeps_its_shape",
+  "tests/integration/test_web_api_follow.py::test_an_empty_home_has_no_follows",
+  "apps/alpha-web/frontend/e2e/follow-today.spec.ts::Today on an empty home says how to start a follow",
+]
+docs = ["docs/reference/invariants/web-frontend.md"]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "tested with a faked relay and in a browser; the detail shows the last 5 entries the command returns, not 10. No real-data run yet."
+
+[[capability]]
 id = "idea-library"
 name = "Library of published ideas (alpha library)"
 what = "Browse a small starting map of well-known published ideas, written in our own words with the source, the claimed reason, later decay evidence and whether ALPHA can test it today, and turn one into an idea card. The owner's private notes are read from the data folder. It tests nothing."

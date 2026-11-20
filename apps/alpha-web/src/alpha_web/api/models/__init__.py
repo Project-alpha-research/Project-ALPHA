@@ -20,6 +20,7 @@ research_hub: research reports and evidence hub.
 research_gates: research gate packets and decisions.
 figures: figure catalogue and metadata.
 market: the stored-bars Market overview.
+follow: the Today screen's reads of followed ideas.
 """
 
 from __future__ import annotations
@@ -152,6 +153,17 @@ from .figures import FigureCatalogue as FigureCatalogue
 from .figures import FigureCatalogueItem as FigureCatalogueItem
 from .figures import FigureMetadata as FigureMetadata
 from .figures import FigurePanelMeta as FigurePanelMeta
+from .follow import FollowEntryRow as FollowEntryRow
+from .follow import FollowGroup as FollowGroup
+from .follow import FollowMarket as FollowMarket
+from .follow import FollowPaper as FollowPaper
+from .follow import FollowPaperSummary as FollowPaperSummary
+from .follow import FollowRecord as FollowRecord
+from .follow import FollowReplay as FollowReplay
+from .follow import FollowReplayDifference as FollowReplayDifference
+from .follow import FollowRow as FollowRow
+from .follow import FollowShow as FollowShow
+from .follow import FollowToday as FollowToday
 from .market import MarketAsset as MarketAsset
 from .market import MarketOverview as MarketOverview
 from .market import MarketTooFewBars as MarketTooFewBars

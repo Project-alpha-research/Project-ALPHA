@@ -7,6 +7,7 @@ import type { Profile } from '../state/settings'
 import { DataManager } from '../panels/DataManager'
 import { MarketWatch } from '../panels/MarketWatch'
 import { MarketOverview } from '../panels/MarketOverview'
+import { FollowToday } from '../panels/FollowToday'
 import { Navigator } from '../panels/Navigator'
 import { Alerts } from '../panels/Alerts'
 import { DataPulls } from '../panels/JobMonitor'
@@ -47,6 +48,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
       if (!page.panes.some(item => item.name === pane.name)) page.panes.push(pane)
     }
   }
+  pages.find(page => page.id === 'research')!.panes.push({ name: 'FollowToday', title: 'Today', component: FollowToday })
   pages.find(page => page.id === 'operations')!.panes.push(
     { name: 'DataPulls', title: 'Data jobs', component: DataPulls },
     { name: 'Alerts', title: 'Alerts', component: Alerts },

@@ -7,8 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_chain.py
   - apps/alpha-cli/src/alpha_cli/follow_update.py
   - apps/alpha-cli/src/alpha_cli/follow_show.py
-  - apps/alpha-cli/src/alpha_cli/follow_today.py
-verified: 2b9af661fecd9902
+verified: 58092f03836a4e17
 ---
 # Follow a tested idea on paper
 
@@ -17,11 +16,8 @@ verified: 2b9af661fecd9902
 ```text
 uv run alpha follow start --test <run id> --size-pct 10
 uv run alpha follow start --find <find id>
-uv run alpha follow list
-uv run alpha follow today
+uv run alpha follow list    # also: today, show, update, verify
 uv run alpha follow update <follow id>
-uv run alpha follow show <follow id>
-uv run alpha follow verify <follow id>
 ```
 
 The follow is frozen when it starts: the source, the spec hash, the assets, the paper size (a percent of a paper account) and the
@@ -35,7 +31,7 @@ downloads nothing. It decides on each close and books a paper fill at the next o
   A session with no stored bar is `late`. One written after the next open is `missed`: it shows what the rule would have signalled.
 - Bars before the start only warm the indicators. The follow starts flat, even if the rule is already long.
 - Each update replays the rule. `agrees = false` names the sessions that differ: stored bars or the engine changed.
-- `today` is what is active today: new signal, open paper position, nothing, late or missed, waiting. It reads the journals only.
+- `today` groups the active follows: new signal, open position, nothing, late or missed, waiting. It reads journals only.
 - `verify` recomputes the hash chain and names the first broken entry. Exit 1: do not trust it.
   A follow is not a test: no trial is written. Research never reads it.
 

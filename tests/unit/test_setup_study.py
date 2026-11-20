@@ -84,7 +84,8 @@ def test_returns_incomplete_facts_repeat_and_blindness(tmp_path: Path) -> None:
     assert [r.counts_for_deflation for r in ledger.records] == [False, True, False, False]
     studies = [r for r in ledger.records if r.kind == "setup_study"]
     assert studies[0].family_id == "setup:inspect matches"
-    assert studies[0].outcome == "inconclusive"
+    assert studies[0].outcome == "too little to read"
+    assert studies[0].machine_outcome == "inconclusive"
     assert sum(r["reader_trials"] for r in family_counts(ledger)) == 1
     assert read_trials(tmp_path)[1]["verdict"] is None
 

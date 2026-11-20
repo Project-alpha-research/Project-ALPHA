@@ -24,29 +24,43 @@ DSR_THRESHOLD = 0.95  # _gauntlet.py dsr_threshold: deflated Sharpe, after count
 # corrected figure decides between "not clear of chance" and the two positive words, and only a
 # deflated Sharpe counted against a ledger family can give the top word. A missing number never
 # helps: it makes the word weaker.
+CLEAR, SOME, NOT_CLEAR, TOO_LITTLE = (
+    "clear of chance",
+    "some evidence",
+    "not clear of chance",
+    "too little to read",
+)
 WORDS = {
-    "clear of chance": (
+    CLEAR: (
         f"Every check holds after counting all trials: each null test at {NULL_THRESHOLD}, the "
         f"{CONFIDENCE:.0%} Sharpe interval above 0, deflated Sharpe at least {DSR_THRESHOLD} with "
         "the trials counted from the ledger family, cross-validated mean Sharpe above 0, and the "
         "plausibility check ran and raised nothing."
     ),
-    "some evidence": (
+    SOME: (
         f"The Sharpe interval is above 0, every null test holds and deflated Sharpe is at least "
         f"{DSR_THRESHOLD}, but cross-validation, a plausibility caution or a plausibility check "
         "that did not run, or trials not counted from a ledger family hold back the top word."
     ),
-    "not clear of chance": (
+    NOT_CLEAR: (
         "The Sharpe is not above 0, its interval includes 0, random data did as well as the rule "
         f"in more than {1 - NULL_THRESHOLD:.0%} of draws, or the deflated Sharpe after counting "
         f"trials is under {DSR_THRESHOLD}. A missing interval, null test or deflated Sharpe "
         "reads the same way."
     ),
-    "too little to read": (
+    TOO_LITTLE: (
         f"Under {MIN_TRADES} closed trades or under {MIN_OOS_OBSERVATIONS} out-of-sample "
         "observations, or either count was not stored. This word wins over every other."
     ),
 }
+# Setup Lab: the three outcome words stored before readings, read as the evidence word they were
+# derived from (the same conditions). The old words stay in stored files for machines.
+OLD_SETUP_OUTCOMES = {
+    "inconclusive": TOO_LITTLE,
+    "not supported": NOT_CLEAR,
+    "supported (exploratory, not confirmed)": SOME,
+}
+LEGACY_SETUP_OUTCOMES = {word: old for old, word in OLD_SETUP_OUTCOMES.items()}
 RELATIONS = ("above the aim", "below the aim", "within the uncertainty of the aim")
 AIM_BASIS = (
     "buy-and-hold Sharpe over the same scored days ({price}, no costs) against the strategy's "
@@ -144,7 +158,7 @@ def _word(
     nulls = manifest.get("nulls") or []
     dsr = _num(_get(manifest, "dsr", "dsr"))
     if little:
-        return "too little to read", []
+        return TOO_LITTLE, []
     if (
         sharpe is None
         or sharpe <= 0
@@ -155,7 +169,7 @@ def _word(
         or dsr is None
         or dsr < DSR_THRESHOLD
     ):
-        return "not clear of chance", []
+        return NOT_CLEAR, []
     held = []
     if _get(manifest, "cpcv", "passed") is not True:
         held.append("Cross-validated mean Sharpe is not above 0.")
@@ -166,7 +180,7 @@ def _word(
         held.append("The plausibility check did not run.")
     elif plausible:
         held.append("The result looks too good: check for a data error first.")
-    return ("some evidence" if held else "clear of chance"), held
+    return (SOME if held else CLEAR), held
 
 
 def _evidence(
@@ -320,3 +334,20 @@ def old_grade_text(letter: str | None) -> str:
 def reading_word(reading: Mapping[str, Any]) -> str:
     """The short owner word: the evidence word, or ``fault``."""
     return str(_get(reading, "evidence", "word") or "fault")
+
+
+def ledger_fields(found: Mapping[str, Any] | None) -> dict[str, str | None]:
+    """The two additive ledger fields of a new rule-test row; an error row has none."""
+    if not isinstance(found, Mapping):
+        return {"evidence": None, "aim_relation": None}
+    rows = _get(found, "aim", "rows") or []
+    relation = rows[0].get("relation") if rows else None
+    return {"evidence": reading_word(found), "aim_relation": relation}
+
+
+def setup_evidence_of(summary: Mapping[str, Any]) -> tuple[str, bool]:
+    """A stored setup study or trade as an evidence word, and True when only the old word exists."""
+    word = summary.get("evidence")
+    if isinstance(word, str) and word in WORDS:
+        return word, False
+    return OLD_SETUP_OUTCOMES[str(summary["outcome"])], True

@@ -10,7 +10,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: b4dca1c086c3d033
+verified: c9f7b42d7a12c19e
 ---
 
 # One trial ledger invariants
@@ -46,57 +46,13 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
 
 - `setup_study` and `setup_trade` count once; rows labelled `repeat` do not count. `setup_find` stays uncounted.
   Studies use `setup:<idea>` with Unicode case folding and collapsed whitespace; rule families stay unchanged.
-  Studies have no comparable Sharpe. Outcomes are `inconclusive` below 30 complete primary outcomes,
+  Studies have no comparable Sharpe. The stored `outcome` stays `inconclusive` below 30 complete primary outcomes,
   `supported (exploratory, not confirmed)` for a positive excess with random-date p ≤ 0.05 and agreeing halves,
-  otherwise `not supported`. Studies use `setup-studies/<study_id>/manifest.json`; trades use `setup-trades/<trade_id>/manifest.json`.
-  Trade readings count completed trades and apply the same support conditions, with unavailable controls never supporting.
-- Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
-  and `rule:<family_id>`. Keep recorded family size separate from the reader count.
-- Tool rows (`tool:<id>`) come in pairs, `attempted` then `ok` or `error`, and never count for deflation. Rows of the old
-  `tool:attribution|regimes|changepoints` kinds map to the `market.*` ids; both keep the family `spine-tool:<old name>`.
-- `family_counts` reuses the existing RD-Agent `trial_family` function. Unknown RD-Agent rows
-  contribute conservatively even if there are no mapped factors; an unmapped row of a factor
-  schema goes through `trial_family` itself, other unknown rows add one each. `all_trials` is the sum of family
-  counts plus unknown spine rows: each row once, never doubled (ADR-0053).
-## Rule-test counting
-
-- Rule-test deflation reads only the spine ledger, never `sources.toml` or RD-Agent. Reader version 1
-  counts prior `spine:<rule>` trials excluding repeats and errors, plus this run, scored sensitivity
-  variants and all unknown spine rows. It is raised to the wider count of same-asset tests of any
-  rule, this run and its variants when that is larger.
-  The test key is (spec hash, symbol, data window start and end as used, bar size, store, `idea_id`:
-  spec hash plus the exact bars and dividends used), one definition (`make_test_key`, `trial_record.py`)
-  for repeat labelling, the family count and the same-asset count. Another store, a price revision or
-  another adjustment basis is a new key. Costs are in the spec hash; seed and `--quick` change no
-  out-of-sample return. It never includes the code fingerprint: a re-run after a code change is the
-  same test. Trials of
-  one key count once, keeping the earliest; a run repeating an earlier test is not counted again
-  (`this_run` 0) and its own Sharpe replaces the earlier one. A longer data window is a new key, by
-  design. Rows without a spec hash or symbol cannot be matched and each count. `append_trial` labels a
-  new row `repeat` when an earlier non-error row has its key (or its run id; an error row never
-  matches) and adds `repeat_of`, the first such `run_id`; old rows are never rewritten, so every dedupe happens on read.
-  The wider count is of distinct keys: `same_asset_tests` (counted) and `same_asset_repeats` (rows not
-  counted: key-equal, or key-less and labelled repeat) in `trials.family`. `total_trials` is the ledger row number
-  (audit sequence, no statistic reads it).
-- `trial_dsr` uses exactly the verdict's inputs below, so for a rule test with diagnostics it equals
-  the verdict's `dsr`. The public expected-maximum and PSR functions compute the probability.
-  Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;
-  `family_trials` cites the recorded count. Missing ledgers count zero; unreadable ones fail with
-  `LEDGER_UNREADABLE`, never a one-trial fallback. No diagnostics means `spine.deflation` is null.
-- The verdict's `dsr` takes its variance from counted family Sharpes of the run's bar size only
-  (daily on either calendar; another bar size's per-bar Sharpe is on another scale, so it counts in
-  N but not in the variance) and this run's own OOS Sharpe, with N at least the family count.
-  Sensitivity variants count in N but stay out of the variance: they are full-sample figures of
-  neighbouring settings, another basis and strongly correlated, and would narrow the spread.
-  Below 5 comparable trials (distinct same-bar-size family tests with a Sharpe, this run included)
-  the variance is the larger of the sample variance and the sampling variance of this run's
-  per-bar Sharpe (the PSR's non-normal standard error, squared); from 5 the sample variance stands.
-  `trial_basis` says in plain words when the count is the wider same-asset count of any
-  rule, how many repeats were not counted and when the spread was floored. `dsr` also records
-  `family_id`, `prior_sharpes`, `family_count`, `comparable_trials`, `repeats`, `spread_floored`
-  and `deflation_rule` (`family-dedup-floor-2`, not part of the run id). A rule test reads the
-  ledger once for both the verdict and diagnostics; an unreadable ledger stops `alpha validate`
-  with `LEDGER_UNREADABLE` and its next step.
+  otherwise `not supported`; machines read it. A new row adds `evidence` (`too little to read`, `some evidence`, `not clear of chance`)
+  and the reader prints that word; an old row reads through its old word. Studies use `setup-studies/<study_id>/manifest.json`;
+  trades use `setup-trades/<trade_id>/manifest.json`. Trade readings count completed trades and apply the same conditions,
+  with unavailable controls never giving `some evidence`. No count reads any of these words
+  ([readings](cli-rule-readings.md#ledger-words)).
   `alpha validate` recognises existing spine families by registered rule strategy; other runs state
   `no ledger family: counted as one trial`. Re-running an existing run id reuses the family inputs
   in its manifest, never today's grown ledger. No ledger history or immutable run is rewritten.

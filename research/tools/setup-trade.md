@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_trade_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: cb777a4de4999b9d
+verified: 8aaeeb4688f76db2
 ---
 # Setup trade
 
@@ -32,8 +32,8 @@ uv run alpha results cite <trade_id> setup_trade_mean_net_return --json
 - A result of +0.4 R means that, risking 1% of the account per trade, the average trade made 0.4%. No currency position sizing is simulated.
 - Compare the mean with all eligible dates and 2,000 spaced random draws, each half against its own history.
   The uncounted opposite-direction control compares mean return and mean R on exactly the same entries with mirrored exits and its own costs.
-- The figure shows entry direction, net returns, the random-date comparison and a histogram of completed trades in R.
-- Changing direction or exits counts another trial in its family. A repeat adds none. A find that used reserved bars is refused (`RESERVED_PERIOD_SEEN`).
+- The figure shows entries, net returns, random dates and R. Quote the evidence word and "Setup trade K of N" as for a [study](setup-study.md).
+- A new direction or exits counts another trial; a repeat adds none. A find that used reserved bars is refused (`RESERVED_PERIOD_SEEN`).
 The trade run checks the inputs again before simulating exits. A failed report requires a reason on this invocation. [Data health](data-health.md)
 **What it cannot tell you** Currency position sizing, dividends, actual borrow or funding rates, portfolios or confirmation
 on reserved data. Unusual dates are not proof that the setup can be traded.

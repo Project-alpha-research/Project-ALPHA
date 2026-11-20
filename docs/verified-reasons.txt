@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f8b0382a482106c6 on 2026-11-20: nightly refresh freezes first; this text is still correct
+  verified 4cc925bed37e2d93 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 apps/alpha-cli/README.md
-  verified f8b0382a482106c6 on 2026-11-20: nightly refresh now freezes first; this text is still correct
+  verified 4cc925bed37e2d93 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-research.md
   verified 918fdb0fc02c9941 on 2026-11-19: Re-read: tool-count pin changed to 77; this text stays correct
 
 docs/reference/invariants/cli-results-check.md
-  verified b7d30ef3e2484569 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
   verified c73a8f27192ce963 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -128,13 +128,13 @@ docs/reference/project/components/setup-lab.md
   verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/strategies-and-signals.md
-  verified e9b71f4d445bb3e1 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 83157f5963876d57 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/project/components/toolbox.md
   verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 6a13bac6fa56fddd on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 3922bf88d4ff357b on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -185,13 +185,13 @@ packages/alpha-data/CONTEXT.md
   verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 research/CONTEXT.md
-  verified 0272affe2a51e27f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 0e1684530077ba77 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/PLAYBOOK.md
-  verified 33b3f3be54efae39 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
+  verified 96adace7cc5b94b3 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/README.md
-  verified b3f7e63b0f7e65df on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 26fdc1c8d5483641 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -200,22 +200,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified e3e89eaad868c402 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 49a32885f6179038 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 2473db61b60cc50b on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 990cabba707ae234 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/charts.md
-  verified b320c36e794b4d49 on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 147bf7e23b912c9f on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
+  verified f056a7f069613031 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/diagnose-and-audit.md
-  verified c48efd7ea1bfb32a on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified b5aff299cb07c076 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -245,16 +245,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 617b0bbed74a2387 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified d493fd562dffec17 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 3f1e9267a07b79a3 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 147bf7e23b912c9f on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified f056a7f069613031 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

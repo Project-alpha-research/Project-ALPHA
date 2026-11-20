@@ -84,8 +84,11 @@ def _stores_facts(home: Path) -> tuple[list[dict[str, Any]], str | None]:
 
 
 def _outcome_words(home: Path, record: Any) -> str:
-    """Rule tests read as evidence words; a row with only a letter says which rules graded it."""
-    if record.kind == "rule_test" and record.outcome != "error":
+    """Rows read as evidence words; a row with only a letter says which rules graded it.
+
+    A rule-test row written before the ledger kept the evidence word is read from its run folder.
+    """
+    if record.kind == "rule_test" and record.evidence is None and record.outcome != "error":
         return owner_word(home, record.run_id, record.raw_status)
     return str(OUTCOME_WORDS.get(record.outcome, record.outcome))
 

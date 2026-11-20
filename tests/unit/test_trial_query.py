@@ -46,8 +46,10 @@ def test_every_question(tmp_path: Path, question: Any) -> None:
     }
     if question == "by-outcome":
         assert {r["outcome"]: r["rows"] for r in result} == {
-            "supported": 2,
-            "rejected": 2,
+            "supported": 1,
+            "rejected": 1,
+            "graded B under the old rules": 1,
+            "graded D under the old rules": 1,
             "inconclusive": 1,
             "recorded": 1,
             "error": 1,

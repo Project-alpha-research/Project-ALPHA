@@ -76,6 +76,8 @@ def _render(output: dict[str, Any]) -> str:
     if "record" in output:
         rows = [output["record"]]
     rows = [{**row, "figures": figures(row)} if row.get("measure_clock") else row for row in rows]
+    # A rule test's stored status is its old letter grade: it stays in the JSON, never in the text.
+    rows = [{**row, "raw_status": None} if row.get("kind") == "rule_test" else row for row in rows]
     keys = [
         key
         for key in (
@@ -209,10 +211,10 @@ def list_trials(
             for r in snapshot.records
             if all(
                 value is None or getattr(r, key) == value
-                for key, value in dict(
-                    kind=kind, family_id=family, outcome=outcome, source=source
-                ).items()
+                for key, value in dict(kind=kind, family_id=family, source=source).items()
             )
+            # The filter still takes the old machine words, so existing callers keep working.
+            and (outcome is None or outcome in {r.outcome, r.machine_outcome})
             and (asset is None or asset_group(asset) in {asset_group(a) for a in r.assets})
         ]
         records.sort(

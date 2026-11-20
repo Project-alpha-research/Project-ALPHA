@@ -42,7 +42,20 @@ FORBIDDEN = (
     "data pull",
     "library import-catalogue",
 )
-BAD_TEXT = ["--config", "-x", "a\nb", "a\rb", "a\x00b", "", "  ", "x" * 301]
+BAD_TEXT = [
+    "--config",
+    "-x",
+    " -x",
+    "a\nb",
+    "a\rb",
+    "a\x00b",
+    "a\x0bb",
+    "a\u2028b",
+    "a\tb",
+    "",
+    "  ",
+    "x" * 301,
+]
 
 
 @pytest.fixture
@@ -88,7 +101,7 @@ def test_every_tool_builds_the_expected_argv(calls: list[list[str]]) -> None:
         ["alpha", "library", "list", "--market", "crypto", "--tier", "all", "--json"],
         ["alpha", "library", "show", RECORD, "--json"],
         ["alpha", "library", "card", RECORD, "--json"],
-        ["alpha", "tool", "find", "drift", "--json"],
+        ["alpha", "tool", "find", "--json", "--", "drift"],
         ["alpha", "tool", "situations", "--json"],
         ["alpha", "follow", "today", "--json"],
         ["alpha", "follow", "list", "--json"],
@@ -102,7 +115,7 @@ def test_every_tool_builds_the_expected_argv(calls: list[list[str]]) -> None:
 def test_free_text_is_one_argv_element(calls: list[list[str]]) -> None:
     front_door_tools.tool_find("my rule fails after costs; why?")
     front_door_tools.idea_new(claim="Gap fills $(date) within a day")
-    assert calls[0] == ["alpha", "tool", "find", "my rule fails after costs; why?", "--json"]
+    assert calls[0] == ["alpha", "tool", "find", "--json", "--", "my rule fails after costs; why?"]
     assert calls[1] == [
         "alpha",
         "idea",
@@ -111,6 +124,51 @@ def test_free_text_is_one_argv_element(calls: list[list[str]]) -> None:
         "Gap fills $(date) within a day",
         "--json",
     ]
+
+
+def test_hostile_text_is_one_argv_element_or_refused(calls: list[list[str]]) -> None:
+    lookalikes = [
+        "\u2212minus",
+        "\u2013dash",
+        "\uff0dfull",
+        "\u2010hy",
+        "a --config b",
+        "`id`",
+        "a|b&c",
+    ]
+    for text in lookalikes:
+        front_door_tools.tool_find(text)
+        front_door_tools.idea_new(claim=text)
+    assert [c[-1] for c in calls[0::2]] == lookalikes
+    assert all(c[:5] == ["alpha", "tool", "find", "--json", "--"] for c in calls[0::2])
+    for c in calls[1::2]:
+        assert c[:3] == ["alpha", "idea", "new"] and c[3] == "--claim" and c[-1] == "--json"
+        assert len(c) == 6
+
+
+def test_hostile_ids_never_reach_the_command(calls: list[list[str]]) -> None:
+    hostile = ["../../x", "/etc/passwd", "a" * 100, "0" * 100, "ab\x00cd", "ａｂｃｄ", "١٢٣٤"]
+    for bad in hostile:
+        for call in (
+            front_door_tools.idea_show,
+            front_door_tools.follows_verify,
+            front_door_tools.library_show,
+        ):
+            with pytest.raises(ValueError):
+                call(bad)
+    assert calls == []
+
+
+def test_note_writes_are_capped_per_session(calls: list[list[str]]) -> None:
+    front_door_tools._note_writes[0] = 0
+    for index in range(front_door_tools._MAX_NOTE_WRITES):
+        front_door_tools.idea_new(claim=f"idea {index}")
+    with pytest.raises(ValueError, match="note files"):
+        front_door_tools.idea_new(claim="one more")
+    with pytest.raises(ValueError, match="note files"):
+        front_door_tools.library_card(RECORD)
+    front_door_tools.idea_list()
+    front_door_tools._note_writes[0] = 0
 
 
 @pytest.mark.parametrize("bad", BAD_TEXT)
@@ -200,11 +258,24 @@ def test_a_failure_without_error_json_is_a_plain_error_not_a_traceback(
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
 
     def fake_run(argv: list[str], **_: Any) -> Any:
-        return subprocess.CompletedProcess(argv, 2, stdout="", stderr="Traceback boom")
+        return subprocess.CompletedProcess(argv, 2, stdout="", stderr="Traceback /home/u SECRET=1")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    with pytest.raises(RuntimeError, match="failed"):
+    with pytest.raises(RuntimeError, match="failed") as caught:
         front_door_tools.next_step()
+    assert "Traceback" not in str(caught.value) and "SECRET" not in str(caught.value)
+    assert "/home" not in str(caught.value)
+
+
+def test_an_oversized_answer_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+
+    def fake_run(argv: list[str], **_: Any) -> Any:
+        return subprocess.CompletedProcess(argv, 0, stdout="[" + "1," * 2_000_000 + "1]", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="more than"):
+        front_door_tools.idea_list()
 
 
 def test_a_timeout_is_set_on_every_tool(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -234,6 +305,16 @@ def test_every_tool_maps_to_a_command_the_catalog_calls_safe() -> None:
     for name, argv in FRONT_DOOR_COMMANDS.items():
         expected = "empirical" if name in _READ_ONLY_UNDER_EMPIRICAL_ROOT else "safe"
         assert classify_generic_command(argv) == expected, name
+
+
+def test_no_front_door_tool_maps_to_an_owner_only_or_empirical_root() -> None:
+    from alpha_cli import catalog
+
+    risky = set(catalog._OWNER_ONLY_ROOTS) | set(catalog._EMPIRICAL_ROOTS)
+    for name, argv in FRONT_DOOR_COMMANDS.items():
+        if argv[0] in risky:
+            assert name in _READ_ONLY_UNDER_EMPIRICAL_ROOT, name
+        assert classify_generic_command(argv) != "owner_only", name
 
 
 @pytest.mark.parametrize("command", FORBIDDEN)

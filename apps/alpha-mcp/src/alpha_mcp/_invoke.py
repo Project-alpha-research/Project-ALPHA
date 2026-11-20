@@ -31,6 +31,7 @@ _RUN_ID_RE = re.compile(r"->\s+run\s+([0-9a-f]{16})\b")
 _TIMEOUT_S = 3600.0  # generous ceiling for a full gauntlet; a hung child must not hang the server
 _PROJECTION_TIMEOUT_S = 30.0
 _MAX_STDOUT_CHARS = 16_384
+_RELAY_MAX_CHARS = 2_000_000
 _DURABLE_HEARTBEAT_INTERVAL_S = DEFAULT_HEARTBEAT_INTERVAL_SECONDS
 _DURABLE_HEARTBEAT_TIMEOUT_S = 5.0
 _PROCESS_ENV_NAMES = frozenset(
@@ -133,9 +134,12 @@ def run_json_relay(args: list[str], *, data_dir: Path, timeout_seconds: float) -
     """Run one ``alpha ... --json`` read and return its JSON, or its own error JSON unchanged.
 
     A command that fails with ``{"error": {...}}`` on stdout (code, message, next) returns that
-    object. Any other failure, a timeout or invalid JSON raises a plain ``RuntimeError``.
+    object. Any other failure, a timeout, oversized output or invalid JSON raises a plain
+    ``RuntimeError`` that names only the command words and the exit code. Stderr and the
+    arguments are never echoed to the client.
     """
     env = _cli_environment(data_dir)
+    command = " ".join(arg for arg in args[:2] if not arg.startswith("-"))
     try:
         proc = subprocess.run(
             [_ALPHA_BIN, *args],
@@ -146,7 +150,9 @@ def run_json_relay(args: list[str], *, data_dir: Path, timeout_seconds: float) -
             timeout=timeout_seconds,
         )
     except subprocess.TimeoutExpired as exc:
-        raise RuntimeError(f"`alpha {' '.join(args)}` exceeded {timeout_seconds:.0f}s") from exc
+        raise RuntimeError(f"`alpha {command}` exceeded {timeout_seconds:.0f}s") from exc
+    if len(proc.stdout) > _RELAY_MAX_CHARS:
+        raise RuntimeError(f"`alpha {command}` returned more than {_RELAY_MAX_CHARS} characters")
     try:
         decoded = json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -155,8 +161,7 @@ def run_json_relay(args: list[str], *, data_dir: Path, timeout_seconds: float) -
         return decoded
     if isinstance(decoded, dict) and isinstance(decoded.get("error"), dict):
         return decoded
-    detail = proc.stderr.strip()[:500] or "(no JSON output)"
-    raise RuntimeError(f"`alpha {' '.join(args)}` failed (exit {proc.returncode}): {detail}")
+    raise RuntimeError(f"`alpha {command}` failed (exit {proc.returncode}) without a JSON answer")
 
 
 def _renew_job_heartbeat(job_id: str, *, data_dir: Path) -> bool:

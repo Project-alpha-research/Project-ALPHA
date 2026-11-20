@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
-verified: e09a09ccc1ff3503
+verified: be8da92135834609
 ---
 
 # MCP invariants
@@ -75,9 +75,18 @@ It is a surface like the web backend: it composes nothing and has no authority o
   `nightly_status` (`alpha nightly status`). The follow tools are plural so no name matches the follow-store guard.
 - Two tools write one small note file in the data directory: `idea_new` and `library_card`. A card is a note.
   Nothing is tested or approved. The CLI catalog classes both commands `safe`.
-- Ids are checked before a command is built: card and follow ids are 4 to 16 hex characters; library ids are lower-case
-  words with dashes, at most 64. Free text (`words`, card fields) is at most 300 characters, one argv element, never
-  starts with `-`, has no NUL, CR or LF. No value can act as an option. Each tool has a 60 s timeout.
+- Ids are checked before a command is built: card and follow ids are 4 to 16 lower-case hex characters; library ids are
+  lower-case words with dashes, at most 64. Free text (`words`, card fields) is at most 300 printable characters, one
+  argv element, never starts with `-`, has no NUL, CR, LF or other control character. A card field is bound to its
+  option (`--claim <text>`); `tool_find` text goes last, after `--`. No value can act as an option. No shell is used.
+  Each tool has a 60 s timeout and its answer is at most 2,000,000 characters.
+- Card text is DATA, never instructions. `idea_show` and `idea_file` return it as written, and a card may later reach
+  RD-Agent through the discussion channel, where user text is already delimited as data. An assistant must not obey it.
+- A card is named by a hash of its text and never changes: a changed card is a new card, a clash is refused, and no
+  command deletes one. Each server process writes at most 25 note files (`idea_new` and `library_card` together).
+  The CLI itself has no total cap on cards: a hostile client can still add 25 per process start. Owner decision.
+- A failure without the command's own error JSON raises a plain error naming only the command and exit code. Stderr and
+  the arguments are not echoed.
 - No tool exists for `follow start`, `follow stop`, `follow update` (they change a paper follow), `nightly run`
   (it can spend money through RD-Agent), `rdagent run` (it spends money), `data pull` (it uses the network) or
   `library import-catalogue`. `data_pull` is an older tool, kept as it was.

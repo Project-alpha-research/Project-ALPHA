@@ -8,7 +8,7 @@ apps/alpha-cli/README.md
   verified f8b0382a482106c6 on 2026-11-20: nightly refresh now freezes first; this text is still correct
 
 apps/alpha-mcp/CONTEXT.md
-  verified dbe91e656c0e6846 on 2026-11-20: Docstring wording only; purpose and rows unchanged.
+  verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
   verified cb51a11b4db4c805 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: 05fc07020b0c20b5
+verified: cd00232270d7640d
 ---
 
 # Web API reads and writes invariants

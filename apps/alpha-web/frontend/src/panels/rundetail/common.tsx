@@ -104,11 +104,14 @@ export function ExplainCard({
   title,
   stats = [],
   tests,
+  chart,
 }: {
   story: Explained & Partial<Pick<GateStory, 'state' | 'oldLevel' | 'plain'>>
   title: string
   stats?: StatChip[]
   tests?: string
+  /** A small chart of this run's own recorded data; sits between the plain sentence and the numbers. */
+  chart?: ReactNode
 }) {
   const { explain } = useSettings()
   return (
@@ -124,6 +127,7 @@ export function ExplainCard({
         {story.state === 'sound' ? <span className="muted explain-state-hint">computed means the check could run; it does not say the result is good</span> : null}
       </div>
       {explain === 'narrative' && story.plain ? <p className="explain-plain">{story.plain}</p> : null}
+      {chart}
       <StatChips stats={stats} />
       {story.oldLevel ? <p className="muted explain-old-level">{story.oldLevel}</p> : null}
       {explain === 'narrative' ? (

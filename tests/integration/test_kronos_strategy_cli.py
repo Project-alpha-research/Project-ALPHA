@@ -94,7 +94,7 @@ def test_kronos_validate_full_gauntlet(tmp_path: Path, monkeypatch: pytest.Monke
         ],
     )
     assert result.exit_code == 0, result.output
-    assert "PASS" in result.output or "FAIL" in result.output
+    assert ": reading " in result.output
 
     (rdir,) = sorted((tmp_path / "runs").iterdir())
     manifest = json.loads((rdir / "manifest.json").read_text())

@@ -19,7 +19,7 @@ _GAUNTLET = (
     "--tier2-paths", "4", "--tier3-paths", "4", "--n-resamples", "50", "--seed", "7",
     "--max-workers", "1",
 )  # fmt: skip
-_VERDICT_LINE = re.compile(r"-> run ([0-9a-f]{16}): (PASS|FAIL) \(Verdict ([A-F])\b")
+_VERDICT_LINE = re.compile(r"-> run ([0-9a-f]{16}): reading .+? \(old grade: ([A-F])\)")
 
 
 def test_validation_verdict_is_stored_and_read_back(data_home: Path, tmp_path: Path) -> None:
@@ -27,14 +27,13 @@ def test_validation_verdict_is_stored_and_read_back(data_home: Path, tmp_path: P
     ran = alpha(home, "validate", "SPY", *STRATEGY, *_GAUNTLET, "--snapshot", SNAPSHOT)
     match = _VERDICT_LINE.search(ran.stdout)
     assert match, ran.report()
-    run_id, verdict, grade = match.groups()
+    run_id, grade = match.groups()
 
     run_dir = home / "data" / "runs" / run_id
     for artefact in ("manifest.json", "nulls.parquet", "tearsheet.html", "equity_curve.parquet"):
         assert (run_dir / artefact).is_file(), artefact
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert manifest["command"] == "validate"
-    assert manifest["passed"] is (verdict == "PASS")
     assert manifest["verdict"]["overall"] == grade
 
     report = alpha(home, "report", run_id).stdout

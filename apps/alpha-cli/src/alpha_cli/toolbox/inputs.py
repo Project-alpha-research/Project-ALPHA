@@ -21,6 +21,7 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.run import assemble_run_spec
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.toolbox.reference import vintage_fingerprint
 from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_validation.attribution import MIN_BARS
 from alpha_validation.metrics import to_returns
@@ -54,7 +55,7 @@ class RunSeries:
         return ("reserved-period-seen",) if end.date() >= RESERVED_DAY else ()
 
 
-RUN_KINDS = frozenset(("run_returns", "run_positions", "run_bars"))
+RUN_KINDS = frozenset(("run_returns", "run_positions", "run_bars", "reference_factors"))
 
 
 STORED_FILES = {
@@ -169,6 +170,8 @@ class Target:
         hashes.update({name: sha256_file(self.directory / name) for name in files})
         if market:
             hashes.update(market=market.fingerprint, market_asset=market.name)
+        if "reference_factors" in needs:
+            hashes.update(vintage_fingerprint(home))
         return market, hashes
 
 
@@ -294,12 +297,19 @@ class Inputs:
     source: RunSeries | Target
     market: Market | None = None
     seed: int = 0
+    home: Path | None = None
 
     @property
     def run(self) -> RunSeries:
         if not isinstance(self.source, RunSeries):
             raise ValueError("This tool requires a full-sample replay")
         return self.source
+
+    @property
+    def data_home(self) -> Path:
+        if self.home is None:
+            raise ValueError("This tool requires the data home")
+        return self.home
 
     @property
     def stored(self) -> Target:

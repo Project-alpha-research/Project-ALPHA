@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: ee1d7224911281e9
+verified: 6f0f641b13141e65
 ---
 
 # Monte Carlo

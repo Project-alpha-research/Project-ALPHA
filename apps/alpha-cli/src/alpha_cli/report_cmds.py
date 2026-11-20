@@ -21,6 +21,7 @@ import typer
 
 from alpha_cli.artifact_contract import verify_manifest_artifacts
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest
+from alpha_cli.spine.report_readings import gate_lines, null_line, reading_line
 from alpha_core.config import AlphaSettings
 
 _DAILY_RULE_COMMANDS = frozenset(
@@ -50,12 +51,6 @@ def _find_manifest(data_dir: Path, run_id: str) -> dict[str, Any] | None:
 
 def _echo_json(value: Any) -> None:
     typer.echo(json.dumps(value, sort_keys=True, allow_nan=False))
-
-
-def _caveat(verdict: dict[str, Any]) -> str:
-    """A capped grade keeps its caveat beside it (for example ``too-few-trades``)."""
-    labels = verdict.get("labels")
-    return f" [{', '.join(labels)}: {verdict.get('sentence')}]" if labels else ""
 
 
 def report(
@@ -221,7 +216,7 @@ def report(
             f"max-dd ${_fmt(rules.get('max_drawdown'))}"
         )
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
-        typer.echo(f"Monte Carlo stage status: {manifest.get('status')}")
+        typer.echo(f"Monte Carlo families: {len(manifest.get('families') or [])}")
         families = manifest.get("families")
         if not isinstance(families, list):
             family = manifest.get("family")
@@ -229,21 +224,22 @@ def report(
         for family in families:
             if not isinstance(family, dict):
                 continue
+            # stored percentiles and the share of paths below zero with its range: no risk letter
+            loss = family.get("loss_probability")
+            loss = loss if isinstance(loss, dict) else {}
             typer.echo(
-                f"family[{family.get('family')}]: status={family.get('status')} "
-                f"grade={family.get('risk_grade')} paths={family.get('n_paths')} "
+                f"family[{family.get('family')}]: paths={family.get('n_paths')} "
                 f"median_terminal={_fmt(family.get('terminal_return_q50'))} "
-                f"drawdown_q95={_fmt(family.get('maximum_drawdown_q95'))}"
+                f"terminal_5th={_fmt(family.get('terminal_return_q05'))} "
+                f"terminal_95th={_fmt(family.get('terminal_return_q95'))} "
+                f"drawdown_median={_fmt(family.get('maximum_drawdown_q50'))} "
+                f"drawdown_q95={_fmt(family.get('maximum_drawdown_q95'))} "
+                f"paths_below_zero={_fmt(loss.get('point'))} "
+                f"[{_fmt(loss.get('lower'))}, {_fmt(loss.get('upper'))}]"
             )
-    if "passed" in manifest:
-        typer.echo(f"verdict: {'PASS' if manifest['passed'] else 'FAIL'}")
-    verdict = manifest.get("verdict")
-    if isinstance(verdict, dict):  # the A-F grade (gauntlet runs)
-        typer.echo(
-            f"grade: {verdict.get('overall')} "
-            f"(edge {verdict.get('edge')}/robustness {verdict.get('robustness')}/"
-            f"risk {verdict.get('risk')}/sample {verdict.get('sample')})" + _caveat(verdict)
-        )
+    line = reading_line(manifest)
+    if line:
+        typer.echo(line)
     if "oos_metrics" in manifest:
         metrics = ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(manifest["oos_metrics"].items()))
         typer.echo(f"OOS metrics: {metrics}")
@@ -259,10 +255,7 @@ def report(
     if manifest.get("folds"):
         typer.echo(f"walk-forward: {len(manifest['folds'])} OOS folds")
     for n in manifest.get("nulls", []):
-        v = "PASS" if n["passed"] else "FAIL"
-        typer.echo(
-            f"null[{n['tier']}]: percentile={_fmt(n['percentile'])} p={_fmt(n['p_value'])} -> {v}"
-        )
+        typer.echo(null_line(n))
     for key in ("sharpe_ci", "cagr_ci"):  # portfolio / cross-sectional intervals
         ci = manifest.get(key)
         if isinstance(ci, dict):
@@ -276,7 +269,9 @@ def report(
         block = manifest.get(key)
         if isinstance(block, dict):
             # Headline value first; a recorded list (trial Sharpes) shows as its length.
-            items = sorted(block.items(), key=lambda item: item[0] != key)
+            items = sorted(
+                ((k, v) for k, v in block.items() if k != "passed"), key=lambda item: item[0] != key
+            )
             inner = ", ".join(f"{k}={_block_value(v)}" for k, v in items)
             typer.echo(f"{key}: {inner}")
     if manifest.get("best_config"):
@@ -285,8 +280,8 @@ def report(
     for leg in manifest.get("legs", []):
         sharpe = _fmt(leg.get("oos_sharpe"))
         typer.echo(f"leg[{leg['symbol']}]: weight={_fmt(leg['weight'])} oos_sharpe={sharpe}")
-    for o in manifest.get("outcomes", []):
-        typer.echo(f"gate[{o['name']}]: {'PASS' if o['passed'] else 'FAIL'}")
+    for gate in gate_lines(manifest):
+        typer.echo(gate)
     if "orders" in manifest:  # plain backtest run
         typer.echo(
             f"orders={manifest['orders']} fills={manifest.get('fills')} "

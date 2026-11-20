@@ -366,7 +366,7 @@ def test_program_golden_path_reaches_the_strategy_brief_losslessly(
     assert "gate[randomized_price_null]" in stored_report.output
     monte_carlo_report = runner.invoke(app, ["report", monte_carlo_runs[0]])
     assert monte_carlo_report.exit_code == 0, monte_carlo_report.output
-    assert "Monte Carlo stage status:" in monte_carlo_report.output
+    assert "Monte Carlo families:" in monte_carlo_report.output
     assert "family[iid_empirical]" in monte_carlo_report.output
 
     workspace = _project_cli("workspace", "sync", project_id)

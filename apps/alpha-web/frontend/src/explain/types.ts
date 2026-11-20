@@ -195,7 +195,16 @@ export interface StatChip {
 export interface GateStory extends Explained {
   gate: string
   title: string
+  /** The stored machine value. Screens never print it; they read `kind`, `state` and `oldLevel`. */
   passed: boolean | null
+  /** `fact`: is the test valid (a state word). `stat`: how strong is the evidence (numbers and a plain comparison). */
+  kind: 'fact' | 'stat'
+  /** A fact check's state word; null for a statistic. */
+  state: 'sound' | 'fault' | 'not-checked' | null
+  /** The level the old grade used, in words, shown muted; null when none applies. */
+  oldLevel: string | null
+  /** One plain sentence that reads the numbers, shown first. A missing input reads "not computed: <reason>". */
+  plain: string
   /** What this gate tests, independent of this run's numbers (teaching text). */
   tests: string
   stats: StatChip[]

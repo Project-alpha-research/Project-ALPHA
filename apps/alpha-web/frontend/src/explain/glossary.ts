@@ -14,7 +14,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   sharpe: {
     name: 'Sharpe ratio',
     short: 'Sharpe measures return relative to how much returns varied. A higher score means more return per unit of risk.',
-    long: 'Mean daily return divided by daily return standard deviation, scaled by √periods-per-year. The validation grade uses out-of-sample returns. The rule-test Summary compares the rule and buy-and-hold over the full history. Rule of thumb on daily data: > 1 is strong, > 1.5 exceptional; anything measured on < 500 observations has wide error bars (see PSR).',
+    long: 'Mean daily return divided by daily return standard deviation, scaled by √periods-per-year. The rule-test reading uses out-of-sample returns. The rule-test Summary compares the rule and buy-and-hold over the full history. Rule of thumb on daily data: > 1 is strong, > 1.5 exceptional; anything measured on < 500 observations has wide error bars (see PSR).',
   },
   cagr: {
     name: 'CAGR',
@@ -29,7 +29,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   max_drawdown: {
     name: 'Max drawdown',
     short: 'The largest fall from a previous high during the test.',
-    long: 'The worst percentage decline from a running equity peak. The verdict risk grade bands it at 10/20/35/50%: beyond 50% is an F — recovering from a 50% loss requires a +100% gain, and most allocators (and prop firms) are gone long before that.',
+    long: 'The worst percentage decline from a running equity peak. A drawdown is a measurement, not a mark: recovering from a 50% loss requires a +100% gain, and most allocators (and prop firms) are gone long before that. Read it against the strategy\'s own aim.',
   },
   total_return: {
     name: 'Total return',
@@ -84,7 +84,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   convention_divergence: {
     name: 'Convention divergence',
     short: 'Tier-1 fidelity check: close-fill vs t+1-open-fill Sharpe gap.',
-    long: 'The Tier-1 surrogate fills at the close; the real engine fills at next open. This measures |Sharpe(close-fill) − Sharpe(open-fill)| of the same surrogate weights. When it exceeds the tolerance (default 0.25) AND Tier 2 passed, a Tier-1 fail is demoted to advisory ("flagged low fidelity") — the surrogate\'s crediting bias, not the strategy, likely caused the fail. A Tier-2 fail is never rescued.',
+    long: 'The Tier-1 surrogate fills at the close; the real engine fills at next open. This measures |Sharpe(close-fill) − Sharpe(open-fill)| of the same surrogate weights. When it exceeds the tolerance (default 0.25) AND Tier 2 held, Tier 1 is marked advisory ("flagged low fidelity"): the surrogate\'s crediting bias, not the strategy, likely caused its reading. A Tier 2 reading is never set aside.',
   },
   cpcv: {
     name: 'CPCV',
@@ -124,7 +124,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   monte_carlo_path_risk: {
     name: 'Monte Carlo path risk',
     short: 'How alternate sequencing, regimes, tails, or synthetic markets change outcomes.',
-    long: 'A required post-robustness stage over the canonical OOS strategy. IID empirical, causal regime-Markov, and Student-t families simulate account returns; Kronos generates OHLCV and reruns the full engine. Each family is graded independently. These scenarios describe fragility and drawdown risk; they do not prove edge and are never majority-voted.',
+    long: 'A required post-robustness stage over the canonical OOS strategy. IID empirical, causal regime-Markov, and Student-t families simulate account returns; Kronos generates OHLCV and reruns the full engine. Each family is read independently, from its stored percentiles. These scenarios describe fragility and drawdown risk; they do not prove edge and are never majority-voted.',
   },
   regime_markov_bootstrap: {
     name: 'Regime Markov bootstrap',
@@ -157,9 +157,9 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     long: 'The Kronos foundation model was pretrained on market data up to its cutoff. Any forecast or evaluation whose window predates the cutoff overlaps data the model may have memorized; results there are flagged and must be read as in-sample. Only post-cutoff evaluation measures real zero-shot skill (ADR-0009).',
   },
   verdict: {
-    name: 'Verdict (A–F)',
-    short: 'Equal-weight GPA over edge, robustness, risk, and sample grades.',
-    long: 'Each dimension grades independently on fixed bands (edge = OOS Sharpe; robustness = count of null/DSR/CPCV/CI checks passed; risk = worse of drawdown and ruin bands; sample = OOS observation count), then the 4.0-scale GPA re-bands into the overall letter. The bands are auditable constants — hover any dimension to see exactly which band the number landed in.',
+    name: 'Old grade (retired)',
+    short: 'The letter that earlier runs carry. New runs show a reading instead.',
+    long: 'Runs recorded before readings carry a letter from fixed bands (edge, robustness, risk and sample, averaged). The Workstation now shows them as "graded X under the old rules", muted, and shows the evidence word, the checks and the numbers for every new run. The letter is still stored for machines.',
   },
   pass_probability: {
     name: 'Pass probability',

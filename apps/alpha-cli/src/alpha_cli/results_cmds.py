@@ -23,6 +23,7 @@ from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, unreadable_file
 from alpha_cli.spine.facts import (
     build_facts,
+    plain_basis,
     read_json,
     require_metric,
     tool_fact,
@@ -356,6 +357,10 @@ def cite_result(
         citation = f"{metric}@{tool_output}" if metric in METRIC_OUTPUTS and tool_output else metric
         fact = fact_lookup(home)(run_id, citation)
         value = "null" if fact["value"] is None else str(fact["value"])
+        if metric == "verdict":  # the letter stays in the JSON; the text shows the reading
+            value = f"{owner_word(home, run_id, fact['value'])}" + (
+                f" (old grade: {fact['value']})" if fact["value"] else ""
+            )
         caveat = " [too-few-trades]" if "too-few-trades" in fact["labels"] else ""
         tag = f"{metric}@{tool_output}" if tool_output else metric
         settings = (
@@ -364,7 +369,7 @@ def cite_result(
         emit(
             fact,
             json_out=json_out,
-            fallback=f"{value} [{run_id}:{tag}]{settings} ({fact['basis']}){caveat}",
+            fallback=f"{value} [{run_id}:{tag}]{settings} ({plain_basis(fact['basis'])}){caveat}",
         )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

@@ -320,7 +320,7 @@ def test_report_grade_line_carries_the_sparse_trade_caveat(tmp_path: Path) -> No
     (rdir / "manifest.json").write_text(json.dumps({"command": "validate", "verdict": verdict}))
     printed = CliRunner(env={"ALPHA_DATA_DIR": str(tmp_path)}).invoke(app, ["report", "c" * 16])
     assert printed.exit_code == 0, printed.output
-    line = next(row for row in printed.output.splitlines() if row.startswith("grade:"))
+    line = next(row for row in printed.output.splitlines() if row.startswith("reading:"))
     assert "too-few-trades" in line and "Only 4 closed trades" in line
 
 

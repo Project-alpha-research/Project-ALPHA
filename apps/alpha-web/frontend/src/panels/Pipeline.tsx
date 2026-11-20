@@ -14,6 +14,7 @@ import type { Suggestion } from '../explain/types'
 import { useActivityField } from '../state/activity'
 import { shortId } from '../util/format'
 import { openRunDetail, openStrategyLab } from './actions'
+import { runWord } from './readingModel'
 import { SuggestionList } from './rundetail/common'
 import { useLinkedProjectGate } from './useLinkedProjectGate'
 import type { PanelHandleProps } from '../context/panelHandle'
@@ -41,15 +42,15 @@ const STAGES: Stage[] = [
   {
     key: 'backtest',
     title: '2 · Backtest',
-    desc: 'One pass, fixed params — behavior, not proof',
+    desc: 'One run, fixed params — behavior, not proof',
     match: (r) => r.kind === 'runs' && r.command === 'backtest_run',
     launch: { command: 'backtest run', args: 'SPY --strategy ts_momentum' },
   },
   {
     key: 'validate',
     title: '3 · Validate',
-    desc: 'The gauntlet: 5 gates, A–F verdict',
-    // gauntlet manifests carry no command key — the verdict is their signature
+    desc: 'The gauntlet: five checks, read in context',
+    // gauntlet manifests carry no command key — the stored old grade is their signature
     match: (r) => r.kind === 'runs' && r.command !== 'backtest_run',
     launch: { command: 'validate', args: 'SPY --strategy ts_momentum' },
   },
@@ -75,6 +76,17 @@ const STAGES: Stage[] = [
     launch: { command: 'propfirm run', args: '--firm topstep --from-run <run-id>' },
   },
 ]
+
+/** The latest run of a stage: its short id and its evidence word. Never a grade or a gate result. */
+export function PipelineLatest({ run }: { run: RunListItem }) {
+  const word = runWord(run.evidence, run.verdict)
+  return (
+    <>
+      {shortId(run.run_id)}
+      {word ? <span className={word.old ? 'muted' : undefined}>{word.text}</span> : null}
+    </>
+  )
+}
 
 export function Pipeline(_props: PanelHandleProps) {
   const runsVersion = useActivityField('runsVersion')
@@ -172,14 +184,7 @@ export function Pipeline(_props: PanelHandleProps) {
                     className="pipe-latest mono"
                     onClick={() => openRunDetail(latest.run_id)}
                   >
-                    {shortId(latest.run_id)}
-                    {latest.verdict ? (
-                      <span className={`verdict g-${latest.verdict}`}>{latest.verdict}</span>
-                    ) : latest.passed !== null ? (
-                      <span className={`chip ${latest.passed ? 'pass' : 'fail'}`}>
-                        {latest.passed ? 'PASS' : 'FAIL'}
-                      </span>
-                    ) : null}
+                    <PipelineLatest run={latest} />
                   </button>
                 ) : null}
                 <button
@@ -211,7 +216,7 @@ export function Pipeline(_props: PanelHandleProps) {
           </div>
         ) : linked.runId ? null : (
           <Placeholder>
-            Select a run (Run Browser or Activity) to see rule-based next steps for it here.
+            Select a run (Navigator or Activity) to see rule-based next steps for it here.
           </Placeholder>
         )}
       </div>

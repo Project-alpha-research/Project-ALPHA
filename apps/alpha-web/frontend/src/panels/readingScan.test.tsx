@@ -2,12 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { RuleTest, RuleTestChecks } from '../api/types'
 import { CLEAR, FAULT, NO_AIM, NOT_CLEAR, SOME, TOO_LITTLE, WITHIN } from './__fixtures__/readings'
+import { BANNED } from './__fixtures__/scanWords'
 import { RuleTestReport } from './rundetail/RuleTestReport'
 import { SetupLabView, type SetupDetail } from './SetupLabPanel'
 
 // The owner-facing words that left these screens, and a lone letter grade. Fact checks (data health,
 // audit rows) keep their own words; the fixtures below carry none, so the scan sees the reading only.
-const BANNED = /\b(supported|rejected|inconclusive|pass|fail|profit|verdict|grade)\b/i
 const OLD_PHRASE = /graded [A-F] under the old rules/g
 const LETTER = /(?<![\w'./-])[A-F](?![\w'./-])/
 const ARTICLE = /(?:^|(?<=[.!?:] ))A(?= [a-z])/gm

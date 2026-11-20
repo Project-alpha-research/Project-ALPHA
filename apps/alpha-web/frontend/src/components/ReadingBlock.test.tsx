@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { CLEAR, FAULT, NO_AIM, NOT_CLEAR, reading as make, SOME, TOO_LITTLE, WITHIN } from '../panels/__fixtures__/readings'
+import { BANNED } from '../panels/__fixtures__/scanWords'
 import { parseReading } from '../panels/readingModel'
 import { EvidenceScale, ReadingBlock, SetupReadingBlock } from './ReadingBlock'
 
@@ -85,7 +86,7 @@ describe('the reading block', () => {
 
   it('reads as a description, never a verdict', () => {
     const html = render(make('some evidence'))
-    expect(html).not.toMatch(/\b(pass|fail|supported|rejected|inconclusive|profit|verdict)\b/i)
+    expect(html).not.toMatch(BANNED)
     expect(html).not.toContain('var(--verdict')
     expect(html).not.toContain('var(--up)')
     expect(html).not.toContain('var(--down)')

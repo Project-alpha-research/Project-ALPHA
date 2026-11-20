@@ -143,11 +143,29 @@ describe('gate stories', () => {
     expect(g.terse).toContain('/30')
   })
 
-  it('failed null gate reads as the luck flag', () => {
+  it('a null gate that random data matched reads as luck, in numbers, without a colour or a pass word', () => {
     const g = nullStory(m)
     expect(g.passed).toBe(false)
-    expect(g.tone).toBe('bad')
-    expect(g.narrative).toContain('indistinguishable from luck')
+    expect(g.kind).toBe('stat')
+    expect(g.tone).toBe('info')
+    expect(g.narrative).toContain('cannot be told apart from luck')
+    expect(g.narrative).toContain('random data did as well in 53.8% of draws')
+    expect(g.oldLevel).toBe('The level used by the old grade: each tier at the 95% percentile or higher')
+  })
+
+  it('classes walk-forward as a fact check and the other four as statistics', () => {
+    const stories = gateStories(m)
+    expect(stories.map((g) => g.kind)).toEqual(['fact', 'stat', 'stat', 'stat', 'stat'])
+    expect(stories[0].state).toBe('sound')
+    expect(stories.slice(1).every((g) => g.state === null && g.oldLevel !== null)).toBe(true)
+    expect(stories.every((g) => g.tone === 'info')).toBe(true)
+    expect(JSON.stringify(stories.map((g) => [g.terse, g.narrative, g.tests]))).not.toMatch(/\b(pass|passed|fail|failed|verdict)\b/i)
+  })
+
+  it('shows the interval as a number and a plain comparison', () => {
+    const g = gateStories(m)[2]
+    expect(g.terse).toMatch(/the interval includes zero$/)
+    expect(g.oldLevel).toBe('The level used by the old grade: lower end above 0')
   })
 })
 

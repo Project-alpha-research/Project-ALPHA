@@ -103,7 +103,8 @@ def test_validate_writes_manifest_and_tearsheet(
     assert report_out.exit_code == 0, report_out.output
     assert "dsr: n/a" not in report_out.output
     assert "dsr: dsr=" in report_out.output
-    assert "grade:" in report_out.output  # the verdict grade is surfaced on re-display
+    assert "reading: " in report_out.output  # the reading, with the old grade beside it
+    assert "(old grade: " in report_out.output
 
 
 def test_validate_rejects_unknown_null_model(

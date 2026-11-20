@@ -23,7 +23,7 @@ Start from [the example](../examples/nightly.example.toml).
 - N2 setup path: `setup find`, `study`, `trade`, then the stored result read back.
 - N3 RD-Agent path: not run until `rdagent_config` is set. Then it calls `alpha rdagent run --config <file>` unchanged, then `rdagent status`. It adds no cap.
 - N4 (only if an idea is followed): `follow update --all`, `today`, `verify`; a changed journal history is blocking.
-  N0 (opt-in, `refresh_followed = true`): `data snapshot` (0.3 MB), then `data pull`, per followed asset, before N4. A failed snapshot blocks it.
+  N0 (opt-in, `refresh_followed = true`): `data pull` per followed asset, before N4. The pull freezes the old series first (0.3 MB, reused when identical). A failed freeze blocks it.
 
 **How to read it**
 - A step passes, has a minor defect (a warning) or was not run. A reading such as `not clear of chance` is not a defect.

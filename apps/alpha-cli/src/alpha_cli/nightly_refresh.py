@@ -1,25 +1,25 @@
-"""N0 (opt-in): freeze, then pull, stored bars for the assets of followed ideas, and only those.
+"""N0 (opt-in): pull stored bars for the assets of followed ideas, and only those.
 
-Before each pull the asset's stored bars and corporate actions are frozen by the installed
-`alpha data snapshot` command (a child process). If that fails, the pull for that asset is not run:
-a blocking defect, so nothing is replaced without a frozen copy. The snapshot id is in the record.
-Each pull is the installed `alpha data pull` command in a child process, with the arguments the
-owner would type. This module does no network and reads no key: the child uses the environment of
-the nightly process, exactly as when the owner runs it. A pull replaces the symbol's whole series,
-so it starts at the first stored bar and the provider's whole history comes again. Before the pull
-the old bars are held in memory; after it each old bar is compared, and a changed or missing old
-bar is a minor defect that names the first changed date (never a price). The request ends at the
-newest CLOSED day: a provider with an inclusive end gets the day before the run's UTC date, so a
-forming bar is never asked for. A failed pull is a minor defect, never a blocking one: the follow
-update then records `late` or `missed` honestly.
+Each pull is the installed `alpha data pull ... --json` command in a child process, with the
+arguments the owner would type. The pull itself freezes the stored series as a snapshot before it
+replaces anything, reuses an identical snapshot, and reports what changed (counts and dates, never
+a price). This module reads that JSON. A failed freeze (exit code 3) means nothing was replaced:
+a blocking defect for that asset. New bars are `computed`, none are `reused`, and a revised or
+dropped old bar is a minor defect that names the snapshot. This module does no network and reads no
+key: the child uses the environment of the nightly process, exactly as when the owner runs it.
+A pull replaces the symbol's whole series, so it starts at the first stored bar and the provider's
+whole history comes again. The request ends at the newest CLOSED day: a provider with an inclusive
+end gets the day before the run's UTC date, so a forming bar is never asked for. A failed pull is
+a minor defect, never a blocking one: the follow update then records `late` or `missed` honestly.
 """
 
 from __future__ import annotations
 
+import json
 import re
 import shlex
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +30,6 @@ from alpha_cli.nightly_steps import (
     BLOCKING,
     COMPUTED,
     MINOR,
-    NOT_RUN,
     REUSED,
     Outcome,
     Runner,
@@ -95,25 +94,6 @@ def _span(frame: pl.DataFrame | None) -> tuple[datetime, datetime] | None:
     return (low, high) if isinstance(low, datetime) and isinstance(high, datetime) else None
 
 
-def first_revised(old: pl.DataFrame, new: pl.DataFrame) -> tuple[date, list[str]] | None:
-    """The first day whose old bar is missing or different after the pull, with the names of the
-    columns that differ on that day (`missing` when the bar is gone). None when nothing changed."""
-    cols = [c for c in old.columns if c in new.columns]
-    if "ts" not in cols:
-        return None
-    fresh = {row[0]: row for row in new.select(cols).iter_rows()}
-    for row in old.select(cols).sort("ts").iter_rows():
-        found = fresh.get(row[0])
-        if found != row and isinstance(row[0], datetime):
-            names = (
-                ["missing"]
-                if found is None
-                else [c for c, a, b in zip(cols, row, found, strict=True) if a != b]
-            )
-            return row[0].date(), names
-    return None
-
-
 def _scrub(text: str) -> str:
     return SECRET.sub(r"\1[removed]", AUTH.sub(r"\1[removed]", text))
 
@@ -127,20 +107,6 @@ def _plan(home: Path, asset: str, end: date) -> tuple[list[str], Path | None]:
     return pull_tail(found.symbol, provenance, span[0].date(), end), (
         None if found.store_name == "home" else found.data_dir
     )
-
-
-def snapshot_tail(asset: str, pull: Sequence[str], stamp: datetime) -> tuple[str, list[str]]:
-    """The snapshot id and the `alpha data snapshot` arguments for the asset a pull is about to
-    replace. The id holds the run's UTC time, so a second run on the same day never collides.
-    The source options are those of the pull, because the command checks the stored provenance."""
-    name = re.sub(r"[^A-Za-z0-9_-]+", "-", pull[2]).strip("-") or "asset"
-    snap_id = f"n0-{stamp:%Y%m%dT%H%M%S}-{name}"
-    options = list(pull[3:-4])
-    kept: list[str] = []
-    for index, word in enumerate(options):
-        if word in {"--source", "--exchange"} and index + 1 < len(options):
-            kept += [word, options[index + 1]]
-    return snap_id, ["data", "snapshot", snap_id, pull[2], *kept]
 
 
 def _child(
@@ -167,37 +133,33 @@ def _failure(out: Outcome, timeout: float) -> str | None:
     return None
 
 
-def _freeze(
-    config: NightlyConfig,
-    runner: Runner,
-    asset: str,
-    tail: list[str],
-    other: Path | None,
-    stamp: datetime,
-) -> tuple[dict[str, Any], str | None]:
-    """Freeze the asset's stored bars and actions. Returns the step and the snapshot id, or None
-    for the id when the freeze failed (a blocking defect: nothing may be replaced unfrozen)."""
-    snap_id, snap = snapshot_tail(asset, tail, stamp)
-    step = new_step(f"N0.freeze.{asset}", "N0", f"freeze bars {asset}", snap)
-    step["ids"] = {"snapshot": snap_id}
-    failed = _failure(_child(runner, step, snap, other, config.step_timeout), config.step_timeout)
-    if failed is None:
-        return step, snap_id
-    mark(step, BLOCKING, f"could not freeze {asset} before the refresh: {failed}")
-    return step, None
+FREEZE_FAILED = 3  # `alpha data pull` exit code: the stored series could not be frozen
 
 
-def _revision_words(
-    asset: str, changed: tuple[date, list[str]], snap_id: str, other: Path | None
-) -> str:
+def _revision_words(asset: str, report: dict[str, Any], other: Path | None) -> str | None:
+    """Plain words when the provider changed or dropped earlier bars; None when it did not."""
+    revised, dropped = report["bars_revised"], report["bars_removed"]["count"]
+    if not revised["count"] and not dropped:
+        return None
+    snap = (report.get("snapshot") or {}).get("id")
     listing = "alpha data snapshots"
     if other is not None:
         listing = f"ALPHA_DATA_DIR={shlex.quote(str(other))} {listing}"
-    return (
-        f"the provider revised history for {asset}: first changed bar {changed[0]} "
-        f"({', '.join(changed[1])}). The earlier series is kept in snapshot {snap_id}; "
-        f"list it with `{listing}`"
-    )
+    head = f"the provider revised history for {asset}"
+    if revised["count"]:
+        head += f": first changed bar {revised['first_date']} ({', '.join(revised['columns'])})"
+    if dropped:
+        head += f"{';' if revised['count'] else ':'} {dropped} earlier bars are gone"
+    return f"{head}. The earlier series is kept in snapshot {snap}; list it with `{listing}`"
+
+
+def _read_report(out: Outcome) -> dict[str, Any] | None:
+    try:
+        report = json.loads(out.stdout)
+    except ValueError:
+        return None
+    needed = ("bars_added", "bars_removed", "bars_revised")
+    return report if isinstance(report, dict) and all(k in report for k in needed) else None
 
 
 def refresh_assets(
@@ -206,44 +168,41 @@ def refresh_assets(
     runner: Runner,
     assets: Sequence[str],
     end: date,
-    now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """One freeze, then one pull, per asset. `assets` holds the assets of followed ideas only."""
+    """One pull per asset. `assets` holds the assets of followed ideas only."""
     if not assets:
         return [
             not_run(
                 "N0.stub", "N0", "refresh bars", ["data", "pull"], "not run: nothing is followed"
             )
         ]
-    stamp = now or datetime.now(UTC)
     steps: list[dict[str, Any]] = []
     for asset in assets:
         step = new_step(f"N0.pull.{asset}", "N0", f"refresh bars {asset}", ["data", "pull", asset])
+        steps.append(step)
         try:
             tail, other = _plan(home, asset, end)
         except (ValueError, DataError) as exc:
-            steps.append(step)
             mark(step, MINOR, f"no fresh bars for {asset}: {exc}")
             continue
-        frozen, snap_id = _freeze(config, runner, asset, tail, other, stamp)
-        steps += [frozen, step]
-        if snap_id is None:
-            step["state"], step["note"] = NOT_RUN, f"not run: {asset} could not be frozen first"
-            continue
-        step["ids"] = {"snapshot": snap_id}
-        old = _bars(home, asset)
-        before = _span(old)
-        out = _child(runner, step, tail, other, config.step_timeout)
+        out = _child(runner, step, [*tail, "--json"], other, config.step_timeout)
         failed = _failure(out, config.step_timeout)
+        if failed is not None and out.exit_code == FREEZE_FAILED and not out.timed_out:
+            mark(step, BLOCKING, f"could not freeze {asset} before the refresh: {failed}")
+            continue
         if failed is not None:
             mark(step, MINOR, f"no fresh bars for {asset}: {failed}")
             continue
-        fresh = _bars(home, asset)
-        after = _span(fresh)
-        if before and after:
-            step["evidence"] = COMPUTED if after[1] > before[1] else REUSED
-            step["note"] = None if after[1] > before[1] else "no new bar"
-        changed = first_revised(old, fresh) if old is not None and fresh is not None else None
-        if changed is not None:
-            mark(step, MINOR, _revision_words(asset, changed, snap_id, other))
+        report = _read_report(out)
+        if report is None:
+            mark(step, MINOR, f"the refresh of {asset} ran, but its result could not be read")
+            continue
+        if report.get("snapshot"):
+            step["ids"] = {"snapshot": report["snapshot"]["id"]}
+        grew = report["bars_added"]["count"] > 0
+        step["evidence"] = COMPUTED if grew else REUSED
+        step["note"] = None if grew else "no new bar"
+        words = _revision_words(asset, report, other)
+        if words is not None:
+            mark(step, MINOR, words)
     return steps

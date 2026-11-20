@@ -14,6 +14,7 @@ declared strategy-specific ``--param name=value`` pairs.
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from datetime import date
@@ -351,23 +352,27 @@ def _grid_flags(strategy: str, grid: dict[str, list[float]]) -> list[str]:
 
 
 @mcp.tool()
-def data_pull(
-    symbol: str, source: str = "yfinance", start: str | None = None, end: str | None = None
-) -> dict[str, Any]:
-    """Fetch + store raw OHLCV bars + actions for SYMBOL (source: yfinance|ccxt|stooq)."""
+def data_pull(symbol: str, start: str, end: str, source: str = "yfinance") -> dict[str, Any]:
+    """Download SYMBOL's bars + actions from the network (source: yfinance|ccxt|stooq).
+
+    Both dates are required (YYYY-MM-DD). It replaces the stored series, but first freezes the
+    current one as a snapshot (or reuses an identical one); if the freeze fails nothing is changed.
+    It returns the pull's own JSON: the snapshot id and the counts of bars added, removed and
+    revised. It never deletes snapshots.
+    """
     symbol = _symbol(symbol)
     if source not in {"yfinance", "ccxt", "stooq"}:
         raise ValueError("source must be yfinance, ccxt, or stooq")
-    args = ["data", "pull", symbol, "--source", source]
-    parsed_start = _iso_date(start, "start") if start is not None else None
-    parsed_end = _iso_date(end, "end") if end is not None else None
-    if parsed_start is not None and parsed_end is not None and parsed_start > parsed_end:
+    parsed_start, parsed_end = _iso_date(start, "start"), _iso_date(end, "end")
+    if parsed_start > parsed_end:
         raise ValueError("start must be on or before end")
-    if parsed_start is not None:
-        args += ["--start", parsed_start]
-    if parsed_end is not None:
-        args += ["--end", parsed_end]
-    return _invoke.run_alpha(args, data_dir=_data_dir(), run_type=None)
+    args = ["data", "pull", symbol, "--source", source]
+    args += ["--start", parsed_start, "--end", parsed_end, "--json"]
+    out = _invoke.run_alpha(args, data_dir=_data_dir(), run_type=None)
+    pulled: Any = json.loads(out["stdout"])
+    if not isinstance(pulled, dict):
+        raise RuntimeError("`alpha data pull` returned no JSON object")
+    return pulled
 
 
 @mcp.tool()

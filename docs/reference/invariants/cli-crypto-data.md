@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: c25803c8d6c854d0
+verified: 700c7d74ffe52b49
 ---
 
 # Command line data invariants
@@ -31,6 +31,10 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
   `tests/integration/test_data_alpaca_cli.py`.
 - `data pull` rejects `--end` before `--start`, normalises the symbol (ambiguous input fails with the accepted forms), and
   for CCXT refuses a start before the first listed bar with a "Start there?" hint. Never clamp silently.
+- `data pull` freezes the stored series as a snapshot before it replaces it, and refuses (exit 3) when it cannot;
+  `--json` and the plain output report the snapshot and the counts of bars and actions added, removed and revised
+  ([freeze before replace](data-freeze-before-replace.md)). `data snapshots` shows each content hash (`--json --with-content` too), which
+  snapshots share it, and the total size.
 - `--timeframe` (default `1D`) selects the bar size on `data pull`, `snapshot`, `symbols`, `source-status`,
   `audit`, `repair` and `rollback-promotion`; each bar size has its own store root. Only Alpaca and CCXT serve
   intraday bars; other sources refuse a non-daily `--timeframe`. Rules: [bar timeframes](data-bar-timeframes.md).

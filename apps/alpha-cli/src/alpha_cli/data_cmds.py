@@ -7,7 +7,7 @@ import json
 from datetime import UTC, date, datetime, time
 from inspect import Parameter, signature
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 import typer
 
@@ -20,12 +20,8 @@ from alpha_cli.providers import (
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.adapters.base import DataAdapter
-from alpha_data.ingest import store_fetch_result
-from alpha_data.pipeline import (
-    promote_quarantined,
-    rollback_interrupted_promotion,
-    stage_and_promote,
-)
+from alpha_data.pipeline import promote_quarantined, rollback_interrupted_promotion
+from alpha_data.pull_store import FreezeRefused, pull_into_store
 from alpha_data.snapshot import (
     create_snapshot,
     resolve_snapshot_dir,
@@ -33,6 +29,7 @@ from alpha_data.snapshot import (
     snapshot_timeframe,
     verify_snapshot,
 )
+from alpha_data.snapshot_reuse import read_manifests, shared_content, total_bytes
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, BarTimeframe, parse_timeframe, store_dir
 
@@ -270,6 +267,24 @@ def ticker(
         typer.echo(f"{symbol} on {exchange}: last {last} at {stamp.isoformat()}")
 
 
+def _refuse_unfrozen(
+    exc: FreezeRefused, symbol: str, source: str, start: str, end: str
+) -> NoReturn:
+    """Say plainly that nothing was replaced and what to do next; exit 3 (a freeze failure)."""
+    again = f"alpha data pull {symbol} --source {source} --start {start} --end {end}"
+    step = (
+        "No safe command exists today."
+        if exc.older_adapter
+        else f"Fix that, then run the same pull again: {again}"
+    )
+    typer.echo(
+        f"cannot replace the stored {symbol}: it could not be frozen first. {exc.reason}. "
+        f"Nothing was changed. {step}",
+        err=True,
+    )
+    raise typer.Exit(3)
+
+
 @data_app.command()
 def pull(
     symbol: str,
@@ -282,8 +297,12 @@ def pull(
     start: str = typer.Option(...),
     end: str = typer.Option(...),
     timeframe: str = typer.Option("1D", help=_TIMEFRAME_HELP),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
 ) -> None:
-    """Pull raw bars + corporate actions for SYMBOL and store them."""
+    """Pull raw bars + corporate actions for SYMBOL and store them.
+
+    The stored series is frozen as a snapshot first; a failed freeze stops the pull unchanged.
+    """
     tf = _timeframe(timeframe)
     adapter = _adapter(
         source,
@@ -332,25 +351,26 @@ def pull(
                 f"{result.symbol} holds Alpaca data here; ALPHA never mixes two sources in one "
                 f"price series, so pull {adapter.name} into a separate ALPHA_DATA_DIR"
             )
-        if (
-            result.identity is not None
-            or result.receipt is not None
-            or result.raw_response is not None
-        ):
-            outcome = stage_and_promote(store, result, authoritative_source=adapter.name)
-            detail = f", receipt {outcome.receipt_id} promoted"
-        else:
-            store.clear_provenance(result.symbol)
-            store_fetch_result(store, result)
-            store.write_provenance(
-                result.symbol,
-                source=adapter.name,
-                adapter_version=adapter.version,
-                parser_version=adapter.parser_version,
-            )
-            detail = ""
+        report = pull_into_store(
+            store,
+            _snaps_root(),
+            result,
+            source=adapter.name,
+            adapter_version=adapter.version,
+            parser_version=adapter.parser_version,
+            now=datetime.now(UTC),
+            timeframe=tf.canonical,
+        )
+    except FreezeRefused as exc:  # nothing was replaced; a distinct exit code tells the nightly
+        _refuse_unfrozen(exc, symbol, source, start, end)
     except DataError as exc:  # expected domain failure (no data, anti-bot gate, bad vendor row)
         raise typer.BadParameter(str(exc)) from exc
+    if json_out:
+        typer.echo(
+            json.dumps({**report.as_dict(), "fetched_bars": result.bars.height}, sort_keys=True)
+        )
+        return
+    detail = f", receipt {report.receipt_id} promoted" if report.receipt_id else ""
     if adapter.name == "alpaca":
         detail += "; not yet confirmed (interim source, not the authoritative Tiingo source)"
     if not tf.is_daily:
@@ -359,6 +379,8 @@ def pull(
         f"pulled {symbol} from {source}: {result.bars.height} bars, "
         f"{len(result.actions)} actions{detail}"
     )
+    for line in report.lines():
+        typer.echo(line)
 
 
 @data_app.command("source-status")
@@ -683,33 +705,55 @@ def symbols(
 
 
 @data_app.command()
-def snapshots(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -> None:
-    """List every immutable snapshot's manifest summary in deterministic id order."""
+def snapshots(
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+    with_content: bool = typer.Option(
+        False, "--with-content", help="with --json: add content hashes and the total size"
+    ),
+) -> None:
+    """List every immutable snapshot's manifest summary in deterministic id order.
+
+    The plain list also shows each content hash and the snapshots that share it, and the total
+    size on disk. `--json` keeps its shape (the workstation reads it) unless `--with-content`.
+    """
     root = _snaps_root()
+    manifests = read_manifests(root)
+    shared = shared_content(manifests)
     rows: list[dict[str, object]] = []
-    if root.is_dir():
-        for manifest_path in sorted(root.glob("*/manifest.json")):
-            raw = manifest_path.read_bytes()
-            try:
-                manifest = json.loads(raw)
-            except json.JSONDecodeError as exc:
-                raise DataError(f"corrupt snapshot manifest at {manifest_path}") from exc
-            if not isinstance(manifest, dict):
-                raise DataError(f"corrupt snapshot manifest at {manifest_path}")
-            symbols_entry = manifest.get("symbols")
-            rows.append(
-                {
-                    "snapshot_id": manifest.get("snapshot_id"),
-                    "created_at": manifest.get("created_at"),
-                    "source": manifest.get("source"),
-                    "adapter_version": manifest.get("adapter_version"),
-                    "parser_version": manifest.get("parser_version"),
-                    "symbols": (sorted(symbols_entry) if isinstance(symbols_entry, dict) else []),
-                    "manifest_sha256": hashlib.sha256(raw).hexdigest(),
-                }
-            )
+    for _, raw, manifest in manifests:
+        symbols_entry = manifest.get("symbols")
+        held = symbols_entry if isinstance(symbols_entry, dict) else {}
+        held_content = {
+            name: {
+                "sha256": entry["content_sha256"],
+                "shared_with": [
+                    other
+                    for other in shared.get((name, entry["content_sha256"]), [])
+                    if other != manifest.get("snapshot_id")
+                ],
+            }
+            for name, entry in sorted(held.items())
+            if isinstance(entry, dict) and isinstance(entry.get("content_sha256"), str)
+        }
+        rows.append(
+            {
+                "snapshot_id": manifest.get("snapshot_id"),
+                "created_at": manifest.get("created_at"),
+                "source": manifest.get("source"),
+                "adapter_version": manifest.get("adapter_version"),
+                "parser_version": manifest.get("parser_version"),
+                "symbols": sorted(held),
+                "manifest_sha256": hashlib.sha256(raw).hexdigest(),
+                "content": held_content,
+            }
+        )
+    size = total_bytes(root)
     if json_out:
-        typer.echo(json.dumps({"snapshots": rows}, sort_keys=True, allow_nan=False))
+        if with_content:
+            body: dict[str, object] = {"snapshots": rows, "total_bytes": size}
+        else:
+            body = {"snapshots": [{k: v for k, v in r.items() if k != "content"} for r in rows]}
+        typer.echo(json.dumps(body, sort_keys=True, allow_nan=False))
         return
     if not rows:
         typer.echo("no snapshots")
@@ -718,6 +762,14 @@ def snapshots(json_out: bool = typer.Option(False, "--json", help="emit JSON")) 
         listed = row["symbols"]
         names = ",".join(str(item) for item in listed) if isinstance(listed, list) else ""
         typer.echo(f"{row['snapshot_id']} {row['source']} {names}")
+        content = row["content"]
+        for name, info in content.items() if isinstance(content, dict) else []:
+            twins = ", ".join(info["shared_with"]) or "none"
+            typer.echo(f"  {name} content {info['sha256'][:12]} also held by: {twins}")
+    typer.echo(
+        f"{len(rows)} snapshots, {size / 1024:.0f} KB in total. "
+        "They are never deleted automatically; removing old ones is the owner's decision."
+    )
 
 
 @data_app.command()

@@ -10,6 +10,7 @@ import os
 import shutil
 import tempfile
 from bisect import bisect_left, bisect_right
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -478,7 +479,11 @@ def _stage_candidate(
 
 
 def _promote_candidate(
-    store: ParquetStore, candidate_root: Path, *, approved_repair: bool
+    store: ParquetStore,
+    candidate_root: Path,
+    *,
+    approved_repair: bool,
+    before_replace: Callable[[], None] | None = None,
 ) -> IngestOutcome:
     try:
         report = json.loads((candidate_root / "quality.json").read_text(encoding="utf-8"))
@@ -510,6 +515,8 @@ def _promote_candidate(
     _verify_stored_receipt(store, identity, receipt)
     bars = candidate.read_bars(symbol)
     actions = candidate.read_actions(symbol)
+    if before_replace is not None:
+        before_replace()  # the pull freezes the series it is about to replace; a failure stops here
     backup_root = _create_promotion_backup(
         store,
         symbol=symbol,
@@ -669,8 +676,13 @@ def stage_and_promote(
     *,
     authoritative_source: str,
     max_cross_source_price_difference: float = 0.01,
+    before_replace: Callable[[], None] | None = None,
 ) -> IngestOutcome:
-    """Persist a receipt, validate a merged candidate, and promote only on a clean gate."""
+    """Persist a receipt, validate a merged candidate, and promote only on a clean gate.
+
+    ``before_replace`` runs once the candidate has passed the gate and before canonical files are
+    touched; if it raises, nothing is replaced.
+    """
     if result.identity is None or result.receipt is None or result.raw_response is None:
         raise DataError("receipt-backed ingestion requires identity, receipt, and raw response")
     if (
@@ -723,7 +735,9 @@ def stage_and_promote(
         raise DataError(
             f"candidate {result.receipt.receipt_id} quarantined for {result.symbol}: {details}"
         )
-    return _promote_candidate(store, candidate, approved_repair=False)
+    return _promote_candidate(
+        store, candidate, approved_repair=False, before_replace=before_replace
+    )
 
 
 def promote_quarantined(

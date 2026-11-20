@@ -379,10 +379,18 @@ def test_snapshots_lists_manifest_summaries_deterministically(
         assert row["source"] == "fake"
         assert row["symbols"] == ["AAPL"]
         assert len(row["manifest_sha256"]) == 64
+    detailed = json.loads(
+        runner.invoke(app, ["data", "snapshots", "--json", "--with-content"]).stdout
+    )
+    for row in detailed["snapshots"]:
+        twin = "snap-b" if row["snapshot_id"] == "snap-a" else "snap-a"
+        assert row["content"]["AAPL"]["shared_with"] == [twin]  # same bytes, listed as shared
+    assert detailed["total_bytes"] > 0
 
     fallback = runner.invoke(app, ["data", "snapshots"])
     assert fallback.exit_code == 0
     assert "snap-a" in fallback.output and "snap-b" in fallback.output
+    assert "never deleted automatically" in fallback.output
 
 
 class _RecordingCrypto(_FakeCrypto):

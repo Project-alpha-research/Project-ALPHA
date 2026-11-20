@@ -215,7 +215,7 @@ def _store(home: Path, symbols: list[str], source: str = "yfinance") -> None:
 def _pull_adds_a_bar(home: Path, symbol: str) -> Callable[[list[str]], Outcome]:
     def reply(tail: list[str]) -> Outcome:
         _grow(home, symbol)
-        return Outcome(0, "pulled", "", 1, False)
+        return pull_result(added=1)
 
     return reply
 
@@ -227,11 +227,27 @@ def _grow(home: Path, symbol: str) -> None:
     bars.write_bars(symbol, pl.concat([frame, extra]))
 
 
-SNAP_OK = Outcome(0, "snapshot made", "", 1, False)
+def pull_result(
+    added: int = 0,
+    revised: int = 0,
+    dropped: int = 0,
+    snapshot: str | None = "pull-20261120T030000-AAA",
+) -> Outcome:
+    """The JSON `alpha data pull --json` prints: counts and dates only."""
+    body = {
+        "snapshot": None if snapshot is None else {"id": snapshot, "reused": False},
+        "bars_added": {"count": added, "first": None, "last": None},
+        "bars_removed": {"count": dropped},
+        "bars_revised": {
+            "count": revised,
+            "first_date": "2026-11-03" if revised else None,
+            "columns": ["close"] if revised else [],
+        },
+    }
+    return Outcome(0, json.dumps(body), "", 1, False)
 
 
 def _refresh(tmp_path: Path, runner: FakeRunner) -> dict[str, Any]:
-    runner.replies.setdefault("data snapshot", SNAP_OK)
     cfg = config(tmp_path, refresh_followed=True)
     return run_nightly(cfg, tmp_path / "home", runner, only=("N0",), today=date(2026, 11, 20))
 
@@ -264,6 +280,7 @@ def test_only_followed_assets_are_pulled_and_a_new_bar_is_computed(tmp_path: Pat
             "2026-11-02",
             "--end",
             "2026-11-20",
+            "--json",
         ]
     ]
     step = next(s for s in record["steps"] if s["id"] == "N0.pull.CCC")
@@ -277,7 +294,7 @@ def test_no_new_bar_is_reused_and_unreadable_evidence_is_unknown(tmp_path: Path)
     runner = FakeRunner(
         {
             "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
-            "data pull": Outcome(0, "pulled", "", 1, False),
+            "data pull": pull_result(),
         }
     )
     step = next(s for s in _refresh(tmp_path, runner)["steps"] if s["id"] == "N0.pull.CCC")
@@ -292,7 +309,6 @@ def test_a_failed_pull_is_a_minor_defect_and_n4_then_says_late(tmp_path: Path) -
         {
             "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
             "data pull": Outcome(2, "", "Error: no key token=abc123 set", 1, False),
-            "data snapshot": SNAP_OK,
             "follow update": ok({"follows": []}),
             "follow today": ok(_today(late)),
             "follow verify": ok({"ok": True, "entries": 2, "head": HEAD}),
@@ -462,116 +478,89 @@ def test_a_provider_that_revises_old_bars_is_a_minor_defect_with_the_first_date(
 ) -> None:
     home = tmp_path / "home"
     _store(home, ["CCC"])
-
-    def revise(tail: list[str]) -> Outcome:
-        bars = ParquetStore(home / "store")
-        frame = bars.read_bars("CCC")
-        bars.write_bars(
-            "CCC",
-            frame.with_columns(
-                pl.when(pl.col("ts").dt.day() >= 3)
-                .then(pl.col("close") * 0.5)
-                .otherwise(pl.col("close"))
-                .alias("close")
-            ),
-        )
-        return Outcome(0, "pulled", "", 1, False)
-
     runner = FakeRunner(
-        {"follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}), "data pull": revise}
+        {
+            "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
+            "data pull": pull_result(revised=2, snapshot="pull-20261120T030000-CCC"),
+        }
     )
     record = _refresh(tmp_path, runner)
     assert states(record)["N0.pull.CCC"] == "defect-minor" and record["blocking"] == 0
-    assert (
+    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.pull.CCC")
+    assert text.startswith(
         "the provider revised history for CCC: first changed bar 2026-11-03 (close)"
-        in json.dumps(record)
     )
-    _store(home, ["CCC"])  # an unchanged pull is quiet
+    assert "snapshot pull-20261120T030000-CCC" in text and "alpha data snapshots" in text
     quiet = FakeRunner(
         {
             "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
-            "data pull": Outcome(0, "pulled", "", 1, False),
+            "data pull": pull_result(),
         }
     )
     assert states(_refresh(tmp_path, quiet))["N0.pull.CCC"] == "pass"
 
 
-# ---- N0 freezes each followed asset's bars before the pull replaces them -------------------
+def test_dropped_old_bars_are_a_minor_defect_naming_the_snapshot(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    _store(home, ["CCC"])
+    runner = FakeRunner(
+        {
+            "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
+            "data pull": pull_result(dropped=2),
+        }
+    )
+    record = _refresh(tmp_path, runner)
+    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.pull.CCC")
+    assert "2 earlier bars are gone" in text and "snapshot pull-" in text
 
 
-def _order(runner: FakeRunner) -> list[str]:
-    return [
-        f"{c[1]}:{c[3] if c[1] == 'snapshot' else c[2]}" for c in runner.calls if c[0] == "data"
-    ]
+# ---- the pull itself freezes; N0 only reads what it says ------------------------------------
 
 
-def test_each_asset_is_frozen_before_its_pull_and_the_record_names_the_snapshot(
-    tmp_path: Path,
-) -> None:
+def test_n0_runs_only_the_pull_and_records_the_snapshot_the_pull_names(tmp_path: Path) -> None:
     home = tmp_path / "home"
     _store(home, ["AAA", "BBB"])
     runner = FakeRunner(
         {
             "follow list": ok({"follows": [{**ROW, "assets": ["AAA", "BBB"]}]}),
-            "data pull": Outcome(0, "pulled", "", 1, False),
+            "data pull": pull_result(),
         }
     )
     record = _refresh(tmp_path, runner)
-    assert _order(runner) == ["snapshot:AAA", "pull:AAA", "snapshot:BBB", "pull:BBB"]
-    first = next(c for c in runner.calls if c[:2] == ["data", "snapshot"])
-    assert (
-        first[3] == "AAA" and first[2].startswith("n0-") and first[4:] == ["--source", "yfinance"]
-    )
+    assert [c[1] for c in runner.calls if c[0] == "data"] == ["pull", "pull"]  # no snapshot child
     for asset in ("AAA", "BBB"):
-        freeze = next(s for s in record["steps"] if s["id"] == f"N0.freeze.{asset}")
         pull = next(s for s in record["steps"] if s["id"] == f"N0.pull.{asset}")
-        assert freeze["state"] == "pass" and freeze["ids"]["snapshot"] == pull["ids"]["snapshot"]
-        assert asset in freeze["ids"]["snapshot"]
-    ids = {s["ids"]["snapshot"] for s in record["steps"] if s["id"].startswith("N0.freeze.")}
-    assert len(ids) == 2  # one snapshot per asset
+        assert pull["state"] == "pass" and pull["ids"] == {"snapshot": "pull-20261120T030000-AAA"}
+    assert not [s for s in record["steps"] if s["id"].startswith("N0.freeze.")]
 
 
-def test_a_snapshot_that_fails_stops_that_pull_only_and_is_blocking(tmp_path: Path) -> None:
+def test_a_freeze_that_fails_is_blocking_for_that_asset_only(tmp_path: Path) -> None:
     home = tmp_path / "home"
     _store(home, ["AAA", "BBB"])
 
-    def snap(tail: list[str]) -> Outcome:
-        if tail[3] == "AAA":
-            return Outcome(2, "", "Error: cannot snapshot token=abc123", 1, False)
-        return SNAP_OK
+    def pull(tail: list[str]) -> Outcome:
+        if tail[2] == "AAA":
+            return Outcome(3, "", "cannot replace the stored AAA: token=abc123", 1, False)
+        return pull_result()
 
     runner = FakeRunner(
-        {
-            "follow list": ok({"follows": [{**ROW, "assets": ["AAA", "BBB"]}]}),
-            "data snapshot": snap,
-            "data pull": Outcome(0, "pulled", "", 1, False),
-        }
+        {"follow list": ok({"follows": [{**ROW, "assets": ["AAA", "BBB"]}]}), "data pull": pull}
     )
     record = _refresh(tmp_path, runner)
-    assert _order(runner) == ["snapshot:AAA", "snapshot:BBB", "pull:BBB"]
-    assert states(record)["N0.freeze.AAA"] == "defect-blocking"
-    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.freeze.AAA")
+    assert states(record)["N0.pull.AAA"] == "defect-blocking"
+    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.pull.AAA")
     assert text.startswith("could not freeze AAA before the refresh") and "abc123" not in text
-    assert states(record)["N0.pull.AAA"] == "not-run"
     assert states(record)["N0.pull.BBB"] == "pass" and record["blocking"] == 1
 
 
-def test_a_revision_defect_names_the_snapshot_and_the_listing_command(tmp_path: Path) -> None:
+def test_a_pull_result_that_cannot_be_read_is_a_minor_defect(tmp_path: Path) -> None:
     home = tmp_path / "home"
     _store(home, ["CCC"])
-
-    def revise(tail: list[str]) -> Outcome:
-        bars = ParquetStore(home / "store")
-        frame = bars.read_bars("CCC")
-        bars.write_bars("CCC", frame.with_columns(pl.col("volume") * 1.005))
-        return Outcome(0, "pulled", "", 1, False)
-
     runner = FakeRunner(
-        {"follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}), "data pull": revise}
+        {
+            "follow list": ok({"follows": [{**ROW, "assets": ["CCC"]}]}),
+            "data pull": Outcome(0, "pulled", "", 1, False),
+        }
     )
     record = _refresh(tmp_path, runner)
-    snap_id = next(c[2] for c in runner.calls if c[:2] == ["data", "snapshot"])
-    text = next(d["text"] for d in record["defects"] if d["step"] == "N0.pull.CCC")
-    assert "the provider revised history for CCC" in text
-    assert f"snapshot {snap_id}" in text and "alpha data snapshots" in text
-    assert "1.005" not in text
+    assert states(record)["N0.pull.CCC"] == "defect-minor"

@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_mcp_spine_tools.py
   - tests/unit/test_mcp_front_door_tools.py
   - tests/integration/test_mcp_front_door.py
-verified: be8da92135834609
+verified: 1c5c6923ba029be7
 ---
 
 # MCP invariants
@@ -89,7 +89,9 @@ It is a surface like the web backend: it composes nothing and has no authority o
   the arguments are not echoed.
 - No tool exists for `follow start`, `follow stop`, `follow update` (they change a paper follow), `nightly run`
   (it can spend money through RD-Agent), `rdagent run` (it spends money), `data pull` (it uses the network) or
-  `library import-catalogue`. `data_pull` is an older tool, kept as it was.
+  `library import-catalogue`. `data_pull` is an older tool, kept and made safe: `start` and `end` are
+  required; it runs the same `alpha data pull ... --json`, so the stored series is frozen first (the pull stops if it
+  cannot) and the pull's JSON (snapshot id, counts) comes back unchanged. It never deletes snapshots.
 - The module never imports or reads the follow store or any `forward/` path (`tests/unit/test_follow_separation.py`).
 - Enforced by `tests/unit/test_mcp_front_door_tools.py` (argv, refusals, catalog class, forbidden commands) and
   `tests/integration/test_mcp_front_door.py` (the real command on a synthetic home).

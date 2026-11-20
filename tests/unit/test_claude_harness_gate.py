@@ -421,6 +421,29 @@ class TestQuantRigorTooling:
         harness_quant.mutate(repo, [rel], runner=runner)
         assert clean_runs == 2  # the second run names nothing new, so no third run
 
+    def test_mutate_still_blocks_when_the_clean_runs_never_settle(self, repo: Path) -> None:
+        # Every clean run names a new failing file: the rounds stop at the cap, mutmut still
+        # runs and fails, and the module is unavailable, which blocks under require_measured.
+        rel = self._quant_module(repo, body="def value(): return 1\n")
+        (repo / "packages/alpha-validation/src/alpha_validation/__init__.py").write_text("")
+        (repo / "tests").mkdir()
+        (repo / "pyproject.toml").write_text("[tool.pytest.ini_options]\nmarkers = []\n")
+        clean_runs = 0
+
+        def runner(cmd: list[str], **kwargs: Any) -> tuple[bool, float, str]:
+            nonlocal clean_runs
+            if "pytest" in cmd:
+                clean_runs += 1
+                return (False, 1.0, f"ERROR tests/unit/test_{clean_runs}.py - ImportError: x\n")
+            return (False, 0.0, "failed to collect stats")
+
+        code, report = harness_quant.mutate(repo, [rel], runner=runner, require_measured=True)
+        assert clean_runs == harness_quant._PREFLIGHT_ROUNDS == 4
+        assert code != 0
+        entry = report["modules"][rel]
+        assert entry["status"].startswith("unavailable:")
+        assert entry["excluded_tests"] == [f"tests/unit/test_{i}.py" for i in range(1, 5)]
+
     def test_mutate_runs_mutmut_with_single_threaded_accelerate(self, repo: Path) -> None:
         # mutmut isolates each mutant with os.fork(); Apple's Accelerate BLAS is not fork-safe
         # once its thread pool exists, so every mutant reaching numpy/scipy linear algebra is

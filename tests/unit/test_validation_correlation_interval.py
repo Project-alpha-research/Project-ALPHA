@@ -99,6 +99,12 @@ def test_perfect_correlation_is_a_stated_edge(sign: float) -> None:
     assert out["p"] == pytest.approx(0.0, abs=1e-15)
     assert out["z"] is None
     assert out["se_z"] == pytest.approx(1.0 / math.sqrt(7.0), abs=1e-15)
+    assert out["edge"] == "perfect_correlation"
+
+
+def test_ordinary_correlation_has_no_edge_label() -> None:
+    x = np.arange(10.0)
+    assert correlation_interval(x, x**2 * np.cos(x))["edge"] is None
 
 
 def test_coverage_of_the_true_correlation() -> None:

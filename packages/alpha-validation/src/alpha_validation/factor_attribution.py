@@ -115,14 +115,20 @@ def _newey_west(design: FloatArray, resid: FloatArray, lags: int) -> FloatArray:
 
 
 def _row(estimate: float, se: float) -> dict[str, Any]:
-    """Estimate, standard error, t, two-sided normal p and 95% interval; t is None if se is 0."""
+    """Estimate, standard error, t, two-sided normal p and 95% interval.
+
+    At ``se == 0`` (an exact fit) there is no sampling distribution: ``t`` and ``p`` are None and
+    ``edge`` is ``"zero_standard_error"``; otherwise ``edge`` is None.
+    """
+    t: float | None = None
+    p: float | None = None
+    edge: str | None = "zero_standard_error"
     if se > 0.0:
-        t: float | None = estimate / se
-        p = float(2.0 * stats.norm.sf(abs(estimate / se)))
-    else:
-        t = None
-        p = 0.0 if abs(estimate) > 0.0 else 1.0
-    return {"se": se, "t": t, "p": p, "ci95": [estimate - _Z95 * se, estimate + _Z95 * se]}
+        t = estimate / se
+        p = float(2.0 * stats.norm.sf(abs(t)))
+        edge = None
+    ci95 = [estimate - _Z95 * se, estimate + _Z95 * se]
+    return {"se": se, "t": t, "p": p, "edge": edge, "ci95": ci95}
 
 
 def factor_attribution(
@@ -135,14 +141,17 @@ def factor_attribution(
     """Regress per-period strategy returns (length N) on an N x K factor matrix, with a constant.
 
     The caller aligns the series by date and removes any risk-free rate. Returns, per factor,
-    ``beta``, ``se``, ``t``, ``p`` and ``ci95``; the intercept per period and annualised (alpha
-    times ``periods_per_year``) with ``alpha_se``, ``alpha_t``, ``alpha_p`` and intervals;
-    ``r_squared``, ``adj_r_squared``, ``n``, ``k``, ``hac_lags``, ``residual_std`` (sqrt of
-    SSR / (N - K - 1)) and ``condition_number``. Fails loud with ``DataError`` on non-finite
-    input, unequal lengths, duplicate names, fewer than ``min_observations(K)`` rows, a series
-    that does not vary, or a design whose condition number exceeds ``MAX_CONDITION_NUMBER``.
-    The standard errors assume the HAC lag covers the serial dependence; they are an
-    approximation, and exposure to a factor is not evidence of an edge.
+    ``beta``, ``se``, ``t``, ``p``, ``edge`` and ``ci95``; the intercept per period and annualised
+    (alpha times ``periods_per_year``) with ``alpha_se``, ``alpha_t``, ``alpha_p``, ``alpha_edge``
+    and intervals; ``r_squared``, ``adj_r_squared``, ``n``, ``k``, ``hac_lags``,
+    ``residual_std`` (sqrt of SSR / (N - K - 1)) and ``condition_number``. Fails loud with
+    ``DataError`` on non-finite input, unequal lengths, duplicate names, fewer than
+    ``min_observations(K)`` rows, a series that does not vary, or a design whose condition
+    number exceeds ``MAX_CONDITION_NUMBER``.
+    HAC standard errors are large-sample approximations: the 95% intervals under-cover in small
+    samples, more so under serial correlation (a seeded check with N = 60, K = 2 covered about 92%
+    with independent errors and about 89% with AR(1) errors, phi = 0.5; N = 500 covered about
+    95-96% and 94%). Exposure to a factor is not evidence of an edge.
     """
     y = _array(strategy, "strategy", 1)
     x = _array(factors, "factors", 2)
@@ -169,6 +178,7 @@ def factor_attribution(
         "alpha_se": alpha_row["se"],
         "alpha_t": alpha_row["t"],
         "alpha_p": alpha_row["p"],
+        "alpha_edge": alpha_row["edge"],
         "alpha_ci95_per_period": alpha_row["ci95"],
         "alpha_ci95_annual": [bound * periods_per_year for bound in alpha_row["ci95"]],
         "factors": factor_rows,

@@ -90,6 +90,21 @@ def test_noiseless_plane_is_recovered_exactly() -> None:
     assert out["residual_std"] == pytest.approx(0.0, abs=1e-10)
 
 
+def test_zero_standard_error_is_a_typed_edge_not_a_made_up_p() -> None:
+    # se = 0 exactly: there is no sampling distribution, so t and p are None and a label says why.
+    row = fa._row(0.5, 0.0)
+    assert row == {
+        "se": 0.0,
+        "t": None,
+        "p": None,
+        "edge": "zero_standard_error",
+        "ci95": [0.5, 0.5],
+    }
+    ordinary = fa._row(0.5, 0.25)
+    assert ordinary["edge"] is None
+    assert ordinary["t"] == pytest.approx(2.0, abs=1e-15)
+
+
 def test_orthogonal_factors_give_the_single_factor_betas() -> None:
     # Orthogonal, centred factors: each multi-factor beta is cov(y, x_j) / var(x_j) (1e-10).
     rng = np.random.default_rng(5)

@@ -28,6 +28,7 @@ InputKind = Literal[
     "factor_panel",
     "run_set",
     "asset_bars",
+    "reference_factors",
 ]
 Value = float | str | None
 

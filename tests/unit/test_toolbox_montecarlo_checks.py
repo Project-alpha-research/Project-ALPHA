@@ -201,7 +201,7 @@ def test_listed_and_described(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     cli = CliRunner()
     listed = json.loads(cli.invoke(tool_app, ["list", "--json"]).stdout)
-    assert len(SPECS) == len(listed) == 15
+    assert len(SPECS) == len(listed) == 16
     ids = {row["id"] for row in listed}
     assert set(TOOLS) <= ids and "resampling.regime_paths" not in ids
     for tool in TOOLS:

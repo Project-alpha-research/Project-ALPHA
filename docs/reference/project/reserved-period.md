@@ -8,7 +8,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: cf917963f28ddcc3
+verified: fbbcf0f33e206228
 ---
 
 # The reserved period
@@ -67,6 +67,8 @@ Only labels it:
 
 - Older rule runs that saw the date, and `alpha tool` on them: the label `reserved-period-seen`. Nothing is rewritten. The label is derived when the
   run is read, from its last bar date and the lack of a hold-back record (`toolbox/inputs.py`, `alpha results show`).
+- A descriptive check that reads reference series published later never reads the held-back period:
+  [descriptive reference reads](../invariants/cli-toolbox.md#descriptive-reference-reads).
 
 Holds nothing back (they still read bars from the date on):
 

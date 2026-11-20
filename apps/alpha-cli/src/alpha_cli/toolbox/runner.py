@@ -109,7 +109,9 @@ def run(
                 else semantic_seed(seed, file)
             )
             rng = default_rng(effective_seed) if spec.seeded else None
-            result = spec.compute(inputs.Inputs(series, market, effective_seed), settings, rng)
+            result = spec.compute(
+                inputs.Inputs(series, market, effective_seed, home), settings, rng
+            )
             written_at = now()
             # The one place a result is written: it is declared only if chosen before this moment.
             declared = declarations.status(home, target, tool_id, set_name, written_at)

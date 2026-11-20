@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f8b0382a482106c6 on 2026-11-20: nightly refresh freezes first; this text is still correct
+  verified 64669c17663d2dfa on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 apps/alpha-cli/README.md
-  verified f8b0382a482106c6 on 2026-11-20: nightly refresh now freezes first; this text is still correct
+  verified 64669c17663d2dfa on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbd165a561b534ae on 2026-11-19: Re-read: MCP gained 15 research-path tools; routing text stays correct
@@ -26,7 +26,7 @@ docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 05dbe0b01b359600 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 5e713780360ee7fc on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -44,7 +44,7 @@ docs/reference/invariants/cli-runs.md
   verified 762ae0b567677732 on 2026-11-20: N0 freezes a followed asset before the pull; the nightly description here is unchanged
 
 docs/reference/invariants/cli-toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 2e8bd9127eae3cee on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified b4dca1c086c3d033 on 2026-11-19: Re-read after merging main: this page names the full test key (store and data content included) and the repeat label source; still correct
@@ -115,6 +115,9 @@ docs/reference/project/components/forecasting.md
 docs/reference/project/components/literature-worker.md
   verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
+docs/reference/project/components/monte-carlo.md
+  verified 6f0f641b13141e65 on 2026-11-20: Text still correct; only the toolbox gained one entry and inputs.
+
 docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
@@ -140,7 +143,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified e9b71f4d445bb3e1 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/toolbox.md
-  verified fac522123feb76b8 on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 2e8bd9127eae3cee on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 docs/reference/project/components/validation-and-evidence.md
   verified 6a13bac6fa56fddd on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -239,13 +242,16 @@ research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
 research/tools/montecarlo-checks.md
-  verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
+  verified e1bec6df3be5b18b on 2026-11-20: Only the registry count in a test changed; the card text is still correct.
 
 research/tools/nightly-run.md
   verified 4f6aa0e464b24bbd on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+
+research/tools/published-factors.md
+  verified 11024a221ff70253 on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 research/tools/random-price-null.md
   verified e08b545d32b9a3c1 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
@@ -278,7 +284,7 @@ research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/toolbox-by-situation.md
-  verified 580a02185f5e2d2c on 2026-11-19: reviewed against changed sources; text updated where needed
+  verified 5251d2c2604865ec on 2026-11-20: Text still correct; only toolbox code details of the new entry changed.
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

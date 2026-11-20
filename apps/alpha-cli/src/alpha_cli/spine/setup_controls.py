@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from alpha_cli.spine.reading import LEGACY_SETUP_OUTCOMES, NOT_CLEAR, SOME, TOO_LITTLE
 from alpha_cli.spine.setup_find import CLUSTER_GAP_BARS
 
 RANDOM_DRAWS = 2000
@@ -236,13 +237,35 @@ def horizon_summary(
     return result
 
 
+MIN_OCCURRENCES = 30
+P_LINE = 0.05
+
+
+def study_evidence(primary: dict[str, Any], labels: list[str]) -> str:
+    """The evidence word of one setup study. Never the top word: the p-value is not corrected."""
+    if primary["occurrences"] < MIN_OCCURRENCES:
+        return TOO_LITTLE
+    p = primary["random_date_p"]
+    agree = "halves-disagree" not in labels
+    return SOME if p <= P_LINE and primary["excess"] > 0 and agree else NOT_CLEAR
+
+
+def trade_evidence(primary: dict[str, Any], labels: list[str]) -> str:
+    """The same word for a setup trade; it also needs a random control."""
+    if primary["trades"] < MIN_OCCURRENCES:
+        return TOO_LITTLE
+    p, excess = primary["random_date_p"], primary["excess"]
+    held = p is not None and p <= P_LINE and excess is not None and excess > 0
+    clear = not {"halves-disagree", "no-random-control"}.intersection(labels)
+    return SOME if held and clear else NOT_CLEAR
+
+
 def reading(primary: dict[str, Any], horizon: int, labels: list[str]) -> tuple[str, str]:
+    """The stored sentence and the stored outcome word (kept as written; the evidence is beside)."""
     n, mean, drift, p = (primary[k] for k in ("occurrences", "mean", "drift_mean", "random_date_p"))
+    word = LEGACY_SETUP_OUTCOMES[study_evidence(primary, labels)]
     if n == 0:
-        return (
-            "Too few occurrences (0) to judge. For the record: no complete outcomes.",
-            "inconclusive",
-        )
+        return "Too few occurrences (0) to judge. For the record: no complete outcomes.", word
     start = (
         f"After this setup the average {horizon}-bar return was {mean:.2%} "
         f"after costs, against {drift:.2%}"
@@ -251,19 +274,19 @@ def reading(primary: dict[str, Any], horizon: int, labels: list[str]) -> tuple[s
         return (
             f"Too few occurrences ({n}) to judge. For the record: {start} on any day; "
             f"random dates did as well or better in {p:.2%} of draws."
-        ), "inconclusive"
-    if p <= 0.05 and primary["excess"] > 0 and "halves-disagree" not in labels:
+        ), word
+    if word == LEGACY_SETUP_OUTCOMES[SOME]:
         return (
             f"{start} for the asset on any day; "
             f"random dates did this well in {p:.2%} of 2,000 draws. "
             "This is one counted test, not proof: it was not checked on reserved data. "
             "Beating random dates says these dates were unusual, not that the setup "
             "can be traded."
-        ), "supported (exploratory, not confirmed)"
+        ), word
     return (
         f"{start} on any day; random dates did as well or better in {p:.2%} of draws. "
         "No evidence the setup adds anything here."
-    ), "not supported"
+    ), word
 
 
 def study_labels(
@@ -389,8 +412,9 @@ def trade_report(
 
 def trade_reading(primary: dict[str, Any], labels: list[str]) -> tuple[str, str]:
     n, mean, drift, p = (primary[k] for k in ("trades", "mean", "drift_mean", "random_date_p"))
+    word = LEGACY_SETUP_OUTCOMES[trade_evidence(primary, labels)]
     if n == 0:
-        return "Too few trades (0) to judge. For the record: no completed trades.", "inconclusive"
+        return "Too few trades (0) to judge. For the record: no completed trades.", word
     start = (
         f"Traded with these exits the average trade made {mean:.2%} after costs "
         f"(hit rate {primary['hit_rate']:.1%}, about {primary['mean_bars_held']:.1f} bars held)"
@@ -403,19 +427,13 @@ def trade_reading(primary: dict[str, Any], labels: list[str]) -> tuple[str, str]
         start += f"; random dates did this well in {p:.2%} of 2,000 draws"
     start += "."
     if n < 30:
-        return f"Too few trades ({n}) to judge. For the record: {start}", "inconclusive"
-    if (
-        p is not None
-        and p <= 0.05
-        and primary["excess"] is not None
-        and primary["excess"] > 0
-        and not {"halves-disagree", "no-random-control"}.intersection(labels)
-    ):
+        return f"Too few trades ({n}) to judge. For the record: {start}", word
+    if word == LEGACY_SETUP_OUTCOMES[SOME]:
         return (
             start + " Beating random dates says these dates were unusual, not that the setup "
             "can be traded. One counted test, not confirmed on reserved data."
-        ), "supported (exploratory, not confirmed)"
-    return start + " No evidence the setup adds anything with these exits.", "not supported"
+        ), word
+    return start + " No evidence the setup adds anything with these exits.", word
 
 
 def trade_labels(

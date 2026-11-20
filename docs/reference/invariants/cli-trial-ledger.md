@@ -10,7 +10,7 @@ sources:
   - tests/smoke/test_family_deflation_smoke.py
   - tests/unit/test_spine_deflation.py
   - tests/smoke/test_ledger_smoke.py
-verified: b4dca1c086c3d033
+verified: 85f323ffb7e0a2ae
 ---
 
 # One trial ledger invariants
@@ -46,10 +46,13 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
 
 - `setup_study` and `setup_trade` count once; rows labelled `repeat` do not count. `setup_find` stays uncounted.
   Studies use `setup:<idea>` with Unicode case folding and collapsed whitespace; rule families stay unchanged.
-  Studies have no comparable Sharpe. Outcomes are `inconclusive` below 30 complete primary outcomes,
+  Studies have no comparable Sharpe. The stored `outcome` stays `inconclusive` below 30 complete primary outcomes,
   `supported (exploratory, not confirmed)` for a positive excess with random-date p ≤ 0.05 and agreeing halves,
-  otherwise `not supported`. Studies use `setup-studies/<study_id>/manifest.json`; trades use `setup-trades/<trade_id>/manifest.json`.
-  Trade readings count completed trades and apply the same support conditions, with unavailable controls never supporting.
+  otherwise `not supported`; machines read it. A new row adds `evidence` (`too little to read`, `some evidence`,
+  `not clear of chance`) and the reader prints that word; an old row reads through its old word. Studies use
+  `setup-studies/<study_id>/manifest.json`; trades use `setup-trades/<trade_id>/manifest.json`. Trade readings count
+  completed trades and apply the same conditions; unavailable controls never give `some evidence`. No count reads
+  any of these words ([readings](cli-rule-readings.md#ledger-words)).
 - Families remain separate: spine rule, tool, setup and other families, `rdagent-factors`,
   and `rule:<family_id>`. Keep recorded family size separate from the reader count.
 - Tool rows (`tool:<id>`) come in pairs, `attempted` then `ok` or `error`, and never count for deflation. Rows of the old

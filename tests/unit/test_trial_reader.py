@@ -57,7 +57,11 @@ def test_worked_example(tmp_path: Path) -> None:
     assert counts["rule:f1"]["reader_trials"] == 1
     assert counts["rule:f1"]["family_size_recorded"] == 2
     assert counts["spine:ma_cross"]["reader_trials"] == 2
-    assert counts["spine:ma_cross"]["outcomes"] == {"supported": 1, "rejected": 1, "error": 1}
+    assert counts["spine:ma_cross"]["outcomes"] == {
+        "graded B under the old rules": 1,
+        "graded D under the old rules": 1,
+        "error": 1,
+    }
     result = trials_for_deflation(snapshot, "rdagent-factors")
     assert (
         result["family_trials"] == 6

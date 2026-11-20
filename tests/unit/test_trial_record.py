@@ -107,7 +107,11 @@ def mapped(row: Any) -> Any:
     ],
 )
 def test_spine_outcomes(verdict: Any, outcome: Any) -> None:
-    assert mapped(spine(verdict=verdict)).outcome == outcome
+    record = mapped(spine(verdict=verdict))
+    assert record.machine_outcome == outcome
+    assert record.outcome == (
+        "recorded" if verdict is None else f"graded {verdict} under the old rules"
+    )
     assert mapped(spine(verdict=verdict, labels=["error"])).outcome == "error"
 
 

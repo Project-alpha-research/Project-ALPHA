@@ -10,6 +10,13 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli._rdagent_stability import plain_name, recorded_status, status_reason
+from alpha_cli.spine.reading import (
+    LEGACY_SETUP_OUTCOMES,
+    OLD_SETUP_OUTCOMES,
+    SETUP_WORDS,
+    WORDS,
+    old_grade_text,
+)
 
 OUTCOMES = ("supported", "rejected", "inconclusive", "invalid", "error", "recorded")
 FACTOR_OUTCOMES = {
@@ -64,6 +71,11 @@ class TrialRecord:
     source_line: int
     reason: str | None = None
     measure_clock: str | None = None
+    # Owner words never branch code: ``outcome`` is what is printed; ``machine_outcome`` is the
+    # old four-way word (and the old letter stays in ``raw_status``). Counting reads neither.
+    machine_outcome: str | None = None
+    evidence: str | None = None
+    aim_relation: str | None = None
 
 
 # What was tested, independent of the code version that tested it: spec hash, assets, data window
@@ -122,6 +134,33 @@ def _strings(value: Any) -> tuple[str, ...]:
     return tuple(value)
 
 
+def _rule_words(row: dict[str, Any], status: Any, machine: str) -> tuple[str, str | None]:
+    """Owner outcome and evidence of a rule-test row; a row with only a letter says so."""
+    found = row.get("evidence")
+    if found is not None and found != "fault" and found not in WORDS:
+        raise ValueError(f"unknown evidence: {found}")
+    if machine in {"error", "recorded"}:
+        return machine, found
+    return (found if found is not None else old_grade_text(status)), found
+
+
+def _setup_words(row: dict[str, Any]) -> tuple[str, str, str | None]:
+    """Machine word, owner word and a note for a setup row; old and new words both read."""
+    raw = row["outcome"]
+    found = row.get("evidence")
+    if found is not None and found not in SETUP_WORDS:
+        raise ValueError(f"unknown evidence: {found}")
+    if raw in OLD_SETUP_OUTCOMES:
+        return (
+            raw,
+            found or OLD_SETUP_OUTCOMES[raw],
+            None if found else "recorded under the old wording",
+        )
+    if raw not in SETUP_WORDS:
+        raise ValueError(f"unknown study outcome: {raw}")
+    return LEGACY_SETUP_OUTCOMES[raw], found or raw, None
+
+
 def _spine(row: dict[str, Any]) -> dict[str, Any]:
     raw_kind = row.get("kind", "rule_test")
     if not isinstance(raw_kind, str):
@@ -147,9 +186,12 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         }
         if status not in outcomes:
             raise ValueError(f"unknown verdict: {status}")
-        outcome = "error" if "error" in labels else outcomes[status]
+        machine = "error" if "error" in labels else outcomes[status]
+        outcome, evidence_word = _rule_words(row, status, machine)
     family = "spine-other"
+    machine_outcome, evidence_word, note = None, row.get("evidence"), None
     if kind == "rule_test":
+        machine_outcome = machine
         if not isinstance(row["rule"], str) or not row["rule"]:
             raise ValueError("missing rule name")
         family = f"spine:{row['rule']}"
@@ -164,13 +206,8 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         family = f"spine-setup:{row['name']}"
     elif kind in {"setup_study", "setup_trade"}:
         family = "setup:" + " ".join(row["idea"].casefold().split())
-        outcome = row["outcome"]
-        if outcome not in {
-            "inconclusive",
-            "not supported",
-            "supported (exploratory, not confirmed)",
-        }:
-            raise ValueError(f"unknown study outcome: {outcome}")
+        machine_outcome, outcome, note = _setup_words(row)
+        evidence_word = outcome
     evidence = f"runs/{row['run_id']}/manifest.json" if row.get("run_id") else None
     if kind == "tool":
         evidence = row.get("tool_output")
@@ -213,6 +250,10 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         labels=labels,
         created_at=row["recorded_at"],
         created_at_basis="recorded",
+        reason=note,
+        machine_outcome=machine_outcome,
+        evidence=evidence_word if kind in {"rule_test", "setup_study", "setup_trade"} else None,
+        aim_relation=row.get("aim_relation") if kind == "rule_test" else None,
     )
 
 
@@ -380,6 +421,7 @@ def map_row(source: str, path: Path, line_no: int, row: dict[str, Any]) -> Trial
         values = _rdagent(row)
     else:
         raise ValueError(f"unknown schema: {schema}")
+    values["machine_outcome"] = values.get("machine_outcome") or values["outcome"]
     record = TrialRecord(
         trial_id=f"{source}:{index}",
         source=source,

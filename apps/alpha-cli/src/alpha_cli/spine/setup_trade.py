@@ -14,6 +14,7 @@ from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
 from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.reading import setup_evidence_of
 from alpha_cli.spine.setup_controls import (
     RANDOM_DRAWS,
     _comparison,
@@ -29,6 +30,7 @@ from alpha_cli.spine.setup_exits import (
     trades_frame,
 )
 from alpha_cli.spine.setup_find import checked_study_inputs, load_find, outcome_ids
+from alpha_cli.spine.setup_reading import extras
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
@@ -150,7 +152,12 @@ def _summary(
     cost_labels: list[str],
     control_reason: str | None,
 ) -> dict[str, Any]:
-    from alpha_cli.spine.setup_controls import trade_labels, trade_reading, trade_report
+    from alpha_cli.spine.setup_controls import (
+        trade_evidence,
+        trade_labels,
+        trade_reading,
+        trade_report,
+    )
 
     report = trade_report(rows, cache, control_seed, control_reason)
     primary = report["pooled"]
@@ -199,6 +206,7 @@ def _summary(
             "the average trade made 0.4%. No position sizing in currency is simulated."
         ),
         outcome=outcome,
+        evidence=trade_evidence(primary, labels),
         facts=facts,
         basis=basis,
         costs=costs,
@@ -346,10 +354,16 @@ def _run(
             mean_net_return=primary["mean"],
             excess_over_drift=primary["excess"],
             random_date_p=primary["random_date_p"],
+            evidence=setup_evidence_of(summary)[0],
             verdict=None,
         ),
     )
-    return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
+    return {
+        **summary,
+        **extras(home, "setup_trade", summary, trade_id),
+        "folder": str(destination),
+        "trials_total": ledger["total_trials"],
+    }
 
 
 def run_trade(

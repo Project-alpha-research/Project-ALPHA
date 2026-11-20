@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_cmds.py
   - apps/alpha-cli/src/alpha_cli/nightly_run.py
   - apps/alpha-cli/src/alpha_cli/nightly_status.py
-verified: 6ec51957f4d4723e
+verified: ed3c4f941cd296bc
 ---
 
 # Nightly run
@@ -26,7 +26,7 @@ Start from [the example](../examples/nightly.example.toml).
   N0 (opt-in, `refresh_followed = true`): `data snapshot` (0.3 MB), then `data pull`, per followed asset, before N4. A failed snapshot blocks it.
 
 **How to read it**
-- A step passes, has a minor defect (a warning) or was not run. A verdict such as "not supported" is not a defect.
+- A step passes, has a minor defect (a warning) or was not run. A reading such as `not clear of chance` is not a defect.
 - A blocking defect is a non-zero exit, a time out, bad JSON, a missing field, a `results check` disagreement or data health fail.
 - A record is `<home>/nightly/<date>-<n>/record.json` and `summary.txt`. A new run never edits an old one.
 - Each step says `computed`, `reused` (the command printed the `repeat` label) or `unknown`. A run is `full` only when N1, N2 and N3 all ran.

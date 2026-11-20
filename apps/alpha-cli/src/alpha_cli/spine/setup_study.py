@@ -15,16 +15,19 @@ from alpha_cli.spine.errors import SpineError, study_error
 from alpha_cli.spine.event_study_figure import draw_event_study
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
 from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.reading import setup_evidence_of
 from alpha_cli.spine.setup_controls import (
     RANDOM_DRAWS,
     control_summary,
     eligible_returns,
     horizon_summary,
     reading,
+    study_evidence,
     study_labels,
 )
 from alpha_cli.spine.setup_costs import asset_costs, round_trip
 from alpha_cli.spine.setup_find import checked_study_inputs, load_find, outcome_ids
+from alpha_cli.spine.setup_reading import extras
 from alpha_core import DataError
 from alpha_core.atomic import write_text
 
@@ -177,6 +180,7 @@ def _summarise(
         labels=labels,
         reading=sentence,
         outcome=outcome,
+        evidence=study_evidence(primary, labels),
         basis=BASIS,
         horizons=reports,
         facts=facts,
@@ -315,10 +319,16 @@ def _run(
             mean_net_return=primary["mean"],
             excess_over_drift=primary["excess"],
             random_date_p=primary["random_date_p"],
+            evidence=setup_evidence_of(summary)[0],
             verdict=None,
         ),
     )
-    return dict(**summary, folder=str(destination), trials_total=ledger["total_trials"])
+    return {
+        **summary,
+        **extras(home, "setup_study", summary, study_id),
+        "folder": str(destination),
+        "trials_total": ledger["total_trials"],
+    }
 
 
 def run_study(

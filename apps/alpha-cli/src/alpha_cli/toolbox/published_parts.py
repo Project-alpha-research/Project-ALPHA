@@ -43,6 +43,11 @@ UNKNOWN = (
     "Cannot read: the stored data for this run does not record what kind of asset it is, so it "
     "is not known whether these US stock factors apply."
 )
+INFERRED_LABEL = "asset-kind-inferred-from-calendar"
+INFERRED = (
+    "This data set does not record what kind of asset it is. It was traded on a US stock "
+    "exchange calendar, so it is treated as a US-listed stock or fund."
+)
 SEARCH_STATEMENT = (
     "Picking the three closest of all stored signals is a search, not a test chosen in advance, "
     "and the correlation range assumes independent months."

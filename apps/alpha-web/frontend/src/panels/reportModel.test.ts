@@ -96,7 +96,8 @@ describe('summary rows', () => {
     expect(byLabel['Sharpe']).toBe('1.234')
     expect(byLabel['Max drawdown']).toBe('-0.181')
     expect(byLabel['Deflated Sharpe']).toBe('0.910')
-    expect(byLabel['Verdict']).toBe('PASS')
+    expect(byLabel['Reading']).toBe('graded PASS under the old rules')
+    expect(byLabel['Verdict']).toBeUndefined()
     expect(byLabel['Win rate']).toBe('not recorded')
     expect(byLabel['Profit factor']).toBe('not recorded')
     expect(byLabel['Exposure']).toBe('not recorded')
@@ -153,5 +154,13 @@ describe('trade count and CSV', () => {
         { entry_ts: '2024-01-03', pnl: -2, note: 'plain', empty: null },
       ]),
     ).toBe('entry_ts,pnl,note,empty\n2024-01-02,1.5,"a, ""quoted""",\n2024-01-03,-2,plain,')
+  })
+})
+
+describe('the summary reading row', () => {
+  it('shows the stored evidence word, not a grade', () => {
+    const rows = summaryRows({ reading: { evidence: { word: 'not clear of chance' } }, verdict: { overall: 'C' } })
+    expect(rows.find((row) => row.label === 'Reading')?.value).toBe('not clear of chance')
+    expect(rows.some((row) => row.label === 'Verdict')).toBe(false)
   })
 })

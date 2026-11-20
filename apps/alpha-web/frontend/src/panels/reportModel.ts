@@ -5,6 +5,7 @@
 
 import type { FigureCatalogueItem, TradeRow } from '../api/types'
 import { asNum, asStr, isFiniteNum } from '../util/format'
+import { runWord } from './readingModel'
 
 export interface ReportLeaf {
   id: string
@@ -142,7 +143,8 @@ export function summaryRows(manifest: Record<string, unknown>): SummaryRow[] {
   const oos = obj(manifest.oos_metrics) ?? {}
   for (const [key, label] of METRIC_LABELS) push(label, ratio(metrics[key] ?? oos[key]))
   push('Deflated Sharpe', ratio(obj(manifest.dsr)?.dsr))
-  push('Verdict', asStr(obj(manifest.verdict)?.overall) ?? asStr(manifest.verdict))
+  const word = runWord(asStr(obj(obj(manifest.reading)?.evidence)?.word), obj(manifest.verdict)?.overall ?? manifest.verdict)
+  push('Reading', word?.text ?? null)
   if (typeof manifest.passed === 'boolean') push('Passed', manifest.passed ? 'yes' : 'no')
   for (const label of NOT_RECORDED) push(label, 'not recorded')
   return rows

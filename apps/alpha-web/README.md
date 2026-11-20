@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: cb51a11b4db4c805
+verified: a3ae7d4e6fde8b7e
 ---
 
 # alpha-web: code map and change loop
@@ -39,6 +39,8 @@ grants authority.
   Field sources and limits: [API](../../docs/reference/invariants/web-api-reads.md#reads-and-writes),
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
+- The reading block (`components/ReadingBlock.tsx`, model `panels/readingModel.ts`) is used by `RuleTestReport.tsx` and `SetupLabPanel.tsx`. The rule-test reading
+  and the declared or exploratory word come with `GET /api/runs/{id}/checks` (`_checks.py`); Setup Lab's come from `_setup_reading.py`. Browser spec: `e2e/reading-block.spec.ts`.
 - The Market screen (Data & Assets › Market) is `panels/MarketOverview.tsx` with pure helpers in `panels/marketModel.ts`. It reads `GET /api/market/overview`
   (`api/market.py`, `api/models/market.py`), which relays `alpha data market-overview` (`apps/alpha-cli/src/alpha_cli/market_overview_cmds.py`). Browser spec: `e2e/market-overview.spec.ts`.
   Rules: [Market data views](../../docs/reference/invariants/web-frontend.md#market-data-views), [reads](../../docs/reference/invariants/web-api-reads.md#market-overview-read).

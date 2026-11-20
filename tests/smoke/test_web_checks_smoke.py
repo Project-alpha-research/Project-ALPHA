@@ -43,7 +43,8 @@ def test_web_api_returns_the_readings_of_a_rule_tests_standard_set(tmp_path: Pat
 
     with web_server(home) as base:
         before = get_json(f"{base}/api/runs/{run_id}/checks")
-        assert before == {"run_id": run_id, "checks": []}
+        assert (before["run_id"], before["checks"]) == (run_id, [])
+        assert before["reading"]["schema"] == "AlphaReadingV1"
 
         ran = alpha(home, "tool", "run-set", STANDARD_SET, run_id, "--json").json()
         readings = {item["tool"]: item["reading"] for item in ran}

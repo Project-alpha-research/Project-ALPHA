@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 4b2dc7b49911970c on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
 
 apps/alpha-cli/README.md
-  verified 4b2dc7b49911970c on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+  verified 0a5afcd06c403982 on 2026-11-20: Merge of main: the data pull now freezes before replace; these alpha-cli maps route to the freeze page and stay correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified cb51a11b4db4c805 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified a3ae7d4e6fde8b7e on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 apps/alpha-web/README.md
-  verified bf0221022d9cbc72 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
+  verified a3ae7d4e6fde8b7e on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -22,14 +22,11 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified e8c675fcdb6fe821 on 2026-11-20: the cram ceiling for cli-setups.md was removed because the page is no longer crammed; these pages name no ceiling
 
-docs/reference/invariants/cli-crypto-data.md
-  verified 487a29c0d0eb0e39 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
-
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 23b19345f24a881d on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+  verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
@@ -44,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 83882dc512daaaea on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-runs.md
-  verified 2bd45d316a460c8d on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+  verified 8378ba0213d578bb on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -55,17 +52,11 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
-docs/reference/invariants/data-bar-timeframes.md
-  verified 177c97a0eb8fbb49 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
-
-docs/reference/invariants/data-free-sources.md
-  verified e86cc34d087822e5 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
-
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified cda0440bb2af68e6 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+  verified 0f1c00b49be8cf32 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -86,13 +77,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified c08c41feb17fa3e0 on 2026-11-19: Only an e2e mock for the new checks route was added; this document's text stays correct.
+  verified d597b8b951c3a91e on 2026-11-20: docstring wording only in a source; text already correct
 
 docs/reference/invariants/web-api.md
-  verified f0f5f80574c76c03 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
+  verified 6098cb454691d1fd on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/reference/invariants/web-frontend.md
-  verified 70b93826df280038 on 2026-11-19: after merging main: this branch adds one menu group line (follow: Research); the page text is still correct
+  verified 2fa8f1b4312ec2e4 on 2026-11-20: Display words and one run-list field changed; the text here is still correct, the details are in web-api-reads.md and web-run-detail.md
 
 docs/reference/invariants/web-run-detail.md
   verified 7614f54c171788a6 on 2026-11-20: A new read-only follow route and the Today pane were added; the rules on this page are unchanged.
@@ -152,7 +143,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 6e50723dd06584df on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
 docs/reference/project/components/toolbox.md
-  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+  verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
   verified 5b5ad43ef89ac24d on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -203,7 +194,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 737f3927a3c29108 on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
+  verified 2c4041a7cab6e148 on 2026-11-20: Merge of main: stamps taken from main; options routing text (European and American solver) still matches the code
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
@@ -234,9 +225,6 @@ research/tools/benchmark-and-drawdowns.md
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
-
-research/tools/data-health.md
-  verified 15eb8e01ffc5b8bb on 2026-11-20: Review fixes keep the content hash computed instead of stored, add a store lock, a fail-closed marker for every pull and freezing under the stored versions; these pages route to the freeze page, which holds those facts, and stay correct.
 
 research/tools/deflated-sharpe-and-trials.md
   verified 2700a5238549f3de on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -296,7 +284,7 @@ research/tools/setup-trade.md
   verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/toolbox-by-situation.md
-  verified 0c170e67999d429a on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+  verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
   verified 78c4f3dcfd78c7c2 on 2026-11-19: validate gained one comment line only; text still correct

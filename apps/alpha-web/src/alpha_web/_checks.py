@@ -1,6 +1,8 @@
-"""The toolbox checks stored for one rule test, relayed from ``alpha results show --json``.
+"""The toolbox checks and the reading stored for one rule test, relayed from the CLI.
 
-Nothing is computed here. Each stored tool output becomes one row with its stored reading; each
+Everything comes from ``alpha results show --json``; nothing is computed here. The run's reading
+(``AlphaReadingV1``) is the CLI's: stored with a new run, derived by the CLI for an old one.
+Each stored tool output becomes one row with its stored reading; each
 failed attempt in the trial ledger becomes one row with its stored error code. Rows are ordered by
 the time the CLI recorded them.
 """
@@ -35,7 +37,20 @@ def _stored(row: Mapping[str, Any]) -> dict[str, Any]:
         "error": None,
         "labels": _labels(row.get("labels")),
         "recorded_at": _text(row.get("recorded_at")),
+        "status": _text(row.get("status")),
     }
+
+
+def _counts(value: Any) -> dict[str, Any] | None:
+    """The CLI's count line of the stored results, passed on whole or not at all."""
+    if not isinstance(value, Mapping):
+        return None
+    total, declared, exploratory = (value.get(k) for k in ("total", "declared", "exploratory"))
+    text = _text(value.get("text"))
+    numbers = (total, declared, exploratory)
+    if text is None or any(not isinstance(n, int) or isinstance(n, bool) for n in numbers):
+        return None
+    return {"total": total, "declared": declared, "exploratory": exploratory, "text": text}
 
 
 def _failed(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -46,6 +61,7 @@ def _failed(row: Mapping[str, Any]) -> dict[str, Any]:
         "error": _text(row.get("error_code")) or "no error code was stored",
         "labels": _labels(row.get("labels")),
         "recorded_at": _text(row.get("recorded_at")),
+        "status": None,
     }
 
 
@@ -61,4 +77,10 @@ def rule_test_checks(run_id: str, *, data_dir: Path) -> dict[str, Any]:
         _failed(row) for row in _rows(run.get("tool_history")) if row.get("outcome") == "error"
     ]
     checks.sort(key=lambda check: check["recorded_at"] or "")
-    return {"run_id": run_id, "checks": checks}
+    reading = run.get("reading")
+    return {
+        "run_id": run_id,
+        "checks": checks,
+        "reading": dict(reading) if isinstance(reading, Mapping) else None,
+        "counts": _counts(run.get("tool_counts")),
+    }

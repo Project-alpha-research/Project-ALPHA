@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from ._base import StrictModel
 
@@ -172,6 +172,17 @@ class RuleTestCheck(StrictModel):
     error: str | None
     labels: list[str]
     recorded_at: str | None
+    # "declared" or "exploratory", as the CLI states it; null for a failed attempt
+    status: str | None = None
+
+
+class RuleTestCheckCounts(StrictModel):
+    """The CLI's own count of the stored results, with its sentence."""
+
+    total: int
+    declared: int
+    exploratory: int
+    text: str
 
 
 class RuleTestChecks(StrictModel):
@@ -179,3 +190,7 @@ class RuleTestChecks(StrictModel):
 
     run_id: str
     checks: list[RuleTestCheck]
+    # the run's reading (``AlphaReadingV1``) exactly as ``alpha results show --json`` gives it:
+    # stored for a new run, derived by the CLI for an old one; null when the CLI gave none
+    reading: dict[str, Any] | None = None
+    counts: RuleTestCheckCounts | None = None

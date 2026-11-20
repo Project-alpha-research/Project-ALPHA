@@ -104,7 +104,20 @@ def write_factor_file(
     )
 
 
-def write_bars(home: Path, days: list[date], identity: DatasetIdentity | None) -> None:
+def days_of(kind: str, first: date, last: date) -> list[date]:
+    """Weekdays (default), real XNYS sessions, or every calendar day (a 24/7 market)."""
+    if kind == "sessions":
+        from alpha_data.sessions import sessions_between
+
+        return sessions_between("XNYS", first, last)
+    if kind == "everyday":
+        return [first + timedelta(days=i) for i in range((last - first).days + 1)]
+    return trading_days(first, last)
+
+
+def write_bars(
+    home: Path, days: list[date], identity: DatasetIdentity | None, source: str = "alpaca"
+) -> None:
     stamps = [datetime(d.year, d.month, d.day, tzinfo=UTC) for d in days]
     bars = pl.DataFrame(
         {
@@ -123,7 +136,7 @@ def write_bars(home: Path, days: list[date], identity: DatasetIdentity | None) -
     if identity is None:
         folder = home / "store" / "provenance"
         folder.mkdir(parents=True, exist_ok=True)
-        legacy = {"adapter_version": "1", "parser_version": "1", "source": "alpaca"}
+        legacy = {"adapter_version": "1", "parser_version": "1", "source": source}
         (folder / "SYN.json").write_text(json.dumps(legacy))
         return
     receipt = FetchReceipt(
@@ -141,7 +154,7 @@ def write_bars(home: Path, days: list[date], identity: DatasetIdentity | None) -
     )
     store.write_provenance(
         "SYN",
-        source="alpaca",
+        source=source,
         adapter_version="1",
         parser_version="1",
         identity=identity,
@@ -172,11 +185,13 @@ def write_run(
     identity: DatasetIdentity | None = US_STOCK,
     bar_first: date = FIRST,
     run_id: str = RUN,
+    calendar: str = "weekdays",
+    source: str = "alpaca",
 ) -> list[date]:
     """A run whose daily equity compounds to ``monthly`` in each full month; returns its days."""
-    bar_days = trading_days(bar_first, last)
-    write_bars(home, bar_days, identity)
-    days = trading_days(first, last)
+    bar_days = days_of(calendar, bar_first, last)
+    write_bars(home, bar_days, identity, source)
+    days = days_of(calendar, first, last)
     steps: dict[tuple[int, int], int] = {}
     for day in days[:-1]:
         steps[(day.year, day.month)] = steps.get((day.year, day.month), 0) + 1

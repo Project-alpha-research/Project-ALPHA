@@ -12572,8 +12572,24 @@ export interface components {
             reading: string | null;
             /** Recorded At */
             recorded_at: string | null;
+            /** Status */
+            status?: string | null;
             /** Tool */
             tool: string;
+        };
+        /**
+         * RuleTestCheckCounts
+         * @description The CLI's own count of the stored results, with its sentence.
+         */
+        RuleTestCheckCounts: {
+            /** Declared */
+            declared: number;
+            /** Exploratory */
+            exploratory: number;
+            /** Text */
+            text: string;
+            /** Total */
+            total: number;
         };
         /**
          * RuleTestChecks
@@ -12582,6 +12598,11 @@ export interface components {
         RuleTestChecks: {
             /** Checks */
             checks: components["schemas"]["RuleTestCheck"][];
+            counts?: components["schemas"]["RuleTestCheckCounts"] | null;
+            /** Reading */
+            reading?: {
+                [key: string]: unknown;
+            } | null;
             /** Run Id */
             run_id: string;
         };
@@ -12907,6 +12928,8 @@ export interface components {
             command: string | null;
             /** Display Name */
             display_name: string;
+            /** Evidence */
+            evidence: string | null;
             /** Kind */
             kind: string;
             /** Label */
@@ -13150,6 +13173,7 @@ export interface components {
             figure: components["schemas"]["SetupFigure"];
             /** Labels */
             labels: string[];
+            reading?: components["schemas"]["SetupReading"] | null;
             /** Rows */
             rows: {
                 [key: string]: unknown;
@@ -13168,6 +13192,20 @@ export interface components {
             trial_labels?: {
                 [key: string]: string[];
             } | null;
+        };
+        /**
+         * SetupReading
+         * @description How a stored study or trade reads: an evidence word and its place in the setup's family.
+         */
+        SetupReading: {
+            /** Evidence */
+            evidence: string | null;
+            /** Family Count */
+            family_count: number | null;
+            /** Family Position */
+            family_position: number | null;
+            /** Old Wording */
+            old_wording: boolean;
         };
         /** SetupRun */
         SetupRun: {

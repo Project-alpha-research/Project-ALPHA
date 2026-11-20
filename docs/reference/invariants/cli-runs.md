@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: de5d0feaaf793bbd
+verified: a8c884021d8ddfab
 ---
 
 # Command line runs invariants
@@ -187,14 +187,14 @@ Moved to [cli-setups.md § Setup trade](cli-setups.md#setup-trade).
 ## Nightly real run
 - `alpha nightly run` runs each step as the installed `alpha` command in a child process. It re-implements no step.
   A step failure never stops an independent step.
-- A step is pass, minor defect, blocking defect or not run. A research verdict such as "not supported" is never a defect.
+- A step is pass, minor defect, blocking defect or not run. A verdict such as "not supported" is never a defect.
 - A record is `<home>/nightly/<UTC date>-<n>/record.json` plus `summary.txt`. It is append-only (exclusive create).
-  It holds commands, ids, durations, verdict words and defect text only.
+  It holds commands, ids, durations, verdict words, defect text and each follow's chain head only.
 - Nightly tests are counted trials like any other. The run never hides a label and never passes `--accept-bad-data`.
-- Data health reads the saved report first (`--stored`). A new report changes the test identity,
-  so it is computed only when none is saved or it is out of date.
+- Data health reads the saved report first (`--stored`): a new report changes the test identity.
 - Each step has `evidence`: `computed`, `reused` (the command printed `repeat`) or `unknown`; old records read `unknown` and are never rewritten.
   A record has `paths_run` (N3 off is not run); `full` needs all three paths.
 - `nightly_status.readiness` decides "ready": two latest non-partial runs, two UTC dates, no blocking defect, all paths, computed work.
+  N4 (follow update) counts only if a follow exists; N0 is an opt-in refresh: [cli-follow.md](cli-follow.md#nightly-n4-n0).
 - The command installs no schedule. It prints one crontab line. N3 runs only when `rdagent_config` is set.
   It calls `alpha rdagent run --config <file>` unchanged and adds no cap.

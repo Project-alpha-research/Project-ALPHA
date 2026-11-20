@@ -9,6 +9,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.follow_counts import followed_counts, followed_line
 from alpha_cli.nightly_status import last_night_line
 from alpha_cli.spine import idea_card
 from alpha_cli.spine.reading_read import owner_word, run_reading
@@ -169,7 +170,9 @@ def collect(home: Path) -> dict[str, Any]:
             "`alpha data pull SPY --start 2015-01-01 --end 2023-12-31` (needs network)."
         )
     notes.append("Decisions waiting are not shown: no local status data is read.")
+    followed = followed_counts(home)
     return {
+        **({"followed": followed} if followed else {}),
         "last_night": last_night_line(home),
         "stores": stores,
         "recent_trials": _trial_facts(home),
@@ -206,6 +209,8 @@ def _text(facts: dict[str, Any]) -> str:
             f"See them: alpha ledger proposal --run-dir {w['run_dir']}"
             for w in waiting
         )
+    if facts.get("followed"):
+        lines.append(followed_line(facts["followed"]))
     ideas = facts["ideas"]
     plural = "" if ideas["cards"] == 1 else "s"
     lines.append(

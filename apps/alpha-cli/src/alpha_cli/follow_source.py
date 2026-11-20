@@ -84,6 +84,22 @@ def setup_find_source(home: Path, find_id: str) -> Source:
     )
 
 
+def source_name(home: Path, kind: str, source_id: str) -> str:
+    """The name of a followed test or find, or its id when the stored files cannot say."""
+    try:
+        if kind == "rule_test":
+            from alpha_cli.run_store import find_run_dir
+
+            folder = find_run_dir(home, source_id)
+            raw = json.loads((folder / "spec.json").read_text(encoding="utf-8")) if folder else {}
+        else:
+            raw = json.loads((home / "setups" / source_id / "manifest.json").read_text("utf-8"))
+        name = raw.get("name") if isinstance(raw, dict) else None
+    except (OSError, ValueError):
+        name = None
+    return str(name) if isinstance(name, str) and name.strip() else source_id
+
+
 def latest_bar_hashes(home: Path, assets: list[str]) -> dict[str, str]:
     """The hash of the newest stored bar of each asset. Forward use reads the newest bars on
     purpose, as `alpha scan check` does; a research command never takes this path."""

@@ -31,7 +31,7 @@ from alpha_cli.nightly_steps import (
     run_step,
     stderr_tail,
 )
-from alpha_cli.spine.reading import old_grade_text, reading_word
+from alpha_cli.spine.reading import old_grade_text, reading_word, setup_evidence_of
 
 
 def _ok(step: dict[str, Any]) -> bool:
@@ -48,6 +48,14 @@ def _word(result: dict[str, Any]) -> str:
     if isinstance(found, dict):
         return reading_word(found)
     return old_grade_text(result.get("verdict"))
+
+
+def setup_word(payload: dict[str, Any]) -> str:
+    """The evidence word of a setup study or trade; an old payload is read through its old word."""
+    try:
+        return setup_evidence_of(payload)[0]
+    except KeyError:
+        return old_grade_text(None)
 
 
 def _health(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
@@ -216,7 +224,7 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
     study = new_step("N2.study", "N2", "setup study", (t := ["setup", "study", find_id, "--json"]))
     studied = run_step(runner, study, t, config.step_timeout, required=("study_id", "outcome"))
     if studied and _ok(study):
-        study["ids"], study["verdict"] = {"study_id": studied["study_id"]}, str(studied["outcome"])
+        study["ids"], study["verdict"] = {"study_id": studied["study_id"]}, setup_word(studied)
         study["evidence"] = evidence_of([studied.get("labels")])
     trade = new_step("N2.trade", "N2", "setup trade", (t := ["setup", "trade", find_id, "--json"]))
     traded = run_step(runner, trade, t, config.step_timeout, required=("trade_id", "outcome"))
@@ -228,7 +236,7 @@ def setup_path(config: NightlyConfig, runner: Runner) -> list[dict[str, Any]]:
                 "N2.readback", "N2", "results show", ["results", "show"], wait.format("N2.trade")
             ),
         ]
-    trade["ids"], trade["verdict"] = {"trade_id": traded["trade_id"]}, str(traded["outcome"])
+    trade["ids"], trade["verdict"] = {"trade_id": traded["trade_id"]}, setup_word(traded)
     trade["evidence"] = evidence_of([traded.get("labels")])
     tail = ["results", "show", str(traded["trade_id"]), "--json"]
     back = new_step("N2.readback", "N2", "results show", tail)

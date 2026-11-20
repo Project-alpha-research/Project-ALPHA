@@ -33,7 +33,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 762ae0b567677732
+verified: 8378ba0213d578bb
 ---
 
 # Command line runs invariants
@@ -187,7 +187,7 @@ Moved to [cli-setups.md § Setup trade](cli-setups.md#setup-trade).
 ## Nightly real run
 - `alpha nightly run` runs each step as the installed `alpha` command in a child process. It re-implements no step.
   A step failure never stops an independent step.
-- A step is pass, minor defect, blocking defect or not run. A verdict such as "not supported" is never a defect.
+- A step is pass, minor defect, blocking defect or not run. A reading such as `not clear of chance` is never a defect.
 - A record is `<home>/nightly/<UTC date>-<n>/record.json` plus `summary.txt`. It is append-only (exclusive create).
   It holds commands, ids, durations, verdict words, defect text and each follow's chain head only.
 - Nightly tests are counted trials like any other. The run never hides a label and never passes `--accept-bad-data`.

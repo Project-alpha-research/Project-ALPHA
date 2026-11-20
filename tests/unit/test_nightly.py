@@ -61,7 +61,9 @@ def _happy() -> dict[str, Reply]:
         "results cite": text("1.5 [r1:oos_sharpe] (basis) [quick]"),
         "results check": ok({"ok": True, "problems": [], "warnings": []}),
         "setup find": ok({"find_id": "f1", "totals": {"events": 4}, "labels": ["exploratory"]}),
-        "setup study": ok({"study_id": "s1", "outcome": "rejected", "labels": ["exploratory"]}),
+        "setup study": ok(
+            {"study_id": "s1", "outcome": "not supported", "labels": ["exploratory"]}
+        ),
         "setup trade": ok({"trade_id": "tr1", "outcome": "inconclusive", "labels": []}),
         "results show": ok({"runs": [{"id": "tr1"}], "failed": []}),
     }
@@ -135,11 +137,11 @@ def test_bad_json_and_missing_field_are_blocking(tmp_path: Path) -> None:
 
 def test_a_not_supported_verdict_is_not_a_defect(tmp_path: Path) -> None:
     rejected = {"test_id": "t1", "trials_total": 1, "results": [_result(verdict="F")]}
-    runner = FakeRunner({"test": ok(rejected), "setup study": ok(_study("rejected"))})
+    runner = FakeRunner({"test": ok(rejected), "setup study": ok(_study("not supported"))})
     record = run(tmp_path, runner)
     assert record["blocking"] == 0 and record["minor"] == 0
     study = next(s for s in record["steps"] if s["id"] == "N2.study")
-    assert study["state"] == "pass" and study["verdict"] == "rejected"
+    assert study["state"] == "pass" and study["verdict"] == "not clear of chance"
 
 
 def _result(verdict: str = "C", error: object = None) -> dict[str, Any]:

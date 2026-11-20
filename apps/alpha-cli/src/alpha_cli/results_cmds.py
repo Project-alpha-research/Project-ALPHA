@@ -70,6 +70,11 @@ def _error(exc: ValueError | OSError | DataError, json_out: bool) -> None:
     )
 
 
+def _row_word(home: Path, row: dict[str, Any], evidence: str | None) -> str:
+    """The ledger row's own evidence word; an older row is read from its run, or by its letter."""
+    return evidence or owner_word(home, row["run_id"], row["verdict"])
+
+
 @results_app.callback()
 def list_results(
     ctx: typer.Context,
@@ -127,15 +132,14 @@ def list_results(
         home = AlphaSettings().data_dir
         lines = [
             "\t".join(
-                owner_word(home, row["run_id"], row["verdict"])
-                if key == "verdict"
-                else str(row[key])
+                _row_word(home, row, found.get("evidence")) if key == "verdict" else str(row[key])
                 for key in row
             )
-            for row in items
+            for row, found in zip(items, selected, strict=True)
         ]
-        for row in items:
+        for row, found in zip(items, selected, strict=True):
             row["reading"] = run_reading(home, row["run_id"])
+            row.update(evidence=found.get("evidence"), aim_relation=found.get("aim_relation"))
         for row in items:
             row["reasons"] = {
                 key: "an investigation-tool row; see alpha results show for its output"

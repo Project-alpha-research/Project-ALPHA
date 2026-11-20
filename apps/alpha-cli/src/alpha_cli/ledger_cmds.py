@@ -30,6 +30,13 @@ from alpha_core.config import AlphaSettings
 ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-ledger view.")
 RD = Annotated[Path | None, typer.Option("--rdagent-ledger", help="RD-Agent ledger path.")]
 JSON = Annotated[bool, typer.Option("--json")]
+OUTCOME = Annotated[
+    str | None,
+    typer.Option(
+        help="An evidence word (e.g. 'some evidence') or an old word (supported, rejected, "
+        "inconclusive, error, 'not supported'); both match, so old scripts keep working."
+    ),
+]
 NOTICE = "Read-only view; the ledgers themselves are unchanged."
 # Where the RD-Agent factor loop's shared ledger lives beside the data directory (the
 # `--trial-ledger` path every real run has used): read when `ledger/sources.toml` is absent.
@@ -76,6 +83,8 @@ def _render(output: dict[str, Any]) -> str:
     if "record" in output:
         rows = [output["record"]]
     rows = [{**row, "figures": figures(row)} if row.get("measure_clock") else row for row in rows]
+    # A rule test's stored status is its old letter grade: it stays in the JSON, never in the text.
+    rows = [{**row, "raw_status": None} if row.get("kind") == "rule_test" else row for row in rows]
     keys = [
         key
         for key in (
@@ -193,7 +202,7 @@ def list_trials(
     kind: str | None = None,
     family: str | None = None,
     asset: str | None = None,
-    outcome: str | None = None,
+    outcome: OUTCOME = None,
     source: str | None = None,
     limit: int = 50,
     rdagent_ledger: RD = None,
@@ -209,10 +218,10 @@ def list_trials(
             for r in snapshot.records
             if all(
                 value is None or getattr(r, key) == value
-                for key, value in dict(
-                    kind=kind, family_id=family, outcome=outcome, source=source
-                ).items()
+                for key, value in dict(kind=kind, family_id=family, source=source).items()
             )
+            # The filter still takes the old machine words, so existing callers keep working.
+            and (outcome is None or outcome in {r.outcome, r.machine_outcome})
             and (asset is None or asset_group(asset) in {asset_group(a) for a in r.assets})
         ]
         records.sort(

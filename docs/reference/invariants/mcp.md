@@ -7,7 +7,9 @@ sources:
   - tests/integration/test_research_mcp.py
   - tests/unit/test_codex_investigation.py
   - tests/unit/test_mcp_spine_tools.py
-verified: 3017678c22d94318
+  - tests/unit/test_mcp_front_door_tools.py
+  - tests/integration/test_mcp_front_door.py
+verified: e09a09ccc1ff3503
 ---
 
 # MCP invariants
@@ -62,6 +64,27 @@ It is a surface like the web backend: it composes nothing and has no authority o
 - Each description says what it runs and that results are research records, not approvals.
   Enforced by `tests/unit/test_mcp_spine_tools.py`.
 
+## Front-door tools
+
+- `front_door_tools.py` gives an assistant the project's front door as 15 thin relays, registered from `server.py`.
+  Each runs one `alpha` command with `--json` and returns its JSON unchanged, error JSON (code, message, next) included.
+  The server instructions tell an assistant to call `next_step` first.
+- Tools: `next_step` (`alpha next`); `idea_list`, `idea_show`, `idea_file`, `idea_new` (`alpha idea ...`);
+  `library_list`, `library_show`, `library_card` (`alpha library ...`); `tool_find`, `tool_situations` (`alpha tool ...`);
+  `follows_today`, `follows_list`, `follows_show`, `follows_verify` (`alpha follow today|list|show|verify`);
+  `nightly_status` (`alpha nightly status`). The follow tools are plural so no name matches the follow-store guard.
+- Two tools write one small note file in the data directory: `idea_new` and `library_card`. A card is a note.
+  Nothing is tested or approved. The CLI catalog classes both commands `safe`.
+- Ids are checked before a command is built: card and follow ids are 4 to 16 hex characters; library ids are lower-case
+  words with dashes, at most 64. Free text (`words`, card fields) is at most 300 characters, one argv element, never
+  starts with `-`, has no NUL, CR or LF. No value can act as an option. Each tool has a 60 s timeout.
+- No tool exists for `follow start`, `follow stop`, `follow update` (they change a paper follow), `nightly run`
+  (it can spend money through RD-Agent), `rdagent run` (it spends money), `data pull` (it uses the network) or
+  `library import-catalogue`. `data_pull` is an older tool, kept as it was.
+- The module never imports or reads the follow store or any `forward/` path (`tests/unit/test_follow_separation.py`).
+- Enforced by `tests/unit/test_mcp_front_door_tools.py` (argv, refusals, catalog class, forbidden commands) and
+  `tests/integration/test_mcp_front_door.py` (the real command on a synthetic home).
+
 ## Tool inputs
 
 - Common knobs are typed parameters. The deprecated `options` dict accepts only that tool's closed vocabulary
@@ -114,9 +137,10 @@ atop the DAG") and runs the CLI as a subprocess. It can never approve or decide 
 D2 confirmation, reveal a holdout or place orders.
 
 - Code: `apps/alpha-mcp/src/alpha_mcp/` (`server.py` holds the tools and each tool's option
-  allowlist; `spine_tools.py` holds the research-path tools; `_invoke.py` runs the CLI).
+  allowlist; `spine_tools.py` holds the research-path tools; `front_door_tools.py` holds the front-door tools; `_invoke.py` runs the CLI).
 - Tests: `tests/unit/test_mcp_invoke.py`, `tests/integration/test_mcp_server.py`,
   `tests/integration/test_research_mcp.py` (pins the exact tool list and count),
-  `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals).
+  `tests/unit/test_mcp_spine_tools.py` (spine argv and refusals),
+  `tests/unit/test_mcp_front_door_tools.py` and `tests/integration/test_mcp_front_door.py` (front door).
 - Check: `uv run python scripts/gate.py check`.
 - Tests: a test that the new tool refuses options outside its allowlist.

@@ -129,6 +129,36 @@ def run_json(
         raise RuntimeError(f"`alpha {' '.join(args)}` returned invalid JSON") from exc
 
 
+def run_json_relay(args: list[str], *, data_dir: Path, timeout_seconds: float) -> Any:
+    """Run one ``alpha ... --json`` read and return its JSON, or its own error JSON unchanged.
+
+    A command that fails with ``{"error": {...}}`` on stdout (code, message, next) returns that
+    object. Any other failure, a timeout or invalid JSON raises a plain ``RuntimeError``.
+    """
+    env = _cli_environment(data_dir)
+    try:
+        proc = subprocess.run(
+            [_ALPHA_BIN, *args],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"`alpha {' '.join(args)}` exceeded {timeout_seconds:.0f}s") from exc
+    try:
+        decoded = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        decoded = None
+    if proc.returncode == 0 and decoded is not None:
+        return decoded
+    if isinstance(decoded, dict) and isinstance(decoded.get("error"), dict):
+        return decoded
+    detail = proc.stderr.strip()[:500] or "(no JSON output)"
+    raise RuntimeError(f"`alpha {' '.join(args)}` failed (exit {proc.returncode}): {detail}")
+
+
 def _renew_job_heartbeat(job_id: str, *, data_dir: Path) -> bool:
     row = run_json(
         [

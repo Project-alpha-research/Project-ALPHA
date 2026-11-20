@@ -14,7 +14,7 @@ How an AI works with ALPHA on research (as opposed to building it). The main way
 partner: Claude or ChatGPT, in an app or a terminal, following a one-page playbook and calling the
 `alpha` commands. Two older ways remain: an in-product assistant that can explain a recorded run,
 and a tool server (MCP, the Model Context Protocol) that lets an AI client call a bounded set of
-`alpha` commands.
+`alpha` commands, starting at a front door (`next_step`, ideas, library, find a check, today).
 
 ## Why it exists
 

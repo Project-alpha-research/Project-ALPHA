@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
+  verified d200f0cc72f2c15a on 2026-11-21: figure-pack builder changes do not alter what this document says
 
 apps/alpha-cli/README.md
-  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
+  verified d200f0cc72f2c15a on 2026-11-21: figure-pack builder changes do not alter what this document says
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 75c82b098dcd2dd9 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 apps/alpha-web/README.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 75c82b098dcd2dd9 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 69d7bd6f29afbcca on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-runs.md
-  verified 24fad42f70b35806 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 43ba7e8466895227 on 2026-11-21: figure-pack builder changes do not alter what this document says
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -86,10 +86,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 77da50bc0cbe9a00 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 docs/reference/invariants/web-api.md
-  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 05f7ddcb5a29ddc2 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -149,13 +149,13 @@ docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified efeacd0f97fea8f1 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 19e8ab5f3addbd35 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified fb432488e8ee6d74 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -212,10 +212,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 72d104701f6681c1 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 9e8496d61702e4a1 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/PLAYBOOK.md
-  verified afbfa7743bef95fe on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 2e51a4f679468239 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/README.md
   verified e6879b89c651c7b4 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -227,13 +227,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified d0b27d6c807db804 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 9c1856d4c6b5b698 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 264c86220705da3b on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 0991c71efe9fe0be on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/charts.md
   verified 555f4dee9293a0be on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -242,10 +242,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified d61ea7a658664d82 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified c210feac73d6c5dc on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/diagnose-and-audit.md
-  verified 7369e48720765607 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 8975c27b7fd4df7c on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -287,13 +287,13 @@ research/tools/results-and-cite.md
   verified 4487a967b258939d on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified ef31fa79b9702077 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified f587d21f57d7a3d4 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified d61ea7a658664d82 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified c210feac73d6c5dc on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -302,10 +302,10 @@ research/tools/setup-find.md
   verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 65dcadb3c1803907 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/setup-trade.md
-  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified ac00893f72e800eb on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 0375e4ab3fe2b99a
+verified: 26f5c19d9ee9a44d
 ---
 
 # Command line setup invariants
@@ -36,7 +36,7 @@ Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alph
 - Only pooled primary outcomes are tested; other horizons carry `not-primary`. Each chronological half uses controls from its own years, no p-value.
 - `setup-studies/<id>` binds find id, `setup-study-2` and new health evidence. Old folders read with `older-cost-rule`.
   Re-studying a find with an older-rule study is labelled `remeasured-new-cost-rule` and counts again: a new cost assumption is a new look, never a free one.
-- Publish outcomes, summary and a deterministic 1600 × 900 figure before the atomic, hash-bound manifest; verify sidecars before reading.
+- Publish outcomes, summary and a deterministic 1600 × 900 figure (light theme) before the atomic, hash-bound manifest; verify sidecars before reading.
 - Facts support `results cite|check`; a stored `total_trials` records observed ledger rows plus this study, preserving the draft check's requirement.
 - Words: the study prints `too little to read` (under 30 occurrences), `not clear of chance` or `some evidence` (p ≤ 0.05, positive excess,
   agreeing halves). The words live in `spine/reading.py`. Never `clear of chance`: the p-value is not corrected for the setup variants tried,

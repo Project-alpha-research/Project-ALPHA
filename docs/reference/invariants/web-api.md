@@ -12,7 +12,7 @@ sources:
   - tests/unit/test_owner_auth_api.py
   - tests/unit/test_owner_local_confirmation.py
   - tests/unit/test_run_context_authority.py
-verified: da290d9f3c48e88d
+verified: 05f7ddcb5a29ddc2
 ---
 
 # Web API invariants
@@ -154,7 +154,7 @@ Moved to [web-api-reads.md § Reads and writes](web-api-reads.md#reads-and-write
   plus the key environment the CLI publishes. Serve on a hit; on a miss subprocess `alpha figures render` behind a
   single-flight lock, so concurrent requests render once.
 - Bare image URL: strong `ETag` + `must-revalidate`. Pinned `?key=`: `immutable`. A stale pinned key returns 409 with
-  the current key — never different bytes at one URL. A traversal-shaped figure id never reaches the filesystem. Enforced by `tests/unit/test_web_figures.py`.
+  the current key — never different bytes at one URL. The web asks the CLI for the dark theme (`--dark`) and keys the cache on the dark theme digest. A traversal-shaped figure id never reaches the filesystem. Enforced by `tests/unit/test_web_figures.py`.
 
 ## Adding a route
 

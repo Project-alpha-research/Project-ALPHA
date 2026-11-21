@@ -63,6 +63,13 @@ def _legacy_basis(frame: Any) -> str:
     return "with dividends" if kinds == {"passive_open_to_open_with_dividends"} else "price only"
 
 
+def _padded_limits(values: tuple[float, ...]) -> tuple[float, float]:
+    """Room above and below the line so its end label never sits on the frame."""
+    low, high = min(0.0, *values), max(0.0, *values)
+    pad = 0.14 * ((high - low) or 0.01)
+    return low - pad, high + pad
+
+
 def _plotted_subtitle(ctx: BuildContext, frame: Any) -> str:
     """Name the dates actually drawn; a run's stored window can be wider than its curve."""
     first, last = frame["ts"][0].date().isoformat(), frame["ts"][-1].date().isoformat()
@@ -190,6 +197,7 @@ def build(ctx: BuildContext, figure_id: str, row: dict[str, Any] | None) -> Figu
                 y_unit="percent",
                 y_percent=True,
                 y_zero_rule=True,
+                y_limits=_padded_limits(lower),
                 legend=False,
                 marks=tuple(lower_marks),
             ),

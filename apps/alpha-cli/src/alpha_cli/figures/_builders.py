@@ -251,7 +251,7 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
                         role="subject",
                         step=True,
                         end_label=ValueLabel(
-                            text=money(cumulative[-1]), dx_pt=-4.0, dy_pt=9.0, ha="right"
+                            text=money(cumulative[-1]), dx_pt=-4.0, dy_pt=-11.0, ha="right"
                         ),
                     ),
                 ),
@@ -309,18 +309,15 @@ def holding_period(ctx: BuildContext) -> FigureSpec:
                 z=-1,
             )
         )
-    # The label goes on the side of the rule with more room, never on top of its own bar.
+    # The median is named in the legend, not printed beside the rule: a label placed at the
+    # axis top lands on whichever bar is tallest there.
     marks.append(
         RuleMark(
             orientation="vertical",
             position=median,
             role="feature",
             width=1.2,
-            annotate=ValueLabel(
-                text=f"median {median:.0f}d",
-                ha="right" if median > span / 2 else "left",
-                dx_pt=-6.0 if median > span / 2 else 6.0,
-            ),
+            label=f"Median {median:.0f} d",
         )
     )
     return ctx.spec(
@@ -531,7 +528,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 role="down",
                 alpha=0.16,
                 label="Drawdown window" if rank == 1 else None,
-                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0),
+                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0, dy_pt=-9.0),
             )
         )
         rows.append(
@@ -564,6 +561,8 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 y_label="Growth of 1 (x initial)",
                 y_unit="multiple",
                 height_ratio=2.0,
+                # No legend: it sat on the first date. The numbered blocks match the table.
+                legend=False,
                 marks=tuple(zones),
             ),
             Panel(

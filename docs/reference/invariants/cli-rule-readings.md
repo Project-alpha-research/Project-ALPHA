@@ -65,12 +65,9 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   "Fault: ... Fix this first. No reading." Fact checks stay hard.
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
-- `--json` keeps `verdict` and adds `reading`.
+- `--json` keeps `verdict` and adds `reading`, with its `costs` lines ([cost classes](cli-cost-classes.md)).
 - A run id hashes every `alpha_cli` source byte, so any edit moves it. `tests/unit/test_reading_rule.py` holds that input fixed and
   proves the reading changes no id.
-
-- Each reading also carries `costs`: the one costs line and the annualisation line the run used. Rules and the table:
-  [cost classes](cli-cost-classes.md).
 
 ## Owner-rule labels
 

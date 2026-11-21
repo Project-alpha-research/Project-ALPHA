@@ -1,6 +1,6 @@
 # Brief: cost defaults by asset class, stated on every run
 
-Branch: `feat/m71-costs-by-asset-class`. Rules: `docs/work/_common-rules-2026-11-21.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
+Branch: `feat/m71-costs-by-asset-class`. Rules: `docs/work/2026-11-21-common-build-rules/brief.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
 (rule-test and costs rows), `docs/reference/invariants/cli-rule-readings.md`, the costs tool card under `research/tools/`.
 
 ## Why

@@ -33,6 +33,10 @@ class ResearchReport(StrictModel):
     comparison_status: Literal["preferred", "tie", "no_trades", "not_comparable"]
     preferred_strategy: str | None
     preference_reason: str | None
+    # Present only when stored bars from the reserved day on were held back.
+    research_cutoff: str | None = None
+    reserve: dict[str, str | int] | None = None
+    reserve_sentence: str | None = None
 
 
 class HubSource(StrictModel):

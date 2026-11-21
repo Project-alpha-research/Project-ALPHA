@@ -6948,6 +6948,7 @@ def test_data_audit_reverifies_registered_crypto_crowding_snapshot(
     from alpha_cli import crypto_data_cmds
     from alpha_cli.research_data_audit import run_data_audit
 
+    first = datetime(2023, 8, 6, 9, 0, tzinfo=UTC)  # before the reserved period
     store = ControlStore(tmp_path)
     project_id = _captured_case(store, 0, at=START)
     snapshot_id = "a" * 64
@@ -6956,7 +6957,7 @@ def test_data_audit_reverifies_registered_crypto_crowding_snapshot(
     manifest_path.write_text("{}", encoding="utf-8")
     observations = tuple(
         SimpleNamespace(
-            funding_time=START + timedelta(hours=8 * index),
+            funding_time=first + timedelta(hours=8 * index),
             funding_rate=(-1 if index % 2 else 1) * (index + 1) / 100_000,
         )
         for index in range(40)
@@ -6972,8 +6973,8 @@ def test_data_audit_reverifies_registered_crypto_crowding_snapshot(
         "dataset_kind": "snapshot",
         "instrument": "BTC",
         "provider": "crypto-data-house",
-        "start_ts": START.isoformat(),
-        "end_ts": (START + timedelta(hours=8 * 39)).isoformat(),
+        "start_ts": first.isoformat(),
+        "end_ts": (first + timedelta(hours=8 * 39)).isoformat(),
         "bar_duration_minutes": None,
         "origin": {
             "snapshot_id": snapshot_id,

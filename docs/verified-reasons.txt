@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 172ff64f2b6675f6 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 apps/alpha-cli/README.md
-  verified 172ff64f2b6675f6 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -22,9 +22,6 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
-docs/reference/invariants/cli-control-store.md
-  verified f4fee63f55a7bfd2 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
-
 docs/reference/invariants/cli-follow.md
   verified f82b7658d6a7bebe on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
@@ -35,16 +32,16 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
-  verified af0344ef55aa33c8 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 6d7cb94085efa825 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 655e0dfacb1217f3 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-runs.md
-  verified 5b8215a0ca95c040 on 2026-11-21: Text updated in this change for whole-path surrogate signals, the per-bar operand cache, the refusal list and the measured rounding difference
+  verified 401130b0343c2e7c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -71,7 +68,7 @@ docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/patterns.md
-  verified d3864dc4ca5b3886 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -79,8 +76,8 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
-docs/reference/invariants/strategies.md
-  verified a532ab85c8e2ae60 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
+docs/reference/invariants/research.md
+  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
@@ -111,9 +108,6 @@ docs/reference/model-routing-codex.md
 
 docs/reference/model-routing.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
-
-docs/reference/owner-rule-language.md
-  verified 01af7ad62633b879 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -164,7 +158,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified f1a29ee746959ad3 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 200bde8e999e3da7 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -214,12 +208,6 @@ docs/work/CONTEXT.md
 packages/alpha-data/CONTEXT.md
   verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
-packages/alpha-patterns/CONTEXT.md
-  verified 75ee6179340cc8ad on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
-
-packages/alpha-strategies/CONTEXT.md
-  verified 3b2f49208f161d62 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
-
 packages/alpha-study/CONTEXT.md
   verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
 
@@ -227,13 +215,13 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 3fc1821bed09b83a on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
 
 research/PLAYBOOK.md
-  verified 780b6e14ba52c265 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/README.md
-  verified 7ea55f9a4eeb64c1 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 4b2aeb9720445559 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -242,25 +230,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 5d1424fa68b46804 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 2fdbb912d7450e3c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified e488aea34918ee3c on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 980630856bd2db10 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/charts.md
-  verified 2d02f1ffc62a700b on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 555f4dee9293a0be on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified e437e45adb6516ce on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/diagnose-and-audit.md
-  verified 8d649f3f968e4d51 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified abbb4da8fbdc5a9d on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -278,7 +266,7 @@ research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
 
 research/tools/portfolio-book.md
-  verified c9be7f36ebdb5486 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified ac26c355506d5adb on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/positioning-short-volume-context.md
   verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
@@ -299,16 +287,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified ae1a3c951301e3f0 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 4487a967b258939d on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified 91ae51daa0e3f098 on 2026-11-21: Merge of main added the context line; text re-read and true for owner rules too
+  verified daf06adda45c7812 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified e437e45adb6516ce on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -326,7 +314,7 @@ research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
-  verified d4f75099c12f9568 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

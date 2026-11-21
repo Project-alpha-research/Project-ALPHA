@@ -14,6 +14,7 @@ from typing import Annotated
 import typer
 
 from alpha_cli import _artifacts, _identity, _runner
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.sessions import sessions_between
@@ -193,9 +194,9 @@ def weekly_classifier(
     """
     settings = AlphaSettings()
     try:
-        cutoff = _runner.parse_as_of(as_of)
+        held = reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
         bars, _ = _runner.load_bars(
-            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=cutoff
+            symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=held.as_of
         )
         first, last = bars[0].ts.date(), bars[-1].ts.date()
         sessions = sessions_between(
@@ -222,6 +223,7 @@ def weekly_classifier(
             calendar_hash=hashlib.sha256(
                 json.dumps([s.isoformat() for s in sessions]).encode()
             ).hexdigest(),
+            **held.record_fields(),
         )
         serialized = json.dumps(
             {"identity": identity, "report": report}, sort_keys=True, allow_nan=False
@@ -253,6 +255,8 @@ def weekly_classifier(
                 evidence=str(directory / "evidence.json"),
                 sha256=digest,
                 metrics=report["metrics"],
+                **held.record_fields(),
+                **({"reserve_sentence": held.say()} if held.held_back else {}),
             ),
             sort_keys=True,
             allow_nan=False,

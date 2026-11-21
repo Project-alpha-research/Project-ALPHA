@@ -1310,6 +1310,13 @@
       "reason": "Parameterized safe read uses typed identity and boundary fixtures."
     },
     {
+      "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "sheet_api_setup_runs__find_id__sheets__kind___number__get",
+      "path": "/api/setup/runs/{find_id}/sheets/{kind}/{number}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
       "method": "POST",
       "mode": "fixture_backed",
       "operation_id": "update_stage_state_api_stage_links__link_id__state_post",

@@ -3311,6 +3311,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/setup/runs/{find_id}/sheets/{kind}/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sheet
+         * @description Read one recorded match sheet; the detail carries only the first, to stay small.
+         */
+        get: operations["sheet_api_setup_runs__find_id__sheets__kind___number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stage-links/{link_id}/state": {
         parameters: {
             query?: never;
@@ -13205,6 +13225,8 @@ export interface components {
         };
         /** SetupFigure */
         SetupFigure: {
+            /** Deferred */
+            deferred?: boolean | null;
             /** Name */
             name: string;
             /** Png */
@@ -19873,6 +19895,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupRunDetail"];
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    sheet_api_setup_runs__find_id__sheets__kind___number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                find_id: string;
+                kind: string;
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupFigure"];
                 };
             };
             /** @description Stable, redacted Workstation error */

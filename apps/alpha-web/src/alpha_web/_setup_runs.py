@@ -305,6 +305,25 @@ def _outcomes(
     return result
 
 
+def _check_sheet_name(name: object) -> None:
+    if not isinstance(name, str) or not re.fullmatch(r"sheets/(accepted|rejected)-\d{3}\.png", name):
+        raise ValueError("setup sheet name is invalid")
+
+
+def read_sheet(home: Path, find_id: str, name: str) -> SetupFigure:
+    """One recorded match sheet of a find, by the name its manifest lists."""
+    _check_sheet_name(name)
+    if not ID.fullmatch(find_id) or find_id not in {row.find_id for row in list_runs(home).items}:
+        raise FileNotFoundError("setup run not found")
+    reader = _Reader()
+    folder = home / "setups" / find_id
+    manifest = _manifest(folder, "find", reader)
+    listed = manifest.get("files", {}).get("sheets") if manifest else None
+    if not isinstance(listed, list) or name not in listed:
+        raise FileNotFoundError("setup sheet not found")
+    return _figure(name, reader.read(folder, name))
+
+
 def read_run(home: Path, find_id: str) -> SetupRunDetail:
     if not ID.fullmatch(find_id):
         raise FileNotFoundError("setup run not found")
@@ -323,11 +342,12 @@ def read_run(home: Path, find_id: str) -> SetupRunDetail:
             raise ValueError("setup sheet limit exceeded")
         sheets = []
         for name in names:
-            if not isinstance(name, str) or not re.fullmatch(
-                r"sheets/(accepted|rejected)-\d{3}\.png", name
-            ):
-                raise ValueError("setup sheet name is invalid")
-            sheets.append(_figure(name, reader.read(folder, name)))
+            _check_sheet_name(name)
+            # Only the first sheet rides along; the rest are read one at a time (`read_sheet`).
+            if sheets:
+                sheets.append(SetupFigure(name=name, png=None, deferred=True))
+            else:
+                sheets.append(_figure(name, reader.read(folder, name)))
     studies = _outcomes(home, manifest, "study", ledger, reader)
     trades = _outcomes(home, manifest, "trade", ledger, reader)
     read = _readings(home, [*studies, *trades])

@@ -26456,6 +26456,17 @@
       "SetupFigure": {
         "additionalProperties": false,
         "properties": {
+          "deferred": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deferred"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -37575,6 +37586,71 @@
           }
         },
         "summary": "Run Detail",
+        "tags": [
+          "setup"
+        ]
+      }
+    },
+    "/api/setup/runs/{find_id}/sheets/{kind}/{number}": {
+      "get": {
+        "description": "Read one recorded match sheet; the detail carries only the first, to stay small.",
+        "operationId": "sheet_api_setup_runs__find_id__sheets__kind___number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "find_id",
+            "required": true,
+            "schema": {
+              "maxLength": 16,
+              "pattern": "^[0-9a-f]{16}$",
+              "title": "Find Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "pattern": "^(accepted|rejected)$",
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{3}$",
+              "title": "Number",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupFigure"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Sheet",
         "tags": [
           "setup"
         ]

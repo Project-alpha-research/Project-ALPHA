@@ -270,3 +270,44 @@ def test_the_archive_is_readable_by_the_owner_only_from_the_start(
         os.umask(old)
     assert modes and set(modes) == {0o600}  # never wider, even while it is written
     assert archive.stat().st_mode & 0o777 == 0o600
+
+
+def test_restore_keeps_the_new_folder_private_while_it_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import home_restore
+
+    home = synthetic_home(tmp_path)
+    archive = Path(backup(home, tmp_path / "out")["archive"])
+    target = tmp_path / "restored"
+    seen: list[tuple[int, int]] = []
+    real = os.utime
+
+    def watching(place: Any, times: Any) -> None:
+        if Path(place).is_file() and target in Path(place).parents:  # one file was just written
+            seen.append((target.stat().st_mode & 0o777, 0))
+        real(place, times)
+
+    real_open = os.open
+
+    def opening(path: Any, flags: int, mode: int = 0o777) -> int:
+        if str(path).startswith(str(target)):
+            seen.append((target.stat().st_mode & 0o777, mode))
+        return real_open(path, flags, mode)
+
+    monkeypatch.setattr(os, "utime", watching)
+    monkeypatch.setattr(os, "open", opening)
+    old = os.umask(0o022)
+    try:
+        restore(archive, target, home)
+        other = tmp_path / "broken"
+        monkeypatch.setattr(home_restore, "_check_disk", lambda *_: ["a.txt: injected."])
+        with pytest.raises(HomeBackupError, match="injected"):
+            restore(archive, other, home)
+    finally:
+        os.umask(old)
+    opened = [mode for _, mode in seen if mode]
+    assert opened and set(opened) == {0o600}  # each file is private before its first byte
+    assert {root for root, _ in seen} == {0o700}  # nobody else can enter while it is written
+    assert target.stat().st_mode & 0o777 == 0o755  # a finished restore has the usual mode
+    assert other.stat().st_mode & 0o777 == 0o700  # a failed one stays closed

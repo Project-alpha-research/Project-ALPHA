@@ -86,10 +86,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified b80a348972d48649 on 2026-11-21: re-read: the only source change is one fake command name in a refusal test; the documented behaviour is unchanged
 
 docs/reference/invariants/web-api.md
-  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 375810b890607f4f on 2026-11-21: re-read: the only source change is one fake command name in a refusal test; the documented behaviour is unchanged
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.

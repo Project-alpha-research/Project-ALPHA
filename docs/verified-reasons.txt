@@ -80,7 +80,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/strategies.md
-  verified b6c3b86c4167ddbc on 2026-11-21: Text updated in this change for whole-path surrogate signals, the per-bar operand cache, the refusal list and the measured rounding difference
+  verified a532ab85c8e2ae60 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
@@ -113,7 +113,7 @@ docs/reference/model-routing.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
 
 docs/reference/owner-rule-language.md
-  verified d5e58cf9806d0166 on 2026-11-21: Text updated in this change for whole-path surrogate signals, the per-bar operand cache, the refusal list and the measured rounding difference
+  verified 01af7ad62633b879 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -218,7 +218,7 @@ packages/alpha-patterns/CONTEXT.md
   verified 75ee6179340cc8ad on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
 
 packages/alpha-strategies/CONTEXT.md
-  verified becce254344ec8c8 on 2026-11-21: Re-read after the owner-rule review and the main merge: owner rules keep the same surface; the changes were a refusal text, family dedupe of a repeated condition, whole-path surrogate signals and float loops with equal numbers, none of which this page states
+  verified 3b2f49208f161d62 on 2026-11-21: Only type hints and layout changed in the rule modules after the review; the text stays true
 
 packages/alpha-study/CONTEXT.md
   verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged

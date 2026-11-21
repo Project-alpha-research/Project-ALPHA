@@ -50,7 +50,8 @@ class _Windows:
         return [(a, min(a + size, self.close.size)) for a in range(first, self.close.size, size)]
 
     def rows(self, values: FloatArray, a: int, b: int) -> FloatArray:
-        view = sliding_window_view(values, self.history)[a - self.history + 1 : b - self.history + 1]
+        first = a - self.history + 1
+        view = sliding_window_view(values, self.history)[first : first + b - a]
         return np.ascontiguousarray(view)
 
 
@@ -165,7 +166,8 @@ def _block_values(w: _Windows, operand: Operand, a: int, b: int) -> FloatArray:
         if operand.field == "middle":
             return mid
         sd = _last_std(w.close, a, b, int(p[0]))
-        return np.asarray(mid + float(p[1]) * sd if operand.field == "upper" else mid - float(p[1]) * sd)
+        k = float(p[1])
+        return np.asarray(mid + k * sd if operand.field == "upper" else mid - k * sd)
     return _fallback(w, operand, a, b)
 
 
@@ -234,16 +236,23 @@ def path_signals(
         return out
     w = _Windows(h, lo, c, spec.history)
     for a, b in w.blocks(start):
-        cache: dict[Operand, FloatArray] = {}
-
-        def values(operand: Operand, a: int = a, b: int = b) -> FloatArray:
-            if operand not in cache:
-                cache[operand] = _block_values(w, operand, a, b)
-            return cache[operand]
-
-        long, long_errors = _side(spec.long_when, values, b - a, spec.history)
-        short, short_errors = _side(spec.short_when, values, b - a, spec.history)
-        for i in range(b - a):
-            error = long_errors[i] or short_errors[i]
-            out[a + i] = error or (0 if long[i] == short[i] else 1 if long[i] else -1)
+        out[a:b] = _block_signals(spec, w, a, b)
     return out
+
+
+def _block_signals(spec: RuleSpec, w: _Windows, a: int, b: int) -> list[int | str | None]:
+    """The signals of the windows ending at ``a .. b - 1``; each operand is computed once."""
+    cache: dict[Operand, FloatArray] = {}
+
+    def values(operand: Operand) -> FloatArray:
+        if operand not in cache:
+            cache[operand] = _block_values(w, operand, a, b)
+        return cache[operand]
+
+    long, long_errors = _side(spec.long_when, values, b - a, spec.history)
+    short, short_errors = _side(spec.short_when, values, b - a, spec.history)
+    signals: list[int | str | None] = []
+    for i in range(b - a):
+        error = long_errors[i] or short_errors[i]
+        signals.append(error or (0 if long[i] == short[i] else 1 if long[i] else -1))
+    return signals

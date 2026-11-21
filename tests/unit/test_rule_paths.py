@@ -74,9 +74,7 @@ def test_every_operand_value_equals_the_window_definition(seed: int) -> None:
         expected = np.array(
             [
                 operand_series(
-                    trailing_ohlcv(
-                        high[: t + 1], low[: t + 1], close[: t + 1], history=history
-                    ),
+                    trailing_ohlcv(high[: t + 1], low[: t + 1], close[: t + 1], history=history),
                     operand,
                 )[-1]
                 for t in range(history - 1, close.size)
@@ -103,16 +101,28 @@ RULES: list[list[dict[str, Any]]] = [
     ],
     [
         {"left": {"source": "close"}, "op": ">=", "right": {"source": "close", "lag": 1}},
-        {"left": {"indicator": "atr", "params": [5]}, "op": "<=",
-         "right": {"indicator": "atr", "params": [20]}},
+        {
+            "left": {"indicator": "atr", "params": [5]},
+            "op": "<=",
+            "right": {"indicator": "atr", "params": [20]},
+        },
     ],  # fmt: skip
     [
-        {"left": {"indicator": "macd", "params": [12, 26, 9], "field": "histogram"}, "op": ">",
-         "right": {"value": 0}},
-        {"left": {"source": "close"}, "op": "<",
-         "right": {"indicator": "bbands", "params": [20, 1], "field": "upper"}},
-        {"left": {"indicator": "ema", "params": [10]}, "op": ">",
-         "right": {"indicator": "ema", "params": [30]}},
+        {
+            "left": {"indicator": "macd", "params": [12, 26, 9], "field": "histogram"},
+            "op": ">",
+            "right": {"value": 0},
+        },
+        {
+            "left": {"source": "close"},
+            "op": "<",
+            "right": {"indicator": "bbands", "params": [20, 1], "field": "upper"},
+        },
+        {
+            "left": {"indicator": "ema", "params": [10]},
+            "op": ">",
+            "right": {"indicator": "ema", "params": [30]},
+        },
     ],  # fmt: skip
     [{"left": {"indicator": "runs_z", "params": [10]}, "op": "<", "right": {"value": 0.5}}],
 ]

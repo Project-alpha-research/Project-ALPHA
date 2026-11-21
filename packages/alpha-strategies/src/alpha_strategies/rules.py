@@ -590,9 +590,9 @@ def evaluate_values(spec: RuleSpec, value: OperandValue, history: int) -> int:
 
 
 def trailing_ohlcv(
-    highs: Sequence[float],
-    lows: Sequence[float],
-    closes: Sequence[float],
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
     *,
     history: int,
     symbol: str = "RULES",
@@ -623,7 +623,10 @@ def trailing_ohlcv(
 
 
 def rule_signal(
-    spec: RuleSpec, highs: Sequence[float], lows: Sequence[float], closes: Sequence[float]
+    spec: RuleSpec,
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
 ) -> int:
     """Convenience: build the trailing window and evaluate — the one call the engine, the Tier-1
     surrogate and a scanner all make."""

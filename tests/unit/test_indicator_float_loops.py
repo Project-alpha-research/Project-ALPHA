@@ -40,7 +40,7 @@ def numpy_scalar_ema(values: np.ndarray, window: int) -> np.ndarray:
 @pytest.mark.parametrize("seed", range(4))
 def test_rsi_equals_the_numpy_scalar_loop(seed: int) -> None:
     rng = np.random.default_rng(seed)
-    closes = 123.456789 * np.cumprod(1.0 + rng.normal(0.0, 0.02, 600))
+    closes = np.asarray(123.456789 * np.cumprod(1.0 + rng.normal(0.0, 0.02, 600)), dtype=np.float64)
     closes[100:110] = closes[100]  # flat stretch: zero gains and losses
     for window in (2, 14, 50):
         assert np.array_equal(rsi(closes, window), numpy_scalar_rsi(closes, window))
@@ -50,6 +50,7 @@ def test_rsi_equals_the_numpy_scalar_loop(seed: int) -> None:
 def test_ema_equals_the_numpy_scalar_loop(seed: int) -> None:
     rng = np.random.default_rng(seed)
     values = 123.456789 * np.cumprod(1.0 + rng.normal(0.0, 0.02, 600))
-    for series in (values, values.astype(np.float32), np.round(values).astype(np.int64)):
+    for raw in (values, values.astype(np.float32), np.round(values).astype(np.int64)):
+        series = np.asarray(raw, dtype=np.float64)  # the declared input; the cast is exact
         for window in (2, 12, 200):
             assert np.array_equal(ema(series, window), numpy_scalar_ema(series, window))

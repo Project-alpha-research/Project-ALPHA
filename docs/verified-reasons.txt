@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-cli/README.md
-  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -62,7 +62,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 84c1ca1137a28db2 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+  verified e4ab39b0d50fe178 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged

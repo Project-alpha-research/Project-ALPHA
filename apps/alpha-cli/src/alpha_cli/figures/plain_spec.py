@@ -86,7 +86,8 @@ def _style_axes(axes: Axes, spec: FigureSpec, panel: Panel, last: bool, drawn: b
         axes.axhline(0.0, color="black", linewidth=0.8)
     if not heat:
         axes.grid(True, alpha=0.3)
-    if not any(isinstance(m, ErrorBarMark | TableMark) for m in panel.marks):
+    table = any(isinstance(m, TableMark) for m in panel.marks)
+    if not table and not any(isinstance(m, ErrorBarMark) for m in panel.marks):
         axes.set_ylabel(ps.wrap(panel.y_label, 26) if not heat else panel.y_label)
     if panel.note is not None:
         axes.text(
@@ -100,7 +101,7 @@ def _style_axes(axes: Axes, spec: FigureSpec, panel: Panel, last: bool, drawn: b
         )
     if panel.legend and panel.legend_entries and drawn:
         axes.legend(loc="upper left", fontsize=8, ncol=min(len(panel.legend_entries), 3))
-    if last:
+    if last and not table:
         axes.set_xlabel(spec.x_label)
 
 
@@ -168,6 +169,10 @@ def _annotate(figure: Figure, spec: FigureSpec, axes_list: list[Axes]) -> None:
         if axes.images:
             _outline_cells(axes, plan)
             continue
+        tables = [m for m in panel.marks if isinstance(m, TableMark)]
+        if tables:
+            ps.band(axes, 0.0, 1.0, f"stored evidence table: {len(tables[0].rows)} rows")
+            continue
         for call in plan.calls[:3]:
             xy = (float(pm.x_values((call.x,), spec.x_kind)[0]), call.y)
             ps.callout(axes, call.text, xy, used)
@@ -187,7 +192,7 @@ def draw_spec(spec: FigureSpec, variant: str, sentences: list[str]) -> Figure:
         1,
         height_ratios=ratios,
         hspace=0.3,
-        left=0.08,
+        left=0.11,
         right=0.96,
         top=1 - top / total,
         bottom=(foot + 0.5) / total,

@@ -65,7 +65,7 @@ class CacheKeyInputs:
     dpi: int
     fmt: FigureFormat
     background: str
-    variant: str
+    variant: str = "plain"
     artifact_contract_version: int | None
     input_digest: str
     input_digest_kind: Literal["artifact_sha256", "mtime_fallback"]

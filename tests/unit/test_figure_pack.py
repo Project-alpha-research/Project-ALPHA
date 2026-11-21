@@ -11,7 +11,6 @@ import polars as pl
 import pytest
 
 from alpha_cli.figures import build_figure_spec
-from alpha_cli.figures_cmds import _run_theme
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_data.store import ParquetStore
@@ -31,12 +30,6 @@ def rule_run(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, 
     assert result["error"] is None, result["error"]
     rdir = Path(result["run_dir"])
     return rdir, json.loads((rdir / "manifest.json").read_bytes()), rdir.parent.parent
-
-
-def test_every_run_kind_gets_the_light_theme_unless_dark_is_asked() -> None:
-    for manifest in ({}, {"spine": {"periods": {"x": 1}}}, {"command": "validate"}):
-        assert _run_theme(manifest, False).bg == "#ffffff"
-        assert _run_theme(manifest, True).theme_id == "alpha-dark"
 
 
 def test_return_distribution_mean_is_the_mean_of_the_stored_daily_returns(

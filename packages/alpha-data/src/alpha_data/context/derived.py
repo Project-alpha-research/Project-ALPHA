@@ -3,15 +3,16 @@
 Every function works on one native timeline (weekly COT reports or daily FINRA rows), sorted by
 period, with trailing windows that include the current row. A derived row carries `known_eff`:
 the running maximum of `known_from` over the stored rows up to and including it, so a value is
-never known before its newest input. Nothing here joins to bars; `attach.py` does that.
-Windows are fixed in the recipe; a change is a new recipe version.
+never known before its newest input. A COT `known_from` that comes from the release rule alone
+(no system stamp) is first moved one day later (`RULE_MARGIN`). Nothing here joins to bars;
+`attach.py` does that. Windows are fixed in the recipe; a change is a new recipe version.
 """
 
 from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Final
 
 import polars as pl
@@ -42,6 +43,10 @@ SHUTDOWN_WINDOWS: Final = (
     (date(2018, 12, 18), date(2019, 3, 5)),
     (date(2013, 10, 1), date(2013, 10, 29)),
 )
+# A COT time from the release rule alone (known_basis "rule" or "rule-only-era") cannot see a late
+# release. Stamped rows show them: in normal weeks of 2022-09 to 2026 some reports came out after
+# the 16:00 US Eastern close (up to about two hours late). One day later is always safe.
+RULE_MARGIN: Final = timedelta(days=1)
 SCHEMA: Final[Mapping[str, pl.DataType | type[pl.DataType]]] = dict(
     period=pl.Date, known_eff=TIME, value=pl.Float64, reason=pl.String
 )
@@ -157,7 +162,11 @@ def derive_cot(rows: pl.DataFrame, series: str) -> pl.DataFrame:
     else:
         value = _change(nc_oi, COT_CHANGE_LAG)
     reason = [UNVERIFIED if bad else None for bad in unknown]
-    return _frame(periods, ordered["known_from"].to_list(), value, reason)
+    known = [
+        stamp if basis == "stamp" else stamp + RULE_MARGIN
+        for stamp, basis in zip(ordered["known_from"], ordered["known_basis"], strict=True)
+    ]
+    return _frame(periods, known, value, reason)
 
 
 def _finite(values: Sequence[float], field: str) -> None:

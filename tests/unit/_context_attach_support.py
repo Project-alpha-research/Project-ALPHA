@@ -31,7 +31,8 @@ def cot_rows(specs: Sequence[Mapping[str, Any]]) -> pl.DataFrame:
     rows = []
     for spec in specs:
         period: date = spec["report_date"]
-        default_basis = "rule-only-era" if period < cftc_cot.RULE_ONLY_BEFORE else "rule"
+        # From 2022-09 a stamp at the rule time: the derived series take it as it is.
+        default_basis = "rule-only-era" if period < cftc_cot.RULE_ONLY_BEFORE else "stamp"
         rows.append(
             dict(
                 market_code=CODE,

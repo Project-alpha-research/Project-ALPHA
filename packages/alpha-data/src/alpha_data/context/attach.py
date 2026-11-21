@@ -13,20 +13,19 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time
+from datetime import date, datetime
 from pathlib import Path
 from typing import NamedTuple
 
 import polars as pl
 
 from alpha_core import DataError
-from alpha_core.reserve import RESERVED_DAY
+from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT
 from alpha_data.context import cftc_cot, derived, finra_short
 from alpha_data.context.events import TIME, as_known_events, load_events, utc_time
 from alpha_data.sessions import bar_known_at
 from alpha_data.timeframe import BarTimeframe
 
-RESERVED_INSTANT = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
 SELF = "SELF"
 ALL_NAMES = "ALL"
 NOT_YET_KNOWN = "not-yet-known"
@@ -197,6 +196,11 @@ def attach_context(
     frame = bars.filter(pl.col("ts") < RESERVED_INSTANT)
     resolved = {alias: _resolve(raw, symbol) for alias, raw in bindings.items()}
     sources = {alias: _derive(b.series, b.key, data_dir, cutoff) for alias, b in resolved.items()}
+    # A derived row is known no earlier than its stored rows; it must also be known by the cutoff.
+    sources = {
+        alias: _Source(s.frame.filter(pl.col("known_eff") <= cutoff), s.tables, s.note)
+        for alias, s in sources.items()
+    }
     firsts: list[datetime] = [
         min(s.frame["known_eff"].to_list()) for s in sources.values() if s.frame.height
     ]

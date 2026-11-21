@@ -58,6 +58,8 @@ def test_json_output_names_recipe_and_hashes(home: Path) -> None:
     assert out["rows"][-1]["value"] == pytest.approx(0.2, rel=1e-9, abs=1e-12)
     assert out["rows"][-1]["stale"] is False and len(out["used_rows_sha256"]) == 64
     assert max(r["bar_date"] for r in out["rows"]) < "2024-01-01"
+    assert out["coverage"].startswith("Coverage: ") and out["reading"].startswith("A reading")
+    assert out["caveat"] == ""  # COT has no FINRA facilities caveat
 
 
 def test_breadth_prints_its_label(home: Path) -> None:

@@ -5,18 +5,17 @@ from __future__ import annotations
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
-from alpha_core.reserve import RESERVED_DAY, RESERVED_START
+from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT, RESERVED_START
 
 # The one boundary. A row stamped at or after the first instant of the reserved day is held
 # back. A row stamped before it is used once it is known, and it is known by this instant at the
 # latest when its interval closes on it (the last daily bar of the day before).
-RESERVED_INSTANT = datetime.combine(RESERVED_DAY, time.min, tzinfo=UTC)
 # The last instant before the boundary: for readers that keep a row when its stamp <= ``as_of``.
 CUTOFF = RESERVED_INSTANT - timedelta(microseconds=1)
 CUTOFF_DAY = CUTOFF.date()

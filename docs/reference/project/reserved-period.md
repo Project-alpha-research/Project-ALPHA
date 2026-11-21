@@ -8,7 +8,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
-verified: fbbcf0f33e206228
+verified: 8b37ee4838906523
 ---
 
 # The reserved period
@@ -19,7 +19,7 @@ families, its post-verdict checks and its journey figures lock it, and so do rul
 
 ## Where the code defines the date
 
-- `alpha_core.reserve` defines `RESERVED_DAY` and derives the ISO text `RESERVED_START`. Daily funding imports the date from core.
+- `alpha_core.reserve` defines `RESERVED_DAY` and derives the ISO text `RESERVED_START` and `RESERVED_INSTANT`. Daily funding imports the date from core.
   `alpha_cli.toolbox.reserve` re-exports both names for existing CLI callers.
 - The isolated RD-Agent factor runtime has no ALPHA packages. `alpha_factor_data.py` uses its `RESERVED_START` for funding checks,
   panel checks, and panel dates in the proposer prompt. A [root unit test](../../../tests/unit/test_reserved_date_one_home.py)
@@ -36,7 +36,7 @@ Locks it out (the code refuses reserved rows or aborts):
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
 - Rule tests (`alpha test`) and setups (`alpha setup find|study|trade`): every bar and dividend read passes the cut-off 2023-12-31 (`spine/reserve.py`).
-  `spine/reserve.py` has one boundary, `RESERVED_INSTANT` (the first instant of the reserved day). A row stamped at or after it is held back.
+  `spine/reserve.py` uses one boundary, core's `RESERVED_INSTANT` (the first instant of the reserved day). A row stamped at or after it is held back.
   A row stamped before it is used once it is known. A daily store read keeps it by its stamp (`CUTOFF`, one microsecond before
   the boundary). An intraday store, archive or crypto read keeps it when its interval closes by the boundary.
   Every command applies this one rule. The count of held-back bars comes from a timestamp-only scan.

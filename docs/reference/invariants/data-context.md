@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_derived_cmds.py
-verified: 847423d8c508d699
+verified: 8e4226a7feb0e5cd
 ---
 
 # Data layer invariants: context data
@@ -123,12 +123,15 @@ In order:
 3. Derive on the native timeline, sorted by period. `known_eff` = running maximum of `known_from` over all rows up to and
    including the row. It can be later than the window's own maximum: it is stricter, never looser. A value is never known
    before its newest input. Breadth takes the newest `known_eff` of the names on that date, then a running maximum.
+   A COT `known_from` from the release rule alone (`known_basis` `rule` or `rule-only-era`) is moved one day later
+   first (`derived.RULE_MARGIN`): stamped weeks show releases after the 16:00 US Eastern close, which the rule cannot
+   see. Derived rows not known by the cutoff are dropped.
 4. Decision instant `d` = `bar_known_at(ts)`. Backward as-of join on `known_eff` <= `d`, inclusive. The latest known value
    carries forward; that is not imputation, and `age_days` (date of `d` minus period) shows how old it is.
 5. Stale: age above 17 days (COT) or 5 days (FINRA) gives null and `stale` true. Age equal to the limit is not stale.
    A null is never filled with zero. A bar before any known row is null with reason `not-yet-known`, not stale.
 6. FINRA day t is known at 12:00 UTC on t+1: stock bar t+1 uses it, bar t does not. The BTC COT Friday release is before
-   Saturday 00:00 UTC, so Friday's crypto bar (`ts` + 1 day) uses it.
+   Saturday 00:00 UTC, so Friday's crypto bar (`ts` + 1 day) uses a stamped release; a rule-only one waits a day.
 7. Delayed releases (shutdown gap). COT rows with `known_basis` `rule-only-era` whose report date is in a window of
    `derived.SHUTDOWN_WINDOWS` (2018-12-18 to 2019-03-05 and 2013-10-01 to 2013-10-29, inclusive) are unknown: null, reason
    `cot-delayed-release-unverified`. The catch-up dates were not verified, so the windows are wide on purpose.
@@ -145,7 +148,9 @@ The result holds `ctx_<alias>`, `_age_days`, `_stale`, `_known_from`, `_reason`,
 ## Derived series: result and guards
 
 Guards: `tests/unit/test_context_attach_guard.py` lets only `attach.py`, the two stores and the listed display reader
-`context_free_cmds.py` name the COT or FINRA `table_path`, and lets only `align.py` and `attach.py` use `join_asof`.
+`context_free_cmds.py` reach the COT or FINRA tables (`table_path`, `SOURCE` or `SCHEMA` under any alias, `getattr` on
+the store, or the table path or source name as text), and lets only `align.py` and `attach.py` use `join_asof` or
+`merge_asof`. A name built at run time escapes an AST scan; the future-poison guard checks behaviour.
 `test_context_attach_poison.py` sets every row known after bar k to a huge value and checks bars up to k do not change;
 a deliberately leaky join in the test does change. Outputs are readings, never verdicts or advice.
 

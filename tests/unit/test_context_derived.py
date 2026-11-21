@@ -97,7 +97,7 @@ def test_net_change_over_four_reports() -> None:
 def test_known_eff_is_the_cumulative_maximum_of_known_from() -> None:
     t = [datetime(2020, 1, d, tzinfo=UTC) for d in (20, 10, 15, 30)]
     specs = [
-        dict(report_date=p, known_from=k)
+        dict(report_date=p, known_from=k, basis="stamp")
         for p, k in zip(weekly(date(2020, 1, 7), 4), t, strict=True)
     ]
     frame = derived.derive_cot(cot_rows(specs), "cot_nc_net_oi")

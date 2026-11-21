@@ -1,8 +1,9 @@
 """Structural guard: only `context/attach.py` and the stores join context tables to bars.
 
-Scans every source file. A file may name the COT or FINRA table reader (`table_path` of
-`cftc_cot` or `finra_short`) only if it is the store, `attach.py` itself, or is listed in
-READERS with a reason. `join_asof` may appear only in `align.py` and `attach.py`.
+Scans every source file. A file may reach a COT or FINRA table (the store's `table_path`, `SOURCE`
+or `SCHEMA` under any alias or through `getattr`, or the table path or source name as text) only
+if it is the store, `attach.py` itself, or is listed in READERS with a reason. `join_asof` may
+appear only in `align.py` and `attach.py`.
 """
 
 from __future__ import annotations
@@ -23,39 +24,77 @@ READERS: dict[Path, str] = {
 }
 
 
+TOUCHES = {"table_path", "SOURCE", "SCHEMA"}
+# Path parts and source names that reach the tables without the store module.
+TABLE_TEXT = ("context/cftc", "context/finra", "cftc-cot", "finra-short-volume")
+
+
+def _store_aliases(tree: ast.AST) -> set[str]:
+    """Every local name bound to a store module, under any alias."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            names |= {a.asname or a.name for a in node.names if a.name in STORE_MODULES}
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                if a.name.rsplit(".", 1)[-1] in STORE_MODULES and a.asname is not None:
+                    names.add(a.asname)
+    return names
+
+
+def _is_store(node: ast.expr, aliases: set[str]) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in aliases or node.id in STORE_MODULES
+    return isinstance(node, ast.Attribute) and node.attr in STORE_MODULES
+
+
 def names_store_reader(source: str) -> bool:
-    for node in ast.walk(ast.parse(source)):
+    """True if the code can reach a COT or FINRA table: the store's path, source or schema."""
+    tree = ast.parse(source)
+    aliases = _store_aliases(tree)
+    for node in ast.walk(tree):
         if (
             isinstance(node, ast.Attribute)
-            and node.attr == "table_path"
-            and isinstance(node.value, ast.Name)
-            and node.value.id in STORE_MODULES
+            and node.attr in TOUCHES
+            and _is_store(node.value, aliases)
         ):
             return True
         if (
             isinstance(node, ast.ImportFrom)
             and node.module is not None
             and node.module.rsplit(".", 1)[-1] in STORE_MODULES
-            and any(a.name == "table_path" for a in node.names)
+            and any(a.name in TOUCHES or a.name == "*" for a in node.names)
         ):
             return True
-        if isinstance(node, ast.Constant) and node.value in {
-            "alpha_data.context.cftc_cot.table_path",
-            "alpha_data.context.finra_short.table_path",
-        }:
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "getattr"
+            and node.args
+            and _is_store(node.args[0], aliases)
+        ):
+            return True
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and any(text in node.value for text in TABLE_TEXT)
+        ):
             return True
     return False
 
 
+ASOF_JOINS = {"join_asof", "merge_asof"}  # polars and pandas as-of joins
+
+
 def names_join_asof(source: str) -> bool:
     for node in ast.walk(ast.parse(source)):
-        if isinstance(node, ast.Attribute) and node.attr == "join_asof":
+        if isinstance(node, ast.Attribute) and node.attr in ASOF_JOINS:
             return True
-        if isinstance(node, ast.Name) and node.id == "join_asof":
+        if isinstance(node, ast.Name) and node.id in ASOF_JOINS:
             return True
-        if isinstance(node, ast.Constant) and node.value == "join_asof":
+        if isinstance(node, ast.Constant) and node.value in ASOF_JOINS:
             return True
-        if isinstance(node, ast.alias) and node.name == "join_asof":
+        if isinstance(node, ast.alias) and node.name in ASOF_JOINS:
             return True
     return False
 
@@ -91,9 +130,26 @@ def test_the_guard_sees_every_way_of_naming_the_readers() -> None:
         "from alpha_data.context import finra_short\nf = finra_short.table_path"
     )
     assert not names_store_reader("osap_portfolios.table_path(d)")
+    assert not names_store_reader(
+        "from alpha_data.context import finra_short\nc = finra_short.CAVEAT"
+    )
+    assert names_store_reader("import alpha_data.context.cftc_cot as c\nc.table_path(d, 'X')")
+    assert names_store_reader("from alpha_data.context import cftc_cot as c\np = c.table_path")
+    assert names_store_reader(
+        "import alpha_data.context.finra_short\nalpha_data.context.finra_short.SCHEMA"
+    )
+    assert names_store_reader(
+        "from alpha_data.context import cftc_cot\ngetattr(cftc_cot, 'table_' + 'path')"
+    )
+    assert names_store_reader("from alpha_data.context.cftc_cot import *")
+    assert names_store_reader(
+        "pl.read_parquet(data_dir / 'context/finra/short_volume/SPY.parquet')"
+    )
+    assert names_store_reader("load_events(p, source='cftc-cot', schema=s)")
     assert names_join_asof("df.join_asof(o, on='t')")
     assert names_join_asof("from polars import join_asof")
     assert names_join_asof("getattr(df, 'join_asof')")
+    assert names_join_asof("pd.merge_asof(a, b, on='t')")
     assert not names_join_asof("df.join(o, on='t')")
 
 

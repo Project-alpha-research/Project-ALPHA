@@ -98,6 +98,7 @@ def show_derived(
     ]
     note = result.notes["v"]
     coverage = _coverage(frame, CUTOFF)
+    caveat = finra_short.CAVEAT if derived.series_source(series) == "finra" else ""
     payload = dict(
         series=series,
         key=key,
@@ -107,6 +108,8 @@ def show_derived(
         source_table_sha256=result.source_table_sha256,
         note=note,
         coverage=coverage,
+        caveat=caveat,
+        reading=READING,
         rows=table,
     )
     lines = [f"{'bar_date':<11}{'value':<24}{'known_from':<18}{'age_days':<10}stale"]
@@ -120,7 +123,7 @@ def show_derived(
     lines.append(coverage)
     if note:
         lines.append(note)
-    if derived.series_source(series) == "finra":
-        lines.append(finra_short.CAVEAT)
+    if caveat:
+        lines.append(caveat)
     lines.append(f"Recipe {result.recipe}. {READING}")
     emit(payload, json_out=json_out, fallback="\n".join(lines))

@@ -252,3 +252,55 @@ def test_words_say_the_rule_in_plain_language() -> None:
     assert words == rule.words
     assert words == "Long while RSI(14) < 30 and close > SMA(200), flat otherwise."
     assert "profit" not in words
+
+
+def test_a_repeated_condition_does_not_open_a_new_family() -> None:
+    """Writing one condition twice changes no decision, so it must not reset the try count."""
+    twice = {"long_when": [*RSI_DIP["long_when"], RSI_DIP["long_when"][0]]}
+    assert family(twice) == family(RSI_DIP)
+
+
+def _one(left: dict[str, Any], right: dict[str, Any] | None = None) -> dict[str, Any]:
+    return {"long_when": [{"left": left, "op": ">", "right": right or {"source": "close"}}]}
+
+
+def test_indicator_names_fields_and_sources_are_part_of_the_family() -> None:
+    shapes = [
+        _one({"indicator": "sma", "params": [20]}),
+        _one({"indicator": "ema", "params": [20]}),
+        _one({"indicator": "atr", "params": [20]}),
+        _one({"indicator": "bbands", "params": [20, 2], "field": "upper"}),
+        _one({"indicator": "bbands", "params": [20, 2], "field": "lower"}),
+        _one({"indicator": "macd", "params": [12, 26, 9], "field": "line"}, {"value": 0}),
+        _one({"indicator": "macd", "params": [12, 26, 9], "field": "signal"}, {"value": 0}),
+        _one({"indicator": "sma", "params": [20]}, {"source": "high"}),
+        _one({"indicator": "sma", "params": [20]}, {"source": "low"}),
+    ]
+    assert len({family(shape) for shape in shapes}) == len(shapes)
+
+
+@pytest.mark.parametrize(
+    "left, right",
+    [
+        ({"indicator": "atr", "params": [14]}, {"value": 2}),
+        ({"indicator": "macd", "params": [12, 26, 9], "field": "line"}, {"value": 0.5}),
+        ({"indicator": "bbands", "params": [20, 2], "field": "upper"}, {"value": 400}),
+        ({"source": "close", "lag": 5}, {"value": 400}),
+        ({"indicator": "ema", "params": [10]}, {"indicator": "cmma", "params": [10, 20]}),
+    ],
+)
+def test_every_price_sized_operand_is_refused_against_a_level(
+    left: dict[str, Any], right: dict[str, Any]
+) -> None:
+    with pytest.raises(ValueError, match="price level") as caught:
+        idea({"long_when": [{"left": left, "op": ">", "right": right}]})
+    assert "write" in str(caught.value).lower()
+
+
+def test_price_sized_operands_may_meet_zero_or_each_other() -> None:
+    macd_line = {"indicator": "macd", "params": [12, 26, 9], "field": "line"}
+    idea(_one(macd_line, {"value": 0}))
+    idea(_one(macd_line, {"indicator": "macd", "params": [12, 26, 9], "field": "signal"}))
+    idea(_one({"indicator": "atr", "params": [5]}, {"indicator": "atr", "params": [20]}))
+    idea(_one({"indicator": "bbands", "params": [20, 2], "field": "lower"}))
+    idea(_one({"indicator": "cmma", "params": [10, 20]}, {"value": 0.5}))

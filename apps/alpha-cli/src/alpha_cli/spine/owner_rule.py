@@ -37,7 +37,9 @@ VOLUME_REFUSED = (
 PRICE_LEVEL_REFUSED = (
     "'{label}' compares a price level with a fixed number or an unscaled indicator: the "
     "random-price test rebuilds prices from returns, so a fixed price level has no meaning there. "
-    "Compare a price with an average, a lagged price or another price, or use rsi"
+    "Prices, averages, ATR, Bollinger bands and MACD are all price-sized. Write instead: a price "
+    "against an average, a band, a lagged price or another price; ATR against another ATR; MACD "
+    "against 0 or its signal line; or a fixed number against RSI or another scale-free indicator"
 )
 NULL_CLOSES = "null-closes-for-high-low"
 VARIANTS_NOTE = (
@@ -127,11 +129,12 @@ def _condition_shape(condition: Condition) -> str:
 
 def shape_digest(spec: Mapping[str, Any]) -> str:
     """Hash of a rule's structure: no name, no history, every number as a hole, ``<`` as ``<=``,
-    a constant on the right, conditions sorted. Thirty RSI thresholds are one shape."""
+    a constant on the right, conditions sorted, a repeated condition once. Thirty RSI thresholds
+    are one shape."""
     parsed = _parsed(spec)
     shape = {
-        "long_when": sorted(_condition_shape(c) for c in parsed.long_when),
-        "short_when": sorted(_condition_shape(c) for c in parsed.short_when),
+        "long_when": sorted({_condition_shape(c) for c in parsed.long_when}),
+        "short_when": sorted({_condition_shape(c) for c in parsed.short_when}),
     }
     return hashlib.sha256(json.dumps(shape, sort_keys=True).encode()).hexdigest()
 

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 5bb1f902dcbdbc55 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified e172a883a5551ef0 on 2026-11-21: typing cleanup in figure builders does not change what this document says
 
 apps/alpha-cli/README.md
-  verified 5bb1f902dcbdbc55 on 2026-11-21: re-read after merging main; the figure-pack changes do not alter what this document says
+  verified e172a883a5551ef0 on 2026-11-21: typing cleanup in figure builders does not change what this document says
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -27,6 +27,9 @@ docs/reference/invariants/README.md
 
 docs/reference/invariants/cli-crypto-data.md
   verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
+
+docs/reference/invariants/cli-figures.md
+  verified 3fcb64f314848974 on 2026-11-21: typing cleanup in figure builders does not change what this document says
 
 docs/reference/invariants/cli-follow.md
   verified 8739347cc6883a2a on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
@@ -89,7 +92,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 428ec363dbb2e794 on 2026-11-21: reversal fix does not change what this document says
+  verified cbfc014545dbd03d on 2026-11-21: typing cleanup in figure builders does not change what this document says
 
 docs/reference/invariants/testing.md
   verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says

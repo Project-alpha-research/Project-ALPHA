@@ -376,6 +376,7 @@ def _rules_build(spec: RunSpec, instrument_id: InstrumentId, bar_type: BarType) 
 
 def _rules_surrogate(spec: RunSpec) -> Surrogate:
     from alpha_cli._surrogate import make_surrogate
+    from alpha_strategies.rule_paths import path_signals
     from alpha_strategies.rules import rule_signal
 
     rules = _rules_spec(spec)
@@ -397,6 +398,8 @@ def _rules_surrogate(spec: RunSpec) -> Surrogate:
         allow_short=spec.allow_short,
         cost_bps=spec.fee_bps + spec.slippage_bps,
         unit_weight=spec.sizing == "all_in",
+        # The same signals, all bars of a path at once and bit-identical (test_rule_paths.py).
+        path_signals=lambda closes, start: path_signals(rules, closes, closes, closes, start=start),
     )
 
 

@@ -15,7 +15,14 @@ from nautilus_trader.model.identifiers import InstrumentId
 
 from alpha_patterns import OHLCV
 from alpha_strategies.base import VolTargetStrategy
-from alpha_strategies.rules import RuleSpec, evaluate_rules, operand_series, trailing_ohlcv
+from alpha_strategies.rules import (
+    Operand,
+    OperandValue,
+    RuleSpec,
+    evaluate_values,
+    last_values,
+    trailing_ohlcv,
+)
 
 
 class RuleStrategy(VolTargetStrategy):
@@ -65,6 +72,9 @@ class RuleStrategy(VolTargetStrategy):
             fixed_entry_once=fixed_entry_once,
         )
         self._spec = spec
+        self._values_bar = -1  # the bar count ``_values`` belongs to (history is append-only)
+        self._values: dict[Operand, float] = {}
+        self._value_of: OperandValue | None = None
 
     def _window(self) -> OHLCV:
         return trailing_ohlcv(
@@ -75,14 +85,30 @@ class RuleStrategy(VolTargetStrategy):
             symbol=str(self._iid),
         )
 
+    def _bar_values(self) -> OperandValue:
+        """Operand values on the current decision bar, each computed once per bar from one window:
+        the decision and the indicator trace read the same numbers."""
+        if self._values_bar != len(self._closes):
+            self._values_bar, self._values, self._value_of = len(self._closes), {}, None
+        values = self._values
+
+        def value(operand: Operand) -> float:
+            if operand not in values:
+                if self._value_of is None:
+                    self._value_of = last_values(self._window())
+                values[operand] = self._value_of(operand)
+            return values[operand]
+
+        return value
+
     def _signal(self) -> int:
-        return evaluate_rules(self._spec, self._window())
+        return evaluate_values(self._spec, self._bar_values(), self._spec.history)
 
     def _indicator_snapshot(self) -> Mapping[str, tuple[float, str]]:
         values = dict(super()._indicator_snapshot())
-        window = self._window()
+        value = self._bar_values()
         for operand in self._spec.operands:
             if operand.kind == "indicator":
                 unit = "index" if operand.indicator == "rsi" else "price"
-                values[operand.label] = (float(operand_series(window, operand)[-1]), unit)
+                values[operand.label] = (value(operand), unit)
         return values

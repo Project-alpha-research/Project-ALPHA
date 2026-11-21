@@ -261,3 +261,46 @@ def test_inverted_control_accepts_a_rules_spec(tmp_path: Path) -> None:
     original = _runner.run_full_backtest(rows, spec)
     control = run_inverted_backtest(rows, spec, original)
     assert control.decision_trace and control.equity_curve
+
+
+def _c(left: dict[str, Any], op: str, right: dict[str, Any]) -> dict[str, Any]:
+    return {"left": left, "op": op, "right": right}
+
+
+EVERY_INDICATOR: dict[str, Any] = {
+    "history": 120,
+    "long_when": [
+        _c({"source": "close"}, ">", {"indicator": "sma", "params": [20]}),
+        _c({"indicator": "ema", "params": [10]}, ">", {"source": "close", "lag": 3}),
+        _c({"indicator": "rsi", "params": [14]}, "<", {"value": 101}),
+        _c({"indicator": "atr", "params": [5]}, "<", {"indicator": "atr", "params": [20]}),
+        _c({"source": "low"}, "<", {"indicator": "bbands", "params": [20, 2], "field": "upper"}),
+        _c({"indicator": "macd", "params": [12, 26, 9], "field": "histogram"}, ">", {"value": 0}),
+        _c({"indicator": "hawkes", "params": [0.1, 20]}, ">", {"value": -1}),
+        _c({"indicator": "runs_z", "params": [20]}, ">", {"value": -100}),
+        _c({"indicator": "perm_entropy", "params": [3, 5]}, ">", {"value": -1}),
+        _c({"indicator": "cmma", "params": [10, 20]}, ">", {"value": -100}),
+        _c({"indicator": "vg_path", "params": [12], "field": "price"}, ">", {"value": -1}),
+        _c({"indicator": "reversibility", "params": [100]}, ">", {"value": -100}),
+    ],
+}
+
+
+def test_no_indicator_reads_a_bar_after_the_decision_bar() -> None:
+    """All twelve indicators the spine accepts, through the spine's own run spec: every value the
+    engine records on bars up to k is unchanged when every price after k is poisoned."""
+    n, k = 300, 240
+    spec = assemble_run_spec(idea(EVERY_INDICATOR), "SPY", 252, n)
+    base = _runner.run_full_backtest(on_ticks(bars(n)), spec)
+    after = _runner.run_full_backtest(on_ticks(bars(n, poison_from=k + 1)), spec)
+    stamp = bars(n)[k].ts
+    names = {row.name for row in base.indicator_trace}
+    assert len({name.split(":")[0] for name in names} - {"close"}) == 12, names
+
+    def upto(result: BacktestResult) -> list[tuple[Any, ...]]:
+        return [(r.ts, r.name, r.value) for r in result.indicator_trace if r.ts <= stamp]
+
+    assert upto(after) == upto(base) and upto(base)
+    assert _decisions_to(after, k, spec.min_train) == _decisions_to(base, k, spec.min_train)
+    later = [(r.ts, r.name, r.value) for r in after.indicator_trace if r.ts > stamp]
+    assert later != [(r.ts, r.name, r.value) for r in base.indicator_trace if r.ts > stamp]

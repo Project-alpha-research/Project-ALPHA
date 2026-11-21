@@ -3,6 +3,7 @@ owner: strategy layer
 sources:
   - packages/alpha-strategies/src/**
   - tests/unit/test_rules*.py
+  - tests/unit/test_rule_paths.py
   - tests/unit/test_signal*.py
   - tests/unit/test_sizing.py
   - tests/unit/test_ts_momentum_signal.py
@@ -24,7 +25,10 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   `alpha_strategies depends only on core and patterns` in `pyproject.toml`.
   [engineering § Import layers](engineering.md#import-layers).
 - Take indicators from `alpha_patterns` (the functions `alpha chart overlays` draws); never re-implement
-  one here. Parity is pinned by `tests/unit/test_rules_indicators_parity.py`.
+  one here. Parity is pinned by `tests/unit/test_rules_indicators_parity.py`. One exception, for speed only:
+  `rule_paths.py` runs the same arithmetic of `sma`, `ema`, `rsi`, `atr`, `bbands` and `macd` on every trailing
+  window of a path at once, for the Tier-1 surrogate. Its values must equal `operand_series` exactly (`==`, no
+  tolerance): `tests/unit/test_rule_paths.py`. Every other indicator falls back to `operand_series` per window.
 - Never import `alpha_backtest`. The engine reaches the strategy only through the optional
   `configure_cash_execution` hook it looks up with `getattr`, so the dependency stays one-way.
 
@@ -79,7 +83,9 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   indicator except `rsi_pc1`, whose PCA lives in `alpha_research`). `INDICATOR_FIELDS` names the multi-series
   fields; `FLOAT_FIRST` marks `hawkes`, whose first parameter is a decay rate, not a window.
 - `RuleStrategy` sets `min_history = spec.history`, and its indicator snapshot records every operand's value on
-  the decision bar.
+  the decision bar. It computes each operand once per bar (`evaluate_values`); the decision and the snapshot read
+  the same value. A non-finite snapshot value fails the run (`IndicatorTrace` requires finite values), also when
+  the decision did not reach that condition.
 - Sources are `high`, `low`, `close` only (the history the base keeps). A source `lag` is a non-negative
   integer; an omitted or zero lag keeps the original bytes. `tests/unit/test_rules_source_lag.py`.
 - `canonical_json` (sorted keys, compact separators, no NaN) is the run-identity byte string and
@@ -127,7 +133,7 @@ and patterns"); only `alpha_cli` composes it. A strategy decides on the close of
 the next open, never earlier.
 
 - Code: `packages/alpha-strategies/src/alpha_strategies/` (`base.py`, `signals.py`, `sizing.py`,
-  one module per strategy, `rule_strategy.py` for rule specs).
+  one module per strategy, `rule_strategy.py` for rule specs, `rule_paths.py` for whole-path rule signals).
 - Tests: `tests/unit/test_*strategy*.py`, `tests/unit/test_signals*.py`, `tests/unit/test_sizing*.py`,
   `tests/unit/test_rules_*.py`, `tests/unit/test_entry_gap_sizing.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
   `test_signal_window_boundary.py`; integration `tests/integration/test_nautilus_engine.py`.

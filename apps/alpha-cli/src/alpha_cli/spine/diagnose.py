@@ -36,6 +36,7 @@ from alpha_cli.spine.deflation import (
     spine_test_key,
 )
 from alpha_cli.spine.macro import macro_window
+from alpha_cli.spine.owner_rule import VARIANTS_NOTE, OwnerRule
 from alpha_cli.spine.price_noise import price_noise
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
@@ -74,6 +75,8 @@ def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str,
             replace(spec, fee_bps=spec.fee_bps * 2, slippage_bps=spec.slippage_bps * 2),
         )
     ]
+    if isinstance(idea.rule, OwnerRule):
+        return variants
     for key, value in idea.rule.params.items():
         for factor in (0.8, 1.2):
             neighbour = round(value * factor)
@@ -396,6 +399,7 @@ def write_diagnostics(
     document["sensitivity"] = {
         "basis": "full-sample engine re-runs on the same loaded bars",
         "variants": variants,
+        **({"note": VARIANTS_NOTE} if isinstance(idea.rule, OwnerRule) else {}),
     }
     document["variants_evaluated"] = result["variants_evaluated"]
     document["inverted_signal"] = _inverted_control(bars, dividends, spec, full, document)
@@ -423,7 +427,7 @@ def write_diagnostics(
         out.oos.oos_returns,
         ppy,
         variants,
-        idea.rule.kind,
+        idea.rule.family_key,
         snapshot=snapshot,
         current_test=current,
     )

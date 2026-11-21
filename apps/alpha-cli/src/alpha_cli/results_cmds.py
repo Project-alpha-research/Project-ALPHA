@@ -188,7 +188,8 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
     from alpha_cli.toolbox.store import history
 
     diagnostics = read_json(rdir / "diagnostics.json")
-    rule = manifest.get("spine", {}).get("rule", {}).get("kind")
+    spine = manifest.get("spine", {})
+    rule = spine.get("family") or spine.get("rule", {}).get("kind")
     family_id = f"spine:{rule}" if rule else None
     counts = family_counts(spine_snapshot(home))
     current = next(

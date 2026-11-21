@@ -5,6 +5,7 @@ Other runbooks in this directory: [`owner-actions-checklist.md`](owner-actions-c
 [`codex-second-model-runbook.md`](codex-second-model-runbook.md) (the optional Codex login).
 For the Codex-first recorded-run runtime, see
 [`codex-investigations.md`](codex-investigations.md).
+To back up the data home and prove a restore, see [`data-home-backup.md`](data-home-backup.md).
 For purposes, assumptions and interpretation of all four required path-risk families, see
 [Four-family Monte Carlo](monte-carlo/README.md).
 

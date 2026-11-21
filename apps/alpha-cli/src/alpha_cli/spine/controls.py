@@ -55,7 +55,7 @@ def run_inverted_backtest(
     if (
         spec.sizing != "all_in"
         or spec.allow_short
-        or spec.strategy_name not in {"ma_crossover", "breakout", "ts_momentum"}
+        or spec.strategy_name not in {"ma_crossover", "breakout", "ts_momentum", "rules"}
         or spec.halt_drawdown is not None
     ):
         raise DataError("inverted control requires a supported long/flat all-in rule-test spec")

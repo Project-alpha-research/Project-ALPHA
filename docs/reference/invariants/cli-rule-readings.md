@@ -8,6 +8,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/idea_map.py
   - tests/unit/test_idea_file.py
   - apps/alpha-cli/src/alpha_cli/spine/run.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_rule.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/_context_gate.py
   - apps/alpha-cli/src/alpha_cli/_context_plan.py
@@ -28,7 +29,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
   - apps/alpha-web/frontend/src/explain/gates.ts
-verified: 655e0dfacb1217f3
+verified: 6d7cb94085efa825
 ---
 
 # Command line rule-test readings invariants
@@ -67,6 +68,13 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - `--json` keeps `verdict` and adds `reading`.
 - A run id hashes every `alpha_cli` source byte, so any edit moves it. `tests/unit/test_reading_rule.py` holds that input fixed and
   proves the reading changes no id.
+
+## Owner-rule labels
+
+- An owner rule (`rule.kind = "owner"`, [language](../owner-rule-language.md)) is read like the old kinds: same reading, same words. Its
+  ledger `rule` field and family are `owner:<shape12>`. The label `null-closes-for-high-low` says the first random-price null used closes
+  for high and low (the rule reads `atr`, `hawkes`, `cmma` or a high or low source). It is a caveat on one null, not a result.
+- `alpha diagnose` runs no parameter variants for an owner rule yet; `sensitivity.note` says so, and only `costs_x2` runs.
 
 ## Ledger words
 

@@ -12,7 +12,8 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from alpha_cli.home_backup import HomeBackupError, backup, restore, safe_parts, verify
+from alpha_cli.home_backup import HomeBackupError, backup
+from alpha_cli.home_restore import restore, safe_parts, verify
 from alpha_cli.main import app
 
 RUNNER = CliRunner()

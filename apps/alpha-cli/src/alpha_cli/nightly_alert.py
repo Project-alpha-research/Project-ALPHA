@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -46,7 +47,13 @@ def notify(summary: str, enabled: bool) -> bool:
 def _mark(home: Path, day: date, number: int, headline: str, details: list[str]) -> None:
     name = f"{day.isoformat()}-{number}"
     lines = [f"{HEAD}run {name} {headline}", f"Date: {day.isoformat()}", f"Run: {name}", *details]
-    write_text(marker_path(home), "\n".join(lines) + "\n")
+    try:
+        write_text(marker_path(home), "\n".join(lines) + "\n")
+    except OSError as error:  # the marker must never hide the run's own result or error
+        print(
+            f"Warning: the failure marker {marker_path(home)} cannot be written: {error}",
+            file=sys.stderr,
+        )
 
 
 def after_run(home: Path, record: dict[str, Any], *, notify_owner: bool) -> None:
@@ -54,7 +61,10 @@ def after_run(home: Path, record: dict[str, Any], *, notify_owner: bool) -> None
     blocking = [d for d in record["defects"] if d["severity"] == "blocking"]
     if not blocking:
         if not is_partial(tuple(record["scenarios"])):
-            marker_path(home).unlink(missing_ok=True)
+            try:
+                marker_path(home).unlink(missing_ok=True)
+            except OSError as error:
+                print(f"Warning: the failure marker cannot be removed: {error}", file=sys.stderr)
         return
     count = len(blocking)
     headline = f"has {count} blocking defect{'' if count == 1 else 's'}."

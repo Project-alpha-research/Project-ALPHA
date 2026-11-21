@@ -260,7 +260,7 @@ def run_nightly(
         record = build_record(steps + later, wanted, day, number, config.source, follows, heads)
         record["home_bytes"] = tree_bytes(home)  # the size of the data home at the end of the run
         write_record(folder, record)
-    except Exception as error:
+    except BaseException as error:  # also Ctrl-C: a stopped run must leave the marker
         after_crash(home, day, number, error, notify_owner=config.notify)
         raise
     after_run(home, record, notify_owner=config.notify)

@@ -11,8 +11,9 @@ from typing import Annotated
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli.home_backup import HomeBackupError, backup, restore, verify
+from alpha_cli.home_backup import HomeBackupError, backup
 from alpha_cli.home_disk import human
+from alpha_cli.home_restore import restore, verify
 from alpha_core.config import AlphaSettings
 
 home_app = typer.Typer(help="Back up the data home, check a backup, restore it to a new folder.")
@@ -79,9 +80,18 @@ def restore_command(
         facts = restore(archive, folder, AlphaSettings().data_dir)
     except HomeBackupError as error:
         raise _refuse(error) from error
+    left = (
+        f" {facts['left_out']} links or special files were left out of the backup."
+        if facts["left_out"]
+        else ""
+    )
     words = (
-        f"Restored {facts['files']} files into {facts['target']}. Every file matched the "
-        "manifest. The live data home was not changed. To look at the copy, run a command "
-        f"with ALPHA_DATA_DIR={facts['target']}"
+        f"Restored {facts['files']} files into {facts['target']}. Every file was read again from "
+        f"disk and matches the manifest.{left}\n"
+        "The live data home was not changed. To look at the copy, run any command with "
+        f"ALPHA_DATA_DIR={facts['target']} in front, for example:\n"
+        f"  ALPHA_DATA_DIR={facts['target']} alpha nightly status\n"
+        "To make the copy the live home, stop every ALPHA job, move the old home aside, and "
+        "point ALPHA_DATA_DIR at the copy. This command never does that for you."
     )
     emit(facts, json_out=json_out, fallback=words)

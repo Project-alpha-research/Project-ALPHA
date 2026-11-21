@@ -244,3 +244,61 @@ def test_status_shows_the_disk_lines_and_writes_nothing(tmp_path: Path) -> None:
     text = status_text(facts)
     assert "Data home size now: " in text and "Free space on its disk: " in text
     assert sorted(str(p) for p in home.rglob("*")) == before
+
+
+def test_a_hanging_notifier_is_stopped_and_changes_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import nightly_alert
+
+    folder = tmp_path / "bin"
+    folder.mkdir()
+    program = folder / "notify-send"
+    program.write_text("#!/bin/sh\nsleep 30\n")
+    program.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{folder}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setattr(nightly_alert, "NOTIFY_SECONDS", 0.3)
+    record = run(tmp_path / "slow", FakeRunner(BOOM), notify=True)
+    assert record["blocking"] == 1 and marker(tmp_path / "slow").exists()
+
+
+def test_a_failure_while_writing_the_record_still_leaves_the_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import nightly_run
+
+    def broken(folder: Path, record: dict[str, Any]) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(nightly_run, "write_record", broken)
+    with pytest.raises(OSError, match="disk full"):
+        run(tmp_path, FakeRunner())
+    assert "disk full" in marker(tmp_path).read_text(encoding="utf-8")
+
+
+def test_a_marker_that_cannot_be_written_never_hides_the_real_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli import nightly_alert
+
+    def refuse(path: Path, text: str) -> None:
+        raise OSError("marker write refused")
+
+    monkeypatch.setattr(nightly_alert, "write_text", refuse)
+
+    def crash(tail: list[str]) -> Outcome:
+        raise RuntimeError("the real failure")
+
+    with pytest.raises(RuntimeError, match="the real failure"):
+        run(tmp_path / "a", FakeRunner({"setup find": crash}))
+    record = run(tmp_path / "b", FakeRunner(BOOM))  # a refused marker never changes the result
+    assert record["blocking"] == 1
+
+
+def test_an_interrupted_run_leaves_the_marker(tmp_path: Path) -> None:
+    def stop(tail: list[str]) -> Outcome:
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        run(tmp_path, FakeRunner({"setup find": stop}))
+    assert "stopped before it finished" in marker(tmp_path).read_text(encoding="utf-8")

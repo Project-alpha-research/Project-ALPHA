@@ -222,8 +222,8 @@ def _summary(
 def _publish(
     folder: Path, summary: dict[str, Any], rows: list[dict[str, Any]], manifest: dict[str, Any]
 ) -> None:
-    from alpha_cli.spine.setup_trade_figure import draw_trades
     from alpha_cli.figures.rdagent_journey_figures import figure_theme
+    from alpha_cli.spine.setup_trade_figure import draw_trades
 
     png = draw_trades(
         rows=rows,

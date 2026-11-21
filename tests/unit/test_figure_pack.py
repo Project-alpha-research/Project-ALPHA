@@ -55,23 +55,45 @@ def test_return_distribution_mean_is_the_mean_of_the_stored_daily_returns(
 
 
 def test_return_distribution_mean_does_not_come_from_bin_centres(tmp_path: Path) -> None:
-    """Bins start at the minimum, so a centre-weighted mean can flip sign; the stored returns cannot."""
+    """Bins start at the minimum, so a centre-weighted mean can flip sign; stored returns cannot."""
     rng = np.random.default_rng(3)
     returns = np.sort(np.append(rng.normal(0.0008, 0.004, 1500), [-0.12, 0.09]))
     counts, edges = np.histogram(returns, bins=20)
     rows: list[dict[str, Any]] = [
-        {"kind": "histogram", "index": i, "left": float(edges[i]), "right": float(edges[i + 1]),
-         "count": int(c), "probability": None, "theoretical": None, "sample": None}
+        {
+            "kind": "histogram",
+            "index": i,
+            "left": float(edges[i]),
+            "right": float(edges[i + 1]),
+            "count": int(c),
+            "probability": None,
+            "theoretical": None,
+            "sample": None,
+        }
         for i, c in enumerate(counts)
     ] + [
-        {"kind": "qq", "index": i, "left": None, "right": None, "count": None,
-         "probability": (i + 0.5) / len(returns), "theoretical": float(i) / len(returns),
-         "sample": float(v)}
+        {
+            "kind": "qq",
+            "index": i,
+            "left": None,
+            "right": None,
+            "count": None,
+            "probability": (i + 0.5) / len(returns),
+            "theoretical": float(i) / len(returns),
+            "sample": float(v),
+        }
         for i, v in enumerate(returns)
     ]
-    schema = {"kind": pl.String, "index": pl.Int64, "left": pl.Float64, "right": pl.Float64,
-              "count": pl.Int64, "probability": pl.Float64, "theoretical": pl.Float64,
-              "sample": pl.Float64}
+    schema = {
+        "kind": pl.String,
+        "index": pl.Int64,
+        "left": pl.Float64,
+        "right": pl.Float64,
+        "count": pl.Int64,
+        "probability": pl.Float64,
+        "theoretical": pl.Float64,
+        "sample": pl.Float64,
+    }
     pl.DataFrame(rows, schema=schema).write_parquet(tmp_path / "return_distribution.parquet")
     spec = build_figure_spec(
         "return_distribution", run_id="fixture", rdir=tmp_path, manifest={}, data_dir=tmp_path
@@ -204,7 +226,9 @@ def _ledger(rdir: Path, sharpes: list[float]) -> None:
             "status": ["passed"] * len(sharpes),
             "annualized_sharpe": sharpes,
             "config_json": [
-                json.dumps([["lookback", 20.0 + 20 * (i % 3)], ["target_vol", 0.1 + 0.05 * (i // 3)]])
+                json.dumps(
+                    [["lookback", 20.0 + 20 * (i % 3)], ["target_vol", 0.1 + 0.05 * (i // 3)]]
+                )
                 for i in range(len(sharpes))
             ],
         }
@@ -271,9 +295,9 @@ def _paths(rdir: Path) -> None:
                 )
             )
     pl.concat(frames).write_parquet(rdir / "paths.parquet")
-    pl.DataFrame({"step": list(range(20)), "equity": [1.0 + 0.002 * i for i in range(20)]}).write_parquet(
-        rdir / "observed_oos.parquet"
-    )
+    pl.DataFrame(
+        {"step": list(range(20)), "equity": [1.0 + 0.002 * i for i in range(20)]}
+    ).write_parquet(rdir / "observed_oos.parquet")
     pl.DataFrame(
         {
             "family": ["iid_empirical"] * 50 + ["regime_switching"] * 50,
@@ -296,9 +320,11 @@ def test_terminal_returns_use_one_unit_percent(mc_run: Path) -> None:
     spec = _build(mc_run, "monte_carlo_terminal_returns")
     assert "(%)" in spec.x_label
     panel = spec.panels[0]
-    values = pl.read_parquet(mc_run / "path_metrics.parquet").filter(
-        pl.col("family") == "iid_empirical"
-    )["terminal_return"].to_numpy()
+    values = (
+        pl.read_parquet(mc_run / "path_metrics.parquet")
+        .filter(pl.col("family") == "iid_empirical")["terminal_return"]
+        .to_numpy()
+    )
     hist, _, median_rule = panel.marks
     assert hist.edges[0] == pytest.approx(values.min() * 100.0)
     assert median_rule.position == pytest.approx(float(np.median(values)) * 100.0)
@@ -310,7 +336,9 @@ def test_the_fan_band_keeps_contrast_on_both_themes(mc_run: Path, dark: bool) ->
     from alpha_cli.figures.rdagent_journey_figures import figure_theme
 
     theme = figure_theme(dark)
-    outer = next(m for m in _build(mc_run, "monte_carlo_equity_fans").panels[0].marks if m.label == "5-95%")
+    outer = next(
+        m for m in _build(mc_run, "monte_carlo_equity_fans").panels[0].marks if m.label == "5-95%"
+    )
     colour = theme.series_colour(outer.palette_index)
     assert _contrast(_blend(colour, theme.panel, outer.alpha), theme.panel) >= 1.5
 
@@ -330,7 +358,11 @@ def test_regime_matrix_is_sequential_and_both_states_have_a_visible_outline(tmp_
     rdir = _synthetic(tmp_path, "monte_carlo")
     state = rng.integers(0, 2, 200)
     pl.DataFrame(
-        {"step": list(range(200)), "state": state.tolist(), "account_return": rng.normal(0, 0.01, 200).tolist()}
+        {
+            "step": list(range(200)),
+            "state": state.tolist(),
+            "account_return": rng.normal(0, 0.01, 200).tolist(),
+        }
     ).write_parquet(rdir / "regime_emissions.parquet")
     pl.DataFrame(
         {
@@ -399,7 +431,14 @@ def test_price_is_cut_to_the_run_and_many_fills_become_shading(
     first = datetime(2022, 1, 3, tzinfo=UTC)
     days = [first + timedelta(days=i) for i in range(200)]
     rows = [
-        {"t": d.timestamp(), "o": 100.0 + i, "h": 101.0 + i, "l": 99.0 + i, "c": 100.5 + i, "v": 1.0}
+        {
+            "t": d.timestamp(),
+            "o": 100.0 + i,
+            "h": 101.0 + i,
+            "l": 99.0 + i,
+            "c": 100.5 + i,
+            "v": 1.0,
+        }
         for i, d in enumerate(days)
     ]
     monkeypatch.setattr(_sources, "bars", lambda *a, **k: (rows, None))
@@ -409,7 +448,13 @@ def test_price_is_cut_to_the_run_and_many_fills_become_shading(
         rdir / "equity_curve.parquet"
     )
     fills = [
-        {"sequence_id": i, "event_type": "fill", "ts": days[i], "side": "BUY" if i % 2 == 0 else "SELL", "price": 100.0 + i}
+        {
+            "sequence_id": i,
+            "event_type": "fill",
+            "ts": days[i],
+            "side": "BUY" if i % 2 == 0 else "SELL",
+            "price": 100.0 + i,
+        }
         for i in range(80)
     ]
     pl.DataFrame(fills).write_parquet(rdir / "execution_trace.parquet")
@@ -441,7 +486,9 @@ def test_holding_period_uses_one_colour_family_and_leaves_head_room(
     panel = spec.panels[0]
     bars = [m for m in panel.marks if hasattr(m, "counts")]
     assert {m.palette_index for m in bars} == {0}
-    assert panel.y_limits is not None and panel.y_limits[1] >= 1.3 * max(max(m.counts) for m in bars)
+    assert panel.y_limits is not None and panel.y_limits[1] >= 1.3 * max(
+        max(m.counts) for m in bars
+    )
 
 
 def _capture_figures(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
@@ -488,12 +535,25 @@ def test_setup_trades_keep_bars_clear_of_the_legend_and_the_dot_above_the_band(
     from alpha_cli.spine.setup_trade_figure import draw_trades
 
     rows = [
-        {"entry_ts": i, "asset": "X", "candidate_id": i, "net_return": v, "reason": r, "complete": True}
-        for i, (v, r) in enumerate([(-0.05, "stop"), (0.12, "target"), (0.12, "target"), (0.02, "time")])
+        {
+            "entry_ts": i,
+            "asset": "X",
+            "candidate_id": i,
+            "net_return": v,
+            "reason": r,
+            "complete": True,
+        }
+        for i, (v, r) in enumerate(
+            [(-0.05, "stop"), (0.12, "target"), (0.12, "target"), (0.02, "time")]
+        )
     ]
     primary = {
-        "mean": 0.0125, "drift_mean": 0.001, "random_date_5": -0.02, "random_date_95": 0.03,
-        "trades": 4, "hit_rate": 0.5,
+        "mean": 0.0125,
+        "drift_mean": 0.001,
+        "random_date_5": -0.02,
+        "random_date_95": 0.03,
+        "trades": 4,
+        "hit_rate": 0.5,
     }
     seen = _capture_figures(monkeypatch)
     draw_trades(rows=rows, primary=primary, theme=figure_theme(False), title="Synthetic")

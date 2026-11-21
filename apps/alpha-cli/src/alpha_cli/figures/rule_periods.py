@@ -69,7 +69,9 @@ def _plotted_subtitle(ctx: BuildContext, frame: Any) -> str:
     parts = [ctx.symbol, ctx.strategy, f"plotted {first} to {last}"]
     start, end = ctx.field("start", "first_ts"), ctx.field("end", "last_ts")
     if isinstance(start, str) and isinstance(end, str) and (start[:10], end[:10]) != (first, last):
-        parts.append(f"run data {start[:10]} to {end[:10]}; the plotted curve covers only part of that window")
+        parts.append(
+            f"run data {start[:10]} to {end[:10]}; the plotted curve covers part of that window"
+        )
     return "  ·  ".join(parts)
 
 

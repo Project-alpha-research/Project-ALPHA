@@ -35,7 +35,12 @@ class Measured:
         bad: list[str] = []
         for run in self.tick_runs:
             for (a, box_a), (b, box_b) in zip(run, run[1:], strict=False):
-                if box_a[0] < box_b[2] and box_b[0] < box_a[2] and box_a[1] < box_b[3] and box_b[1] < box_a[3]:
+                if (
+                    box_a[0] < box_b[2]
+                    and box_b[0] < box_a[2]
+                    and box_a[1] < box_b[3]
+                    and box_b[1] < box_a[3]
+                ):
                     bad.append(f"{a}|{b}")
         return bad
 

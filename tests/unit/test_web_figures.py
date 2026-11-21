@@ -232,7 +232,9 @@ def test_the_web_process_never_imports_matplotlib_or_the_renderer() -> None:
 class TestTheme:
     """The Workstation opens dark; the CLI's own default is light. Keys must tell them apart."""
 
-    def test_the_web_asks_the_cli_for_dark(self, client: TestClient, spawns: list[list[str]]) -> None:
+    def test_the_web_asks_the_cli_for_dark(
+        self, client: TestClient, spawns: list[list[str]]
+    ) -> None:
         response = client.get(f"/api/runs/{_RUN}/figures/equity_underwater/image?fmt=svg")
         assert response.status_code == 200
         renders = [call for call in spawns if call[:2] == ["figures", "render"]]

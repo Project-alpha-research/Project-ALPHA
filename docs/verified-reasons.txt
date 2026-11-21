@@ -41,10 +41,10 @@ docs/reference/invariants/cli-results-check.md
   verified 456942026d0aa537 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 4b211e9c11a96fca on 2026-11-21: owner rule added beside the old kinds; checked and still correct
 
 docs/reference/invariants/cli-runs.md
-  verified 0e8a6d37fc2f8aa3 on 2026-11-21: Merged main into the calendar range branch; both sides' source changes re-read; text still correct
+  verified d735a49556284040 on 2026-11-21: owner rule added beside the old kinds; checked and still correct
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -78,6 +78,9 @@ docs/reference/invariants/rdagent.md
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
+docs/reference/invariants/strategies.md
+  verified b3a658bc284a4aa1 on 2026-11-21: owner rule added beside the old kinds; checked and still correct
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
@@ -287,7 +290,7 @@ research/tools/results-and-cite.md
   verified c15a500a7f82b12c on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/rule-test.md
-  verified 7f5083598a89bacd on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified ba065771c00ffa99 on 2026-11-21: owner rule added beside the old kinds; checked and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.

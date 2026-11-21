@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: f16bfa1eca4431e4
+verified: 666d57b0de441248
 ---
 
 # Web frontend invariants
@@ -35,9 +35,7 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - Never label local confirmation as verified physical presence. [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
 - The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the server and never grants anything.
   Selecting a project confers no research authority either.
-- `explain/bands.ts` still mirrors the old grade bands in `packages/alpha-validation/src/alpha_validation/verdict.py`, but no screen uses it
-  (owner decision 2026-11-19: readings, not grades; see [web run detail](web-run-detail.md#readings-in-the-remaining-places)). The persisted
-  manifest verdict stays for machines. Its drift guard in `src/explain/explain.test.ts` stays until the files are deleted in one separate step.
+- No screen shows an A–F grade. The frontend holds no band table; the stored manifest `verdict` stays for old records and machines.
 - The Market Watch live ticker is display only: never stored, never read by anything else.
 
 ## Shell and navigation

@@ -25,6 +25,7 @@ from alpha_cli.ml_contract import (
     prepare_exchange,
     sha256_file,
 )
+from alpha_cli.spine import reserve
 from alpha_core import Bar, DataError
 
 _SURVIVORSHIP_WARNING = (
@@ -283,9 +284,14 @@ def export_project_input(
     experiment_id: str,
     output_dir: Path,
     worker_project: Path | None = None,
-    as_of: datetime | None = None,
+    as_of: str | None = None,
 ) -> dict[str, object]:
-    """Publish one immutable Qlib input draft from a verified ALPHA project snapshot."""
+    """Publish one immutable Qlib input draft from a verified ALPHA project snapshot.
+
+    The reserved period is held back: no bar from 2024-01-01 on enters the panel. When bars were
+    held back, the summary and a `reserve.json` file in the bundle record it; otherwise the
+    bundle and summary are the same as before.
+    """
     data_dir = Path(data_dir)
     output_dir = Path(output_dir)
     if output_dir.exists():
@@ -313,11 +319,12 @@ def export_project_input(
     snapshot_hash = _runner.verified_snapshot_hash(data_dir, snapshot_id)
     if snapshot_hash is None:  # pragma: no cover - snapshot_id is required above.
         raise DataError("experiment snapshot hash is unavailable")
+    held = reserve.hold_many(universe, data_dir, as_of, snapshot_id)
     panel, sessions = _aligned_panel(
         data_dir=data_dir,
         snapshot_id=snapshot_id,
         universe=universe,
-        as_of=as_of,
+        as_of=held.as_of,
     )
     draft = _draft_spec(
         experiment=experiment,
@@ -336,6 +343,8 @@ def export_project_input(
         panel_path = staging / "panel.parquet"
         spec_path.write_bytes(canonical_json_bytes(draft))
         panel.write_parquet(panel_path)
+        if held.held_back:
+            (staging / "reserve.json").write_bytes(canonical_json_bytes(held.fields()))
         # Reuse the exact boundary validator that will later prepare the real worker exchange.
         prepare_exchange(
             spec_path,
@@ -364,7 +373,15 @@ def export_project_input(
         "panel_sha256": sha256_file(output_dir / "panel.parquet"),
         "spec_sha256": sha256_file(output_dir / "spec.json"),
         "worker_contract_validated": True,
+        **_reserve_summary(held),
     }
+
+
+def _reserve_summary(held: reserve.Hold) -> dict[str, object]:
+    """The hold-back keys for the summary; empty when no bar was held back."""
+    if not held.held_back:
+        return {}
+    return {**held.fields(), "reserve_sentence": held.say()}
 
 
 __all__ = ["export_project_input"]

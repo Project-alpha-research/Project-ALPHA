@@ -186,7 +186,7 @@ def export_input(
             project_id=project_id,
             experiment_id=experiment_id,
             output_dir=output,
-            as_of=parse_as_of(as_of),
+            as_of=as_of,
         )
     except (DataError, MLContractError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc

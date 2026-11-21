@@ -62,6 +62,12 @@ describe('ideaModel', () => {
     expect(rows[2].problem).toContain('could not be read')
     expect(rows[2].word).toBe('not readable')
   })
+  it('shows the fault of a damaged linked study instead of hiding it', () => {
+    const damaged = { ...find, studies: [{ id: 's1', reading: null, labels: [], problem: 'the stored study could not be read: bad file' }] } as unknown as IdeaTest
+    const row = timeline(file({ readings: [damaged] }))[0]
+    expect(row.problem).toBe('study s1: the stored study could not be read: bad file')
+    expect(row.word).toBe('a linked study could not be read')
+  })
   it('handles a missing aim and missing counts in words', () => {
     expect(aimText(run('a', '2026-11-19', { aim: null }))).toBe('no aim stored')
     expect(triesText(run('a', '2026-11-19', { reading: null }))).toBe('tries not recorded')

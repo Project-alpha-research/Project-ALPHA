@@ -102,9 +102,11 @@ export function timeline(file: IdeaFile): TimelineRow[] {
   return file.readings.map(test => {
     const find = test.kind === 'setup find'
     const t = test.totals
+    const faults = test.studies.filter(s => s.problem).map(s => `study ${s.id}: ${s.problem}`)
+    const problem = [test.problem, ...faults].filter(Boolean).join('; ') || null
     return {
-      id: test.id, kind: test.kind, day: shortDay(test.recorded_at), problem: test.problem ?? null, checks: test.checks.length,
-      word: find ? test.studies.find(s => !s.problem)?.reading ?? 'no study yet' : evidenceWord(test),
+      id: test.id, kind: test.kind, day: shortDay(test.recorded_at), problem, checks: test.checks.length,
+      word: find ? test.studies.find(s => !s.problem)?.reading ?? (faults.length ? 'a linked study could not be read' : 'no study yet') : evidenceWord(test),
       aim: find ? `${t.accepted ?? '?'} accepted, ${t.pending ?? '?'} pending, ${t.set_aside ?? '?'} set aside` : aimText(test),
       tries: find ? `${plural(test.studies.length, 'study', 'studies')} linked` : triesText(test),
     }

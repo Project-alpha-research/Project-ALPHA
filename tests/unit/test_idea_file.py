@@ -372,3 +372,15 @@ def test_each_linked_run_names_its_figures_by_id_only(tmp_path: Path) -> None:
         assert isinstance(row["figures_available"], list)
         assert all(isinstance(name, str) for name in row["figures_available"])
     assert "image" not in json.dumps(facts) and ".png" not in json.dumps(facts["readings"])
+
+
+def test_a_follow_with_a_damaged_journal_keeps_its_card_and_shows_as_broken(tmp_path: Path) -> None:
+    from tests.fixtures import follow_today_fixtures as fx
+
+    fx.seed(tmp_path)
+    card = synthetic_home(tmp_path)
+    follow = fx.start(tmp_path, "AAA", run_id="a" * 16, card=card)
+    journal = tmp_path / "forward" / follow / "journal.jsonl"
+    journal.write_text(journal.read_text().replace("a", "b", 1))
+    rows = json.loads(_file(tmp_path, card, "--json")[1])["follows"]
+    assert [(r["follow_id"], r["state"]) for r in rows] == [(follow, "broken")]

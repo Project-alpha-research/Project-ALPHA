@@ -42,30 +42,41 @@ def followed_counts(home: Path) -> dict[str, Any] | None:
 def follows_of_card(home: Path, card: str) -> list[dict[str, Any]]:
     """The paper follows whose frozen record names this idea card, oldest first.
 
-    One entry per follow: its state and the count of session entries. A follow that cannot be read
-    is shown as `broken`; its journal text never passes this door.
+    One entry per follow: its state and the count of session entries. The frozen record is read on
+    its own, so a follow with a damaged journal keeps its card link and shows as `broken`. A record
+    that cannot be read names no card and is not listed. No journal text passes this door.
     """
     rows = []
-    for row in follow_store.list_facts(home):
-        if row.get("card_id") != card:
+    for follow_id in follow_store.all_ids(home):
+        try:
+            record = follow_store.load_record(follow_store.folder_of(home, follow_id))
+        except SpineError:
+            continue
+        if record.card_id != card:
             continue
         shown = {
-            "follow_id": row["follow_id"],
-            "kind": row["kind"],
-            "source_id": row["source_id"],
-            "assets": row["assets"],
-            "version": row["version"],
-            "started_at": row["started_at"],
-            "state": row["state"],
-            "paper_account_percent": row["paper_account_percent"],
+            "follow_id": follow_id,
+            "kind": record.kind,
+            "source_id": record.source_id,
+            "assets": record.assets,
+            "version": record.version,
+            "started_at": record.started_at.isoformat(),
+            "paper_account_percent": record.paper_account_percent,
         }
         try:
-            facts = follow_store.show_facts(home, row["follow_id"])
+            facts = follow_store.show_facts(home, follow_id)
         except (SpineError, JournalRefusal):
             rows.append({**shown, "state": "broken", "sessions": 0, "stop_reason": ""})
             continue
         sessions = sum(n for kind, n in facts["entries"].items() if kind not in {"start", "stop"})
-        rows.append({**shown, "sessions": sessions, "stop_reason": facts["stop_reason"]})
+        rows.append(
+            {
+                **shown,
+                "state": facts["state"],
+                "sessions": sessions,
+                "stop_reason": facts["stop_reason"],
+            }
+        )
     return sorted(rows, key=lambda r: (r["started_at"], r["follow_id"]))
 
 

@@ -19,7 +19,10 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 301b995b1ad4e373
+  - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
+  - apps/alpha-cli/src/alpha_cli/optim_cmds.py
+  - apps/alpha-web/frontend/src/explain/gates.ts
+verified: fe3d1dec1976bcc5
 ---
 
 # Command line rule-test readings invariants
@@ -146,7 +149,11 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   or imply profit. The word scans look for promise phrases (will profit, profitable, make money, guaranteed), not the bare word.
 - The drawdown, ruin, Sharpe and sample-size bands of the old grade are TASTE or STAT levels of the grade itself. No screen or line prints them as a result.
 - `alpha validate` prints `reading <evidence word>` from the shared reading code, with the OOS Sharpe and the null percentiles.
-- Still printing PASS/FAIL, with no reading wired in yet: the `alpha backtest` locked holdout (`backtest_cmds.py`)
-  and `alpha optim` (`optim_cmds.py`, two lines). A later change gives them a reading.
-  A prop-firm challenge is passed or failed by its own rules; "pass probability" stays.
+- `alpha backtest holdout` and `alpha optim grid|mcpt` print no PASS/FAIL. Each old word judged a result against a level (a taste or stat
+  level, not a fact about a rule), so the line gives the number, the plain comparison and "The level used by the old grade: X".
+  The holdout line compares the Sharpe with `--min-sharpe`; `optim grid` names deflated Sharpe, PBO and SPA levels; `optim mcpt` the
+  percentile level. Manifests keep `passed`. A prop-firm challenge is passed or failed by its own rules; "pass probability" stays.
+- The Workstation walk-forward card counts windows once, in `foldCounts` (`explain/gates.ts`). With a window that has no Sharpe it says
+  "N windows. A were above zero, B were at or below zero, and C had no Sharpe recorded"; the manifest stores no cause per fold, so none is
+  stated. The chip reads "A of N (C with no Sharpe)". The CLI prints no walk-forward above-zero count.
 - The HTML tear sheet is written by `alpha_validation/tearsheet.py` and still prints the old PASS/FAIL words. It is not changed here.

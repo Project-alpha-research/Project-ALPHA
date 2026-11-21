@@ -25,21 +25,28 @@ const fact = (passed: boolean | null): Fixed => ({
 
 // ---- gate: walk_forward_oos ----------------------------------------------------------------
 
+/** The one home for the window counts: the manifest records no cause per fold, so a missing Sharpe says so. */
+export function foldCounts(folds: FoldRow[]): { total: number; above: number; atOrBelow: number; none: number } {
+  const above = folds.filter((f) => finite(f.oos_sharpe) && f.oos_sharpe > 0).length
+  const none = folds.filter((f) => !finite(f.oos_sharpe)).length
+  return { total: folds.length, above, atOrBelow: folds.length - none - above, none }
+}
+
 export function walkForwardStory(m: ValidateManifest): GateStory {
   const folds: FoldRow[] = m.folds ?? []
   const sharpe = m.oos_metrics?.sharpe ?? null
   const passed = m.outcomes?.find((o) => o.name === 'walk_forward_oos')?.passed ?? null
   const nOos = folds.reduce((acc, f) => acc + (f.n_test || 0), 0)
-  const positive = folds.filter((f) => finite(f.oos_sharpe) && f.oos_sharpe > 0).length
-  const graded = folds.filter((f) => finite(f.oos_sharpe)).length
+  const { total, above: positive, atOrBelow, none } = foldCounts(folds)
+  const noSharpe = none > 0 ? ` (${none} with no Sharpe)` : ''
   const years = nOos > 0 ? nOos / 252 : 0
 
   const narrative =
     `The strategy traded ${folds.length} out-of-sample windows in sequence — a total of ` +
     `${nOos.toLocaleString()} sessions (~${fmtNum(years, 1)} years) it never saw during warmup. ` +
     `Stitched together they earn an annualized Sharpe of ${fmtNum(sharpe)}. ` +
-    `${positive} of ${graded} windows had a positive Sharpe` +
-    (graded < folds.length ? ` (${folds.length - graded} flat windows carry no Sharpe)` : '') +
+    `${positive} of ${total} windows had a positive Sharpe` +
+    (none > 0 ? ` (${none} with no Sharpe recorded)` : '') +
     `. Consistency across windows matters more than the average: an edge that only lived in one ` +
     `regime shows up here as a few great folds drowning many flat ones.`
 
@@ -48,7 +55,10 @@ export function walkForwardStory(m: ValidateManifest): GateStory {
     title: 'Walk-forward out-of-sample',
     passed,
     plain: finite(sharpe)
-      ? `The out-of-sample Sharpe is ${fmtNum(sharpe)} over ${folds.length} windows, with ${positive} of ${graded} windows above zero.`
+      ? none > 0
+        ? `The out-of-sample Sharpe is ${fmtNum(sharpe)} over ${total} windows. ${positive} windows were above zero, ` +
+          `${atOrBelow} were at or below zero, and ${none} had no Sharpe recorded.`
+        : `The out-of-sample Sharpe is ${fmtNum(sharpe)} over ${total} windows, with ${positive} of ${total} windows above zero.`
       : 'No out-of-sample Sharpe was produced, so this check could not be computed.',
     tests:
       'Is there any out-of-sample performance to talk about? The series is split into rolling ' +
@@ -57,10 +67,10 @@ export function walkForwardStory(m: ValidateManifest): GateStory {
     stats: [
       { label: 'OOS Sharpe', value: fmtNum(sharpe), term: 'sharpe' },
       { label: 'Folds', value: String(folds.length), term: 'walk_forward' },
-      { label: 'Folds above zero', value: `${positive}/${graded}` },
+      { label: 'Folds above zero', value: `${positive} of ${total}${noSharpe}` },
       { label: 'OOS sessions', value: nOos.toLocaleString() },
     ],
-    terse: `OOS Sharpe ${fmtNum(sharpe)} over ${folds.length} folds (${positive}/${graded} positive), n=${nOos}.`,
+    terse: `OOS Sharpe ${fmtNum(sharpe)} over ${folds.length} folds (${positive} of ${total} above zero${noSharpe}), n=${nOos}.`,
     narrative,
     ...fact(passed),
   }

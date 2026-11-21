@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 22f962d272bf158d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified c9bf6e487d79f2e9 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 apps/alpha-cli/README.md
-  verified 22f962d272bf158d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified c9bf6e487d79f2e9 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified f803104c942d3f96 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 738ee05cedc1badb on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified f803104c942d3f96 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 738ee05cedc1badb on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -38,13 +38,13 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 301b995b1ad4e373 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified fe3d1dec1976bcc5 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/invariants/cli-runs.md
-  verified ae41156b9befcc2d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified a22c110a551155cf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified ae0c9f15e49e5af4 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -80,13 +80,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 4ab2b5c00b8793aa on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-api.md
-  verified 1670e99e9b105d7b on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail
+  verified 666d57b0de441248 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -140,16 +140,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified 34c000f543018b05 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/strategies-and-signals.md
-  verified c9fa89d4325d37c2 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 3e9c24abea15fc3e on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified ffdfec375b90ec63 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -203,10 +203,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 1b7e23e86db7f25c on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/PLAYBOOK.md
-  verified 6f7c435d799d7fa9 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -218,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 6aa0704a509bc1d8 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified f7d1c65c81a511c8 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified b40da326eaf6a8be on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 879a16b25dc371bf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified d1f3a41ce0925a66 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -257,7 +257,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified 3917c740f14da4e9 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
+  verified f36195ad4dbd9ce4 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -269,22 +269,22 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 3159a2743c3cfe2b on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified b40da326eaf6a8be on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 879a16b25dc371bf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/setup-find.md
-  verified 53335879d2b48ede on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/setup-study.md
-  verified ee810b7ad1d03c2c on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified 3bf380359d19bf43 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/setup-trade.md
-  verified 529eb8fdc5a584ff on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
+  verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

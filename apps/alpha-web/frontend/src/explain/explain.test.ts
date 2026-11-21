@@ -40,7 +40,28 @@ describe('gate stories', () => {
     expect(g.passed).toBe(true)
     expect(g.terse).toContain('31 folds')
     // fold 24 is flat (null sharpe) → 30 graded
-    expect(g.terse).toContain('/30')
+    expect(g.terse).toContain('of 31')
+  })
+
+  it('walk-forward says why the window count and the above-zero count differ', () => {
+    const fold = (index: number, sharpe: number | null) => ({ index, n_test: 252, oos_sharpe: sharpe })
+    const folds = [fold(0, 1.2), fold(1, 0.4), fold(2, 0.1), fold(3, -0.3), fold(4, -0.1), fold(5, null), fold(6, null)]
+    const g = walkForwardStory({ ...m, folds, oos_metrics: { ...m.oos_metrics, sharpe: 0.16 } } as unknown as ValidateManifest)
+    expect(g.plain).toBe(
+      'The out-of-sample Sharpe is 0.16 over 7 windows. 3 windows were above zero, 2 were at or below zero, ' +
+        'and 2 had no Sharpe recorded.',
+    )
+    expect(g.stats.find((s) => s.label === 'Folds above zero')?.value).toBe('3 of 7 (2 with no Sharpe)')
+    expect(g.terse).toContain('3 of 7 above zero (2 with no Sharpe)')
+    expect(g.narrative).toContain('3 of 7 windows had a positive Sharpe (2 with no Sharpe recorded)')
+  })
+
+  it('walk-forward stays short when every window has a Sharpe', () => {
+    const fold = (index: number, sharpe: number) => ({ index, n_test: 252, oos_sharpe: sharpe })
+    const folds = [fold(0, 1.2), fold(1, -0.3), fold(2, 0.5)]
+    const g = walkForwardStory({ ...m, folds, oos_metrics: { ...m.oos_metrics, sharpe: 0.5 } } as unknown as ValidateManifest)
+    expect(g.plain).toBe('The out-of-sample Sharpe is 0.50 over 3 windows, with 2 of 3 windows above zero.')
+    expect(g.stats.find((s) => s.label === 'Folds above zero')?.value).toBe('2 of 3')
   })
 
   it('a null gate that random data matched reads as luck, in numbers, without a colour or a pass word', () => {

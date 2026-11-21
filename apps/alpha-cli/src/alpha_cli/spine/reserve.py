@@ -235,7 +235,9 @@ def reserved_span(
 
 def family_asset(rule_kind: str, symbol: str) -> str:
     """The idea family on one asset: the unit that can be confirmed once (deflation family)."""
-    return f"spine:{rule_kind}|{symbol}"
+    from alpha_cli import reserved_receipts
+
+    return reserved_receipts.family_asset(rule_kind, symbol)
 
 
 def confirmed_in_family(home: Path, rule_kind: str, symbol: str) -> dict[str, Any] | None:

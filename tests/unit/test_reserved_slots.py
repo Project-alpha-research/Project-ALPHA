@@ -5,6 +5,7 @@ Every test uses a temporary data home and the Touch ID test double; no real slot
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import threading
 from datetime import UTC, datetime, timedelta
@@ -13,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from alpha_cli import owner_auth, reserved_slots
+from alpha_cli import owner_auth, reserved_receipts, reserved_slots
 from alpha_cli.control_store import ControlStore
 from alpha_core import DataError
 from alpha_web.api.owner_auth import OwnerActionChallengeRequest
@@ -28,15 +29,21 @@ from tests.fixtures.reserved_owner import (
 DB = Path("control") / "workstation.sqlite3"
 
 
-def _frozen(n: int, *, family: str | None = None) -> dict[str, Any]:
-    body = {"run_id": f"run{n:013d}", "n": n}
+def _frozen(n: int, *, rule: str | None = None, key: int | None = None) -> dict[str, Any]:
+    """A frozen test whose derived fields follow from its body, as `Frozen.record` makes them."""
+    body = {
+        "run_id": f"run{n:013d}",
+        "rule": rule or f"rule{n}",
+        "symbol": "SPY",
+        "test_key": ["key", n if key is None else key],
+        "spec_sha256": "a" * 64,
+        "reserved_end": "2024-05-19T00:00:00+00:00",
+    }
     return {
         **body,
         "artifact_hash": reserved_slots.sha256(body),
-        "test_key_sha256": reserved_slots.sha256(["key", n]),
-        "family_asset": family or f"spine:rule{n}|SPY",
-        "spec_sha256": "a" * 64,
-        "reserved_end": "2024-05-19T00:00:00+00:00",
+        "test_key_sha256": reserved_slots.sha256(body["test_key"]),
+        "family_asset": f"spine:{body['rule']}|SPY",
     }
 
 
@@ -94,15 +101,15 @@ def test_a_changed_receipt_is_refused_on_read(home: Path) -> None:
     _take(home, _frozen(1))
     with sqlite3.connect(home / DB) as connection:
         connection.execute("UPDATE reserved_period_receipts SET created_at = 'later'")
-    with pytest.raises(DataError, match="hash mismatch"):
+    with pytest.raises(DataError, match="hash chain"):
         reserved_slots.receipts(home)
 
 
 def test_one_test_key_one_family_one_run_one_authorization(home: Path) -> None:
     first = _frozen(1)
     receipt = _take(home, first)
-    same_key = {**_frozen(2), "test_key_sha256": first["test_key_sha256"]}
-    same_family = _frozen(3, family=first["family_asset"])
+    same_key = _frozen(2, key=1)
+    same_family = _frozen(3, rule="rule1")
     for frozen, words in ((same_key, "this exact test"), (same_family, "this rule family")):
         with pytest.raises(DataError, match=words):
             _take(home, frozen)
@@ -119,7 +126,7 @@ def test_one_test_key_one_family_one_run_one_authorization(home: Path) -> None:
 def test_a_yes_binds_one_test_and_expires(home: Path) -> None:
     frozen = _frozen(1)
     auth = _yes(home, frozen)
-    changed = {**frozen, "artifact_hash": "f" * 64}
+    changed = _frozen(1, rule="other")
     with pytest.raises(DataError, match="test changed after the owner confirmed"):
         reserved_slots.take_slot(home, authorization_id=auth, frozen=changed, now=datetime.now(UTC))
     late = datetime.now(UTC) + reserved_slots.AUTHORIZATION_LIFETIME + timedelta(seconds=1)
@@ -247,3 +254,115 @@ def test_an_old_store_without_the_tables_reads_as_no_slot_used(tmp_path: Path) -
     assert not (tmp_path / "control").exists()
     ControlStore(tmp_path).list_active_owner_credentials()
     assert reserved_slots.receipts(tmp_path) == []
+
+
+def _sql(home: Path, *statements: tuple[str, tuple[Any, ...]]) -> None:
+    """Direct edits by another process as the same OS user (no foreign keys, no ALPHA code)."""
+    with sqlite3.connect(home / DB) as connection:
+        for sql, args in statements:
+            connection.execute(sql, args)
+
+
+def test_an_owner_yes_cannot_be_re_pointed_to_another_test_in_sqlite(home: Path) -> None:
+    """The owner says yes to A; editing every stored row to B fails: the signature covers A."""
+    said_yes, wanted = _frozen(1), _frozen(2)
+    auth = _yes(home, said_yes)
+    payload = {"run_id": wanted["run_id"], "reserved_end": wanted["reserved_end"]}
+    with sqlite3.connect(home / DB) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            "SELECT challenge_id FROM reserved_period_authorizations WHERE authorization_id = ?",
+            (auth,),
+        ).fetchone()
+        found = connection.execute(
+            "SELECT binding_json FROM owner_auth_challenges WHERE challenge_id = ?",
+            (row["challenge_id"],),
+        ).fetchone()
+    binding = {
+        **json.loads(found["binding_json"]),
+        "artifact_hash": wanted["artifact_hash"],
+        "request_hash": reserved_slots.sha256(payload),
+        "run_id": wanted["run_id"],
+    }
+    _sql(
+        home,
+        (
+            "UPDATE owner_auth_challenges SET binding_json = ? WHERE challenge_id = ?",
+            (reserved_slots.canonical(binding), row["challenge_id"]),
+        ),
+        (
+            """UPDATE reserved_period_authorizations SET artifact_hash = ?, request_hash = ?,
+            payload_json = ? WHERE authorization_id = ?""",
+            (
+                wanted["artifact_hash"],
+                reserved_slots.sha256(payload),
+                reserved_slots.canonical(payload),
+                auth,
+            ),
+        ),
+    )
+    with pytest.raises(DataError, match="does not check out"):
+        reserved_slots.take_slot(home, authorization_id=auth, frozen=wanted, now=datetime.now(UTC))
+    assert reserved_slots.receipts(home) == []
+
+
+def test_a_payload_edited_after_the_yes_is_refused(home: Path) -> None:
+    frozen = _frozen(1)
+    auth = _yes(home, frozen)
+    edited = {"run_id": frozen["run_id"], "reserved_end": "2026-01-01T00:00:00+00:00"}
+    _sql(
+        home,
+        (
+            "UPDATE reserved_period_authorizations SET payload_json = ?",
+            (reserved_slots.canonical(edited),),
+        ),
+    )
+    with pytest.raises(DataError, match="does not check out"):
+        reserved_slots.authorization_payload(home, auth)
+
+
+def test_a_receipt_removed_from_the_middle_makes_every_read_refuse(home: Path) -> None:
+    for n in (1, 2, 3):
+        _take(home, _frozen(n))
+    _sql(home, ("DELETE FROM reserved_period_receipts WHERE slot = 2", ()))
+    with pytest.raises(DataError, match="hash chain"):
+        reserved_slots.receipts(home)
+    with pytest.raises(DataError, match="hash chain"):
+        _take(home, _frozen(4))
+
+
+def test_a_re_pointed_receipt_with_fresh_hashes_is_refused(home: Path) -> None:
+    """Free a family by editing the receipt and its hashes: the signed yes still names it."""
+    _take(home, _frozen(1))
+    other = _frozen(1, rule="freed")
+    with sqlite3.connect(home / DB) as connection:
+        connection.row_factory = sqlite3.Row
+        row = dict(connection.execute("SELECT * FROM reserved_period_receipts").fetchone())
+    row.update(family_asset=other["family_asset"], frozen_json=reserved_slots.canonical(other))
+    fresh = reserved_receipts.receipt_hash(row, None)
+    _sql(
+        home,
+        (
+            "UPDATE reserved_period_receipts SET family_asset = ?, frozen_json = ?, "
+            "receipt_sha256 = ?",
+            (row["family_asset"], row["frozen_json"], fresh),
+        ),
+    )
+    with pytest.raises(DataError, match="no matching owner authorization"):
+        reserved_slots.receipts(home)
+    with pytest.raises(DataError, match="changed outside ALPHA"):
+        _take(home, _frozen(5, rule="rule1"))
+
+
+def test_the_challenge_is_the_hash_of_what_the_owner_says_yes_to(home: Path) -> None:
+    frozen = _frozen(1)
+    payload = {"run_id": frozen["run_id"], "reserved_end": frozen["reserved_end"]}
+    challenge_id, raw = challenge(home, payload, frozen["artifact_hash"])
+    with sqlite3.connect(home / DB) as connection:
+        stored = connection.execute(
+            "SELECT binding_json FROM owner_auth_challenges WHERE challenge_id = ?",
+            (challenge_id,),
+        ).fetchone()[0]
+    binding = json.loads(stored)
+    assert raw == reserved_slots.binding_challenge(binding)
+    assert binding["artifact_hash"] == frozen["artifact_hash"] and len(binding["nonce"]) == 64

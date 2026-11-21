@@ -291,12 +291,16 @@ def action_binding(
 
 
 def authentication_options(
-    *, data_dir: Path, binding: Mapping[str, object], now: datetime | None = None
+    *,
+    data_dir: Path,
+    binding: Mapping[str, object],
+    now: datetime | None = None,
+    challenge_bytes: bytes | None = None,
 ) -> dict[str, object]:
     issued_at = _now() if now is None else now
     store = ControlStore(data_dir)
     credentials = store.list_active_owner_credentials()
-    challenge_bytes = secrets.token_bytes(32)
+    challenge_bytes = secrets.token_bytes(32) if challenge_bytes is None else challenge_bytes
     challenge = store.create_owner_auth_challenge(
         ceremony="action",
         challenge=challenge_bytes,
@@ -369,8 +373,15 @@ def reserved_confirmation_options(
         "consequence_summary": consequence_summary,
         "reason": reason,
         "run_id": clean.get("run_id"),
+        "nonce": secrets.token_hex(32),
     }
-    return authentication_options(data_dir=data_dir, binding=binding, now=now)
+    # The challenge is the binding's hash: the owner's signature covers what they said yes to.
+    return authentication_options(
+        data_dir=data_dir,
+        binding=binding,
+        now=now,
+        challenge_bytes=reserved_slots.binding_challenge(binding),
+    )
 
 
 def verify_action_assertion(

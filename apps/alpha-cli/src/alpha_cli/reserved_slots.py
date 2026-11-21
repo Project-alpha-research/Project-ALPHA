@@ -8,7 +8,8 @@ route: an authorization row is written only by `owner_auth` after it has verifie
 The rules are enforced twice, in code and by the store: WebAuthn only; one receipt per
 authorization; one receipt per test key and per rule family on one asset, ever; ten slots, taken
 in order, for the life of the reserved window. Every write runs in one `BEGIN IMMEDIATE`
-transaction, so two processes cannot both take the last slot.
+transaction, so two processes cannot both take the last slot. Each write checks the rows it
+builds on, and every read checks every row (`reserved_receipts`): the store file is not trusted.
 """
 
 from __future__ import annotations
@@ -19,30 +20,31 @@ import sqlite3
 import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
 from alpha_cli._control_schema import _SCHEMA_RESERVED_CONFIRMATION
-from alpha_cli.control_store import DATABASE_NAME, ControlStore
+from alpha_cli.control_store import ControlStore
+from alpha_cli.reserved_receipts import (
+    ACTION,
+    SLOTS,
+    authorization_payload,
+    binding_challenge,
+    canonical,
+    check_frozen,
+    checked_rows,
+    receipt_hash,
+    receipts,
+    reverify,
+    sha256,
+    verified_receipt,
+)
+from alpha_cli.reserved_receipts import format_timestamp as _format_timestamp
 from alpha_core import DataError
 
-ACTION: Final = "confirm_reserved_period"
-SLOTS: Final = 10
 # The owner's yes is used at once by the Workstation; an older unused yes is not a yes for today.
 AUTHORIZATION_LIFETIME: Final = timedelta(minutes=30)
-_TABLES: Final = (
-    "reserved_period_authorizations",
-    "reserved_period_receipts",
-    "reserved_period_results",
-)
-
-
-def _format_timestamp(value: datetime) -> str:
-    """The control store's timestamp form (UTC, microseconds, `Z`)."""
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise DataError("control timestamps must be timezone-aware")
-    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _create_tables(connection: sqlite3.Connection) -> None:
@@ -55,34 +57,11 @@ def _create_tables(connection: sqlite3.Connection) -> None:
             pending = ""
 
 
-def canonical(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
-
-
-def sha256(value: object) -> str:
-    return hashlib.sha256(canonical(value).encode()).hexdigest()
-
-
 @contextmanager
 def _write(data_dir: Path) -> Iterator[sqlite3.Connection]:
     with ControlStore(data_dir)._transaction(write=True) as connection:
         _create_tables(connection)
         yield connection
-
-
-@contextmanager
-def _read(data_dir: Path) -> Iterator[sqlite3.Connection | None]:
-    """A read snapshot, or None when no store or no slot table exists yet (nothing used)."""
-    if not (data_dir / "control" / DATABASE_NAME).is_file():
-        yield None
-        return
-    # The read-only seam: it never migrates, heals or writes (an `alpha test` reads here too).
-    with ControlStore(data_dir)._readonly_transaction() as connection:
-        names = {
-            str(row[0])
-            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
-        }
-        yield connection if set(_TABLES) <= names else None
 
 
 def record_authorization(
@@ -121,6 +100,7 @@ def record_authorization(
             or binding.get("action_type") != ACTION
             or binding.get("authorization_method") != "webauthn"
             or binding.get("request_hash") != sha256(dict(payload))
+            or bytes(challenge["challenge"]) != binding_challenge(binding)
         ):
             raise DataError("this challenge is not a Touch ID reserved-period confirmation")
         stored = connection.execute(
@@ -172,91 +152,6 @@ def record_authorization(
     return {key: row[key] for key in ("authorization_id", "actor", "authorized_at")}
 
 
-def _reverify(connection: sqlite3.Connection, auth: sqlite3.Row) -> None:
-    """Check the stored Touch ID assertion again: its bytes, its challenge and its signature."""
-    from alpha_cli.owner_auth import check_assertion
-
-    found = connection.execute(
-        """SELECT c.challenge, c.binding_json, k.public_key FROM owner_auth_challenges c
-        JOIN owner_credentials k ON k.credential_id = ?
-        WHERE c.challenge_id = ? AND c.verified_credential_id = ?""",
-        (auth["credential_id"], auth["challenge_id"], auth["credential_id"]),
-    ).fetchone()
-    text = str(auth["assertion_json"])
-    if found is None or hashlib.sha256(text.encode()).hexdigest() != auth["assertion_hash"]:
-        raise DataError("the owner authorization for this slot does not check out")
-    binding = json.loads(str(found["binding_json"]))
-    if (binding.get("action_type"), binding.get("artifact_hash")) != (
-        ACTION,
-        auth["artifact_hash"],
-    ):
-        raise DataError("the owner authorization for this slot does not check out")
-    check_assertion(
-        credential=json.loads(text),
-        challenge=bytes(found["challenge"]),
-        public_key=bytes(found["public_key"]),
-        sign_count=int(auth["previous_sign_count"]),
-    )
-
-
-def verified_receipt(data_dir: Path, receipt_id: str) -> dict[str, Any]:
-    """One receipt, its hash checked and its owner assertion verified again, on every call."""
-    with _read(data_dir) as connection:
-        row = auth = None
-        if connection is not None:
-            row = connection.execute(
-                "SELECT * FROM reserved_period_receipts WHERE receipt_id = ?", (receipt_id,)
-            ).fetchone()
-        if connection is not None and row is not None:
-            auth = connection.execute(
-                "SELECT * FROM reserved_period_authorizations WHERE authorization_id = ?",
-                (row["authorization_id"],),
-            ).fetchone()
-            if auth is not None:
-                _reverify(connection, auth)
-    if row is None or auth is None:
-        raise DataError(f"no valid reserved-period receipt {receipt_id!r}")
-    if json.loads(str(row["frozen_json"]))["artifact_hash"] != auth["artifact_hash"]:
-        raise DataError("the receipt does not match the owner's authorization")
-    return _shape(dict(row), None)
-
-
-def authorization_payload(data_dir: Path, authorization_id: str) -> dict[str, Any]:
-    """What the owner said yes to (the run and the reserved span), from the stored row."""
-    with _read(data_dir) as connection:
-        found = None
-        if connection is not None:
-            found = connection.execute(
-                """SELECT payload_json FROM reserved_period_authorizations
-                WHERE authorization_id = ?""",
-                (authorization_id,),
-            ).fetchone()
-    if found is None:
-        raise DataError("no owner authorization with this id; ask for a new one")
-    payload: dict[str, Any] = json.loads(str(found[0]))
-    return payload
-
-
-def _receipt_hash(row: Mapping[str, Any]) -> str:
-    fields = (
-        "receipt_id",
-        "authorization_id",
-        "slot",
-        "previous_slot",
-        "test_key_sha256",
-        "family_asset",
-    )
-    return sha256(
-        {
-            **{name: row[name] for name in fields},
-            "run_id": row["run_id"],
-            "spec_sha256": row["spec_sha256"],
-            "frozen": json.loads(row["frozen_json"]),
-            "created_at": row["created_at"],
-        }
-    )
-
-
 def take_slot(
     data_dir: Path,
     *,
@@ -273,7 +168,9 @@ def take_slot(
         ).fetchone()
         if auth is None:
             raise DataError("no owner authorization with this id; ask for a new one")
-        _reverify(connection, auth)
+        reverify(connection, auth)
+        check_frozen(frozen)
+        spent = checked_rows(connection)
         if connection.execute(
             "SELECT 1 FROM reserved_period_receipts WHERE authorization_id = ?",
             (authorization_id,),
@@ -285,8 +182,7 @@ def take_slot(
             raise DataError("the test changed after the owner confirmed it; nothing was spent")
         if json.loads(str(auth["payload_json"])).get("run_id") != frozen["run_id"]:
             raise DataError("the owner confirmed another run; nothing was spent")
-        count = connection.execute("SELECT COUNT(*) FROM reserved_period_receipts")
-        used = int(count.fetchone()[0])
+        used = len(spent)
         if used >= SLOTS:
             raise DataError(f"all {SLOTS} reserved-period slots are used; nothing was spent")
         for column, value, words in (
@@ -310,52 +206,14 @@ def take_slot(
             "frozen_json": canonical(dict(frozen)),
             "created_at": stamp,
         }
-        row["receipt_sha256"] = _receipt_hash(row)
+        row["receipt_sha256"] = receipt_hash(row, spent[-1]["receipt_sha256"] if spent else None)
         connection.execute(
             f"INSERT INTO reserved_period_receipts ({', '.join(row)}) "
             f"VALUES ({', '.join('?' for _ in row)})",
             tuple(row.values()),
         )
-    return _shape(row, None)
-
-
-def _shape(row: Mapping[str, Any], result: Mapping[str, Any] | None) -> dict[str, Any]:
-    if _receipt_hash(row) != row["receipt_sha256"]:
-        raise DataError(f"corrupt reserved-period receipt {row['receipt_id']}: hash mismatch")
-    return {
-        **{key: row[key] for key in row if key != "frozen_json"},
-        "frozen": json.loads(str(row["frozen_json"])),
-        "result": None
-        if result is None
-        else {
-            "confirmation_run_id": result["confirmation_run_id"],
-            "completed_at": result["completed_at"],
-            **json.loads(str(result["result_json"])),
-        },
-    }
-
-
-def receipts(data_dir: Path) -> list[dict[str, Any]]:
-    """Every slot receipt, in slot order, each hash-checked, with its result when finished."""
-    with _read(data_dir) as connection:
-        if connection is None:
-            return []
-        rows = [
-            dict(row)
-            for row in connection.execute("SELECT * FROM reserved_period_receipts ORDER BY slot")
-        ]
-        results = {
-            str(row["receipt_id"]): dict(row)
-            for row in connection.execute("SELECT * FROM reserved_period_results")
-        }
-    return [_shape(row, results.get(str(row["receipt_id"]))) for row in rows]
-
-
-def receipt(data_dir: Path, receipt_id: str) -> dict[str, Any]:
-    found = [item for item in receipts(data_dir) if item["receipt_id"] == receipt_id]
-    if not found:
-        raise DataError(f"no reserved-period receipt {receipt_id!r}")
-    return found[0]
+    shown = {key: value for key, value in row.items() if key != "frozen_json"}
+    return {**shown, "frozen": dict(frozen), "result": None}
 
 
 def record_result(
@@ -368,6 +226,8 @@ def record_result(
 ) -> None:
     """Record the finished confirmation once; a resumed run that finds it changes nothing."""
     with _write(data_dir) as connection:
+        if receipt_id not in {str(row["receipt_id"]) for row in checked_rows(connection)}:
+            raise DataError(f"no valid reserved-period receipt {receipt_id!r}")
         if connection.execute(
             "SELECT 1 FROM reserved_period_results WHERE receipt_id = ?", (receipt_id,)
         ).fetchone():
@@ -383,8 +243,9 @@ __all__ = [
     "ACTION",
     "AUTHORIZATION_LIFETIME",
     "SLOTS",
+    "authorization_payload",
+    "binding_challenge",
     "canonical",
-    "receipt",
     "receipts",
     "record_authorization",
     "record_result",

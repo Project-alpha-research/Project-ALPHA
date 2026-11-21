@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 8fce6427f1e2025e on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 apps/alpha-cli/README.md
   verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified dacf8068e5efaf5b on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 1e03fb5d19ffd3f2 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -152,7 +152,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 1588a8729ebf1455 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -206,13 +206,13 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified a0ada26c46167879 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/PLAYBOOK.md
-  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified a74ef95499ca40e2 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/README.md
-  verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
+  verified c88356142e676824 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -221,22 +221,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified e011be8a0a58aa21 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified e146fbe37e2f422e on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 88ed3868cf9cd753 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/tools/diagnose-and-audit.md
-  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 21a7ec7a04719876 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -278,7 +278,7 @@ research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 88ed3868cf9cd753 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; this page's text still describes its sources correctly
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

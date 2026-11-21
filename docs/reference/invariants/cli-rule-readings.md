@@ -9,6 +9,10 @@ sources:
   - tests/unit/test_idea_file.py
   - apps/alpha-cli/src/alpha_cli/spine/run.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
+  - apps/alpha-cli/src/alpha_cli/_context_gate.py
+  - apps/alpha-cli/src/alpha_cli/_context_plan.py
+  - tests/unit/test_rule_context_gate.py
+  - tests/unit/test_rule_context_plan.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/report_readings.py
@@ -22,7 +26,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
   - apps/alpha-web/frontend/src/explain/gates.ts
-verified: 4fc5f9a54156a764
+verified: 6d6a6778b2d37d6a
 ---
 
 # Command line rule-test readings invariants
@@ -101,6 +105,26 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   or any identity hash. `repeat` still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for
   the setup tests: the summary and every row of the stored table compared; ledger count, health record, health labels and facts
   left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
+
+## Context gate plan
+
+- A spec may carry `context` (`{alias: "series@key"}`) and `when` (a condition over the aliases). `when` needs `context`, and
+  `context` needs `when`. An unknown alias, an unknown series or a bad key fails when the spec loads. Both fields are in the spec hash.
+  A spec without them dumps without the keys, so its hash, run id and stored `spec.json` stay as before (a test pins three hashes).
+- `_context_gate.build_gate` calls `attach_context` (the only join) with the reserve cutoff, then reads `when` with the Setup Lab
+  language (`compile_expr`). That language has no slot for extra sources, so each alias in `when` is renamed to a price source name
+  (open, high, low, close, volume) and those columns hold the context values. At most five aliases fit. A later change should add
+  real extra sources to that language and drop the rename. No `eval` or `exec` is used.
+- The gate is a map from bar timestamp to a boolean, never an index. A null context value makes the gate false. The nulls are
+  counted by reason (`not-yet-known`, `stale`, a derived reason, `warm-up-or-undefined`, `expression-undefined`).
+- `context_fp` is the sha256 of the used rows hash, the recipe, the staleness limits and the `when` text. The data id is
+  `idea_id(spec hash, sha256(source fingerprint + context_fp))`. Source table hashes are provenance only. Rows after the reserve
+  or not known by the cutoff are not used rows, so adding them changes no test key. The family stays the base rule kind.
+- `alpha test <spec> --plan [--json]` reads bars and context and prints, per asset: the context span, the true days, the separate
+  spells, null counts by reason, labels (`short-context-history` when the span with a value is under 3 years), the test key and one
+  sentence. It runs no engine and writes no ledger row, run folder or lock file; a test lists every path with size and mtime.
+- `alpha test <spec>` without `--plan` refuses a context spec: "the gated engine is not built yet; use --plan". It never runs the
+  ungated rule. `--plan` on a spec without context, or with `--recheck`, is refused. The words are readings: no pass, fail or advice.
 
 ## Idea file
 

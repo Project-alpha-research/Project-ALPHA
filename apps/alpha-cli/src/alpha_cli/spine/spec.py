@@ -8,7 +8,16 @@ import tomllib
 from pathlib import Path
 from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
+
+from alpha_cli._context_gate import check_context
 
 
 class FrozenModel(BaseModel):
@@ -86,6 +95,10 @@ class IdeaSpec(FrozenModel):
     assets: tuple[Annotated[str, Field(min_length=1)], ...] = Field(min_length=1)
     rule: Rule
     costs: Costs = Field(default_factory=Costs)
+    # Context gate: `{alias: "series@key"}` and an expression over the aliases. A spec without
+    # them dumps without these keys, so its hash, run id and stored spec stay as before.
+    context: dict[str, str] | None = None
+    when: str | None = None
     # A link to an idea card. Excluded from dumps, so it is in no hash, run id or stored spec.
     idea_card: str = Field(default="", exclude=True)
 
@@ -96,6 +109,19 @@ class IdeaSpec(FrozenModel):
                 self, "name", "-".join([self.rule.kind, *map(str, self.rule.params.values())])
             )
         return self
+
+    @model_validator(mode="after")
+    def check_gate(self) -> Self:
+        check_context(self.context, self.when)
+        return self
+
+    @model_serializer(mode="wrap")
+    def omit_absent_gate(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        for key in ("context", "when"):
+            if data.get(key) is None:
+                data.pop(key, None)
+        return data
 
     def canonical(self) -> str:
         return json.dumps(

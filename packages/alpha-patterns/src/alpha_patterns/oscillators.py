@@ -65,9 +65,11 @@ def ema(values: FloatArray, window: int) -> FloatArray:
     _check(values, "ema", window)
     alpha = 2.0 / (window + 1.0)
     out = np.empty(values.size, dtype=np.float64)
-    acc = float(values[0])
+    # Plain floats in the loop: the same IEEE double arithmetic as float(values[i]), read faster.
+    items = np.asarray(values, dtype=np.float64).tolist()
+    acc = items[0]
     for i in range(values.size):
-        acc = alpha * float(values[i]) + (1.0 - alpha) * acc if i else float(values[0])
+        acc = alpha * items[i] + (1.0 - alpha) * acc if i else items[0]
         out[i] = acc
     return out
 

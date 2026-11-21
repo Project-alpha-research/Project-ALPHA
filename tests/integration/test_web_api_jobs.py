@@ -234,7 +234,7 @@ def test_unknown_free_form_command_fails_closed_with_project_context(
     assert "unknown command" in response.json()["message"]
 
 
-@pytest.mark.parametrize("args", ["mystery empirical-command SPY", "sleep", "options price SPY"])
+@pytest.mark.parametrize("args", ["mystery empirical-command SPY", "sleep", "pricing price SPY"])
 def test_unknown_free_form_command_is_refused_without_a_run_context(
     monkeypatch: pytest.MonkeyPatch, args: str
 ) -> None:

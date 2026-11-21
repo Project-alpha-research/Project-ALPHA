@@ -15,6 +15,8 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 - Today a rule is long while all `long_when` conditions hold, and flat otherwise. All-in sizing, daily bars, as for the old kinds.
 - The spec is stored in one canonical form: parsed, then written with defaults (`history`). The rule `name` is a constant
   inside the hash, so two specs that differ only in that name are one test. The display name is the spec's own `name`.
+- `history` is the number of bars each decision sees. The default is 4 times the longest window. A recursive indicator (`rsi`, `ema`)
+  costs time in proportion to it: set `history` lower, but not below the longest window, to run faster.
 - Example: `research/examples/owner-rsi-dip.toml`.
 
 ## Operands

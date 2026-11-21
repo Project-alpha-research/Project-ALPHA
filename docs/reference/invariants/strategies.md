@@ -58,6 +58,8 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   the target is net liquidation value less a 0.2% buffer, divided by close times fee and slippage,
   rounded down to the instrument increment; units are held while long and zero when flat. Long
   only. The Tier-1 surrogate models it as weight 1 or 0. `tests/unit/test_all_in_sizing.py`.
+  The `rules` strategy takes `sizing` too: under all-in its warm-up is `history` (vol-target keeps `max(history, vol_window + 1)`).
+  This is how an owner rule runs in `alpha test` ([language](../owner-rule-language.md)). `tests/unit/test_owner_rule_engine.py`.
 - If an all-in or `size_on_equity` long entry from flat exceeds free CASH including rounded fees, reduce it to the
   largest affordable instrument size step at the opening ask, with no extra buffer. Affordable orders,
   raising an open long, fixed-unit/fixed-capital orders, shorts, exits, MARGIN and paper execution retain their behavior.

@@ -95,6 +95,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
   trial; so does the same test after a code change ([test key](cli-trial-ledger.md#rule-test-counting));
   the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+- A spec rule is `ma_cross`, `breakout`, `tsmom` or `owner` ([language](../owner-rule-language.md)). An owner rule runs the `rules` strategy; its ledger `rule`
+  and family are `owner:<shape12>`; the three old kinds keep their canonical bytes, spec hash, test key and ledger keys (`tests/unit/test_spine_golden_pins.py`).
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.

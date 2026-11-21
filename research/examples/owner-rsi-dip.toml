@@ -7,6 +7,7 @@ assets = ["SPY", "QQQ"]
 kind = "owner"
 
 [rule.spec]
+history = 300  # bars each decision sees; the default (4 x the longest window, here 800) runs about 2.7 times slower
 long_when = [
   { left = { indicator = "rsi", params = [14] }, op = "<", right = { value = 30 } },
   { left = { source = "close" }, op = ">", right = { indicator = "sma", params = [200] } },

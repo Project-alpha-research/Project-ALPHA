@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 from alpha_cli.research_cmds import research_app
 from alpha_cli.spine.reserve import sentence
 from alpha_core.reserve import RESERVED_START
+from alpha_web.api.models.research_hub import ResearchReport
 from tests.fixtures.reserve_read_fixtures import (
     HELD,
     LONG,
@@ -74,5 +75,15 @@ def test_compare_with_nothing_to_hold_back_says_nothing_and_is_unchanged(
     write_store(home, SHORT, poisoned=False)
     payload = _payload(home, monkeypatch)
     assert "reserve" not in payload and "reserve_sentence" not in payload
-    assert payload["research_cutoff"] is None
+    assert "research_cutoff" not in payload
     assert "Held back" not in _compare(home, monkeypatch)
+
+
+def test_the_workstation_report_model_accepts_the_held_back_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = tmp_path / "poisoned"
+    write_store(home, LONG, poisoned=True)
+    report = ResearchReport.model_validate(_payload(home, monkeypatch))
+    assert report.reserve == {"reserved_start": RESERVED_START, "held_back_bars": HELD}
+    assert report.reserve_sentence == sentence(HELD)

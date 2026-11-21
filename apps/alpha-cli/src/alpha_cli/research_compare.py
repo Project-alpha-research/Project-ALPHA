@@ -22,5 +22,5 @@ def held_bars(symbol: str, data_dir: Path) -> tuple[list[Any], reserve.Hold]:
 
 
 def held_fields(held: reserve.Hold) -> dict[str, Any]:
-    """The payload keys: the cut-off and record, and the plain sentence when bars were held."""
-    return {**held.identity(), **({"reserve_sentence": held.say()} if held.held_back else {})}
+    """The payload keys: the cut-off, record and plain sentence; none unless bars were held back."""
+    return {**held.identity(), "reserve_sentence": held.say()} if held.held_back else {}

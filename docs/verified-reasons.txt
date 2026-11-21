@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified c0e3357732c33c34 on 2026-11-21: compare, propfirm and labels read bars up to the held-back boundary; this page's text is still correct
+  verified cdf8fa46d54d214f on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 apps/alpha-cli/README.md
-  verified c0e3357732c33c34 on 2026-11-21: compare, propfirm and labels read bars up to the held-back boundary; this page's text is still correct
+  verified cdf8fa46d54d214f on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified c878eb6561853752 on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 apps/alpha-web/README.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified c878eb6561853752 on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 5469749742c08f5f on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -83,13 +83,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified 3cf90c654acb2e21 on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 docs/reference/invariants/web-api.md
-  verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified 31fc59114c3402a5 on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified ffdba1d4ac6a715e on 2026-11-21: research compare reports what it held back; the workstation report model gains three optional fields; this page's text is still correct
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data

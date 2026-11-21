@@ -140,7 +140,7 @@ def sheet_panels(
 
 
 def _asset(
-    spec: Any, asset: str, resolved: ResolvedAsset, result: dict[str, Any]
+    spec: Any, asset: str, resolved: ResolvedAsset, result: dict[str, Any], home: Path
 ) -> tuple[Any, Any]:
     import polars as pl
 
@@ -171,6 +171,14 @@ def _asset(
         **dict.fromkeys(("open", "high", "low", "close", "volume"), pl.Float64),
     }
     frame = pl.DataFrame({k: [getattr(b, k) for b in bars] for k in schema}, schema=schema)
+    if spec.context:
+        from alpha_cli.spine import setup_context
+
+        attached = setup_context.attach(spec, bars, resolved, home)
+        info = setup_context.block(spec, attached)
+        result.update(context=info, context_fingerprint=setup_context.fingerprint(attached))
+        result["labels"].extend(setup_context.labels(info))
+        frame = attached.frame
     candidates = cluster_candidates(frame, find_candidates(spec, frame, symbol=asset))
     return frame, candidates.with_columns(
         pl.lit(resolved.symbol).alias("resolved_symbol"),
@@ -224,7 +232,7 @@ def prepare_assets(
     for resolved, result in selected:
         asset = result["asset"]
         try:
-            frame, rows = _asset(spec, asset, resolved, result)
+            frame, rows = _asset(spec, asset, resolved, result, home)
             frames[asset] = frame
             candidates.append(rows)
         except (DataError, ValueError, OSError) as exc:
@@ -258,6 +266,15 @@ def load_spec(path: Path, assets: list[str] | None) -> Any:
         raise SpineError(
             "SPEC_INVALID", str(exc), "Fix the spec file and run alpha setup find again."
         ) from exc
+    try:
+        if spec.context:
+            from alpha_cli.spine import setup_context
+
+            setup_context.check_series(spec)
+    except DataError as exc:
+        raise SpineError(
+            "SPEC_INVALID", str(exc), "Fix the spec file and run alpha setup find again."
+        ) from exc
     for asset in assets or []:
         if asset not in spec.setup.assets:
             raise SpineError(
@@ -275,8 +292,11 @@ def study_inputs(
     spec: Any,
     *,
     sources: dict[str, ResolvedAsset] | None = None,
-) -> tuple[dict[str, Any], int]:
-    """Reload the find's exact sources; compile only warm-up lengths, never detect again."""
+) -> tuple[dict[str, Any], dict[str, tuple[int, int | None]]]:
+    """Reload the find's exact sources; compile only warm-up lengths, never detect again.
+
+    Returns the bars and, per asset, the control bars `[start, stop)`; stop None is the data end.
+    """
     from alpha_cli import _runner
     from alpha_study.setup.expr import compile_expr
 
@@ -284,8 +304,10 @@ def study_inputs(
     texts = [spec.setup.event, *spec.filters.values(), *spec.reference.values()]
     if spec.trigger:
         texts.append(spec.trigger.when)
-    warmup = max(compile_expr(text).warmup for text in texts)
+    names = frozenset(spec.context)
+    warmup = max(compile_expr(text, names).warmup for text in texts)
     bars_by_asset = {}
+    spans: dict[str, tuple[int, int | None]] = {}
     for asset in manifest["assets"]:
         if asset["error"] is not None:
             continue  # Failed assets have no recorded candidates; preserve them in the manifest.
@@ -305,8 +327,20 @@ def study_inputs(
             raise SpineError(
                 "DATA_CHANGED_SINCE_FIND", asset["asset"], "Run alpha setup find again."
             )
+        if spec.context:
+            from alpha_cli.spine import setup_context
+
+            attached = setup_context.attach(spec, bars, resolved, home)
+            if setup_context.fingerprint(attached) != asset.get("context_fingerprint"):
+                raise SpineError(
+                    "DATA_CHANGED_SINCE_FIND", asset["asset"], "Run alpha setup find again."
+                )
+            # Random controls sit where this asset's events could: its own context span.
+            spans[asset["asset"]] = setup_context.control_span(spec, attached, bars, warmup)
+        else:
+            spans[asset["asset"]] = (warmup, None)
         bars_by_asset[asset["asset"]] = bars
-    return bars_by_asset, warmup
+    return bars_by_asset, spans
 
 
 def checked_study_inputs(
@@ -317,7 +351,7 @@ def checked_study_inputs(
     check_data: bool,
     accept_bad_data: str | None,
     report_time: datetime | None,
-) -> tuple[dict[str, Any], int, dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, tuple[int, int | None]], dict[str, Any]]:
     reserve.refuse_find_that_saw_period(manifest)
     sources = {
         a["asset"]: resolve_asset(a["asset"], data_dir=home)
@@ -328,9 +362,9 @@ def checked_study_inputs(
     record = run_health_record(
         assets, check_data=check_data, accept_bad_data=accept_bad_data, report_time=report_time
     )
-    bars, warmup = study_inputs(home, manifest, spec, sources=sources)
+    bars, spans = study_inputs(home, manifest, spec, sources=sources)
     verify_inputs(assets, record)
-    return bars, warmup, record
+    return bars, spans, record
 
 
 def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:
@@ -340,7 +374,12 @@ def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:
 
 
 def source_keys(results: list[dict[str, Any]]) -> list[str]:
-    return [f"{r['asset']}={r['source_fingerprint']}" for r in results if r["error"] is None]
+    return [
+        f"{r['asset']}={r['source_fingerprint']}"
+        + (f"|context={r['context_fingerprint']}" if r.get("context_fingerprint") else "")
+        for r in results
+        if r["error"] is None
+    ]
 
 
 def health_find_id(

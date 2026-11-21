@@ -7,10 +7,12 @@ from typing import Any
 import polars as pl
 
 from alpha_core import DataError
+from alpha_study.setup.context import check_frame, condition_texts, used_aliases
 from alpha_study.setup.expr import compile_expr
 from alpha_study.setup.spec import SetupSpec
 
 PENDING = "pending-trigger"
+CONTEXT_STALE = "context-stale"
 
 
 def _status(reason: str | None) -> str:
@@ -47,6 +49,8 @@ def _decision(
     for name in spec.filters:
         value = values[f"filter:{name}"][i]
         if value is None:
+            if values.get(f"why:filter:{name}", [None] * length)[i] == "stale":
+                return CONTEXT_STALE, f"{name}: context value too old", None
             return "warm-up", f"{name}: null", None
         if not value:
             return name, f"{name}: false", None
@@ -76,6 +80,21 @@ def _decision(
     return None, None, trigger
 
 
+def _context_reasons(spec: SetupSpec, bars: pl.DataFrame) -> dict[str, list[Any]]:
+    """Per filter that reads context: the reason `stale` where an alias value is null by age."""
+    texts = condition_texts(spec)
+    out: dict[str, list[Any]] = {}
+    for name in spec.filters:
+        if f"filter:{name}" not in texts:
+            continue
+        stale = [
+            pl.when(pl.col(f"ctx_{a}_reason") == "stale").then(pl.lit("stale"))
+            for a in sorted(used_aliases(texts[f"filter:{name}"], frozenset(spec.context)))
+        ]
+        out[f"why:filter:{name}"] = bars.select(pl.coalesce(stale).alias("why"))["why"].to_list()
+    return out
+
+
 def find_candidates(spec: SetupSpec, bars: pl.DataFrame, *, symbol: str) -> pl.DataFrame:
     """Return event rows after static warm-up, with ordered reasons and next-open fills.
 
@@ -85,18 +104,23 @@ def find_candidates(spec: SetupSpec, bars: pl.DataFrame, *, symbol: str) -> pl.D
     `no-next-bar`: its next-open entry does not exist yet.
     """
     _validate(bars)
+    check_frame(spec, bars)
     if symbol not in spec.setup.assets:
         raise DataError(f"symbol {symbol!r} is not in setup.assets")
-    expressions = {"event": compile_expr(spec.setup.event)}
+    names = frozenset(spec.context)
+    expressions = {"event": compile_expr(spec.setup.event, names)}
     expressions.update(
-        {f"filter:{name}": compile_expr(text) for name, text in spec.filters.items()}
+        {f"filter:{name}": compile_expr(text, names) for name, text in spec.filters.items()}
     )
-    expressions.update({f"ref:{name}": compile_expr(text) for name, text in spec.reference.items()})
+    expressions.update(
+        {f"ref:{name}": compile_expr(text, names) for name, text in spec.reference.items()}
+    )
     if spec.trigger is not None:
-        expressions["trigger"] = compile_expr(spec.trigger.when)
+        expressions["trigger"] = compile_expr(spec.trigger.when, names)
     warmup = max(value.warmup for value in expressions.values())
     evaluated = bars.with_columns(value.expr.alias(name) for name, value in expressions.items())
     values = {name: evaluated[name].to_list() for name in expressions}
+    values.update(_context_reasons(spec, bars))
     timestamps, opens = bars["ts"].to_list(), bars["open"].to_list()
     schema: dict[str, pl.DataType] = {
         "candidate_id": pl.Int64(),

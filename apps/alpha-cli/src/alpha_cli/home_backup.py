@@ -172,7 +172,9 @@ def backup(home: Path, target: Path, now: datetime | None = None) -> dict[str, A
         if archive.exists():
             raise HomeBackupError(f"{archive} already exists. Wait one second and run it again.")
         try:
-            with partial.open("xb") as raw:
+            # Owner-only from the first byte: the archive holds every private file of the home.
+            private = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(private, "wb") as raw:
                 out = _Hashing(raw)
                 sink = cast(IO[bytes], out)
                 with tarfile.open(fileobj=sink, mode="w|", format=tarfile.PAX_FORMAT) as tar:

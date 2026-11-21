@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: bf467600edef19c2
+verified: be9e873810f717b5
 ---
 
 # Command line nightly run invariants
@@ -74,6 +74,7 @@ verified: bf467600edef19c2
 - Before writing, it estimates the size (every file plus 2 kB per entry plus 1 MB) and refuses if the target disk has less free.
   A folder it cannot read stops it. A second name of one file (hard link) is stored in full: each header comes from a fresh helper.
 - A file whose size or modification time changes while it is read stops the backup; the partial archive is removed.
+- The archive is created with mode `0600` (owner only) from its first byte: it holds every private file of the home.
 - It refuses a target inside the home. Symbolic links are never followed: each is excluded and listed. Nothing is excluded silently.
 - `verify-backup` re-reads the archive, compares every file with the manifest and the archive with its `.sha256`, and names
   each bad file. Exit code 1 on any problem. It extracts nothing.

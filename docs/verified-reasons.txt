@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified a0e1268a427e16fc on 2026-11-21: Merged main again; its changes are outside this page's claims, and this branch's home rows still hold
+  verified 8a3f6c5e214612d6 on 2026-11-21: home_backup now creates the archive with mode 0600; the page states nothing about the archive's file mode, so its text holds
 
 apps/alpha-cli/README.md
-  verified a0e1268a427e16fc on 2026-11-21: Merged main again; its changes are outside this page's claims, and this branch's home rows still hold
+  verified 8a3f6c5e214612d6 on 2026-11-21: home_backup now creates the archive with mode 0600; the page states nothing about the archive's file mode, so its text holds
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -257,7 +257,7 @@ research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
 
 research/tools/home-backup.md
-  verified 70a5d5d4fd2df8f3 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
+  verified 5607a18347a11c61 on 2026-11-21: home_backup now creates the archive with mode 0600; the page states nothing about the archive's file mode, so its text holds
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read

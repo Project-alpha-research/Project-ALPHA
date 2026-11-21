@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import hashlib
 import json
+import os
 import tarfile
 from pathlib import Path
 from typing import Any
@@ -248,3 +249,24 @@ def test_the_commands_print_plain_words_and_json(tmp_path: Path) -> None:
     assert "ALPHA_DATA_DIR" in done.output  # it says how to look at the copy, and changes nothing
     again = RUNNER.invoke(app, ["home", "restore", archive, str(target)], env=env)
     assert again.exit_code == 2 and "not empty" in again.output
+
+
+def test_the_archive_is_readable_by_the_owner_only_from_the_start(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home = synthetic_home(tmp_path)
+    modes: list[int] = []
+    real = tarfile.TarFile.addfile
+
+    def watching(self: tarfile.TarFile, info: tarfile.TarInfo, fileobj: Any = None) -> None:
+        modes.extend(p.stat().st_mode & 0o777 for p in (tmp_path / "out").iterdir())
+        real(self, info, fileobj)
+
+    monkeypatch.setattr(tarfile.TarFile, "addfile", watching)
+    old = os.umask(0o022)
+    try:
+        archive = Path(backup(home, tmp_path / "out")["archive"])
+    finally:
+        os.umask(old)
+    assert modes and set(modes) == {0o600}  # never wider, even while it is written
+    assert archive.stat().st_mode & 0o777 == 0o600

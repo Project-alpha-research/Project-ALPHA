@@ -42,7 +42,8 @@ def run(
         sealed = analysis == "holdout"
         early = user is not None and user <= reserve.CUTOFF
         cutoff = user if sealed or early else reserve.CUTOFF
-        held = 0 if sealed or early else snapshot_held_back_rows(snapshot_id, hedged=True)
+        n = 0 if sealed or early else snapshot_held_back_rows(snapshot_id, hedged=True, until=user)
+        held = reserve.Hold(cutoff, reserve.CUTOFF_DATE if n else as_of, n, "rows")
         start = None if holdout_start is None else date.fromisoformat(holdout_start)
         end = None if holdout_end is None else date.fromisoformat(holdout_end)
         observations = crypto_hedged_basis_observations(snapshot_id, before_reserved=not sealed)
@@ -57,9 +58,9 @@ def run(
             holdout_start=start,
             holdout_end=end,
             holdout_spec_hash=holdout_spec_hash,
-            research_cutoff=reserve.CUTOFF_DATE if held else as_of,
+            research_cutoff=held.research_cutoff,
             as_of=cutoff,
-            reserve_record=reserve.record(held, "rows") if held else None,
+            held=held,
         )
     except (DataError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -67,8 +68,7 @@ def run(
         typer.echo(json.dumps(manifest, sort_keys=True, allow_nan=False))
         return
     typer.echo(f"hedged basis {analysis} -> run {manifest['run_id']} (SANDBOX ONLY)")
-    if held:
-        typer.echo(reserve.sentence(held, "rows"))
+    held.announce()
 
 
 @strategy_candidate_app.command("paper-preflight")

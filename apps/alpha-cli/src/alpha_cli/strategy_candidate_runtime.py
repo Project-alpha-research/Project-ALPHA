@@ -8,7 +8,7 @@ import re
 from dataclasses import asdict
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import numpy as np
 import polars as pl
@@ -30,6 +30,9 @@ from alpha_validation import (
     student_t_return_paths,
     summarize_path_family,
 )
+
+if TYPE_CHECKING:
+    from alpha_cli.spine.reserve import Hold
 
 _COMMANDS: Final = {
     "baseline": "candidate_baseline",
@@ -429,7 +432,7 @@ def run_hedged_basis_candidate(
     holdout_spec_hash: str | None = None,
     research_cutoff: str | None,
     as_of: datetime | None,
-    reserve_record: dict[str, Any] | None = None,
+    held: Hold | None = None,
 ) -> dict[str, Any]:
     """Publish one candidate analysis without constructing an execution adapter."""
     if analysis not in _ANALYSES:
@@ -509,8 +512,8 @@ def run_hedged_basis_candidate(
         "candidate_analysis_artifact": "candidate_analysis.json",
         "returns_artifact": "returns.parquet",
     }
-    if reserve_record:
-        manifest["reserve"] = reserve_record
+    if held is not None:
+        held.stamp(manifest)
     if analysis.startswith("monte_carlo_"):
         manifest["source_run_id"] = source_run_id
         manifest["status"] = analysis_result["status"]

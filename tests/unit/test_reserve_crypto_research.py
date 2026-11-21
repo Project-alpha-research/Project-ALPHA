@@ -11,7 +11,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import polars as pl
 import pytest
@@ -207,9 +207,11 @@ def test_audit_of_a_crypto_dataset_stops_at_the_boundary_and_says_so(
     assert 0 < frame.height < len(stamps)
     assert frame["ts"].max() < RESERVED_INSTANT
     monkeypatch.setattr("alpha_cli.research_crypto_data.snapshot_held_back_rows", lambda *a, **k: 7)
-    notes = research_data_audit._reserve_notes(tmp_path, ref)
-    assert notes == [reserve.sentence(7, "rows")]
-    assert "rows (bars, funding and open interest)" in notes[0] and SENTENCE in notes[0]
+    held = research_data_audit._audit_hold(tmp_path, ref)
+    assert held.record_fields() == {"reserve": reserve.record(7, "rows")}
+    note = held.say()
+    assert note == reserve.sentence(7, "rows")
+    assert "rows (bars, funding and open interest)" in note and SENTENCE in note
 
 
 class Candidate:
@@ -232,39 +234,50 @@ def candidate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Candidate:
 
     def fake_run(_: Path, **kwargs: Any) -> dict[str, Any]:
         seen.run = kwargs
-        return {"run_id": "1234567890abcdef", "reserve": kwargs["reserve_record"]}
+        return {"run_id": "1234567890abcdef", "reserve": kwargs["held"].record_fields() or None}
 
     monkeypatch.setattr(strategy_candidate_cmds, "crypto_hedged_basis_observations", observations)
     monkeypatch.setattr(strategy_candidate_cmds, "run_hedged_basis_candidate", fake_run)
     return seen
 
 
-def _candidate(*extra: str, rows: int, monkeypatch: pytest.MonkeyPatch) -> Any:
-    monkeypatch.setattr(strategy_candidate_cmds, "snapshot_held_back_rows", lambda *_a, **_k: rows)
+def _candidate(
+    *extra: str, rows: int, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Any, list[datetime | None]]:
+    def count(*_a: Any, **kwargs: Any) -> int:
+        counted.append(kwargs.get("until"))
+        return rows
+
+    counted: list[datetime | None] = []
+    monkeypatch.setattr(strategy_candidate_cmds, "snapshot_held_back_rows", count)
     args = ["strategy-candidate", "run", "d" * 64, "--research-contract-id", f"rc_{'f' * 64}"]
-    return CliRunner().invoke(app, [*args, *extra])
+    return CliRunner().invoke(app, [*args, *extra]), counted
 
 
 @pytest.mark.parametrize("extra", [[], ["--as-of", "2025-03-01"]])
 def test_candidate_cutoff_defaults_to_the_reserve_cutoff_and_says_so(
     candidate: Candidate, monkeypatch: pytest.MonkeyPatch, extra: list[str]
 ) -> None:
-    result = _candidate(*extra, rows=5, monkeypatch=monkeypatch)
+    result, counted = _candidate(*extra, rows=5, monkeypatch=monkeypatch)
     assert result.exit_code == 0, result.output
     assert candidate.run["as_of"] == reserve.CUTOFF
     assert candidate.run["research_cutoff"] == reserve.CUTOFF_DATE
-    assert candidate.run["reserve_record"] == reserve.record(5, "rows")
+    held = candidate.run["held"]
+    assert held == reserve.Hold(reserve.CUTOFF, reserve.CUTOFF_DATE, 5, "rows")
+    assert held.record_fields() == {"reserve": reserve.record(5, "rows")}
     assert SENTENCE in result.output and RESERVED_START in result.output
     assert candidate.loads == [True]
+    # Only rows the user's own cut-off would have admitted are counted.
+    assert counted == [_runner.parse_as_of(extra[1]) if extra else None]
 
 
 def test_candidate_with_nothing_held_back_keeps_its_cutoff_and_record(
     candidate: Candidate, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    result = _candidate("--json", rows=0, monkeypatch=monkeypatch)
+    result, counted = _candidate("--json", rows=0, monkeypatch=monkeypatch)
     assert result.exit_code == 0, result.output
     assert candidate.run["research_cutoff"] is None
-    assert candidate.run["reserve_record"] is None
+    assert not candidate.run["held"].held_back
     assert json.loads(result.output)["reserve"] is None
     assert SENTENCE not in result.output
 
@@ -272,19 +285,67 @@ def test_candidate_with_nothing_held_back_keeps_its_cutoff_and_record(
 def test_candidate_with_an_early_cutoff_is_not_changed(
     candidate: Candidate, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    result = _candidate("--as-of", "2023-06-30", rows=9, monkeypatch=monkeypatch)
+    result, counted = _candidate("--as-of", "2023-06-30", rows=9, monkeypatch=monkeypatch)
     assert result.exit_code == 0, result.output
     assert candidate.run["research_cutoff"] == "2023-06-30"
     assert candidate.run["as_of"] == datetime(2023, 6, 30, 23, 59, 59, tzinfo=UTC)
-    assert candidate.run["reserve_record"] is None
+    assert not candidate.run["held"].held_back
 
 
 def test_candidate_holdout_reads_its_sealed_window_and_is_not_cut(
     candidate: Candidate, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     window = ["--holdout-start", "2025-01-01", "--holdout-end", "2025-01-31"]
-    result = _candidate("--analysis", "holdout", *window, rows=5, monkeypatch=monkeypatch)
+    result, counted = _candidate("--analysis", "holdout", *window, rows=5, monkeypatch=monkeypatch)
     assert result.exit_code == 0, result.output
     assert candidate.loads == [False]
     assert candidate.run["as_of"] is None
-    assert candidate.run["reserve_record"] is None
+    assert not candidate.run["held"].held_back
+
+
+def test_candidate_run_records_the_hold_back_and_its_label_only_when_rows_were_held(
+    tmp_path: Path,
+) -> None:
+    from alpha_cli.strategy_candidate_runtime import run_hedged_basis_candidate
+    from tests.unit.test_strategy_candidate_runtime import _observations
+
+    def run(held: reserve.Hold, home: Path) -> dict[str, Any]:
+        return run_hedged_basis_candidate(
+            home,
+            snapshot_id="d" * 64,
+            snapshot_hash="e" * 64,
+            research_contract_id=f"rc_{'f' * 64}",
+            observations=_observations(),
+            analysis="baseline",
+            research_cutoff=held.research_cutoff,
+            as_of=None,
+            held=held,
+        )
+
+    stamped = run(reserve.Hold(reserve.CUTOFF, reserve.CUTOFF_DATE, 5, "rows"), tmp_path / "a")
+    assert stamped["reserve"] == reserve.record(5, "rows")
+    assert reserve.HELD_BACK in stamped["labels"]
+    plain = run(reserve.Hold(reserve.CUTOFF, None, 0, "rows"), tmp_path / "b")
+    assert "reserve" not in plain and reserve.HELD_BACK not in plain.get("labels", [])
+    before = run_hedged_basis_candidate(
+        tmp_path / "c",
+        snapshot_id="d" * 64,
+        snapshot_hash="e" * 64,
+        research_contract_id=f"rc_{'f' * 64}",
+        observations=_observations(),
+        analysis="baseline",
+        research_cutoff=None,
+        as_of=None,
+    )
+    assert plain["run_id"] == before["run_id"]
+
+
+def test_candidate_count_reads_only_rows_the_user_cutoff_admits(tmp_path: Path) -> None:
+    stamps = [RESERVED_INSTANT + timedelta(days=d) for d in (-1, 0, 10, 40)]
+    path = tmp_path / "member.parquet"
+    pl.DataFrame({"timestamp": stamps}).write_parquet(path)
+    member = SimpleNamespace(artifact_key="member.parquet")
+    snapshot = cast(CryptoSnapshotV1, SimpleNamespace(members=(member,)))
+    assert held_back_rows(snapshot, bulk_root=tmp_path) == 3
+    until = RESERVED_INSTANT + timedelta(days=20)
+    assert held_back_rows(snapshot, bulk_root=tmp_path, until=until) == 2

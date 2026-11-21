@@ -261,11 +261,14 @@ def load_crypto_crowding_observations(
     )
 
 
-def held_back_rows(snapshot: CryptoSnapshotV1, *, bulk_root: Path) -> int:
+def held_back_rows(
+    snapshot: CryptoSnapshotV1, *, bulk_root: Path, until: datetime | None = None
+) -> int:
     """Count member rows the cut drops; only the time columns are read.
 
     A bar frame with open and close times (Binance spot) is dropped when its bar closes after
     the reserved instant; every other frame is dropped by its ``timestamp``. The catalog has none.
+    With ``until`` (the user's own cut-off), a row stamped after it is not counted.
     """
     total = 0
     for member in snapshot.members:
@@ -279,12 +282,16 @@ def held_back_rows(snapshot: CryptoSnapshotV1, *, bulk_root: Path) -> int:
             if dtype.time_zone is None:
                 stamp = stamp.dt.replace_time_zone("UTC")
             kept = stamp > RESERVED_INSTANT if closes else stamp >= RESERVED_INSTANT
+            if until is not None:
+                kept = kept & (stamp <= until)
             total += int(lazy.filter(kept).select(pl.len()).collect().item())
             break
     return total
 
 
-def snapshot_held_back_rows(snapshot_id: str, *, hedged: bool) -> int:
+def snapshot_held_back_rows(
+    snapshot_id: str, *, hedged: bool, until: datetime | None = None
+) -> int:
     """Rows the cut drops from one verified snapshot (crowding bundle, or the hedged-basis one)."""
     from alpha_cli import crypto_data_cmds
 
@@ -292,7 +299,8 @@ def snapshot_held_back_rows(snapshot_id: str, *, hedged: bool) -> int:
         snapshot = crypto_data_cmds._verified_hedged_basis_snapshot(snapshot_id)[0]
     else:
         snapshot = crypto_data_cmds._verified_crypto_crowding_snapshot(snapshot_id)[0]
-    return held_back_rows(snapshot, bulk_root=crypto_data_cmds._bulk_store().bulk_root)
+    root = crypto_data_cmds._bulk_store().bulk_root
+    return held_back_rows(snapshot, bulk_root=root, until=until)
 
 
 __all__ = [

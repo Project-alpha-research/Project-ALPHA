@@ -150,29 +150,22 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     return frame.filter(frame["ts"] >= start_at)
 
 
-def _reserve_notes(data_dir: Path, ref: Mapping[str, object]) -> list[str]:
-    """The one hold-back sentence when the registered range reaches the reserved period."""
-    start_at = _parse_bound(ref.get("start_ts"), "start_ts", end_of_day=False)
-    end_at = _parse_bound(ref.get("end_ts"), "end_ts", end_of_day=True)
-    first = max(start_at, reserve.RESERVED_INSTANT)
-    origin = ref.get("origin")
-    if end_at < first:
-        return []
-    if isinstance(origin, Mapping) and origin.get("snapshot_schema") == "CryptoSnapshotV1":
+def _audit_hold(data_dir: Path, ref: Mapping[str, object]) -> reserve.Hold:
+    """What the cut held back from the registered range; only time columns are read."""
+    end = str(ref.get("end_ts", ""))[:10]
+    value = ref.get("origin")
+    origin: Mapping[str, object] = value if isinstance(value, Mapping) else {}
+    if origin.get("snapshot_schema") == "CryptoSnapshotV1":
+        if _parse_bound(end, "end_ts", end_of_day=True) < reserve.RESERVED_INSTANT:
+            return reserve.Hold(None, None, 0, "rows")
         from alpha_cli.research_crypto_data import snapshot_held_back_rows
 
         rows = snapshot_held_back_rows(str(origin.get("snapshot_id", "")), hedged=False)
-        return [reserve.sentence(rows, "rows")] if rows else []
-    root = _verified_root(data_dir, ref)
-    path = ParquetStore(root)._bars_path(str(ref.get("instrument")))
-    stamps = pl.scan_parquet(path).select("ts")
-    held = int(
-        stamps.filter(pl.col("ts").is_between(first, end_at, closed="both"))
-        .select(pl.len())
-        .collect()
-        .item()
+        return reserve.Hold(reserve.CUTOFF, reserve.CUTOFF_DATE, rows, "rows")
+    snapshot = str(origin.get("snapshot_id")) if ref.get("dataset_kind") == "snapshot" else None
+    return reserve.hold(
+        str(ref.get("instrument")), data_dir=data_dir, as_of=end, snapshot_id=snapshot
     )
-    return [reserve.sentence(held)] if held else []
 
 
 def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]) -> dict[str, Any]:
@@ -198,7 +191,8 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
     if isinstance(duration, int) and not isinstance(duration, bool) and duration > 0:
         interval_seconds = duration * 60.0
     coverage = coverage_summary(timestamps, expected_interval_seconds=interval_seconds)
-    notes: list[str] = _reserve_notes(Path(data_dir), ref)
+    held = _audit_hold(Path(data_dir), ref)
+    notes = [reserve.sentence(held.held_back, held.unit)] if held.held_back else []
     blocking: list[str] = []
     limiting: list[str] = []
     if int(coverage["n"]) < _MINIMUM_USABLE_SAMPLE:  # type: ignore[call-overload]
@@ -358,6 +352,7 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
         "source_fingerprint": dataset_hash,
         "dataset_hash": dataset_hash,
     }
+    held.stamp(manifest)
     _artifacts.write_manifest(run_dir, manifest)
     return {"manifest": _artifacts.read_manifest(run_dir), "summary": summary}
 

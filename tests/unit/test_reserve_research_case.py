@@ -277,6 +277,10 @@ def test_audit_read_is_capped_at_the_boundary_and_says_so(tmp_path: Path, ends: 
     assert any(SENTENCE in note and RESERVED_START in note for note in notes), notes
     assert not any(SENTENCE in note for note in plain["summary"]["notes"])
     assert held["manifest"]["dataset_hash"] == plain["manifest"]["dataset_hash"]
+    assert held["manifest"]["reserve"]["reserved_start"] == RESERVED_START
+    assert held["manifest"]["reserve"]["held_back_bars"] > 0
+    assert held["manifest"]["labels"] == ["reserved-period-held-back"]
+    assert "reserve" not in plain["manifest"] and "labels" not in plain["manifest"]
     _same(
         json.loads(
             (poisoned / "runs" / held["manifest"]["run_id"] / "descriptives.json").read_text()
@@ -296,7 +300,7 @@ def test_audit_with_an_end_before_the_boundary_keeps_its_record(tmp_path: Path, 
     assert not any(SENTENCE in note for note in held["summary"]["notes"])
     assert held["summary"] == plain["summary"]
     assert held["manifest"]["dataset_hash"] == plain["manifest"]["dataset_hash"]
-    assert "reserve" not in held["manifest"]
+    assert "reserve" not in held["manifest"] and "labels" not in held["manifest"]
 
 
 # ---- C7: the controller ---------------------------------------------------------------------

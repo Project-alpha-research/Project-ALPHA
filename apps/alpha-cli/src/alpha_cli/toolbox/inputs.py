@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 from alpha_cli import _runner
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.reserve import CONFIRMATION
 from alpha_cli.spine.run import assemble_run_spec
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import periods_per_year, resolve_asset
@@ -199,6 +200,13 @@ def load_run(home: Path, target: Target) -> RunSeries:
     from alpha_cli.spine.facts import read_json
 
     rdir, manifest, run_id = target.directory, target.manifest, target.run_id
+    if CONFIRMATION in (manifest.get("spine") or {}).get("labels", []):
+        raise SpineError(
+            "CONFIRMATION_RUN",
+            f"Run {run_id} is the owner's one look at the reserved period. Tools never read it "
+            "again: a second look at that period is not a fresh test.",
+            "Run alpha confirm show with the confirmed run id; run tools on that earlier run.",
+        )
     stored = read_json(rdir / "spec.json")
     meta = manifest["metadata"]
     resolved = resolve_asset(f"{meta['symbol']}@{manifest['spine']['store']}", data_dir=home)

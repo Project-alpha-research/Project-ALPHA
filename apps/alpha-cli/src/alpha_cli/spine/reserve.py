@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -225,7 +225,11 @@ def reserved_span(
     if until is not None:
         keep = keep & (pl.col("ts") <= until)
     stamps = pl.scan_parquet(path).select("ts").filter(keep)
-    row = stamps.select(pl.len(), pl.col("ts").min(), pl.col("ts").max()).collect().row(0)
+    row = (
+        stamps.select(pl.len(), pl.col("ts").min().alias("first"), pl.col("ts").max().alias("last"))
+        .collect()
+        .row(0)
+    )
     return int(row[0]), row[1], row[2]
 
 
@@ -266,10 +270,14 @@ def open_with_receipt(
     resolved = resolve_asset(str(frozen["asset"]), data_dir=home)
     if (resolved.symbol, resolved.store_name) != (frozen["symbol"], frozen["store"]):
         raise DataError("the receipt names another asset or store; nothing was read")
-    end = datetime.fromisoformat(str(frozen["reserved_end"]))
+    # The end of the last confirmed bar's day: a daily bar is read as of its date, as `CUTOFF` is.
+    last_day = datetime.fromisoformat(str(frozen["reserved_end"])).date()
+    end = datetime.combine(last_day, time.max, tzinfo=UTC)
     n, _, last = reserved_span(resolved, end)
     if n != frozen["reserved_bars"] or last is None or last.isoformat() != frozen["reserved_end"]:
         raise DataError("the stored reserved bars changed since the owner confirmed them")
     bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
     dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
+    if bars[-1].ts.isoformat() != frozen["reserved_end"]:
+        raise DataError("the reserved bars read are not the ones the owner confirmed")
     return bars, dividends, snapshot_id

@@ -51,6 +51,23 @@ def _numbers(manifest: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# The one stored field the earlier period may differ in: the count of bars held back. It is not a
+# computed result; it grows each time new bars from 2024-01-01 on are stored.
+COUNT_ONLY = "manifest.spine.reserve.held_back_bars"
+
+
+def _matches(found: dict[str, Any]) -> bool:
+    """The recheck matched, except at most for the held-back count."""
+    if found.get("match") is True:
+        return True
+    differences = found.get("differences") or []
+    return (
+        found.get("match") is False
+        and found.get("differences_total") == len(differences) >= 1
+        and all(d["field"] == COUNT_ONLY for d in differences)
+    )
+
+
 def _receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
     return next((r for r in reserved_slots.receipts(home) if r["run_id"] == run_id), None)
 
@@ -68,8 +85,9 @@ def _take(home: Path, run_id: str, authorization_id: str, now: datetime) -> dict
         quick=frozen.quick,
         no_diagnose=frozen.no_diagnose,
     )["recheck"]
-    if found.get("match") is not True or found.get("compared_with") != run_id:
-        why = found.get("reason") or f"{found.get('differences_total')} differences"
+    if not _matches(found) or found.get("compared_with") != run_id:
+        fields = ", ".join(str(d["field"]) for d in found.get("differences") or [])
+        why = found.get("reason") or f"{found.get('differences_total')} differences: {fields}"
         raise SpineError(
             "RECHECK_MISMATCH",
             f"The earlier period, computed again, is not the same as stored run {run_id} "

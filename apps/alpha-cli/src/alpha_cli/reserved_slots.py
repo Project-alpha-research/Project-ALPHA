@@ -19,17 +19,12 @@ import sqlite3
 import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
 from alpha_cli._control_schema import _SCHEMA_RESERVED_CONFIRMATION
-from alpha_cli.control_store import (
-    DATABASE_NAME,
-    ControlStore,
-    _execute_static_sql_script,
-    _format_timestamp,
-)
+from alpha_cli.control_store import DATABASE_NAME, ControlStore
 from alpha_core import DataError
 
 ACTION: Final = "confirm_reserved_period"
@@ -43,6 +38,23 @@ _TABLES: Final = (
 )
 
 
+def _format_timestamp(value: datetime) -> str:
+    """The control store's timestamp form (UTC, microseconds, `Z`)."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise DataError("control timestamps must be timezone-aware")
+    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _create_tables(connection: sqlite3.Connection) -> None:
+    """Run the static DDL statement by statement, inside the caller's transaction."""
+    pending = ""
+    for line in _SCHEMA_RESERVED_CONFIRMATION.splitlines(keepends=True):
+        pending += line
+        if sqlite3.complete_statement(pending):
+            connection.execute(pending)
+            pending = ""
+
+
 def canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
@@ -54,7 +66,7 @@ def sha256(value: object) -> str:
 @contextmanager
 def _write(data_dir: Path) -> Iterator[sqlite3.Connection]:
     with ControlStore(data_dir)._transaction(write=True) as connection:
-        _execute_static_sql_script(connection, _SCHEMA_RESERVED_CONFIRMATION)
+        _create_tables(connection)
         yield connection
 
 

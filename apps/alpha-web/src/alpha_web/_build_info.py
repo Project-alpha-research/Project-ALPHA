@@ -1,7 +1,7 @@
 """Which code built the screen, and which code is running now (the staleness signal).
 
-``npm run build`` writes ``build-info.json`` next to ``index.html``. ``/healthz`` returns it with the
-commit of the running Python code, so the screen can tell the owner when the two differ.
+``npm run build`` writes ``build-info.json`` next to ``index.html``. ``/healthz`` returns it with
+the commit of the running Python code, so the screen can tell the owner when the two differ.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ _UNKNOWN = "unknown"
 
 
 def read_build_info(app_dir: Path) -> dict[str, str]:
-    """Return the commit and time recorded in the built bundle; ``unknown`` when absent or unreadable."""
+    """Return the commit and time recorded in the built bundle; ``unknown`` if absent or bad."""
     try:
         raw = json.loads((app_dir / "build-info.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):

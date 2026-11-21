@@ -149,7 +149,8 @@ function monteCarloFamilyText(family: Record<string, unknown>): string {
 
 /** The line under the trades table: the starting capital the P&L refers to, as the run recorded it. */
 export function startingCapitalCaption(manifest: Record<string, unknown>): string {
-  const capital = money(manifest.starting_equity)
+  // Backtests record `starting_equity`; rule tests and validate runs record `metadata.starting_cash`.
+  const capital = money(manifest.starting_equity) ?? money(obj(manifest.metadata)?.starting_cash)
   return capital === null ? 'P&L: starting capital not recorded.' : `P&L is measured from a starting capital of ${capital}.`
 }
 

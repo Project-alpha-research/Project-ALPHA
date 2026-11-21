@@ -1,4 +1,4 @@
-"""The health route reports the commit of the built screen next to the commit of the running code."""
+"""The health route reports the commit of the built screen and of the running code."""
 
 from __future__ import annotations
 

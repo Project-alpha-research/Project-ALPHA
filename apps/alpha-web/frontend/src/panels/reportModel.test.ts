@@ -83,6 +83,7 @@ describe('equity, risk and drawdown tab order', () => {
 describe('trades caption', () => {
   it('names the starting capital the P&L refers to, or says it was not recorded', () => {
     expect(startingCapitalCaption({ starting_equity: 100000 })).toBe('P&L is measured from a starting capital of 100,000.00.')
+    expect(startingCapitalCaption({ metadata: { starting_cash: 250000 } })).toBe('P&L is measured from a starting capital of 250,000.00.')
     expect(startingCapitalCaption({})).toBe('P&L: starting capital not recorded.')
   })
 })

@@ -75,9 +75,12 @@ export function CompareRuns(_props: PanelHandleProps) {
     return [...names].sort()
   }, [visibleComparison])
 
-  const notice = visibleComparison
-    ? compareNotice(visibleComparison.rows, visibleComparison.same_snapshot_hash)
-    : null
+  // A rule test records no symbol on its comparison row; the run list knows it.
+  const identities = (visibleComparison?.rows ?? []).map((row) => {
+    const listed = runs.find((item) => item.run_id === row.run_id)
+    return { symbol: row.symbol ?? listed?.symbol ?? null, symbols: row.symbols ?? listed?.symbols ?? null, command: row.command }
+  })
+  const notice = visibleComparison ? compareNotice(identities, visibleComparison.same_snapshot_hash) : null
 
   const toggle = (runId: string) =>
     setSelected((current) =>
@@ -148,11 +151,12 @@ export function CompareRuns(_props: PanelHandleProps) {
                 <thead>
                   <tr>
                     <th scope="col">Metric</th>
-                    {visibleComparison.rows.map((row) => {
-                      const column = compareColumn(row.run_id, row, runs.find((item) => item.run_id === row.run_id))
+                    {visibleComparison.rows.map((row, index) => {
+                      const column = compareColumn(row.run_id, identities[index], runs.find((item) => item.run_id === row.run_id))
                       return (
                         <th key={row.run_id} scope="col">
                           <span className="mono">{column.id}</span>
+                          <br />
                           <span className="library-row-sub">{column.kind} · {column.asset}</span>
                         </th>
                       )

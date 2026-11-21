@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: 2dda1d6cbdd8c3f0
+verified: 9dcec26aaf2f2fc5
 ---
 
 # Setup Lab

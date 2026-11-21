@@ -306,7 +306,9 @@ def _outcomes(
 
 
 def _check_sheet_name(name: object) -> None:
-    if not isinstance(name, str) or not re.fullmatch(r"sheets/(accepted|rejected)-\d{3}\.png", name):
+    if not isinstance(name, str) or not re.fullmatch(
+        r"sheets/(accepted|rejected)-\d{3}\.png", name
+    ):
         raise ValueError("setup sheet name is invalid")
 
 

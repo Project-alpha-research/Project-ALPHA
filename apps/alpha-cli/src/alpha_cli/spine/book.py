@@ -99,8 +99,15 @@ def _sentence(pair: dict[str, Any]) -> str:
             f"(correlation {pair['correlation']:.2f}) over {n} common days"
         )
     if pair["overlap_share"] is None:
-        return f"{head}{body}; time in the market together: {pair['overlap_reason']}."
-    return f"{head}{body}; both were in the market on {pair['overlap_share']:.0%} of them."
+        text = f"{head}{body}; time in the market together: {pair['overlap_reason']}"
+    else:
+        text = f"{head}{body}; both were in the market on {pair['overlap_share']:.0%} of them"
+    dropped = [
+        f"{count} day{'s' if count != 1 else ''} from run {run}"
+        for run, count in pair["dropped_days"].items()
+        if count
+    ]
+    return f"{text}; dropped {' and '.join(dropped)} (not shared)." if dropped else f"{text}."
 
 
 def pair_reading(a: DailySeries, b: DailySeries) -> dict[str, Any]:
@@ -125,6 +132,10 @@ def pair_reading(a: DailySeries, b: DailySeries) -> dict[str, Any]:
     pair: dict[str, Any] = {
         "runs": [a.run_id, b.run_id],
         "common_days": n,
+        "dropped_days": {
+            a.run_id: len(a.days) - len(common),
+            b.run_id: len(b.days) - len(common),
+        },
         "first_day": common[1].isoformat() if n else None,
         "last_day": common[-1].isoformat() if n else None,
         "correlation": value,
@@ -160,7 +171,8 @@ def correlate(series: Sequence[DailySeries]) -> dict[str, Any]:
 
 def render_correlate(result: dict[str, Any]) -> str:
     lines = [
-        "Daily returns from the stored walk-forward equity of each run, on the dates they share.",
+        "Daily returns from the stored walk-forward equity of each run (net of fees; "
+        "days out of the market count as zero), on the dates they share.",
         *[pair["sentence"] for pair in result["pairs"]],
     ]
     for run in result["runs"]:

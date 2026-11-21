@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 37 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 38 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -55,6 +55,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Intraday bars, from one minute to one hour, end to end** — proven in-process and by hand on real data, with no smoke test yet; oos, portfolio and holdout backtests, research registration and the Workstation chart toolbar are still daily. More: [docs/reference/invariants/data-bar-timeframes.md](docs/reference/invariants/data-bar-timeframes.md).
 - **Reports, figures and run comparison** — the text and JSON (--json) reports are proven end to end; figures and run comparison are tested in-process only.
 - **Follow a tested idea on paper (alpha follow)** — Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet.. More: [docs/reference/invariants/cli-follow.md](docs/reference/invariants/cli-follow.md).
+- **Portfolio view across strategies (alpha results correlate, alpha follow book)** — Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded.. More: [docs/reference/invariants/cli-results-check.md](docs/reference/invariants/cli-results-check.md). More: [docs/reference/invariants/cli-follow.md](docs/reference/invariants/cli-follow.md).
 - **Today screen for followed ideas** — tested with a faked relay and in a browser; the detail shows the last 5 entries the command returns, not 10. No real-data run yet.. More: [docs/reference/invariants/web-frontend.md](docs/reference/invariants/web-frontend.md).
 - **Price forecasts with the Kronos model** — proved only with a stand-in model. Needs: the Kronos model files (downloaded on first use; not on this computer).
 - **Research cases from idea to decision (D0, D1, D2)** — proven up to the owner-approval boundary; a full case needs provider data and your approval.

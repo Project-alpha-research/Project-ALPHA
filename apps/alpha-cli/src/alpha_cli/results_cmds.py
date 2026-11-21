@@ -568,7 +568,7 @@ def correlate_results(
         for run in result["runs"]:
             if reserve.SEEN in run["labels"]:
                 run["reserve_sentence"] = reserve.SEEN_SENTENCE
-        result["basis"] = "stored walk-forward equity and exposure of each run"
+        result["basis"] = "stored walk-forward equity (net of fees) and exposure of each run"
         emit(result, json_out=json_out, fallback=book.render_correlate(result))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

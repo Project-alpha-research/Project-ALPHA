@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/book.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/follow_cmds.py
-verified: 4a9996d4eb34d39a
+verified: ac26c355506d5adb
 ---
 # Portfolio book: several strategies together
 
@@ -22,6 +22,7 @@ It runs no test and reads no bar. `follow book` reads the follow records and jou
 - Each pair has one sentence: the correlation of daily returns, the number of common days, and the share of those days on which
   both runs were in the market.
 - Near 1: the two runs rose and fell on the same days. Near 0: mostly independent. Near -1: opposite days.
+- The returns are net of fees. Days out of the market count as zero. Days only one run has are dropped, and the sentence says how many.
 - Under 60 common days the answer is "too few common days to read". No correlation is printed.
 - "not defined" means the returns of one run do not change (for example, it never traded in the scored period).
 - A run that saw the held-back period keeps its label and its sentence.

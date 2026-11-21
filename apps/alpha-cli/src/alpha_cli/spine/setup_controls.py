@@ -17,8 +17,14 @@ RANDOM_DRAWS = 2000
 
 
 def eligible_returns(
-    opened: list[float], closed: list[float], warmup: int, horizon: int, cost: float
+    opened: list[float],
+    closed: list[float],
+    warmup: int,
+    horizon: int,
+    cost: float,
+    stop: int | None = None,
 ) -> tuple[Any, Any]:
+    """Control positions in `[warmup, stop)` with a complete horizon; stop None is the data end."""
     import numpy as np
 
     if horizon < 1 or warmup < 0 or len(opened) != len(closed):
@@ -28,7 +34,8 @@ def eligible_returns(
         raise ValueError("control prices must be finite and opens positive")
     if not np.isfinite(cost) or cost < 0:
         raise ValueError("cost must be finite and non-negative")
-    positions = np.arange(warmup, max(warmup, len(op) - horizon))
+    end = len(op) - horizon if stop is None else min(stop, len(op) - horizon)
+    positions = np.arange(warmup, max(warmup, end))
     # Future close is the measured outcome, never an input to detection or entry.
     returns = cl[positions + horizon] / op[positions + 1] - 1 - cost
     return positions, returns

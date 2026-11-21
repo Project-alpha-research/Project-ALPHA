@@ -216,3 +216,24 @@ def test_account_view_with_no_follows() -> None:
     view = book.account_view([])
     assert view["total_pct"] == 0.0 and view["assets"] == [] and view["follows"] == []
     assert book.render_account(view).startswith("No active follows yet (paper).")
+
+
+def test_days_dropped_from_each_run_are_counted_and_said() -> None:
+    # a is a weekday-and-weekend run (140 days); b keeps every second day (70 days).
+    a = series("a" * 16, wave(139))
+    b = book.DailySeries("b" * 16, a.days[::2], a.equity[::2], None)
+    pair = book.pair_reading(a, b)
+    assert pair["dropped_days"] == {"a" * 16: 70, "b" * 16: 0}
+    assert "dropped 70 days from run " + "a" * 16 in pair["sentence"]
+    assert "from run " + "b" * 16 not in pair["sentence"]
+
+
+def test_no_dropped_days_says_nothing_about_dropping() -> None:
+    pair = book.pair_reading(series("a" * 16, wave(90)), series("b" * 16, wave(90)))
+    assert pair["dropped_days"] == {"a" * 16: 0, "b" * 16: 0}
+    assert "dropped" not in pair["sentence"]
+
+
+def test_the_header_says_the_returns_are_net_of_fees() -> None:
+    result = book.correlate([series("a" * 16, wave(90)), series("b" * 16, wave(90))])
+    assert "net of fees" in book.render_correlate(result)

@@ -78,7 +78,7 @@ def test_two_identical_stored_runs(tmp_path: Path) -> None:
     assert pair["common_days"] == 90
     assert pair["correlation"] == near(1.0)
     assert pair["both_in_market_days"] == 45 and pair["overlap_share"] == near(0.5)
-    assert facts["basis"] == "stored walk-forward equity and exposure of each run"
+    assert facts["basis"] == "stored walk-forward equity (net of fees) and exposure of each run"
     assert [r["run_id"] for r in facts["runs"]] == [A, B]
     assert facts["runs"][0]["labels"] == ["quick"]
     code, text = _cli(tmp_path, A, B)

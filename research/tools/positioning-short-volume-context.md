@@ -35,6 +35,6 @@ uv run alpha context show-derived --series cot_nc_net_pct_156w --key 13874A --as
 - FINRA files cover trades reported to FINRA facilities only, not all exchange volume: the level understates total
   volume. Compare a symbol with itself over time, never with exchange totals.
 - Cause or direction. Short volume is not short interest; positioning is not intent. Say "Hypothesis:".
-- Only `show-derived` reads these on bars (cut 2023-12-31); no rule test or RD-Agent run does yet. Count spells, not days.
+- Only `show-derived` and a [setup find](setup-context.md) read these on bars (cut 2023-12-31); no rule test or RD-Agent does. Count spells.
 
-**Next** Put the question to the [rule test](rule-test.md) with a defined rule; none exists on these series yet.
+**Next** Ask "what happened after this was extreme?" with a [setup find](setup-context.md); a rule test cannot use them yet.

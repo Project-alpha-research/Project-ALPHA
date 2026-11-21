@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified efbbfca05b41d1ee on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified b5ef39185f10ecde on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 apps/alpha-cli/README.md
   verified b5ef39185f10ecde on 2026-11-21: lazy import only; text still correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 7808de7862569145 on 2026-11-21: lazy import only; text still correct
 
 docs/reference/invariants/cli-runs.md
-  verified 583f092f6b814b99 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified f4dfb051dca6e36a on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -155,7 +155,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 832485d1e668183d on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 05cbf9ce3db84610 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -212,13 +212,13 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 26a0ce8dc922b1d0 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 9ebb6a07853da125 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/PLAYBOOK.md
-  verified 016616b001bb93b4 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 184a282565383c21 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/README.md
-  verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
+  verified f4c16c38198b4b32 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -227,13 +227,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 01604590cbec7f2d on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 8879004e4e4296df on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified a311412c19cd53d4 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 49421a1d483f35ce on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -242,10 +242,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 4f87dbdc3fd4b9be on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified e17b093c04cfbbb5 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/tools/diagnose-and-audit.md
-  verified 28f461301bb05e8e on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified ad7a616c45890b3b on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -290,7 +290,7 @@ research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 4f87dbdc3fd4b9be on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified e17b093c04cfbbb5 on 2026-11-21: m57 changes how spec.py and test_cmds.py load code; this page's text still describes its sources correctly
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct

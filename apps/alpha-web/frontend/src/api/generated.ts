@@ -11793,6 +11793,14 @@ export interface components {
             preferred_strategy: string | null;
             /** Ranked */
             ranked: components["schemas"]["ResearchRow"][];
+            /** Research Cutoff */
+            research_cutoff?: string | null;
+            /** Reserve */
+            reserve?: {
+                [key: string]: string | number;
+            } | null;
+            /** Reserve Sentence */
+            reserve_sentence?: string | null;
             /** Symbol */
             symbol: string;
         };

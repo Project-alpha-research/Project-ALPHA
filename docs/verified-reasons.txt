@@ -2,25 +2,28 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 5ea67d1eff8e2ae0 on 2026-11-21: merge of main plus the run-price command; routing and code map still hold
+  verified 6a9b06e7b43222bc on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 apps/alpha-cli/README.md
-  verified 5ea67d1eff8e2ae0 on 2026-11-21: merge of main plus the run-price command; routing and code map still hold
+  verified 6a9b06e7b43222bc on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified c2ea835085a54a48 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 apps/alpha-web/README.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified c2ea835085a54a48 on 2026-11-21: merge of main; my series route and stack text re-read and still correct beside main's changes
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+
+docs/reference/invariants/cli-crypto-data.md
+  verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-follow.md
   verified f82b7658d6a7bebe on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -32,7 +35,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -76,6 +79,9 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
+docs/reference/invariants/research.md
+  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
@@ -86,13 +92,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 0602b3aea4d03891 on 2026-11-21: merge of main; my series route and stack text re-read and still correct beside main's changes
 
 docs/reference/invariants/web-api.md
-  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified d5aa998dc7fdf8d9 on 2026-11-21: merge of main; my series route and stack text re-read and still correct beside main's changes
 
 docs/reference/invariants/web-frontend.md
-  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified dd38eec897c38a91 on 2026-11-21: merge of main; my series route and stack text re-read and still correct beside main's changes
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -212,7 +218,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified f556ef058d8f1184 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
 
 research/PLAYBOOK.md
   verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold

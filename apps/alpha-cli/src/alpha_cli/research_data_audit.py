@@ -20,6 +20,7 @@ from typing import Any, Final
 import polars as pl
 
 from alpha_cli import _artifacts
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_data.pit import PointInTimeReader
 from alpha_data.snapshot import verify_snapshot
@@ -121,6 +122,7 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     end_at = _parse_bound(ref.get("end_ts"), "end_ts", end_of_day=True)
     if end_at < start_at:
         raise DataError("registered dataset range must end at or after its start")
+    end_at = min(end_at, reserve.CUTOFF)
     origin = ref.get("origin")
     if isinstance(origin, Mapping) and origin.get("snapshot_schema") == "CryptoSnapshotV1":
         snapshot_id = str(origin.get("snapshot_id", ""))
@@ -148,6 +150,29 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     return frame.filter(frame["ts"] >= start_at)
 
 
+def _audit_hold(data_dir: Path, ref: Mapping[str, object]) -> tuple[reserve.Hold, list[str]]:
+    """What the cut held back from the registered range, and its note; reads time columns only."""
+    held = _held_in_range(data_dir, ref)
+    return held, [reserve.sentence(held.held_back, held.unit)] if held.held_back else []
+
+
+def _held_in_range(data_dir: Path, ref: Mapping[str, object]) -> reserve.Hold:
+    end = str(ref.get("end_ts", ""))[:10]
+    value = ref.get("origin")
+    origin: Mapping[str, object] = value if isinstance(value, Mapping) else {}
+    if origin.get("snapshot_schema") == "CryptoSnapshotV1":
+        if _parse_bound(end, "end_ts", end_of_day=True) < reserve.RESERVED_INSTANT:
+            return reserve.Hold(None, None, 0, "rows")
+        from alpha_cli.research_crypto_data import snapshot_held_back_rows
+
+        rows = snapshot_held_back_rows(str(origin.get("snapshot_id", "")), hedged=False)
+        return reserve.Hold(reserve.CUTOFF, reserve.CUTOFF_DATE, rows, "rows")
+    snapshot = str(origin.get("snapshot_id")) if ref.get("dataset_kind") == "snapshot" else None
+    return reserve.hold(
+        str(ref.get("instrument")), data_dir=data_dir, as_of=end, snapshot_id=snapshot
+    )
+
+
 def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]) -> dict[str, Any]:
     """Audit one registered dataset and publish the immutable EXPLORATORY run."""
     if _PROJECT_ID.fullmatch(project_id) is None:
@@ -165,13 +190,12 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
     crypto_snapshot = "funding_rate" in frame.columns
     value_column = "funding_rate" if crypto_snapshot else "close"
     values = [float(value) for value in frame[value_column]]
-
     interval_seconds = 8 * 3_600.0 if crypto_snapshot else 86_400.0
     duration = ref.get("bar_duration_minutes")
     if isinstance(duration, int) and not isinstance(duration, bool) and duration > 0:
         interval_seconds = duration * 60.0
     coverage = coverage_summary(timestamps, expected_interval_seconds=interval_seconds)
-    notes: list[str] = []
+    held, notes = _audit_hold(Path(data_dir), ref)
     blocking: list[str] = []
     limiting: list[str] = []
     if int(coverage["n"]) < _MINIMUM_USABLE_SAMPLE:  # type: ignore[call-overload]
@@ -331,6 +355,7 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
         "source_fingerprint": dataset_hash,
         "dataset_hash": dataset_hash,
     }
+    held.stamp(manifest)
     _artifacts.write_manifest(run_dir, manifest)
     return {"manifest": _artifacts.read_manifest(run_dir), "summary": summary}
 

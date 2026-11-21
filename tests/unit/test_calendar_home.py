@@ -203,3 +203,10 @@ def test_in_window_answers_equal_the_library_default_window(name: str) -> None:
         if probe not in index:
             assert _known(probe, name) == _stamp(probe) + DAILY.duration
             assert not is_session(name, probe)
+
+
+def test_a_weekend_bar_before_the_window_is_not_a_session() -> None:
+    saturday, monday = date(1940, 6, 1), date(1940, 6, 3)
+    present = {saturday, monday}
+    assert sessions_between("XNYS", saturday, monday, present) == [monday]
+    assert list(daily_session_closes("XNYS", saturday, monday, present)) == [monday]

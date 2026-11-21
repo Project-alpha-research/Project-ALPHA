@@ -164,8 +164,8 @@ def sessions_between(
 ) -> list[date]:
     """Every exchange session date from ``first`` to ``last`` inclusive.
 
-    Before the window start the sessions are the dates in ``present`` (the bar dates), or every
-    weekday when ``present`` is None. After the window end: ``CalendarRangeError``.
+    Before the window start the sessions are the weekday dates in ``present`` (the bar dates), or
+    every weekday when ``present`` is None (a weekend bar is a non-session, as inside the window). After the window end: ``CalendarRangeError``.
     """
     table = _table(calendar)
     _refuse_after(table, last)
@@ -173,7 +173,7 @@ def sessions_between(
     if first < table.first:
         stop = min(last, table.first - timedelta(days=1))
         if present is not None:
-            old = sorted(d for d in present if first <= d <= stop)
+            old = sorted(d for d in present if first <= d <= stop and d.weekday() < 5)
         else:
             old = [
                 first + timedelta(n)

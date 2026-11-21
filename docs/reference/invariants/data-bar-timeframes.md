@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: b568e0729040a92c
+verified: fd253f9e1b9bae63
 ---
 
 # Bar timeframes
@@ -63,8 +63,11 @@ other source file does. Every caller asks the home: `is_session`, `session_close
   truth, never earlier. An intraday open before the start fails loud (`CalendarRangeError`).
 - After the last session: `CalendarRangeError` (a `DataError`), "future session and not research".
   Follow commands turn it into the `FOLLOW_CALENDAR_RANGE` refusal.
+- Daily health adds a `calendar_range` check (status pass) with the label, the count and the first and last
+  date, only when bars predate the start. A weekend bar before the start is a non-session.
 - Crypto has no calendar: the end of the UTC day, as before.
-- Tests: `test_calendar_home.py` (date-independent: bounds come from the library at run time).
+- Tests: `test_calendar_home.py` (date-independent: bounds come from the library at run time) and
+  `test_calendar_before_after.py` (the kept bars and known-at instants equal the old rule in the window).
 
 ## Reading intraday bars
 

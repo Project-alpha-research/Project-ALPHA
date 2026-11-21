@@ -23,7 +23,12 @@ from alpha_core import (
 from alpha_data.adapters.yfinance_adapter import split_discontinuity
 from alpha_data.corporate import known_actions
 from alpha_data.crypto.quality import missing_slot_ranges
-from alpha_data.sessions import daily_session_closes
+from alpha_data.sessions import (
+    OUTSIDE_RANGE_LABEL,
+    daily_session_closes,
+    outside_supported_range,
+    supported_range,
+)
 from alpha_data.timeframe import DAILY
 
 SPLIT_RATIOS = (
@@ -644,6 +649,31 @@ def _mechanical_checks(
     ]
 
 
+def _range_checks(calendar: str | None, dates: Sequence[date]) -> list[HealthCheck]:
+    """Say so when bars predate the calendar: their sessions and closes are assumed, not known."""
+    if calendar is None:
+        return []
+    old = sorted(d for d in set(dates) if outside_supported_range(calendar, d))
+    if not old:
+        return []
+    first = supported_range(calendar)[0]
+    finding = (
+        f"{OUTSIDE_RANGE_LABEL}: {len(old)} bars from {old[0]} to {old[-1]} come before the first "
+        f"{calendar} session in the calendar ({first}). Each is taken as a session closing at the "
+        "regular close; holidays before it cannot be told apart."
+    )
+    return [
+        _item(
+            "calendar_range",
+            "gaps",
+            old,
+            "pass",
+            finding,
+            "Bars before the calendar start use the labelled fallback.",
+        )
+    ]
+
+
 def health_report(
     bars: pl.DataFrame,
     *,
@@ -690,6 +720,7 @@ def health_report(
         *_adjustments(runs, splits, calendar is None, slots, moves),
         *_mechanical_checks(observed, closes, report_time, calendar, dates, timezone_check, future),
         *_price_checks(runs),
+        *_range_checks(calendar, dates),
         _survivorship(universe_bars, memberships, report_time),
     ]
     return HealthReport(

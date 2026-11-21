@@ -195,16 +195,16 @@ def _bars(
 ) -> tuple[str, list[dict[str, float]], bool]:
     symbol = manifest.get("symbol")
     snapshot = manifest.get("snapshot_id")
-    if not isinstance(symbol, str):
-        return "not_applicable", [], False
-    if not isinstance(snapshot, str):
-        if not isinstance(manifest.get("spine"), dict):
-            return "snapshot_unavailable", [], False
+    if not isinstance(snapshot, str) and isinstance(manifest.get("spine"), dict):
         # A rule test saves no snapshot: its bars show only when they hash to its recorded source.
         status, rows = run_price.verified_bars(manifest, data_dir=data_dir)
         if status != "available":
             return status, [], False
         return _window_rows(rows, limit, lower, cutoff)
+    if not isinstance(symbol, str):
+        return "not_applicable", [], False
+    if not isinstance(snapshot, str):
+        return "snapshot_unavailable", [], False
     try:
         kwargs: dict[str, Any] = {}
         if manifest.get("command") == "research_daily_rule_projection_v1":

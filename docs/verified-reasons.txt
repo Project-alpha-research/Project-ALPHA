@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b3ccef37d1760660 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-cli/README.md
-  verified b3ccef37d1760660 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -65,7 +65,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 84c1ca1137a28db2 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+  verified e4ab39b0d50fe178 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -83,7 +83,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified f36c0a93f15aac0b on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
+  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
 
 docs/reference/invariants/testing.md
   verified 1abbbd07773b424f on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
@@ -224,7 +224,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 3c8718e4bbba4812 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
+  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
 
 research/PLAYBOOK.md
   verified 18c4f9f54a72ebb1 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.

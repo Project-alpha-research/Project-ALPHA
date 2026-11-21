@@ -811,14 +811,14 @@ def crypto_hedged_basis_snapshot_compatibility(snapshot_id: str) -> dict[str, ob
 
 
 def crypto_hedged_basis_observations(
-    snapshot_id: str,
+    snapshot_id: str, *, before_reserved: bool = True
 ) -> tuple[HedgedBasisObservationV1, ...]:
-    """Reverify and compose the exact candidate stream without creating a run."""
+    """Reverify and compose the exact candidate stream without creating a run.
+
+    Reserved-day rows are read only if ``before_reserved`` is False (a sealed holdout window)."""
     snapshot, reports, _ = _verified_hedged_basis_snapshot(snapshot_id)
     return load_hedged_basis_observations(
-        snapshot,
-        reports,
-        bulk_root=_bulk_store().bulk_root,
+        snapshot, reports, bulk_root=_bulk_store().bulk_root, before_reserved=before_reserved
     )
 
 

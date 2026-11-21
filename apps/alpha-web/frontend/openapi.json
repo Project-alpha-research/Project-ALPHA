@@ -21866,6 +21866,49 @@
             "title": "Ranked",
             "type": "array"
           },
+          "research_cutoff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Cutoff"
+          },
+          "reserve": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve"
+          },
+          "reserve_sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Sentence"
+          },
           "symbol": {
             "title": "Symbol",
             "type": "string"

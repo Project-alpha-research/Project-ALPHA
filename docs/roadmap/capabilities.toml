@@ -1376,7 +1376,7 @@ id = "options-data"
 name = "Provider-neutral options data layer"
 what = "Store option chains from any provider in one shape and read them point in time, without changing stored snapshots."
 see_it = ["uv run pytest -q tests/unit/test_options_store.py"]
-entry_points = ["code: packages/alpha-data/src/alpha_data/options/store.py"]
+entry_points = ["cli: alpha options derived", "code: packages/alpha-data/src/alpha_data/options/store.py"]
 proof_synthetic = [
   "tests/unit/test_options_store.py::test_early_read_sees_nothing_and_later_reads_see_only_known_snapshots",
   "tests/unit/test_options_schema.py::test_duplicate_contract_in_one_snapshot_is_refused",
@@ -1384,7 +1384,7 @@ proof_synthetic = [
 real_data = "not yet confirmed; no provider is chosen and the synthetic fixture is the only source"
 needs = []
 state = "Partial"
-missing = "no provider adapter, derived series, health rows or command; waits for the paid data package"
+missing = "no provider adapter, health rows or context-store join; waits for the paid data package"
 docs = ["docs/reference/project/components/options-data.md"]
 
 [[capability]]

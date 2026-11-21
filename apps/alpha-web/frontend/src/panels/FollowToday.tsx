@@ -198,7 +198,7 @@ export function FollowToday() {
   }, [round])
   useEffect(() => {
     let live = true
-    api.marketOverview('1D', 30, 200).then(
+    api.marketOverview('1D', 30, 30).then(
       overview => { if (live) setBarsEnd(Object.fromEntries(overview.assets.map(item => [item.asset, item.last_bar.slice(0, 10)]))) },
       () => { /* Without stored-bar dates the card keeps the command's own words. */ },
     )

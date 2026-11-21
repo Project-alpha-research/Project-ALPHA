@@ -30,7 +30,7 @@ export function EquitiesDataView() {
   useEffect(() => {
     let live = true
     setError(null)
-    api.marketOverview('1D', 30, 200)
+    api.marketOverview('1D', 30, 30)
       .then((overview) => live && setAssets(overview.assets))
       .catch((cause: unknown) => live && setError(String(cause)))
     api.cryptoStorage().then((value) => live && setStorage(value)).catch(() => live && setStorage(null))
@@ -39,7 +39,7 @@ export function EquitiesDataView() {
   const rows = assets ? storedRows(assets, new Date().toISOString().slice(0, 10)) : null
   return (
     <section className="panel-pad equities-data" aria-label="Stored equity bars">
-      <div className="rd-head">Stored stock and ETF bars (daily)</div>
+      <div className="rd-head">Stored stock and ETF bars (daily; first 30 symbols)</div>
       {error ? <div className="leak" role="alert">{error}</div> : null}
       {rows === null && !error ? <Placeholder>Loading stored bars…</Placeholder> : null}
       {rows && rows.length === 0 ? <p className="muted">No daily bars are stored yet. Use the Pull tab to add some.</p> : null}

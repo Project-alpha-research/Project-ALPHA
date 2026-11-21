@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified ec7b3f5493bb6a9a on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 apps/alpha-cli/README.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified ec7b3f5493bb6a9a on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified a10a05c9297d3cbf on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -64,6 +64,9 @@ docs/reference/invariants/data.md
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
+docs/reference/invariants/engineering.md
+  verified ba24d3973d175368 on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
+
 docs/reference/invariants/patterns.md
   verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
@@ -72,6 +75,9 @@ docs/reference/invariants/rdagent.md
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
+docs/reference/invariants/research.md
+  verified e6cf02261e71acc7 on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
@@ -95,7 +101,7 @@ docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
 
 docs/reference/invariants/workers.md
-  verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 93a130d7f2a08335 on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
@@ -206,7 +212,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 06104032b6af9c41 on 2026-11-21: alpha-cli code changed for held-back reads (compare, propfirm, monte-carlo, labels); this page's text is still correct
 
 research/PLAYBOOK.md
   verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct

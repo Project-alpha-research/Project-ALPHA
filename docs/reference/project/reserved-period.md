@@ -47,7 +47,7 @@ Locks it out (the code refuses reserved rows or aborts):
   Study and trade refuse an older find that used the period (`RESERVED_PERIOD_SEEN`). `alpha tool` reads a held-back run with the run's own cut-off.
 - Search and score commands: `alpha optim` (grid and mcpt), `alpha validate`, `alpha backtest oos`, `run`, `portfolio` and `cross-sectional`,
   `alpha scan run`, `alpha scan hypotheses` (and `replay`), `alpha backtest run --manifest-id`, `alpha rules explain`, `alpha lookalike`, `alpha
-  unusual` and `alpha labels barrier`. They use the same helper
+  unusual`, `alpha labels barrier`, `alpha research compare` and `alpha propfirm run SYMBOL`. They use the same helper
   (`Hold` in `spine/reserve.py`) and the same cut-off, count, label and sentence as rule tests. The earlier of the cut-off and the user's own
   `--as-of` wins. A run with held-back bars records `reserve` and the label `reserved-period-held-back`, and its `research_cutoff` becomes 2023-12-31.
   A store with no bar from the date on keeps its ids and outputs, except that a split or dividend known only from the date on is never applied.
@@ -59,8 +59,11 @@ Locks it out (the code refuses reserved rows or aborts):
   It counts every such row (bars, funding, open interest) that the user's cut-off would have admitted, so its record is `held_back_rows` and its
   sentence says "rows (bars, funding and open interest)". Other commands keep `held_back_bars` and the standard sentence. A manifest replay reads
   the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
-  A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
-  only when the source run did.
+  A replay of an older frozen scan is refused by its code hash, as before. `alpha research compare` and `alpha propfirm run` print the same sentence
+  and record the same `reserve` field. `propfirm` adds it to the run id only when a bar was held back, so other ids stay. `alpha propfirm --from-run`
+  reads only a stored equity curve. `alpha monte-carlo` reads with its source run's cut-off, never later than 2023-12-31: a source run that recorded
+  none gets 2023-12-31. `alpha labels weights` and `importance` refuse a stored barrier result that holds a bar or event from the date on
+  (`RESERVED_PERIOD_SEEN`) and name `alpha labels barrier` as the next step.
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
 Only labels it:
@@ -76,12 +79,10 @@ Holds nothing back (they still read bars from the date on):
   - ML input preparation (`ml_input.py`): tied to a project's frozen export.
   - Forecast evaluation (`alpha forecast`): a forecast run is forward use; the evaluation sites need their own design.
   - Research diagnostics (`research_diagnostic_cmds.py`): tied to research cases and their sealed holdout.
-  - `alpha propfirm`: it reads every stored bar (no cut-off).
   - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose (tested:
     `test_alert_check_is_forward_use_and_still_reads_the_latest_bar`).
   - Research case runs (`research_cmds.py`, `research_execution.py`): they have their own sealed holdout; `alpha backtest holdout` is the revealed
     holdout itself.
-  - `alpha labels weights` and `importance` read a stored barrier result; one built before this change can hold events from the date on.
 - Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
 - Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.
 - Data health (`alpha data health`, and `--check-data` on a rule test or setup) checks every stored bar, the held-back ones too.
@@ -102,3 +103,5 @@ Holds nothing back (they still read bars from the date on):
   this change are not relabelled; only rule runs derive `reserved-period-seen`. Stored hypothesis scans and backtest runs carry no last-bar
   date in a common place, so a read-only label on display needs its own design.
 - Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.
+- Guard: [a structural test](../../../tests/unit/test_research_reads_are_cut.py) lists every read of bars or dividends that passes no cut-off,
+  with a reason each. A new one fails it. It sees a missing or `None` `as_of`, not a variable that is `None` at run time; the command tests cover those.

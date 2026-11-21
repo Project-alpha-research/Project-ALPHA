@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d338231461043a84 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified b16a62275483804f on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 apps/alpha-cli/README.md
-  verified d338231461043a84 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified b16a62275483804f on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -38,10 +38,10 @@ docs/reference/invariants/cli-results-check.md
   verified d9971783cc7ee726 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 7e90f29a2796cd6e on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
+  verified 7f0208afa7cbd685 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 docs/reference/invariants/cli-runs.md
-  verified e8b68e6a37a0b799 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 82cfe06a3850a2f2 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -152,7 +152,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 174e38e7cc93ac13 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 218ac11a2a5d309f on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -206,10 +206,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 58593ea7691f8edd on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 61dbd2f4962ac0e3 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/PLAYBOOK.md
-  verified 22687c4678c62c99 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified b0700528e90dc792 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/README.md
   verified f7c44f6e0bccb2ec on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
@@ -221,22 +221,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 1f06e890b6307165 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified f7670eeac04dd5bb on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 627e9a3fb242a682 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 3b832f79197f48d0 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/charts.md
   verified ae687b3ae1f3392c on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 research/tools/deflated-sharpe-and-trials.md
-  verified b66c16425534e4bb on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 6aa427b5d347e73b on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/diagnose-and-audit.md
-  verified 6ed17b9cee19020a on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 43c832b6d3b825b3 on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -275,13 +275,13 @@ research/tools/results-and-cite.md
   verified 86e95bba31166bba on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified 42adca2f1c4185b4 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 253eca57fda3d4fa on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified b66c16425534e4bb on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
+  verified 6aa427b5d347e73b on 2026-11-21: Merged main into the portfolio book branch: adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed; text re-read
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

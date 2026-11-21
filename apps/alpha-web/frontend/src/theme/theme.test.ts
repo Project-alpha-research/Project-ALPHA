@@ -26,9 +26,8 @@ describe('workstation themes', () => {
       const block = css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)`))?.[1]
       expect(block).toBeDefined()
       const tokens = Object.fromEntries([...block!.matchAll(/--([\w-]+):\s*(#[a-f\d]{6});/gi)].map(m => [m[1], m[2]]))
-      const grades = ['a', 'b', 'c', 'd', 'f'].map(g => 'verdict-' + g)
-      const backgrounds = ['bg', 'panel', 'panel-2', 'elevated', 'title', 'field-bg', 'accent-soft', 'up-soft', 'down-soft', 'gold-soft', ...grades.map(g => g + '-soft')]
-      for (const role of ['ink', 'ink-dim', 'muted', 'accent-text', 'negative-text', 'up', 'gold', ...grades]) {
+      const backgrounds = ['bg', 'panel', 'panel-2', 'elevated', 'title', 'field-bg', 'accent-soft', 'up-soft', 'down-soft', 'gold-soft']
+      for (const role of ['ink', 'ink-dim', 'muted', 'accent-text', 'negative-text', 'up', 'gold']) {
         for (const bg of backgrounds) expect(contrast(tokens[role], tokens[bg]), role + ' on ' + bg).toBeGreaterThanOrEqual(role === 'ink' ? 7 : 4.5)
       }
       expect(contrast(tokens['selection-ink'], tokens.selection)).toBeGreaterThanOrEqual(4.5)

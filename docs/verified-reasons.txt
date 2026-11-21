@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 52b8382de1a04f57 on 2026-11-21: re-read: a new options command group and one menu entry were added; routing and rules here are unchanged
+  verified f27c34198ff1ee42 on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 apps/alpha-cli/README.md
-  verified 52b8382de1a04f57 on 2026-11-21: re-read: a new options command group and one menu entry were added; routing and rules here are unchanged
+  verified f27c34198ff1ee42 on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 6fac4f4f526f04a9 on 2026-11-21: re-read: a new options command group and one menu entry were added; routing and rules here are unchanged
+  verified 3ee45c87e4671f2e on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 apps/alpha-web/README.md
-  verified 6fac4f4f526f04a9 on 2026-11-21: re-read: a new options command group and one menu entry were added; routing and rules here are unchanged
+  verified 3ee45c87e4671f2e on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -41,7 +41,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified dacf8068e5efaf5b on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 0e8a6d37fc2f8aa3 on 2026-11-21: Merged main into the calendar range branch; both sides' source changes re-read; text still correct
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -52,6 +52,9 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
+docs/reference/invariants/data-context.md
+  verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
+
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
@@ -59,7 +62,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified e46fb4e1c46ac85e on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
+  verified 2858c0632759547a on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -89,7 +92,7 @@ docs/reference/invariants/web-api.md
   verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 416a809d54f2d4cf on 2026-11-21: re-read: one Research menu entry added for the new options group; no rule changes
+  verified be5205682cd47f4b on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -128,7 +131,7 @@ docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/options-data.md
-  verified d19536658f0fe4ba on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
+  verified 814a9b6c19ab1666 on 2026-11-20: Invariants page only split into a new section and rewrapped a line; the component summary (0.14 s solve, 21 s chain) still matches
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -152,7 +155,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 8d344f6bea767d1d on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -200,16 +203,16 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified c9af6a41f923ae02 on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
+  verified 5e5de9113a6024c6 on 2026-11-21: re-read after merging main: the options group and menu entry were added; routing and rules here are unchanged
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 27011a9ff5a675ee on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified ad3802efccc9fed2 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -221,22 +224,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 834a0af0847ddc9b on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 7c1eb2d3dc938ace on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
+research/tools/data-health.md
+  verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+
 research/tools/deflated-sharpe-and-trials.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 9f3e55d30e846b3e on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -252,6 +258,9 @@ research/tools/montecarlo-checks.md
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+
+research/tools/positioning-short-volume-context.md
+  verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -272,13 +281,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 7f5083598a89bacd on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

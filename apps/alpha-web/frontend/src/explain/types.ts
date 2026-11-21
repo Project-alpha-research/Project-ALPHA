@@ -99,6 +99,14 @@ export interface ValidateManifest {
   research_cutoff?: string | null
 }
 
+/** A validate manifest as the run response carries it, with the labels older runs may lack. */
+export type RecordedManifest = ValidateManifest & {
+  labels?: readonly string[]
+  spine?: { labels?: readonly string[] }
+  n_trades?: number | null
+  verdict?: ValidateManifest['verdict'] & { labels?: readonly string[] }
+}
+
 // ---- optim / portfolio / propfirm / forecast manifests ------------------------------------
 
 export interface OptimManifest {
@@ -217,12 +225,6 @@ export interface GateStory extends Explained {
   /** What this gate tests, independent of this run's numbers (teaching text). */
   tests: string
   stats: StatChip[]
-}
-
-/** One verdict dimension, explained against its grading bands. */
-export interface DimensionStory extends Explained {
-  dimension: 'edge' | 'robustness' | 'risk' | 'sample' | 'overall'
-  grade: string
 }
 
 /** A rule-based "what to try next" recommendation. */

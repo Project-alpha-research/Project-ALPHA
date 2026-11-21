@@ -298,7 +298,7 @@ def test_reserved_period_labels_are_explained() -> None:
     )
 
 
-def test_a_stored_outcome_reads_as_evidence_with_its_place_in_the_family(tmp_path: Path) -> None:
+def test_a_stored_outcome_reads_as_the_command_lines_evidence_word(tmp_path: Path) -> None:
     find_fixture(tmp_path)
     folder = outcome_fixture(tmp_path, "study")
     summary = json.loads((folder / "summary.json").read_text())
@@ -311,18 +311,7 @@ def test_a_stored_outcome_reads_as_evidence_with_its_place_in_the_family(tmp_pat
         "sha256": hashlib.sha256(data).hexdigest(),
     }
     write_json(folder / "manifest.json", manifest)
-    rows = [
-        {"kind": "setup_study", "study_id": "z" * 16, "idea": "volume SPIKE", "labels": []},
-        {"kind": "setup_study", "study_id": STUDY, "idea": "Volume spike", "labels": []},
-    ]
-    (tmp_path / "ledger").mkdir()
-    (tmp_path / "ledger/trials.jsonl").write_text(
-        "".join(
-            json.dumps(row | {"schema": "AlphaTrialV1", "trial_index": i, "total_trials": i}) + "\n"
-            for i, row in enumerate(rows, 1)
-        )
-    )
     found = _setup_runs.read_run(tmp_path, FIND).studies[0].reading
     assert found is not None
     assert (found.evidence, found.old_wording) == ("some evidence", False)
-    assert (found.family_position, found.family_count) == (2, 2)
+    assert found.family_position is None  # no ledger row of this study; the CLI counts them

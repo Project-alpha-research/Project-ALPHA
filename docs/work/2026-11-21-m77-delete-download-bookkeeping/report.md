@@ -14,6 +14,7 @@ Result: the four accounting modules, their tests and the optional accounting par
 - `run_backfill`: the parameters `fixture_accounting`, `fixture_http_accounting`, `fixture_http_response_evidence` and the code that used them.
 - Capability `download-bookkeeping`, its trace row, the production-scope row, and text in `data-layer.md` and `cli-crypto-data.md`.
   `docs/ARCHITECTURE.md` had no row for these modules. The triage sheet is history; I left it.
+- `docs/roadmap/triage-2026-11.md`: removed the card 2 row from the decisions table (`test_capabilities` compares it with the capability map).
 - Protected, not edited: `scripts/gate_test_durations.json` still lists `tests/unit/test_market_data_acquisition_accounting.py` (line 371). The orchestrator should remove that entry.
 
 ## Decisions
@@ -37,3 +38,6 @@ The orchestrator must remove these entries from `.claude/code-size-baseline.json
 - `apps/alpha-cli/src/alpha_cli/_crypto_backfill.py::run_backfill`
 - `apps/alpha-cli/src/alpha_cli/_crypto_http_replay.py::FixtureBoundHttpAccounting._dispatch_bound` (272)
 - `apps/alpha-cli/src/alpha_cli/_crypto_http_replay.py::FixtureBoundHttpAccounting._validate` (164)
+
+## CI note
+`test_filesystem_contract.py::test_work_folder_holds_only_task_folders` fails because `docs/work/_common-rules-2026-11-21.md` comes from the base branch. Not caused by this change.

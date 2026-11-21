@@ -4566,6 +4566,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/owner-auth/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Owner Reserved Confirmation
+         * @description SPA entry reached only through `alpha confirm request`'s short-lived Touch ID link.
+         */
+        get: operations["owner_reserved_confirmation_owner_auth_confirm_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/owner-auth/enroll": {
         parameters: {
             query?: never;
@@ -21943,6 +21963,35 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    owner_reserved_confirmation_owner_auth_confirm_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Stable, redacted Workstation error */

@@ -182,3 +182,51 @@ export function contentAddressHash(identifier: string): string {
   if (!/^[0-9a-f]{64}$/u.test(digest)) throw new Error('The active artifact is not content-addressed.')
   return digest
 }
+
+export interface ReservedConfirmationRequest {
+  challengeId: string
+  publicKey: Record<string, unknown>
+  payload: Record<string, unknown>
+  summary: string
+}
+
+function objectFromBase64url(value: string): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(new TextDecoder().decode(bytesFromBase64url(value)))
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('The confirmation link is damaged. Run alpha confirm request again.')
+  }
+  return parsed as Record<string, unknown>
+}
+
+// The link from `alpha confirm request`: the challenge the trusted CLI issued, in the fragment
+// (never sent to the server). The server checks the payload against that challenge.
+export function reservedConfirmationRequest(hash: string): ReservedConfirmationRequest | null {
+  const params = new URLSearchParams(hash.replace(/^#/u, ''))
+  const challengeId = params.get('challenge')
+  const options = params.get('options')
+  const payload = params.get('payload')
+  if (!challengeId || !options || !payload) return null
+  return {
+    challengeId,
+    publicKey: objectFromBase64url(options),
+    payload: objectFromBase64url(payload),
+    summary: params.get('summary') ?? '',
+  }
+}
+
+export async function confirmReservedPeriod(
+  request: ReservedConfirmationRequest,
+): Promise<OwnerActionResult> {
+  const credentials = requireWebAuthn()
+  const asserted = await credentials.get({
+    publicKey: authenticationRequestOptions(request.publicKey),
+  })
+  if (!(asserted instanceof PublicKeyCredential)) {
+    throw new Error('Touch ID was cancelled. Nothing was spent.')
+  }
+  return api.ownerActionPerform(
+    request.challengeId,
+    serializeAuthenticationCredential(asserted),
+    request.payload,
+  )
+}

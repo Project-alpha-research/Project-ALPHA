@@ -41060,6 +41060,33 @@
         "summary": "Healthz"
       }
     },
+    "/owner-auth/confirm": {
+      "get": {
+        "description": "SPA entry reached only through `alpha confirm request`'s short-lived Touch ID link.",
+        "operationId": "owner_reserved_confirmation_owner_auth_confirm_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Owner Reserved Confirmation"
+      }
+    },
     "/owner-auth/enroll": {
       "get": {
         "description": "SPA entry reached only through the trusted CLI's short-lived enrollment URL.",

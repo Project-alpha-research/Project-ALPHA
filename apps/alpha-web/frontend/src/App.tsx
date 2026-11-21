@@ -7,6 +7,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { IndicatorsDialog } from './components/IndicatorsDialog'
 import { Toasts } from './components/Toasts'
 import { OwnerEnrollment } from './auth/OwnerEnrollment'
+import { ReservedConfirmation } from './auth/ReservedConfirmation'
 import { getLinked, getLinkedWorkspace, restoreLinked, setLinked, useLinked } from './context/linked'
 import { requestNewIdea } from './context/newIdea'
 import { onResearchCase } from './context/researchCase'
@@ -203,5 +204,7 @@ function WorkstationApp() {
 }
 
 export function App() {
-  return window.location.pathname === '/owner-auth/enroll' ? <OwnerEnrollment /> : <WorkstationApp />
+  if (window.location.pathname === '/owner-auth/enroll') return <OwnerEnrollment />
+  if (window.location.pathname === '/owner-auth/confirm') return <ReservedConfirmation />
+  return <WorkstationApp />
 }

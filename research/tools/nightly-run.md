@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_cmds.py
   - apps/alpha-cli/src/alpha_cli/nightly_run.py
   - apps/alpha-cli/src/alpha_cli/nightly_status.py
-verified: 2e4d6ed6f1fc54c5
+verified: f4762e62775591a8
 ---
 
 # Nightly run
@@ -36,5 +36,5 @@ Start from [the example](../examples/nightly.example.toml).
 - The first night's test is a counted trial; a recheck adds no ledger row. The run reads the saved health report first: a new report changes the test id.
 
 **What it cannot tell you** Whether any idea has an edge. A clean night says the system works, nothing more.
-**Schedule** Installs nothing; `status` prints one crontab line. Run after the close and the provider's bar, before the next open: check the time.
-**Next** `uv run alpha nightly status` lists 5 runs and names the missing item, (a) to (d). `--only` runs are ignored.
+**Schedule** Installs nothing; `status` prints one crontab line. Run after the close and the provider's bar, before the next open.
+**Next** `uv run alpha nightly status` lists 5 runs and names the missing item, (a) to (d). A failed night: [marker](nightly-alert.md).

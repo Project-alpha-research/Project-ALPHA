@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-310 commands in 42 groups. Options marked (required) are
+314 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -170,6 +170,14 @@ Kronos foundation-model forecasting (probabilistic outcome cones).
 - `alpha forecast eval <SYMBOL>` — Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines. Options: `--horizon`, `--stride`, +16 more
 - `alpha forecast run <SYMBOL>` — Sample future OHLCV paths for SYMBOL and write the outcome-cone artifacts. Options: `--horizon`, `--samples`, +12 more
 
+## alpha home
+
+Back up the data home, check a backup, restore it to a new folder.
+
+- `alpha home backup <FOLDER>` — Write one archive of the whole data home, with a manifest and its SHA-256. Options: `--json`
+- `alpha home restore <ARCHIVE> <FOLDER>` — Check a backup, then write it into a NEW EMPTY folder. Options: `--json`
+- `alpha home verify-backup <ARCHIVE>` — Read a backup again and check every file against its manifest. Options: `--json`
+
 ## alpha idea
 
 Write an idea card before you test an idea.
@@ -265,6 +273,12 @@ Parameter sweeps judged for overfitting (Deflated Sharpe + PBO + SPA).
 
 - `alpha optim grid <SYMBOL>` — Sweep SYMBOL over the ''--grid'' axes and report the overfitting-aware best config. Options: `--grid`, `--strategy`, +27 more
 - `alpha optim mcpt <SYMBOL>` — In-sample Monte Carlo permutation test of the ''--grid'' sweep (overfit test, not OOS). Options: `--grid`, +24 more
+
+## alpha options
+
+Stored option chains: derived volatility series (readings only).
+
+- `alpha options derived <UNDERLYING>` — Show iv30, IV rank and percentile, 25-delta skew, term slope and IV minus real… Options: `--series`, `--rows`, +4 more
 
 ## alpha owner-auth
 

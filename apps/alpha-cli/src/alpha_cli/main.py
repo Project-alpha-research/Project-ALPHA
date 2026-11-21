@@ -45,7 +45,9 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("idea", "alpha_cli.idea_cmds", "idea_app"),
     ("library", "alpha_cli.library_cmds", "library_app"),
     ("nightly", "alpha_cli.nightly_cmds", "nightly_app"),
+    ("home", "alpha_cli.home_cmds", "home_app"),
     ("follow", "alpha_cli.follow_cmds", "follow_app"),
+    ("options", "alpha_cli.options_cmds", "options_app"),
 )
 COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("diagnose", "alpha_cli.results_cmds", "diagnose_run"),

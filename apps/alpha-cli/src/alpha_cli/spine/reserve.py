@@ -11,7 +11,8 @@ from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
-from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT, RESERVED_START
+from alpha_core.reserve import RESERVED_DAY, RESERVED_START
+from alpha_core.reserve import RESERVED_INSTANT as RESERVED_INSTANT  # re-exported: the one boundary
 
 # The one boundary. A row stamped at or after the first instant of the reserved day is held
 # back. A row stamped before it is used once it is known, and it is known by this instant at the

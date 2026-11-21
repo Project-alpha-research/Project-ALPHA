@@ -27,7 +27,9 @@ from tests.unit._context_attach_support import (
 )
 
 
-def _on(frame_days: list[date], data_dir: Path, binding: Binding, calendar: str | None) -> list:
+def _on(
+    frame_days: list[date], data_dir: Path, binding: Binding, calendar: str | None
+) -> list[object]:
     out = attach_context(
         bars(frame_days),
         timeframe=DAILY,

@@ -20,7 +20,8 @@ from typing import NamedTuple
 import polars as pl
 
 from alpha_core import DataError
-from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT
+from alpha_core.reserve import RESERVED_DAY
+from alpha_core.reserve import RESERVED_INSTANT as RESERVED_INSTANT  # re-exported
 from alpha_data.context import cftc_cot, derived, finra_short
 from alpha_data.context.events import TIME, as_known_events, load_events, utc_time
 from alpha_data.sessions import bar_known_at

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/_context_plan.py
-verified: 91ae51daa0e3f098
+verified: f9800b65c9ac7e66
 ---
 
 # Rule test

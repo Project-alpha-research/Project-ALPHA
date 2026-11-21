@@ -1,101 +1,71 @@
-"""Price bars for a run that saved no bar snapshot: shown only when they match the run's record.
+"""Price bars for a run that saved no snapshot, read through ``alpha data run-price``.
 
-A rule test reads the stored bars up to the research cut-off and records one source fingerprint
-over them. This module reads the stored bars again, cuts them at that cut-off and at the run's
-last date, and hashes them the way the run did. It returns the bars only when the two hashes are
-equal. It never reads a bar at or after the cut-off. It computes no statistic.
+The check hashes stored bars with the engine's own fingerprint, so it runs in the CLI process and
+this module only calls it. It returns the bars only when the CLI says they match the run's record.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from datetime import datetime
+import json
+import math
+import os
+import subprocess
 from pathlib import Path
-from typing import Any
 
-from alpha_core import Bar, DataError
-
-BARS_CHANGED = "bars_changed_since_run"
-NOT_SAVED = "price_not_saved_with_run"
+_ALPHA_BIN = "alpha"
+_TIMEOUT_S = 30.0
+_ENV_NAMES = frozenset(
+    {
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "PATH",
+        "PYTHONPATH",
+        "TMPDIR",
+        "TZ",
+        "VIRTUAL_ENV",
+        "ALPHA_BULK_DATA_DIR",
+        "ALPHA_BULK_VOLUME_UUID",
+    }
+)
+_FIELDS = ("t", "o", "h", "l", "c", "v")
+AVAILABLE = "available"
 UNAVAILABLE = "price_unavailable"
 
 
-def _text(value: object) -> str | None:
-    return value if isinstance(value, str) and value else None
-
-
-def _map(value: object) -> Mapping[str, Any]:
-    return value if isinstance(value, Mapping) else {}
-
-
-def _recorded(manifest: Mapping[str, Any]) -> str | None:
-    """The run's recorded source fingerprint when it is a 64-hex digest."""
-    value = _text(manifest.get("source_fingerprint"))
-    if value is None or len(value) != 64:
-        return None
+def verified_bars(run_id: str, *, data_dir: Path) -> tuple[str, list[dict[str, float]]]:
+    """``(status, rows)``; rows only when the status is ``available``. A refusal never raises."""
+    env = {name: value for name, value in os.environ.items() if name in _ENV_NAMES}
+    env["ALPHA_DATA_DIR"] = str(data_dir)
     try:
-        int(value, 16)
-    except ValueError:
-        return None
-    return value
-
-
-def _last_date(manifest: Mapping[str, Any]) -> datetime | None:
-    spine = _map(manifest.get("spine"))
-    stamp = _text(_map(spine.get("data_period")).get("last_ts")) or _text(
-        _map(manifest.get("metadata")).get("last_ts")
-    )
-    if stamp is None:
-        return None
-    try:
-        last = datetime.fromisoformat(stamp)
-    except ValueError:
-        return None
-    return last if last.tzinfo is not None else None
-
-
-def _row(bar: Bar) -> dict[str, float]:
-    return {
-        "t": bar.ts.timestamp(),
-        "o": bar.open,
-        "h": bar.high,
-        "l": bar.low,
-        "c": bar.close,
-        "v": bar.volume,
-    }
-
-
-def verified_bars(
-    manifest: Mapping[str, Any], *, data_dir: Path
-) -> tuple[str, list[dict[str, float]]]:
-    """Return ``(status, rows)`` for a rule-test manifest; rows only when ``status`` is available.
-
-    Statuses: ``available``; ``price_not_saved_with_run`` (no usable fingerprint, symbol, store or
-    last date was recorded); ``bars_changed_since_run`` (the stored bars no longer hash to the
-    record); ``price_unavailable`` (the stored bars could not be read).
-    """
-    recorded = _recorded(manifest)
-    symbol = _text(_map(manifest.get("metadata")).get("symbol")) or _text(manifest.get("symbol"))
-    store = _text(_map(manifest.get("spine")).get("store"))
-    last = _last_date(manifest)
-    if recorded is None or symbol is None or store is None or last is None:
-        return NOT_SAVED, []
-    from alpha_cli import _runner
-    from alpha_cli.spine import reserve
-    from alpha_cli.spine.stores import resolve_asset
-
-    try:
-        resolved = resolve_asset(f"{symbol}@{store}", data_dir=data_dir)
-        bars, _ = _runner.load_bars(
-            resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
+        proc = subprocess.run(
+            [_ALPHA_BIN, "data", "run-price", run_id, "--json"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+            timeout=_TIMEOUT_S,
         )
-        dividends = _runner.load_dividends(
-            resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
-        )
-    except DataError:
+        payload = json.loads(proc.stdout) if proc.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
         return UNAVAILABLE, []
-    edge = min(last, reserve.CUTOFF)
-    kept = [bar for bar in bars if bar.ts <= edge]
-    if _runner.source_fingerprint(kept, dividends=dividends) != recorded:
-        return BARS_CHANGED, []
-    return "available", [_row(bar) for bar in kept]
+    if not isinstance(payload, dict) or not isinstance(payload.get("status"), str):
+        return UNAVAILABLE, []
+    status: str = payload["status"]
+    raw = payload.get("bars")
+    if status != AVAILABLE or not isinstance(raw, list):
+        return (status if status != AVAILABLE else UNAVAILABLE), []
+    rows: list[dict[str, float]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            return UNAVAILABLE, []
+        row = {key: item.get(key) for key in _FIELDS}
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, int | float)
+            or not math.isfinite(value)
+            for value in row.values()
+        ):
+            return UNAVAILABLE, []
+        rows.append({key: float(value) for key, value in row.items() if value is not None})
+    return AVAILABLE, rows

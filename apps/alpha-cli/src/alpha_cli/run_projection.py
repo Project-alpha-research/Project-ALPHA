@@ -184,6 +184,7 @@ def _candle_rows(
 
 
 def _bars(
+    run_id: str,
     manifest: dict[str, Any],
     *,
     data_dir: Path,
@@ -197,7 +198,7 @@ def _bars(
     snapshot = manifest.get("snapshot_id")
     if not isinstance(snapshot, str) and isinstance(manifest.get("spine"), dict):
         # A rule test saves no snapshot: its bars show only when they hash to its recorded source.
-        status, rows = run_price.verified_bars(manifest, data_dir=data_dir)
+        status, rows = run_price.verified_bars(run_id, data_dir=data_dir)
         if status != "available":
             return status, [], False
         return _window_rows(rows, limit, lower, cutoff)
@@ -246,7 +247,14 @@ def price_series(
     if manifest.get("schema_version") == 3:
         verify_manifest_artifacts(rdir, manifest)
     return _bars(
-        manifest, data_dir=data_dir, limit=limit, start=None, end=None, lower=None, cutoff=None
+        run_id,
+        manifest,
+        data_dir=data_dir,
+        limit=limit,
+        start=None,
+        end=None,
+        lower=None,
+        cutoff=None,
     )
 
 
@@ -379,6 +387,7 @@ def chart_bundle(
         verify_manifest_artifacts(rdir, manifest)
 
     bars_status, bars, bars_truncated = _bars(
+        run_id,
         manifest,
         data_dir=data_dir,
         limit=bar_limit,

@@ -1,119 +1,64 @@
-"""Verified bars for a rule test: bars show only when they hash to the run's recorded source."""
+"""The web-safe caller of `alpha data run-price` trusts only a well-formed, available reply."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
-import polars as pl
+import pytest
 
-from alpha_cli import _runner, run_price
-from alpha_cli.spine import reserve
-from alpha_data.store import ParquetStore
-from alpha_data.timeframe import DAILY, store_dir
+from alpha_cli import run_price
 
-START = datetime(2020, 1, 1, tzinfo=UTC)
-LAST = START + timedelta(days=59)
+BAR = {"t": 1.0, "o": 1.0, "h": 2.0, "l": 0.5, "c": 1.5, "v": 10.0}
 
 
-def _frame(days: int, *, bump_day: int | None = None) -> pl.DataFrame:
-    stamps = [START + timedelta(days=i) for i in range(days)]
-    prices = [100.0 + i + (5.0 if i == bump_day else 0.0) for i in range(days)]
-    return pl.DataFrame(
-        {
-            "ts": stamps,
-            "open": prices,
-            "high": prices,
-            "low": prices,
-            "close": prices,
-            "volume": [1.0] * days,
-        }
-    )
+def _reply(monkeypatch: pytest.MonkeyPatch, stdout: str, code: int = 0) -> list[Any]:
+    calls: list[Any] = []
+
+    def run(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append((command, kwargs))
+        return subprocess.CompletedProcess(command, code, stdout=stdout, stderr="")
+
+    monkeypatch.setattr("alpha_cli.run_price.subprocess.run", run)
+    return calls
 
 
-def _store(home: Path, frame: pl.DataFrame) -> None:
-    store = ParquetStore(store_dir(home, DAILY))
-    store.write_bars("AAA", frame)
-    store.write_provenance("AAA", source="vendor", adapter_version="1", parser_version="1")
+def test_an_available_reply_returns_its_bars_and_forwards_no_credentials(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "secret")
+    calls = _reply(monkeypatch, json.dumps({"status": "available", "bars": [BAR]}))
+    assert run_price.verified_bars("a" * 16, data_dir=tmp_path) == ("available", [BAR])
+    command, kwargs = calls[0]
+    assert command[1:4] == ["data", "run-price", "a" * 16]
+    assert kwargs["env"]["ALPHA_DATA_DIR"] == str(tmp_path)
+    assert "ALPHA_TIINGO_API_KEY" not in kwargs["env"]
 
 
-def _recorded(home: Path) -> str:
-    bars, _ = _runner.load_bars("AAA", data_dir=home, as_of=reserve.CUTOFF)
-    return _runner.source_fingerprint(bars)
+def test_a_refusal_status_carries_no_bars(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _reply(monkeypatch, json.dumps({"status": "bars_changed_since_run", "bars": [BAR]}))
+    assert run_price.verified_bars("a" * 16, data_dir=tmp_path) == ("bars_changed_since_run", [])
 
 
-def _manifest(fingerprint: str | None) -> dict[str, Any]:
-    manifest: dict[str, Any] = {
-        "metadata": {"symbol": "AAA"},
-        "spine": {
-            "store": "home",
-            "data_period": {
-                "first_ts": START.isoformat(),
-                "last_ts": LAST.isoformat(),
-            },
-        },
-    }
-    if fingerprint is not None:
-        manifest["source_fingerprint"] = fingerprint
-    return manifest
+@pytest.mark.parametrize(
+    "stdout",
+    [
+        "not json",
+        json.dumps([]),
+        json.dumps({"status": "available", "bars": "x"}),
+        json.dumps({"status": "available", "bars": [{**BAR, "c": None}]}),
+        json.dumps({"status": "available", "bars": [{**BAR, "c": True}]}),
+    ],
+)
+def test_a_malformed_reply_is_unavailable(
+    stdout: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _reply(monkeypatch, stdout)
+    assert run_price.verified_bars("a" * 16, data_dir=tmp_path) == ("price_unavailable", [])
 
 
-def test_equal_fingerprint_draws_the_bars(tmp_path: Path) -> None:
-    _store(tmp_path, _frame(60))
-    status, rows = run_price.verified_bars(_manifest(_recorded(tmp_path)), data_dir=tmp_path)
-    assert status == "available"
-    assert len(rows) == 60
-    assert rows[0]["c"] == 100.0
-    assert rows[-1]["t"] == LAST.timestamp()
-
-
-def test_one_changed_bar_refuses(tmp_path: Path) -> None:
-    _store(tmp_path, _frame(60))
-    recorded = _recorded(tmp_path)
-    _store(tmp_path, _frame(60, bump_day=10))
-    status, rows = run_price.verified_bars(_manifest(recorded), data_dir=tmp_path)
-    assert status == "bars_changed_since_run"
-    assert rows == []
-
-
-def test_no_recorded_fingerprint_refuses(tmp_path: Path) -> None:
-    _store(tmp_path, _frame(60))
-    status, rows = run_price.verified_bars(_manifest(None), data_dir=tmp_path)
-    assert status == "price_not_saved_with_run"
-    assert rows == []
-
-
-def test_bars_after_the_runs_last_date_are_not_returned(tmp_path: Path) -> None:
-    _store(tmp_path, _frame(60))
-    recorded = _recorded(tmp_path)
-    _store(tmp_path, _frame(70))  # ten later bars arrive; the first sixty are unchanged
-    status, rows = run_price.verified_bars(_manifest(recorded), data_dir=tmp_path)
-    assert status == "available"
-    assert max(row["t"] for row in rows) == LAST.timestamp()
-
-
-def test_nothing_at_or_after_the_reserved_instant_is_returned(tmp_path: Path) -> None:
-    before = reserve.RESERVED_INSTANT - timedelta(days=2)
-    stamps = [before + timedelta(days=i) for i in range(4)]  # last two are in the held-back period
-    prices = [10.0, 11.0, 12.0, 13.0]
-    _store(
-        tmp_path,
-        pl.DataFrame(
-            {
-                "ts": stamps,
-                "open": prices,
-                "high": prices,
-                "low": prices,
-                "close": prices,
-                "volume": [1.0] * 4,
-            }
-        ),
-    )
-    bars, _ = _runner.load_bars("AAA", data_dir=tmp_path, as_of=reserve.CUTOFF)
-    manifest = _manifest(_runner.source_fingerprint(bars))
-    manifest["spine"]["data_period"]["last_ts"] = stamps[-1].isoformat()  # a lying record
-    status, rows = run_price.verified_bars(manifest, data_dir=tmp_path)
-    assert status == "available"
-    assert all(row["t"] < reserve.RESERVED_INSTANT.timestamp() for row in rows)
-    assert len(rows) == 2
+def test_a_failed_command_is_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _reply(monkeypatch, "", code=2)
+    assert run_price.verified_bars("a" * 16, data_dir=tmp_path) == ("price_unavailable", [])

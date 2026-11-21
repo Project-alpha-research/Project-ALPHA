@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified f2534619179dcdb8 on 2026-11-21: Merged main again: its changes are outside this page's claims; the home group rows and the code map still hold
+  verified ca3206ddf6b7567b on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
 
 apps/alpha-cli/README.md
-  verified f2534619179dcdb8 on 2026-11-21: Merged main again: its changes are outside this page's claims; the home group rows and the code map still hold
+  verified ca3206ddf6b7567b on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified cf84c8826aaf7b89 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
+  verified 15f6fbb84aeff767 on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
 
 apps/alpha-web/README.md
-  verified cf84c8826aaf7b89 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
+  verified 15f6fbb84aeff767 on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -95,7 +95,7 @@ docs/reference/invariants/web-api.md
   verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
-  verified ea854d88754d9885 on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
+  verified 7d04dcf483931473 on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -215,7 +215,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified f556ef058d8f1184 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
 
 research/PLAYBOOK.md
   verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold

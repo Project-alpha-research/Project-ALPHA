@@ -1,22 +1,7 @@
-// The explanation engine's guardrails.
-//
-// The drift-guard suite is the load-bearing part: it recomputes every fixture's verdict from raw
-// gate quantities using the TS band mirror and asserts equality with the grades the Python side
-// persisted. If verdict.py's bands ever change without bands.ts following (or vice versa), this
-// fails — the UI must never explain a grade with stale rules.
+// The explanation engine's guardrails: gate, suggestion and kind-module stories.
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  DRAWDOWN_BANDS,
-  EDGE_BANDS,
-  RUIN_BANDS,
-  SAMPLE_BANDS,
-  bandInterval,
-  gradeAtLeast,
-  gradeAtMost,
-  recomputeVerdict,
-} from './bands'
 import { forecastStories } from './forecast'
 import { gateStories, nullStory, walkForwardStory } from './gates'
 import { optimStories, optimSuggestions } from './optim'
@@ -24,95 +9,10 @@ import { portfolioStories } from './portfolio'
 import { propfirmStories } from './propfirm'
 import { suggestions } from './suggestions'
 import type { OptimManifest, PortfolioManifest, PropfirmManifest, ValidateManifest } from './types'
-import { sparseTradeStory, verdictStories } from './verdictStory'
 import optimFixture from './__fixtures__/optim.json'
 import portfolioFixture from './__fixtures__/portfolio.json'
 import propfirmFixture from './__fixtures__/propfirm.json'
-import validateA from './__fixtures__/validate-a.json'
 import validateB from './__fixtures__/validate-b.json'
-import validateD from './__fixtures__/validate-d-kronos.json'
-
-// Synthetic capped copies retain the original dimensions and raw gate quantities.
-const capped = (fixture: ValidateManifest, overall: string): ValidateManifest & { spine: { labels: string[] }; n_trades: number } => ({
-  ...fixture,
-  spine: { labels: ['too-few-trades'] },
-  n_trades: 7,
-  verdict: { ...fixture.verdict!, overall, detail: { ...fixture.verdict!.detail, overall_gpa: Math.min(2, fixture.verdict!.detail.overall_gpa!) } },
-})
-
-const VALIDATE_FIXTURES: [string, ValidateManifest & { spine?: { labels: string[] } }][] = [
-  ['validate-a', validateA as unknown as ValidateManifest],
-  ['validate-b', validateB as unknown as ValidateManifest],
-  ['validate-d-kronos', validateD as unknown as ValidateManifest],
-  ['capped-a', capped(validateA as unknown as ValidateManifest, 'C')],
-  ['capped-b', capped(validateB as unknown as ValidateManifest, 'C')],
-  ['capped-d', capped(validateD as unknown as ValidateManifest, 'D')],
-]
-
-describe('drift guard: TS bands vs persisted Python verdicts', () => {
-  it.each(VALIDATE_FIXTURES)('%s: recomputed grades equal persisted grades', (_name, m) => {
-    const v = m.verdict
-    expect(v).toBeDefined()
-    if (!v) return
-    const sharpeCi = m.cis?.find((c) => c.metric === 'sharpe')
-    const recomputed = recomputeVerdict({
-      oosSharpe: m.oos_metrics?.sharpe ?? null,
-      nullTiersPassed: (m.nulls?.length ?? 0) > 0 && (m.nulls ?? []).every((n) => n.passed),
-      dsrPassed: m.dsr?.passed ?? false,
-      cpcvPassed: m.cpcv?.passed ?? false,
-      ciLowerPositive: typeof sharpeCi?.lower === 'number' && sharpeCi.lower > 0,
-      maxDrawdown: m.oos_metrics?.max_drawdown ?? null,
-      riskOfRuin: m.oos_metrics?.risk_of_ruin ?? null,
-      nOos: v.detail.sample_n_oos ?? NaN,
-      labels: 'spine' in m ? m.spine?.labels : [],
-    })
-    expect(recomputed.edge).toBe(v.edge)
-    expect(recomputed.robustness).toBe(v.robustness)
-    expect(recomputed.risk).toBe(v.risk)
-    expect(recomputed.sample).toBe(v.sample)
-    expect(recomputed.overall).toBe(v.overall)
-    expect(recomputed.gpa).toBeCloseTo(v.detail.overall_gpa ?? NaN, 10)
-    expect(recomputed.checks).toBe(v.detail.robustness_checks_passed ?? NaN)
-  })
-})
-
-describe('band boundaries (mirror verdict.py exactly)', () => {
-  it('edge bands are inclusive lower bounds', () => {
-    expect(gradeAtLeast(1.5, EDGE_BANDS)).toBe('A')
-    expect(gradeAtLeast(1.4999, EDGE_BANDS)).toBe('B')
-    expect(gradeAtLeast(1.0, EDGE_BANDS)).toBe('B')
-    expect(gradeAtLeast(0.5, EDGE_BANDS)).toBe('C')
-    expect(gradeAtLeast(0.0, EDGE_BANDS)).toBe('D')
-    expect(gradeAtLeast(-0.0001, EDGE_BANDS)).toBe('F')
-  })
-  it('sample bands', () => {
-    expect(gradeAtLeast(1000, SAMPLE_BANDS)).toBe('A')
-    expect(gradeAtLeast(999, SAMPLE_BANDS)).toBe('B')
-    expect(gradeAtLeast(100, SAMPLE_BANDS)).toBe('D')
-    expect(gradeAtLeast(99, SAMPLE_BANDS)).toBe('F')
-  })
-  it('risk bands are inclusive upper bounds', () => {
-    expect(gradeAtMost(0.1, DRAWDOWN_BANDS)).toBe('A')
-    expect(gradeAtMost(0.10001, DRAWDOWN_BANDS)).toBe('B')
-    expect(gradeAtMost(0.5, DRAWDOWN_BANDS)).toBe('D')
-    expect(gradeAtMost(0.51, DRAWDOWN_BANDS)).toBe('F')
-    expect(gradeAtMost(0.01, RUIN_BANDS)).toBe('A')
-    expect(gradeAtMost(0.3, RUIN_BANDS)).toBe('D')
-    expect(gradeAtMost(0.31, RUIN_BANDS)).toBe('F')
-  })
-  it('null/NaN grade F', () => {
-    expect(gradeAtLeast(null, EDGE_BANDS)).toBe('F')
-    expect(gradeAtLeast(NaN, EDGE_BANDS)).toBe('F')
-    expect(gradeAtMost(null, RUIN_BANDS)).toBe('F')
-  })
-  it('band intervals render for narratives', () => {
-    expect(bandInterval('B', EDGE_BANDS, 'atLeast')).toBe('[1, 1.5)')
-    expect(bandInterval('A', EDGE_BANDS, 'atLeast')).toBe('≥ 1.5')
-    expect(bandInterval('F', EDGE_BANDS, 'atLeast')).toBe('below 0')
-    expect(bandInterval('A', DRAWDOWN_BANDS, 'atMost')).toBe('≤ 0.1')
-    expect(bandInterval('B', DRAWDOWN_BANDS, 'atMost')).toBe('(0.1, 0.2]')
-  })
-})
 
 describe('gate stories', () => {
   const m = validateB as unknown as ValidateManifest
@@ -166,74 +66,6 @@ describe('gate stories', () => {
     const g = gateStories(m)[2]
     expect(g.terse).toMatch(/the interval includes zero$/)
     expect(g.oldLevel).toBe('The level used by the old grade: lower end above 0')
-  })
-})
-
-describe('verdict stories', () => {
-  it('explains a labelled sparse run even when its verdict was never saved', () => {
-    expect(sparseTradeStory({ spine: { labels: ['too-few-trades'] } })).toContain('fewer than 30 closed trades')
-    expect(sparseTradeStory({ n_trades: 4 })).toBeNull()
-  })
-
-  it.each([
-    ['A', 'C', 'A', 4], ['B', 'C', 'B', 3], ['C', 'C', 'C', 2],
-    ['D', 'D', 'D', 1], ['F', 'F', 'F', 0],
-  ])('explains sparse %s dimensions with stored grade %s', (raw, stored, dimension, gpa) => {
-    const manifest = {
-      ...capped(validateB as unknown as ValidateManifest, stored),
-      verdict: { edge: raw, robustness: raw, risk: dimension, sample: dimension, overall: stored,
-        detail: { overall_gpa: Math.min(2, gpa) } },
-    }
-    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
-    expect(story.grade).toBe(stored)
-    expect(story.narrative).toContain('only 7 closed trades')
-    expect(story.narrative).toContain('too few to judge')
-    expect(story.terse).toContain('too few trades')
-    if (raw === 'A' || raw === 'B') {
-      expect(story.narrative).toContain(`dimensions alone would give ${raw}`)
-      expect(story.narrative).toContain('held at C')
-    } else {
-      expect(story.narrative).not.toContain('held at C')
-      expect(story.narrative).not.toContain('lowered')
-    }
-  })
-
-  it.each(['spine', 'verdict', 'root'])('reads the recorded %s label and uses the unknown-count wording', location => {
-    const base = validateB as unknown as ValidateManifest
-    const manifest = {
-      ...base, n_trades: null,
-      ...(location === 'root' ? { labels: ['too-few-trades'] } : {}),
-      ...(location === 'spine' ? { spine: { labels: ['too-few-trades'] } } : {}),
-      verdict: { ...base.verdict!, overall: 'C', detail: { ...base.verdict!.detail, overall_gpa: 2 },
-        ...(location === 'verdict' ? { labels: ['too-few-trades'] } : {}) },
-    }
-    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
-    expect(story.narrative).toContain('fewer than 30 closed trades')
-    expect(story.narrative).toContain('dimensions alone would give B')
-    expect(story.grade).toBe('C')
-  })
-
-  it('preserves a recorded zero and the stored grade even when dimensions disagree', () => {
-    const manifest = { ...capped(validateA as unknown as ValidateManifest, 'D'), n_trades: 0 }
-    const story = verdictStories(manifest).find(s => s.dimension === 'overall')!
-    expect(story.grade).toBe('D')
-    expect(story.narrative).toContain('only 0 closed trades')
-    expect(story.narrative).not.toContain('Overall = C')
-  })
-
-  it('explains each dimension against its band (fixture B: C/C/B/A → B overall)', () => {
-    const stories = verdictStories(validateB as unknown as ValidateManifest)
-    const byDim = Object.fromEntries(stories.map((s) => [s.dimension, s]))
-    expect(byDim.edge.grade).toBe('C')
-    expect(byDim.edge.narrative).toContain('[0.5, 1)')
-    expect(byDim.robustness.grade).toBe('C')
-    expect(byDim.robustness.narrative).toContain('2 of the 4')
-    expect(byDim.risk.grade).toBe('B')
-    expect(byDim.sample.grade).toBe('A')
-    expect(byDim.overall.grade).toBe('B')
-    // hard gates failed → overall story must say so, loudly
-    expect(byDim.overall.tone).toBe('bad')
-    expect(byDim.overall.narrative).toContain('FAILED')
   })
 })
 

@@ -7,14 +7,18 @@ It reads the ledger; it computes no new statistic (the adjustment is the validat
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine.reading import TOO_LITTLE, setup_evidence_of
+from alpha_cli.spine.errors import SpineError
+from alpha_cli.spine.reading import OLD_SETUP_OUTCOMES, SETUP_WORDS, TOO_LITTLE, setup_evidence_of
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_validation.proportion import benjamini_hochberg
 
 NOUNS = {"setup_study": "study", "setup_trade": "trade"}
+AREAS = {"setup_study": "setup-studies", "setup_trade": "setup-trades"}
 # The family is the counted runs of one kind whose idea text matches after case and spacing; a
 # variant saved under another idea text is outside it, so the adjustment can be too weak.
 VARIANTS = "Variants saved under another idea text are not counted."
@@ -93,3 +97,34 @@ def owner_lines(output: dict[str, Any]) -> list[str]:
     if output.get("old_wording"):
         lines.append("Old record: the outcome word stored with it is not shown (old wording).")
     return lines
+
+
+def stored_reading(home: Path, run_id: str) -> dict[str, Any]:
+    """The reading of one stored study or trade, from its stored summary and the ledger.
+
+    A record with no readable word has ``evidence`` None; one with no idea text has no family.
+    """
+    unknown = SpineError(
+        "UNKNOWN_SETUP_OUTCOME",
+        f"No stored setup study or trade has the id {run_id}.",
+        "Run alpha setup study or alpha setup trade on a recorded find, then use its id.",
+    )
+    if not re.fullmatch(r"[0-9a-f]{16}", run_id):
+        raise unknown
+    for kind, area in AREAS.items():
+        path = home / area / run_id / "summary.json"
+        if path.is_file():
+            summary = json.loads(path.read_text())
+            break
+    else:
+        raise unknown
+    outcome = summary.get("outcome")
+    if summary.get("evidence") in SETUP_WORDS or outcome in OLD_SETUP_OUTCOMES:
+        word, old = setup_evidence_of(summary)
+    else:
+        word, old = None, isinstance(outcome, str)
+    idea = summary.get("idea")
+    family = (
+        family_context(home, kind, idea, run_id) if isinstance(idea, str) and idea.strip() else None
+    )
+    return {"id": run_id, "kind": kind, "evidence": word, "old_wording": old, "family": family}

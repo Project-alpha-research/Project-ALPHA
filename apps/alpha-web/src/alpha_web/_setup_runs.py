@@ -15,10 +15,11 @@ from typing import Any
 import polars as pl
 
 from alpha_core.reserve import RESERVED_START
-from alpha_web._setup_reading import reading_of
+from alpha_web._catalog import _run_json
 from alpha_web.api.models.setup_runs import (
     SetupFigure,
     SetupOutcome,
+    SetupReading,
     SetupRun,
     SetupRunDetail,
     SetupRunList,
@@ -223,6 +224,23 @@ def _indices(ledger: list[dict[str, Any]] | None, kind: str, run_id: str) -> lis
     ]
 
 
+def _reading(home: Path, summary: dict[str, Any] | None, run_id: str) -> SetupReading | None:
+    """The CLI's own reading of this outcome (``alpha setup show``); None without a summary."""
+    if summary is None:
+        return None
+    try:
+        shown = _run_json(["setup", "show", run_id, "--json"], data_dir=home)
+    except RuntimeError as exc:
+        raise ValueError("the setup reading could not be read from the command line") from exc
+    family = shown.get("family") or {}
+    return SetupReading(
+        evidence=shown["evidence"],
+        old_wording=shown["old_wording"],
+        family_position=family.get("position"),
+        family_count=family.get("studies"),
+    )
+
+
 def _outcomes(
     home: Path,
     find: dict[str, Any],
@@ -268,7 +286,7 @@ def _outcomes(
                 figure=_figure(figure_name, data[figure_name]),
                 trial_indices=_indices(ledger, kind, folder.name),
                 trial_labels=_trial_labels(ledger, kind, folder.name),
-                reading=reading_of(summary, ledger, kind, folder.name),
+                reading=_reading(home, summary, folder.name),
             )
         )
     return result

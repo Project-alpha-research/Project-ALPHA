@@ -406,3 +406,23 @@ def trade_command(
         json_out=json_out,
         fallback=trade_text(output) + "\n" + health_sentence(output.get("data_health")),
     )
+
+
+@setup_app.command("show")
+def show_command(
+    run_id: str,
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Read one stored study or trade: its evidence word and its place in the setup's family."""
+    from alpha_cli.spine.setup_reading import owner_lines, stored_reading
+
+    try:
+        output = stored_reading(AlphaSettings().data_dir, run_id)
+    except SpineError as exc:
+        fail(exc, json_out)
+    words = (
+        "\n".join(owner_lines(output))
+        if output["evidence"] and output["family"]
+        else "No evidence word or family is stored for this record."
+    )
+    emit(output, json_out=json_out, fallback=words)

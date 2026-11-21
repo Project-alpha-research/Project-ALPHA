@@ -9,6 +9,7 @@ import {
   summaryHeadline,
   summaryNumbers,
   labelChips,
+  ruleWords,
   NOT_RECORDED,
   pct,
   ratio,
@@ -257,4 +258,37 @@ it('explains each stored data health label and shows the saved finding by the he
     test, manifest: { data_health: { verdict: 'warn', sentence } }, runId: 'a', figures: null,
   }))
   expect(html).toContain(sentence)
+})
+
+const OWNER: RuleTest = {
+  ...test, rule_kind: 'owner', rule_params: {}, rule_family: 'owner:0123456789ab', labels: ['null-closes-for-high-low'],
+  rule_sentence: 'Buy at the next open when the 14-day ATR is below the 50-day ATR. Sell at the next open when that stops being true. Long or flat.',
+}
+
+describe('ruleWords', () => {
+  it('states an owner rule with its family', () => {
+    expect(ruleWords(OWNER)).toEqual({ sentence: OWNER.rule_sentence, family: 'owner:0123456789ab' })
+  })
+
+  it('says so when an owner run has no stored rule', () => {
+    expect(ruleWords({ ...OWNER, rule_sentence: null, rule_family: null }))
+      .toEqual({ sentence: 'the rule was not stored with this run', family: null })
+  })
+
+  it('says so when a run has no rule kind at all', () => {
+    expect(ruleWords({ ...test, rule_kind: null, rule_sentence: null }))
+      .toEqual({ sentence: 'the rule was not stored with this run', family: null })
+  })
+
+  it('leaves the three old kinds on their present wording', () => {
+    expect(ruleWords(test)).toBeNull()
+    expect(testedRows(test).find((row) => row.label === 'Rule')?.value).toBe(test.rule_sentence)
+  })
+
+  it('shows the owner sentence in the tested rows and gives the new label a plain meaning', () => {
+    expect(testedRows(OWNER).find((row) => row.label === 'Rule')?.value).toBe(OWNER.rule_sentence)
+    const [chip] = labelChips(['null-closes-for-high-low'])
+    expect(chip.title).toMatch(/closes for high and low/)
+    expect(chip.title).not.toMatch(/No explanation/)
+  })
 })

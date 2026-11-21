@@ -20,6 +20,7 @@ export interface LabelChip {
 }
 
 const LABEL_MEANING: Record<string, string> = {
+  'null-closes-for-high-low': 'The rule reads the high or low. The first random-price test has no daily range, so it uses closes for high and low.',
   exploratory: 'Exploratory test. These results describe this run only.',
   'too-few-trades': 'Too few closed trades in the walk-forward test to judge the result.',
   'benchmark-price-only': 'Both lines use prices only. No dividend cash was recorded.',
@@ -48,6 +49,17 @@ const LABEL_MEANING: Record<string, string> = {
 export const RULE_TEST_TITLE =
   'A rule test made by alpha test. It is counted in the trial ledger. It is exploratory: '
   + 'it is not governed research evidence and approves nothing.'
+
+export const RULE_NOT_STORED = 'the rule was not stored with this run'
+
+/**
+ * The rule in words for the report and Gates screens: an owner rule (or a run with no stored rule) gets
+ * its sentence and family; the three old kinds return null and keep their present wording.
+ */
+export function ruleWords(test: RuleTest): { sentence: string; family: string | null } | null {
+  if (test.rule_kind === 'owner') return { sentence: test.rule_sentence ?? RULE_NOT_STORED, family: test.rule_family ?? null }
+  return test.rule_kind ? null : { sentence: RULE_NOT_STORED, family: null }
+}
 
 /** The run's labels as small chips, in stored order; an unknown label keeps its own text. */
 export function labelChips(labels: readonly string[] | null | undefined): LabelChip[] {
@@ -99,7 +111,7 @@ export function testedRows(test: RuleTest): TestedRow[] {
     { label: 'Idea', value: test.idea?.trim() || 'no idea text was saved with this run', mono: false },
     {
       label: 'Rule',
-      value: test.rule_sentence ?? ([test.rule_kind, params].filter(Boolean).join(': ') || NOT_RECORDED),
+      value: test.rule_sentence ?? ([test.rule_kind, params].filter(Boolean).join(': ') || RULE_NOT_STORED),
       mono: false,
     },
     { label: 'Name', value: test.name ?? NOT_RECORDED, mono: true },

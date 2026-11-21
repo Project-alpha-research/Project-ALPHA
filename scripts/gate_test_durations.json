@@ -368,7 +368,6 @@
   "tests/unit/test_keychain_provider_launcher.py": 0.0,
   "tests/unit/test_literature_worker_pin.py": 0.0,
   "tests/unit/test_manifest_v3.py": 0.1,
-  "tests/unit/test_market_data_acquisition_accounting.py": 0.1,
   "tests/unit/test_market_profile.py": 0.7,
   "tests/unit/test_market_state.py": 0.1,
   "tests/unit/test_market_structure.py": 0.1,

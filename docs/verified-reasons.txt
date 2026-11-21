@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified b2d1b153ba2c3689 on 2026-11-21: Merged main into the calendar range branch; both sides' source changes re-read; text still correct
+  verified db55a6edece276e9 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 apps/alpha-cli/README.md
-  verified b2d1b153ba2c3689 on 2026-11-21: Merged main into the calendar range branch; both sides' source changes re-read; text still correct
+  verified db55a6edece276e9 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -22,6 +22,9 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
+docs/reference/invariants/cli-control-store.md
+  verified 9a32e3f7ead39710 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
@@ -35,7 +38,7 @@ docs/reference/invariants/cli-research.md
   verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
 
 docs/reference/invariants/cli-results-check.md
-  verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified 456942026d0aa537 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
@@ -155,7 +158,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 8d344f6bea767d1d on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 57d1cc2d1462d00a on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -205,17 +208,20 @@ docs/work/CONTEXT.md
 packages/alpha-data/CONTEXT.md
   verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
+packages/alpha-strategies/CONTEXT.md
+  verified 052023176fd77aee on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 27011a9ff5a675ee on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 5ceba94e5b376add on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/PLAYBOOK.md
-  verified ad3802efccc9fed2 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified c396b7b24a784116 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/README.md
-  verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
+  verified 6c519596adb4a353 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -224,34 +230,34 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 834a0af0847ddc9b on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 663b32963bad61b7 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 7c1eb2d3dc938ace on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified a987d05207be2955 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/charts.md
-  verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified a4442520048b555a on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 23c1130a8f32d633 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/diagnose-and-audit.md
-  verified 9f3e55d30e846b3e on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 5b5a18dd3ed98607 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 research/tools/idea-card.md
-  verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
+  verified 302a29c82e740a2b on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/inverted-signal-control.md
-  verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 8edd6a246f76c789 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
@@ -263,7 +269,7 @@ research/tools/positioning-short-volume-context.md
   verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
 
 research/tools/price-noise.md
-  verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+  verified 5b14ac172b6eee8e on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -278,7 +284,7 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified c15a500a7f82b12c on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/rule-test.md
   verified 7f5083598a89bacd on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
@@ -302,7 +308,7 @@ research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
-  verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
+  verified 1ebaaa0d11aa3a24 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

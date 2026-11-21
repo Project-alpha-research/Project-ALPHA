@@ -2,7 +2,7 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 8d9d8954f8712327 on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
 
 apps/alpha-cli/README.md
   verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
@@ -59,7 +59,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified b8a07c28590d972a on 2026-11-20: A pipeline test now expects the loud RestoreFailed error that names the repair command; the page already states that behaviour.
+  verified e46fb4e1c46ac85e on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -128,7 +128,7 @@ docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/options-data.md
-  verified 814a9b6c19ab1666 on 2026-11-20: Invariants page only split into a new section and rewrapped a line; the component summary (0.14 s solve, 21 s chain) still matches
+  verified d19536658f0fe4ba on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -200,7 +200,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 3fbe94346180dd08 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
+  verified c9af6a41f923ae02 on 2026-11-21: re-read: the change adds options derived series and one command; routing and rules here are unchanged
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels

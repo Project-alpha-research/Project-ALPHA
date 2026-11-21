@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: 08d3395ef9d0235c
+verified: 8d9d8954f8712327
 ---
 
 # alpha-cli: code map and change loop
@@ -32,6 +32,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Nightly real run | `nightly_*` (6: `cmds`, `config`, `run`, `steps`, `record`, `status`; runs real commands in child processes) | `test_nightly`, `smoke/test_nightly_smoke` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
 `test_suite_*` |
+| Options chains | `options_cmds` (`alpha options derived`; reads only the capped store read) | `test_options_derived_cmd` |
 | Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |
 | Native jobs | `_native_*` (20), `native_*` (6), `daily_*` (3) | `test_native_*`, `test_daily_*` |
 | RD-Agent ledger, discussion and `alpha rdagent run`/`status` | `rdagent_*` (incl. `rdagent_cmds`, `rdagent_run_config`, `rdagent_run_status`), `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |

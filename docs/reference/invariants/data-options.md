@@ -12,7 +12,8 @@ sources:
   - tests/unit/test_options_conventions.py
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
-verified: 7dbbe0912fbcaad3
+  - tests/unit/test_options_derived.py
+verified: da19c29eb723723e
 ---
 
 # Data layer invariants: options
@@ -183,7 +184,17 @@ The known surface IV is stored as the provided IV. No real market data or symbol
   above zero). Contracts are European-style. The solver recovers the surface IV from the mid to 1e-7; 44 of 54 rows are
   stored, and the other 10 are `low_vega`.
 
+## Derived series
+
+`derived.py`, `derived_surface.py`, `derived_params.py` (all constants; exact rules in the docstrings). Descriptive readings, no thresholds.
+- `iv30`: forward-ATM IV (parity forward for European quotes, else the strike nearest spot, labelled), mid quotes, linear in strike;
+  constant 30 days by total variance linear in time between the two expiries around it. One side missing: null with a reason, never extrapolated.
+- `iv_rank_252` and `iv_percentile_252`: over 252 sessions including today; warm-up, a null day or a flat window gives null.
+- `skew_25d`: put IV minus call IV at 25 forward delta, linear in delta, same time rule. `term_slope`: IV at 90 days minus `iv30`.
+  `iv_minus_rv`: `iv30` minus realized volatility the caller supplies (the command uses `alpha_strategies.realized_volatility`).
+- Crossed, zero-width and zero-bid quotes are dropped; an expiry needs 3 quoted strikes and 7 days. The store has no rate or yield: defaults 0.
+- `known_from` = the snapshot's `known_at`; rank: latest in the window; `iv_minus_rv`: later of it and the bar's day end. Reads: `snapshots_as_of` only.
+
 ## Not here yet
 
-Derived series, health card rows, a provider adapter, the security-id map, delisted names,
-`occ_symbol`, `deliverable`, `first_seen` and `last_seen` as separate fields, put-call parity reading, and a command group.
+Health card rows, a provider adapter, the security-id map, delisted names, `occ_symbol`, `deliverable`, parity reading, a context-store join.

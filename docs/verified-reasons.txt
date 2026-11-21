@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified fc3f412c52f279be on 2026-11-21: Merged main; ML input and forecast eval now hold the reserved period back; text re-read and still correct
+  verified 58a380491bab553c on 2026-11-21: the hold-back record now carries from the ML bundle to the replay run, and forecast runs record forward use; the routing and code map are unchanged
 
 apps/alpha-cli/README.md
-  verified fc3f412c52f279be on 2026-11-21: Merged main; ML input and forecast eval now hold the reserved period back; text re-read and still correct
+  verified 58a380491bab553c on 2026-11-21: the hold-back record now carries from the ML bundle to the replay run, and forecast runs record forward use; the routing and code map are unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -28,6 +28,9 @@ docs/reference/invariants/cli-follow.md
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
+docs/reference/invariants/cli-ml.md
+  verified d3effcd32cb91e9f on 2026-11-21: the hold-back record now carries from the ML bundle to the replay run, and forecast runs record forward use; the routing and code map are unchanged
+
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
@@ -38,7 +41,7 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 85a79928dae80c37 on 2026-11-21: alpha report only gains a reserve line for forecast runs; rule readings, the random-price null and walk-forward output are unchanged
 
 docs/reference/invariants/cli-runs.md
   verified f1a66f807f284927 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
@@ -260,7 +263,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified f36195ad4dbd9ce4 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 2deff69cbf25b619 on 2026-11-21: alpha report only gains a reserve line for forecast runs; rule readings, the random-price null and walk-forward output are unchanged
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -293,7 +296,7 @@ research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
 
 research/tools/walk-forward.md
-  verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
+  verified 9f3558d485f5d36a on 2026-11-21: alpha report only gains a reserve line for forecast runs; rule readings, the random-price null and walk-forward output are unchanged
 
 scripts/CONTEXT.md
   verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says

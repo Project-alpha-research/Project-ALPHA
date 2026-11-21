@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -261,3 +264,69 @@ def test_a_later_user_cutoff_is_capped_and_said(poisoned: World) -> None:
     assert summary["sessions"] == CUT_N
     assert "Held back" in str(summary["reserve_sentence"])
     assert (bundle / "reserve.json").is_file()
+
+
+def test_the_last_sessions_before_the_boundary_have_no_label_and_no_fold(poisoned: World) -> None:
+    # A label for session t is open[t+2] / open[t+1] - 1 (decide at close t, fill at open t+1).
+    # The panel stops before the boundary, so every label and fold target uses held-in bars only;
+    # the last panel session is context, and no label looks past it.
+    _, bundle = _export(poisoned, "labels")
+    spec = json.loads((bundle / "spec.json").read_text(encoding="utf-8"))
+    panel = pl.read_parquet(bundle / "panel.parquet")
+    sessions = panel.get_column("session_ts").unique().sort().to_list()
+    assert sessions[-1] < RESERVED_INSTANT
+    assert spec["label_recipe"]["horizon_sessions"] == 1
+    assert max(datetime.fromisoformat(f["test_end"]) for f in spec["folds"]) == sessions[-2]
+
+
+def _replayed(world: World, name: str) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    repo = Path(__file__).parents[2]
+    worker_lock = repo / "workers/qlib/uv.lock"
+    _, bundle = _export(world, name)
+    exchange = world[0] / "exchanges" / name
+    prepared = runner.invoke(
+        app,
+        ["ml", "prepare", str(bundle / "spec.json"), str(bundle / "panel.parquet")]
+        + [str(exchange), "--worker-lock", str(worker_lock), "--json"],
+    )
+    assert prepared.exit_code == 0, prepared.output
+    env = {**os.environ, "PYTHONPATH": str(repo / "workers/qlib/src")}
+    subprocess.run(
+        [sys.executable, "-m", "alpha_qlib_worker", "fake", str(exchange)]
+        + ["--worker-lock", str(worker_lock)],
+        cwd=repo,
+        env=env,
+        check=True,
+    )
+    replayed = runner.invoke(
+        app,
+        ["ml", "replay", str(exchange), "--as-of", "2025-06-30", "--json"],
+        env={"ALPHA_DATA_DIR": str(world[0])},
+    )
+    assert replayed.exit_code == 0, replayed.output
+    summary: dict[str, Any] = json.loads(replayed.output)
+    manifest: dict[str, Any] = json.loads(
+        (world[0] / "runs" / summary["run_id"] / "manifest.json").read_text(encoding="utf-8")
+    )
+    return exchange, summary, manifest
+
+
+def test_a_model_run_from_a_held_bundle_carries_the_hold_back(poisoned: World) -> None:
+    exchange, summary, manifest = _replayed(poisoned, "carried")
+    block = {"reserved_start": RESERVED_START, "held_back_bars": HELD_PER_SYMBOL * MIN_SYMBOLS}
+    record = json.loads((exchange / "reserve.json").read_text(encoding="utf-8"))
+    assert record["reserve"] == block
+    assert manifest["reserve"] == block
+    assert manifest["labels"] == ["reserved-period-held-back"]
+    # The replay's own later cut-off is capped: the panel stopped before the boundary.
+    assert manifest["research_cutoff"] == "2023-12-31"
+    assert summary["reserve"] == block
+    assert SENTENCE in str(summary["reserve_sentence"])
+
+
+def test_a_model_run_from_an_unheld_bundle_is_unchanged(cut: World) -> None:
+    exchange, summary, manifest = _replayed(cut, "unheld")
+    assert not (exchange / "reserve.json").exists()
+    assert "reserve" not in manifest and "labels" not in manifest
+    assert manifest["research_cutoff"] == "2025-06-30"
+    assert "reserve" not in summary

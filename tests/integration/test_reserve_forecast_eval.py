@@ -282,3 +282,50 @@ def test_forecast_run_is_forward_use_and_still_reads_the_latest_bar(
     (rdir,) = (p for p in (tmp_path / "forecast").iterdir() if p.is_dir())
     manifest = json.loads((rdir / "manifest.json").read_text())
     assert manifest["research_cutoff"] is None
+
+
+def test_forecast_run_records_forward_use_and_keeps_its_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _plain(tmp_path, CUT_N + EXTRA, poisoned=False)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    payloads: list[dict[str, Any]] = []
+    identity_for = _runner.run_identity_for
+
+    def spy(payload: dict[str, Any], **kwargs: Any) -> Any:
+        payloads.append(dict(payload))
+        return identity_for(payload, **kwargs)
+
+    monkeypatch.setattr(_runner, "run_identity_for", spy)
+    result = runner.invoke(
+        app,
+        ["forecast", "run", "SPY", "--model", "fake", "--context", "8", "--horizon", "4"]
+        + ["--samples", "8"],
+    )
+    assert result.exit_code == 0, result.output
+    assert "forward use" in result.output
+    # The marker is a manifest field only: the run id payload has the keys it had before.
+    (payload,) = payloads
+    assert "use" not in payload
+    (rdir,) = (p for p in (tmp_path / "forecast").iterdir() if p.is_dir())
+    manifest_path = rdir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["use"] == "forward"
+    shown = runner.invoke(app, ["report", rdir.name])
+    assert shown.exit_code == 0, shown.output
+    assert "use: forward (the reserved period is not held back)" in shown.output
+    del manifest["use"]
+    manifest_path.write_text(json.dumps(manifest))
+    old = runner.invoke(app, ["report", rdir.name])
+    assert old.exit_code == 0, old.output
+    assert "use: not recorded" in old.output
+
+
+def test_forecast_eval_report_says_what_was_held_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _plain(tmp_path, CUT_N + EXTRA, poisoned=True)
+    _, manifest = _eval(tmp_path, monkeypatch)
+    shown = runner.invoke(app, ["report", manifest["run_id"]])
+    assert shown.exit_code == 0, shown.output
+    assert SENTENCE in shown.output

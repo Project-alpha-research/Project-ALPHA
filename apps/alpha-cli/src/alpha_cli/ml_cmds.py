@@ -27,6 +27,7 @@ from alpha_cli.ml_contract import (
 )
 from alpha_cli.ml_input import export_project_input
 from alpha_cli.ml_refit import plan_refit, publish_refit_plan, status_refit_plan
+from alpha_cli.spine.reserve import describe
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -527,6 +528,11 @@ def replay(
             "n_oos_periods": manifest["n_oos_periods"],
             "metrics": manifest["metrics"],
             "validation": manifest["validation"],
+            **(
+                {"reserve": manifest["reserve"], "reserve_sentence": describe(manifest["reserve"])}
+                if "reserve" in manifest
+                else {}
+            ),
         },
         as_json=as_json,
     )

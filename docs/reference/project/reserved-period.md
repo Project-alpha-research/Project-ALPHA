@@ -5,6 +5,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/reserve.py
   - apps/alpha-cli/src/alpha_cli/spine/reserve.py
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
+  - apps/alpha-cli/src/alpha_cli/confirm_cmds.py
+  - apps/alpha-cli/src/alpha_cli/reserved_slots.py
+  - apps/alpha-cli/src/alpha_cli/spine/confirm*.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
   - workers/rdagent/alpha_factor_judge.py
@@ -88,7 +91,7 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   the exchange, and `alpha ml replay` records `reserve` and the label on its run; a later replay `--as-of` is recorded as 2023-12-31.
   Labels and fold targets come from the cut panel only, so the last panel session has no label. `alpha forecast run` stays forward use: its
   manifest records `use: forward` (not part of the run id), and `alpha report` shows it; an older run shows "not recorded".
-- Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
+- The owner's confirmation is the one way to open the period: [below](#the-owners-confirmation).
 
 ### Only labels it
 
@@ -114,11 +117,39 @@ These still read bars from the date on.
   Its verdict can label or stop a run; its numbers do not enter a result.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
+## The owner's confirmation
+
+`alpha confirm plan|request|run|list|show` ([card](../../../research/tools/reserved-confirmation.md)). The rules, enforced in code and by the store:
+
+- What: one frozen rule test. That is a stored `alpha test` run made with the period held back: its spec hash, test key (spec, asset,
+  store, dates, data content), costs and engine settings (seed, quick, diagnostics). Nothing can change. Setup Lab runs: not yet.
+- Span: from the first stored bar on or after 2024-01-01 to the last stored bar when the owner asks. It is fixed in the yes, so a
+  later bar is never read (bars added afterwards are left out; the stamps up to it must still match).
+- Yes: Touch ID only. `request` (trusted CLI) issues a 60-second WebAuthn challenge bound to the frozen test's hash. The owner's
+  assertion on the local page goes to the existing perform route; `owner_auth` verifies it and records an authorization row.
+  No local click, MCP tool, generic web job, config flag or stand-in user can give it. The yes is valid for 30 minutes.
+- Recheck first: the earlier period is computed again (`spine/recheck.py`). It must match the stored run; only the count of
+  held-back bars may differ. A mismatch spends nothing.
+- Receipt before read: a slot receipt (slot, test key, run, spec hash, frozen test, the yes, time, its own hash) is written in one
+  `BEGIN IMMEDIATE` transaction before any reserved bar is read. A crash after it resumes with the same receipt and bars.
+- Ten slots, ever: slot 1 to 10, each naming the one before it, so two processes cannot both take the last.
+  One receipt per test key, per run, per authorization and per rule on one asset (the deflation family on that asset).
+- The read: only `reserve.open_with_receipt`. It checks the receipt hash and verifies the Touch ID assertion again on every
+  call. Only `spine/confirm_run.py` calls it. The structural guard lists it under its own kind, `receipt:`.
+- The result: the same reading, scored on reserved bars only (the rule warms up on the bars just before 2024), beside the
+  earlier reading. It is stored as a run labelled `reserved-period-confirmation`, shown whatever it is, and never
+  discarded. Tools refuse that run. Its ledger kind is `reserved_confirmation`: not a research trial, and outside every
+  family count used to deflate another test. Its own deflation uses the family count as it stood.
+- The family label: after a confirmation, every later `alpha test` of the same rule on the same asset carries
+  `reserved-period-confirmed-in-family` (tuned settings are new test keys but the same idea), and cannot be confirmed.
+  `alpha next` shows the slots in use.
+
 ## What the owner decided
 
 - 2026-11-18: shortlisted factors may be confirmed once each on the reserved data. There are ten slots for the life of the reserved window, and each
-  needs the owner's own yes. Approved, not built, queued behind the screens. Nothing may use a slot yet, and a stand-in user can never give the yes
+  needs the owner's own yes. A stand-in user can never give the yes
   ([log](owner-decisions-5.md#2026-11-18-one-shot-confirmation-of-shortlisted-factors-on-reserved-data-approved-not-built)).
+  2026-11-21: built for rule tests as [above](#the-owners-confirmation), with Touch ID, each idea once, ten slots.
 - Settled, and a different matter: only the owner reveals a project's sealed holdout ([owner authority](../invariants/research-integrity.md#owner-authority)).
   That rule is about the holdout, not about the reserved period.
 
@@ -127,7 +158,8 @@ These still read bars from the date on.
 - The commands under "Still to cover": each should hold the period back or label it. Not built. Open: archived runs scored on held-back bars before
   this change are not relabelled; only rule runs derive `reserved-period-seen`. Stored hypothesis scans and backtest runs carry no last-bar
   date in a common place, so a read-only label on display needs its own design.
-- Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.
+- Only the owner opens the period, one frozen rule test at a time ([above](#the-owners-confirmation)). Setup Lab runs and
+  RD-Agent factors cannot be confirmed yet.
 - Guard: [a structural test](../../../tests/unit/test_research_reads_are_cut.py) checks every `load_bars`, `load_dividends` and `read_bars` call.
   Its `as_of` must come from the reserve (`reserve.CUTOFF`, a `Hold`'s `as_of`, or a helper parameter that every caller fills so). Every other
   read is listed as `exempt:` (forward use, display, verification) or `open:` (a known leak, with the change that fixes it). A new unlisted read

@@ -17,7 +17,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 |---|---|
 | Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
 | "Which check fits my situation?" | [toolbox by situation](toolbox-by-situation.md), or `alpha tool find "<words>"` |
-| An idea to test (write the [idea card](idea-card.md) first; [library](library.md) has published ones) | [rule test](rule-test.md), then [follow](follow.md) |
+| An idea to test ([idea card](idea-card.md), [library](library.md)) | [rule test](rule-test.md), [follow](follow.md), [final](reserved-confirmation.md) |
 | "Does the whole pipeline still work on real data?" | [nightly run](nightly-run.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md), [with a context condition](setup-context.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |

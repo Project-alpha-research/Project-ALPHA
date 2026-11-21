@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-309 commands in 43 groups. Options marked (required) are
+314 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -39,6 +39,16 @@ Run the v1 strategy through the backtest engine.
 Chart overlays (indicators, swings, trendlines, Fibonacci levels).
 
 - `alpha chart overlays <SYMBOL>` — Indicator series and pattern annotations over the PIT candle window of SYMBOL. Options: `--indicator`, `--pattern`, +4 more
+
+## alpha confirm
+
+Confirm one tested idea on the reserved period (2024-01-01 on): once, 10 slots in all.
+
+- `alpha confirm list` — Slots used and left, and each receipt in plain words. Options: `--json`
+- `alpha confirm plan <RUN_ID>` — Show exactly what would be tested and what it costs. Options: `--json`
+- `alpha confirm request <RUN_ID>` — Ask for the owner's Touch ID yes: prints a local link that works for 60 seconds. Options: `--reason (required)`, `--json`
+- `alpha confirm run <RUN_ID>` — Run the confirmed test on the reserved period once, or resume it. Options: `--authorization`, `--json`
+- `alpha confirm show <WHICH>` — One receipt and its result, as stored. Options: `--json`
 
 ## alpha context
 

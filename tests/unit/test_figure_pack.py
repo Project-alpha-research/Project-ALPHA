@@ -46,23 +46,45 @@ def test_return_distribution_mean_is_the_mean_of_the_stored_daily_returns(
 
 
 def test_return_distribution_mean_does_not_come_from_bin_centres(tmp_path: Path) -> None:
-    """Bins start at the minimum, so a centre-weighted mean can flip sign; the stored returns cannot."""
+    """Bins start at the minimum, so a centre-weighted mean can flip sign; stored returns cannot."""
     rng = np.random.default_rng(3)
     returns = np.sort(np.append(rng.normal(0.0008, 0.004, 1500), [-0.12, 0.09]))
     counts, edges = np.histogram(returns, bins=20)
     rows: list[dict[str, Any]] = [
-        {"kind": "histogram", "index": i, "left": float(edges[i]), "right": float(edges[i + 1]),
-         "count": int(c), "probability": None, "theoretical": None, "sample": None}
+        {
+            "kind": "histogram",
+            "index": i,
+            "left": float(edges[i]),
+            "right": float(edges[i + 1]),
+            "count": int(c),
+            "probability": None,
+            "theoretical": None,
+            "sample": None,
+        }
         for i, c in enumerate(counts)
     ] + [
-        {"kind": "qq", "index": i, "left": None, "right": None, "count": None,
-         "probability": (i + 0.5) / len(returns), "theoretical": float(i) / len(returns),
-         "sample": float(v)}
+        {
+            "kind": "qq",
+            "index": i,
+            "left": None,
+            "right": None,
+            "count": None,
+            "probability": (i + 0.5) / len(returns),
+            "theoretical": float(i) / len(returns),
+            "sample": float(v),
+        }
         for i, v in enumerate(returns)
     ]
-    schema = {"kind": pl.String, "index": pl.Int64, "left": pl.Float64, "right": pl.Float64,
-              "count": pl.Int64, "probability": pl.Float64, "theoretical": pl.Float64,
-              "sample": pl.Float64}
+    schema = {
+        "kind": pl.String,
+        "index": pl.Int64,
+        "left": pl.Float64,
+        "right": pl.Float64,
+        "count": pl.Int64,
+        "probability": pl.Float64,
+        "theoretical": pl.Float64,
+        "sample": pl.Float64,
+    }
     pl.DataFrame(rows, schema=schema).write_parquet(tmp_path / "return_distribution.parquet")
     spec = build_figure_spec(
         "return_distribution", run_id="fixture", rdir=tmp_path, manifest={}, data_dir=tmp_path

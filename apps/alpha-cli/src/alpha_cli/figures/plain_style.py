@@ -100,6 +100,13 @@ def _coverage(axes: Axes, rect: tuple[float, float, float, float]) -> int:
             & (points[:, 1] <= top)
         )
         count += int(inside.sum())
+    for container in axes.containers:
+        for patch in getattr(container, "patches", []):
+            box = patch.get_window_extent()
+            low = inverse.transform((box.x0, box.y0))
+            high = inverse.transform((box.x1, box.y1))
+            if low[0] < right and high[0] > left and low[1] < top and high[1] > bottom:
+                count += 5
     return count
 
 

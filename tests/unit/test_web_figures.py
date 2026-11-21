@@ -229,7 +229,9 @@ def test_the_web_process_never_imports_matplotlib_or_the_renderer() -> None:
 
 
 class TestVariants:
-    def test_the_two_variants_have_two_cache_entries(self, spawns: list[list[str]], store: Path) -> None:
+    def test_the_two_variants_have_two_cache_entries(
+        self, spawns: list[list[str]], store: Path
+    ) -> None:
         plain = _figures._cache_entry(_RUN, "equity_underwater", "svg", store, "plain")
         annotated = _figures._cache_entry(_RUN, "equity_underwater", "svg", store, "annotated")
         assert plain[2] != annotated[2]

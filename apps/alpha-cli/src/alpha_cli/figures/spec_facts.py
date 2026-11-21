@@ -129,12 +129,7 @@ def _histogram_plan(spec: FigureSpec, panel: Panel, mark: HistogramMark) -> Plan
         f"The bars hold {total:,.0f} observations between {edges[0]:,.3g} and {edges[-1]:,.3g}; "
         f"the tallest bin, {edges[top]:,.3g} to {edges[top + 1]:,.3g}, holds {counts[top]:,.0f}."
     ]
-    rules = [
-        m
-        for p in spec.panels
-        for m in p.marks
-        if isinstance(m, RuleMark) and m.orientation == "vertical"
-    ]
+    rules = [m for m in panel.marks if isinstance(m, RuleMark) and m.orientation == "vertical"]
     for rule in rules[:1]:
         above = float(counts[edges[:-1] >= rule.position].sum()) / total if total else 0.0
         label = rule.label or "Marked value"

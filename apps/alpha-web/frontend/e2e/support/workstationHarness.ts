@@ -3026,7 +3026,7 @@ test('Research Cockpit Study tab preserves masking and owner-only D1 authority',
   await expectReleaseAccessibility(page)
 })
 
-test('research workflow links the backlog, cockpit, evidence, and Codex panels', async ({ page }) => {
+test('research workflow links the backlog, cockpit and evidence panels', async ({ page }) => {
   await preparePage(page)
 
   await openTask(page, 'Research', 'Backlog')
@@ -3052,14 +3052,6 @@ test('research workflow links the backlog, cockpit, evidence, and Codex panels',
   // Evidence against renders with the same component and prominence as evidence for.
   await page.getByRole('tab', { name: 'Evidence against', exact: true }).click()
   await expect(page.getByText(/No typed findings of this direction exist yet/)).toBeVisible()
-
-  // The linked case follows into the Codex panel, which fences commentary as never-evidence.
-  await openTask(page, 'Research', 'Codex Research')
-  await expect(page.getByText('MCP-ATTACHED · NO CHAT · NO API KEY', { exact: true })).toBeVisible()
-  await expect(page.getByText(/RECORDING HAPPENS ON THE GOVERNED SEAMS/)).toBeVisible()
-  await expect(page.getByText('CODEX COMMENTARY — NOT EVIDENCE', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: /cp_f+/ }).click()
-  await expect(page.getByText('"packet_schema": "ResearchContextPacketV1"')).toBeVisible()
 
   // The Quality tab of the Data Manager dock serves registered refs with audit badges.
   await openTask(page, 'Data & Assets', 'Data downloads')
@@ -4046,41 +4038,6 @@ test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', as
   await row.getByRole('button', { name: 'Verify' }).click()
   await expect(page.getByText(/verify snap1 started as job job-verify-1/)).toBeVisible()
   expect(posts).toEqual([{ path: '/api/jobs', body: { command: 'data', args: 'verify snap1' } }])
-})
-
-test('the owner answers Codex in the notes stream through the notes route', async ({ page }) => {
-  const posts: Array<{ path: string; body: Record<string, unknown> }> = []
-  await preparePage(page, {
-    capturedPost: (path, body) => {
-      posts.push({ path, body })
-      if (path.endsWith('/notes')) {
-        return {
-          note_id: `rn_${'1'.repeat(64)}`,
-          project_id: RESEARCH_CASE.project_id,
-          sequence: 9,
-          note_kind: body['note_kind'],
-          body: body['body'],
-          author: 'owner',
-          author_kind: 'owner',
-          context_packet_id: null,
-          created_at: '2026-09-04T00:00:00+00:00',
-        }
-      }
-      return undefined
-    },
-  })
-  await openTask(page, 'Research', 'Research Case')
-  await page.getByLabel('Research Case project ID').fill(RESEARCH_CASE.project_id)
-  await page.getByRole('button', { name: 'open case' }).click()
-  await openTask(page, 'Research', 'Codex Research')
-  const composer = page.getByRole('form', { name: 'Add owner note' })
-  await composer.getByLabel('Owner note').fill('Check the funding regime before D1.')
-  await composer.getByRole('button', { name: 'Add note' }).click()
-  await expect.poll(() => posts.length).toBe(1)
-  expect(posts[0]).toEqual({
-    path: `/api/research/cases/${RESEARCH_CASE.project_id}/notes`,
-    body: { note_kind: 'critique', body: 'Check the funding regime before D1.' },
-  })
 })
 
 test('the Development Center links a run to a stage and keeps seal/decide as CLI copy commands', async ({ page }) => {

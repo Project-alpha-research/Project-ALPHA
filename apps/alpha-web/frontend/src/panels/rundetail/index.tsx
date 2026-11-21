@@ -29,7 +29,6 @@ import { Artifacts } from './Artifacts'
 import { Gates } from './Gates'
 import { rerunCommand } from './rerun'
 import { Risk } from './Risk'
-import { RunInvestigation } from '../RunInvestigation'
 import { DailyRuleReport } from '../DailyRuleReport'
 import { TradesTab } from './TradesTab'
 import { BacktestResultCard } from './BacktestResultCard'
@@ -63,7 +62,6 @@ export function RunDetail(props: PanelHandleProps) {
   const [catalogueState, setCatalogueState] = useState<RunOwned<FigureCatalogue | string> | null>(null)
   const [checksState, setChecksState] = useState<RunOwned<RuleTestChecks | string> | null>(null)
   const [view, setView] = useState('summary')
-  const [investigating, setInvestigating] = useState(false)
 
   useEffect(() => {
     const requestId = ++detailRequestId.current
@@ -241,7 +239,6 @@ export function RunDetail(props: PanelHandleProps) {
   return (
     <div className="panel report-document">
       <div className="panel-toolbar report-toolbar" role="toolbar" aria-label="Report toolbar">
-        <button type="button" className="btn" onClick={() => setInvestigating(value => !value)}>{investigating ? 'Close investigation' : 'Investigate this run'}</button>
         <button type="button" className="btn glyph" disabled aria-label="Save report" title="The report is its run directory on disk — already saved, immutable">
           <Icon name="report" />
         </button>
@@ -348,7 +345,7 @@ export function RunDetail(props: PanelHandleProps) {
           </ul>
         </nav>
         <div className="figure-scroll" tabIndex={0} role="region" aria-label="Report analytical content">
-          {investigating ? <RunInvestigation key={runId} runId={runId} /> : body}
+          {body}
           <p className="report-hint muted">Double-click any chart to open it full-screen · Save PNG / SVG / Copy from there</p>
         </div>
       </div>

@@ -1,7 +1,6 @@
 /** Browser-local layout preferences never alter data identity or research authority. */
 import { createPortal } from 'react-dom'
 import type { ArchiveChartDataset } from '../api/client'
-import { AssistantDock } from '../panels/AssistantDock'
 import { ConditionChecklist } from '../panels/ConditionChecklist'
 import { IndicatorPicker } from '../components/IndicatorPicker'
 import { DeskNotes } from '../panels/DeskNotes'
@@ -41,7 +40,7 @@ export function MarketDesk({ children, tools, profile, archive, onFooterMount }:
   const [edge, setEdge] = useState(() => {
     try { const raw = JSON.parse(localStorage.getItem(`alpha.edge-desk.v1.${profile}`) ?? '{}'); return {
       open: typeof raw.open === 'boolean' ? raw.open : false,
-      tab: ['Assistant', 'Conditions', 'Indicators', 'Notes'].includes(raw.tab) ? String(raw.tab) : 'Conditions',
+      tab: ['Conditions', 'Indicators', 'Notes'].includes(raw.tab) ? String(raw.tab) : 'Conditions',
       bottom: typeof raw.bottom === 'boolean' ? raw.bottom : false,
       result: RESULT_TABS.includes(raw.result) ? raw.result as ResultTab : 'Scan results' as ResultTab,
       width: typeof raw.width === 'number' && Number.isFinite(raw.width) ? Math.min(480, Math.max(280, raw.width)) : 340,
@@ -72,8 +71,8 @@ export function MarketDesk({ children, tools, profile, archive, onFooterMount }:
       </aside> : null}
       <div className="market-desk-chart">{children}<div className="chart-document-footer" ref={onFooterMount}/></div>
       {edge.open && !desk.maximized ? <aside className="edge-dock terminal-dock" style={{ width: edge.width }} aria-label="Research tools">
-        <nav onKeyDown={moveTab} role="tablist" aria-label="Research tools tabs">{['Assistant', 'Conditions', 'Indicators', 'Notes'].map(tab => <button className="btn" role="tab" aria-selected={edge.tab === tab} tabIndex={edge.tab === tab ? 0 : -1} key={tab} onClick={() => setEdge(value => ({ ...value, tab }))}>{tab}</button>)}</nav>
-        <div className="edge-dock-body">{edge.tab === 'Assistant' ? <AssistantDock archive={archive} /> : edge.tab === 'Conditions' ? <ConditionChecklist archive={archive} /> : edge.tab === 'Indicators' ? <IndicatorPicker inline /> : <DeskNotes />}</div>
+        <nav onKeyDown={moveTab} role="tablist" aria-label="Research tools tabs">{['Conditions', 'Indicators', 'Notes'].map(tab => <button className="btn" role="tab" aria-selected={edge.tab === tab} tabIndex={edge.tab === tab ? 0 : -1} key={tab} onClick={() => setEdge(value => ({ ...value, tab }))}>{tab}</button>)}</nav>
+        <div className="edge-dock-body">{edge.tab === 'Conditions' ? <ConditionChecklist archive={archive} /> : edge.tab === 'Indicators' ? <IndicatorPicker inline /> : <DeskNotes />}</div>
       </aside> : null}
       {desk.data && !desk.maximized ? <aside className="market-desk-right terminal-dock" aria-label="Data Manager dock"><h2>Data Manager</h2><PanelHost name="DataManager" component={DataManager} /></aside> : null}
     </div>

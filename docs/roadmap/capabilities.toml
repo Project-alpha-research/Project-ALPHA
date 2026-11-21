@@ -370,7 +370,7 @@ proof_synthetic = [
   "tests/integration/test_cli_rules.py::test_rules_lifecycle",
   "tests/integration/test_cli_scan.py::test_scan_lifecycle",
   "tests/unit/test_reserve_holdback_commands.py::test_alpha_scan_and_rules_explain_hold_the_period_back",
-  "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions, scan drilldown and assistant context share recorded inputs",
+  "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions and scan drilldown share recorded inputs",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
@@ -778,31 +778,6 @@ state = "Partial"
 missing = "no test takes one paper all the way to an experiment"
 # owner's delegation, 2026-11-14 ("Build whatever you believe is the right decision"): keep; fits how research is done
 triage = { card = "6", recommendation = "KEEP", owner_decision = "KEEP" }
-
-[[capability]]
-id = "ai-investigations"
-name = "Ask the AI assistant about a recorded run"
-codes = ["Codex"]
-what = "Ask the built-in AI assistant to investigate a finished run; its answers are advice and cite the recorded evidence."
-see_it = [
-  "Workstation: open a run, then \"Investigate this run\"",
-  "Workstation: View → Research → Codex Research",
-]
-entry_points = [
-  "cli: alpha research investigations create",
-  "cli: alpha assistant turn",
-  "api: POST /api/investigations",
-  "panel: apps/alpha-web/frontend/src/panels/RunInvestigation.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/CodexBench.tsx",
-]
-proof_synthetic = [
-  "apps/alpha-web/frontend/e2e/investigations-real.spec.ts::real persisted investigation supports followup, cancel, refresh and comparison handoff",
-]
-real_data = "Recorded: on 2026-10-04 live checks against the real Codex service passed for the command line and the web app (docs/BUILD-STATUS.md, 2026-10-04 managed investigations entry)."
-real_data_needs = "A signed-in Codex command-line tool."
-needs = []
-state = "Partial"
-missing = "tested in a browser against a test server only; no end-to-end smoke check yet"
 
 [[capability]]
 id = "ai-tools-connection"

@@ -39,7 +39,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | RD-Agent ledger, discussion and `alpha rdagent run`/`status` | `rdagent_*` (incl. `rdagent_cmds`, `rdagent_run_config`, `rdagent_run_status`), `_rdagent_*`, `spine/trial_*`, `ledger_cmds` | `test_rdagent_*`, `test_trial_*`, `test_ledger_cmds` |
 | Machine learning, labels | `ml_*` (6), `_ml_*` (2), `_forecast*` (3), `forecast_cmds`, `labels_cmds` | `test_ml_*`, `test_forecast_*` |
 | Paper, providers | `paper_*` (5), `_paper`, `_ibkr_paper`, `ibkr_what_if`, `provider*` (3) | `test_paper_*`, `test_provider_*` |
-| Advisory models | `assistant_*` (6), `codex_*` (5), `investigation_*` (8), `comparison_acquisition*` | `test_assistant_*`, `test_codex_*` |
+| Advisory models | `assistant_*` (6) | `test_assistant_*` |
 
 Many integration tests in `tests/integration/` use the same prefixes. Shared helpers live once: `_cli_json` (JSON emit and
 option parsing), `_research_artifact_io` (D1/D2 artifact publication and reads) and `alpha_core.atomic` (atomic file writes);
@@ -74,6 +74,5 @@ do not add a private copy.
 |---|---|---|
 | [architecture](../../docs/ARCHITECTURE.md) | Runtime data-directory layout | adding a folder under the data directory |
 | [bounded discovery workflow](../../docs/operations/bounded-research-workflow.md) | — | running a bounded discovery or frozen-rule study |
-| [Codex investigations runbook](../../docs/operations/codex-investigations.md) | — | running or changing a recorded-run investigation |
 | [local operations runbook](../../docs/operations/README.md) | — | daily Tiingo data, IBKR Paper setup or the acceptance steps |
 | [toolbox](../../docs/reference/project/components/toolbox.md) | — | `alpha tool`, `toolbox/`: adding a test, its honesty rules, what is not built yet |

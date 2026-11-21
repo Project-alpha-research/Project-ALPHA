@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 38 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 34 working, 37 partly working, 0 demo only, 4 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -86,7 +86,6 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Write trading rules and scan markets** — tested in-process and in a browser against a test server.
 - **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — tested in-process only.
-- **Ask the AI assistant about a recorded run (Codex)** — tested in a browser against a test server only (a real run is recorded).
 - **Let an AI assistant use ALPHA's tools (MCP)** — tested in-process only.
 - **Purged cross-validation for labels that last several days** — tested in-process only (a real run is recorded).
 - **Fractional differencing with d chosen on training data only** — tested in-process only (a real run is recorded).

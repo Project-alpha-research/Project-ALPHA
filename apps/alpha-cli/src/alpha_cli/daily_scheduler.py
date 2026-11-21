@@ -22,6 +22,13 @@ from alpha_core.atomic import write_text
 from alpha_data.adapters.base import FetchReceipt
 from alpha_data.adapters.tiingo_adapter import TiingoAdapter
 from alpha_data.pull_store import pull_into_store
+from alpha_data.sessions import (
+    session_after,
+    session_before,
+    session_bounds,
+    session_close,
+    session_on_or_before,
+)
 from alpha_data.snapshot import create_snapshot, snapshot_manifest_hash, verify_snapshot
 from alpha_data.store import ParquetStore
 
@@ -156,20 +163,14 @@ def due_session(item: DailyInstrument, now: datetime) -> date:
     """Latest session whose close plus correction window is known by ``now``."""
     if now.tzinfo is None or now.utcoffset() is None:
         raise DataError("daily scheduler clock must be timezone-aware")
-    import exchange_calendars as xcals  # type: ignore[import-untyped]
-
-    calendar = xcals.get_calendar(item.calendar)
     utc_now = now.astimezone(UTC)
-    candidate = calendar.date_to_session(utc_now.date(), direction="previous")
-    eligible = calendar.session_close(candidate).to_pydatetime() + timedelta(
+    candidate = session_on_or_before(item.calendar, utc_now.date())
+    eligible = session_close(item.calendar, candidate) + timedelta(
         minutes=item.correction_delay_minutes
     )
     if utc_now < eligible:
-        candidate = calendar.previous_session(candidate)
-    candidate_date = candidate.date()
-    if not isinstance(candidate_date, date):
-        raise DataError("exchange calendar returned an invalid session date")
-    return candidate_date
+        candidate = session_before(item.calendar, candidate)
+    return candidate
 
 
 def _run_spec(item: DailyInstrument) -> _runner.RunSpec:
@@ -196,14 +197,9 @@ def _run_spec(item: DailyInstrument) -> _runner.RunSpec:
 
 
 def _next_session_times(item: DailyInstrument, session: date) -> tuple[date, datetime]:
-    import exchange_calendars as xcals
-
-    calendar = xcals.get_calendar(item.calendar)
-    next_session = calendar.next_session(session.isoformat())
-    cutoff = calendar.session_open(next_session).to_pydatetime() + timedelta(
-        minutes=item.cutoff_minutes_after_open
-    )
-    return next_session.date(), cutoff.astimezone(UTC)
+    next_session = session_after(item.calendar, session)
+    opening = session_bounds(item.calendar, next_session)[0]
+    return next_session, opening + timedelta(minutes=item.cutoff_minutes_after_open)
 
 
 def _state_paths(data_dir: Path, item: DailyInstrument, session: date) -> tuple[Path, Path]:

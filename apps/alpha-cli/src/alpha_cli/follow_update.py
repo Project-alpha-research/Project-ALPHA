@@ -83,20 +83,18 @@ class _Ctx:
 
 def _sessions(calendar: str, first: date, last: date) -> list[date]:
     """The sessions of the forward window only, or a plain-words refusal outside the calendar."""
-    guard = follow_source.calendar_guard
-    with guard(calendar, last), guard(calendar, first):
+    with follow_source.calendar_guard(calendar):
         return sessions_between(calendar, first, last)
 
 
 def close_of(calendar: str | None, session: date) -> datetime:
-    with follow_source.calendar_guard(calendar, session):
+    with follow_source.calendar_guard(calendar):
         return session_close(calendar or "", session)
 
 
 def next_open(calendar: str | None, session: date) -> datetime:
     # The open after `session` is up to 14 days on: a session at the calendar's end has none.
-    guard = follow_source.calendar_guard
-    with guard(calendar, session + timedelta(14)), guard(calendar, session):
+    with follow_source.calendar_guard(calendar):
         return _next_open(calendar or "", session)
 
 

@@ -674,6 +674,7 @@ def health_report(
             calendar,
             min([first, *(a.ex_date for a in splits)]),
             max([today, *(a.ex_date for a in splits)]),
+            present=set(dates),
         )
         if calendar
         else {

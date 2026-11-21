@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: 177c97a0eb8fbb49
+verified: b568e0729040a92c
 ---
 
 # Bar timeframes
@@ -46,6 +46,25 @@ Owner decision 2026-11-15: there is no daily-only rule. Daily (`1D`) is the defa
   `tests/unit/test_ingest_pipeline_intraday.py`.
 
 Daily health reports use exchange close instants for the requested historical range, including shortened sessions.
+
+## Exchange calendar range
+
+The exchange-calendars library answers only a moving window (about 20 years back, about a year ahead).
+`sessions.py` is the only module that imports it; `tests/unit/test_calendar_home_guard.py` fails if any
+other source file does. Every caller asks the home: `is_session`, `session_close`, `session_bounds`,
+`sessions_between`, `daily_session_closes`, `session_on_or_before/before/after`, `bar_known_at`.
+
+- Start: the home builds each calendar from 1950-01-01 (or the calendar's own first year, if later), so
+  answers inside that range are the library's own and equal the default window for every date it covers.
+- Before that start, daily bars use a labelled fallback, `calendar-outside-supported-range`
+  (`range_label`). Each bar date present is a session (`present=`; every weekday if none given). Its close is
+  the regular close of the exchange in local time, DST aware (latest regular close the calendar knows). A
+  Saturday or Sunday has no session: known at the end of its UTC day. The instant may be later than the
+  truth, never earlier. An intraday open before the start fails loud (`CalendarRangeError`).
+- After the last session: `CalendarRangeError` (a `DataError`), "future session and not research".
+  Follow commands turn it into the `FOLLOW_CALENDAR_RANGE` refusal.
+- Crypto has no calendar: the end of the UTC day, as before.
+- Tests: `test_calendar_home.py` (date-independent: bounds come from the library at run time).
 
 ## Reading intraday bars
 

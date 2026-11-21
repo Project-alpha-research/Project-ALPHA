@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/strategy_candidate*.py
   - tests/unit/test_research_*.py
   - tests/integration/test_research_*.py
-verified: f30411a595a98a9a
+verified: 6d94261733ecf7db
 ---
 
 # Command line research invariants

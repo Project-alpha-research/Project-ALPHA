@@ -103,5 +103,8 @@ Holds nothing back (they still read bars from the date on):
   this change are not relabelled; only rule runs derive `reserved-period-seen`. Stored hypothesis scans and backtest runs carry no last-bar
   date in a common place, so a read-only label on display needs its own design.
 - Open: who may reveal the reserved period itself to rule tests or setups. This is separate from the settled holdout rule above.
-- Guard: [a structural test](../../../tests/unit/test_research_reads_are_cut.py) lists every read of bars or dividends that passes no cut-off,
-  with a reason each. A new one fails it. It sees a missing or `None` `as_of`, not a variable that is `None` at run time; the command tests cover those.
+- Guard: [a structural test](../../../tests/unit/test_research_reads_are_cut.py) checks every `load_bars`, `load_dividends` and `read_bars` call.
+  Its `as_of` must come from the reserve (`reserve.CUTOFF`, a `Hold`'s `as_of`, or a helper parameter that every caller fills so). Every other
+  read is listed as `exempt:` (forward use, display, verification) or `open:` (a known leak, with the change that fixes it). A new unlisted read
+  fails, and so does a stale entry. A polars read of a bars store file is allowed only where listed. It does not see other readers (for example
+  `PointInTimeSource`, the crypto bulk artifacts) or callers outside the package; its docstring lists these limits.

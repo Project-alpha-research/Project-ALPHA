@@ -167,10 +167,11 @@ def run_propfirm(
         returns: Sequence[float] | FloatArray = trim_warmup(raw_returns)
         source = f"run:{from_run}"
     elif symbol is not None:
-        held = reserve.hold(symbol, data_dir=data_dir, snapshot_id=snapshot)
+        fresh = reserve.hold(symbol, data_dir=data_dir, snapshot_id=snapshot)
         raw_returns, observed_source = _returns_from_backtest(
-            symbol, spec, data_dir, snapshot, held.as_of
+            symbol, spec, data_dir, snapshot, fresh.as_of
         )
+        held = fresh
         returns = trim_warmup(raw_returns)
         source = f"symbol:{symbol}"
     else:  # pragma: no cover - the CLI guarantees one input is set

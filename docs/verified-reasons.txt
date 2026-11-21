@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 18d543fb28f148e0 on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified 1a4e2fe494640960 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
 
 apps/alpha-cli/README.md
-  verified 18d543fb28f148e0 on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified 1a4e2fe494640960 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 6d94261733ecf7db on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -75,6 +75,9 @@ docs/reference/invariants/rdagent.md
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
+docs/reference/invariants/research.md
+  verified 7898479510264d27 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged

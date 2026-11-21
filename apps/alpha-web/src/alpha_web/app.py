@@ -171,6 +171,11 @@ def create_app() -> FastAPI:
         """SPA entry reached only through the trusted CLI's short-lived enrollment URL."""
         return _spa()
 
+    @app.get("/owner-auth/confirm")
+    def owner_reserved_confirmation() -> FileResponse:
+        """SPA entry reached only through `alpha confirm request`'s short-lived Touch ID link."""
+        return _spa()
+
     return app
 
 

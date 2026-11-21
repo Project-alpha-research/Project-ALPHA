@@ -11,6 +11,7 @@ from pydantic import Field
 
 from alpha_cli.owner_auth import (
     OWNER_ACTION_TYPES,
+    RESERVED_ACTION,
     action_binding,
     authentication_options,
     derive_action_artifact_hash,
@@ -303,6 +304,18 @@ def perform_action(body: OwnerActionPerformRequest) -> dict[str, object]:
         action_type = str(binding["action_type"])
         if action_type == "record_semantic_event":
             return {"authorization": authorization, "result": authorization}
+        if action_type == RESERVED_ACTION:
+            # Issued only by `alpha confirm request`; the verified Touch ID yes is passed on.
+            argv = [
+                "confirm",
+                "run",
+                _string(body.payload, "run_id"),
+                "--authorization",
+                str(authorization["authorization_id"]),
+                "--json",
+            ]
+            result = _run_json(argv, data_dir=data_dir(), timeout_seconds=3_600)
+            return {"authorization": authorization, "result": result}
         project_id = str(binding["project_id"])
         argv = _action_argv(
             action_type=action_type,

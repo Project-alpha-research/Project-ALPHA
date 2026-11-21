@@ -26,6 +26,7 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("provider", "alpha_cli.provider_cmds", "provider_app"),
     ("info", "alpha_cli.info_cmds", "info_app"),
     ("owner-auth", "alpha_cli.owner_auth_cmds", "owner_auth_app"),
+    ("confirm", "alpha_cli.confirm_cmds", "confirm_app"),
     ("risk", "alpha_cli.risk_cmds", "risk_app"),
     ("research", "alpha_cli.research_cmds", "research_app"),
     ("figures", "alpha_cli.figures_cmds", "figures_app"),

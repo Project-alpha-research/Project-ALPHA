@@ -11,6 +11,7 @@ from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.stores import ResolvedAsset, resolve_asset
+from alpha_core import Bar, CorporateAction, DataError
 from alpha_core.reserve import RESERVED_DAY, RESERVED_START
 from alpha_core.reserve import RESERVED_INSTANT as RESERVED_INSTANT  # re-exported: the one boundary
 
@@ -23,6 +24,10 @@ CUTOFF_DAY = CUTOFF.date()
 CUTOFF_DATE = CUTOFF_DAY.isoformat()
 HELD_BACK = "reserved-period-held-back"
 SEEN = "reserved-period-seen"
+# The owner's one-shot confirmation run, and the label every later test of the same rule family
+# on the same asset carries (the owner has seen how that kind of rule did in the period).
+CONFIRMATION = "reserved-period-confirmation"
+CONFIRMED = "reserved-period-confirmed-in-family"
 SEEN_SENTENCE = (
     f"This run used data from {RESERVED_START} on, before that data was held back. "
     "It is not a fresh test on that period."
@@ -172,7 +177,8 @@ def seen(last_ts: str | datetime | None, manifest: Mapping[str, Any]) -> bool:
     block = manifest.get("reserve") or (
         spine.get("reserve") if isinstance(spine, Mapping) else None
     )
-    return last.date() >= RESERVED_DAY and block is None
+    confirmation = isinstance(spine, Mapping) and CONFIRMATION in spine.get("labels", [])
+    return last.date() >= RESERVED_DAY and block is None and not confirmation
 
 
 def read_labels(manifest: Mapping[str, Any]) -> list[str]:
@@ -204,3 +210,66 @@ def carry_to_outcome(summary: dict[str, Any], find_manifest: Mapping[str, Any]) 
         summary["labels"] = [*summary["labels"], HELD_BACK]
     summary["reserve"] = block
     summary["reserve_sentence"] = sentence(block["held_back_bars"])
+
+
+def reserved_span(
+    resolved: ResolvedAsset, until: datetime | None = None
+) -> tuple[int, datetime | None, datetime | None]:
+    """Count, first and last stored stamp from the reserved day on (to ``until``); no price."""
+    import polars as pl
+
+    path = resolved.daily_store()._bars_path(resolved.symbol)
+    if not path.exists():
+        return 0, None, None
+    keep = pl.col("ts") >= RESERVED_INSTANT
+    if until is not None:
+        keep = keep & (pl.col("ts") <= until)
+    stamps = pl.scan_parquet(path).select("ts").filter(keep)
+    row = stamps.select(pl.len(), pl.col("ts").min(), pl.col("ts").max()).collect().row(0)
+    return int(row[0]), row[1], row[2]
+
+
+def family_asset(rule_kind: str, symbol: str) -> str:
+    """The idea family on one asset: the unit that can be confirmed once (deflation family)."""
+    return f"spine:{rule_kind}|{symbol}"
+
+
+def confirmed_in_family(home: Path, rule_kind: str, symbol: str) -> dict[str, Any] | None:
+    """The receipt that spent a slot on this rule family and asset, if one did."""
+    from alpha_cli import reserved_slots
+
+    key = family_asset(rule_kind, symbol)
+    return next((r for r in reserved_slots.receipts(home) if r["family_asset"] == key), None)
+
+
+def confirmed_sentence(found: Mapping[str, Any]) -> str:
+    frozen = found["frozen"]
+    return (
+        f"The owner has seen how a {frozen['rule']} rule did on {frozen['symbol']} in the reserved "
+        f"period (slot {found['slot']}, {str(found['created_at'])[:10]}). A tuned version tested "
+        "now is not independent of that result, and this family can never be confirmed again."
+    )
+
+
+def open_with_receipt(
+    home: Path, receipt_id: str
+) -> tuple[list[Bar], list[CorporateAction], str | None]:
+    """The one read of bars after the boundary. Only `spine/confirm_run.py` may call it.
+
+    Every call checks the receipt against the store: its hash, the owner's Touch ID assertion
+    (verified again), the asset and the exact reserved bars the owner confirmed. A structural test
+    keeps every other module from calling this function.
+    """
+    from alpha_cli import _runner, reserved_slots
+
+    frozen = reserved_slots.verified_receipt(home, receipt_id)["frozen"]
+    resolved = resolve_asset(str(frozen["asset"]), data_dir=home)
+    if (resolved.symbol, resolved.store_name) != (frozen["symbol"], frozen["store"]):
+        raise DataError("the receipt names another asset or store; nothing was read")
+    end = datetime.fromisoformat(str(frozen["reserved_end"]))
+    n, _, last = reserved_span(resolved, end)
+    if n != frozen["reserved_bars"] or last is None or last.isoformat() != frozen["reserved_end"]:
+        raise DataError("the stored reserved bars changed since the owner confirmed them")
+    bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
+    dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
+    return bars, dividends, snapshot_id

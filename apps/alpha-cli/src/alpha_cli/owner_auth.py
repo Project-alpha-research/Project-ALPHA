@@ -32,6 +32,7 @@ from webauthn.helpers.structs import (
     UserVerificationRequirement,
 )
 
+from alpha_cli import reserved_slots
 from alpha_cli.control_store import (
     OWNER_ACTION_TYPES,
     ControlStore,
@@ -47,6 +48,9 @@ OWNER_USER_NAME: Final = "owner"
 CHALLENGE_LIFETIME_SECONDS: Final = 60
 ENROLLMENT_LIFETIME_SECONDS: Final = 300
 _MAX_ACTION_JSON_BYTES: Final = 65_536
+# The one owner action that is not a research-case action: confirm a frozen test on the reserved
+# period. Touch ID only; the trusted CLI issues it (`alpha confirm request`), never a route.
+RESERVED_ACTION: Final = reserved_slots.ACTION
 
 
 def _now() -> datetime:
@@ -318,6 +322,57 @@ def authentication_options(
     }
 
 
+def check_assertion(
+    *,
+    credential: Mapping[str, object],
+    challenge: bytes,
+    public_key: bytes,
+    sign_count: int,
+) -> int:
+    """Verify one Touch ID assertion over ``challenge``; return the new signature counter."""
+    try:
+        verification = verify_authentication_response(
+            credential=dict(credential),
+            expected_challenge=challenge,
+            expected_rp_id=OWNER_RP_ID,
+            expected_origin=OWNER_ORIGIN,
+            credential_public_key=public_key,
+            credential_current_sign_count=sign_count,
+            require_user_verification=True,
+        )
+    except Exception as exc:
+        raise DataError("Touch ID assertion could not be verified") from exc
+    return int(verification.new_sign_count)
+
+
+def reserved_confirmation_options(
+    *,
+    data_dir: Path,
+    payload: Mapping[str, object],
+    artifact_hash: str,
+    consequence_summary: str,
+    reason: str,
+    now: datetime | None = None,
+) -> dict[str, object]:
+    """Issue the Touch ID challenge for one reserved-period confirmation (trusted CLI only).
+
+    WebAuthn only: this action has no local-click form, and no web route issues it.
+    """
+    clean = _object(payload, "action payload")
+    if len(artifact_hash) != 64 or any(c not in "0123456789abcdef" for c in artifact_hash):
+        raise DataError("owner action artifact hash must be lowercase SHA-256")
+    binding = {
+        "action_type": reserved_slots.ACTION,
+        "authorization_method": "webauthn",
+        "artifact_hash": artifact_hash,
+        "request_hash": reserved_slots.sha256(clean),
+        "consequence_summary": consequence_summary,
+        "reason": reason,
+        "run_id": clean.get("run_id"),
+    }
+    return authentication_options(data_dir=data_dir, binding=binding, now=now)
+
+
 def verify_action_assertion(
     *,
     data_dir: Path,
@@ -331,6 +386,15 @@ def verify_action_assertion(
     store = ControlStore(data_dir)
     snapshot = store.get_owner_action_challenge_snapshot(challenge_id, now=verified_at)
     snapshot_binding = _object(snapshot["binding"], "action binding")
+    if snapshot_binding.get("action_type") == reserved_slots.ACTION:
+        recorded = reserved_slots.record_authorization(
+            data_dir,
+            challenge_id=challenge_id,
+            credential=credential,
+            payload=payload,
+            now=verified_at,
+        )
+        return {**recorded, "binding": snapshot_binding}
     if snapshot_binding.get("action_type") == "record_semantic_event":
         if snapshot["used_at"] is not None:
             recovered = store.recover_semantic_event_authorization(
@@ -422,6 +486,8 @@ def local_confirmation_options(
     *, data_dir: Path, binding: Mapping[str, object], now: datetime | None = None
 ) -> dict[str, object]:
     """Issue a single-use local intent token; this does not prove physical presence."""
+    if binding.get("action_type") == reserved_slots.ACTION:
+        raise DataError("a reserved-period confirmation needs Touch ID, not a local click")
     issued = _now() if now is None else now
     token = secrets.token_bytes(32)
     result = ControlStore(data_dir).create_owner_auth_challenge(
@@ -456,6 +522,8 @@ def verify_local_confirmation(
     ):
         raise DataError("invalid local confirmation token")
     action_type = str(binding["action_type"])
+    if action_type == reserved_slots.ACTION:
+        raise DataError("a reserved-period confirmation needs Touch ID, not a local click")
     if action_type == "record_semantic_event" and challenge["used_at"] is not None:
         result = store.recover_semantic_event_authorization(
             challenge_id=challenge_id, payload=payload
@@ -513,12 +581,15 @@ __all__ = [
     "OWNER_ACTION_TYPES",
     "OWNER_ORIGIN",
     "OWNER_RP_ID",
+    "RESERVED_ACTION",
     "action_binding",
     "authentication_options",
+    "check_assertion",
     "derive_action_artifact_hash",
     "finish_registration",
     "issue_enrollment",
     "registration_options",
+    "reserved_confirmation_options",
     "verify_action_assertion",
     "local_confirmation_options",
     "verify_local_confirmation",

@@ -72,6 +72,9 @@ async function openRuleTest(page: Page, runId: string, body: unknown) {
 
 test('the rule-test summary opens with one interactive price, equity and drawdown chart', async ({ page }) => {
   const runId = 'd'.repeat(16)
+  const problems: string[] = []
+  page.on('pageerror', error => problems.push(error.message))
+  page.on('console', message => { if (message.type() === 'error') problems.push(message.text()) })
   const ts = Array.from({ length: DAYS }, (_, i) => T0 + i * DAY)
   await openRuleTest(page, runId, seriesBody(runId, { status: 'available', ts, close: ts.map((_, i) => 100 + i) }))
   const summary = page.getByRole('region', { name: 'Rule test', exact: true })
@@ -89,6 +92,7 @@ test('the rule-test summary opens with one interactive price, equity and drawdow
   await expect(stack.locator('.bk-Canvas').first()).toBeVisible()
   // the saved images stay, with their new name
   await expect(summary.getByRole('heading', { name: /Hold after a new high/ })).toBeVisible()
+  expect(problems).toEqual([])
 })
 
 test('the chart says in plain words why the price pane is missing', async ({ page }) => {

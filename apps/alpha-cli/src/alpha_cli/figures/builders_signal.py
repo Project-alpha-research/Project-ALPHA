@@ -1,6 +1,8 @@
-"""Figure builders: signal."""
+"""Figure builders: the price chart with the strategy's own signals."""
 
 from __future__ import annotations
+
+from typing import Any, cast
 
 from alpha_cli.figures import _sources as src
 from alpha_cli.figures._common import BuildContext, _truncation
@@ -15,149 +17,140 @@ from alpha_research.figures import (
     ValueLabel,
     ZoneMark,
 )
+from alpha_research.figures.spec import Role, YUnit
 
 
-# --------------------------------------------------------------------------- signals
-def price_signal(ctx: BuildContext) -> FigureSpec:
-    keys = ("symbol", "snapshot_id", "start", "end", "timeframe", "source_timeframe", "session")
-    rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
-    if reason is not None or not rows:
-        raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
+def _price_marks(rows: list[dict[str, Any]]) -> list[Mark]:
     ts = tuple(row["t"] for row in rows)
-    marks: list[Mark] = [
-        CandleMark(
-            x=ts,
-            open=tuple(row["o"] for row in rows),
-            high=tuple(row["h"] for row in rows),
-            low=tuple(row["l"] for row in rows),
-            close=tuple(row["c"] for row in rows),
-            alpha=0.85,
-        )
-        if len(rows) <= 400
-        else LineMark(
+    if len(rows) <= 400:
+        return [
+            CandleMark(
+                x=ts,
+                open=tuple(row["o"] for row in rows),
+                high=tuple(row["h"] for row in rows),
+                low=tuple(row["l"] for row in rows),
+                close=tuple(row["c"] for row in rows),
+                alpha=0.85,
+            )
+        ]
+    return [
+        LineMark(
             x=ts, y=tuple(row["c"] for row in rows), role="substrate", label="Close", width=1.0
         )
     ]
 
+
+def _annotation_marks(ctx: BuildContext) -> tuple[list[Mark], int, int]:
+    """Strategy-authored annotations: zones and lines; returns marks, drawn and total."""
     annotations = src.frame(ctx.rdir, "chart_annotations.parquet", "annotation_id", "anchor_index")
-    drawn, total = 0, 0
-    if annotations is not None and not annotations.is_empty():
-        groups = annotations.partition_by("annotation_id", maintain_order=True)
-        total = len(groups)
-        for group in groups[:40]:
-            label = str(group["label"].to_list()[0])
-            kind = str(group["kind"].to_list()[0])
-            unit = str(group["unit"].to_list()[0])
-            xs = src.epochs(group["ts"])
-            ys = src.floats(group["value"], name="annotation value")
-            if kind == "zone":
-                marks.append(
-                    ZoneMark(
-                        x0=min(xs),
-                        x1=max(xs),
-                        role="feature",
-                        alpha=0.12,
-                        label=label if drawn == 0 else None,
-                        corner_label=ValueLabel(text=label),
-                    )
-                )
-            else:
-                marks.append(
-                    LineMark(
-                        x=xs,
-                        y=ys,
-                        role="feature",
-                        label=label if drawn == 0 else None,
-                        end_label=ValueLabel(text=f"{label} {ys[-1]:.2f}{'' if unit else ''}"),
-                    )
-                )
-            drawn += 1
-
-    trace = src.frame(ctx.rdir, "execution_trace.parquet", "sequence_id")
-    if trace is not None and not trace.is_empty():
-        fills = trace.filter(trace["event_type"] == "fill")
-        if not fills.is_empty():
-            buys = fills.filter(fills["side"] == "BUY")
-            sells = fills.filter(fills["side"] == "SELL")
-            for subset, marker, role, label in (
-                (buys, "^", "up", "Buy fill"),
-                (sells, "v", "down", "Sell fill"),
-            ):
-                if subset.is_empty():
-                    continue
-                marks.append(
-                    ScatterMark(
-                        x=src.epochs(subset["ts"]),
-                        y=src.floats(subset["price"], name="fill price"),
-                        marker=marker,  # type: ignore[arg-type]
-                        role=role,  # type: ignore[arg-type]
-                        size=26.0,
-                        label=label,
-                    )
-                )
-
-    # Indicators are grouped by unit, not one panel each. A strategy that publishes three
-    # price-unit series (two moving averages and the close it already draws) used to get
-    # three near-identical panels whose rotated labels ran into each other, and the one
-    # series that was NOT a price fell off the end of an alphabetical cap. Anything
-    # measured in price belongs over the price -- which is exactly how a moving average is
-    # read -- and each remaining unit gets one panel with the series named in its legend.
-    indicators = src.frame(ctx.rdir, "indicator_series.parquet", "name", "ts")
-    by_unit: dict[str, list[str]] = {}
-    if indicators is not None and not indicators.is_empty():
-        for name in sorted({str(value) for value in indicators["name"].to_list()}):
-            subset = indicators.filter(indicators["name"] == name)
-            unit = _indicator_unit(str(subset["unit"].to_list()[0]))
-            # `close` restates the price line this figure already draws.
-            if unit == "price" and name == "close":
-                continue
-            by_unit.setdefault(unit, []).append(name)
-
-    def _indicator_marks(unit: str, names: tuple[str, ...], role: str) -> tuple[Mark, ...]:
-        assert indicators is not None
-        drawn_marks: list[Mark] = []
-        for index, name in enumerate(names):
-            subset = indicators.filter(indicators["name"] == name)
-            values = src.floats(subset["value"], name=name)
-            # One series wears the role's own colour. Several sharing a panel must be told
-            # apart, and two gold lines over the same price are two lines you cannot read.
-            categorical = len(names) > 1
-            drawn_marks.append(
-                LineMark(
-                    x=src.epochs(subset["ts"]),
-                    y=values,
-                    role="categorical" if categorical else role,  # type: ignore[arg-type]
-                    palette_index=index if categorical else None,
-                    label=name,
-                    width=1.2,
-                    end_label=ValueLabel(text=f"{values[-1]:,.2f}"),
+    marks: list[Mark] = []
+    if annotations is None or annotations.is_empty():
+        return marks, 0, 0
+    groups = annotations.partition_by("annotation_id", maintain_order=True)
+    for drawn, group in enumerate(groups[:40]):
+        label = str(group["label"].to_list()[0])
+        xs = src.epochs(group["ts"])
+        ys = src.floats(group["value"], name="annotation value")
+        first = label if drawn == 0 else None
+        if str(group["kind"].to_list()[0]) == "zone":
+            marks.append(
+                ZoneMark(
+                    x0=min(xs),
+                    x1=max(xs),
+                    role="feature",
+                    alpha=0.12,
+                    label=first,
+                    corner_label=ValueLabel(text=label),
                 )
             )
-        return tuple(drawn_marks)
+        else:
+            marks.append(
+                LineMark(
+                    x=xs,
+                    y=ys,
+                    role="feature",
+                    label=first,
+                    end_label=ValueLabel(text=f"{label} {ys[-1]:.2f}"),
+                )
+            )
+    return marks, min(len(groups), 40), len(groups)
 
-    price_overlays = tuple(by_unit.pop("price", [])[:3])
-    if price_overlays:
-        marks.extend(_indicator_marks("price", price_overlays, "feature"))
 
-    panels: list[Panel] = [
-        Panel(
-            panel_id="price",
-            y_label="Price (native quote)",
-            y_unit="price",
-            height_ratio=3.0,
-            marks=tuple(marks),
-            note=None if drawn else "the strategy emitted no chart annotations",
+def _fill_marks(trace: Any) -> list[Mark]:
+    if trace is None or trace.is_empty():
+        return []
+    fills = trace.filter(trace["event_type"] == "fill")
+    marks: list[Mark] = []
+    for side, marker, role, label in (
+        ("BUY", "^", "up", "Buy fill"),
+        ("SELL", "v", "down", "Sell fill"),
+    ):
+        subset = fills.filter(fills["side"] == side)
+        if subset.is_empty():
+            continue
+        marks.append(
+            ScatterMark(
+                x=src.epochs(subset["ts"]),
+                y=src.floats(subset["price"], name="fill price"),
+                marker="^" if marker == "^" else "v",
+                role="up" if role == "up" else "down",
+                size=26.0,
+                label=label,
+            )
         )
-    ]
+    return marks
 
+
+def _indicator_groups(indicators: Any) -> dict[str, list[str]]:
+    """Indicators grouped by unit, not one panel each.
+
+    Anything measured in price belongs over the price, which is how a moving average is
+    read; each remaining unit gets one panel with its series named in the legend.
+    """
+    by_unit: dict[str, list[str]] = {}
+    if indicators is None or indicators.is_empty():
+        return by_unit
+    for name in sorted({str(value) for value in indicators["name"].to_list()}):
+        subset = indicators.filter(indicators["name"] == name)
+        unit = _indicator_unit(str(subset["unit"].to_list()[0]))
+        # `close` restates the price line this figure already draws.
+        if unit == "price" and name == "close":
+            continue
+        by_unit.setdefault(unit, []).append(name)
+    return by_unit
+
+
+def _indicator_marks(indicators: Any, names: tuple[str, ...], role: Role) -> tuple[Mark, ...]:
+    marks: list[Mark] = []
+    for index, name in enumerate(names):
+        subset = indicators.filter(indicators["name"] == name)
+        values = src.floats(subset["value"], name=name)
+        # Several series sharing a panel must be told apart; one wears the role's colour.
+        several = len(names) > 1
+        marks.append(
+            LineMark(
+                x=src.epochs(subset["ts"]),
+                y=values,
+                role="categorical" if several else role,
+                palette_index=index if several else None,
+                label=name,
+                width=1.2,
+                end_label=ValueLabel(text=f"{values[-1]:,.2f}"),
+            )
+        )
+    return tuple(marks)
+
+
+def _indicator_panels(indicators: Any, by_unit: dict[str, list[str]]) -> list[Panel]:
+    panels: list[Panel] = []
     for index, (unit, names) in enumerate(sorted(by_unit.items())):
         capped = tuple(names[:3])
         panels.append(
             Panel(
                 panel_id=f"indicator_{index}",
                 y_label=_UNIT_LABELS.get(unit, unit.replace("_", " ").capitalize()),
-                y_unit=unit,  # type: ignore[arg-type]
-                marks=_indicator_marks(unit, capped, "subject"),
+                y_unit=cast(YUnit, unit),
+                marks=_indicator_marks(indicators, capped, "subject"),
                 note=(
                     None
                     if len(capped) == len(names)
@@ -165,7 +158,32 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
                 ),
             )
         )
+    return panels
 
+
+def price_signal(ctx: BuildContext) -> FigureSpec:
+    keys = ("symbol", "snapshot_id", "start", "end", "timeframe", "source_timeframe", "session")
+    rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
+    if reason is not None or not rows:
+        raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
+    marks = _price_marks(rows)
+    notes, drawn, total = _annotation_marks(ctx)
+    marks.extend(notes)
+    trace = src.frame(ctx.rdir, "execution_trace.parquet", "sequence_id")
+    marks.extend(_fill_marks(trace))
+    indicators = src.frame(ctx.rdir, "indicator_series.parquet", "name", "ts")
+    by_unit = _indicator_groups(indicators)
+    overlays = tuple(by_unit.pop("price", [])[:3])
+    if overlays:
+        marks.extend(_indicator_marks(indicators, overlays, "feature"))
+    price_panel = Panel(
+        panel_id="price",
+        y_label="Price (native quote)",
+        y_unit="price",
+        height_ratio=3.0,
+        marks=tuple(marks),
+        note=None if drawn else "the strategy emitted no chart annotations",
+    )
     fills_count = 0 if trace is None else int((trace["event_type"] == "fill").sum())
     return ctx.spec(
         "price_signal",
@@ -180,7 +198,7 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
             f"{fills_count:,} fills over {len(rows):,} sessions, with {drawn} strategy-authored "
             f"annotation{'s' if drawn != 1 else ''} drawn on price."
         ),
-        panels=tuple(panels),
+        panels=(price_panel, *_indicator_panels(indicators, by_unit)),
     )
 
 

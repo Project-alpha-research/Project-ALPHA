@@ -13,6 +13,7 @@ from alpha_research.figures import (
     Panel,
     figure_definition,
 )
+from alpha_research.figures.spec import XKind
 
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
@@ -107,7 +108,7 @@ class BuildContext:
         *,
         panels: tuple[Panel, ...],
         x_label: str,
-        x_kind: str = "time",
+        x_kind: XKind = "time",
         answer: str,
         artifacts: tuple[str, ...],
         truncation: str | None = None,
@@ -119,7 +120,7 @@ class BuildContext:
             title=definition.title,
             subtitle=self.subtitle(),
             x_label=x_label,
-            x_kind=x_kind,  # type: ignore[arg-type]
+            x_kind=x_kind,
             x_categories=x_categories,
             panels=panels,
             question=definition.question,

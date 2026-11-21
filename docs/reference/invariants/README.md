@@ -39,13 +39,13 @@ verified: 8115bbcdee4c05e0
 | file | owns | load when |
 |---|---|---|
 | [cli-runs.md](cli-runs.md), [cli-nightly.md](cli-nightly.md) | runs, publication; the nightly run | `alpha run`, `alpha nightly` |
-| [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
+| [cli-setups.md](cli-setups.md), [cli-idea-file.md](cli-idea-file.md) | `alpha setup`; `alpha idea file` | `alpha setup`, `alpha idea file` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
-| [cli-rule-readings.md](cli-rule-readings.md), [cost classes](cli-cost-classes.md), [idea file](cli-idea-file.md) | readings; costs; idea file | `alpha test`, `alpha idea file` |
+| [cli-rule-readings.md](cli-rule-readings.md), [cli-cost-classes.md](cli-cost-classes.md) | readings; costs by class | `alpha test` text, costs line |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |

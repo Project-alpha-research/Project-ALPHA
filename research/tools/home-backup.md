@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/home_cmds.py
   - apps/alpha-cli/src/alpha_cli/home_backup.py
   - apps/alpha-cli/src/alpha_cli/home_restore.py
-verified: f94fbcd05eac0fd4
+verified: 70a5d5d4fd2df8f3
 ---
 # Back up and restore the data home
 

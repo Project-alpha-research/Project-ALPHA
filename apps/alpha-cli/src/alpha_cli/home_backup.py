@@ -60,6 +60,13 @@ def inside(path: Path, folder: Path) -> bool:
     return path.resolve().is_relative_to(folder.resolve())
 
 
+def _plain_info(path: Path, arcname: str) -> tarfile.TarInfo:
+    """The header of one file. A fresh helper per file, so a second name of one file (a hard
+    link) is stored in full and never as an empty link entry."""
+    with tarfile.open(fileobj=io.BytesIO(), mode="w") as scratch:
+        return scratch.gettarinfo(str(path), arcname)
+
+
 def _add_file(tar: tarfile.TarFile, path: Path, name: str) -> dict[str, Any]:
     """Copy one file into the archive, hashing the same bytes; fail if it changed meanwhile."""
     changed = (
@@ -68,8 +75,7 @@ def _add_file(tar: tarfile.TarFile, path: Path, name: str) -> dict[str, Any]:
     )
     try:
         before = path.lstat()
-        tar.inodes.clear()  # a second name of one file is stored in full, never as an empty link
-        info = tar.gettarinfo(str(path), f"{PREFIX}/{name}")
+        info = _plain_info(path, f"{PREFIX}/{name}")
         if not info.isreg():
             raise HomeBackupError(f"{name} is not a plain file any more. {changed}")
         with path.open("rb") as stream:

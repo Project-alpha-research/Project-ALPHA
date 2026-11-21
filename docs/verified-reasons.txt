@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified e77ffbfddd7a6267 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
+  verified f1079cabccc8acb9 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 apps/alpha-cli/README.md
-  verified e77ffbfddd7a6267 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold; text updated for home_restore and the new refusals
+  verified f1079cabccc8acb9 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-nightly.md
-  verified f8619b354424f05c on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold; text updated for home_restore and the new refusals
+  verified bf467600edef19c2 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 docs/reference/invariants/cli-research.md
   verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
@@ -254,7 +254,7 @@ research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
 
 research/tools/home-backup.md
-  verified f94fbcd05eac0fd4 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold; text updated for home_restore and the new refusals
+  verified 70a5d5d4fd2df8f3 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
@@ -266,7 +266,7 @@ research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/nightly-alert.md
-  verified 49356981eee1fc79 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
+  verified a976f66296419ad5 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 research/tools/nightly-run.md
   verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold

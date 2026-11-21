@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from alpha_cli import home_restore
-from alpha_cli.home_backup import HomeBackupError, backup
+from alpha_cli.home_backup import HomeBackupError, backup, file_hash
 from alpha_cli.home_restore import restore, verify
 from tests.unit.test_home_backup import synthetic_home, tree
 
@@ -145,7 +145,7 @@ def test_restore_checks_the_written_files_again_from_disk(
 ) -> None:
     home = synthetic_home(tmp_path)
     archive = Path(backup(home, tmp_path / "out")["archive"])
-    real = home_restore.file_hash
+    real = file_hash
     monkeypatch.setattr(
         home_restore, "file_hash", lambda p: "0" * 64 if "back" in p.parts else real(p)
     )

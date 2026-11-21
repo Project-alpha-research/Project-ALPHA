@@ -75,7 +75,7 @@ def after_run(home: Path, record: dict[str, Any], *, notify_owner: bool) -> None
 
 
 def after_crash(
-    home: Path, day: date, number: int, error: Exception, *, notify_owner: bool
+    home: Path, day: date, number: int, error: BaseException, *, notify_owner: bool
 ) -> None:
     """The run itself stopped: no record may exist, so the marker must say what happened."""
     headline = "stopped before it finished."

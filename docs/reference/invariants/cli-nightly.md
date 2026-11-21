@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: f8619b354424f05c
+verified: bf467600edef19c2
 ---
 
 # Command line nightly run invariants
@@ -72,7 +72,7 @@ verified: f8619b354424f05c
 - Lock rule: the backup takes `flock` on `<home>/nightly/.lock` without waiting, the lock the crontab line holds for a nightly run.
   If it is held, the backup refuses and writes nothing. It holds the lock until the archive is complete.
 - Before writing, it estimates the size (every file plus 2 kB per entry plus 1 MB) and refuses if the target disk has less free.
-  A folder it cannot read stops it. A second name of one file (hard link) is stored in full: `tar.inodes` is cleared per file.
+  A folder it cannot read stops it. A second name of one file (hard link) is stored in full: each header comes from a fresh helper.
 - A file whose size or modification time changes while it is read stops the backup; the partial archive is removed.
 - It refuses a target inside the home. Symbolic links are never followed: each is excluded and listed. Nothing is excluded silently.
 - `verify-backup` re-reads the archive, compares every file with the manifest and the archive with its `.sha256`, and names

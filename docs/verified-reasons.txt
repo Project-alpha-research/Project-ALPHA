@@ -32,7 +32,7 @@ docs/reference/invariants/cli-follow.md
   verified e2df583b5a2d335f on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified 4e402cc8d1d62a08 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
+  verified 4e402cc8d1d62a08 on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
 
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
@@ -50,7 +50,7 @@ docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 66494f7f60c6b14f on 2026-11-21: the idea file and Ideas page sections moved into their own pages (cli-idea-file.md, web-ideas.md); the rest of this page is unchanged
+  verified 66494f7f60c6b14f on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
 
 docs/reference/invariants/cli-runs.md
   verified bbc7747add776889 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -108,6 +108,9 @@ docs/reference/invariants/web-api-reads.md
 
 docs/reference/invariants/web-api.md
   verified 055b8aa9b58624c8 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+
+docs/reference/invariants/web-frontend-ideas.md
+  verified e24cae1f03437816 on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
 
 docs/reference/invariants/web-frontend.md
   verified 94759451dde81222 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct

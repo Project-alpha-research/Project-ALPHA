@@ -9,9 +9,10 @@ sources:
 verified: 4e402cc8d1d62a08
 ---
 
-# Idea file invariants
+# Command line idea file invariants
 
-The one-page view of one idea. The reading rules it shows are in [cli-rule-readings.md](cli-rule-readings.md).
+What must not break when changing `alpha idea file`. The readings it joins are described in
+[rule-test readings](cli-rule-readings.md#rule-test-readings).
 
 ## Idea file
 
@@ -32,6 +33,6 @@ The one-page view of one idea. The reading rules it shows are in [cli-rule-readi
   - Baseline: an aim row in a reading. Settings: stored variants tried, or more than one setting of the same rule linked.
   - Costs: a stored `costs.break_even` result. Out-of-sample numbers recorded: stored out-of-sample numbers; this is not an independent replication.
   - A setup study that cannot be read does not count. The study sentence prints; its outcome word does not (old wording), and the page says so once.
-  - Held-back confirmation reads `not built yet`. Following forward on paper is `done` when a follow record names the card; otherwise `not yet`.
+  - Held-back confirmation and following forward on paper read `not built yet`. The forward-use code is not read.
 - Text caps at 20 readings: the first 10 and last 10 print, the middle is counted. `--json` carries all.
 - Text for the owner never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit". A scan test holds this.

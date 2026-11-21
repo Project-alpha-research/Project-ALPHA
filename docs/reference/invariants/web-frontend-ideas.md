@@ -6,9 +6,9 @@ sources:
 verified: e24cae1f03437816
 ---
 
-# Web Ideas page invariants
+# Web frontend ideas page invariants
 
-The Ideas screen. The other frontend rules are in [web-frontend.md](web-frontend.md); the reads are in [web-api-reads.md](web-api-reads.md#ideas-read).
+What must not break when changing the Ideas page. The rest of the browser app is in [web frontend](web-frontend.md).
 
 ## Ideas page
 

@@ -91,6 +91,9 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - The equity chart plots the entries `follow show` returns (newest 5): percent since the start, a dashed zero line,
   and a table below. Enforced by `src/panels/FollowToday.test.tsx`, `followTodayModel.test.ts`, `e2e/follow-today.spec.ts`.
 
+## Ideas page
+Moved: [web frontend ideas page](web-frontend-ideas.md).
+
 ## Workstation themes and readability
 
 - Owner request, 2026-11-18: not all black; charts may stay dark. Top-bar Theme: Light (default), Dim, Dark (old terminal), applied before first paint.

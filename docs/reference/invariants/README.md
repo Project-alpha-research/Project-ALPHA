@@ -29,7 +29,7 @@ verified: 8115bbcdee4c05e0
 | [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
 | [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
-| [web-frontend.md](web-frontend.md), [web-ideas.md](web-ideas.md) | Workstation single-page app; the Ideas page | editing the browser app |
+| [web-frontend.md](web-frontend.md), [web-frontend-ideas.md](web-frontend-ideas.md) | Workstation single-page app; the Ideas page | editing the browser app |
 | [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |
@@ -45,7 +45,7 @@ verified: 8115bbcdee4c05e0
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
-| [cli-rule-readings.md](cli-rule-readings.md), [cli-idea-file.md](cli-idea-file.md) | rule-test reading; idea file | `alpha test`, `alpha idea file` |
+| [cli-rule-readings.md](cli-rule-readings.md), [cli-idea-file.md](cli-idea-file.md) | rule-test reading; the idea file | `alpha test` text, `alpha idea file` |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |

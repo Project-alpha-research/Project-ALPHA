@@ -143,6 +143,10 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   `assemble_run_spec` also refuses a context spec, so no path runs the ungated rule. `--plan` on a spec without context is
   refused. The words are readings: no pass, fail or advice.
 
+## Idea file
+
+Moved: [command line idea file](cli-idea-file.md).
+
 ## Report, cite and the gates
 
 - `alpha report <run>` prints `reading: <word> (old grade: X)` for a gauntlet run: the stored reading's word, or one derived from the stored

@@ -74,8 +74,11 @@ def test_candidate_run_cli_forwards_only_typed_frozen_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-    monkeypatch.setattr(strategy_candidate_cmds, "crypto_hedged_basis_observations", lambda _: ())
+    monkeypatch.setattr(
+        strategy_candidate_cmds, "crypto_hedged_basis_observations", lambda _, **kw: ()
+    )
     monkeypatch.setattr(_runner, "verified_snapshot_hash", lambda *_: "e" * 64)
+    monkeypatch.setattr(strategy_candidate_cmds, "snapshot_held_back_rows", lambda *_a, **_k: 0)
     captured: dict[str, object] = {}
 
     def fake_run(data_dir: Path, **kwargs: object) -> dict[str, object]:

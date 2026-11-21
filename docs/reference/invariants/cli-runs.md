@@ -29,7 +29,7 @@ sources:
   - tests/unit/test_suite_*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: e1da12daa4d9d130
+verified: 33b3b7469ae5bcad
 ---
 
 # Command line runs invariants
@@ -148,6 +148,11 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   capacity](cli-control-store.md#jobs-leases-and-capacity).
 ## Figures
 Figure cache, themes and builders: [command line figures](cli-figures.md).
+- A rule test saves no snapshot. `alpha data run-price <run_id> --json` (`run_price_cmds.py`; the web calls it through
+  `run_price.py`) reloads the stored bars at the research cut-off, cuts them at the run's last date, and returns them only
+  when `_runner.source_fingerprint` equals the manifest's `source_fingerprint`. Otherwise it returns a status and no bars
+  (`tests/unit/test_run_price_cmds.py`). `chart_bundle` keeps its older `bars_status` words; `run_projection.price_series`
+  gives the reason.
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen

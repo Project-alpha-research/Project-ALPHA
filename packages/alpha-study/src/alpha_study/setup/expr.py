@@ -68,6 +68,10 @@ def _error(node: ast.AST, allowed: str) -> DataError:
     return DataError(f"offending token {ast.unparse(node)!r}: allowed {allowed}")
 
 
+Aliases = frozenset[str]
+NO_ALIASES: Aliases = frozenset()
+
+
 def _finite(expr: pl.Expr) -> pl.Expr:
     # One reference to `expr`: a when/then wrapper would double the tree at every level.
     return expr.replace(NON_FINITE, None)
@@ -103,7 +107,35 @@ def _window(node: ast.AST) -> int:
     return n
 
 
-def _call(node: ast.Call) -> CompiledExpr:
+def _reads(node: ast.AST, aliases: Aliases) -> bool:
+    return any(isinstance(n, ast.Name) and n.id in aliases for n in ast.walk(node))
+
+
+def _kleene(name: str, x: pl.Expr, n: int) -> pl.Expr:
+    """Three-valued window over context: a null may be anything, so it never decides the result.
+
+    `within_bars` is true on a known true, `for_bars` false on a known false; otherwise a null in
+    the window gives null, so `not` of the window cannot turn a missing context value into true.
+    """
+
+    def count(flags: pl.Expr) -> pl.Expr:
+        return flags.fill_null(False).cast(pl.Int64).rolling_sum(n, min_samples=n)
+
+    unknown = count(x.is_null())
+    decided = count(x) > 0 if name == "within_bars" else count(~x) > 0
+    none = pl.lit(None, dtype=pl.Boolean)
+    return (
+        pl.when(unknown.is_null())
+        .then(none)
+        .when(decided)
+        .then(pl.lit(name == "within_bars"))
+        .when(unknown > 0)
+        .then(none)
+        .otherwise(pl.lit(name != "within_bars"))
+    )
+
+
+def _call(node: ast.Call, aliases: Aliases) -> CompiledExpr:
     if not isinstance(node.func, ast.Name) or node.func.id not in FUNCTIONS:
         raise _error(node, f"functions {', '.join(FUNCTIONS)}")
     name, args = node.func.id, list(node.args)
@@ -131,12 +163,12 @@ def _call(node: ast.Call) -> CompiledExpr:
         maximum = pl.when(maximum >= c).then(maximum).otherwise(c)
         tr = pl.when(previous.is_not_null() & high.is_not_null() & low.is_not_null()).then(maximum)
         return _sized(node, _finite(tr.rolling_mean(n, min_samples=n)), "number", n, 60)
-    x = _walk(args[0])
+    x = _walk(args[0], aliases)
     if name == "abs":
         _require(node, [x], "number")
         return _sized(node, x.expr.abs(), "number", x.warmup, x.size + 1)
     if not windowed:
-        y = _walk(args[1])
+        y = _walk(args[1], aliases)
         _require(node, [x, y], "number")
         a, b, pa, pb = x.expr, y.expr, x.expr.shift(1), y.expr.shift(1)
         crossing = _all([a > b, pa <= pb] if name == "crosses_above" else [a < b, pa >= pb])
@@ -147,6 +179,10 @@ def _call(node: ast.Call) -> CompiledExpr:
         return _sized(node, x.expr.shift(n), x.kind, x.warmup + n, x.size + 1)
     if name in {"for_bars", "within_bars"}:
         _require(node, [x], "boolean")
+        if _reads(args[0], aliases):
+            return _sized(
+                node, _kleene(name, x.expr, n), "boolean", x.warmup + n - 1, 3 * x.size + 14
+            )
         # A missing value inside the window counts as false, never as "unknown for n bars".
         total = x.expr.fill_null(False).cast(pl.Int64).rolling_sum(n, min_samples=n)
         result = total == n if name == "for_bars" else total > 0
@@ -168,9 +204,12 @@ def _call(node: ast.Call) -> CompiledExpr:
     return _sized(node, _finite(result), "number", x.warmup + n - 1, x.size + 2)
 
 
-def _walk(node: ast.AST) -> CompiledExpr:
+def _walk(node: ast.AST, aliases: Aliases) -> CompiledExpr:
     if isinstance(node, ast.Name) and node.id in SOURCES:
         return CompiledExpr(_finite(pl.col(node.id).cast(pl.Float64)), "number", 0, 3)
+    if isinstance(node, ast.Name) and node.id in aliases:
+        # A context series: it carries its own warm-up as null, so the static warm-up is 0.
+        return CompiledExpr(_finite(pl.col(f"ctx_{node.id}").cast(pl.Float64)), "number", 0, 3)
     if isinstance(node, ast.Constant) and type(node.value) in {int, float}:
         try:
             number = float(cast(int | float, node.value))
@@ -183,25 +222,25 @@ def _walk(node: ast.AST) -> CompiledExpr:
         literal = pl.lit(number) + pl.col("close").is_null().cast(pl.Float64) * 0
         return CompiledExpr(literal, "number", 0, 6)
     if isinstance(node, ast.Call):
-        return _call(node)
+        return _call(node, aliases)
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.Not)):
-        value = _walk(node.operand)
+        value = _walk(node.operand, aliases)
         kind: Kind = "number" if isinstance(node.op, ast.USub) else "boolean"
         _require(node, [value], kind)
         result = -value.expr if kind == "number" else ~value.expr
         return _sized(node, result, kind, value.warmup, value.size + 1)
     if isinstance(node, ast.BinOp) and type(node.op) in ARITHMETIC:
-        a, b = _walk(node.left), _walk(node.right)
+        a, b = _walk(node.left, aliases), _walk(node.right, aliases)
         _require(node, [a, b], "number")
         result = _finite(ARITHMETIC[type(node.op)](a.expr, b.expr))
         return _sized(node, result, "number", max(a.warmup, b.warmup), a.size + b.size + 2)
     if isinstance(node, ast.Compare) and len(node.ops) == 1 and type(node.ops[0]) in COMPARISONS:
-        a, b = _walk(node.left), _walk(node.comparators[0])
+        a, b = _walk(node.left, aliases), _walk(node.comparators[0], aliases)
         _require(node, [a, b], "number")
         result = COMPARISONS[type(node.ops[0])](a.expr, b.expr)
         return _sized(node, result, "boolean", max(a.warmup, b.warmup), a.size + b.size + 1)
     if isinstance(node, ast.BoolOp) and isinstance(node.op, (ast.And, ast.Or)):
-        values = [_walk(value) for value in node.values]
+        values = [_walk(value, aliases) for value in node.values]
         _require(node, values, "boolean")
         operands = [value.expr for value in values]
         # Any null operand gives null (no Kleene short-circuit): the decision's null rule.
@@ -210,7 +249,7 @@ def _walk(node: ast.AST) -> CompiledExpr:
         return _sized(node, result, "boolean", warmup, sum(v.size + 2 for v in values) + 1)
     raise _error(
         node,
-        f"sources {', '.join(SOURCES)}; functions {', '.join(FUNCTIONS)}; "
+        f"sources {', '.join([*SOURCES, *sorted(aliases)])}; functions {', '.join(FUNCTIONS)}; "
         "+ - * /, unary -, single comparisons, and/or/not, finite numbers",
     )
 
@@ -227,8 +266,11 @@ def _depth(root: ast.AST) -> int:
     return deepest
 
 
-def compile_expr(text: str) -> CompiledExpr:
-    """Parse a closed vocabulary into an expression with a causal warm-up bound."""
+def compile_expr(text: str, aliases: Aliases = NO_ALIASES) -> CompiledExpr:
+    """Parse a closed vocabulary into an expression with a causal warm-up bound.
+
+    `aliases` are the spec's declared context names: each reads the `ctx_<alias>` column.
+    """
     if len(text) > MAX_TEXT:
         raise DataError(
             f"expression of {len(text)} characters: allowed at most {MAX_TEXT} (too large)"
@@ -241,4 +283,4 @@ def compile_expr(text: str) -> CompiledExpr:
         raise DataError(
             f"expression nests deeper than {MAX_DEPTH} levels (too deep): {text[:60]!r}"
         )
-    return _walk(node)
+    return _walk(node, aliases)

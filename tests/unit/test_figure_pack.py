@@ -17,7 +17,7 @@ from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_core import DataError
 from alpha_data.store import ParquetStore
-from alpha_research.figures import RuleMark
+from alpha_research.figures import HistogramMark, RuleMark
 from tests.fixtures.cli_fixtures import seed_store
 
 
@@ -102,9 +102,10 @@ def test_return_distribution_mean_does_not_come_from_bin_centres(tmp_path: Path)
     rule = next(m for m in marks if isinstance(m, RuleMark))
     assert rule.position == pytest.approx(float(returns.mean()), abs=1e-12)
     hist = marks[0]
+    assert isinstance(hist, HistogramMark)
     # range follows the data quantiles, not the two outliers; bins are finer than 20-over-range
-    assert hist.edges[0] > -0.05 and hist.edges[-1] < 0.05  # type: ignore[union-attr]
-    assert len(hist.counts) >= 15  # type: ignore[union-attr]
+    assert hist.edges[0] > -0.05 and hist.edges[-1] < 0.05
+    assert len(hist.counts) >= 15
 
 
 def test_every_rule_run_figure_keeps_its_text_inside_the_figure(

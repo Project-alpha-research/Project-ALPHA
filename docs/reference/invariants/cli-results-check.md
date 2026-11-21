@@ -4,6 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/check.py
   - apps/alpha-cli/src/alpha_cli/spine/compare.py
+  - apps/alpha-cli/src/alpha_cli/spine/book.py
   - apps/alpha-cli/src/alpha_cli/spine/honesty.py
   - apps/alpha-cli/src/alpha_cli/spine/check_rules.py
   - apps/alpha-cli/src/alpha_cli/spine/check_flags.py
@@ -17,8 +18,10 @@ sources:
   - tests/smoke/test_partner_selftest_smoke.py
   - tests/unit/test_spine_check.py
   - tests/unit/test_spine_compare.py
+  - tests/unit/test_results_correlate.py
+  - tests/unit/test_book_math.py
   - tests/unit/test_spine_results_cmds.py
-verified: fd1751e9c20812c4
+verified: d9971783cc7ee726
 ---
 
 # Command line draft checks and run comparisons invariants
@@ -85,6 +88,19 @@ drafted answer against stored run facts, and the computed differences between ru
   a zero base prevents a ratio. Computed facts carry both run ids and a distinct computed basis.
 - Check comparison quotes with `[base~run:metric:diff]` or `[base~run:metric:ratio]`; the checker
   recomputes them from stored facts. Unreadable answer files return `UNREADABLE_FILE` with a next step.
+
+## Run correlations
+
+- `alpha results correlate <run_id> <run_id> [...] [--json]` takes 2 to 8 rule-test runs (a unique prefix of 8 hex digits is enough).
+  It reads two stored files per run: `equity_curve.parquet` (the walk-forward equity) and `exposure_turnover.parquet`.
+  It runs no engine, reads no bar and writes nothing. The maths is in `spine/book.py`, which opens no file.
+- For each pair it gives the Pearson correlation of simple daily returns, the number of common days, and the share of those days on
+  which both runs were in the market. Returns are taken between the dates both runs have, so the intervals are the same for both.
+- Under 60 common days the answer is "too few common days to read" and no correlation is given. When the returns of one run do not
+  change, the correlation is "not defined". A run without a stored exposure file gets its correlation; the overlap says why it is absent.
+- A run keeps its labels. A run that saw the held-back period keeps `reserved-period-seen` and its sentence.
+- Invalid stored data fails loud: non-finite or non-positive equity, two rows on one day, exposure dates that do not match the equity
+  dates. The words are readings of the past: no pass or fail, no advice.
 
 ## Honesty self-test
 

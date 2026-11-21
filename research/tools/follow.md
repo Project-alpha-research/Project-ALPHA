@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_chain.py
   - apps/alpha-cli/src/alpha_cli/follow_update.py
   - apps/alpha-cli/src/alpha_cli/follow_show.py
-verified: 58092f03836a4e17
+verified: 4835e063921f7ae8
 ---
 # Follow a tested idea on paper
 
@@ -16,7 +16,7 @@ verified: 58092f03836a4e17
 ```text
 uv run alpha follow start --test <run id> --size-pct 10
 uv run alpha follow start --find <find id>
-uv run alpha follow list    # also: today, show, update, verify
+uv run alpha follow list    # also: today, show, update, verify, book ([portfolio book](portfolio-book.md))
 uv run alpha follow update <follow id>
 ```
 

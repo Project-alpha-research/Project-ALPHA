@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified d338231461043a84 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 apps/alpha-cli/README.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified d338231461043a84 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 docs/reference/invariants/cli-follow.md
-  verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
+  verified d7d1a12c16cd5416 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
@@ -35,13 +35,13 @@ docs/reference/invariants/cli-research.md
   verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
 
 docs/reference/invariants/cli-results-check.md
-  verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified d9971783cc7ee726 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 7e90f29a2796cd6e on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-runs.md
-  verified dacf8068e5efaf5b on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified e8b68e6a37a0b799 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -152,7 +152,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 174e38e7cc93ac13 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -206,13 +206,13 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 58593ea7691f8edd on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/PLAYBOOK.md
-  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 22687c4678c62c99 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/README.md
-  verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
+  verified f7c44f6e0bccb2ec on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -221,22 +221,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 1f06e890b6307165 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 627e9a3fb242a682 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/charts.md
-  verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified ae687b3ae1f3392c on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 research/tools/deflated-sharpe-and-trials.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified b66c16425534e4bb on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/diagnose-and-audit.md
-  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 6ed17b9cee19020a on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -252,6 +252,9 @@ research/tools/montecarlo-checks.md
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+
+research/tools/portfolio-book.md
+  verified 4a9996d4eb34d39a on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -269,16 +272,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
+  verified 86e95bba31166bba on 2026-11-21: Adds results correlate, follow book and spine/book.py only; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 42adca2f1c4185b4 on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified b66c16425534e4bb on 2026-11-21: Type-only fix in spine/book.py after the first stamp; the text still matches the code
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

@@ -33,6 +33,7 @@ from alpha_cli.figure_cache import (
     validate_figure_id,
     validate_format,
     validate_run_id,
+    validate_variant,
 )
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_web._catalog import _run_json
@@ -120,14 +121,8 @@ def catalogue(run_id: str, *, data_dir: Path) -> dict[str, Any]:
     return payload
 
 
-def _theme_keys(environment: dict[str, Any], dark: bool) -> tuple[str, str]:
-    """The key's theme pair: the Workstation asks for dark, the CLI's own default is light."""
-    prefix = "dark_theme" if dark else "theme"
-    return str(environment[f"{prefix}_id"]), str(environment[f"{prefix}_digest"])
-
-
 def _cache_entry(
-    run_id: str, figure_id: str, fmt: str, data_dir: Path, dark: bool = True
+    run_id: str, figure_id: str, fmt: str, data_dir: Path, variant: str = "plain"
 ) -> tuple[Path, Path, str]:
     environment = key_environment(data_dir=data_dir)
     definition = _definition(environment, figure_id)
@@ -136,19 +131,19 @@ def _cache_entry(
         definition.get("optional_artifacts") or ()
     )
     digest, kind = input_digest(manifest, rdir, artifacts)
-    theme_id, theme_digest = _theme_keys(environment, dark)
     key = CacheKeyInputs(
         run_id=run_id,
         figure_id=figure_id,
         renderer_version=int(environment["renderer_version"]),
         matplotlib_version=str(environment["matplotlib_version"]),
-        theme_id=theme_id,
-        theme_digest=theme_digest,
+        theme_id=str(environment["theme_id"]),
+        theme_digest=str(environment["theme_digest"]),
         width_in=float(definition["width_in"]),
         height_in=float(definition["height_in"]),
         dpi=int(definition["dpi"]),
         fmt=validate_format(fmt),
         background="theme",
+        variant=validate_variant(variant),
         artifact_contract_version=manifest.get("artifact_contract_version"),
         input_digest=digest,
         input_digest_kind=kind,
@@ -157,7 +152,7 @@ def _cache_entry(
     return image, sidecar, key
 
 
-def _render(run_id: str, figure_id: str, fmt: str, data_dir: Path, dark: bool = True) -> None:
+def _render(run_id: str, figure_id: str, fmt: str, data_dir: Path, variant: str = "plain") -> None:
     _run_json(
         [
             "figures",
@@ -167,7 +162,8 @@ def _render(run_id: str, figure_id: str, fmt: str, data_dir: Path, dark: bool = 
             figure_id,
             "--format",
             fmt,
-            *(["--dark"] if dark else []),
+            "--variant",
+            variant,
             "--json",
         ],
         data_dir=data_dir,
@@ -197,18 +193,18 @@ def _single_flight(token: str, work: Any) -> None:
 
 
 def figure(
-    run_id: str, figure_id: str, *, fmt: str, data_dir: Path, dark: bool = True
+    run_id: str, figure_id: str, *, fmt: str, data_dir: Path, variant: str = "plain"
 ) -> RenderedFigure:
     """Fetch a figure, rendering it out of process only when the cache misses."""
     validate_run_id(run_id)
     validate_figure_id(figure_id)
     fmt = validate_format(fmt)
 
-    image, sidecar, key = _cache_entry(run_id, figure_id, fmt, data_dir, dark)
+    image, sidecar, key = _cache_entry(run_id, figure_id, fmt, data_dir, variant)
     if not is_cached(image, sidecar):
-        token = f"{run_id}:{figure_id}:{fmt}:{'dark' if dark else 'light'}"
-        _single_flight(token, lambda: _render(run_id, figure_id, fmt, data_dir, dark))
-        image, sidecar, key = _cache_entry(run_id, figure_id, fmt, data_dir, dark)
+        token = f"{run_id}:{figure_id}:{fmt}:{variant}"
+        _single_flight(token, lambda: _render(run_id, figure_id, fmt, data_dir, variant))
+        image, sidecar, key = _cache_entry(run_id, figure_id, fmt, data_dir, variant)
     if not is_cached(image, sidecar):
         raise FigureError(f"{figure_id} could not be rendered for run {run_id}")
 
@@ -223,7 +219,7 @@ def figure(
 
 
 def metadata(
-    run_id: str, figure_id: str, *, fmt: str, data_dir: Path, dark: bool = True
+    run_id: str, figure_id: str, *, fmt: str, data_dir: Path, variant: str = "plain"
 ) -> dict[str, Any]:
     """A figure's text without its bytes.
 
@@ -231,12 +227,12 @@ def metadata(
     strings before -- or entirely without -- downloading a picture. That is also the
     accessibility mitigation for glyph-outlined SVG text, which no screen reader can read.
     """
-    rendered = figure(run_id, figure_id, fmt=fmt, data_dir=data_dir, dark=dark)
+    rendered = figure(run_id, figure_id, fmt=fmt, data_dir=data_dir, variant=variant)
     document = dict(rendered.sidecar)
     document["cache_key"] = rendered.cache_key
     document["image_url"] = (
         f"/api/runs/{run_id}/figures/{figure_id}/image?fmt={fmt}"
-        f"&theme={'dark' if dark else 'light'}&key={rendered.cache_key}"
+        f"&variant={variant}&key={rendered.cache_key}"
     )
     document["etag"] = rendered.cache_key
     return document

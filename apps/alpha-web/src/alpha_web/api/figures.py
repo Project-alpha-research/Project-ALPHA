@@ -20,9 +20,9 @@ from alpha_web.api.models import FigureCatalogue, FigureMetadata
 router = APIRouter(prefix="/api/runs", tags=["figures"])
 
 _Format = Annotated[Literal["svg", "png"], Query(description="Image format.")]
-_Theme = Annotated[
-    Literal["dark", "light"],
-    Query(description="Figure theme; the Workstation opens dark."),
+_Variant = Annotated[
+    Literal["plain", "annotated"],
+    Query(description="plain is the standard chart; annotated adds callouts and a long reading."),
 ]
 
 
@@ -47,7 +47,7 @@ def list_figures(run_id: str) -> FigureCatalogue:
 
 @router.get("/{run_id}/figures/{figure_id}", response_model=FigureMetadata)
 def figure_metadata(
-    run_id: str, figure_id: str, fmt: _Format = "svg", theme: _Theme = "dark"
+    run_id: str, figure_id: str, fmt: _Format = "svg", variant: _Variant = "plain"
 ) -> FigureMetadata:
     """A figure's text, legend and provenance -- everything except its bytes.
 
@@ -55,9 +55,7 @@ def figure_metadata(
     them at all for a screen reader, since the SVG's text is embedded as glyph outlines.
     """
     try:
-        document = metadata(
-            run_id, figure_id, fmt=fmt, data_dir=data_dir(), dark=theme == "dark"
-        )
+        document = metadata(run_id, figure_id, fmt=fmt, data_dir=data_dir(), variant=variant)
         return FigureMetadata.model_validate(document)
     except (FigureError, DataError, RuntimeError) as error:
         raise _fail(error) from error
@@ -68,7 +66,7 @@ def figure_image(
     run_id: str,
     figure_id: str,
     fmt: _Format = "svg",
-    theme: _Theme = "dark",
+    variant: _Variant = "plain",
     key: Annotated[str | None, Query(description="Expected cache key.")] = None,
     if_none_match: Annotated[str | None, Header(alias="If-None-Match")] = None,
 ) -> Response:
@@ -81,9 +79,7 @@ def figure_image(
     stale page refetches instead of silently receiving different content at one URL.
     """
     try:
-        rendered = figure(
-            run_id, figure_id, fmt=fmt, data_dir=data_dir(), dark=theme == "dark"
-        )
+        rendered = figure(run_id, figure_id, fmt=fmt, data_dir=data_dir(), variant=variant)
     except (FigureError, DataError, RuntimeError) as error:
         raise _fail(error) from error
 

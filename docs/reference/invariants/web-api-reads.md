@@ -77,3 +77,7 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   backend never opens the `forward/` folder ([guard](../../../tests/unit/test_follow_separation.py)). The id must match 4 to 12 lowercase hex characters
   before any command is built. A command failure is a 409 with its text; a timeout is a 504. No route starts, updates or stops a follow.
   Enforced by `tests/unit/test_web_follow_routes.py` and `tests/integration/test_web_api_follow.py`.
+- `GET /api/ideas` relays `alpha idea list --json` as a subprocess (`api/ideas.py`, 30 s timeout; 409 on a failure, 504 on a timeout).
+  No route writes a card.
+- `GET /healthz` returns `status`, `code_commit` (the running code), `build_commit` and `build_time`
+  (from the built bundle's `build-info.json`); `unknown` when absent.

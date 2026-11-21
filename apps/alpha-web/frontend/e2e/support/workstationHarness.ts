@@ -2251,6 +2251,8 @@ function responseFor(route: Route, options: MockOptions): unknown {
     return FIGURE_META
   }
   if (url.pathname === '/api/chart-datasets') return { datasets: [], authority: 'none', state: 'unavailable' }
+  if (url.pathname === '/api/ideas') return { cards: [] }
+  if (url.pathname === '/healthz') return { status: 'ok', code_commit: 'unknown', build_commit: 'unknown', build_time: 'unknown' }
   if (url.pathname === '/api/symbols') return { symbols: Object.keys(options.candles ?? {}) }
   if (url.pathname === '/api/data/ticker') {
     const symbol = url.searchParams.get('symbol') ?? ''

@@ -34,7 +34,8 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   authority](research-integrity.md#owner-authority).
 - Never label local confirmation as verified physical presence. [ADR-0038](../../adr/0038-local-confirmation-and-terminal-archive-charts.md)
 - The crypto/equities profile (`state/settings.ts`, `shell/profiles.ts`) is a display setting. It is never sent to the server and never grants anything.
-  Selecting a project confers no research authority either.
+  Selecting a project confers no research authority either. A fresh load opens Equities when the store holds equity bars and no crypto
+  (`profiles.profileForStore`), else the last used profile, else Equities.
 - No screen shows an A–F grade. The frontend holds no band table; the stored manifest `verdict` stays for old records and machines.
 - The Market Watch live ticker is display only: never stored, never read by anything else.
 
@@ -46,8 +47,8 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   page; `shell/profiles.ts` decides which windows a profile shows.
 - Only the selected task panel mounts, so hidden panels do not poll. The exception is `ChartWorkspace`: once opened it stays mounted (hidden) so charts keep
   their captured context and range.
-- `shell/menuModel.ts` `GROUP_MENU` must name every CLI command group the server's catalog serves, and no others. An unmapped group throws and blanks the menu
-  bar. Enforced by `tests/unit/test_web_menu_groups.py`.
+- `shell/menuModel.ts` `GROUP_MENU` must name every CLI command group the server's catalog serves, and no others. An unmapped group never blanks the screen:
+  it lands under Help with a console warning. The build-time guard `tests/unit/test_web_menu_groups.py` still fails on the mismatch.
 - Archive-chart identity belongs to `App`. Run, project, profile and stored-market navigation clear it.
 - A control no capability backs renders disabled with the reason in its `title`; never a silent no-op.
 - The toolbar status chip (`shell/statusModel.statusChip`) shows the strongest state: the selected run's research-gate watermark verbatim, else `Research gate
@@ -77,6 +78,11 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   (`panels/marketModel.differsMost`); it is neutral, never a good or bad colour. Tiles and rows are buttons that open the single-asset chart
   (`actions.openStoredMarket`). Colour is never the only signal. Enforced by `src/panels/MarketOverview.test.tsx`, `marketModel.test.ts`,
   `e2e/market-overview.spec.ts`.
+
+- Data Manager under Equities: Quality shows the stored daily bars (symbol, bars, newest bar, age), and Pull starts on the first stored symbol.
+  Crypto storage that was never set up is a calm note with the exact command, not a red error; red is for a real blocker (`dataManagerModel.storageNote`).
+- The price chart's source tag is plain words in a neutral colour; `legacy_unqualified` reads `identity not recorded` with a hint (`sourceTagModel.ts`).
+- The front screen lists idea cards (count and the first five) from `GET /api/ideas`; the research-case empty line shows only when both are empty.
 
 ## Today screen
 
@@ -159,6 +165,8 @@ Moved to [web-run-detail.md § Run detail binding](web-run-detail.md#run-detail-
 - `npm run build` writes it (Vite `emptyOutDir`, base `/static/app/`) and `scripts/normalize-build.mjs` normalizes the
   text assets. CI builds it in every job that needs it; the alpha-web wheel ships it (hatch `artifacts`) and
   `scripts/wheel_smoke.py` fails a wheel built without it.
+- `normalize-build.mjs` also writes `build-info.json` (git commit and build time). `/healthz` returns it beside the running code's commit;
+  when they differ the status bar says `This screen was built from older code. Run the setup again.` Nothing rebuilds on its own.
 - Verify UI changes in the integrated app (`uv run alpha-web`). `npm run dev` serves assets only, with no API proxy.
 - The API starts without a frontend build. The server mounts `/static` when the asset directory exists at startup.
   If `static/app/index.html` is missing, the SPA entry points answer 503 with a build hint

@@ -899,7 +899,7 @@ def null_distribution(ctx: BuildContext) -> FigureSpec:
                     width=1.6,
                     dashed=False,
                     label="Observed",
-                    annotate=ValueLabel(text=_observed_label(float(observed), percentile)),
+                    annotate=_observed_label(float(observed), percentile, edges[0], edges[-1]),
                 )
             )
             if isinstance(percentile, int | float):
@@ -1224,11 +1224,20 @@ def _indicator_unit(raw: str) -> str:
     return raw if raw in _INDICATOR_UNITS else "ratio"
 
 
-def _observed_label(observed: float, percentile: object) -> str:
+def _observed_label(
+    observed: float, percentile: object, low: float, high: float
+) -> ValueLabel:
+    """The observed-value note on a null histogram: short, and kept inside the plot.
+
+    A rule in the right half of the range gets a right-aligned label, so the text runs back
+    over the plot instead of off its edge; the short text keeps it from covering the bars.
+    """
     text = f"observed {observed:.3f}"
     if isinstance(percentile, int | float) and not isinstance(percentile, bool):
-        text += f" · {pct(float(percentile), 0)} pct"
-    return text
+        text += f" · pct {float(percentile) * 100:.0f}"
+    if observed > (low + high) / 2:
+        return ValueLabel(text=text, ha="right", dx_pt=-6.0)
+    return ValueLabel(text=text)
 
 
 def _cell_text(
@@ -2474,7 +2483,7 @@ def mcpt_null_histogram(ctx: BuildContext) -> FigureSpec:
                 width=1.6,
                 dashed=False,
                 label="Observed best",
-                annotate=ValueLabel(text=_observed_label(float(stat), percentile)),
+                annotate=_observed_label(float(stat), percentile, edges[0], edges[-1]),
             )
         )
     verdict = "The manifest records no observed percentile for the permutation bests"

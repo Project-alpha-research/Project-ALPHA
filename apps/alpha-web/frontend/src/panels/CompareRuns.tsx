@@ -17,7 +17,8 @@ import { FigureCard } from '../components/FigureCard'
 import type { FigureCatalogueItem } from '../api/types'
 import { useActivityField } from '../state/activity'
 import { fmtNum, shortId } from '../util/format'
-import { uniqueComparisonMaximum } from './compareRunsModel'
+import { metricLabel } from '../explain/glossary'
+import { compareColumn, compareNotice, uniqueComparisonMaximum } from './compareRunsModel'
 
 const MAX_RUNS = 8
 
@@ -74,6 +75,10 @@ export function CompareRuns(_props: PanelHandleProps) {
     return [...names].sort()
   }, [visibleComparison])
 
+  const notice = visibleComparison
+    ? compareNotice(visibleComparison.rows, visibleComparison.same_snapshot_hash)
+    : null
+
   const toggle = (runId: string) =>
     setSelected((current) =>
       current.includes(runId)
@@ -126,7 +131,12 @@ export function CompareRuns(_props: PanelHandleProps) {
 
           {visibleComparison ? (
             <>
-              {!visibleComparison.same_snapshot_hash ? (
+              {notice === 'different assets' ? (
+                <p className="compare-warning">
+                  These runs use different assets, so the numbers differ by asset as well as by rule.
+                </p>
+              ) : null}
+              {notice === 'different snapshots' ? (
                 <p className="compare-warning">
                   These runs used different data snapshots, so differences may come from the data
                   rather than the strategies.
@@ -138,12 +148,15 @@ export function CompareRuns(_props: PanelHandleProps) {
                 <thead>
                   <tr>
                     <th scope="col">Metric</th>
-                    {visibleComparison.rows.map((row) => (
-                      <th key={row.run_id} scope="col" className="mono">
-                        {shortId(row.run_id)}
-                        <span className="library-row-sub">{row.symbol ?? row.command}</span>
-                      </th>
-                    ))}
+                    {visibleComparison.rows.map((row) => {
+                      const column = compareColumn(row.run_id, row, runs.find((item) => item.run_id === row.run_id))
+                      return (
+                        <th key={row.run_id} scope="col">
+                          <span className="mono">{column.id}</span>
+                          <span className="library-row-sub">{column.kind} · {column.asset}</span>
+                        </th>
+                      )
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -154,7 +167,7 @@ export function CompareRuns(_props: PanelHandleProps) {
                     const uniqueBest = uniqueComparisonMaximum(values)
                     return (
                       <tr key={name}>
-                        <th scope="row">{name}</th>
+                        <th scope="row" title={name}>{metricLabel(name)}</th>
                         {values.map((value, index) => (
                           <td
                             key={visibleComparison.rows[index].run_id}

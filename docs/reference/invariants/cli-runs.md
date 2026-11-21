@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: 24fad42f70b35806
+verified: 50c9546d2718bebc
 ---
 
 # Command line runs invariants
@@ -156,6 +156,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
   `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
   (`tests/unit/test_run_projection_security.py`).
+- A rule test saves no snapshot. `run_price.verified_bars` reloads the stored bars at the research cut-off, cuts them at the run's last date, and returns them
+  only when `_runner.source_fingerprint` equals the manifest's `source_fingerprint`. Otherwise it returns a status and no bars
+  (`tests/unit/test_run_price.py`). `chart_bundle` keeps its older `bars_status` words; `run_projection.price_series` gives the reason.
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen

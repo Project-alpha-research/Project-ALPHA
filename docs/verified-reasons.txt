@@ -2,16 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
+  verified b1744414fc9c1352 on 2026-11-21: new run_price.py module and a run_projection seam only; the routing rows and code map stay correct
 
 apps/alpha-cli/README.md
-  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
+  verified b1744414fc9c1352 on 2026-11-21: new run_price.py module and a run_projection seam only; the routing rows and code map stay correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified cfe6cd4c6ef09d8f on 2026-11-21: routing rows unchanged; the new series route and stack are covered by the owning invariants pages and the README code map
 
 apps/alpha-web/README.md
   verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct

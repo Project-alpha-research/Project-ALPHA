@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: b992a2b526e23e5f
+verified: ba84ac5092aebc54
 ---
 
 # Web run detail invariants
@@ -28,6 +28,9 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
   missing figures. Flags and variants precede closed setup and audit disclosures. Audit rows retain each identifier, status and
   detail. Only variants subtract Sharpe scores. Covered by `ruleTestModel.test.ts`, `rundetail/RuleTestSummary.test.tsx` and
   `e2e/rule-test-summary.spec.ts`.
+- The rule-test Summary opens with the interactive stack (`components/tearsheet/TearSheetStack.tsx`, [rule](web-frontend.md#charts)). The
+  stored matplotlib figures stay below it, and their strip reads “Saved image”. Loading, error and a missing price each say so in words.
+  Covered by `components/tearsheet/tearSheetModel.test.ts` and `e2e/rule-test-summary.spec.ts`.
 - The rule-test Summary lists “Checks run on this test”: each stored toolbox result (plain name, stored reading, labels in words,
   time) or “could not run: <stored error code>”, from GET `/api/runs/{id}/checks`. With none it quotes
   `alpha tool run-set market-context <run_id>`. Nothing is computed in the browser. Covered by `rundetail/RuleTestChecks.test.tsx`.

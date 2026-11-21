@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: ce3d3750e6615271
+verified: 5aacc67d9a4ac365
 ---
 
 # Web API reads and writes invariants
@@ -39,6 +39,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   shows times when the curve has several points a day) and omits any part it does not record; `market_of` decides
   crypto/equities or `unknown`; the equity sources include `alpaca`.
   Identity fields (symbol, symbols, label, snapshot id) are read from the manifest top level first, then its `metadata`.
+- GET `/api/runs/{id}/series` (`_run_series.py`) reads stored equity, trades, benchmark, bands and, through `run_projection.price_series`, verified price bars.
+  It is bounded (`limit` 2 to 5,000; trades capped at 2,000) and computes no statistic. Route shape: [web-api.md](web-api.md#chart-data).
 - A rule test is a run whose manifest has a `spine` key (`alpha test`). `_rule_test.py` projects it as `RunDetail.rule_test`
   (and `RunListItem.rule_test_labels`) from the run's own `manifest.json` and `diagnostics.json` only: values pass
   through, nothing is recomputed, a missing part is null and a missing or unreadable file is null with a reason. The

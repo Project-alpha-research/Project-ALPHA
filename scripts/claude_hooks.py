@@ -30,7 +30,9 @@ _MCP_OWNER_VERBS = re.compile(
 
 # Local click confirmation (ADR-0038) is any-local-process confirmable at the HTTP layer, so agent
 # tools must never address the owner-action routes or start the CLI credential ceremonies.
-_OWNER_ACTION_TEXT = re.compile(r"/owner-auth\b|\bowner-auth\s+(enroll|recover)\b")
+_OWNER_ACTION_TEXT = re.compile(
+    r"/owner-auth\b|\bowner-auth\s+(enroll|recover)\b|\balpha\s+confirm\s+(request|run)\b"
+)
 
 
 def _strings(value: object) -> list[str]:

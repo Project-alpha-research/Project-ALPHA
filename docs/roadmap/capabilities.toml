@@ -557,7 +557,7 @@ entry_points = [
   "code: apps/alpha-cli/src/alpha_cli/reserved_slots.py",
 ]
 proof_synthetic = [
-  "tests/unit/test_reserved_confirmation.py::test_one_confirmation_reads_reserved_bars_only_after_its_receipt",
+  "tests/bias_guards/test_reserved_confirmation_future_poison.py::test_one_confirmation_reads_reserved_bars_only_after_its_receipt",
   "tests/unit/test_reserved_slots.py::test_two_processes_cannot_both_take_the_last_slot",
   "tests/unit/test_reserved_confirmation_surfaces.py::test_the_owner_reads_what_is_spent_before_saying_yes",
 ]

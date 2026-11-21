@@ -1,8 +1,8 @@
 """The owner's one-shot confirmation of a frozen rule test on the reserved period, end to end.
 
-Temporary data homes and the Touch ID test double only: no real store and no real slot. The
-future-poison check (bars after the confirmed span are poisoned) belongs in tests/bias_guards;
-it lives here until the owner approves that protected move.
+Temporary data homes and the Touch ID test double only: no real store and no real slot. A
+bias guard: bars after the confirmed span are poisoned, and no reserved bar is read before the
+slot is spent (the owner approved this file's place in tests/bias_guards on 2026-11-22).
 """
 
 from __future__ import annotations
@@ -31,6 +31,8 @@ from alpha_core.reserve import RESERVED_INSTANT
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
 from tests.fixtures.reserved_owner import enroll, install_double, owner_yes
+
+pytestmark = pytest.mark.bias_guard
 
 # 2020-01-01 plus 1,600 daily bars ends 2024-05-19: 139 bars are in the reserved period.
 LONG, RESERVED = 1600, 139

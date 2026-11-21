@@ -90,7 +90,10 @@ def test_an_old_record_reads_as_its_mapped_word_and_says_so(
     data = json.dumps(summary, allow_nan=False).encode()
     (folder / "summary.json").write_bytes(data)
     manifest = json.loads((folder / "manifest.json").read_text())
-    manifest["files"]["summary.json"] = {"size": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    manifest["files"]["summary.json"] = {
+        "size": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
     (folder / "manifest.json").write_text(json.dumps(manifest, allow_nan=False))
     shown = cli(home, "setup", "show", study)[1]
     assert (shown["evidence"], shown["old_wording"]) == (word, True)

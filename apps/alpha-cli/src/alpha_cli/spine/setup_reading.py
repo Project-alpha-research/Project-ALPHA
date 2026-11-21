@@ -111,13 +111,15 @@ def stored_reading(home: Path, run_id: str) -> dict[str, Any]:
     )
     if not re.fullmatch(r"[0-9a-f]{16}", run_id):
         raise unknown
-    for kind, area in AREAS.items():
-        path = home / area / run_id / "summary.json"
-        if path.is_file():
-            summary = json.loads(path.read_text())
-            break
-    else:
+    found = [
+        (kind, home / area / run_id / "summary.json")
+        for kind, area in AREAS.items()
+        if (home / area / run_id / "summary.json").is_file()
+    ]
+    if not found:
         raise unknown
+    kind, path = found[0]
+    summary = json.loads(path.read_text())
     outcome = summary.get("outcome")
     if summary.get("evidence") in SETUP_WORDS or outcome in OLD_SETUP_OUTCOMES:
         word, old = setup_evidence_of(summary)

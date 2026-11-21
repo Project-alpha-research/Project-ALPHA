@@ -71,6 +71,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
 ## Validation and optimisation
 - `_gauntlet.py`/`_optim.py` refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing.
+- `make_surrogate` takes an optional `path_signals`, one call per path; it must equal `signal_fn` on every prefix. The `rules`
+  strategy uses it (`rule_paths.py`, pinned bit for bit by `tests/unit/test_rule_paths.py`).
 - `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
 - `--snapshot` verifies and reads the frozen snapshot, never the live store.
 - The headline null must be beaten in every null tier that runs. [ADR-0006](../../adr/0006-two-tier-null-model.md); method rules in [research integrity §

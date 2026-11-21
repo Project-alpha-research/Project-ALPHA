@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified c9bf6e487d79f2e9 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 65d37acc06c2bbc0 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 apps/alpha-cli/README.md
-  verified c9bf6e487d79f2e9 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 65d37acc06c2bbc0 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 738ee05cedc1badb on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 apps/alpha-web/README.md
-  verified 738ee05cedc1badb on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -38,10 +38,10 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified fe3d1dec1976bcc5 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified a22c110a551155cf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified f1a66f807f284927 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -70,6 +70,9 @@ docs/reference/invariants/patterns.md
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
+docs/reference/invariants/research-integrity.md
+  verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
@@ -86,7 +89,7 @@ docs/reference/invariants/web-api.md
   verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 666d57b0de441248 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -149,7 +152,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 8d344f6bea767d1d on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -203,10 +206,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 27011a9ff5a675ee on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified ad3802efccc9fed2 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -218,22 +221,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 834a0af0847ddc9b on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 7c1eb2d3dc938ace on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 879a16b25dc371bf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 9f3e55d30e846b3e on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -269,13 +272,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 7f5083598a89bacd on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 879a16b25dc371bf on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

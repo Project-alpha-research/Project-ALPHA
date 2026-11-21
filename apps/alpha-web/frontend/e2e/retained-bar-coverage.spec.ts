@@ -4,6 +4,11 @@ import { once } from 'node:events'
 import { resolve } from 'node:path'
 import { preparePage, openDocument } from './support/workstationHarness'
 
+// These specs open the crypto Data Center; a fresh browser now opens Equities unless the store is equity-only.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto' })) })
+})
+
 let fixture: ChildProcess
 let endpoint = ''
 let identities: Record<string, string>

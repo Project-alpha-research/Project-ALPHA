@@ -5,6 +5,11 @@ import { readFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 
+// These specs open the crypto Data Center; a fresh browser now opens Equities unless the store is equity-only.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto' })) })
+})
+
 // No browser request interception: load the production SPA and actual HTTP API directly.
 let fixture: ChildProcess
 let endpoint = ''

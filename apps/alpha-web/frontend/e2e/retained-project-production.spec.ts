@@ -3,6 +3,11 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { once } from 'node:events'
 import { resolve } from 'node:path'
 
+// These specs open the crypto Data Center; a fresh browser now opens Equities unless the store is equity-only.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto' })) })
+})
+
 let fixture: ChildProcess
 let endpoint = ''
 let projects: Record<string, string>

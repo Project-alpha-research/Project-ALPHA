@@ -45,5 +45,5 @@ def followed_line(counts: dict[str, Any]) -> str:
     return (
         f"Followed on paper: {counts['active']} ({counts['new_signal']} new signal, "
         f"{counts['open_position']} open, {counts['late_or_missed']} late or missed). "
-        "See: alpha follow today"
+        "See: alpha follow today. As one paper account: alpha follow book"
     )

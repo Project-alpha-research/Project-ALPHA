@@ -524,6 +524,26 @@ state = "Partial"
 missing = "Build F2: a followed rule test updates on stored bars (synthetic proof only). A setup or factor cannot be updated yet. Build F3 added `follow today` and the nightly steps N4 (update every follow, check journals) and N0 (opt-in bar refresh for followed assets); proven with fakes only. `scripts/status.py` does not show the follow count yet (protected). No real-data run yet."
 
 [[capability]]
+id = "portfolio-book"
+name = "Portfolio view across strategies (alpha results correlate, alpha follow book)"
+what = "See how two to eight stored rule tests moved together (correlation of daily returns, common days, days both in the market) and all active paper follows as shares of one paper account. Readings only: no pass or fail, no advice."
+see_it = ["uv run alpha results correlate <run id> <run id>", "uv run alpha follow book"]
+entry_points = [
+  "cli: alpha results correlate",
+  "cli: alpha follow book",
+]
+proof_synthetic = [
+  "tests/unit/test_book_math.py::test_correlation_of_three_points_by_hand",
+  "tests/unit/test_results_correlate.py::test_two_identical_stored_runs",
+  "tests/unit/test_follow_book_view.py::test_sizes_total_and_exposure_per_asset",
+]
+docs = ["docs/reference/invariants/cli-results-check.md", "docs/reference/invariants/cli-follow.md"]
+real_data = "not yet confirmed (to check on the Mac later)"
+needs = []
+state = "Partial"
+missing = "Proven with in-process unit tests only; no smoke test through the installed program. Follow sizes are fixed paper sizes, not marked to market. No real-data run recorded."
+
+[[capability]]
 id = "follow-today-screen"
 name = "Today screen for followed ideas"
 what = "See what is active today among the ideas followed on paper: cards in four groups plus waiting, and for one card the paper equity path, the last entries and the replay check. It only shows; it places no order."

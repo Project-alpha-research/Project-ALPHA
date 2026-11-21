@@ -62,7 +62,8 @@ def test_a_clock_beyond_the_calendar_gives_a_plain_words_error(tmp_path: Path) -
         )
     text = str(caught.value)
     assert "XNYS has no sessions for" in text
-    assert "supported range 2006-11-20 to" in text
+    # the calendar library starts 20 years before today, so the first day moves each day
+    assert f"supported range {follow_source.calendar_range('XNYS')[0]} to" in text
     assert caught.value.payload["code"] == "FOLLOW_CALENDAR_RANGE"
 
 
@@ -78,4 +79,4 @@ def test_a_session_after_the_calendar_gives_the_same_plain_words_error() -> None
     with pytest.raises(SpineError) as caught:
         follow_update.next_open("XNYS", date(2040, 3, 1))
     assert caught.value.payload["code"] == "FOLLOW_CALENDAR_RANGE"
-    assert follow_source.calendar_range("XNYS")[0] == date(2006, 11, 20)
+    assert follow_source.calendar_range("XNYS")[0].year in {2006, 2007}

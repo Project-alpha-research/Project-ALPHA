@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-304 commands in 42 groups. Options marked (required) are
+305 commands in 42 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -56,6 +56,7 @@ Point-in-time macro, SEC filings, Binance derivatives, CFTC and FINRA context.
 - `alpha context show-binance` — Show stored funding or metrics as known, with optional inclusive UTC date bounds. Options: `--symbol (required)`, +5 more
 - `alpha context show-bybit` — Show imported Bybit context known at the UTC cutoff. Options: `--symbol (required)`, `--kind (required)`, `--as-of`, `--json`
 - `alpha context show-cftc-cot` — Show stored CFTC positioning known at the cutoff (a row appears only once published). Options: `--market (required)`, +2 more
+- `alpha context show-derived` — Show a derived COT or FINRA series on an asset's daily bars (value, known_from, age). Options: `--series (required)`, +4 more
 - `alpha context show-edgar` — Show locally stored EDGAR events as known at the cutoff. Options: `--view (required)`, `--ticker`, `--cik`, `--as-of`, `--json`
 - `alpha context show-finra-short-volume` — Show stored FINRA short volume known at the cutoff; FINRA-reported trades o… Options: `--symbol (required)`, +2 more
 - `alpha context show-osap-portfolios` — Show stored factor returns known at the cutoff, naming the vintage used. Options: `--as-of`, `--release`, +2 more

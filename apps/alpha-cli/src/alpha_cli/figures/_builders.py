@@ -150,7 +150,11 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
     # same ramp as monthly returns saturates it and flattens every month into one shade.
     # It keeps its number and sits on the neutral background, which also reads correctly
     # as "this column is a summary, not a thirteenth month".
-    values = tuple(tuple([*grid[year], None]) for year in ordered)
+    # Colour scale in percent, like the cell text and the colour bar label.
+    values = tuple(
+        tuple([*(None if cell is None else cell * 100.0 for cell in grid[year]), None])
+        for year in ordered
+    )
     # Cell numbers need about 0.2 inch of height each; below that they collide.
     cell_text = (
         tuple(
@@ -165,7 +169,7 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
         if len(ordered) <= 12
         else ()
     )
-    flat = [cell for row in values for cell in row[:12] if cell is not None]
+    flat = [cell for year in ordered for cell in grid[year] if cell is not None]
     best, worst = max(flat), min(flat)
     return ctx.spec(
         "monthly_heatmap",
@@ -528,7 +532,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 role="down",
                 alpha=0.16,
                 label="Drawdown window" if rank == 1 else None,
-                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0, dy_pt=-9.0),
+                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0, dy_pt=-20.0),
             )
         )
         rows.append(
@@ -542,7 +546,6 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 "-" if episode.recovery_length is None else f"{episode.recovery_length}",
             )
         )
-    unrecovered = sum(1 for item in episodes if item.recovery_index is None)
     return ctx.spec(
         "drawdown_episodes",
         x_label="Date (UTC)",
@@ -551,7 +554,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
             f"The worst drawdown was {pct(episodes[0].depth)} over {episodes[0].length} sessions"
             + (
                 "; it had not recovered by the end of the window."
-                if unrecovered
+                if episodes[0].recovery_index is None
                 else f", recovering in {episodes[0].recovery_length} sessions."
             )
         ),

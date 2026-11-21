@@ -136,6 +136,50 @@ def test_every_rule_run_figure_keeps_its_text_inside_the_figure(
     assert not problems, problems
 
 
+def test_drawdown_window_numbers_never_sit_on_the_date_labels(
+    rule_run: tuple[Path, dict[str, Any], Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.unit._figure_probe import measure
+
+    rdir, manifest, data_dir = rule_run
+    spec = build_figure_spec(
+        "drawdown_episodes", run_id=rdir.name, rdir=rdir, manifest=manifest, data_dir=data_dir
+    )
+    seen = measure(spec, monkeypatch, dark=False)
+    assert not seen.overlapping_texts(), seen.overlapping_texts()
+
+
+def test_the_monthly_heatmap_scale_is_in_the_unit_its_label_and_cells_use(
+    rule_run: tuple[Path, dict[str, Any], Path],
+) -> None:
+    """Cells print percent; the colour bar said percent but its ticks were ratios."""
+    from alpha_research.figures import HeatmapMark
+
+    rdir, manifest, data_dir = rule_run
+    spec = build_figure_spec(
+        "monthly_heatmap", run_id=rdir.name, rdir=rdir, manifest=manifest, data_dir=data_dir
+    )
+    mark = next(m for m in spec.panels[0].marks if isinstance(m, HeatmapMark))
+    assert mark.colorbar_label == "Return (%)"
+    for row, texts in zip(mark.values, mark.cell_text, strict=True):
+        for value, text in zip(row, texts, strict=True):
+            if value is not None and text:
+                assert text == f"{value:.1f}"
+
+
+def test_the_drawdown_sentence_is_about_the_worst_episode_not_any_open_one(
+    tmp_path: Path,
+) -> None:
+    """The worst drawdown recovered; a smaller, later one is still open."""
+    stamps = [datetime(2021, 1, 4, tzinfo=UTC) + timedelta(days=i) for i in range(60)]
+    equity = [*(1.0 - 0.01 * i for i in range(10)), *(0.91 + 0.02 * i for i in range(10))]
+    equity += [1.1 - 0.005 * i for i in range(10)] + [1.1 - 0.05 + 0.001 * i for i in range(30)]
+    rdir = _synthetic(tmp_path)
+    pl.DataFrame({"ts": stamps, "equity": equity}).write_parquet(rdir / "equity_curve.parquet")
+    answer = _build(rdir, "drawdown_episodes").plain_language_answer
+    assert "recovering in" in answer and "had not recovered" not in answer, answer
+
+
 # ------------------------------------------------------------------ synthetic run helpers
 _RUN = "0f0f0f0f0f0f0f0f"
 

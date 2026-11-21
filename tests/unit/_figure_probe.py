@@ -31,6 +31,20 @@ class Measured:
             if a < x0 - 1 or b < y0 - 1 or c > x1 + 1 or d > y1 + 1
         ]
 
+    def overlapping_texts(self) -> list[str]:
+        """Pairs of text boxes that overlap by more than a pixel in both directions."""
+        bad: list[str] = []
+        for i, (a, box_a) in enumerate(self.texts):
+            for b, box_b in self.texts[i + 1 :]:
+                if (
+                    box_a[0] < box_b[2] - 1
+                    and box_b[0] < box_a[2] - 1
+                    and box_a[1] < box_b[3] - 1
+                    and box_b[1] < box_a[3] - 1
+                ):
+                    bad.append(f"{a}|{b}")
+        return bad
+
     def overlapping_ticks(self) -> list[str]:
         bad: list[str] = []
         for run in self.tick_runs:

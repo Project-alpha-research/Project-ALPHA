@@ -20,6 +20,7 @@ from typing import Any, Final
 import polars as pl
 
 from alpha_cli import _artifacts
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_data.pit import PointInTimeReader
 from alpha_data.snapshot import verify_snapshot
@@ -121,6 +122,7 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     end_at = _parse_bound(ref.get("end_ts"), "end_ts", end_of_day=True)
     if end_at < start_at:
         raise DataError("registered dataset range must end at or after its start")
+    end_at = min(end_at, reserve.CUTOFF)
     origin = ref.get("origin")
     if isinstance(origin, Mapping) and origin.get("snapshot_schema") == "CryptoSnapshotV1":
         snapshot_id = str(origin.get("snapshot_id", ""))
@@ -148,6 +150,31 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     return frame.filter(frame["ts"] >= start_at)
 
 
+def _reserve_notes(data_dir: Path, ref: Mapping[str, object]) -> list[str]:
+    """The one hold-back sentence when the registered range reaches the reserved period."""
+    start_at = _parse_bound(ref.get("start_ts"), "start_ts", end_of_day=False)
+    end_at = _parse_bound(ref.get("end_ts"), "end_ts", end_of_day=True)
+    first = max(start_at, reserve.RESERVED_INSTANT)
+    origin = ref.get("origin")
+    if end_at < first:
+        return []
+    if isinstance(origin, Mapping) and origin.get("snapshot_schema") == "CryptoSnapshotV1":
+        from alpha_cli.research_crypto_data import snapshot_held_back_rows
+
+        rows = snapshot_held_back_rows(str(origin.get("snapshot_id", "")), hedged=False)
+        return [reserve.sentence(rows, "rows")] if rows else []
+    root = _verified_root(data_dir, ref)
+    path = ParquetStore(root)._bars_path(str(ref.get("instrument")))
+    stamps = pl.scan_parquet(path).select("ts")
+    held = int(
+        stamps.filter(pl.col("ts").is_between(first, end_at, closed="both"))
+        .select(pl.len())
+        .collect()
+        .item()
+    )
+    return [reserve.sentence(held)] if held else []
+
+
 def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]) -> dict[str, Any]:
     """Audit one registered dataset and publish the immutable EXPLORATORY run."""
     if _PROJECT_ID.fullmatch(project_id) is None:
@@ -171,7 +198,7 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
     if isinstance(duration, int) and not isinstance(duration, bool) and duration > 0:
         interval_seconds = duration * 60.0
     coverage = coverage_summary(timestamps, expected_interval_seconds=interval_seconds)
-    notes: list[str] = []
+    notes: list[str] = _reserve_notes(Path(data_dir), ref)
     blocking: list[str] = []
     limiting: list[str] = []
     if int(coverage["n"]) < _MINIMUM_USABLE_SAMPLE:  # type: ignore[call-overload]

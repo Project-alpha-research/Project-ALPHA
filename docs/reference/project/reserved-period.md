@@ -61,6 +61,12 @@ Locks it out (the code refuses reserved rows or aborts):
   the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
   A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
   only when the source run did.
+- Research-case lane: the weekly classifier (`alpha research diagnostic weekly-classifier`), the data audit (`research_data_audit.py`), the
+  run-plan controller (`research_execution.py`) and the crypto crowding and hedged-basis reads cut at the same boundary and say so. The classifier and the
+  controller use `Hold`, record `reserve` and give the sentence; a plan or `--as-of` before the boundary keeps its record. The audit caps its read at
+  the boundary and puts the sentence in its notes. The crypto reads drop rows stamped on or after the boundary inside the parquet scan; the count reads time
+  columns only. `alpha strategy-candidate run` also caps its cut-off at the boundary. The case's sealed split (D1, D2, D3) divides only
+  the data left after the cut. The reserved period is a separate, later part of the calendar that no case split can reach.
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
 Only labels it:
@@ -75,12 +81,12 @@ Holds nothing back (they still read bars from the date on):
 - Still to cover. Do not assume these hold anything back:
   - ML input preparation (`ml_input.py`): tied to a project's frozen export.
   - Forecast evaluation (`alpha forecast`): a forecast run is forward use; the evaluation sites need their own design.
-  - Research diagnostics (`research_diagnostic_cmds.py`): tied to research cases and their sealed holdout.
   - `alpha propfirm`: it reads every stored bar (no cut-off).
   - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose (tested:
     `test_alert_check_is_forward_use_and_still_reads_the_latest_bar`).
-  - Research case runs (`research_cmds.py`, `research_execution.py`): they have their own sealed holdout; `alpha backtest holdout` is the revealed
-    holdout itself.
+  - Research case registration (`research_cmds.py`): `alpha research data register` does not check a dataset's end date against the boundary. Follow-up.
+    `alpha backtest holdout` is the revealed holdout itself.
+  - `alpha strategy-candidate run --analysis holdout`: it reads its own sealed window as given, and that window may lie past the boundary. Owner to decide.
   - `alpha labels weights` and `importance` read a stored barrier result; one built before this change can hold events from the date on.
 - Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
 - Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.

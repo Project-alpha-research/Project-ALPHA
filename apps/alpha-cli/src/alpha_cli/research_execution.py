@@ -176,6 +176,15 @@ def run_child(
     }
 
 
+def _held(plan: BaselineExecutionPlan, data_dir: Path) -> Any:
+    """The reserved-period cut for the controller's own read; the child cuts the same way."""
+    from alpha_cli.spine import reserve
+
+    return reserve.hold(
+        plan.symbol, data_dir=data_dir, as_of=plan.as_of.isoformat(), snapshot_id=plan.snapshot
+    )
+
+
 def _publish(path: Path, value: dict[str, Any]) -> None:
     from alpha_cli import _artifacts
 
@@ -195,6 +204,8 @@ def _collect(
     from alpha_cli.research_execution_digest import execution_digest
     from alpha_validation import walk_forward_splits
 
+    held = _held(plan, data_dir)
+
     matches = re.findall(r"^.* -> run ([0-9a-f]{16}):", log.read_text(), re.MULTILINE)
     if len(matches) != 1:
         raise DataError("child did not return exactly one terminal run receipt")
@@ -203,7 +214,7 @@ def _collect(
         plan.symbol,
         data_dir=data_dir,
         snapshot_id=plan.snapshot,
-        as_of=_runner.parse_as_of(plan.as_of.isoformat()),
+        as_of=held.as_of,
     )
     timestamps = [bar.ts for bar in bars]
     if stage == "validation":
@@ -218,7 +229,7 @@ def _collect(
         ]
     digest = execution_digest(
         directory,
-        cutoff=plan.as_of.isoformat(),
+        cutoff=held.research_cutoff or plan.as_of.isoformat(),
         expected_sessions=sessions if stage == "baseline" else len(timestamps),
         expected_timestamps=timestamps,
     )
@@ -293,9 +304,9 @@ def execute_plan(plan: BaselineExecutionPlan, *, data_dir: Path) -> dict[str, An
     from alpha_cli.research_execution_digest import execution_digest
 
     started = time.monotonic()
-    cutoff = plan.as_of.isoformat()
+    held = _held(plan, data_dir)
     bars, _ = _runner.load_bars(
-        plan.symbol, data_dir=data_dir, snapshot_id=plan.snapshot, as_of=_runner.parse_as_of(cutoff)
+        plan.symbol, data_dir=data_dir, snapshot_id=plan.snapshot, as_of=held.as_of
     )
     snapshot_hash = _runner.verified_snapshot_hash(data_dir, plan.snapshot)
     assert snapshot_hash is not None
@@ -305,6 +316,7 @@ def execute_plan(plan: BaselineExecutionPlan, *, data_dir: Path) -> dict[str, An
         "execution_fingerprint": _identity.execution_fingerprint(),
         "controller_sha256": sha256_file(Path(__file__)),
         "digest_sha256": sha256_file(Path(execution_digest.__code__.co_filename)),
+        **held.record_fields(),
     }
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
     directory = data_dir / "research_executions" / key
@@ -344,6 +356,7 @@ def _execute_locked(
     sessions: int,
     started: float,
 ) -> dict[str, Any]:
+    held = _held(plan, data_dir)
     receipt: dict[str, Any] = {
         "schema_version": 1,
         "execution_id": directory.name,
@@ -357,6 +370,8 @@ def _execute_locked(
         "information_boundary": "controller_operations_only; surrounding_agent_not_certified",
         "objective_coverage": "fixed baseline and validation only; no regime or strategy search",
         "receipt": str(directory / "receipt.json"),
+        **held.record_fields(),
+        **({"reserve_sentence": held.say()} if held.held_back else {}),
     }
     recovering = any(directory.glob("*.attempt.json"))
     for stage in ("baseline", "validation"):

@@ -9,6 +9,8 @@ import typer
 
 from alpha_cli import _runner
 from alpha_cli.crypto_data_cmds import crypto_hedged_basis_observations
+from alpha_cli.research_crypto_data import snapshot_held_back_rows
+from alpha_cli.spine import reserve
 from alpha_cli.strategy_candidate import hedged_basis_paper_preflight
 from alpha_cli.strategy_candidate_runtime import run_hedged_basis_candidate
 from alpha_core import DataError
@@ -34,10 +36,16 @@ def run(
     """Evaluate a frozen candidate stream; never constructs either venue adapter."""
     settings = AlphaSettings()
     try:
-        cutoff = _runner.parse_as_of(as_of)
+        user = _runner.parse_as_of(as_of)
+        # A candidate holdout reads its own sealed window on purpose; that window may lie past
+        # the reserved day, which is an open question for the owner (reserved-period.md).
+        sealed = analysis == "holdout"
+        early = user is not None and user <= reserve.CUTOFF
+        cutoff = user if sealed or early else reserve.CUTOFF
+        held = 0 if sealed or early else snapshot_held_back_rows(snapshot_id, hedged=True)
         start = None if holdout_start is None else date.fromisoformat(holdout_start)
         end = None if holdout_end is None else date.fromisoformat(holdout_end)
-        observations = crypto_hedged_basis_observations(snapshot_id)
+        observations = crypto_hedged_basis_observations(snapshot_id, before_reserved=not sealed)
         manifest = run_hedged_basis_candidate(
             settings.data_dir,
             snapshot_id=snapshot_id,
@@ -49,8 +57,9 @@ def run(
             holdout_start=start,
             holdout_end=end,
             holdout_spec_hash=holdout_spec_hash,
-            research_cutoff=as_of,
+            research_cutoff=reserve.CUTOFF_DATE if held else as_of,
             as_of=cutoff,
+            reserve_record=reserve.record(held, "rows") if held else None,
         )
     except (DataError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -58,6 +67,8 @@ def run(
         typer.echo(json.dumps(manifest, sort_keys=True, allow_nan=False))
         return
     typer.echo(f"hedged basis {analysis} -> run {manifest['run_id']} (SANDBOX ONLY)")
+    if held:
+        typer.echo(reserve.sentence(held, "rows"))
 
 
 @strategy_candidate_app.command("paper-preflight")

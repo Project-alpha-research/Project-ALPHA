@@ -429,6 +429,7 @@ def run_hedged_basis_candidate(
     holdout_spec_hash: str | None = None,
     research_cutoff: str | None,
     as_of: datetime | None,
+    reserve_record: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Publish one candidate analysis without constructing an execution adapter."""
     if analysis not in _ANALYSES:
@@ -508,6 +509,8 @@ def run_hedged_basis_candidate(
         "candidate_analysis_artifact": "candidate_analysis.json",
         "returns_artifact": "returns.parquet",
     }
+    if reserve_record:
+        manifest["reserve"] = reserve_record
     if analysis.startswith("monte_carlo_"):
         manifest["source_run_id"] = source_run_id
         manifest["status"] = analysis_result["status"]

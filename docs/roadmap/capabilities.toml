@@ -508,7 +508,7 @@ proof_synthetic = [
   "tests/unit/test_web_activity_areas.py::test_ideas_walk_is_one_level_deep_so_its_cost_is_bounded",
   "apps/alpha-web/frontend/e2e/idea-workspace.spec.ts::the list opens one page that tells the whole story, and a click on a test changes the charts",
 ]
-docs = ["docs/reference/invariants/web-frontend.md", "docs/reference/invariants/web-api-reads.md"]
+docs = ["docs/reference/invariants/web-ideas.md", "docs/reference/invariants/web-api-reads.md", "docs/reference/invariants/cli-idea-file.md"]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
 state = "Partial"

@@ -53,7 +53,7 @@ grants authority.
   `GET /api/follow/{id}` (`api/follow.py`, `api/models/follow.py`), which relay `alpha follow today|show`. Browser spec: `e2e/follow-today.spec.ts`.
   Rules: [Today screen](../../docs/reference/invariants/web-frontend.md#today-screen), [reads](../../docs/reference/invariants/web-api-reads.md#follow-today-read).
 - The Ideas page (View → Research → Ideas) is `panels/idea/IdeaWorkspace.tsx` (sections in `IdeaSections.tsx`, run charts and checks in `IdeaRunPanels.tsx`, pure helpers in `ideaModel.ts`). It reads `GET /api/ideas` and `GET /api/ideas/{card}` (`api/ideas.py`, `api/models/ideas.py`), which relay `alpha idea list|file`. Browser spec: `e2e/idea-workspace.spec.ts`.
-  Rules: [Ideas page](../../docs/reference/invariants/web-frontend.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
+  Rules: [Ideas page](../../docs/reference/invariants/web-ideas.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.

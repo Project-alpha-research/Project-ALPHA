@@ -1,0 +1,16 @@
+# Example spec: what happened after speculator positioning in E-mini S&P futures was extreme?
+# Copy it, then change the idea, asset, series and level. The values here are placeholders, not results.
+[setup]
+name = "after-extreme-spec-positioning"
+idea = "Daily close above the 50-day average while speculators are very long (placeholder level)"
+assets = ["SPY"]
+timeframe = "1D"
+event = "close > sma(close, 50)"
+[context]
+# alias = "series@key": the key is declared. 13874A is the E-mini S&P 500 market code. SELF means the asset's own symbol.
+es_pos = "cot_nc_net_pct_156w@13874A"
+[filters]
+very_long = "es_pos > 0.9"
+[study]
+horizons = [5, 10, 20]
+primary = 10

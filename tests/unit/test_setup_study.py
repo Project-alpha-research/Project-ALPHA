@@ -213,8 +213,9 @@ def test_warmup_uses_all_evaluator_expressions(tmp_path: Path) -> None:
     path.write_text(path.read_text().replace('base="low"', 'base="sma(close, 20)"'))
     found = setup_cmds.run_find(path, home=tmp_path)
     manifest = json.loads((Path(found["folder"]) / "manifest.json").read_text())
-    _, warmup = study_inputs(tmp_path, manifest, SetupSpec.load(path))
-    assert warmup == compile_expr("sma(close, 20)").warmup == 19
+    _, spans = study_inputs(tmp_path, manifest, SetupSpec.load(path))
+    assert set(spans.values()) == {(compile_expr("sma(close, 20)").warmup, None)}
+    assert compile_expr("sma(close, 20)").warmup == 19
 
 
 def test_corrupt_candidates_fail_with_structured_study_error(tmp_path: Path) -> None:

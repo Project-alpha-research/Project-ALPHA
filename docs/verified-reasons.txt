@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified db55a6edece276e9 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified bf9b5d63d86c9990 on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 apps/alpha-cli/README.md
-  verified db55a6edece276e9 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified bf9b5d63d86c9990 on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -44,10 +44,10 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4b211e9c11a96fca on 2026-11-21: owner rule added beside the old kinds; checked and still correct
 
 docs/reference/invariants/cli-runs.md
-  verified d735a49556284040 on 2026-11-21: owner rule added beside the old kinds; checked and still correct
+  verified c6e4342c05f2917f on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
+  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -92,10 +92,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -152,16 +152,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 3e9c24abea15fc3e on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 57d1cc2d1462d00a on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified 1fa99d025cf1a2ee on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -211,6 +211,8 @@ docs/work/CONTEXT.md
 packages/alpha-data/CONTEXT.md
   verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
+packages/alpha-study/CONTEXT.md
+  verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
 packages/alpha-strategies/CONTEXT.md
   verified 052023176fd77aee on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
@@ -218,10 +220,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 5ceba94e5b376add on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified 64dfe34988d92b5f on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified c396b7b24a784116 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified a1cdc4a0364dbb0f on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/README.md
   verified 6c519596adb4a353 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
@@ -233,13 +235,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 663b32963bad61b7 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified d6b697824d19b83c on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified a987d05207be2955 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified 5a22526b1fd43623 on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/tools/charts.md
   verified a4442520048b555a on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
@@ -248,10 +250,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 23c1130a8f32d633 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified c29dfb354f677a2d on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified 5b5a18dd3ed98607 on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
+  verified 7c5484e75752c697 on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -290,22 +292,25 @@ research/tools/results-and-cite.md
   verified c15a500a7f82b12c on 2026-11-21: owner rule added beside the old kinds; this text is about other behaviour and stays correct
 
 research/tools/rule-test.md
-  verified ba065771c00ffa99 on 2026-11-21: owner rule added beside the old kinds; checked and still correct
+  verified 24a41d7d48779495 on 2026-11-21: owner rule merged with main; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 334b58a65a4da988 on 2026-11-21: Merged main; setup show takes several ids; text re-read and still correct
+  verified c29dfb354f677a2d on 2026-11-21: owner rule merged with main; text re-read and still correct
+
+research/tools/setup-context.md
+  verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
 
 research/tools/setup-find.md
-  verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 3bf380359d19bf43 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-trade.md
-  verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

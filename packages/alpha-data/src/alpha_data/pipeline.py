@@ -12,7 +12,7 @@ import tempfile
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -22,6 +22,7 @@ import polars as pl
 from alpha_core import CorporateAction, DataError
 from alpha_data._atomic import publish
 from alpha_data.adapters.base import DatasetIdentity, FetchReceipt, FetchResult
+from alpha_data.sessions import calendar_zone, session_bounds, sessions_between
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import BarTimeframe, parse_timeframe
 
@@ -278,31 +279,21 @@ def _calendar_checks(
     if identity.asset_class not in {"stock", "etf"}:
         return critical, extended_hours_rows, session_zone
     try:
-        import exchange_calendars as xcals  # type: ignore[import-untyped]  # noqa: PLC0415
-        from exchange_calendars.errors import (  # type: ignore[import-untyped]  # noqa: PLC0415
-            CalendarError,
+        sessions = sessions_between(
+            identity.calendar,
+            receipt.requested_start,
+            receipt.requested_end,
+            {timestamp.date() for timestamp in incoming},
         )
-
-        calendar = xcals.get_calendar(identity.calendar)
-        sessions = calendar.sessions_in_range(
-            receipt.requested_start.isoformat(), receipt.requested_end.isoformat()
-        )
-        expected_sessions = {timestamp.date() for timestamp in sessions}
+        expected_sessions = set(sessions)
         if not timeframe.is_daily:
-            session_zone = ZoneInfo(str(calendar.tz))
-            intervals = [
-                (
-                    session.date(),
-                    calendar.session_open(session).to_pydatetime().astimezone(UTC),
-                    calendar.session_close(session).to_pydatetime().astimezone(UTC),
-                )
-                for session in sessions
-            ]
+            session_zone = ZoneInfo(str(calendar_zone(identity.calendar)))
+            intervals = [(day, *session_bounds(identity.calendar, day)) for day in sessions]
             errors, extended_hours_rows = _intraday_session_errors(
                 result.bars["ts"].to_list(), intervals, timeframe
             )
             critical.extend(errors)
-    except (ValueError, KeyError, CalendarError) as exc:
+    except (ValueError, KeyError, DataError) as exc:
         critical.append(f"invalid_exchange_calendar:{identity.calendar}:{type(exc).__name__}")
     else:
         if timeframe.is_daily:

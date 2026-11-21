@@ -248,3 +248,13 @@ def test_breadth_label_and_count_follow_the_stored_set(tmp_path: Path) -> None:
     # day 61: AAA and BBB each sit 59/sqrt(60) above a flat window; CCC is near its own mean
     assert col(out, "ctx_b") == [approx(2 / 3)]
     assert out.notes["b"] == "3 stored names, not market-wide"
+
+
+def test_bars_from_before_the_calendar_still_attach_and_stay_null(tmp_path: Path) -> None:
+    """Old stock history joins with the home's fallback instants; no value is known that early."""
+    store_finra(tmp_path, finra_rows("SPY", [(date(2023, 6, 8), 0.2)]), "SPY")
+    old = [date(1940, 6, 3), date(1995, 3, 15), date(2023, 6, 9), date(2023, 6, 12)]
+    out = run(bars(old), tmp_path, {"sv": Binding("sv_ratio", "SPY")}, calendar="XNYS")
+    values = col(out, "ctx_sv")
+    assert values[:2] == [None, None]
+    assert values[2] == approx(0.2)

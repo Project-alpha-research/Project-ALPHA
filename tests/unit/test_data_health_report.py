@@ -9,7 +9,7 @@ import pytest
 
 from alpha_core import ActionType, CorporateAction, DataError, UniverseMembership
 from alpha_data.health import HealthCheck, HealthReport, health_report
-from alpha_data.sessions import sessions_between
+from alpha_data.sessions import sessions_between, supported_range
 
 DAY = timedelta(days=1)
 START = datetime(2024, 1, 2, tzinfo=UTC)
@@ -423,3 +423,31 @@ def test_future_stock_bars_change_no_finding_dated_before_the_report_time() -> N
     assert [c for c in before.checks if c.id != "future_bar"] == [
         c for c in after.checks if c.id != "future_bar"
     ]
+
+
+def test_bars_before_the_calendar_are_labelled_with_their_first_and_last_date() -> None:
+    first, _ = supported_range("XNYS")
+    start = datetime(first.year - 30, 1, 2, tzinfo=UTC)
+    bars = frame([100.0 + i % 3 for i in range(5)], start=start)
+    result = health_report(
+        bars, symbol="X", calendar="XNYS", report_time=datetime(first.year - 29, 1, 2, tzinfo=UTC)
+    )
+    item = check(result, "calendar_range")
+    assert item.status == "pass"
+    assert "calendar-outside-supported-range" in item.finding
+    assert str(start.date()) in item.finding
+    assert str((start + 4 * DAY).date()) in item.finding
+    assert item.count == 5
+    assert "calendar_range" in result.model_dump_json()
+
+
+def test_bars_inside_the_calendar_carry_no_range_label() -> None:
+    first, _ = supported_range("XNYS")
+    start = datetime.combine(first + timedelta(days=400), datetime.min.time(), UTC)
+    result = health_report(
+        frame([100.0, 101.0], start=start),
+        symbol="X",
+        calendar="XNYS",
+        report_time=start + 5 * DAY,
+    )
+    assert all(item.id != "calendar_range" for item in result.checks)

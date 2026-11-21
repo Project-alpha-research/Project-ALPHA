@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -112,11 +113,14 @@ def _returns_from_run(data_dir: Path, run_id: str) -> tuple[FloatArray, str]:
 
 
 def _returns_from_backtest(
-    symbol: str, spec: _runner.RunSpec, data_dir: Path, snapshot: str | None
+    symbol: str, spec: _runner.RunSpec, data_dir: Path, snapshot: str | None, as_of: datetime
 ) -> tuple[FloatArray, str]:
-    """Daily returns from a fresh full backtest of ``symbol`` (the equity curve, net of costs)."""
-    bars, _ = _runner.load_bars(symbol, data_dir=data_dir, snapshot_id=snapshot)
-    dividends = _runner.load_dividends(symbol, data_dir=data_dir, snapshot_id=snapshot)
+    """Daily returns from a fresh full backtest of ``symbol`` (the equity curve, net of costs).
+
+    ``as_of`` is the held-back cut-off: no bar or dividend known after it is read.
+    """
+    bars, _ = _runner.load_bars(symbol, data_dir=data_dir, snapshot_id=snapshot, as_of=as_of)
+    dividends = _runner.load_dividends(symbol, data_dir=data_dir, snapshot_id=snapshot, as_of=as_of)
     result = _runner.run_full_backtest(bars, spec, dividends=dividends)
     returns = to_returns([value for _, value in result.equity_curve])
     return returns, _runner.source_fingerprint(bars, dividends=dividends)
@@ -135,18 +139,25 @@ def run_propfirm(
     mean_block: float,
     seed: int | None,
     horizon_days: int | None,
+    as_of: datetime | None = None,
 ) -> PropFirmRunResult:
     """Resolve the return stream + rules and run the prop-firm Monte Carlo.
 
     Exactly one of ``symbol`` / ``from_run`` must be set (enforced by the caller). Fails loud
-    (``DataError``) on a missing run, an unknown firm, or a degenerate return stream.
+    (``DataError``) on a missing run, an unknown firm, or a degenerate return stream. A fresh
+    backtest reads ``as_of`` (the held-back cut-off, required with ``symbol``); ``from_run`` reads
+    only the stored equity curve of a run that was cut when it was made.
     """
     if from_run is not None:
         raw_returns, observed_source = _returns_from_run(data_dir, from_run)
         returns: Sequence[float] | FloatArray = trim_warmup(raw_returns)
         source = f"run:{from_run}"
     elif symbol is not None:
-        raw_returns, observed_source = _returns_from_backtest(symbol, spec, data_dir, snapshot)
+        if as_of is None:
+            raise DataError("a fresh backtest needs the held-back cut-off (as_of)")
+        raw_returns, observed_source = _returns_from_backtest(
+            symbol, spec, data_dir, snapshot, as_of
+        )
         returns = trim_warmup(raw_returns)
         source = f"symbol:{symbol}"
     else:  # pragma: no cover - the CLI guarantees one input is set

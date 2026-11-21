@@ -51,7 +51,6 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("comparison_acquisition_evidence.py", "_result"): (
         "exempt: verifies stored acquisition artifacts byte for byte; no research read"
     ),
-    ("_propfirm.py", "_returns_from_backtest"): "open: C2 propfirm run reads every stored bar",
 }
 
 

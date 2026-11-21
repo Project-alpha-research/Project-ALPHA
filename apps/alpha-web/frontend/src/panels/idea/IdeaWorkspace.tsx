@@ -13,7 +13,7 @@ import { RunCharts, RunChecks } from './IdeaRunPanels'
 import {
   DataStep, FollowStep, HypothesisStep, IdeaStep, OpenStep, RdAgentStep, RuleStep, Step, TestsStep, ToolsStep,
 } from './IdeaSections'
-import { defaultRun, ideaSteps, newestFirst, runsOf, shortDay, STATE_MARK, STATE_WORD, type StepSummary } from './ideaModel'
+import { defaultRun, ideaSteps, newestFirst, runsOf, shortDay, STATE_WORD, type StepSummary } from './ideaModel'
 
 const FOOTER = 'This page joins stored records. It computes nothing new. A reading is not advice and not an approval.'
 
@@ -54,7 +54,7 @@ function Navigator({ steps, onJump }: { steps: StepSummary[]; onJump(id: string)
           <li key={step.id}>
             <button type="button" className="idea-nav-item" data-step={step.id} data-state={step.state} onClick={() => onJump(step.id)}
               aria-label={`${step.number} ${step.title}: ${STATE_WORD[step.state]}, ${step.count}`}>
-              <span className="idea-dot" aria-hidden="true">{STATE_MARK[step.state]}</span>
+              <span className="idea-dot" aria-hidden="true" />
               <span className="idea-nav-title">{`${step.number} ${step.title}`}</span>
               <span className="mono idea-nav-count">{step.count}</span>
             </button>

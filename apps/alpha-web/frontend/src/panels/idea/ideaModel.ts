@@ -12,8 +12,6 @@ export interface StepSummary { id: string; number: number; title: string; state:
 export const STATE_WORD: Record<StepState, string> = {
   done: 'recorded', some: 'partly recorded', empty: 'nothing recorded yet', 'not-built': 'not built yet',
 }
-/** One mark per state, so the dot never rests on colour alone. */
-export const STATE_MARK: Record<StepState, string> = { done: '●', some: '◐', empty: '○', 'not-built': '–' }
 
 const bound = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
 

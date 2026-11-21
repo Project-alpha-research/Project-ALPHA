@@ -26,16 +26,6 @@
   --down-soft: #1c1c1c;
   --gold: #ffd400;
   --gold-soft: #1c1c1c;
-  --verdict-a: #2fc36a;
-  --verdict-a-soft: #1c1c1c;
-  --verdict-b: #a5d66e;
-  --verdict-b-soft: #1c1c1c;
-  --verdict-c: #ffd400;
-  --verdict-c-soft: #1c1c1c;
-  --verdict-d: #e9a35d;
-  --verdict-d-soft: #1c1c1c;
-  --verdict-f: #e64d52;
-  --verdict-f-soft: #1c1c1c;
   --accent-text: #5584cf;
   --negative-text: #e64d52;
   --field-bg: #141414;
@@ -71,16 +61,6 @@
   --down-soft: #b6bbbe;
   --gold: #513600;
   --gold-soft: #b6bbbe;
-  --verdict-a: #123f30;
-  --verdict-a-soft: #b6bbbe;
-  --verdict-b: #123f30;
-  --verdict-b-soft: #b6bbbe;
-  --verdict-c: #513600;
-  --verdict-c-soft: #b6bbbe;
-  --verdict-d: #513600;
-  --verdict-d-soft: #b6bbbe;
-  --verdict-f: #64263b;
-  --verdict-f-soft: #b6bbbe;
   --accent-text: #143d60;
   --negative-text: #64263b;
   --field-bg: #c6cacc;
@@ -117,16 +97,6 @@
   --down-soft: #eeefea;
   --gold: #6b480a;
   --gold-soft: #eeefea;
-  --verdict-a: #15573c;
-  --verdict-a-soft: #eeefea;
-  --verdict-b: #15573c;
-  --verdict-b-soft: #eeefea;
-  --verdict-c: #6b480a;
-  --verdict-c-soft: #eeefea;
-  --verdict-d: #6b480a;
-  --verdict-d-soft: #eeefea;
-  --verdict-f: #872b43;
-  --verdict-f-soft: #eeefea;
   --accent-text: #235579;
   --negative-text: #872b43;
   --field-bg: #ffffff;
@@ -502,35 +472,9 @@ a:hover {
 }
 
 /* ==========================================================================
-   Badges: verdict medallion + pass/fail + kind chips
+   Badges: pass/fail + kind chips
    ========================================================================== */
 
-.verdict {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: var(--r);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--font-size);
-  color: var(--gold);
-  background: var(--gold-soft);
-  border: 1px solid var(--gold);
-}
-.verdict.g-A {
-  color: var(--up);
-  background: var(--up-soft);
-  border-color: var(--up);
-}
-.verdict.g-D,
-.verdict.g-F {
-  color: var(--negative-text);
-  background: var(--down-soft);
-  border-color: var(--down);
-}
 
 .chip {
   display: inline-flex;
@@ -958,21 +902,6 @@ textarea.field:focus {
   border: 1px solid var(--gold);
   color: var(--gold);
   font-size: var(--font-size);
-}
-.verdict-row {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
-.verdict.big {
-  min-width: 46px;
-  height: 42px;
-  font-size: 24px;
-  border-radius: var(--r-lg);
-}
-.dims {
-  display: flex;
-  gap: 20px;
 }
 .dim {
   display: flex;

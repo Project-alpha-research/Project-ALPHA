@@ -67,7 +67,8 @@ def open_position_zone(fills: Any, span: tuple[float, float] | None) -> Mark | N
             break
         before = position
         position += float(quantity) * (1.0 if side == "BUY" else -1.0)
-        if abs(before) < 1e-9 <= abs(position):
+        # A new holding starts when the account leaves flat or flips sign in one fill.
+        if abs(before) < 1e-9 <= abs(position) or before * position < 0:
             since = stamp
     end = span[1] if span else since
     since = max(since, span[0]) if span else since

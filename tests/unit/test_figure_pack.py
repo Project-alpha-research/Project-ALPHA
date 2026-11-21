@@ -774,3 +774,32 @@ def test_a_position_opened_before_the_window_is_not_mistaken_for_a_short(
     pl.DataFrame(fills).write_parquet(rdir / "execution_trace.parquet")
     marks = _build(rdir, "price_signal").panels[0].marks
     assert not any(getattr(m, "label", None) == "Open position" for m in marks)
+
+
+def test_a_reversal_starts_a_new_open_position_at_the_reversing_fill(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rdir = _many_fill_run(tmp_path, monkeypatch, equity_from=0)
+    days = [datetime(2022, 1, 3, tzinfo=UTC) + timedelta(days=i) for i in range(80)]
+    rows = []
+    for i in range(60):  # 30 round trips
+        rows.append((i, "BUY" if i % 2 == 0 else "SELL", 10.0))
+    rows += [(60, "BUY", 10.0), (70, "SELL", 20.0)]  # long, then a one-fill reversal to short
+    pl.DataFrame(
+        [
+            {
+                "sequence_id": n,
+                "event_type": "fill",
+                "ts": days[d],
+                "side": side,
+                "price": 1.0,
+                "quantity": q,
+                "filled_quantity": q,
+            }
+            for n, (d, side, q) in enumerate(rows)
+        ]
+    ).write_parquet(rdir / "execution_trace.parquet")
+    marks = _build(rdir, "price_signal").panels[0].marks
+    zone = next(m for m in marks if getattr(m, "label", None) == "Open position")
+    assert zone.role == "down"
+    assert zone.x0 == days[70].timestamp()

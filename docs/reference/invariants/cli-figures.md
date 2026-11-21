@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/figure*.py
   - apps/alpha-cli/src/alpha_cli/figures/*.py
   - tests/unit/test_figure*.py
-verified: 51fcf38f311a45fb
+verified: b7eea509d55f7c0c
 ---
 
 # Command line figures invariants

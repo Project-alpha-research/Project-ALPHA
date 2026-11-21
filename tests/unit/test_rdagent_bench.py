@@ -9,16 +9,15 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from alpha_cli.rdagent_bench_clients import FakeClient, GatewayClient
 from alpha_cli.rdagent_bench_model import (
     BenchError,
-    FakeClient,
-    GatewayClient,
     StoredPrompt,
     load_prices,
     load_prompts,
     make_plan,
-    run_bench,
 )
+from alpha_cli.rdagent_bench_run import run_bench
 from alpha_cli.rdagent_bench_score import score_store
 from alpha_cli.rdagent_cmds import rdagent_app
 
@@ -334,3 +333,91 @@ def test_cli_run_refuses_a_store_outside_the_data_home(
     inside = RUNNER.invoke(rdagent_app, [*args, *fixture, "--store", str(tmp_path / "home" / "b")])
     assert inside.exit_code == 0, inside.output
     assert _spend(tmp_path).is_file()
+
+
+def test_a_changed_prompt_under_the_same_id_is_not_served_from_the_store(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(1000, 500)]}})
+    store = tmp_path / "store"
+    run_bench(load_prompts(folder, None), ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    row = json.loads((folder / "p0.json").read_text())
+    row["messages"] = [{"role": "user", "content": "a different idea"}]
+    (folder / "p0.json").write_text(json.dumps(row))
+    with pytest.raises(BenchError, match="changed"):
+        run_bench(
+            load_prompts(folder, None), ["a"], 1, prices, client, store, spend=_spend(tmp_path)
+        )
+    assert client.calls == 1
+
+
+def test_composite_variables_reach_the_family_check(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    text = json.dumps(
+        {
+            "name": "Composite Signal",
+            "description": "declared_direction: +1; primary_clock: weekly; direction_reason: x.",
+            "variables": {"momentum_12_1": "x", "volume_surge": "y"},
+        }
+    )
+    reply = {**_reply(1, 1), "text": text}
+    store = tmp_path / "store"
+    run_bench(
+        prompts, ["a"], 1, prices, FakeClient({"a": {"p0": [reply]}}), store, spend=_spend(tmp_path)
+    )
+    closed = {"past return (momentum or reversal)"}
+    scored = score_store(prompts, ["a"], store, closed=closed, dropped=set())
+    assert scored.models["a"].refusal == pytest.approx(1.0)
+
+
+def test_worker_response_keyed_by_factor_name_is_scored(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    declared = "declared_direction: +1; primary_clock: weekly; direction_reason: x."
+    text = json.dumps(
+        {
+            "Volume Surge": {"description": declared, "plain_summary": "s"},
+            "Short-term Reversal": {"description": declared, "variables": {}},
+        }
+    )
+    reply = {**_reply(1, 1), "text": text}
+    store = tmp_path / "store"
+    run_bench(
+        prompts, ["a"], 1, prices, FakeClient({"a": {"p0": [reply]}}), store, spend=_spend(tmp_path)
+    )
+    closed = {"past return (momentum or reversal)"}
+    scored = score_store(prompts, ["a"], store, closed=closed, dropped=set())
+    assert scored.models["a"].buildable == pytest.approx(1.0)
+    assert scored.models["a"].refusal == pytest.approx(0.5)
+
+
+def test_resume_is_checked_against_the_calls_still_missing(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 2)
+    for file in folder.glob("*.json"):
+        row = json.loads(file.read_text())
+        row["prompt_tokens"], row["completion_tokens"] = 4_000_000, 0
+        file.write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    spend = _spend(tmp_path)
+    spend.parent.mkdir(parents=True)
+    spend.write_text(json.dumps({"ts": datetime.now(UTC).isoformat(), "usd": 42.0}) + "\n")
+    client = FakeClient({"a": {f"p{i}": [_reply(4_000_000, 0)] for i in range(2)}})
+    store = tmp_path / "store"
+    first = run_bench(prompts, ["a"], 1, prices, client, store, spend=spend, max_new_calls=1)
+    assert first.new_calls == 1
+    second = run_bench(prompts, ["a"], 1, prices, client, store, spend=spend)
+    # The last call ends exactly at the 50 USD cap, which is allowed.
+    assert second.new_calls == 1 and second.finished
+
+
+def test_a_resume_does_not_reset_the_run_budget(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 3), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["b"])
+    client = FakeClient({"b": {f"p{i}": [_reply(1000, 2_000_000)] for i in range(3)}})
+    store = tmp_path / "store"
+    for _ in range(3):
+        with pytest.raises(BenchError, match="10"):
+            run_bench(prompts, ["b"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 1

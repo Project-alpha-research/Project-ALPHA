@@ -49,3 +49,12 @@ Not tested because the code is not mine to change: recording off by default, sta
 - Provider pinning is the gateway's job; the bench only records what the call reports.
 - No converter yet from the gateway's `content.jsonl` and `calls.jsonl` to the prompt files.
 - The `verified:` stamp on the new tool card is a placeholder; `fs.py stale` will list it.
+
+## Review round (Codex, 2026-11-21)
+Five findings were correct and are fixed, each with a failing test first:
+1. A stored output now carries a hash of its prompt; a changed prompt under the same id refuses the run.
+2. A proposal's variables reach the family check, so composite proposals fall in their real families.
+3. A resume checks the month cap against the calls still missing only.
+4. A resume carries the run's spend forward, so the 10 USD run cap holds across reruns.
+5. The proposal parser reads the worker's real format (an object keyed by factor name) as well as a single object.
+The run code moved to `rdagent_bench_run.py` and the clients to `rdagent_bench_clients.py` to keep each module under 300 lines.

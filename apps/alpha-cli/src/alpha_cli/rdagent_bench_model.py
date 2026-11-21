@@ -6,16 +6,13 @@ no memory folder, so it cannot write to either. The caps are the owner's and are
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
-import os
-import time
 import tomllib
-import urllib.parse
-import urllib.request
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -129,10 +126,14 @@ def make_plan(
     samples: int,
     prices: Mapping[str, tuple[float, float]],
     month_spent: float,
+    done: Collection[tuple[str, str, int]] = (),
 ) -> Plan:
+    """The calls and cost of a plan. Outputs in `done` are already paid for and in the month's
+    spend, so only the calls still missing count against the month cap."""
     if samples < 1 or not models:
         raise BenchError("Give at least one model and one sample.")
     per_model: dict[str, tuple[int, float]] = {}
+    missing_usd = 0.0
     for model in models:
         usd = 0.0
         for p in prompts:
@@ -141,7 +142,9 @@ def make_plan(
                     f"Prompt '{p.id}' has no recorded token counts; the cost is unknown."
                 )
             price_in, price_out = prices[model]
-            usd += samples * (p.prompt_tokens * price_in + p.completion_tokens * price_out) / 1e6
+            each = (p.prompt_tokens * price_in + p.completion_tokens * price_out) / 1e6
+            usd += samples * each
+            missing_usd += each * sum((model, p.id, n) not in done for n in range(samples))
         per_model[model] = (samples * len(prompts), usd)
     calls = sum(c for c, _ in per_model.values())
     usd = sum(u for _, u in per_model.values())
@@ -149,67 +152,12 @@ def make_plan(
         raise BenchError(f"The plan has {calls} calls. The cap is {RUN_MAX_CALLS} per run.")
     if usd > RUN_MAX_USD:
         raise BenchError(f"The plan costs about {usd:.2f} USD. The cap is {RUN_MAX_USD:g} per run.")
-    if month_spent + usd > MONTH_MAX_USD:
+    if month_spent + missing_usd > MONTH_MAX_USD:
         raise BenchError(
-            f"The plan plus {month_spent:.2f} USD already spent this month passes "
+            f"The calls still to make plus {month_spent:.2f} USD already spent this month pass "
             f"the {MONTH_MAX_USD:g} USD monthly cap."
         )
     return Plan(calls=calls, usd=usd, per_model=per_model)
-
-
-class FakeClient:
-    """Deterministic outputs from a fixture: {model: {prompt id: [reply, ...]}}. No network."""
-
-    def __init__(self, fixture: Mapping[str, Any]) -> None:
-        self.fixture = fixture
-        self.calls = 0
-
-    def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
-        try:
-            raw = self.fixture[model][prompt.id][sample % len(self.fixture[model][prompt.id])]
-        except (KeyError, IndexError, ZeroDivisionError) as error:
-            raise BenchError(f"The fixture has no reply for {model} / {prompt.id}.") from error
-        self.calls += 1
-        return Reply(
-            text=str(raw["text"]),
-            provider=raw.get("provider"),
-            prompt_tokens=raw.get("prompt_tokens"),
-            completion_tokens=raw.get("completion_tokens"),
-            latency_ms=raw.get("latency_ms"),
-        )
-
-
-class GatewayClient:
-    """Posts to a running local gateway, one gateway address per model. The token is read from
-    the environment and is never stored. The gateway holds the provider pin and the call caps."""
-
-    def __init__(self, urls: Mapping[str, str]) -> None:
-        self.urls = urls
-        self.token = os.environ.get(TOKEN_VARIABLE, "")
-
-    def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
-        if model not in self.urls or not self.token:
-            raise BenchError(f"No gateway address for '{model}', or {TOKEN_VARIABLE} is not set.")
-        address = urllib.parse.urlsplit(self.urls[model])
-        if address.scheme != "http" or address.hostname not in LOCAL_HOSTS:
-            raise BenchError("The gateway address must be on this machine.")
-        body = json.dumps({"model": model, "messages": prompt.messages}).encode()
-        request = urllib.request.Request(
-            self.urls[model].rstrip("/") + "/v1/chat/completions",
-            data=body,
-            headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"},
-        )
-        started = time.monotonic()
-        with urllib.request.urlopen(request, timeout=900) as response:
-            data = json.loads(response.read())
-        usage = data.get("usage") or {}
-        return Reply(
-            text=str(data["choices"][0]["message"]["content"]),
-            provider=data.get("provider"),
-            prompt_tokens=usage.get("prompt_tokens"),
-            completion_tokens=usage.get("completion_tokens"),
-            latency_ms=(time.monotonic() - started) * 1000,
-        )
 
 
 def check_outside_git(path: Path) -> None:
@@ -232,95 +180,10 @@ def month_spent(spend: Path, now: datetime) -> float:
     return sum(float(r["usd"]) for r in rows if r["ts"].startswith(stem))
 
 
+def prompt_sha(p: StoredPrompt) -> str:
+    body = json.dumps({"stage": p.stage, "messages": p.messages}, sort_keys=True)
+    return hashlib.sha256(body.encode()).hexdigest()
+
+
 def output_path(store: Path, model: str, prompt_id: str, sample: int) -> Path:
     return store / "outputs" / model.replace("/", "__") / f"{prompt_id}.{sample}.json"
-
-
-def _record(
-    model: str, p: StoredPrompt, sample: int, reply: Reply, price: tuple[float, float]
-) -> dict[str, Any]:
-    usd: float | None = None
-    reason = None
-    if reply.prompt_tokens is None or reply.completion_tokens is None:
-        reason = "the model did not report token counts"
-    else:
-        usd = (reply.prompt_tokens * price[0] + reply.completion_tokens * price[1]) / 1e6
-    return {
-        "schema": "AlphaBenchOutputV1",
-        "model": model,
-        "prompt_id": p.id,
-        "stage": p.stage,
-        "sample": sample,
-        "text": reply.text,
-        "provider": reply.provider,
-        "provider_reason": None if reply.provider else "the call did not report its provider",
-        "prompt_tokens": reply.prompt_tokens,
-        "completion_tokens": reply.completion_tokens,
-        "usd": usd,
-        "usd_reason": reason,
-        "latency_ms": reply.latency_ms,
-        "latency_reason": None
-        if reply.latency_ms is not None
-        else "the call did not report latency",
-    }
-
-
-def _estimate(p: StoredPrompt, price: tuple[float, float]) -> float:
-    return ((p.prompt_tokens or 0) * price[0] + (p.completion_tokens or 0) * price[1]) / 1e6
-
-
-def _charge(spend: Path, now: datetime, record: dict[str, Any], estimate: float) -> float:
-    """Write the spend of one call. A call without token counts is charged its estimate."""
-    usd = record["usd"] if record["usd"] is not None else estimate
-    spend.parent.mkdir(parents=True, exist_ok=True)
-    with spend.open("a", encoding="utf-8") as stream:
-        row = {"ts": now.isoformat(), "usd": usd, "estimated": record["usd"] is None}
-        stream.write(json.dumps(row) + "\n")
-    return float(usd)
-
-
-def run_bench(
-    prompts: list[StoredPrompt],
-    models: list[str],
-    samples: int,
-    prices: Mapping[str, tuple[float, float]],
-    client: Client,
-    store: Path,
-    *,
-    spend: Path,
-    max_new_calls: int | None = None,
-) -> RunResult:
-    """Send each stored prompt to each model `samples` times. An output already stored is kept.
-
-    The plan is checked first. Then, before each call, the spend so far plus that call's
-    estimate must stay within the run cap and the month cap: a model that writes more than the
-    recorded counts stops the run, and the outputs stored so far are kept for a resume.
-    """
-    check_outside_git(store)
-    now = datetime.now(UTC)
-    month = month_spent(spend, now)
-    make_plan(prompts, models, samples, prices, month)
-    new, run_usd = 0, 0.0
-    for model in models:
-        for p in prompts:
-            for sample in range(samples):
-                path = output_path(store, model, p.id, sample)
-                if path.exists():
-                    continue
-                if max_new_calls is not None and new >= max_new_calls:
-                    return RunResult(new_calls=new, finished=False)
-                estimate = _estimate(p, prices[model])
-                if run_usd + estimate > RUN_MAX_USD or month + run_usd + estimate > MONTH_MAX_USD:
-                    raise BenchError(
-                        f"Stopped after {new} calls: {run_usd:.2f} USD spent in this run and "
-                        f"{month + run_usd:.2f} USD this month. The next call would pass the cap "
-                        f"of {RUN_MAX_USD:g} USD per run or {MONTH_MAX_USD:g} USD per month. "
-                        "The stored outputs are kept."
-                    )
-                record = _record(model, p, sample, client.complete(model, p, sample), prices[model])
-                path.parent.mkdir(parents=True, exist_ok=True)
-                with path.open("x", encoding="utf-8") as stream:
-                    stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
-                run_usd += _charge(spend, now, record, estimate)
-                new += 1
-    return RunResult(new_calls=new, finished=True)

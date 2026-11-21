@@ -9,18 +9,17 @@ from typing import Annotated
 
 import typer
 
+from alpha_cli.rdagent_bench_clients import FakeClient, GatewayClient
 from alpha_cli.rdagent_bench_model import (
     BenchError,
     Client,
-    FakeClient,
-    GatewayClient,
     load_prices,
     load_prompts,
     make_plan,
     month_spent,
-    run_bench,
     spend_ledger,
 )
+from alpha_cli.rdagent_bench_run import run_bench
 from alpha_cli.rdagent_bench_score import score_store
 from alpha_core.config import AlphaSettings
 

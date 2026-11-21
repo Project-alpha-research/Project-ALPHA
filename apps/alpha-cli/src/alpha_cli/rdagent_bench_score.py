@@ -32,7 +32,8 @@ for item in json.loads(sys.stdin.read()):
         f.declaration(item["description"]); ok = True
     except ValueError:
         ok = False
-    out.append({"family": f.idea_family(item["name"], item["description"]), "declared": ok})
+    fam = f.idea_family(item["name"], item["description"], "", item.get("variables"))
+    out.append({"family": fam, "declared": ok})
 print(json.dumps(out))
 """
 PREFIX_REASON = (
@@ -88,17 +89,28 @@ def families(items: list[dict[str, str]]) -> list[dict[str, Any]]:
     return result
 
 
-def _proposal(text: str) -> dict[str, Any] | None:
+def _one(name: object, body: object) -> dict[str, Any] | None:
+    if not isinstance(name, str) or not isinstance(body, dict):
+        return None
+    if not isinstance(body.get("description"), str):
+        return None
+    return {"name": name, "description": body["description"], "variables": body.get("variables")}
+
+
+def _proposals(text: str) -> list[dict[str, Any]] | None:
+    """The proposals in one reply. The worker's format is an object keyed by factor name; a single
+    object with its own `name` and `description` is also read. Anything else is not a proposal."""
     try:
         raw = json.loads(text)
     except ValueError:
         return None
-    ok = (
-        isinstance(raw, dict)
-        and isinstance(raw.get("name"), str)
-        and isinstance(raw.get("description"), str)
-    )
-    return raw if ok else None
+    if not isinstance(raw, dict) or not raw:
+        return None
+    if isinstance(raw.get("name"), str):
+        single = _one(raw["name"], raw)
+        return [single] if single else None
+    found = [_one(name, body) for name, body in raw.items()]
+    return None if any(x is None for x in found) else [x for x in found if x is not None]
 
 
 def _code_builds(text: str) -> bool:
@@ -131,20 +143,17 @@ def _reading(
 ) -> Reading:
     flat = [(p, r) for p in prompts for r in rows[p.id]]
     reading = Reading(prompts=sum(1 for p in prompts if rows[p.id]), outputs=len(flat))
-    parsed = {i: _proposal(r["text"]) for i, (p, r) in enumerate(flat) if p.stage == "proposal"}
-    known = {i: x for i, x in parsed.items() if x is not None}
-    info = dict(
-        zip(
-            known,
-            families(
-                [{"name": x["name"], "description": x["description"]} for x in known.values()]
-            ),
-            strict=True,
-        )
+    parsed = {i: _proposals(r["text"]) for i, (p, r) in enumerate(flat) if p.stage == "proposal"}
+    known = {i: xs for i, xs in parsed.items() if xs is not None}
+    items = [x for xs in known.values() for x in xs]
+    checks = iter(
+        families([{k: x[k] for k in ("name", "description", "variables")} for x in items])
     )
+    info = {i: [next(checks) for _ in xs] for i, xs in known.items()}
     refused = [
-        bool(set(info[i]["family"].split("; ")) & closed) or x["name"].strip().lower() in dropped
-        for i, x in known.items()
+        bool(set(c["family"].split("; ")) & closed) or x["name"].strip().lower() in dropped
+        for i, xs in known.items()
+        for x, c in zip(xs, info[i], strict=True)
     ]
     if refused:
         reading.refusal = sum(refused) / len(refused)
@@ -153,11 +162,11 @@ def _reading(
     builds: dict[str, list[float]] = {}
     for i, (p, r) in enumerate(flat):
         if p.stage == "proposal":
-            ok = i in known and bool(info[i]["declared"])
+            ok = i in known and all(c["declared"] for c in info[i])
         elif p.stage == "code":
             ok = _code_builds(r["text"])
         else:
-            ok = _proposal(r["text"]) is not None
+            ok = _proposals(r["text"]) is not None
         builds.setdefault(p.id, []).append(1.0 if ok else 0.0)
     reading.by_prompt = {k: statistics.fmean(v) for k, v in builds.items()}
     reading.buildable = _mean([v for vs in builds.values() for v in vs])

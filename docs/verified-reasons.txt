@@ -73,6 +73,9 @@ docs/reference/invariants/patterns.md
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
+docs/reference/invariants/research-integrity.md
+  verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 

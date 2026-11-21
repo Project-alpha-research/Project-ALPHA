@@ -288,6 +288,29 @@ def test_crossed_zero_width_and_zero_bid_quotes_are_dropped_not_averaged() -> No
     assert dirty == solved_approx(clean)
 
 
+def test_a_stale_quote_is_dropped_not_used() -> None:
+    """A quote older than MAX_QUOTE_AGE before the snapshot is stale: dropped like a crossed one."""
+    from alpha_data.options.derived_params import MAX_QUOTE_AGE
+
+    def aged(age: timedelta, scale: float) -> Callable[[ChainRow], ChainRow]:
+        def edit(row: ChainRow) -> ChainRow:
+            if poison_atm(row) is row or row.quote is None:
+                return row
+            q = row.quote
+            return replace(
+                row, quote=Quote(bid=q.bid * scale, ask=q.ask * scale, quote_ts=q.quote_ts - age)
+            )
+
+        return edit
+
+    clean = one(make_chain(D0, edit=poison_atm), "iv30")[0]
+    dirty = one(make_chain(D0, edit=aged(MAX_QUOTE_AGE + timedelta(seconds=1), 5.0)), "iv30")[0]
+    assert dirty is not None and clean is not None
+    assert dirty == solved_approx(clean)
+    at_limit = one(make_chain(D0, edit=aged(MAX_QUOTE_AGE, 1.0)), "iv30")[0]
+    assert at_limit == solved_approx(one(make_chain(D0), "iv30")[0])  # exactly the limit is used
+
+
 def test_a_quote_that_is_only_bad_on_one_side_still_uses_the_good_side() -> None:
     def kill_puts(row: ChainRow) -> ChainRow:
         if row.contract.right == "P" and row.quote is not None:

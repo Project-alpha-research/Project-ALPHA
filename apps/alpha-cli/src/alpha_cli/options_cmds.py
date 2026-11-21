@@ -1,12 +1,15 @@
 """`alpha options derived`: daily series computed from stored option chains, as plain readings.
 
 Reads only through the capped research read of the options store (rows on or after the reserved
-day are never used). Realized volatility comes from the stored daily bars with the project's
-`alpha_strategies.realized_volatility`. No network, no writes.
+day are never used). Realized volatility: close-to-close log returns of the stored daily bars over
+RV_WINDOW sessions, annualised by `alpha_validation.metrics.annualized_volatility` (ddof=1, 252).
+No network, no writes.
 """
 
 from __future__ import annotations
 
+import math
+from collections import Counter
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Annotated
@@ -29,13 +32,16 @@ from alpha_data.options.store import OptionsStore
 from alpha_data.pit import PointInTimeReader
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, store_dir
-from alpha_strategies.sizing import realized_volatility
+from alpha_validation.metrics import annualized_volatility
 
 options_app = typer.Typer(help="Stored option chains: derived volatility series (readings only).")
 HINTS = {
     "iv30": "iv30: at-the-money implied volatility for a constant 30 days ahead (a yearly rate).",
+    "iv_rank_252": "iv_rank_252: where iv30 sits between its 252-session low (0) and high (1).",
+    "iv_percentile_252": "iv_percentile_252: share of the last 252 sessions with iv30 below today.",
     "skew_25d": "skew_25d: 25-delta put volatility minus 25-delta call volatility at 30 days.",
     "term_slope": "term_slope: volatility at about 90 days minus iv30; above 0 is an upward term.",
+    "iv_minus_rv": "iv_minus_rv: iv30 minus 21-session realized volatility (both yearly rates).",
 }
 READING = "Readings of stored data, not verdicts or advice; a null is a gap, never zero."
 
@@ -52,7 +58,7 @@ def _provider(root: Path, underlying: str, wanted: str | None) -> str:
 
 
 def _realized(underlying: str, data_dir: Path) -> dict[date, RealizedPoint]:
-    """Realized vol on each stored bar day from the last RV_WINDOW + 1 closes; empty if no bars."""
+    """Realized vol on each stored bar day from the last RV_WINDOW log returns; empty if no bars."""
     store = ParquetStore(store_dir(data_dir, DAILY))
     try:
         reader = PointInTimeReader(store, {underlying: store.read_actions(underlying)})
@@ -65,7 +71,9 @@ def _realized(underlying: str, data_dir: Path) -> dict[date, RealizedPoint]:
     for i in range(RV_WINDOW, len(closes)):
         day = ts[i].date()
         known = datetime.combine(day + timedelta(days=1), time.min, UTC)  # end of the bar's day
-        out[day] = RealizedPoint(realized_volatility(closes[i - RV_WINDOW : i + 1]), known)
+        window = closes[i - RV_WINDOW : i + 1]
+        logs = [math.log(b / a) for a, b in zip(window, window[1:], strict=False)]
+        out[day] = RealizedPoint(annualized_volatility(logs), known)
     return out
 
 
@@ -75,12 +83,25 @@ def _cell(p: DerivedPoint) -> str:
     return f"null ({REASON_WORDS.get(p.reason or '', p.reason or 'unknown')})"
 
 
-def _coverage(name: str, points: tuple[DerivedPoint, ...], held: int) -> str:
-    got = [p for p in points if p.value is not None]
-    span = f"{got[0].day} to {got[-1].day}" if got else "none"
+def _counts(points: tuple[DerivedPoint, ...]) -> dict[str, object]:
+    reasons = Counter(p.reason or "unknown" for p in points if p.value is None)
+    got = [p.day for p in points if p.value is not None]
+    return dict(
+        sessions=len(points),
+        with_value=len(got),
+        first=got[0].isoformat() if got else None,
+        last=got[-1].isoformat() if got else None,
+        null_by_reason=dict(sorted(reasons.items())),
+    )
+
+
+def _coverage(name: str, cov: dict[str, object], held: int) -> str:
+    span = f"{cov['first']} to {cov['last']}" if cov["first"] else "none"
+    nulls = cov["null_by_reason"]
+    why = ", ".join(f"{r} {n}" for r, n in nulls.items()) if isinstance(nulls, dict) else ""
     return (
-        f"Coverage {name}: {len(got)} of {len(points)} sessions have a value ({span}); "
-        f"{held} snapshot(s) held back in the reserved period."
+        f"Coverage {name}: {cov['with_value']} of {cov['sessions']} sessions have a value "
+        f"({span}); nulls: {why or 'none'}; {held} snapshot(s) held back in the reserved period."
     )
 
 
@@ -112,6 +133,7 @@ def derived(
     except (DataError, OSError, pl.exceptions.PolarsError) as exc:
         raise typer.BadParameter(f"{exc}. Next: check the underlying and --series.") from None
     shown = {n: (pts[-rows:] if rows > 0 else pts) for n, pts in result.series.items()}
+    coverage = {n: _counts(pts) for n, pts in result.series.items()}
     payload = dict(
         underlying=underlying,
         provider=name,
@@ -120,6 +142,7 @@ def derived(
         reading=READING,
         rate=rate,
         dividend_yield=dividend_yield,
+        coverage=coverage,
         series={
             n: [
                 dict(
@@ -139,7 +162,7 @@ def derived(
         lines.append(f"{n}  {HINTS.get(n, '')}".rstrip())
         lines.append(f"{'date':<12}{'value':<46}known_from")
         lines += [f"{p.day!s:<12}{_cell(p):<46}{p.known_from:%Y-%m-%d %H:%M}Z" for p in pts]
-        lines.append(_coverage(n, result.series[n], result.held_back))
+        lines.append(_coverage(n, coverage[n], result.held_back))
     lines.append(f"Rate {rate:g}, dividend yield {dividend_yield:g} (the store records neither).")
     lines.append(READING)
     emit(payload, json_out=json_out, fallback="\n".join(lines))

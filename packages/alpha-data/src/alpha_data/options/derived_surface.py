@@ -3,7 +3,8 @@
 Pure math on a `ChainSnapshot` already read through the capped store read. No clock, no reads.
 
 Rules (all constants in `derived_params`)
-- Quotes: only rows with a mid count. Crossed, zero-width, zero-bid and missing quotes are dropped.
+- Quotes: only rows with a mid count. Crossed, zero-width, zero-bid (one-sided) and missing quotes
+  are dropped, and so is a stale quote (quote_ts more than `MAX_QUOTE_AGE` before the snapshot).
   An expiry needs `MIN_QUOTED_STRIKES` strikes with a mid, and `MIN_DAYS_TO_EXPIRY` days to run.
 - Forward: when European calls and puts both quote at a strike, F = K + exp(rT)(C - P) at the strike
   with the smallest |C - P|. Rows are then solved with Black-76 on F. Else (no pair, or American
@@ -28,6 +29,7 @@ from decimal import Decimal
 from alpha_data.options.derived_params import (
     LABEL_NEAREST,
     LABEL_PARITY,
+    MAX_QUOTE_AGE,
     MIN_DAYS_TO_EXPIRY,
     MIN_QUOTED_STRIKES,
     WING_DELTA,
@@ -57,9 +59,10 @@ class ExpiryReading:
 
 def _quoted(snapshot: ChainSnapshot, expiry: date) -> dict[Decimal, Sides]:
     out: dict[Decimal, Sides] = {}
+    oldest = snapshot.snapshot_ts - MAX_QUOTE_AGE
     for row in snapshot.rows:
         c = row.contract
-        if c.expiry != expiry or row.quote is None:
+        if c.expiry != expiry or row.quote is None or row.quote.quote_ts < oldest:
             continue
         mid = mid_price(row.quote).value
         if mid is not None:

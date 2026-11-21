@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import time
+from datetime import time, timedelta
 from typing import Final
 
 from alpha_data.options.schema import OptionsDataError
@@ -26,6 +26,7 @@ TARGET_LONG_DAYS: Final = 90
 DAYS_PER_YEAR: Final = 365.0
 MIN_DAYS_TO_EXPIRY: Final = 7  # nearer expiries are too noisy to bracket a target
 MIN_QUOTED_STRIKES: Final = 3  # strikes with a usable mid, else the expiry is not used
+MAX_QUOTE_AGE: Final = timedelta(days=1)  # a quote older than this before the snapshot is stale
 WING_DELTA: Final = 0.25  # absolute forward delta of the wing options
 RANK_WINDOW: Final = 252  # sessions, including today
 RV_WINDOW: Final = 21  # sessions of close-to-close returns for realized volatility

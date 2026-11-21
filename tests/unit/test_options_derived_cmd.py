@@ -62,13 +62,15 @@ def test_unknown_underlying_and_series_fail_loud(tmp_path: Path) -> None:
     assert code != 0 and "unknown series" in out
 
 
-def test_realized_vol_is_the_project_helper_on_the_last_22_closes(tmp_path: Path) -> None:
+def test_realized_vol_is_log_returns_annualised_on_the_last_22_closes(tmp_path: Path) -> None:
+    import math
+    import statistics
+
     import pytest
 
     from alpha_cli.options_cmds import _realized
     from alpha_data.store import ParquetStore
     from alpha_data.timeframe import DAILY, store_dir
-    from alpha_strategies.sizing import realized_volatility
     from tests.fixtures.cli_fixtures import seed_store
 
     seed_store(tmp_path, symbol="AAA", n=60)
@@ -77,9 +79,28 @@ def test_realized_vol_is_the_project_helper_on_the_last_22_closes(tmp_path: Path
     days: list[datetime] = bars["ts"].to_list()
     points = _realized("AAA", tmp_path)
     last = days[-1].date()
-    assert points[last].value == pytest.approx(realized_volatility(closes[-22:]), rel=1e-12)
+    window = closes[-22:]
+    logs = [math.log(b / a) for a, b in zip(window, window[1:], strict=False)]
+    expected = statistics.stdev(logs) * math.sqrt(252.0)  # hand-written: 21 log returns, ddof=1
+    assert points[last].value == pytest.approx(expected, rel=1e-9, abs=1e-12)
     assert points[last].known_from == datetime.combine(
         last + timedelta(days=1), datetime.min.time(), UTC
     )
     assert days[20].date() not in points  # fewer than 22 closes: no value
     assert _realized("NOPE", tmp_path) == {}
+
+
+def test_every_series_has_a_hint_and_reason_counts_add_up(tmp_path: Path) -> None:
+    from alpha_data.options.derived_params import SERIES
+
+    code, out = _run(_home(tmp_path), "--rows", "1")
+    assert code == 0
+    for name in SERIES:
+        assert f"{name}  {name}: " in out
+    assert "Coverage iv_rank_252: 0 of 3 sessions" in out and "warm_up_252 3" in out
+    code, raw = _run(_home(tmp_path / "j"), "--rows", "1", "--json")
+    data = json.loads(raw)
+    for name in SERIES:
+        cov = data["coverage"][name]
+        assert cov["sessions"] == 3
+        assert cov["with_value"] + sum(cov["null_by_reason"].values()) == cov["sessions"]

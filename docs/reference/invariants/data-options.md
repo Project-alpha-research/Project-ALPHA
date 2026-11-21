@@ -13,7 +13,7 @@ sources:
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
   - tests/unit/test_options_derived.py
-verified: da19c29eb723723e
+verified: 2f74fb28e9f0f764
 ---
 
 # Data layer invariants: options
@@ -186,14 +186,14 @@ The known surface IV is stored as the provided IV. No real market data or symbol
 
 ## Derived series
 
-`derived.py`, `derived_surface.py`, `derived_params.py` (all constants; exact rules in the docstrings). Descriptive readings, no thresholds.
-- `iv30`: forward-ATM IV (parity forward for European quotes, else the strike nearest spot, labelled), mid quotes, linear in strike;
-  constant 30 days by total variance linear in time between the two expiries around it. One side missing: null with a reason, never extrapolated.
-- `iv_rank_252` and `iv_percentile_252`: over 252 sessions including today; warm-up, a null day or a flat window gives null.
-- `skew_25d`: put IV minus call IV at 25 forward delta, linear in delta, same time rule. `term_slope`: IV at 90 days minus `iv30`.
-  `iv_minus_rv`: `iv30` minus realized volatility the caller supplies (the command uses `alpha_strategies.realized_volatility`).
-- Crossed, zero-width and zero-bid quotes are dropped; an expiry needs 3 quoted strikes and 7 days. The store has no rate or yield: defaults 0.
-- `known_from` = the snapshot's `known_at`; rank: latest in the window; `iv_minus_rv`: later of it and the bar's day end. Reads: `snapshots_as_of` only.
+`derived.py`, `derived_surface.py`, `derived_params.py` (constants). Readings, no thresholds. Time: ACT/365 years to expiry at 21:00 UTC (the pricer's `t`).
+- Unused: expiries under 7 days or 3 quoted strikes. Constant maturity: total variance linear in time across the bracket; one-sided: null, no extrapolation.
+- `iv30`: ATM IV at the parity forward (European pair: smallest |C - P|), linear in vol across strikes; no pair or American: strike nearest spot, labelled.
+- `iv_rank_252`, `iv_percentile_252`: 252 stored sessions including today; percentile = share strictly below today / 252. Warm-up, gap, flat: null.
+- `skew_25d`: put minus call IV at |forward delta| N(d1) = 0.25 (undiscounted, no premium adjustment), linear in delta. `term_slope`: 90-day IV - iv30.
+  `iv_minus_rv`: `iv30` minus realized vol: 21 close-to-close log returns, sample std, x sqrt(252) (`annualized_volatility`).
+- Dropped quotes: crossed, zero-width, zero-bid (one-sided), stale (over 1 day old). No stored rate or yield: defaults 0; at a true 4% rate iv30 reads
+  about 0.1 vol point low (Black-76 discount): pass `--rate`. `known_from` = snapshot `known_at` (rank: latest in window). Reads: `snapshots_as_of` only.
 
 ## Not here yet
 

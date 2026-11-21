@@ -85,11 +85,13 @@ describe('reserved-period confirmation link', () => {
   }
 
   it('reads the challenge, options and payload from the fragment only', () => {
-    const hash = `#challenge=c1&options=${encoded({ challenge: 'AQID' })}&payload=${encoded({ run_id: 'r1' })}&summary=Uses+1+of+10`
+    const payload = { run_id: 'r1', summary: 'Uses 1 of 10' }
+    const hash = `#challenge=c1&options=${encoded({ challenge: 'AQID' })}&payload=${encoded(payload)}&summary=Other+words`
     const request = reservedConfirmationRequest(hash)
     expect(request?.challengeId).toBe('c1')
-    expect(request?.payload).toEqual({ run_id: 'r1' })
+    expect(request?.payload).toEqual(payload)
     expect(request?.publicKey).toEqual({ challenge: 'AQID' })
+    // Words outside the signed payload are never shown.
     expect(request?.summary).toBe('Uses 1 of 10')
   })
 

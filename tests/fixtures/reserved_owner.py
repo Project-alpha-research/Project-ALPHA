@@ -16,8 +16,9 @@ from typing import Any, cast
 
 import pytest
 
-from alpha_cli import owner_auth
+from alpha_cli import _artifacts, owner_auth
 from alpha_cli.control_store import ControlStore
+from alpha_cli.spine.confirm import plan, summary
 
 PUBLIC_KEY = b"owner-public-key"
 CREDENTIAL = "dG91Y2gtaWQtY3JlZGVudGlhbA"
@@ -88,7 +89,15 @@ def challenge(home: Path, payload: dict[str, Any], artifact_hash: str) -> tuple[
 
 
 def owner_yes(home: Path, payload: dict[str, Any], artifact_hash: str) -> str:
-    """One Touch ID yes through the real verify path, with the signature double."""
+    """One Touch ID yes through the real verify path, with the signature double.
+
+    For a stored run, the payload gets the words `alpha confirm request` shows the owner (when the
+    caller did not give them): `confirm_run` refuses a yes whose words do not describe the test.
+    """
+    run_dir = _artifacts.run_dir(home, str(payload["run_id"]))
+    if "summary" not in payload and (run_dir / "manifest.json").is_file():
+        found = plan(home, str(payload["run_id"]), reserved_end=str(payload["reserved_end"]))
+        payload = {**payload, "summary": summary(found)}
     challenge_id, raw = challenge(home, payload, artifact_hash)
     found = owner_auth.verify_action_assertion(
         data_dir=home,

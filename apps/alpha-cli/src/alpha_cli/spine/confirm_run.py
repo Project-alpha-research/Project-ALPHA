@@ -17,7 +17,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, reserved_slots
 from alpha_cli.spine import reserve
-from alpha_cli.spine.confirm import KIND, Frozen, frozen_test, refuse_spent
+from alpha_cli.spine.confirm import KIND, Frozen, frozen_test, plan, summary
 from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.diagnose import staged_run
 from alpha_cli.spine.errors import SpineError
@@ -75,8 +75,16 @@ def _receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
 def _take(home: Path, run_id: str, authorization_id: str, now: datetime) -> dict[str, Any]:
     """Recheck the earlier period, then spend the slot. A refusal here spends nothing."""
     payload = reserved_slots.authorization_payload(home, authorization_id)
-    frozen = frozen_test(home, run_id, reserved_end=str(payload["reserved_end"]))
-    refuse_spent(frozen, home)
+    reserved_end = str(payload["reserved_end"])
+    if payload.get("summary") != summary(plan(home, run_id, reserved_end=reserved_end)):
+        raise SpineError(
+            "OWNER_WORDS_DIFFER",
+            "The words the owner read before the touch do not describe this test as it is now "
+            "(the slots, the code or the data changed, or the link was not from alpha confirm "
+            "request). No slot was used.",
+            f"Run alpha confirm plan {run_id}, then alpha confirm request {run_id} again.",
+        )
+    frozen = frozen_test(home, run_id, reserved_end=reserved_end)
     found = recheck_one(
         frozen.idea,
         frozen.asset,

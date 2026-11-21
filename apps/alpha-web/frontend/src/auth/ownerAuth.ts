@@ -199,18 +199,20 @@ function objectFromBase64url(value: string): Record<string, unknown> {
 }
 
 // The link from `alpha confirm request`: the challenge the trusted CLI issued, in the fragment
-// (never sent to the server). The server checks the payload against that challenge.
+// (never sent to the server). The words shown are the payload's own `summary`: the payload is
+// bound to the signed challenge, and the server refuses words that do not describe the test.
 export function reservedConfirmationRequest(hash: string): ReservedConfirmationRequest | null {
   const params = new URLSearchParams(hash.replace(/^#/u, ''))
   const challengeId = params.get('challenge')
   const options = params.get('options')
   const payload = params.get('payload')
   if (!challengeId || !options || !payload) return null
+  const parsed = objectFromBase64url(payload)
   return {
     challengeId,
     publicKey: objectFromBase64url(options),
-    payload: objectFromBase64url(payload),
-    summary: params.get('summary') ?? '',
+    payload: parsed,
+    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
   }
 }
 

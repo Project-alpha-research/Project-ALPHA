@@ -38,6 +38,7 @@ from alpha_cli.spine.deflation import (
 from alpha_cli.spine.macro import macro_window
 from alpha_cli.spine.owner_rule import VARIANTS_NOTE, OwnerRule
 from alpha_cli.spine.price_noise import price_noise
+from alpha_cli.spine.reserve import CONFIRMATION
 from alpha_cli.spine.spec import IdeaSpec, Rule
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_cli.spine.trial_record import TestKey
@@ -67,7 +68,17 @@ def staged_run(result: dict[str, Any]) -> Iterator[Path]:
             result["run_dir"] = str(final)
 
 
-def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str, _runner.RunSpec]]:
+# The owner's one look at the reserved period scores the frozen rule only: parameter neighbours
+# run on those bars would show which tuning did best there, a second look in all but name.
+CONFIRMATION_NOTE = (
+    "A reserved-period confirmation runs no parameter neighbours: only the frozen rule, "
+    "and the same rule at double costs, are scored on that period."
+)
+
+
+def variant_specs(
+    idea: IdeaSpec, spec: _runner.RunSpec, *, costs_only: bool = False
+) -> list[tuple[str, str, _runner.RunSpec]]:
     variants = [
         (
             "costs_x2",
@@ -75,7 +86,7 @@ def variant_specs(idea: IdeaSpec, spec: _runner.RunSpec) -> list[tuple[str, str,
             replace(spec, fee_bps=spec.fee_bps * 2, slippage_bps=spec.slippage_bps * 2),
         )
     ]
-    if isinstance(idea.rule, OwnerRule):
+    if costs_only or isinstance(idea.rule, OwnerRule):
         return variants
     for key, value in idea.rule.params.items():
         for factor in (0.8, 1.2):
@@ -384,7 +395,8 @@ def write_diagnostics(
     document["by_year"] = d.yearly(equity, market, dates)
     document["concentration"] = d.concentration([trade.realized_pnl for trade in full.trades])
     variants = []
-    for name, kind, changed in variant_specs(idea, spec):
+    confirmation = CONFIRMATION in result.get("labels", [])
+    for name, kind, changed in variant_specs(idea, spec, costs_only=confirmation):
         result["variants_evaluated"] += 1
         rerun = _runner.run_full_backtest(bars, changed, dividends=dividends)
         variants.append(
@@ -400,6 +412,7 @@ def write_diagnostics(
         "basis": "full-sample engine re-runs on the same loaded bars",
         "variants": variants,
         **({"note": VARIANTS_NOTE} if isinstance(idea.rule, OwnerRule) else {}),
+        **({"note": CONFIRMATION_NOTE} if confirmation else {}),
     }
     document["variants_evaluated"] = result["variants_evaluated"]
     document["inverted_signal"] = _inverted_control(bars, dividends, spec, full, document)

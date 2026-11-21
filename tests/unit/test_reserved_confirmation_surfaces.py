@@ -6,6 +6,7 @@ The command words are checked too: the owner must see what is spent before sayin
 
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 from typing import Any
@@ -138,7 +139,12 @@ def test_the_owner_reads_what_is_spent_before_saying_yes(
     assert (url.scheme, url.netloc) == ("http", "localhost:8801")
     assert url.path.endswith("/confirm") and url.path.startswith("/owner")
     fragment = parse_qs(url.fragment)
-    assert set(fragment) == {"challenge", "options", "payload", "summary"}
+    # The words on the Touch ID page travel only inside the payload the signature covers.
+    assert set(fragment) == {"challenge", "options", "payload"}
+    raw = fragment["payload"][0]
+    sent = json.loads(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+    assert sent["run_id"] == run_id and "Slots: 0 of 10 used, 10 left." in sent["summary"]
+    assert "It cannot be undone." in sent["summary"]
     listed = runner.invoke(confirm_cmds.confirm_app, ["list"])
     assert "0 of 10 used" in listed.output
     assert "Reserved period" not in next_cmds._text(next_cmds.collect(home))

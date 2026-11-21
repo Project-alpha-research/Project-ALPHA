@@ -19,7 +19,7 @@ import typer
 
 from alpha_cli import reserved_slots
 from alpha_cli._cli_json import emit
-from alpha_cli.spine.confirm import plan
+from alpha_cli.spine.confirm import plan, summary
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
@@ -65,7 +65,20 @@ def _plan_lines(found: dict[str, Any]) -> list[str]:
         f"  Earlier period (already seen): {sentence}",
         f"  Reserved period (not seen): {frozen['reserved_first'][:10]} to "
         f"{frozen['reserved_end'][:10]}, {frozen['reserved_bars']} bars",
+        "  Code: "
+        + (
+            "CHANGED since the stored test. The earlier period must still compute the same."
+            if found["code_changed"]
+            else "the same as for the stored test."
+        ),
         f"Slots: {slots['used']} of {slots['total']} used, {slots['left']} left.",
+        "Already confirmed (check for a near-duplicate: the same idea on a similar asset, or "
+        "in another rule shape):",
+        *(
+            f"  Slot {e['slot']}: {e['rule']} on {e['symbol']}, run {e['run_id']}, {e['date']}"
+            for e in found["earlier_confirmations"]
+        ),
+        *([] if found["earlier_confirmations"] else ["  none"]),
         "What confirming means:",
         *(f"  - {line}" for line in found["consequences"]),
         "The earlier period is computed again first. If it does not match the stored run, "
@@ -107,16 +120,14 @@ def request_cmd(
     try:
         found = plan(home, run_id)
         frozen = found["frozen"]
-        payload = {"run_id": run_id, "reserved_end": frozen["reserved_end"]}
-        summary = (
-            f"Test run {run_id} ({frozen['rule']} on {frozen['symbol']}) once on the reserved "
-            f"period, {frozen['reserved_bars']} bars. " + " ".join(found["consequences"])
-        )
+        # The words the owner reads on the Touch ID page are part of the signed payload.
+        words = summary(found)
+        payload = {"run_id": run_id, "reserved_end": frozen["reserved_end"], "summary": words}
         options = reserved_confirmation_options(
             data_dir=home,
             payload=payload,
             artifact_hash=frozen["artifact_hash"],
-            consequence_summary=summary,
+            consequence_summary=words,
             reason=reason,
         )
     except SpineError as exc:
@@ -128,7 +139,6 @@ def request_cmd(
             "challenge": options["challenge_id"],
             "options": _b64(options["public_key"]),
             "payload": _b64(payload),
-            "summary": summary,
         }
     )
     url = f"{OWNER_ORIGIN}/owner-auth/confirm#{fragment}"

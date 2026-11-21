@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: c0c24088cd23efb8
+verified: 66231186fdebe163
 ---
 
 # alpha-web: code map and change loop
@@ -40,7 +40,7 @@ grants authority.
   [journey view](../../docs/reference/invariants/web-run-detail.md#run-detail-binding).
 - The rule-test Summary uses `panels/ruleTestModel.ts` and `panels/rundetail/RuleTestReport.tsx`. Its "Checks run on this test" section reads `GET /api/runs/{id}/checks` (`_checks.py`, which relays `alpha results show`).
 - The reading block (`components/ReadingBlock.tsx`, model `panels/readingModel.ts`) is used by `RuleTestReport.tsx` and `SetupLabPanel.tsx`. The rule-test reading
-  and the declared or exploratory word come with `GET /api/runs/{id}/checks` (`_checks.py`); Setup Lab's come from `_setup_reading.py`. Browser spec: `e2e/reading-block.spec.ts`.
+  and the declared or exploratory word come with `GET /api/runs/{id}/checks` (`_checks.py`); Setup Lab's come from `alpha setup show` (`_setup_runs.py`). Browser spec: `e2e/reading-block.spec.ts`.
 - The other places that show a run's reading (Navigator run list `panels/navigatorModel.ts`, Pipeline, activity feed, toasts, command palette, Gates tab
   `explain/gates.ts`, Summary and edge review rows) use the helpers in `panels/readingModel.ts`. Rules: [readings in the remaining places](../../docs/reference/invariants/web-run-detail.md#readings-in-the-remaining-places). Specs: `panels/readingEverywhere.test.tsx`, `e2e/readings-everywhere.spec.ts`.
 - The Gates tab charts (`panels/rundetail/WalkForward.tsx`, `CheckCharts.tsx`, `NullChart.tsx`; pure models `walkForwardModel.ts`, `checkChartModel.ts`, `nullChartModel.ts`; reads in `useCheckChartData.ts`) use `GET /api/candles` and `GET /api/runs/{id}/nulls`, no new route. Browser spec: `e2e/check-charts.spec.ts`.

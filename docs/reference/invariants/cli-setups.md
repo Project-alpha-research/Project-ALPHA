@@ -5,12 +5,16 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: e10073899c032281
+verified: c4c340353aa1ff50
 ---
 
 # Command line setup invariants
 
-Rules for `alpha setup find`, `alpha setup study` and `alpha setup trade`. Other run rules are in [cli-runs.md](cli-runs.md).
+Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alpha setup show`. Other run rules are in [cli-runs.md](cli-runs.md).
+
+## Setup show
+- `alpha setup show <id> [<id> ...]` only reads: it writes nothing and counts nothing.
+  It prints the stored outcome's reading ([rule](cli-rule-readings.md#rule-test-readings)).
 
 ## Setup find
 - `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.

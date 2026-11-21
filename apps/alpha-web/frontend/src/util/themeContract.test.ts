@@ -12,7 +12,7 @@ const dark = css.match(/\[data-theme="dark"\]\s*\{([^}]+)\}/)![1]
 const tokens = Object.fromEntries([...`${dark}\n${generated}`.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(m => [m[1], m[2]]))
 const surfaces = ['bg', 'panel', 'panel-2', 'elevated', 'title']
 // All seven original chrome text roles remain, with text variants for accent and negative.
-const textRoles = ['ink', 'ink-dim', 'muted', 'accent-text', 'gold', 'up', 'negative-text', ...['a', 'b', 'c', 'd', 'f'].map(grade => `verdict-${grade}`)]
+const textRoles = ['ink', 'ink-dim', 'muted', 'accent-text', 'gold', 'up', 'negative-text']
 function luminance(hex: string): number {
   const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
   return c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722
@@ -65,8 +65,8 @@ describe('preserved dark terminal palette', () => {
     expect(tokens[text]).toBeDefined()
     expect(contrast(tokens[text], tokens[surface])).toBeGreaterThanOrEqual(4.5)
   })
-  it.each(['selection', 'accent-soft', 'up-soft', 'down-soft', 'gold-soft', ...['a', 'b', 'c', 'd', 'f'].map(grade => `verdict-${grade}-soft`)])('readable text on %s', surface => {
-    const foreground = surface === 'selection' ? 'selection-ink' : surface.startsWith('verdict-') ? surface.replace('-soft', '') : ({ 'accent-soft': 'accent-text', 'up-soft': 'up', 'down-soft': 'negative-text', 'gold-soft': 'gold' } as Record<string, string>)[surface]
+  it.each(['selection', 'accent-soft', 'up-soft', 'down-soft', 'gold-soft'])('readable text on %s', surface => {
+    const foreground = surface === 'selection' ? 'selection-ink' : ({ 'accent-soft': 'accent-text', 'up-soft': 'up', 'down-soft': 'negative-text', 'gold-soft': 'gold' } as Record<string, string>)[surface]
     expect(contrast(tokens[foreground], tokens[surface])).toBeGreaterThanOrEqual(4.5)
   })
   it.each(['line-strong', 'bevel-dark', 'accent', 'up', 'down', 'gold'])('%s control boundaries clear 3:1', role => {

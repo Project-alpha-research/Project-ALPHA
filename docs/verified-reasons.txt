@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 27cc1d8ecf945521 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 0a59bee9a0134978 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-cli/README.md
-  verified 27cc1d8ecf945521 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 0a59bee9a0134978 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified c0c24088cd23efb8 on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified c0c24088cd23efb8 on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -41,10 +41,10 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified 55dcb20acbc9b479 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 1d4e219f48a177f5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified 29680b98b313f65e on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified c4c340353aa1ff50 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -70,8 +70,8 @@ docs/reference/invariants/patterns.md
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
-docs/reference/invariants/study.md
-  verified e705d527f32e3fe1 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+docs/reference/invariants/research-integrity.md
+  verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
@@ -83,10 +83,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 2d8f9707a3b24efa on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified 81e661f895ca5389 on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -143,16 +143,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified aa4922b8abe66c69 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified b88a675787be30b4 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 4a26bc223650bd24 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 8b2cdd284e46ca40 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -209,10 +209,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 32a98bafba730f27 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 18b5a96f258e443c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified 4b85111ef650685c on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 843e8be998d4058c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -224,22 +224,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified a9decfc12c7581c2 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified c6083efa63d2229a on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified b4b02d24e460a974 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified c755da3b6e5b7fa8 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 271fd352a2c8d69c on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified fbbf7918ce274182 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 1fdaca18c97b51db on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -275,25 +275,22 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 154f3aaa9844ab67 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 68464bd8c45429e4 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 271fd352a2c8d69c on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
-
-research/tools/setup-context.md
-  verified 30e4105aac3d5c8f on 2026-11-21: Added setup context code and docs only; this document's described behaviour is unchanged
+  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-find.md
-  verified 25d2b8eec08c1c0a on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 17e699fe766f56f9 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-trade.md
-  verified a91b0ab0c2231c6e on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
+  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

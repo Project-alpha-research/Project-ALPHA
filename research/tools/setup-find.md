@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_find.py
   - apps/alpha-cli/src/alpha_cli/spine/contact_sheet.py
-verified: 25d2b8eec08c1c0a
+verified: 0eb84ea138f66e14
 ---
 # Setup find
 

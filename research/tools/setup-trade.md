@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/setup_trade_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: a91b0ab0c2231c6e
+verified: 36c3f24d94230ba1
 ---
 # Setup trade
 

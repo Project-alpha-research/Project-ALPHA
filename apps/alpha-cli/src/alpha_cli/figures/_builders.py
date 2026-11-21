@@ -19,7 +19,6 @@ from typing import Any
 import numpy as np
 
 from alpha_cli.figures import _sources as src
-from alpha_cli.figures._observed_label import observed_label
 from alpha_core import DataError
 from alpha_research.figures import (
     BandMark,
@@ -900,7 +899,7 @@ def null_distribution(ctx: BuildContext) -> FigureSpec:
                     width=1.6,
                     dashed=False,
                     label="Observed",
-                    annotate=observed_label(float(observed), percentile, edges[0], edges[-1]),
+                    annotate=_observed_label(float(observed), percentile, edges[0], edges[-1]),
                 )
             )
             if isinstance(percentile, int | float):
@@ -1223,6 +1222,13 @@ def _indicator_unit(raw: str) -> str:
     ratio rather than silently claiming to be a price.
     """
     return raw if raw in _INDICATOR_UNITS else "ratio"
+
+
+def _observed_label(observed: float, percentile: object, low: float, high: float) -> ValueLabel:
+    text = f"observed {observed:.3f}"
+    if isinstance(percentile, int | float) and not isinstance(percentile, bool):
+        text += f" · pct {float(percentile) * 100:.0f}"
+    return ValueLabel(text=text, ha="right" if observed > (low + high) / 2 else "left")
 
 
 def _cell_text(
@@ -2468,7 +2474,7 @@ def mcpt_null_histogram(ctx: BuildContext) -> FigureSpec:
                 width=1.6,
                 dashed=False,
                 label="Observed best",
-                annotate=observed_label(float(stat), percentile, edges[0], edges[-1]),
+                annotate=_observed_label(float(stat), percentile, edges[0], edges[-1]),
             )
         )
     verdict = "The manifest records no observed percentile for the permutation bests"

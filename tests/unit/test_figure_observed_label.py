@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from alpha_cli.figures._observed_label import observed_label
+from alpha_cli.figures._builders import _observed_label as observed_label
 
 
 def test_label_is_short_and_reads_the_percentile_once() -> None:

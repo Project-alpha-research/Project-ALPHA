@@ -142,3 +142,30 @@ def test_importance_refuses_the_same_parent(
     code, refused = _run("importance", ran["result_id"], "--factors", str(factors))
     assert code == 1 and refused["error"]["code"] == "RESERVED_PERIOD_SEEN"
     assert worker.calls == calls
+
+
+def _stable(path: Path, home: Path) -> bytes:
+    """A file's bytes; a JSON file without its creation time and with the home path named."""
+    if path.suffix != ".json":
+        return path.read_bytes()
+    document = json.loads(path.read_text("utf-8"))
+    document.pop("created_at", None)
+    return json.dumps(document, sort_keys=True).replace(str(home), "HOME").encode()
+
+
+def test_the_check_changes_nothing_for_a_parent_that_did_not_see_the_period(
+    tmp_path: Path, worker: Worker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    outputs = []
+    for checked in (True, False):
+        home = tmp_path / str(checked)
+        ran = _barrier(home, monkeypatch, SHORT, poisoned=False)
+        if not checked:  # the same command as before the check existed
+            monkeypatch.setattr(labels_cmds, "_refuse_parent_that_saw_period", lambda *_a: None)
+        code, weighted = _run("weights", ran["result_id"])
+        assert code == 0, weighted
+        folder = Path(weighted.pop("result_dir"))
+        files = {p.name: _stable(p, home) for p in sorted(folder.iterdir()) if p.is_file()}
+        weighted.pop("created_at")
+        outputs.append((json.dumps(weighted).replace(str(home), "HOME"), files))
+    assert outputs[0] == outputs[1]

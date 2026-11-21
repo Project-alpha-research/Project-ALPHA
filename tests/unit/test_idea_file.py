@@ -133,7 +133,7 @@ def test_map_lines_are_true_or_false_as_the_records_say(tmp_path: Path) -> None:
 def test_counts_are_named_for_what_they_count(tmp_path: Path) -> None:
     card = synthetic_home(tmp_path)
     facts = json.loads(_file(tmp_path, card, "--json")[1])
-    assert sorted(facts) == ["card", "counts", "map", "open_points", "readings"]
+    assert sorted(facts) == ["card", "counts", "map", "open_points", "papers", "readings"]
     counts = facts["counts"]
     assert counts["tests_linked"] == 2
     assert counts["distinct_assets"] == 1

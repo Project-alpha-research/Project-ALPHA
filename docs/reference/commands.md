@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-313 commands in 44 groups. Options marked (required) are
+316 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -185,7 +185,7 @@ Write an idea card before you test an idea.
 
 - `alpha idea file <CARD_ID>` — One page for one idea: the card, the map, every reading, the counts, the open points. Options: `--json`
 - `alpha idea list` — List every card with its idea and whether a test is linked to it. Options: `--json`
-- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +5 more
+- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +6 more
 - `alpha idea show <CARD_ID>` — Print one card, and name the fields that are not stated. Options: `--json`
 
 ## alpha info
@@ -225,7 +225,10 @@ Browse published ideas and turn one into an idea card.
 
 - `alpha library card <RECORD_ID>` — Make an idea card from a record. Options: `--json`
 - `alpha library import-catalogue <SOURCE>` — Turn a published signal table into facts-only 'imported' records. Options: `--from (required)`, +3 more
+- `alpha library import-pdf <FILE_PATH>` — Keep the text of one PDF as a paper. Options: `--title`, `--author`, `--year`, `--json`
 - `alpha library list` — List the records. Options: `--market`, `--tier`, `--json`
+- `alpha library papers` — List the papers kept from searches and PDF imports. Options: `--json`
+- `alpha library search <WORDS>` — Search the literature sources and keep the hits as papers. Options: `--unpaywall-email (required)`, +2 more
 - `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike

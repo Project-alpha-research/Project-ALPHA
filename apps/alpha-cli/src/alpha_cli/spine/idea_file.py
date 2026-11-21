@@ -11,7 +11,7 @@ from typing import Any
 
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_cli.spine import idea_card as cards
-from alpha_cli.spine import reserve
+from alpha_cli.spine import papers, reserve
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import read_json, read_study, tool_outputs
 from alpha_cli.spine.idea_map import DONE, build_map, next_steps
@@ -225,6 +225,7 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
             "supersedes": card.supersedes or None,
             "superseded_by": newer[0] if newer else None,
         },
+        "papers": papers.papers_of(home, identity),
         "map": steps,
         "readings": readings,
         "counts": {

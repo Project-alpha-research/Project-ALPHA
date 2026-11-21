@@ -27,6 +27,22 @@ def _card(card: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _papers(found: list[dict[str, Any]]) -> list[str]:
+    if not found:
+        return ["  No paper is linked. A paper is a source for ideas only, never evidence."]
+    lines = ["  A paper is a source for ideas only. It is not evidence, a test or an approval."]
+    for p in found:
+        if not p["readable"]:
+            lines.append(f"  {p['paper_id']}: the paper file cannot be read.")
+            continue
+        authors = ", ".join(p["authors"]) if p["authors"] else "authors not stated"
+        lines.append(
+            f"  {p['paper_id']}  {p['title'] or 'title not stated'} "
+            f"({authors}; {p['year'] if p['year'] is not None else 'year not stated'})"
+        )
+    return lines
+
+
 def _map(steps: list[dict[str, Any]]) -> list[str]:
     lines = ["  This is a map of what has been done. It is not a gate."]
     for s in steps:
@@ -158,6 +174,7 @@ def render(facts: dict[str, Any]) -> str:
         ("3. Readings so far, oldest first", _readings(facts["readings"])),
         ("4. Counts", _counts(facts["counts"])),
         ("5. Open points", _open(facts["open_points"])),
+        ("6. Papers it draws on", _papers(facts["papers"])),
     ]
     out: list[str] = []
     for title, lines in parts:

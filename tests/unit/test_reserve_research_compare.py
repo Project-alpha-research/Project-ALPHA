@@ -62,10 +62,7 @@ def test_compare_names_what_it_held_back(tmp_path: Path, monkeypatch: pytest.Mon
     payload = _payload(home, monkeypatch)
     assert payload["reserve"] == {"reserved_start": RESERVED_START, "held_back_bars": HELD}
     assert payload["research_cutoff"] == "2023-12-31"
-    assert (
-        payload["reserve_sentence"]
-        == f"{SENTENCE}; they are kept for the owner's confirmation of an idea, so this test did not use them."
-    )
+    assert payload["reserve_sentence"] == sentence(HELD)
     text = _compare(home, monkeypatch)
     assert SENTENCE in text and "Held back" in text
 

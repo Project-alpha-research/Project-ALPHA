@@ -84,9 +84,6 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("_native_daily_rule_projection.py", "chart_snapshot"): "exempt: checks a frozen chart query",
     ("comparison_acquisition_evidence.py", "_replay"): "exempt: verifies stored bytes; no research",
     ("comparison_acquisition_evidence.py", "_result"): "exempt: verifies stored bytes; no research",
-    ("research_diagnostic_cmds.py", "weekly_classifier"): "open: user --as-of; PR #357",
-    ("research_execution.py", "_collect"): "open: research-case plan.as_of; PR #357",
-    ("research_execution.py", "execute_plan"): "open: research-case plan.as_of; PR #357",
 }
 # (file under alpha_cli/, enclosing function) that reads a bars store file with polars.
 PARQUET_ALLOWED: dict[tuple[str, str], str] = {

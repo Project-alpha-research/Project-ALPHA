@@ -9,7 +9,9 @@ from pathlib import Path
 
 import polars as pl
 
+from alpha_cli._crypto_panel import read_before_reserved
 from alpha_core import DataError
+from alpha_core.reserve import RESERVED_INSTANT
 from alpha_data.crypto.contracts import CryptoQualityReportV1, CryptoSnapshotV1
 from alpha_research import CryptoCrowdingObservationV1, registered_crypto_crowding_plan
 
@@ -223,8 +225,13 @@ def load_crypto_crowding_observations(
     quality_reports: Mapping[str, CryptoQualityReportV1],
     *,
     bulk_root: Path,
+    before_reserved: bool = True,
 ) -> tuple[CryptoCrowdingObservationV1, ...]:
-    """Read only the exact already-reverified snapshot members and compose the pure contract."""
+    """Read only the exact already-reverified snapshot members and compose the pure contract.
+
+    Rows stamped on or after the reserved instant are dropped inside the parquet scan, so none
+    reaches Python. ``before_reserved=False`` is for a sealed holdout window read on purpose.
+    """
     plan = registered_crypto_crowding_plan()
     required = {*plan.required_families, plan.confounder_family}
     members = {member.dataset.family: member for member in snapshot.members}
@@ -242,8 +249,11 @@ def load_crypto_crowding_observations(
             )
         lineage.update(report.correction_lineage)
         try:
-            frames[family] = pl.read_parquet(bulk_root / member.artifact_key)
-        except (OSError, pl.exceptions.PolarsError) as exc:
+            path = bulk_root / member.artifact_key
+            frames[family] = (
+                read_before_reserved(path)[1] if before_reserved else pl.read_parquet(path)
+            )
+        except (OSError, DataError, pl.exceptions.PolarsError) as exc:
             raise DataError("crypto crowding snapshot member is unreadable") from exc
     return compose_crypto_crowding_observations(
         frames,
@@ -251,4 +261,51 @@ def load_crypto_crowding_observations(
     )
 
 
-__all__ = ["compose_crypto_crowding_observations", "load_crypto_crowding_observations"]
+def held_back_rows(
+    snapshot: CryptoSnapshotV1, *, bulk_root: Path, until: datetime | None = None
+) -> int:
+    """Count member rows the cut drops; only the time columns are read.
+
+    A bar frame with open and close times (Binance spot) is dropped when its bar closes after
+    the reserved instant; every other frame is dropped by its ``timestamp``. The catalog has none.
+    With ``until`` (the user's own cut-off), a row stamped after it is not counted.
+    """
+    total = 0
+    for member in snapshot.members:
+        lazy = pl.scan_parquet(bulk_root / member.artifact_key)
+        schema = lazy.collect_schema()
+        for column, closes in (("timestamp", False), ("close_time", True)):
+            dtype = schema.get(column)
+            if not isinstance(dtype, pl.Datetime):
+                continue
+            stamp = pl.col(column)
+            if dtype.time_zone is None:
+                stamp = stamp.dt.replace_time_zone("UTC")
+            kept = stamp > RESERVED_INSTANT if closes else stamp >= RESERVED_INSTANT
+            if until is not None:
+                kept = kept & (stamp <= until)
+            total += int(lazy.filter(kept).select(pl.len()).collect().item())
+            break
+    return total
+
+
+def snapshot_held_back_rows(
+    snapshot_id: str, *, hedged: bool, until: datetime | None = None
+) -> int:
+    """Rows the cut drops from one verified snapshot (crowding bundle, or the hedged-basis one)."""
+    from alpha_cli import crypto_data_cmds
+
+    if hedged:
+        snapshot = crypto_data_cmds._verified_hedged_basis_snapshot(snapshot_id)[0]
+    else:
+        snapshot = crypto_data_cmds._verified_crypto_crowding_snapshot(snapshot_id)[0]
+    root = crypto_data_cmds._bulk_store().bulk_root
+    return held_back_rows(snapshot, bulk_root=root, until=until)
+
+
+__all__ = [
+    "compose_crypto_crowding_observations",
+    "held_back_rows",
+    "snapshot_held_back_rows",
+    "load_crypto_crowding_observations",
+]

@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d0f799272cc39af6 on 2026-11-21: catalog.py now classifies the home group as owner-only for the Workstation launcher; the code map and reading list are unchanged
+  verified eb3988094fe63d62 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
 
 apps/alpha-cli/README.md
-  verified d0f799272cc39af6 on 2026-11-21: catalog.py now classifies the home group as owner-only for the Workstation launcher; the code map and reading list are unchanged
+  verified eb3988094fe63d62 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified f3a73f61bfc54d3f on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
+  verified cf84c8826aaf7b89 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
 
 apps/alpha-web/README.md
-  verified f3a73f61bfc54d3f on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
+  verified cf84c8826aaf7b89 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home group (launcher class, menu row, code map row), which holds
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -41,16 +41,19 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified dacf8068e5efaf5b on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 761e47f11c40bfa4 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
+  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
+
+docs/reference/invariants/data-context.md
+  verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
@@ -59,7 +62,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified b8a07c28590d972a on 2026-11-20: A pipeline test now expects the loud RestoreFailed error that names the repair command; the page already states that behaviour.
+  verified 84c1ca1137a28db2 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -83,10 +86,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
   verified ea854d88754d9885 on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
@@ -143,16 +146,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 3e9c24abea15fc3e on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 8b2cdd284e46ca40 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -200,16 +203,19 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 3fbe94346180dd08 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
+  verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+
+packages/alpha-study/CONTEXT.md
+  verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 18b5a96f258e443c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 843e8be998d4058c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -221,22 +227,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified c6083efa63d2229a on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified c755da3b6e5b7fa8 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
+research/tools/data-health.md
+  verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+
 research/tools/deflated-sharpe-and-trials.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 1fdaca18c97b51db on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -252,6 +261,9 @@ research/tools/montecarlo-checks.md
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+
+research/tools/positioning-short-volume-context.md
+  verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -272,22 +284,25 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 68464bd8c45429e4 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+
+research/tools/setup-context.md
+  verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
 
 research/tools/setup-find.md
-  verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 3bf380359d19bf43 on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-trade.md
-  verified cb777a4de4999b9d on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

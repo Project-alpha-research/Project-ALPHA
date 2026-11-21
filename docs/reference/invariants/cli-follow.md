@@ -97,8 +97,8 @@ Each refusal is a typed error with a stable code and plain words.
   `FOLLOW_DEADLINE_NOT_FROM_CALENDAR`. A `bar` before its session's close is `FOLLOW_BAR_BEFORE_CLOSE` (00:00 UTC next day
   with no calendar). A `bar` after the deadline (no calendar: `MAX_BAR_LATENESS_DAYS` after the close) is too late.
   `alpha follow update` refuses `FOLLOW_CALENDAR_CHANGED` if the store's calendar differs from the sealed one.
-- `update` asks the calendar only about the forward window; warm-up bars need no lookup. A date outside its range
-  (`XNYS`: 2006-11-20 on) is refused `FOLLOW_CALENDAR_RANGE`, in words with the supported range.
+- `update` reads old bars through the one calendar home ([range rule](data-bar-timeframes.md#exchange-calendar-range)).
+  A date after the last session is refused `FOLLOW_CALENDAR_RANGE`, in words with the supported range.
 
 ## Verify
 - `alpha follow verify <id>` recomputes the chain and the same rules. It reports the first break by entry number and exits 1.

@@ -234,11 +234,7 @@ def holdout(
         trace_result=scoped,
         periods_per_year=periods_per_year,
     )
-    line = _holdout_line(symbol, run_id, sharpe, len(equity), min_sharpe)
-    # The line states the number and the plain comparison.
-    # The old grade's level is named after them, not applied: the manifest keeps `passed`
-    # for machines, and `--min-sharpe` still sets the level that field uses.
-    typer.echo(line)
+    typer.echo(_holdout_line(symbol, run_id, sharpe, len(equity), min_sharpe))
 
 
 @backtest_app.command()

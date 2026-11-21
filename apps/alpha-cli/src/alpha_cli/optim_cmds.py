@@ -217,9 +217,6 @@ def grid(
         and result.spa is not None
         and result.reality_check is not None
     ):
-        # The line states the numbers and the plain comparison. The old grade's levels are
-        # named after them, not applied: the manifest still carries `passed` for machines.
-        # `--dsr-threshold` and `--alpha` still set the levels that field uses.
         lines.append(
             _selection_line(result, dsr_threshold, alpha),
         )

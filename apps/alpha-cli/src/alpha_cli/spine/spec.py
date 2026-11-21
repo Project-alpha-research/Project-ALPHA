@@ -17,8 +17,6 @@ from pydantic import (
     model_validator,
 )
 
-from alpha_cli._context_gate import check_context
-
 
 class FrozenModel(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
@@ -112,6 +110,10 @@ class IdeaSpec(FrozenModel):
 
     @model_validator(mode="after")
     def check_gate(self) -> Self:
+        if self.context is None and self.when is None:
+            return self  # most specs: keep the heavy context code unloaded
+        from alpha_cli._context_gate import check_context
+
         check_context(self.context, self.when)
         return self
 

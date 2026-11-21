@@ -5,7 +5,7 @@ apps/alpha-cli/CONTEXT.md
   verified efbbfca05b41d1ee on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
 
 apps/alpha-cli/README.md
-  verified efbbfca05b41d1ee on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified b5ef39185f10ecde on 2026-11-21: lazy import only; text still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -38,7 +38,7 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 7808de7862569145 on 2026-11-21: lazy import only; text still correct
 
 docs/reference/invariants/cli-runs.md
   verified 583f092f6b814b99 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
@@ -284,7 +284,7 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified b2f4f0422292ff39 on 2026-11-21: m57 adds an optional context gate and --plan to rule specs; main's other source changes do not alter this page
+  verified 54b90b2548bec7e5 on 2026-11-21: wrapped one line; text still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.

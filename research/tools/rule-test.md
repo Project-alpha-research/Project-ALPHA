@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/_context_plan.py
-verified: b2f4f0422292ff39
+verified: 54b90b2548bec7e5
 ---
 
 # Rule test
@@ -18,8 +18,8 @@ uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; ex
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
 (`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`).
-An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick` runs a small gauntlet, labelled `quick`. An optional `idea_card` links an [idea card](idea-card.md). A spec may add `[context]` (`alias = "series@key"`) and `when`
-(example: `research/examples/rule-context.example.toml`); only `--plan` works for it today and runs no engine.
+An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick` runs a small gauntlet, labelled `quick`.
+An optional `idea_card` links an [idea card](idea-card.md). `[context]` and `when` (see `research/examples/rule-context.example.toml`): `--plan` only.
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates (walk-forward only).

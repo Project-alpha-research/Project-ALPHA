@@ -10,7 +10,6 @@ from typing import Any
 import typer
 
 from alpha_cli._cli_json import emit
-from alpha_cli._context_plan import REFUSAL, plan_idea, plan_lines
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
 from alpha_cli.spine.reading import reading_word
@@ -95,6 +94,8 @@ def _plan_only(
     parsed: IdeaSpec, plan: bool, recheck: bool, settings: AlphaSettings, json_out: bool
 ) -> None:
     """`--plan`, and the refusal of a context spec without it. Never runs the engine."""
+    from alpha_cli._context_plan import REFUSAL, plan_idea, plan_lines
+
     if not plan:
         fail(SpineError("GATED_ENGINE_MISSING", REFUSAL, "Run alpha test <spec> --plan."), json_out)
     if parsed.context is None or recheck:

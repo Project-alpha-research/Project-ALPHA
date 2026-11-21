@@ -79,4 +79,4 @@ def test_a_session_after_the_calendar_gives_the_same_plain_words_error() -> None
     with pytest.raises(SpineError) as caught:
         follow_update.next_open("XNYS", date(2040, 3, 1))
     assert caught.value.payload["code"] == "FOLLOW_CALENDAR_RANGE"
-    assert follow_source.calendar_range("XNYS")[0].year in {2006, 2007}
+    assert date.today().year - follow_source.calendar_range("XNYS")[0].year in {19, 20, 21}

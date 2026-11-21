@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 47ebf4af4d37363f on 2026-11-21: merge of main with the hold-back branch: the ML replay run carries the hold-back and forecast runs record forward use; the routing and code map are unchanged
 
 apps/alpha-cli/README.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 47ebf4af4d37363f on 2026-11-21: merge of main with the hold-back branch: the ML replay run carries the hold-back and forecast runs record forward use; the routing and code map are unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.

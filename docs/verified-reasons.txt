@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 410aefa61c91daab on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 6aafb234482a3702 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 apps/alpha-cli/README.md
-  verified 410aefa61c91daab on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 6aafb234482a3702 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified aa318f150f4174cf on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 apps/alpha-web/README.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified aa318f150f4174cf on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -44,7 +44,7 @@ docs/reference/invariants/cli-runs.md
   verified 401130b0343c2e7c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-setups.md
-  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
+  verified 21bd852be1d5fa1c on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -68,7 +68,7 @@ docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
 docs/reference/invariants/patterns.md
-  verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
+  verified 2ba90d5fb0e8531e on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/reference/invariants/rdagent.md
   verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -86,7 +86,7 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 76e7168920c452d0 on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/reference/invariants/web-api.md
   verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
@@ -95,7 +95,7 @@ docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/reference/invariants/web-run-detail.md
-  verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
+  verified 73e344d3cc83031c on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
@@ -149,13 +149,13 @@ docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 47183be5572b7938 on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 200bde8e999e3da7 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified e55243237f9125af on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -212,10 +212,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified f556ef058d8f1184 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 3c8718e4bbba4812 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/PLAYBOOK.md
-  verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 18c4f9f54a72ebb1 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/README.md
   verified 4b2aeb9720445559 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
@@ -227,13 +227,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 2fdbb912d7450e3c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 4f376ab346932bd9 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 980630856bd2db10 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified a4f17efc735821bd on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 research/tools/charts.md
   verified 555f4dee9293a0be on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -242,10 +242,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified eaa3634693206571 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/tools/diagnose-and-audit.md
-  verified abbb4da8fbdc5a9d on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified ff8acf6e5b75ea90 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -287,13 +287,13 @@ research/tools/results-and-cite.md
   verified 4487a967b258939d on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified daf06adda45c7812 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified a91b14f6153dbbae on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified eaa3634693206571 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -302,10 +302,10 @@ research/tools/setup-find.md
   verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 3bdc969274d42c70 on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 research/tools/setup-trade.md
-  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified df1f9b55c93b174d on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

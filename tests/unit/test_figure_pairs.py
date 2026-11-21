@@ -244,7 +244,9 @@ def _assert_no_tick_overlap(figure: Any) -> None:
 
 
 def _touching(a: Any, b: Any) -> bool:
-    return min(a.x1, b.x1) - max(a.x0, b.x0) < 1 or min(a.y1, b.y1) - max(a.y0, b.y0) < 1
+    across_x = float(min(a.x1, b.x1) - max(a.x0, b.x0))
+    across_y = float(min(a.y1, b.y1) - max(a.y0, b.y0))
+    return across_x < 1 or across_y < 1
 
 
 @pytest.mark.parametrize("name", sorted(_all_specs()))

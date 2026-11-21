@@ -33,7 +33,13 @@ def test_optim_writes_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     result = runner.invoke(app, ["optim", "grid", "SPY", *_ARGS])
     assert result.exit_code == 0, result.output
     assert "optim SPY" in result.output
-    assert "PASS" in result.output or "FAIL" in result.output
+    assert "PASS" not in result.output and "FAIL" not in result.output
+    assert "deflated Sharpe " in result.output
+    assert ("is at least 0.95" in result.output) or ("is below 0.95" in result.output)
+    assert (
+        "The level used by the old grade: deflated Sharpe at least 0.95, PBO at most 0.5"
+        in result.output
+    )
 
     (rdir,) = list((tmp_path / "optim").iterdir())
     manifest = json.loads((rdir / "manifest.json").read_text())

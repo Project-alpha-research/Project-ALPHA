@@ -63,6 +63,9 @@ def test_locked_holdout_writes_scoped_causal_v3_run(
     )
     assert result.exit_code == 0, result.output
     assert "locked holdout SPY -> run" in result.output
+    assert "PASS" not in result.output and "FAIL" not in result.output
+    assert "at or above -100, the minimum Sharpe set for this run." in result.output
+    assert "The level used by the old grade: Sharpe at least -100." in result.output
     run_dir = next((tmp_path / "runs").iterdir())
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == 3

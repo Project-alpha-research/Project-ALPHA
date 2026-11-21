@@ -33,9 +33,11 @@ The whole path in one place. Other pages link here and do not repeat it.
 5. **Who merges.** The orchestrating session merges once `ci-ok` is green and the branch is current: `gh pr merge <n> --merge` (a merge commit). The
 owner keeps
    branch-protection changes ([stage 05](stages/05-land/CONTEXT.md)).
-6. **Marking a document re-read.** `uv run python scripts/fs.py stale` lists documents whose sources changed; `fs.py owners <path>` names those describing a
-   file. Re-read each, fix it, then run `fs.py verify <doc>`. If it needed no fix, `fs.py verify <doc> --reason "<why still correct>"` (at least three words;
-   kept in `docs/verified-reasons.txt`). The gate fails while any document is stale.
+6. **Marking a document re-read.** When your change makes a document's TEXT wrong, fix the text in the same pull request. Do NOT run
+   `fs.py verify` in a feature pull request: re-stamping made every open pull request conflict with every other one. A stale document is
+   listed by `uv run python scripts/fs.py stale` and by the gate, and it does not block (broken front matter and a missing source still do).
+   One sweep pull request re-reads the stale documents and stamps them (`fs.py verify <doc>`, or `--reason "<why still correct>"`, kept in
+   `docs/verified-reasons.txt`); `fs.py owners <path>` names the documents that describe a file.
 
 ## Task folders
 

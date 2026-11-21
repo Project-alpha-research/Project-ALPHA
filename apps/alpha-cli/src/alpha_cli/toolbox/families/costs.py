@@ -130,8 +130,15 @@ def break_even(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
     result = _break_even(inputs, params, rng)
     equity = inputs.stored.table("stored_equity", "equity")["equity"].to_numpy()
     values, reasons = _borrow(inputs, equity)
+    from alpha_cli.spine.cost_classes import BORROW_NOT_CHARGED
+
+    shorts = reasons.get("borrow_note") != NO_SHORTS
+    labels = (*result.labels, BORROW_NOT_CHARGED) if shorts else result.labels
     return replace(
-        result, values={**result.values, **values}, reasons={**result.reasons, **reasons}
+        result,
+        values={**result.values, **values},
+        reasons={**result.reasons, **reasons},
+        labels=labels,
     )
 
 

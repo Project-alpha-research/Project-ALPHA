@@ -28,6 +28,10 @@ SKIPPED = {
     "spine": {"test_id"},
     "artifact": {"sha256", "size_bytes"},
 }
+# Statements added to new runs after older runs were written: `spine.costs` and `reading.costs`
+# restate the spec's costs (the fee and slippage are compared in the spec fields). An older run
+# that lacks one is compared without it, so a recheck of it still matches.
+ADDED_LATER = (("spine", "costs"), ("reading", "costs"))
 HEALTH_LABEL = "data-health-"
 MISSING = "<missing>"
 UNCOMPARED_FILES = {"tearsheet.html", "manifest.json", "diagnostics.json"}
@@ -182,13 +186,28 @@ def _names(folder: Path) -> set[str]:
     return {p.name for p in folder.iterdir() if p.is_file()} if folder.is_dir() else set()
 
 
+def _without_added_later(
+    stored: dict[str, Any] | None, fresh: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """The fresh manifest without the statements the stored run predates."""
+    if stored is None or fresh is None:
+        return fresh
+    fresh = dict(fresh)
+    for block, key in ADDED_LATER:
+        old, new = stored.get(block), fresh.get(block)
+        if isinstance(old, dict) and isinstance(new, dict) and key not in old:
+            fresh[block] = {k: v for k, v in new.items() if k != key}
+    return fresh
+
+
 def compare_runs(stored: Path, fresh: Path) -> Comparison:
     """Every stored fact of a rule-test run against the same run computed again."""
     out = Comparison()
+    old = _manifest_view(_read(stored / "manifest.json"))
     out.add(
         diff_trees(
-            _manifest_view(_read(stored / "manifest.json")),
-            _manifest_view(_read(fresh / "manifest.json")),
+            old,
+            _without_added_later(old, _manifest_view(_read(fresh / "manifest.json"))),
             "manifest",
         )
     )

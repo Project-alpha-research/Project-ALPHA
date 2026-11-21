@@ -6,6 +6,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/costs.py
   - tests/unit/test_cost_classes.py
   - tests/unit/test_cost_classes_pins.py
+  - tests/unit/test_cost_classes_recheck.py
+  - apps/alpha-cli/src/alpha_cli/spine/recheck.py
+  - apps/alpha-cli/src/alpha_cli/spine/recheck_compare.py
 verified: 0000000000000000
 ---
 
@@ -34,10 +37,14 @@ the table below is that text. Every number is a working assumption of the owner'
   spec without costs keeps the flat default of 1 and 2 basis points. Changing it would give old and new results one identity.
 - `costs = "class-default"` in a spec asks for the class row. The spec dumps `mode = "class-default"`, so it has its own hash. The run
   is labelled `class-default-costs`, and stores the numbers it used in `spine.costs`. `alpha follow` refuses such a test.
+- A recheck of a `class-default` run uses the fee and slippage stored in its `spine.costs`, never today's table: a later change of a
+  row does not move a stored result. A recheck of a run stored before `spine.costs` existed compares it without the costs statements
+  (`spine.costs`, `reading.costs`); its fee and slippage are still compared in the spec fields (`tests/unit/test_cost_classes_recheck.py`).
 - Every new run stores `spine.costs` (`line`, `fee_bps`, `slippage_bps`, `asset_class`, `periods`) and the reading carries `costs`
   with the `line` and `periods` text. A run from before this change has `line: null` with a reason. `alpha report` prints the line.
 - Periods per year: stays derived from the stored bars, snapped to 252 or 365 (`spine/stores.annualisation`, which reads the two
   constants from `cost_classes`). Stock runs are unchanged. The run states which number it used and, when the class is known, the rule.
 - `costs.break_even` adds `result_after_borrow`, `borrow_charge` and `borrow_note` for a run with short trades: a plain sum of
   rate x entry value x days held / 365, at the class rate (the highest rate when the class is unknown). A long-only run has none of them,
-  with a reason; the value is never zero. The rule-test engine does not short, so this reads runs from the older lane.
+  with a reason; the value is never zero. A run with short trades carries the label `short-borrow-not-charged`: the borrow is a fact
+  beside the result, never taken from it (owner decision). The rule-test engine does not short, so this reads runs from the older lane.

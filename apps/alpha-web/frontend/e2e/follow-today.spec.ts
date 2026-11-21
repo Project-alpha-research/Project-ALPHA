@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { preparePage } from './support/workstationHarness'
 
 // Synthetic API responses check presentation only; nothing here is a market or research result.
-const READINGS = { fast_sma: 101.2, slow_sma: 99.8 }
+const READINGS = { 'fast average price': 101.2, 'slow average price': 99.8 }
 const FLAT = { open: false, units: 0, entry_price: null, equity: 10000, equity_pct: 0 }
 function row(id: string, group: string, asset: string, extra: Record<string, unknown> = {}) {
   return {

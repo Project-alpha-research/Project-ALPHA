@@ -29,3 +29,12 @@ Size: 82 lines added, 10,736 lines removed (85 files; most of the added lines ar
 - `tests/unit/test_code_size.py` stays red (protected `.claude/code-size-baseline.json`): lower `apps/alpha-cli/src/alpha_cli/research_cmds.py` to 3537; other entries listed in the test output of the last run (see the pull request).
 - `scripts/gate_test_durations.json` (protected `scripts/`) still lists deleted test files.
 - Two process-group tests error in this sandbox (`test_assistant_cleanup … parent_death`, `test_durable_job_lease … exited_leader`); not touched by this change.
+
+## Left red on purpose (protected paths)
+- `scripts/run_playwright_backend.py` (line 48) imports `playwright_investigation_fixture` and mounts `/__fixture/investigations`. I deleted the fixture
+  (it patched the deleted investigation code). The orchestrator must cut that import and route from the script, then drop the `investigations` asserts
+  and the `restore_investigation_dispatch` fixture in `tests/unit/test_playwright_backend_port.py`. Until then, its 2 tests and the Playwright backend fail.
+- `tests/unit/test_code_size.py` (see above).
+- `test_filesystem_contract::test_work_folder_holds_only_task_folders` fails on `docs/work/_common-rules-2026-11-21.md`, which came with the brief branch.
+- Failing before my change too: `test_rdagent_model_gateway::test_codex_confinement` and the live-network tests (no network in this sandbox).
+- Also deleted `test_web_invoke::test_web_investigation_run_preserves_only_codex_auth_home` (tested the removed env rule); added `cli: alpha assistant` to capability `ai-tools-connection`.

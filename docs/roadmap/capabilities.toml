@@ -785,7 +785,7 @@ name = "Let an AI assistant use ALPHA's tools"
 codes = ["MCP"]
 what = "Connect an AI assistant so it can run ALPHA commands, including the main research path (rule test, checks, results, trial ledger, data health) and the front door (where the project stands, idea cards, the library, finding a check, what is active today, nightly status); it can suggest and run, but never approve."
 see_it = ["uv run alpha-mcp (started by an MCP-capable AI client)"]
-entry_points = ["script: alpha-mcp"]
+entry_points = ["script: alpha-mcp", "cli: alpha assistant"]
 proof_synthetic = [
   "tests/integration/test_mcp_server.py::test_backtest_run_tool_returns_a_manifest",
   "tests/integration/test_research_mcp.py::test_research_mcp_capture_propose_status_and_report_round_trip",

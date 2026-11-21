@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -255,20 +256,29 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
         )
     }
     ordered = sorted(grid)
-    rows = tuple(str(year) for year in ordered)
+    # The figure has a fixed height, so a long history must thin its labels instead of
+    # printing 30 rows of text into the same few inches. Every row stays; only the label
+    # is dropped, and only on years that are not a multiple of the step.
+    step = 1 if len(ordered) <= 14 else 2 if len(ordered) <= 24 else 5
+    rows = tuple(str(year) if (year - ordered[0]) % step == 0 or year == ordered[-1] else " " for year in ordered)
     # The annual total is deliberately excluded from the colour scale: a +9.7% year on the
     # same ramp as monthly returns saturates it and flattens every month into one shade.
     # It keeps its number and sits on the neutral background, which also reads correctly
     # as "this column is a summary, not a thirteenth month".
     values = tuple(tuple([*grid[year], None]) for year in ordered)
-    cell_text = tuple(
+    # Cell numbers need about 0.2 inch of height each; below that they collide.
+    cell_text = (
         tuple(
-            [
-                *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
-                "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
-            ]
+            tuple(
+                [
+                    *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
+                    "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
+                ]
+            )
+            for year in ordered
         )
-        for year in ordered
+        if len(ordered) <= 12
+        else ()
     )
     flat = [cell for row in values for cell in row[:12] if cell is not None]
     best, worst = max(flat), min(flat)
@@ -309,6 +319,13 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
     rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
     if reason is not None or not rows:
         raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
+    span = _run_span(ctx)
+    if span is not None:
+        # The store can hold years of bars past the run's last session; the figure is about
+        # what the strategy saw and did, so it stops where the run stops.
+        rows = [row for row in rows if span[0] <= row["t"] <= span[1]]
+        if not rows:
+            raise DataError("no price bars fall inside this run's dated span")
     ts = tuple(row["t"] for row in rows)
     marks: list[Mark] = [
         CandleMark(
@@ -360,9 +377,21 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
             drawn += 1
 
     trace = src.frame(ctx.rdir, "execution_trace.parquet", "sequence_id")
+    held_note = ""
     if trace is not None and not trace.is_empty():
         fills = trace.filter(trace["event_type"] == "fill")
-        if not fills.is_empty():
+        if span is not None:
+            fills = fills.filter(
+                (fills["ts"].dt.epoch("us") / 1e6 >= span[0])
+                & (fills["ts"].dt.epoch("us") / 1e6 <= span[1])
+            )
+        if len(fills) > _MAX_FILL_MARKERS:
+            zones = _held_zones(ctx)
+            if zones:
+                marks.extend(zones)
+                held_note = f"{len(fills):,} fills shown as shaded held periods"
+        if not fills.is_empty() and not held_note:
+            marker_size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0
             buys = fills.filter(fills["side"] == "BUY")
             sells = fills.filter(fills["side"] == "SELL")
             for subset, marker, role, label in (
@@ -377,7 +406,7 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
                         y=src.floats(subset["price"], name="fill price"),
                         marker=marker,  # type: ignore[arg-type]
                         role=role,  # type: ignore[arg-type]
-                        size=26.0,
+                        size=marker_size,
                         label=label,
                     )
                 )
@@ -432,7 +461,6 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
             y_unit="price",
             height_ratio=3.0,
             marks=tuple(marks),
-            note=None if drawn else "the strategy emitted no chart annotations",
         )
     ]
 
@@ -453,7 +481,7 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         )
 
     fills_count = 0 if trace is None else int((trace["event_type"] == "fill").sum())
-    return ctx.spec(
+    spec = ctx.spec(
         "price_signal",
         x_label="Date (UTC)",
         artifacts=(
@@ -468,6 +496,49 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         ),
         panels=tuple(panels),
     )
+    notes = [held_note] if held_note else []
+    if not drawn:
+        notes.append("the strategy emitted no chart annotations")
+    return replace(spec, caption=f"{spec.caption} · {' · '.join(notes)}") if notes else spec
+
+
+_MAX_FILL_MARKERS = 60
+
+
+def _run_span(ctx: BuildContext) -> tuple[float, float] | None:
+    frame = src.frame(ctx.rdir, "equity_curve.parquet", "ts")
+    if frame is None or frame.is_empty():
+        return None
+    ts = src.epochs(frame["ts"])
+    return ts[0], ts[-1]
+
+
+def _held_zones(ctx: BuildContext) -> list[Mark]:
+    """Shade each closed trade's holding period: one block instead of two markers."""
+    trades = src.frame(ctx.rdir, "trades.parquet", "entry_ts")
+    if trades is None or trades.is_empty():
+        return []
+    zones: list[Mark] = []
+    labelled: set[str] = set()
+    for entry, exit_, side in zip(
+        src.epochs(trades["entry_ts"]),
+        src.epochs(trades["exit_ts"]),
+        src.strings(trades["side"]),
+        strict=True,
+    ):
+        if exit_ > entry:
+            name = "Held short" if side == "SELL" else "Held long"
+            zones.append(
+                ZoneMark(
+                    x0=entry,
+                    x1=exit_,
+                    role="down" if side == "SELL" else "up",
+                    alpha=0.14,
+                    label=name if name not in labelled else None,
+                )
+            )
+            labelled.add(name)
+    return zones
 
 
 # --------------------------------------------------------------------------- trades
@@ -483,6 +554,13 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
     wins = sum(1 for value in pnl if value > 0)
     best, worst = max(pnl), min(pnl)
     share = abs(best) / sum(abs(value) for value in pnl) if any(pnl) else 0.0
+    # Plot in thousands or millions: matplotlib prints a "1e6" offset above the axis for
+    # raw currency amounts, and that offset is one more text that can leave the figure.
+    peak = max(abs(value) for value in (*pnl, *cumulative))
+    divisor, unit = (1e6, "M") if peak >= 1e6 else (1e3, "k") if peak >= 1e5 else (1.0, "")
+    shown_pnl = tuple(value / divisor for value in pnl)
+    shown_cumulative = tuple(value / divisor for value in cumulative)
+    suffix = f"{unit} ccy" if unit else "ccy"
     return ctx.spec(
         "trade_pnl",
         x_label="Trade (chronological)",
@@ -496,25 +574,25 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="pnl",
-                y_label="Realised P&L (account currency)",
+                y_label=f"P&L ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,
-                marks=(BarMark(x=ordinal, y=pnl, signed_colour=True, width=0.8),),
+                marks=(BarMark(x=ordinal, y=shown_pnl, signed_colour=True, width=0.8),),
             ),
             Panel(
                 panel_id="cumulative",
-                y_label="Cumulative P&L (account currency)",
+                y_label=f"Cum. P&L ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,
                 marks=(
                     LineMark(
                         x=ordinal,
-                        y=tuple(cumulative),
+                        y=shown_cumulative,
                         role="subject",
                         step=True,
-                        end_label=ValueLabel(text=money(cumulative[-1])),
+                        end_label=ValueLabel(text=money(cumulative[-1]), dx_pt=-4.0, dy_pt=9.0, ha="right"),
                     ),
                 ),
             ),
@@ -547,25 +625,42 @@ def holding_period(ctx: BuildContext) -> FigureSpec:
     ordered = sorted(days)
     median = ordered[len(ordered) // 2]
     marks: list[Mark] = []
+    # One colour family: the accent hue, solid for profitable trades and faint for the rest.
     if winners:
         marks.append(
             HistogramMark(
-                edges=edges, counts=counts(winners), role="up", alpha=0.75, label="Profitable"
+                edges=edges,
+                counts=counts(winners),
+                role="categorical",
+                palette_index=0,
+                alpha=0.85,
+                label="Profitable",
             )
         )
     if losers:
         marks.append(
             HistogramMark(
-                edges=edges, counts=counts(losers), role="down", alpha=0.55, label="Unprofitable"
+                edges=edges,
+                counts=counts(losers),
+                role="categorical",
+                palette_index=0,
+                alpha=0.35,
+                label="Unprofitable",
+                z=-1,
             )
         )
+    # The label goes on the side of the rule with more room, never on top of its own bar.
     marks.append(
         RuleMark(
             orientation="vertical",
             position=median,
             role="feature",
             width=1.2,
-            annotate=ValueLabel(text=f"median {median:.0f}d"),
+            annotate=ValueLabel(
+                text=f"median {median:.0f}d",
+                ha="right" if median > span / 2 else "left",
+                dx_pt=-6.0 if median > span / 2 else 6.0,
+            ),
         )
     )
     return ctx.spec(
@@ -582,6 +677,8 @@ def holding_period(ctx: BuildContext) -> FigureSpec:
                 panel_id="holding",
                 y_label="Trades (count)",
                 y_unit="count",
+                # Head room above the tallest bar keeps the median label off the bars.
+                y_limits=(0.0, 1.3 * max(counts(tuple(days)))),
                 marks=tuple(marks),
             ),
         ),
@@ -705,7 +802,7 @@ def qq_normal(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="qq",
-                y_label="Observed return (ratio)",
+                y_label="Return (ratio)",
                 y_unit="ratio",
                 marks=(
                     LineMark(
@@ -737,7 +834,29 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
     episodes = compute(equity, top=5)
     if not episodes:
         raise DataError("this run never drew down; there are no episodes to show")
-    zones: list[Mark] = [LineMark(x=ts, y=equity, role="subject", label="Equity")]
+    # The panel is not time-shared (the table beside it forbids that), so it carries no tick
+    # labels of its own; the first and last dates are printed on the strip instead.
+    zones: list[Mark] = [
+        LineMark(x=ts, y=equity, role="subject", label="Equity"),
+        RuleMark(
+            orientation="vertical",
+            position=ts[0],
+            role="reference",
+            dashed=False,
+            width=0.6,
+            z=2,
+            annotate=ValueLabel(text=_day(ts[0]), ha="left", dx_pt=4.0),
+        ),
+        RuleMark(
+            orientation="vertical",
+            position=ts[-1],
+            role="reference",
+            dashed=False,
+            width=0.6,
+            z=2,
+            annotate=ValueLabel(text=_day(ts[-1]), ha="right", dx_pt=-4.0),
+        ),
+    ]
     rows: list[tuple[str, ...]] = []
     for rank, episode in enumerate(episodes, start=1):
         end_index = episode.recovery_index if episode.recovery_index is not None else len(ts) - 1
@@ -748,6 +867,7 @@ def drawdown_episodes(ctx: BuildContext) -> FigureSpec:
                 role="down",
                 alpha=0.16,
                 label="Drawdown window" if rank == 1 else None,
+                corner_label=ValueLabel(text=f"#{rank}", dx_pt=3.0),
             )
         )
         rows.append(
@@ -1095,35 +1215,68 @@ def optim_trials(ctx: BuildContext) -> FigureSpec:
     frame = src.require(ctx.rdir, "trials.parquet", "trial", "step")
     groups = frame.partition_by("trial", maintain_order=True)
     best_trial = ctx.manifest.get("best_trial")
-    marks: list[Mark] = []
-    finals: list[float] = []
+    curves: list[tuple[int, tuple[float, ...]]] = []
     for group in groups[:400]:
         trial = int(group["trial"].to_list()[0])
-        returns = src.floats(group["oos_return"], name="oos_return")
         equity, value = [], 1.0
-        for step in returns:
+        for step in src.floats(group["oos_return"], name="oos_return"):
             value *= 1.0 + step
             equity.append(value)
-        finals.append(value)
-        chosen = best_trial is not None and trial == best_trial
+        curves.append((trial, tuple(equity)))
+    if not curves:
+        raise DataError("no trials stored for this run")
+    finals = [curve[-1] for _, curve in curves]
+
+    def line(trial: int, curve: tuple[float, ...], **style: Any) -> LineMark:
+        return LineMark(x=tuple(float(i) for i in range(len(curve))), y=curve, **style)
+
+    # The categorical palette has four verified colours, so only the selected trial and the
+    # three best others are told apart and named; the rest stay a quiet backdrop.
+    others = sorted(
+        (item for item in curves if item[0] != best_trial), key=lambda item: -item[1][-1]
+    )
+    named = others[:3]
+    named_ids = {trial for trial, _ in named}
+    marks: list[Mark] = []
+    quiet = [item for item in others if item[0] not in named_ids]
+    for position, (trial, curve) in enumerate(quiet):
         marks.append(
-            LineMark(
-                x=tuple(float(i) for i in range(len(equity))),
-                y=tuple(equity),
-                role="feature" if chosen else "substrate",
-                alpha=1.0 if chosen else 0.5,
-                label="Selected configuration" if chosen else None,
-                z=2 if chosen else 0,
+            line(
+                trial,
+                curve,
+                role="substrate",
+                alpha=0.5,
+                label=f"Other trials ({len(quiet)})" if position == 0 else None,
             )
         )
-    if not marks:
-        raise DataError("no trials stored for this run")
+    for slot, (trial, curve) in enumerate(named):
+        marks.append(
+            line(
+                trial,
+                curve,
+                role="categorical",
+                palette_index=slot,
+                width=1.4,
+                label=f"Trial {trial} ({mult(curve[-1])})",
+            )
+        )
+    for trial, curve in curves:
+        if trial == best_trial:
+            marks.append(
+                line(
+                    trial,
+                    curve,
+                    role="feature",
+                    label="Selected configuration",
+                    z=2,
+                )
+            )
     return ctx.spec(
         "optim_trials",
         x_label="Out-of-sample step",
         x_kind="numeric",
         artifacts=("trials.parquet",),
-        truncation=_truncation(len(groups), len(marks), "trials"),
+        truncation=_truncation(len(groups), len(curves), "trials"),
         answer=(
             f"{len(groups):,} configurations were tried; their final equity ranged from "
             f"{mult(min(finals))} to {mult(max(finals))}."
@@ -1199,7 +1352,9 @@ def optim_surface(ctx: BuildContext) -> FigureSpec:
                         values=values,
                         cell_text=text,
                         colorbar_label="OOS Sharpe (sharpe)",
-                        diverging_center=0.0,
+                        # Centre on the sweep's own median: a fixed zero centre turns a sweep
+                        # of small, similar Sharpes into one flat grey.
+                        diverging_center=float(np.median(ok)) if ok else 0.0,
                     ),
                 ),
             ),
@@ -1632,20 +1787,24 @@ def monte_carlo_equity_fans(ctx: BuildContext) -> FigureSpec:
                 y_unit="multiple",
                 note=_MONTE_CARLO_ASSUMPTIONS[family],
                 marks=(
+                    # The theme's recessive "substrate" grey nearly vanishes on the dark
+                    # canvas at a third of its strength; the accent hue holds on both.
                     BandMark(
                         x=x,
                         lower=tuple(q05),
                         upper=tuple(q95),
-                        role="substrate",
-                        alpha=0.35,
+                        role="categorical",
+                        palette_index=0,
+                        alpha=0.40,
                         label="5-95%",
                     ),
                     BandMark(
                         x=x,
                         lower=tuple(q25),
                         upper=tuple(q75),
-                        role="neutral",
-                        alpha=0.45,
+                        role="categorical",
+                        palette_index=0,
+                        alpha=0.65,
                         label="25-75%",
                     ),
                     LineMark(x=x, y=tuple(q50), role="subject", label="Median"),
@@ -1682,7 +1841,8 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
             frame.filter(frame["family"] == family)["terminal_return"].to_list(),
             dtype=np.float64,
         )
-        edges, counts = _hist(values)
+        # One unit on the axis and in the labels: percent.
+        edges, counts = _hist(values * 100.0)
         median = float(np.median(values))
         medians.append(median)
         panels.append(
@@ -1697,11 +1857,11 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
                         orientation="vertical",
                         position=0.0,
                         role="reference",
-                        annotate=ValueLabel(text="break-even"),
+                        annotate=ValueLabel(text="break-even", ha="right", dx_pt=-6.0),
                     ),
                     RuleMark(
                         orientation="vertical",
-                        position=median,
+                        position=median * 100.0,
                         role="feature",
                         annotate=ValueLabel(text=f"median {pct(median)}"),
                     ),
@@ -1710,7 +1870,7 @@ def monte_carlo_terminal_returns(ctx: BuildContext) -> FigureSpec:
         )
     return ctx.spec(
         "monte_carlo_terminal_returns",
-        x_label="Terminal account return",
+        x_label="Terminal account return (%)",
         x_kind="numeric",
         artifacts=("path_metrics.parquet",),
         answer="; ".join(
@@ -1733,7 +1893,7 @@ def monte_carlo_drawdown_ruin(ctx: BuildContext) -> FigureSpec:
         ruined = [bool(value) for value in rows["ruined"].to_list()]
         ruin_rate = sum(ruined) / len(ruined)
         ruin_rates.append(ruin_rate)
-        edges, counts = _hist(values)
+        edges, counts = _hist(values * 100.0)
         panels.append(
             Panel(
                 panel_id=f"drawdown_{family}",
@@ -1747,16 +1907,16 @@ def monte_carlo_drawdown_ruin(ctx: BuildContext) -> FigureSpec:
                     HistogramMark(edges=edges, counts=counts, role="down", alpha=0.8),
                     RuleMark(
                         orientation="vertical",
-                        position=0.5,
+                        position=50.0,
                         role="feature",
-                        annotate=ValueLabel(text="50% ruin boundary"),
+                        annotate=ValueLabel(text="50% ruin boundary", ha="right", dx_pt=-6.0),
                     ),
                 ),
             )
         )
     return ctx.spec(
         "monte_carlo_drawdown_ruin",
-        x_label="Maximum peak-to-trough account drawdown",
+        x_label="Maximum peak-to-trough account drawdown (%)",
         x_kind="numeric",
         artifacts=("path_metrics.parquet",),
         answer="; ".join(
@@ -1781,13 +1941,26 @@ def monte_carlo_regimes(ctx: BuildContext) -> FigureSpec:
             dtype=np.float64,
         )
         counts, _ = np.histogram(values, bins=edges)
+        bin_edges = tuple(float(value) for value in edges)
+        heights = tuple(float(value) for value in counts)
+        # A faint fill plus a stepped outline: the second state no longer hides the first.
         emission_marks.append(
             HistogramMark(
-                edges=tuple(float(value) for value in edges),
-                counts=tuple(float(value) for value in counts),
+                edges=bin_edges,
+                counts=heights,
                 role="categorical",
                 palette_index=state,
-                alpha=0.55,
+                alpha=0.25,
+            )
+        )
+        emission_marks.append(
+            LineMark(
+                x=bin_edges,
+                y=(*heights, heights[-1]),
+                step=True,
+                role="categorical",
+                palette_index=state,
+                width=1.8,
                 label=label,
             )
         )
@@ -1826,7 +1999,8 @@ def monte_carlo_regimes(ctx: BuildContext) -> FigureSpec:
                         columns=labels,
                         values=tuple(tuple(row) for row in matrix),
                         cell_text=tuple(tuple(f"{value:.2f}" for value in row) for row in matrix),
-                        colorbar_label="Transition probability",
+                        colorbar_label="Transition probability (0-1)",
+                        diverging_center=None,
                     ),
                 ),
             ),
@@ -2449,7 +2623,7 @@ def trade_runs_test(ctx: BuildContext) -> FigureSpec:
                 position=0.0,
                 role="feature",
                 width=0.8,
-                annotate=ValueLabel(text=f"runs z = {z:+.2f}", dy_pt=8.0),
+                annotate=ValueLabel(text=f"runs z = {z:+.2f}", ha="right", dx_pt=-6.0, dy_pt=2.0),
             )
         )
     else:
@@ -2467,7 +2641,7 @@ def trade_runs_test(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="signs",
-                y_label="Trade sign (win +1 / loss -1)",
+                y_label="Trade sign (+1/-1)",
                 y_unit="index",
                 y_zero_rule=True,
                 legend=False,

@@ -175,6 +175,7 @@ def _publish(path: Path, payload: bytes) -> None:
 
 
 def _sidecar(spec: Any, definition: Any, key: str, fmt: str, size: Any) -> dict[str, Any]:
+    from alpha_cli.figures.how_to_read import how_to_read
     from alpha_research.figures import RENDERER_VERSION
 
     return {
@@ -185,6 +186,7 @@ def _sidecar(spec: Any, definition: Any, key: str, fmt: str, size: Any) -> dict[
         "figure_id": spec.figure_id,
         "format": fmt,
         "height_in": size.height_in,
+        "how_to_read": how_to_read(spec.figure_id),
         "panels": [
             {
                 "panel_id": panel.panel_id,
@@ -213,6 +215,7 @@ def _catalogue_envelope() -> dict[str, Any]:
 
     import matplotlib
 
+    from alpha_cli.figures.how_to_read import how_to_read
     from alpha_cli.figures.rdagent_journey_figures import figure_theme
     from alpha_cli.figures.rule_periods import TRADABLE, definition
     from alpha_research.figures import RENDERER_VERSION, catalog_document, default_size
@@ -228,6 +231,7 @@ def _catalogue_envelope() -> dict[str, Any]:
         figures.append(
             {
                 **item,
+                "how_to_read": how_to_read(str(item["figure_id"])),
                 "width_in": size.width_in,
                 "height_in": size.height_in,
                 "dpi": size.dpi,
@@ -269,6 +273,7 @@ def list_figures(
         return
 
     from alpha_cli.figures import available_figures, resolve_run
+    from alpha_cli.figures.how_to_read import how_to_read
 
     data_dir = _data_dir()
     rdir, manifest = resolve_run(run, data_dir=data_dir)
@@ -277,6 +282,7 @@ def list_figures(
             "figure_id": entry.definition.figure_id,
             "title": entry.definition.title,
             "summary": entry.definition.summary,
+            "how_to_read": how_to_read(entry.definition.figure_id),
             "section": entry.definition.section,
             "panel_count": entry.definition.panel_count,
             "available": entry.available,

@@ -23,8 +23,10 @@ _RUN = "0123456789abcdef"
 _KEY_ENVIRONMENT: dict[str, Any] = {
     "renderer_version": 1,
     "matplotlib_version": "3.11.0",
-    "theme_id": "alpha-dark",
-    "theme_digest": "d" * 64,
+    "theme_id": "alpha-light",
+    "theme_digest": "l" * 64,
+    "dark_theme_id": "alpha-dark",
+    "dark_theme_digest": "d" * 64,
     "figures": [
         {
             "figure_id": "equity_underwater",
@@ -92,7 +94,9 @@ def spawns(monkeypatch: pytest.MonkeyPatch, store: Path) -> list[list[str]]:
         if args[:2] == ["figures", "render"]:
             figure_id = args[args.index("--figure") + 1]
             fmt = args[args.index("--format") + 1]
-            image, sidecar, _ = _figures._cache_entry(_RUN, figure_id, fmt, data_dir)
+            image, sidecar, _ = _figures._cache_entry(
+                _RUN, figure_id, fmt, data_dir, dark="--dark" in args
+            )
             image.parent.mkdir(parents=True, exist_ok=True)
             image.write_bytes(b"<svg xmlns='http://www.w3.org/2000/svg'/>")
             sidecar.write_text(
@@ -223,3 +227,20 @@ def test_the_web_process_never_imports_matplotlib_or_the_renderer() -> None:
         [sys.executable, "-c", script], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "[]", result.stdout
+
+
+class TestTheme:
+    """The Workstation opens dark; the CLI's own default is light. Keys must tell them apart."""
+
+    def test_the_web_asks_the_cli_for_dark(self, client: TestClient, spawns: list[list[str]]) -> None:
+        response = client.get(f"/api/runs/{_RUN}/figures/equity_underwater/image?fmt=svg")
+        assert response.status_code == 200
+        renders = [call for call in spawns if call[:2] == ["figures", "render"]]
+        assert ["--dark" in call for call in renders] == [True]
+
+    def test_the_two_themes_have_different_cache_keys(self, store: Path) -> None:
+        _figures.reset_environment_cache()
+        _figures._ENVIRONMENT = dict(_KEY_ENVIRONMENT)
+        dark = _figures._cache_entry(_RUN, "equity_underwater", "svg", store, dark=True)[2]
+        light = _figures._cache_entry(_RUN, "equity_underwater", "svg", store, dark=False)[2]
+        assert dark != light

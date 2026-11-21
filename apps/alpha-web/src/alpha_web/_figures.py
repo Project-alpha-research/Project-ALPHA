@@ -116,6 +116,9 @@ def catalogue(run_id: str, *, data_dir: Path) -> dict[str, Any]:
     payload = _run_json(["figures", "list", "--run", run_id, "--json"], data_dir=data_dir)
     if not isinstance(payload, dict):
         raise FigureError("invalid figure catalogue projection")
+    for item in payload.get("items") or []:
+        if isinstance(item, dict):
+            item.pop("how_to_read", None)  # see ``metadata``: no API field for it yet
     payload["renderer_version"] = key_environment(data_dir=data_dir)["renderer_version"]
     return payload
 
@@ -233,10 +236,12 @@ def metadata(
     """
     rendered = figure(run_id, figure_id, fmt=fmt, data_dir=data_dir, dark=dark)
     document = dict(rendered.sidecar)
+    # The CLI publishes a longer reading text. The strict API model has no field for it yet;
+    # adding one changes the committed OpenAPI contract and its generated frontend types.
+    document.pop("how_to_read", None)
     document["cache_key"] = rendered.cache_key
     document["image_url"] = (
-        f"/api/runs/{run_id}/figures/{figure_id}/image?fmt={fmt}"
-        f"&theme={'dark' if dark else 'light'}&key={rendered.cache_key}"
+        f"/api/runs/{run_id}/figures/{figure_id}/image?fmt={fmt}&key={rendered.cache_key}"
     )
     document["etag"] = rendered.cache_key
     return document

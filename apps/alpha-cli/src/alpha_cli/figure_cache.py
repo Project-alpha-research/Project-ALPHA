@@ -35,6 +35,11 @@ from alpha_core import DataError
 #: both together.
 FIGURES_CACHE_VERSION: Final = 1
 
+#: Bump when a builder in ``alpha_cli.figures`` (or the Setup Lab drawing) changes what a figure
+#: shows. ``RENDERER_VERSION`` lives in a protected package and only moves with the drawing
+#: code, so a builder-only fix would otherwise keep serving the old bytes from the cache.
+BUILDER_REVISION: Final = 1
+
 FIGURE_ROOT: Final = "figures"
 FIGURE_ID_RE: Final = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")
 _RUN_ID_RE: Final = re.compile(r"[0-9a-f]{16}")
@@ -67,6 +72,7 @@ class CacheKeyInputs:
         return {
             "artifact_contract_version": self.artifact_contract_version,
             "background": self.background,
+            "builder_revision": BUILDER_REVISION,
             "dpi": self.dpi,
             "figure_id": self.figure_id,
             "figures_cache_version": FIGURES_CACHE_VERSION,

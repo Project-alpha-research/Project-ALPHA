@@ -11,7 +11,7 @@ verified: ee810b7ad1d03c2c
 ---
 # Setup study
 
-**Reach for it when** a recorded setup find has the intended matches and the owner wants to measure what followed each separate occurrence against ordinary dates.
+**Reach for it when** a recorded setup find has the intended matches and you want what followed each separate occurrence measured against ordinary dates.
 **Commands**
 ```text
 uv run alpha setup study <find_id> --json

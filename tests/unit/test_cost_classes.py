@@ -162,6 +162,15 @@ def test_borrow_fact_for_a_run_with_shorts(tmp_path: Path) -> None:
     assert values["borrow_note"].startswith("A US stock")
 
 
+def test_a_run_with_shorts_says_borrow_was_not_charged(tmp_path: Path) -> None:
+    _asset(tmp_path, "SPY", "tiingo", {"asset_class": "stock", "venue": "US"})
+    _short_run(tmp_path, short=True)
+    assert cc.BORROW_NOT_CHARGED in run(tmp_path, COSTS, RUN)["labels"]
+    long_only = tmp_path / "long"
+    _short_run(long_only, short=False)
+    assert cc.BORROW_NOT_CHARGED not in run(long_only, COSTS, RUN)["labels"]
+
+
 def test_borrow_fact_is_absent_for_a_long_only_run(tmp_path: Path) -> None:
     _short_run(tmp_path, short=False)
     result = run(tmp_path, COSTS, RUN)

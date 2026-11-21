@@ -7,7 +7,8 @@
     "figure": null,
     "labels": [
       "ad-hoc",
-      "reserved-period-seen"
+      "reserved-period-seen",
+      "short-borrow-not-charged"
     ],
     "params": {},
     "reading": "The result breaks even at 5 times today's costs. It matches buy and hold at 3 times today's costs.",

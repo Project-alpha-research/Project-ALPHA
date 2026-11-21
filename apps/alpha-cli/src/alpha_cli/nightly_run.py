@@ -15,6 +15,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.home_disk import tree_bytes
+from alpha_cli.nightly_alert import after_crash, after_run
 from alpha_cli.nightly_config import NightlyConfig
 from alpha_cli.nightly_follow import follow_steps
 from alpha_cli.nightly_recheck import rule_test, setup_run
@@ -244,13 +246,22 @@ def run_nightly(
     only: tuple[str, ...] | None = None,
     today: date | None = None,
 ) -> dict[str, Any]:
-    """Run the chosen paths, write the record in a new dated folder and return it."""
+    """Run the chosen paths, write the record in a new dated folder and return it.
+
+    A run that stops with an error still leaves the `LAST_FAILED` marker, then fails loud.
+    """
     wanted = selected(only, config.refresh_followed)
     day = today or datetime.now(UTC).date()
     folder, number = new_folder(home, day)
     paths = {"N1": rule_path, "N2": setup_path, "N3": rdagent_path}
-    steps = [step for name in wanted if name in paths for step in paths[name](config, runner)]
-    later, follows, heads = follow_steps(config, home, runner, wanted, day)
-    record = build_record(steps + later, wanted, day, number, config.source, follows, heads)
-    write_record(folder, record)
+    try:
+        steps = [step for name in wanted if name in paths for step in paths[name](config, runner)]
+        later, follows, heads = follow_steps(config, home, runner, wanted, day)
+        record = build_record(steps + later, wanted, day, number, config.source, follows, heads)
+        record["home_bytes"] = tree_bytes(home)  # the size of the data home at the end of the run
+        write_record(folder, record)
+    except BaseException as error:  # also Ctrl-C: a stopped run must leave the marker
+        after_crash(home, day, number, error, notify_owner=config.notify)
+        raise
+    after_run(home, record, notify_owner=config.notify)
     return record

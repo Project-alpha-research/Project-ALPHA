@@ -26,6 +26,8 @@ CLASS_DEFAULT = "class-default"  # the spec value: `costs = "class-default"`
 CLASS_DEFAULT_LABEL = "class-default-costs"
 ASSUMED_LABEL = "cost-class-assumed"
 BORROW_LABEL = "borrow-at-class-rate"
+# Owner decision: a short's borrow is stated as a fact, never charged in the result.
+BORROW_NOT_CHARGED = "short-borrow-not-charged"
 STOCK_SESSIONS = 252
 CRYPTO_DAYS = 365
 

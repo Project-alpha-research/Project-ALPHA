@@ -2,22 +2,25 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 8eb88e836f52fcad on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
+  verified 3183d1c05d289d73 on 2026-11-21: price-signal window fix does not change what this document says
 
 apps/alpha-cli/README.md
-  verified 8eb88e836f52fcad on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
+  verified 3183d1c05d289d73 on 2026-11-21: price-signal window fix does not change what this document says
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 7aef8a227bb5053f on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 60e16d517f679c05 on 2026-11-21: price-signal window fix does not change what this document says
 
 apps/alpha-web/README.md
-  verified 7aef8a227bb5053f on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 60e16d517f679c05 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
+
+docs/reference/checks.md
+  verified a4c1654f3db3846b on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
@@ -44,10 +47,10 @@ docs/reference/invariants/cli-rule-readings.md
   verified 655e0dfacb1217f3 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-runs.md
-  verified 401130b0343c2e7c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 629ecd36db88da75 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/cli-setups.md
-  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
+  verified a9c64db705d810f7 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -70,20 +73,23 @@ docs/reference/invariants/data.md
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
+docs/reference/invariants/engineering.md
+  verified eeaf1119cdc62ef4 on 2026-11-21: price-signal window fix does not change what this document says
+
 docs/reference/invariants/patterns.md
   verified 2648a9ba5f6f26ff on 2026-11-19: review fix only moved the hold-back sentence to text mode and dropped a duplicate key; text unchanged and still correct
 
 docs/reference/invariants/rdagent.md
-  verified d726bf49f1125228 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 9caaba5ecf2b6203 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+  verified 196a6ffe854ab8b0 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/testing.md
-  verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
+  verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/validation-factor-statistics.md
   verified 29fbabfa2cb71320 on 2026-11-20: tests added that pin whole error messages and the stated assumption text; the rules are unchanged
@@ -92,10 +98,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 77da50bc0cbe9a00 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
+  verified 072003e485062bfa on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/web-api.md
-  verified 05f7ddcb5a29ddc2 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
+  verified e7ae042048be2c99 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/invariants/web-frontend.md
   verified 939a57e5a99340e9 on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
@@ -104,7 +110,7 @@ docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
 
 docs/reference/invariants/workers.md
-  verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
+  verified 9c856742539b975c on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
@@ -155,13 +161,13 @@ docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified efeacd0f97fea8f1 on 2026-11-21: figure-pack builder, theme and cache-key changes do not alter what this document says
+  verified 74d73350e2e95ac3 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 200bde8e999e3da7 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 5f8881910f63bb25 on 2026-11-21: price-signal window fix does not change what this document says
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -218,10 +224,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
+  verified 09d680fc9d15514c on 2026-11-21: price-signal window fix does not change what this document says
 
 research/PLAYBOOK.md
-  verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 4d56df24bd3fa55e on 2026-11-21: price-signal window fix does not change what this document says
 
 research/README.md
   verified 4b2aeb9720445559 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
@@ -233,25 +239,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 2fdbb912d7450e3c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 49b5ca65c0fb042a on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 980630856bd2db10 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 601a2a1b281eccf7 on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/charts.md
-  verified 555f4dee9293a0be on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 943bd65230e88e6c on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 9d15527e3405d4f4 on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/diagnose-and-audit.md
-  verified abbb4da8fbdc5a9d on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 75ae443ea55eeaaa on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -299,13 +305,13 @@ research/tools/results-and-cite.md
   verified 4487a967b258939d on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 research/tools/rule-test.md
-  verified daf06adda45c7812 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified a2624cb907b80c75 on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 78fd8a03c034146a on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 9d15527e3405d4f4 on 2026-11-21: price-signal window fix does not change what this document says
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -326,22 +332,22 @@ research/tools/walk-forward.md
   verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
 
 scripts/CONTEXT.md
-  verified 194730e01a6fefa6 on 2026-11-19: routing only; search and stale internals change nothing it says
+  verified 3686090948c9d166 on 2026-11-21: price-signal window fix does not change what this document says
 
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
-  verified d1789c5bebd9feeb on 2026-11-19: re-read; only routing rows and a new test were added, content still correct
+  verified f4cf3670944b0e52 on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/README.md
   verified bb945d1901fa6d5f on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 workflow/stages/03-build/CONTEXT.md
-  verified 7c70c8f0469a7066 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified 4bb90e5006d5dce5 on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/stages/04-verify/CONTEXT.md
-  verified c996343fa4e67a01 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
+  verified b0ecdda77b4d329c on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/stages/05-land/CONTEXT.md
   verified 713cf355f0e49f24 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold

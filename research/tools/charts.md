@@ -28,8 +28,7 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --json
   `drawdown_episodes` (falls), `monthly_heatmap` (when the profit came), `trade_pnl` (each trade),
   `fold_sharpe` (walk-forward slices), `null_distribution` (random-price comparison),
   `confidence_intervals`, `exposure_turnover`, `return_distribution`.
-- Every figure is light by default. `--dark` on render gives the house dark copy. Setup study and trade figures are light only.
-- `alpha figures list --json` gives a longer `how_to_read` text for each figure: the axes, what to look for, what it cannot tell you.
+- Every figure is light by default; `--dark` on render gives the dark copy (setup figures: light only). `alpha figures list --json` adds a `how_to_read` text.
 - Every rule test also writes a tear sheet (`tearsheet.html`) in its run folder; `alpha report` prints the path.
 
 **What it cannot tell you**

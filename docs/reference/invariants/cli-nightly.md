@@ -81,6 +81,6 @@ verified: bf467600edef19c2
 - `restore <archive> <dir>` (module `home_restore`) verifies first, then writes only regular files and folders into a new or empty folder,
   keeps file and folder modes and times, then reads every written file again from disk against the manifest. A failure leaves an incomplete folder, said so.
   It refuses a non-empty target, the live home, a folder inside it and a folder that holds it. Unsafe entry names are refused.
-- `home_backup` (the only backup module that walks the home) is on the follow-store reader list (`test_follow_separation.py`) on purpose: it copies bytes, parses nothing
-  and feeds no research result. The `nightly_*` modules stay off that list.
+- `home_backup` (the only backup module that walks the home) is on the follow-store reader list (`test_follow_separation.py`)
+  on purpose: it copies bytes, parses nothing and feeds no research result. The `nightly_*` modules stay off that list.
 - The Workstation launcher refuses every `alpha home` command (`catalog.classify_generic_command`: owner-only). Terminal only.

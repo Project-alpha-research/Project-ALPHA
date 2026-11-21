@@ -218,7 +218,7 @@ class TestPriceSignal:
         # so this test keeps probing the candle-or-line choice, not the crop.
         from alpha_cli.figures import _price_signal
 
-        monkeypatch.setattr(_price_signal, "_run_span", lambda ctx: (rows[0]["t"], rows[-1]["t"]))
+        monkeypatch.setattr(_price_signal, "_run_span", lambda ctx: (0.0, 4e9))
 
         spec = build_figure_spec(
             "price_signal",

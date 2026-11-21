@@ -34,7 +34,17 @@ def _run_span(ctx: BuildContext) -> tuple[float, float] | None:
     if frame is None or frame.is_empty():
         return None
     ts = src.epochs(frame["ts"])
-    return ts[0], ts[-1]
+    # The equity recorder stamps a session a microsecond after its candle, so the candle
+    # that opens the run sits just before ``ts[0]``. One second of slack keeps it.
+    return ts[0] - 1.0, ts[-1] + 1.0
+
+
+def _clip(frame: Any, column: str, span: tuple[float, float] | None) -> Any:
+    """Rows whose timestamp lies inside the plotted window; every mark shares one window."""
+    if span is None or frame is None or frame.is_empty():
+        return frame
+    seconds = frame[column].dt.epoch("us") / 1e6
+    return frame.filter((seconds >= span[0]) & (seconds <= span[1]))
 
 
 def _price_marks(rows: list[dict[str, float]]) -> list[Mark]:
@@ -54,9 +64,15 @@ def _price_marks(rows: list[dict[str, float]]) -> list[Mark]:
     return [LineMark(x=ts, y=closes, role="substrate", label="Close", width=1.0)]
 
 
-def _annotation_marks(ctx: BuildContext) -> tuple[list[Mark], int, int]:
+def _annotation_marks(
+    ctx: BuildContext, span: tuple[float, float] | None
+) -> tuple[list[Mark], int, int]:
     """The strategy's own annotations: marks, how many were drawn, how many exist."""
-    annotations = src.frame(ctx.rdir, "chart_annotations.parquet", "annotation_id", "anchor_index")
+    annotations = _clip(
+        src.frame(ctx.rdir, "chart_annotations.parquet", "annotation_id", "anchor_index"),
+        "ts",
+        span,
+    )
     if annotations is None or annotations.is_empty():
         return [], 0, 0
     marks: list[Mark] = []
@@ -67,7 +83,10 @@ def _annotation_marks(ctx: BuildContext) -> tuple[list[Mark], int, int]:
         xs = src.epochs(group["ts"])
         ys = src.floats(group["value"], name="annotation value")
         first = label if drawn == 0 else None
-        if str(group["kind"].to_list()[0]) == "zone":
+        is_zone = str(group["kind"].to_list()[0]) == "zone"
+        if is_zone and max(xs) <= min(xs):
+            continue  # clipping left a single instant: nothing to shade
+        if is_zone:
             marks.append(
                 ZoneMark(
                     x0=min(xs),
@@ -92,7 +111,7 @@ def _annotation_marks(ctx: BuildContext) -> tuple[list[Mark], int, int]:
     return marks, drawn, len(groups)
 
 
-def _held_zones(ctx: BuildContext) -> list[Mark]:
+def _held_zones(ctx: BuildContext, span: tuple[float, float] | None) -> list[Mark]:
     """Shade each closed trade's holding period: one block instead of two markers."""
     trades = src.frame(ctx.rdir, "trades.parquet", "entry_ts")
     if trades is None or trades.is_empty():
@@ -105,6 +124,8 @@ def _held_zones(ctx: BuildContext) -> list[Mark]:
         src.strings(trades["side"]),
         strict=True,
     ):
+        if span is not None:
+            entry, exit_ = max(entry, span[0]), min(exit_, span[1])
         if exit_ > entry:
             name = "Held short" if side == "SELL" else "Held long"
             zones.append(
@@ -126,12 +147,9 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
     if trace is None or trace.is_empty():
         return [], "", 0
     all_fills = trace.filter(trace["event_type"] == "fill")
-    fills = all_fills
-    if span is not None and not fills.is_empty():
-        seconds = fills["ts"].dt.epoch("us") / 1e6
-        fills = fills.filter((seconds >= span[0]) & (seconds <= span[1]))
+    fills = _clip(all_fills, "ts", span)
     if len(fills) > _MAX_FILL_MARKERS:
-        zones = _held_zones(ctx)
+        zones = _held_zones(ctx, span)
         if zones:
             return zones, f"{len(fills):,} fills shown as shaded held periods", len(all_fills)
     size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0
@@ -177,9 +195,11 @@ def _indicator_marks(indicators: Any, names: tuple[str, ...], role: Role) -> tup
     return tuple(out)
 
 
-def _indicator_panels(ctx: BuildContext) -> tuple[list[Mark], list[Panel]]:
+def _indicator_panels(
+    ctx: BuildContext, span: tuple[float, float] | None
+) -> tuple[list[Mark], list[Panel]]:
     """Price-unit indicators ride on the price; each other unit gets one panel."""
-    indicators = src.frame(ctx.rdir, "indicator_series.parquet", "name", "ts")
+    indicators = _clip(src.frame(ctx.rdir, "indicator_series.parquet", "name", "ts"), "ts", span)
     by_unit: dict[str, list[str]] = {}
     if indicators is not None and not indicators.is_empty():
         for name in sorted({str(value) for value in indicators["name"].to_list()}):
@@ -224,11 +244,11 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         if not rows:
             raise DataError("no price bars fall inside this run's dated span")
     marks = _price_marks(rows)
-    annotation_marks, drawn, total = _annotation_marks(ctx)
+    annotation_marks, drawn, total = _annotation_marks(ctx, span)
     marks.extend(annotation_marks)
     fill_marks, held_note, fills_count = _fill_marks(ctx, span)
     marks.extend(fill_marks)
-    overlays, indicator_panels = _indicator_panels(ctx)
+    overlays, indicator_panels = _indicator_panels(ctx, span)
     marks.extend(overlays)
     price = Panel(
         panel_id="price",
@@ -252,6 +272,8 @@ def price_signal(ctx: BuildContext) -> FigureSpec:
         ),
         panels=(price, *indicator_panels),
     )
+    if span is not None:
+        spec = replace(spec, x_limits=span)
     # A note inside the axes covers data, so what it says goes in the caption instead.
     notes = [held_note] if held_note else []
     if not drawn:

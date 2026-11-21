@@ -630,3 +630,55 @@ def test_the_catalogue_publishes_both_themes() -> None:
     envelope = _catalogue_envelope()
     assert envelope["theme_id"] == "alpha-light" and envelope["dark_theme_id"] == "alpha-dark"
     assert envelope["theme_digest"] != envelope["dark_theme_digest"]
+
+
+def test_every_price_mark_shares_the_plotted_window_and_the_first_candle_stays(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_cli.figures import _sources
+
+    first = datetime(2022, 1, 3, tzinfo=UTC)
+    days = [first + timedelta(days=i) for i in range(60)]
+    rows = [{"t": d.timestamp(), "o": 1.0, "h": 2.0, "l": 0.5, "c": 1.5, "v": 1.0} for d in days]
+    monkeypatch.setattr(_sources, "bars", lambda *a, **k: (rows, None))
+    rdir = _synthetic(tmp_path, snapshot_id="snap")
+    # The equity recorder stamps each session one microsecond after its candle.
+    run = [d + timedelta(microseconds=1) for d in days[10:40]]
+    pl.DataFrame({"ts": run, "equity": [1.0 + i * 0.01 for i in range(30)]}).write_parquet(
+        rdir / "equity_curve.parquet"
+    )
+    pl.DataFrame(
+        {
+            "annotation_id": ["a"] * 60,
+            "anchor_index": list(range(60)),
+            "label": ["ma"] * 60,
+            "kind": ["line"] * 60,
+            "unit": ["price"] * 60,
+            "ts": days,
+            "value": [1.2] * 60,
+        }
+    ).write_parquet(rdir / "chart_annotations.parquet")
+    pl.DataFrame(
+        {
+            "entry_ts": [days[2], days[35]],
+            "exit_ts": [days[20], days[55]],
+            "side": ["BUY", "BUY"],
+        }
+    ).write_parquet(rdir / "trades.parquet")
+    fills = [
+        {"sequence_id": i, "event_type": "fill", "ts": days[i], "side": "BUY", "price": 1.0}
+        for i in range(60)
+    ]
+    pl.DataFrame(fills).write_parquet(rdir / "execution_trace.parquet")
+    spec = _build(rdir, "price_signal")
+    low, high = days[10].timestamp(), days[39].timestamp()
+    price = spec.panels[0]
+    candle = price.marks[0]
+    assert candle.x[0] == days[10].timestamp()  # the run's first candle is kept
+    for mark in price.marks:
+        if hasattr(mark, "x") and isinstance(mark.x, tuple):
+            assert min(mark.x) >= low - 1.0 and max(mark.x) <= high + 1.0
+        if hasattr(mark, "x0"):
+            assert mark.x0 >= low - 1.0 and mark.x1 <= high + 1.0
+    assert spec.x_limits is not None
+    assert spec.x_limits[0] < low < high < spec.x_limits[1]

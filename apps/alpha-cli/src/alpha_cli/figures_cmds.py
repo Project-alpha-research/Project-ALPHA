@@ -22,12 +22,10 @@ if TYPE_CHECKING:
 
 
 def _run_theme(manifest: dict[str, Any], dark: bool) -> Theme:
+    """One rule for every run kind: light by default, ``--dark`` is the house dark theme."""
     from alpha_cli.figures.rdagent_journey_figures import figure_theme
-    from alpha_research.figures import load_theme
 
-    if manifest.get("spine", {}).get("periods") or dark:
-        return figure_theme(dark)
-    return load_theme()
+    return figure_theme(dark)
 
 
 figures_app = typer.Typer(help="Render publication-quality figures for a stored run.")
@@ -147,16 +145,18 @@ def store_rule_figures(rdir: Path, manifest: dict[str, Any], data_dir: Path) -> 
     """Populate the ordinary immutable figure cache before exposing the completed rule run."""
     from alpha_cli.figures.rule_periods import CHARTS, TRADABLE
 
-    for figure in (*TRADABLE, *CHARTS):
-        _render_one(
-            figure,
-            run_id=rdir.name,
-            rdir=rdir,
-            manifest=manifest,
-            data_dir=data_dir,
-            fmt="svg",
-            force=False,
-        )
+    for dark in (False, True):
+        for figure in (*TRADABLE, *CHARTS):
+            _render_one(
+                figure,
+                run_id=rdir.name,
+                rdir=rdir,
+                manifest=manifest,
+                data_dir=data_dir,
+                fmt="svg",
+                force=False,
+                dark=dark,
+            )
 
 
 def _publish(path: Path, payload: bytes) -> None:
@@ -215,15 +215,10 @@ def _catalogue_envelope() -> dict[str, Any]:
 
     from alpha_cli.figures.rdagent_journey_figures import figure_theme
     from alpha_cli.figures.rule_periods import TRADABLE, definition
-    from alpha_research.figures import (
-        RENDERER_VERSION,
-        catalog_document,
-        default_size,
-        load_theme,
-    )
+    from alpha_research.figures import RENDERER_VERSION, catalog_document, default_size
 
-    theme = load_theme()
     light = figure_theme(False)
+    dark = figure_theme(True)
     figures = []
 
     for item in [*catalog_document(), *(asdict(definition(name)) for name in TRADABLE)]:
@@ -241,10 +236,10 @@ def _catalogue_envelope() -> dict[str, Any]:
     return {
         "renderer_version": RENDERER_VERSION,
         "matplotlib_version": matplotlib.__version__,
-        "theme_id": theme.theme_id,
-        "theme_digest": theme.digest(),
-        "rule_theme_id": light.theme_id,
-        "rule_theme_digest": light.digest(),
+        "theme_id": light.theme_id,
+        "theme_digest": light.digest(),
+        "dark_theme_id": dark.theme_id,
+        "dark_theme_digest": dark.digest(),
         "figures": figures,
     }
 

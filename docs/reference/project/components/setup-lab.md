@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: 34c000f543018b05
+verified: 50d5da70210ce0b5
 ---
 
 # Setup Lab
@@ -33,6 +33,9 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
 - A setup is a small TOML spec: a name, assets, a daily timeframe, ordered filters, an optional trigger and
   named reference levels. Expressions read only bars already seen
   ([setup causality](../../invariants/study.md#setup-causality)).
+- A condition may read a context series (positioning or short volume) declared in a `[context]` table. The find
+  then counts the days the condition was true and its separate spells, and the screen shows the plain label
+  `short-context-history` under three years of such data ([rules](../../invariants/cli-setups.md#setup-context)).
 - `alpha setup find <spec>` records every match and counts separate occurrences (days within ten bars of
   each other are one). It draws contact sheets that stop at the entry open: nothing after entry is computed
   or drawn until the outcome is asked for.

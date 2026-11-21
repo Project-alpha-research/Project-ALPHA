@@ -3,7 +3,7 @@ owner: command line application
 sources:
   - apps/alpha-cli/src/**
   - apps/alpha-cli/pyproject.toml
-verified: e51b66c1cc378fb6
+verified: 8eb88e836f52fcad
 ---
 
 # alpha-cli: code map and change loop
@@ -32,6 +32,7 @@ Code: `apps/alpha-cli/src/alpha_cli/` (`_name.py` = private helper; `*_cmds.py` 
 | Library of published ideas | `library_cmds`, `spine/library` (records in `research/library/published/`, private notes under `<home>/library/private/`) | `test_library` |
 | Forward follow | `follow_*` (10: `cmds`, `store`, `source`, `journal`, `chain`, `update`, `update_check`, `replay`, `book`, `show`; writes only `<home>/forward/`; no research module may import them) | `test_follow_*`, `smoke/test_follow_smoke` |
 | Nightly real run | `nightly_*` (6: `cmds`, `config`, `run`, `steps`, `record`, `status`; runs real commands in child processes) | `test_nightly`, `smoke/test_nightly_smoke` |
+| Nightly alert, disk, backup | `nightly_alert` (`LAST_FAILED` marker, optional `notify-send`), `home_disk` (size, free space, reserve), `home_cmds` + `home_backup` + `home_restore` (`alpha home backup`, `verify-backup`, `restore`) | `test_nightly_alert`, `test_home_backup`, `test_home_backup_adversarial`, `smoke/test_home_backup_smoke` |
 | Runs, validation | `_artifacts`, `_identity`, `_seeds`, `_runner`, `_gauntlet`, `_optim`, `run_*`, `_suite*` | `test_run*`, `test_gauntlet*`,
 `test_suite_*` |
 | Market data, macro | `*crypto_*`, `data_cmds`, `_data_health`, `context*_cmds` | `test_{crypto,tiingo,alpaca,context,data_health}_*` |

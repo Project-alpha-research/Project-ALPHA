@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
-verified: d9e54f766d222476
+verified: e437e45adb6516ce
 ---
 
 # Sensitivity: costs, delay and nearby settings
@@ -33,7 +33,7 @@ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY -
 **What it cannot tell you**
 
 - For the scored break-even cost, use the [run-level check](run-level-checks.md). Costs here are flat and do not model trade capacity.
-- Wider parameter ranges: the re-runs are one step each side only. A sweep is
+- An owner rule gets only `costs_x2` (`sensitivity.note`). Wider parameter ranges: the re-runs are one step each side only. A sweep is
   [deflated Sharpe and trials](deflated-sharpe-and-trials.md), and it must be reported as a search.
 
 **Next** Fragile to costs: state the holding period and trade count beside it. Fragile to delay: treat the

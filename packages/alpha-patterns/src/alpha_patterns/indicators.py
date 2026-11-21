@@ -179,9 +179,11 @@ def rsi(closes: FloatArray, window: int = RSI_WINDOW) -> FloatArray:
     avg_loss = float(np.mean(losses[:window]))
     out[window] = _rsi_value(avg_gain, avg_loss)
 
+    # Plain floats in the loop: the same IEEE double arithmetic as numpy scalars, read faster.
+    gain, loss = gains.tolist(), losses.tolist()
     for i in range(window + 1, n):
-        avg_gain = (avg_gain * (window - 1) + gains[i - 1]) / window
-        avg_loss = (avg_loss * (window - 1) + losses[i - 1]) / window
+        avg_gain = (avg_gain * (window - 1) + gain[i - 1]) / window
+        avg_loss = (avg_loss * (window - 1) + loss[i - 1]) / window
         out[i] = _rsi_value(avg_gain, avg_loss)
     return out
 

@@ -17,6 +17,8 @@ Every automated check, the breakage it exists to catch, where it runs and how lo
 Pull requests merge on the one required check, `ci-ok`. Times are wall time on GitHub's
 standard runners, measured on pull request #134 (run 43482233439, 2026-11-13) unless marked otherwise.
 `tests/unit/test_checks_reference.py` fails when a CI job or a pytest marker is missing here.
+A DRAFT pull request runs only `changes` and `static`, and its `ci-ok` fails on purpose with a message. The full run starts when the pull
+request is marked ready (`gh pr ready <number>`). Nothing merges without the full green run.
 
 Tiers: **PR** runs on every pull request and every push to main. **PR (paths)** runs on a pull
 request only when its paths (or the workflow and gate files) change, and always on main.
@@ -30,7 +32,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `changes` job: picks the conditional jobs | a path-filtered job silently skipped (unknown history selects all) | PR | 8 s |
 | `static` job: `uv lock --check`, `uv sync --locked` | a dependency change without its lock file | PR | 7 s (job 1.4 min) |
 | `static`: ruff lint and format | style and simple bug patterns (unused names, bad comparisons) | PR | 1 s |
-| `static`: living documents (`fs.py stale --strict`) | a source changed without its document being re-read and verified | PR | 1 s |
+| `static`: living documents (`fs.py stale`) | broken front matter or a missing source (blocks); stale documents are listed, not blocked | PR | 1 s |
 | `static`: import contracts (`lint-imports`) | a package importing a layer it must not (the import DAG) | PR | 0.4 s |
 | `static`: mypy, one strict run over packages, apps, tests and harness scripts | type errors | PR | 45 s |
 | `static`: harness lint and doctor | a removed deny rule, unwired hook, lowered coverage floor or `-x` in CI | PR | 0.2 s |

@@ -45,6 +45,8 @@ def _chain(home: Path, identity: str) -> tuple[list[str], list[str]]:
 
 
 def _rule_text(spine: dict[str, Any]) -> str:
+    if spine.get("rule_words"):
+        return str(spine["rule_words"])
     rule = spine.get("rule") or {}
     extras = ", ".join(f"{k}={v}" for k, v in rule.items() if k != "kind" and v is not None)
     kind = rule.get("kind") or "rule not recorded"

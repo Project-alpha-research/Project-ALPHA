@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 4fd45ff6e3ee4d3b on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified db18e1b165b615df on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 apps/alpha-cli/README.md
-  verified 4fd45ff6e3ee4d3b on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified db18e1b165b615df on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -38,13 +38,13 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 116a65532c20e237 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 8c1a4ca1aa4ac9a4 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 docs/reference/invariants/cli-runs.md
-  verified 4853442d4c2ffaa2 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified c64f0fae10f29644 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 docs/reference/invariants/cli-setups.md
-  verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
+  verified 16d7b409f676b0a7 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -143,13 +143,13 @@ docs/reference/project/components/setup-lab.md
   verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 3ab2e60be1acdfad on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 5e9b29f151782d0c on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 5f159f2eb6e58a09 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 484511043fd11a43 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -203,10 +203,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 96dbaa9fb71b8729 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 5a9f1111f49b1fc8 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/PLAYBOOK.md
-  verified 075d86a513081c88 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified a4910b2254c40f6d on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -218,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified c0850bdf240fd260 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 8e4eeadff087b5e0 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 9a78fc6f8daf2d92 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified f02bcb2982c56ee3 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified bd1276e505bb18d4 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified ae4726e3dcdf2820 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/diagnose-and-audit.md
-  verified 85a285985c6d47c8 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified efa2a5d4c24b3a09 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -269,13 +269,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 815d66fd4e1b4a5f on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 04e32e9ec9dbbde9 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified bd1276e505bb18d4 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified ae4726e3dcdf2820 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
 
 research/tools/setup-find.md
   verified c580e86c234dc123 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.

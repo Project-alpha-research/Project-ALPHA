@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 6aafb234482a3702 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
+  verified b3ccef37d1760660 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
 
 apps/alpha-cli/README.md
-  verified 6aafb234482a3702 on 2026-11-21: Searched this document for figure, chart, theme, dark, PNG and render wording: it has none, so the figure-pair change leaves its text correct.
+  verified b3ccef37d1760660 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -18,6 +18,9 @@ apps/alpha-web/README.md
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
+
+docs/reference/checks.md
+  verified 9b15aed9e975ae47 on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
@@ -41,7 +44,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 655e0dfacb1217f3 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-runs.md
-  verified 401130b0343c2e7c on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified c36b70f415f95459 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
 
 docs/reference/invariants/cli-setups.md
   verified 21bd852be1d5fa1c on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
@@ -67,6 +70,9 @@ docs/reference/invariants/data.md
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
 
+docs/reference/invariants/engineering.md
+  verified 9f9a157b06ba5dd0 on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
+
 docs/reference/invariants/patterns.md
   verified 2ba90d5fb0e8531e on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
 
@@ -76,8 +82,11 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
+docs/reference/invariants/research.md
+  verified f36c0a93f15aac0b on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
+
 docs/reference/invariants/testing.md
-  verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
+  verified 1abbbd07773b424f on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
 
 docs/reference/invariants/validation-factor-statistics.md
   verified 29fbabfa2cb71320 on 2026-11-20: tests added that pin whole error messages and the stated assumption text; the rules are unchanged
@@ -86,10 +95,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 76e7168920c452d0 on 2026-11-21: Re-read the figure and theme lines against the change: the claims (1600x900 PNG, light stored figures, light card for journey steps, PNG routes) are still true; the figure-pair change adds no claim here.
+  verified c8b00eb6a550b693 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
 
 docs/reference/invariants/web-api.md
-  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified b0d58b96169a3f49 on 2026-11-21: Re-read after the last callout and test edits: the variant, white-look and explanation claims here still match the code.
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -168,6 +177,9 @@ docs/reference/project/file-system-measurement.md
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
+
+docs/reference/project/outside-projects.md
+  verified d1815b0f82ab9b2d on 2026-11-21: Checked the ruff mentions: only a one-file ruff exclusion was added in pyproject.toml; the described checks and tools are unchanged.
 
 docs/reference/project/owner-decisions-2.md
   verified 4c59d794bcc9c4ff on 2026-11-18: re-read: volume 1 now sends new entries to volume 5; this volume's own pointer and the rules link are unchanged and still right

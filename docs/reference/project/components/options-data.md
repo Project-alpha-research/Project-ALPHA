@@ -9,7 +9,8 @@ sources:
   - tests/unit/test_options_conventions.py
   - tests/unit/test_options_american.py
   - tests/unit/test_options_american_implied.py
-verified: 814a9b6c19ab1666
+  - tests/unit/test_options_derived.py
+verified: 051c334efe60cdb8
 ---
 
 # Options data
@@ -58,9 +59,9 @@ listed US equity and ETF options as well as European index and futures options. 
 priced by the tree. A solve costs about 0.14 s at 500 steps; a 100-contract chain with greeks about 21 s.
 
 Not built:
-- Derived series, health card rows.
+- Health card rows; joining the derived series to the context store.
 - Any provider adapter, history import, security-id map and delisted-name universe. These wait for the purchase.
-- A command group. The fixture is not on any screen yet.
+- Derived series (`iv30`, rank, skew, term slope, IV minus RV) exist as `alpha options derived`; no screen shows them yet.
 
 ## Where it lives
 
@@ -70,7 +71,7 @@ Not built:
 - Tests: `tests/unit/test_options_schema.py`, `tests/unit/test_options_store.py`, `tests/unit/test_options_held_back.py`,
   `tests/unit/test_options_forward_guard.py`, `tests/unit/test_options_pricing.py`, `tests/unit/test_options_implied.py`,
   `tests/unit/test_options_priced_fixture.py`, `tests/unit/test_options_conventions.py`, `tests/unit/test_options_american.py`,
-  `tests/unit/test_options_american_implied.py`.
+  `tests/unit/test_options_american_implied.py`, `tests/unit/test_options_derived.py`, `tests/unit/test_options_derived_cmd.py`.
 - **Plan:** [stage 2](../../../roadmap/production-scope.md#2-data-and-context) of the checklist.
 - How to change it: [packages/alpha-data/CONTEXT.md](../../../../packages/alpha-data/CONTEXT.md).
 

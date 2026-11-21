@@ -16,21 +16,29 @@ HOME = Path("packages/alpha-data/src/alpha_data/sessions.py")
 ALLOWED: dict[Path, str] = {}
 
 
+HOME_MODULE = "alpha_data.sessions"
+NAMES = {"get_calendar", "xcals", "exchange_calendars"}
+
+
 def reaches_library(source: str) -> bool:
+    """Imports, names, attributes and strings that reach the library, also through the home."""
+    if LIBRARY in source.replace("'", "").replace('"', "").replace(" + ", ""):
+        return True
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import) and any(
             a.name.split(".")[0] == LIBRARY for a in node.names
         ):
             return True
-        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == LIBRARY:
-            return True
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and node.value.split(".")[0] == LIBRARY
+        if isinstance(node, ast.ImportFrom) and (
+            (node.module or "").split(".")[0] == LIBRARY
+            or (node.module == HOME_MODULE and any(a.name in {"*", *NAMES} for a in node.names))
         ):
             return True
-        if isinstance(node, ast.Attribute) and node.attr == "get_calendar":
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value in NAMES:
+            return True
+        if isinstance(node, ast.Attribute) and node.attr in NAMES:
+            return True
+        if isinstance(node, ast.Name) and node.id in NAMES:
             return True
     return False
 
@@ -58,7 +66,18 @@ def test_the_guard_sees_every_way_of_reaching_the_library() -> None:
     assert reaches_library("importlib.import_module('exchange_calendars')")
     assert reaches_library("__import__('exchange_calendars')")
     assert reaches_library("calendars.get_calendar('XNYS')")
+    assert reaches_library("getattr(calendars, 'get_calendar')('XNYS')")
+    assert reaches_library("importlib.import_module('exchange' + '_calendars')")
+    assert reaches_library("from alpha_data.sessions import xcals")
+    assert reaches_library("from alpha_data.sessions import *")
+    assert reaches_library("import alpha_data.sessions as s\ns.xcals.ExchangeCalendar")
     assert not reaches_library("from alpha_data.sessions import sessions_between")
+
+
+def test_the_guard_fails_on_a_violating_file(tmp_path: Path) -> None:
+    bad = tmp_path / "bad.py"
+    bad.write_text("from alpha_data.sessions import xcals\n", encoding="utf-8")
+    assert reaches_library(bad.read_text(encoding="utf-8"))
 
 
 def test_the_home_still_uses_the_library_and_the_allow_list_is_real() -> None:

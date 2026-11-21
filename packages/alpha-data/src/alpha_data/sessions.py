@@ -10,6 +10,10 @@ A day inside that window is answered by the library. Two cases remain:
   time, DST aware (the latest regular close the calendar knows). A Saturday or Sunday has no
   session and keeps the end-of-day rule. Such a result is labelled ``OUTSIDE_RANGE_LABEL``.
   The fallback may place a decision instant later than the truth, never earlier.
+* Before ``EXACT_CLOSES_FROM`` (1993), the library's early closes are blanket rules ("Christmas Eve
+  and Black Friday at 14:00" for every year), not a checked list. An invented early close would move
+  a decision instant earlier than the truth, so those sessions keep the regular close. They carry
+  the same label (``close_assumed``).
 * After the window end (about a year ahead), the library has no sessions and future sessions are
   not research: the home refuses with ``CalendarRangeError``.
 """
@@ -31,6 +35,7 @@ from alpha_data.timeframe import BarTimeframe
 
 OUTSIDE_RANGE_LABEL = "calendar-outside-supported-range"
 WIDE_START = date(1950, 1, 1)
+EXACT_CLOSES_FROM = date(1993, 1, 1)
 
 
 class CalendarRangeError(DataError):
@@ -46,6 +51,7 @@ class _Table:
     closes: dict[date, datetime]
     regular_close: time
     close_offset: int
+    assumed: frozenset[date]
 
     @property
     def first(self) -> date:
@@ -70,23 +76,45 @@ def check_session(scope: str, calendar: str | None) -> None:
 @lru_cache(maxsize=32)
 def _table(name: str) -> _Table:
     try:
-        base = xcals.get_calendar(name)
-        lowest = type(base).bound_min()
-        start = WIDE_START if lowest is None else max(WIDE_START, lowest.date())
-        exchange = xcals.get_calendar(name, start=start.isoformat())
+        exchange = _widest(name)
     except (ValueError, KeyError, CalendarError) as exc:
         raise DataError(f"invalid exchange calendar {name!r}: {exc}") from exc
     opens = {s.date(): v.to_pydatetime().astimezone(UTC) for s, v in exchange.opens.items()}
     closes = {s.date(): v.to_pydatetime().astimezone(UTC) for s, v in exchange.closes.items()}
+    regular_close = max(t for _, t in exchange.close_times)
+    offset = int(exchange.close_offset)
+    assumed: set[date] = set()
+    for day in [d for d in closes if d < EXACT_CLOSES_FROM]:
+        regular = _regular_close(exchange.tz, regular_close, offset, day)
+        if closes[day] < regular:
+            closes[day] = regular
+            assumed.add(day)
     return _Table(
         name=name,
         zone=exchange.tz,
         days=tuple(opens),
         opens=opens,
         closes=closes,
-        regular_close=max(t for _, t in exchange.close_times),
-        close_offset=int(exchange.close_offset),
+        regular_close=regular_close,
+        close_offset=offset,
+        assumed=frozenset(assumed),
     )
+
+
+def _widest(name: str) -> xcals.ExchangeCalendar:
+    """One build from ``WIDE_START``; a calendar that starts later is built from its own bound."""
+    try:
+        return xcals.get_calendar(name, start=WIDE_START.isoformat())
+    except ValueError:
+        lowest = type(xcals.get_calendar(name)).bound_min()
+        if lowest is None:
+            raise
+        return xcals.get_calendar(name, start=max(WIDE_START, lowest.date()).isoformat())
+
+
+def _regular_close(zone: tzinfo, close: time, offset: int, day: date) -> datetime:
+    local = datetime.combine(day, close, tzinfo=zone)
+    return local.astimezone(UTC) + timedelta(days=offset)
 
 
 def _aware_utc(ts: datetime) -> datetime:
@@ -106,6 +134,13 @@ def outside_supported_range(calendar: str | None, day: date) -> bool:
     return calendar is not None and day < _table(calendar).first
 
 
+def close_assumed(calendar: str | None, day: date) -> bool:
+    """True when the close of `day` is assumed: before the window, or a pre-1993 early close."""
+    return outside_supported_range(calendar, day) or (
+        calendar is not None and day in _table(calendar).assumed
+    )
+
+
 def range_label(calendar: str | None, first_day: date) -> str | None:
     """`OUTSIDE_RANGE_LABEL` when bars from `first_day` rest on the fallback, else None."""
     return OUTSIDE_RANGE_LABEL if outside_supported_range(calendar, first_day) else None
@@ -123,8 +158,7 @@ def _fallback_close(table: _Table, day: date) -> datetime | None:
     """Regular close of a weekday before the window, exchange-local and DST aware."""
     if day.weekday() >= 5:
         return None
-    local = datetime.combine(day, table.regular_close, tzinfo=table.zone)
-    return local.astimezone(UTC) + timedelta(days=table.close_offset)
+    return _regular_close(table.zone, table.regular_close, table.close_offset, day)
 
 
 def is_session(calendar: str, day: date) -> bool:

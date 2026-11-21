@@ -24,7 +24,9 @@ from alpha_data.adapters.yfinance_adapter import split_discontinuity
 from alpha_data.corporate import known_actions
 from alpha_data.crypto.quality import missing_slot_ranges
 from alpha_data.sessions import (
+    EXACT_CLOSES_FROM,
     OUTSIDE_RANGE_LABEL,
+    close_assumed,
     daily_session_closes,
     outside_supported_range,
     supported_range,
@@ -650,26 +652,35 @@ def _mechanical_checks(
 
 
 def _range_checks(calendar: str | None, dates: Sequence[date]) -> list[HealthCheck]:
-    """Say so when bars predate the calendar: their sessions and closes are assumed, not known."""
+    """Say so when a bar's close is assumed: before the calendar, or a pre-1993 early close."""
     if calendar is None:
         return []
-    old = sorted(d for d in set(dates) if outside_supported_range(calendar, d))
-    if not old:
+    held = sorted(set(dates))
+    old = [d for d in held if outside_supported_range(calendar, d)]
+    early = [d for d in held if close_assumed(calendar, d) and d not in old]
+    if not old and not early:
         return []
-    first = supported_range(calendar)[0]
-    finding = (
-        f"{OUTSIDE_RANGE_LABEL}: {len(old)} bars from {old[0]} to {old[-1]} come before the first "
-        f"{calendar} session in the calendar ({first}). Each is taken as a session closing at the "
-        "regular close; holidays before it cannot be told apart."
-    )
+    parts = []
+    if old:
+        first = supported_range(calendar)[0]
+        parts.append(
+            f"{len(old)} bars from {old[0]} to {old[-1]} come before the first {calendar} "
+            f"session in the calendar ({first}). Each is taken as a session closing at the "
+            "regular close; holidays before it cannot be told apart."
+        )
+    if early:
+        parts.append(
+            f"{len(early)} bars on early-close days before {EXACT_CLOSES_FROM} "
+            f"({', '.join(str(d) for d in early[:5])}) are taken to close at the regular close."
+        )
     return [
         _item(
             "calendar_range",
             "gaps",
-            old,
+            [*old, *early],
             "pass",
-            finding,
-            "Bars before the calendar start use the labelled fallback.",
+            f"{OUTSIDE_RANGE_LABEL}: " + " ".join(parts),
+            "Bars with an assumed close use the labelled fallback.",
         )
     ]
 

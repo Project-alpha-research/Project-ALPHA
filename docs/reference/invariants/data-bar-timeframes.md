@@ -10,7 +10,7 @@ sources:
   - packages/alpha-data/src/alpha_data/sessions.py
   - packages/alpha-data/src/alpha_data/resample.py
   - packages/alpha-data/src/alpha_data/align.py
-verified: 7371622c07000ebb
+verified: 438fb2a9f0947e62
 ---
 
 # Bar timeframes
@@ -51,8 +51,8 @@ Daily health reports use exchange close instants for the requested historical ra
 
 The exchange-calendars library answers only a moving window (about 20 years back, about a year ahead).
 `sessions.py` is the only module that imports it; `tests/unit/test_calendar_home_guard.py` fails if any
-other source file does. Every caller asks the home: `is_session`, `session_close`, `session_bounds`,
-`sessions_between`, `daily_session_closes`, `session_on_or_before/before/after`, `bar_known_at`.
+other source file names it, also through the home (`xcals`, a star import) or by string. Every caller asks
+the home: `is_session`, `session_close`, `session_bounds`, `sessions_between`, `daily_session_closes`, `session_on_or_before/before/after`, `bar_known_at`.
 
 - Start: the home builds each calendar from 1950-01-01 (or the calendar's own first year, if later), so
   answers inside that range are the library's own and equal the default window for every date it covers.
@@ -61,13 +61,21 @@ other source file does. Every caller asks the home: `is_session`, `session_close
   the regular close of the exchange in local time, DST aware (latest regular close the calendar knows). A
   Saturday or Sunday has no session: known at the end of its UTC day. The instant may be later than the
   truth, never earlier. An intraday open before the start fails loud (`CalendarRangeError`).
+- Before 1993 (`EXACT_CLOSES_FROM`), the library's early closes are blanket rules (Christmas Eve and Black
+  Friday at 14:00 in every year), not a checked list. Those sessions keep the regular close, so no close
+  is earlier than the truth (`close_assumed`; same label). Holidays still come from the library: a wrong
+  holiday only makes a bar known at the end of its UTC day, which is later. Regular closes before 1974
+  (15:30, and Saturday sessions before 1952) are earlier than the library's 16:00: the library is late,
+  not early.
 - After the last session: `CalendarRangeError` (a `DataError`), "future session and not research".
   Follow commands turn it into the `FOLLOW_CALENDAR_RANGE` refusal.
 - Daily health adds a `calendar_range` check (status pass) with the label, the count and the first and last
-  date, only when bars predate the start. A weekend bar before the start is a non-session.
+  date, only when bars predate the start or sit on an assumed pre-1993 early-close day. A weekend bar before
+  the start is a non-session.
 - Crypto has no calendar: the end of the UTC day, as before.
 - Tests: `test_calendar_home.py` (date-independent: bounds come from the library at run time) and
-  `test_calendar_before_after.py` (the kept bars and known-at instants equal the old rule in the window).
+  `test_calendar_before_after.py` (the kept bars and known-at instants equal the old rule in the window),
+  `test_calendar_old_early_closes.py` (no pre-1993 close earlier than the regular close).
 
 ## Reading intraday bars
 

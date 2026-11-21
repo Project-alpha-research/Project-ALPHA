@@ -55,6 +55,9 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
+docs/reference/invariants/data-bar-timeframes.md
+  verified 7371622c07000ebb on 2026-11-21: calendar range sweep; text still correct
+
 docs/reference/invariants/data-freeze-before-replace.md
   verified c62e25685530b285 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
 
@@ -62,7 +65,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 214c32a59a7b4e6a on 2026-11-21: calendar range sweep; text still correct
+  verified 23dbf74c645b2c0c on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -200,7 +203,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 698f6dc9c72757a0 on 2026-11-21: calendar range sweep; text still correct
+  verified aaf83ee0c9560850 on 2026-11-21: calendar range sweep; text still correct
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels

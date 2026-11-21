@@ -32,7 +32,8 @@ CLOSES = {s.date(): c.to_pydatetime() for s, c in ORACLE.closes.items()}
 def _old_known_at(ts: datetime) -> datetime:
     """The pre-sweep answer for an in-window date, from the library default window."""
     day = ts.astimezone(UTC).date()
-    return CLOSES.get(day, ts + DAILY.duration)
+    found: datetime | None = CLOSES.get(day)
+    return found if found is not None else ts + DAILY.duration
 
 
 def _store(home: Path) -> list[datetime]:

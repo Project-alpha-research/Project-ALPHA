@@ -18,7 +18,6 @@ import typer
 
 from alpha_cli import _artifacts, _propfirm, _runner
 from alpha_cli._artifacts import sanitize
-from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 
@@ -111,12 +110,6 @@ def run(
         size_on_equity=size_on_equity,
         halt_drawdown=halt_drawdown,
     )
-    held: reserve.Hold | None = None
-    if symbol is not None:
-        try:
-            held = reserve.hold(symbol, data_dir=settings.data_dir, snapshot_id=snapshot)
-        except DataError as exc:
-            raise typer.BadParameter(str(exc)) from exc
     # The run id pins only what the result depends on: the source, the firm + overrides, and the MC
     # knobs. A fresh backtest also depends on the strategy/cost spec; --from-run depends on the run.
     payload: dict[str, Any] = {
@@ -134,8 +127,6 @@ def run(
         payload["symbol"] = symbol
         payload["snapshot"] = snapshot
         payload.update(vars(spec))
-        if held is not None and held.held_back:  # an id with no held-back bar stays as it was
-            payload.update(held.identity())
     try:
         out = _propfirm.run_propfirm(
             data_dir=settings.data_dir,
@@ -149,11 +140,11 @@ def run(
             mean_block=mean_block,
             seed=resolved_seed,
             horizon_days=horizon,
-            as_of=held.as_of if held is not None else None,
         )
     except DataError as exc:  # missing run, unknown firm, degenerate returns, bad rule override
         raise typer.BadParameter(str(exc)) from exc
 
+    payload.update(_propfirm.held_identity(out.held))
     identity = _runner.run_identity_for(
         payload,
         source_fingerprint=out.source_fingerprint,
@@ -172,9 +163,7 @@ def run(
     )
     manifest = _manifest(out, run_id=run_id, seed=resolved_seed)
     manifest.update(identity.manifest_fields())
-    if held is not None and held.held_back:
-        manifest["research_cutoff"] = held.research_cutoff
-        held.stamp(manifest)
+    _propfirm.stamp_held(manifest, out.held)
     _artifacts.write_manifest(rdir, manifest)
 
     res = out.result
@@ -186,7 +175,7 @@ def run(
         f"payout {res.payout_probability:.1%}, median days-to-pass {days}\n"
         f"  expected payout ${res.expected_payout:,.0f} over {res.horizon_days} days "
         f"({res.n_paths} paths)\n"
-        f"  manifest at {rdir / 'manifest.json'}" + (held.note() if held is not None else "")
+        f"  manifest at {rdir / 'manifest.json'}" + (out.held.note() if out.held else "")
     )
 
 

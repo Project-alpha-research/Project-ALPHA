@@ -3186,20 +3186,16 @@ def compare(
 ) -> None:
     """Backtest each strategy on SYMBOL and rank them by total return."""
     from alpha_cli import _runner, _strategies
-    from alpha_cli.spine import reserve
+    from alpha_cli.research_compare import SWEEP_EXCLUDED, held_bars, held_fields
 
+    # The default sweep leaves out the strategies that need a forecast cache or a saved
+    # rule set (see SWEEP_EXCLUDED).
     names = [s.strip() for s in strategies.split(",") if s.strip()] or [
-        # kronos needs a precomputed forecast cache (built by backtest/validate/optim, not this
-        # lightweight comparison spec) and rules needs an owner-saved rule set (--rules), so
-        # exclude both from the default all-strategies sweep.
-        n
-        for n in _strategies.known_strategies()
-        if n not in {"kronos", "rules"}
+        n for n in _strategies.known_strategies() if n not in SWEEP_EXCLUDED
     ]
     settings = AlphaSettings()
     try:
-        held = reserve.hold(symbol, data_dir=settings.data_dir)
-        bars, _ = _runner.load_bars(symbol, data_dir=settings.data_dir, as_of=held.as_of)
+        bars, held = held_bars(symbol, settings.data_dir)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -3231,8 +3227,7 @@ def compare(
         "comparison_status": comparison_status,
         "preferred_strategy": preferred_strategy,
         "preference_reason": preference_reason,
-        **held.identity(),
-        **({"reserve_sentence": held.say()} if held.held_back else {}),
+        **held_fields(held),
     }
     if json_out:
         typer.echo(json.dumps(payload))

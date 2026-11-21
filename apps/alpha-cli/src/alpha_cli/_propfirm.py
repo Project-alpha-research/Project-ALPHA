@@ -17,6 +17,7 @@ from typing import Any
 import numpy as np
 
 from alpha_cli import _artifacts, _runner
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_validation import (
     FIRM_PRESETS,
@@ -63,6 +64,19 @@ class PropFirmRunResult:
     rules: PropFirmRules
     result: PropFirmResult
     source_fingerprint: str
+    held: reserve.Hold | None = None  # the held-back cut-off of a fresh backtest; None for a run
+
+
+def held_identity(held: reserve.Hold | None) -> dict[str, Any]:
+    """Run-identity keys: none unless a bar was held back, so other ids stay as they were."""
+    return held.identity() if held is not None and held.held_back else {}
+
+
+def stamp_held(manifest: dict[str, Any], held: reserve.Hold | None) -> None:
+    """Record the cut-off, the hold-back and its label on a manifest; nothing when none held."""
+    if held is not None and held.held_back:
+        manifest["research_cutoff"] = held.research_cutoff
+        held.stamp(manifest)
 
 
 def resolve_rules(firm: str | None, overrides: Mapping[str, float]) -> PropFirmRules:
@@ -113,7 +127,7 @@ def _returns_from_run(data_dir: Path, run_id: str) -> tuple[FloatArray, str]:
 
 
 def _returns_from_backtest(
-    symbol: str, spec: _runner.RunSpec, data_dir: Path, snapshot: str | None, as_of: datetime
+    symbol: str, spec: _runner.RunSpec, data_dir: Path, snapshot: str | None, as_of: datetime | None
 ) -> tuple[FloatArray, str]:
     """Daily returns from a fresh full backtest of ``symbol`` (the equity curve, net of costs).
 
@@ -139,24 +153,23 @@ def run_propfirm(
     mean_block: float,
     seed: int | None,
     horizon_days: int | None,
-    as_of: datetime | None = None,
 ) -> PropFirmRunResult:
     """Resolve the return stream + rules and run the prop-firm Monte Carlo.
 
     Exactly one of ``symbol`` / ``from_run`` must be set (enforced by the caller). Fails loud
     (``DataError``) on a missing run, an unknown firm, or a degenerate return stream. A fresh
-    backtest reads ``as_of`` (the held-back cut-off, required with ``symbol``); ``from_run`` reads
-    only the stored equity curve of a run that was cut when it was made.
+    backtest reads only up to the held-back cut-off; ``from_run`` reads a stored equity curve of
+    a run that was cut when it was made.
     """
+    held: reserve.Hold | None = None
     if from_run is not None:
         raw_returns, observed_source = _returns_from_run(data_dir, from_run)
         returns: Sequence[float] | FloatArray = trim_warmup(raw_returns)
         source = f"run:{from_run}"
     elif symbol is not None:
-        if as_of is None:
-            raise DataError("a fresh backtest needs the held-back cut-off (as_of)")
+        held = reserve.hold(symbol, data_dir=data_dir, snapshot_id=snapshot)
         raw_returns, observed_source = _returns_from_backtest(
-            symbol, spec, data_dir, snapshot, as_of
+            symbol, spec, data_dir, snapshot, held.as_of
         )
         returns = trim_warmup(raw_returns)
         source = f"symbol:{symbol}"
@@ -173,4 +186,5 @@ def run_propfirm(
         rules=rules,
         result=result,
         source_fingerprint=observed_source,
+        held=held,
     )

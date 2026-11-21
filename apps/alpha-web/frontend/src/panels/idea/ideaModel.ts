@@ -96,7 +96,7 @@ export function triesText(test: IdeaTest): string {
   return parts.length ? parts.join(' · ') : 'tries not recorded'
 }
 
-export interface TimelineRow { id: string; kind: string; day: string; word: string; aim: string; tries: string; problem: string | null; checks: number }
+export interface TimelineRow { labels: string[]; id: string; kind: string; day: string; word: string; aim: string; tries: string; problem: string | null; checks: number }
 
 export function timeline(file: IdeaFile): TimelineRow[] {
   return file.readings.map(test => {
@@ -106,6 +106,7 @@ export function timeline(file: IdeaFile): TimelineRow[] {
     const problem = [test.problem, ...faults].filter(Boolean).join('; ') || null
     return {
       id: test.id, kind: test.kind, day: shortDay(test.recorded_at), problem, checks: test.checks.length,
+      labels: find ? [...new Set([...test.labels, ...test.studies.flatMap(s => s.labels)])] : [],
       word: find ? test.studies.find(s => !s.problem)?.reading ?? (faults.length ? 'a linked study could not be read' : 'no study yet') : evidenceWord(test),
       aim: find ? `${t.accepted ?? '?'} accepted, ${t.pending ?? '?'} pending, ${t.set_aside ?? '?'} set aside` : aimText(test),
       tries: find ? `${plural(test.studies.length, 'study', 'studies')} linked` : triesText(test),

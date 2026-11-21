@@ -68,6 +68,10 @@ describe('ideaModel', () => {
     expect(row.problem).toBe('study s1: the stored study could not be read: bad file')
     expect(row.word).toBe('a linked study could not be read')
   })
+  it('carries the warning labels of a find and its studies onto the timeline row', () => {
+    const labelled = { ...find, labels: ['exploratory'], studies: [{ id: 's1', reading: 'r', labels: ['overlapping-outcomes', 'exploratory'] }] } as unknown as IdeaTest
+    expect(timeline(file({ readings: [labelled] }))[0].labels).toEqual(['exploratory', 'overlapping-outcomes'])
+  })
   it('handles a missing aim and missing counts in words', () => {
     expect(aimText(run('a', '2026-11-19', { aim: null }))).toBe('no aim stored')
     expect(triesText(run('a', '2026-11-19', { reading: null }))).toBe('tries not recorded')

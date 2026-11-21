@@ -64,6 +64,14 @@ describe('IdeaPageView', () => {
     const follow = { follow_id: 'f1f1f1f1f1f1', kind: 'rule_test', source_id: 'x', assets: ['SPY'], version: 2, started_at: '2026-11-17T08:00:00+00:00', state: 'active', sessions: 4, stop_reason: '' }
     expect(page(file({ follows: [follow] } as unknown as Partial<IdeaFile>))).toContain('active; 4 sessions recorded on SPY. Paper only.')
   })
+  it('shows the warning labels stored with a tool result and with a study', () => {
+    const tool = { tool: 'market.vol_regimes', word: 'exploratory', reading: 'Calm months made 90% of the return.', file: 'f.json', labels: ['exploratory', 'parameters-fit-in-sample'] }
+    const html = page(file({ readings: [{ ...run, checks: [tool] }] } as unknown as Partial<IdeaFile>))
+    expect(html).toContain('parameters-fit-in-sample')
+    const find = { kind: 'setup find', id: 'f1', recorded_at: null, tested: { assets: [] }, totals: {}, checks: [], figures_available: [], labels: [], problem: null,
+      studies: [{ id: 's1', reading: 'r', labels: ['data-health-fail'] }] }
+    expect(page(file({ readings: [find] } as unknown as Partial<IdeaFile>))).toContain('data-health-fail')
+  })
   it('shows loading and error states', () => {
     expect(page(null)).toContain('Loading this idea')
     expect(page(null, 'There is no idea card')).toContain('role="alert"')

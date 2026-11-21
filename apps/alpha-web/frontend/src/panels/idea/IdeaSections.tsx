@@ -82,6 +82,7 @@ export function TestsStep({ file, selected, onSelect }: { file: IdeaFile; select
               <strong className="idea-t-word">{row.word}</strong>
               <span className="idea-t-aim">{row.aim}</span>
               <span className="muted idea-t-tries">{row.tries}</span>
+              {row.labels.length ? <span className="idea-t-labels" aria-label="Labels of this find and its studies">{row.labels.map(label => <span key={label} className="chip">{label}</span>)}</span> : null}
               {row.problem ? <span className="idea-t-problem" role="note">Fault: {row.problem}</span> : null}
             </>
           )
@@ -109,6 +110,7 @@ export function ToolsStep({ file }: { file: IdeaFile }) {
               <span className="idea-tool-name mono">{row.tool}</span>
               <span className="chip idea-tool-word" data-word={row.word}>{row.word}</span>
               <span>{row.reading}</span>
+              {row.labels.filter(label => label !== row.word).map(label => <span key={label} className="chip idea-tool-label" title="A label stored with this result">{label}</span>)}
               <span className="muted">run {row.run.slice(0, 8)}</span>
             </li>
           ))}

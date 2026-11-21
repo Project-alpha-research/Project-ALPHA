@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/idea/**
   - apps/alpha-web/frontend/e2e/idea-workspace.spec.ts
-verified: e24cae1f03437816
+verified: 37eadd75e3af8fda
 ---
 
 # Web frontend ideas page invariants

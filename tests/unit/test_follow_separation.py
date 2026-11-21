@@ -30,6 +30,8 @@ READER_REASONS = {
     "follow_show.py": "F2: prints the last entries and the paper equity of a follow",
     "follow_today.py": "F3: reads every journal to build the what-is-active-today view",
     "follow_counts.py": "F3: the one-line count `alpha next` prints, through follow_today",
+    "home_backup.py": "`alpha home backup`: copies every file of the home, byte for byte, into "
+    "one archive; it parses no journal and feeds no research result",
 }
 READERS = frozenset(CLI + name for name in READER_REASONS)
 STORE_IMPORT = re.compile(

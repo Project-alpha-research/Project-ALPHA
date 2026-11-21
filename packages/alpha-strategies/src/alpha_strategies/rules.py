@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
@@ -442,15 +442,31 @@ def operand_series(series: OHLCV, operand: Operand) -> FloatArray:
     return values
 
 
-def _condition_result(condition: Condition, series: OHLCV) -> tuple[float, float, bool]:
-    left = float(operand_series(series, condition.left)[-1])
-    right = float(operand_series(series, condition.right)[-1])
+def no_value_message(condition: Condition, history: int) -> str:
+    """The error of a reached condition with no finite value on the decision bar."""
+    return (
+        f"rule '{condition.label}' has no finite value on the decision bar "
+        f"(history {history} bars); lengthen 'history', or the statistic is undefined "
+        "on this window (one-signed runs, a zero range, absent ordinal patterns)"
+    )
+
+
+#: an operand's value on the decision bar of one window
+OperandValue = Callable[[Operand], float]
+
+
+def last_values(series: OHLCV) -> OperandValue:
+    """Each operand's value on the last bar of ``series``."""
+    return lambda operand: float(operand_series(series, operand)[-1])
+
+
+def _condition_result(
+    condition: Condition, value: OperandValue, history: int
+) -> tuple[float, float, bool]:
+    left = value(condition.left)
+    right = value(condition.right)
     if not (math.isfinite(left) and math.isfinite(right)):
-        raise DataError(
-            f"rule '{condition.label}' has no finite value on the decision bar "
-            f"(history {len(series)} bars); lengthen 'history', or the statistic is undefined "
-            "on this window (one-signed runs, a zero range, absent ordinal patterns)"
-        )
+        raise DataError(no_value_message(condition, history))
     if condition.op == ">":
         passed = left > right
     elif condition.op == "<":
@@ -462,8 +478,8 @@ def _condition_result(condition: Condition, series: OHLCV) -> tuple[float, float
     return left, right, passed
 
 
-def _holds(condition: Condition, series: OHLCV) -> bool:
-    return _condition_result(condition, series)[2]
+def _holds(condition: Condition, value: OperandValue, history: int) -> bool:
+    return _condition_result(condition, value, history)[2]
 
 
 class ConditionExplanation(TypedDict):
@@ -516,6 +532,7 @@ def explain_rules(
     result: RuleExplanation = {"signal": None, "conditions": rows, "error": error}
     if error is not None or series is None:
         return result
+    value = last_values(series)
     offset = 0
     outcomes = []
     for _, conditions in sides:
@@ -526,7 +543,7 @@ def explain_rules(
                 row["reason"] = "Not evaluated: side short-circuited after a failed condition"
                 continue
             try:
-                left, right, passed = _condition_result(condition, series)
+                left, right, passed = _condition_result(condition, value, len(series))
             except DataError as exc:
                 result["error"] = row["reason"] = str(exc)
                 return result
@@ -556,17 +573,26 @@ def evaluate_rules(spec: RuleSpec, series: OHLCV) -> int:
         raise DataError(
             f"rules evaluate over exactly {spec.history} trailing bars, got {len(series)}"
         )
-    long = bool(spec.long_when) and all(_holds(c, series) for c in spec.long_when)
-    short = bool(spec.short_when) and all(_holds(c, series) for c in spec.short_when)
+    return evaluate_values(spec, last_values(series), len(series))
+
+
+def evaluate_values(spec: RuleSpec, value: OperandValue, history: int) -> int:
+    """``evaluate_rules`` from operand values already read off one window of ``history`` bars.
+
+    ``value`` must give each operand's last-bar value on that window; the engine passes one that
+    computes each operand once per bar, for the decision and the indicator trace both.
+    """
+    long = bool(spec.long_when) and all(_holds(c, value, history) for c in spec.long_when)
+    short = bool(spec.short_when) and all(_holds(c, value, history) for c in spec.short_when)
     if long == short:
         return 0
     return 1 if long else -1
 
 
 def trailing_ohlcv(
-    highs: Sequence[float],
-    lows: Sequence[float],
-    closes: Sequence[float],
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
     *,
     history: int,
     symbol: str = "RULES",
@@ -597,7 +623,10 @@ def trailing_ohlcv(
 
 
 def rule_signal(
-    spec: RuleSpec, highs: Sequence[float], lows: Sequence[float], closes: Sequence[float]
+    spec: RuleSpec,
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
 ) -> int:
     """Convenience: build the trailing window and evaluate — the one call the engine, the Tier-1
     surrogate and a scanner all make."""

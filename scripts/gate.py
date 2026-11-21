@@ -314,8 +314,9 @@ def check_steps(root: Path, test_paths: list[str] | None) -> list[tuple[str, lis
     return [
         ("ruff check", ["uv", "run", "ruff", "check", "."]),
         ("ruff format", ["uv", "run", "ruff", "format", "--check", "."]),
-        # A living document whose sources changed without `fs.py verify` fails here and in CI.
-        ("living documents", [sys.executable, "scripts/fs.py", "stale", "--strict"]),
+        # A stale living document is REPORTED here and in CI, not blocked (broken front matter and a
+        # missing source still fail): re-stamping in every pull request made them all conflict.
+        ("living documents", [sys.executable, "scripts/fs.py", "stale"]),
         ("import contracts", ["uv", "run", "lint-imports"]),
         # One mypy run: pyproject's strict config covers the harness scripts too.
         ("mypy", [*FULL_GATE_MYPY_COMMAND, *harness_files]),

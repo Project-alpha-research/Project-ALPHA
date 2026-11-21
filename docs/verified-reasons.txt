@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
+  verified eecc04c440020831 on 2026-11-21: Stamp conflict from the main merge; text re-read, unchanged by this branch's owner rule work
 
 apps/alpha-cli/README.md
-  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
+  verified eecc04c440020831 on 2026-11-21: Stamp conflict from the main merge; text re-read, unchanged by this branch's owner rule work
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -21,6 +21,9 @@ docs/CONTEXT.md
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+
+docs/reference/invariants/cli-control-store.md
+  verified 7311ed1ba8edb423 on 2026-11-21: Stamp conflict from the main merge; text re-read, unchanged by this branch's owner rule work
 
 docs/reference/invariants/cli-follow.md
   verified f82b7658d6a7bebe on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -215,7 +218,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 9abcc2bb498785c1 on 2026-11-21: merge of main (rule context plan) with the hold-back group A branch; both sides' pages were verified, routing unchanged
+  verified 823bd1096f96372b on 2026-11-21: Stamp conflict from the main merge; text re-read, unchanged by this branch's owner rule work
 
 research/PLAYBOOK.md
   verified 68d4b19f3a6545e4 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold

@@ -38,7 +38,8 @@ _EMPIRICAL_ROOTS = frozenset(
         "setup",
     }
 )
-_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})
+# `confirm` spends a reserved-period slot; only the Touch ID route may run it (with the yes).
+_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "confirm", "project", "suite", "provider"})
 _SAFE_ROOTS = frozenset(
     {
         "info",

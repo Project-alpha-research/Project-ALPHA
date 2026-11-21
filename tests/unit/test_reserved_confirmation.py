@@ -15,7 +15,7 @@ from typing import Any
 import polars as pl
 import pytest
 
-from alpha_cli import _runner, reserved_slots
+from alpha_cli import _runner, next_cmds, reserved_slots
 from alpha_cli.spine import confirm_run as confirm_module
 from alpha_cli.spine import reserve
 from alpha_cli.spine.confirm import plan
@@ -151,6 +151,8 @@ def test_one_confirmation_reads_reserved_bars_only_after_its_receipt(
     again = confirm_run(home, run_id, authorization_id=None)
     assert again["reserved"] == output["reserved"] and len(reads.seen) == seen
     assert len(reserved_slots.receipts(home)) == 1
+    line = "Reserved period: 1 of 10 confirmation slots used, 9 left. See them: alpha confirm list"
+    assert line in next_cmds._text(next_cmds.collect(home))
     # The family label: a tuned variant on the same asset carries it, and cannot be confirmed.
     tuned = _test(home, "fast=6", "slow=20")
     assert reserve.CONFIRMED in tuned["labels"]

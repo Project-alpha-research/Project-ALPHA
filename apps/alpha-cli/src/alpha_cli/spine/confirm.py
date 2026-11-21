@@ -27,7 +27,7 @@ KIND = "reserved_confirmation"
 CONSEQUENCES = (
     "This uses 1 of the 10 slots for the reserved period.",
     "It cannot be undone.",
-    "This rule family can never be confirmed again on this asset, tuned or not.",
+    "This rule, with any settings, can never be confirmed again on this asset.",
     "The result is recorded and shown, whatever it is; it cannot be discarded.",
 )
 
@@ -194,6 +194,12 @@ def plan(home: Path, run_id: str) -> dict[str, Any]:
     return {
         "frozen": record,
         "spec": frozen.idea.model_dump(mode="json"),
+        "rule": {
+            "kind": frozen.rule,
+            "params": frozen.idea.rule.params,
+            "costs": frozen.idea.costs.model_dump(mode="json"),
+            "name": frozen.idea.name,
+        },
         "slots": {"used": used, "left": reserved_slots.SLOTS - used, "total": reserved_slots.SLOTS},
         "consequences": list(CONSEQUENCES),
         "earlier_reading": frozen.reading,

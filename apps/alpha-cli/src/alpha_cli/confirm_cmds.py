@@ -38,11 +38,11 @@ def _b64(value: object) -> str:
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _spec_words(spec: dict[str, Any]) -> str:
-    params = ", ".join(f"{k}={v}" for k, v in spec["rule"]["params"].items())
-    costs = spec["costs"]
+def _rule_words(rule: dict[str, Any]) -> str:
+    params = ", ".join(f"{k}={v}" for k, v in rule["params"].items())
+    costs = rule["costs"]
     return (
-        f"{spec['rule']['kind']} ({params}); costs {costs['fee_bps']} bps fee and "
+        f"{rule['kind']} ({params}); costs {costs['fee_bps']} bps fee and "
         f"{costs['slippage_bps']} bps slippage per trade"
     )
 
@@ -55,8 +55,8 @@ def _plan_lines(found: dict[str, Any]) -> list[str]:
         RESERVED_WORDS,
         "",
         "What would be tested. It is frozen: nothing can change.",
-        f"  Run: {frozen['run_id']} ({found['spec']['name']})",
-        f"  Rule: {_spec_words(found['spec'])}",
+        f"  Run: {frozen['run_id']} ({found['rule']['name']})",
+        f"  Rule: {_rule_words(found['rule'])}",
         f"  Asset: {frozen['symbol']} (store {frozen['store']})",
         f"  Test key: {frozen['test_key_sha256'][:16]} "
         "(spec, asset, store, dates and data content)",

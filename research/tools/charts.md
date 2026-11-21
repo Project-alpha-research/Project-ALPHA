@@ -28,7 +28,7 @@ uv run alpha figures render <run_id> --figure equity_vs_passive --json
   `drawdown_episodes` (falls), `monthly_heatmap` (when the profit came), `trade_pnl` (each trade),
   `fold_sharpe` (walk-forward slices), `null_distribution` (random-price comparison),
   `confidence_intervals`, `exposure_turnover`, `return_distribution`.
-- Every figure comes as a pair: `--variant plain` (the standard chart, the default) and `--variant annotated` (the same chart with callouts and a long reading). All figures are white. New rule tests save both Summary figures for each period in both variants.
+- Every figure is a pair: `--variant plain` (default) and `--variant annotated` (callouts, a long reading). All are white.
 - Every rule test also writes a tear sheet (`tearsheet.html`) in its run folder; `alpha report` prints the path.
 
 **What it cannot tell you**

@@ -12,10 +12,8 @@ verified: 2d16c5abab942e68
 
 ```text
 uv run alpha ledger journey --run-dir <run-dir>
-uv run alpha ledger journey --run-dir <run-dir> --factor <name> --out <directory> --theme dark
+uv run alpha ledger journey --run-dir <run-dir> --factor <name> --out <directory>
 ```
-
-Every journey figure is the same white chart; `--theme dark` is accepted and changes nothing.
 
 The command prints the path to the index. Each entry identifies an iteration, a factor name
 and its full code hash. Selecting a name builds every matching iteration. The index lists

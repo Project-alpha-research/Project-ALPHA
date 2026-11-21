@@ -143,10 +143,10 @@ Append-only cited findings and negative-result memory.
 Render publication-quality figures for a stored run.
 
 - `alpha figures clean <RUN_ID>` — Delete cached figures. Options: `--all`, `--json`
-- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +2 more
+- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +3 more
 - `alpha figures list` — Show the figure catalogue, optionally with per-run availability. Options: `--run`, `--json`
-- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--dark`, `--json`
-- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--dark`, `--json`
+- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--variant`, +2 more
+- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--variant`, `--dark`, `--json`
 - `alpha figures theme` — Emit the canonical figure theme document. Options: `--json`
 - `alpha figures theme-css` — Write (or verify) the SPA's generated theme stylesheet. Options: `--out (required)`, `--check`
 

@@ -38,7 +38,7 @@ delivery states, the generated roadmap index, append-only records, and relative 
 - When the code a document describes changes, re-read the document, fix it and run
   `uv run python scripts/fs.py verify <document>` (with `--reason "<why>"` when it needed no fix);
   `fs.py stale` lists the documents to re-check and `fs.py owners <path>` names the ones that
-  describe a file. The check fails while one is stale.
+  describe a file. A stale document is listed, not blocked; one sweep pull request stamps them, not each feature pull request.
 - When work lands, any page that listed it as queued, open or not built is updated in the same pull request (search for the feature's name).
 - Caps are split triggers, not targets. Near a cap, split by heading into a sibling file, or summarise and link. Never drop words
   to fit. CONTEXT files hold routing only, so they have nothing to cram. A test fails a reference file when more than 20% of its
@@ -59,8 +59,9 @@ other files link to it.
   the front matter (its own re-stamp does not cascade); one a glob merely covers never counts. A document left
   with nothing to fingerprint is listed by `fs.py stale` as "cannot be checked": give it a real source.
   `fs.py stale` also fails on a document with unreadable front matter or merge conflict markers.
-  `uv run python scripts/fs.py stale` lists stale documents, and `gate.py check` and the CI `static` job fail
-  while one exists, so no pull request merges with a stale document and none can stay stale on `main`.
+  `uv run python scripts/fs.py stale` lists stale documents; `gate.py check` and the CI `static` job print the list
+  and do not fail on it (owner decision 2026-11-21: stamping in every pull request made all open ones conflict).
+  A feature pull request fixes wrong TEXT and leaves the stamps; a sweep pull request re-reads and stamps.
 - `uv run python scripts/fs.py owners <path>...` names the documents that describe a file. Claude Code is told
   them after every edit by the `post-edit-documents` hook; any other agent learns them from the failing check.
 - `sources` lists only files whose change can make the document wrong: the code, scripts, templates,

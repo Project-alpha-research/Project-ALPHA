@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: c6083efa63d2229a
+verified: d0b27d6c807db804
 ---
 
 # Research tools, by symptom
@@ -23,7 +23,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md), [with a context condition](setup-context.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |
 | A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |
-| "Did we test this?", "what was the number?" | [results and cite](results-and-cite.md) |
+| "Did we test this?", "what was the number?", "do two runs move together?" | [results and cite](results-and-cite.md), [portfolio book](portfolio-book.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
 | The result looks too good after many tries | [deflated Sharpe and trials](deflated-sharpe-and-trials.md) |
 | Big drawdown in a short period | [benchmark and drawdowns](benchmark-and-drawdowns.md), then the macro row below |

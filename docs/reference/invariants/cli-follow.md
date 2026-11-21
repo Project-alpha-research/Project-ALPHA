@@ -13,10 +13,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_show.py
   - apps/alpha-cli/src/alpha_cli/follow_today.py
   - apps/alpha-cli/src/alpha_cli/follow_counts.py
+  - apps/alpha-cli/src/alpha_cli/spine/book.py
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: e58966a337a85cf9
+verified: f82b7658d6a7bebe
 ---
 
 # Command line follow invariants
@@ -160,6 +161,12 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   follows are behind it. JSON keys: `as_of`, `groups`, `rows`, `behind` (also `markets`, `followed`).
 - `alpha next` adds one line when follows exist. It calls `follow_counts` only; `next_cmds.py` is not a reader.
 - `today` is a safe read in the generic launcher. `follow update` stays owner-only.
+
+## Book
+- `follow book [--json]` shows every active follow as a share of ONE paper account: each size, the total, and the sum per asset
+  (two follows of one asset add up; "in the market now" counts open paper positions). Above 100% it prints one plain line.
+- It reads through `follow_store` and `follow_today` only, inside `follow_cmds.py`; it writes nothing. The sums are in `spine/book.py`,
+  which is not a reader. Sizes are the fixed paper sizes, not marked to market. An unreadable follow is named and not counted.
 
 ## Nightly (N4, N0)
 - N4 runs `alpha follow update --all --json`, then `follow today --json`, then `follow verify <id> --json` per follow.

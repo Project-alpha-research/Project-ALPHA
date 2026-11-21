@@ -17,11 +17,13 @@ import polars as pl
 from alpha_backtest.portfolio_replay import PortfolioReplayResult, WeightTarget, run_weight_replay
 from alpha_cli import _artifacts, _runner
 from alpha_cli.ml_contract import (
+    RESERVE_FILENAME,
     ValidatedResult,
     replay_signal_frame,
     sha256_file,
     validate_result_bundle,
 )
+from alpha_cli.spine import reserve
 from alpha_core import Bar, DataError
 from alpha_validation import (
     annualized_volatility,
@@ -164,6 +166,23 @@ def _source_fingerprint(validated: ValidatedResult, exchange_dir: Path) -> str:
     ).hexdigest()
 
 
+def _held_back(exchange_dir: Path, research_cutoff: datetime | None) -> reserve.Hold:
+    """The hold-back the exported bundle recorded; nothing held when it recorded none.
+
+    A held bundle's panel stops before the reserved day, so a later replay cut-off is capped.
+    """
+    text = None if research_cutoff is None else research_cutoff.date().isoformat()
+    path = exchange_dir / RESERVE_FILENAME
+    if not path.is_file():
+        return reserve.Hold(None, text, 0)
+    block = json.loads(path.read_text(encoding="utf-8")).get("reserve")
+    count = block.get("held_back_bars") if isinstance(block, dict) else None
+    if isinstance(count, bool) or not isinstance(count, int) or count < 1:
+        raise DataError(f"{RESERVE_FILENAME} in the exchange is not a hold-back record")
+    capped = reserve.CUTOFF_DATE if text is None else min(text, reserve.CUTOFF_DATE)
+    return reserve.Hold(None, capped, count)
+
+
 def run_ml_replay(
     exchange_dir: Path,
     *,
@@ -177,12 +196,11 @@ def run_ml_replay(
         raise DataError(f"periods_per_year must be >= 1, got {periods_per_year}")
     exchange_dir = Path(exchange_dir)
     validated = validate_result_bundle(exchange_dir)
-    cutoff_text: str | None = None
+    held = _held_back(exchange_dir, research_cutoff)
     if research_cutoff is not None:
         offset = research_cutoff.utcoffset()
         if research_cutoff.tzinfo is None or offset is None or offset.total_seconds() != 0:
             raise DataError("ML research cutoff must be timezone-aware UTC")
-        cutoff_text = research_cutoff.date().isoformat()
         if validated.request.sessions[-1] > research_cutoff:
             raise DataError("ML input panel contains sessions after the research cutoff")
     signals = replay_signal_frame(exchange_dir)
@@ -214,7 +232,7 @@ def run_ml_replay(
             "periods_per_year": periods_per_year,
             "seed": request["seed"],
             "costs": costs,
-            "research_cutoff": cutoff_text,
+            **held.identity(),
         },
         source_fingerprint=_source_fingerprint(validated, exchange_dir),
     )
@@ -302,7 +320,7 @@ def run_ml_replay(
         "survivorship_warning": request["survivorship_warning"],
         "portfolio": request["portfolio"],
         "costs": costs,
-        "research_cutoff": cutoff_text,
+        "research_cutoff": held.research_cutoff,
         "starting_cash": starting_cash,
         "periods_per_year": periods_per_year,
         "n_oos_periods": len(replay.periods),
@@ -340,5 +358,6 @@ def run_ml_replay(
         },
         **identity.manifest_fields(),
     }
+    held.stamp(manifest)
     _artifacts.write_manifest(rdir, _artifacts.sanitize(manifest))
     return MlReplayRun(run_id=run_id, run_dir=rdir, manifest=_artifacts.read_manifest(rdir))

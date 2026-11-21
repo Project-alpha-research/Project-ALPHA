@@ -60,6 +60,7 @@ table. A capability may serve several rows; a row may be served by several capab
 | `published-factor-reference` | Verified source library: papers, books and tools checked to exist, grouped by topic, rules of thumb traced to their origin |
 | `front-door` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `forward-follow` | Paper trading: local crypto practice account or a broker practice account |
+| `portfolio-book` | Paper trading: local crypto practice account or a broker practice account |
 | `follow-today-screen` | Paper trading: local crypto practice account or a broker practice account |
 | `nightly-run` | Every test, tool and variant counted in one ledger; the count printed on each result |
 | `home-backup` | Every test, tool and variant counted in one ledger; the count printed on each result |

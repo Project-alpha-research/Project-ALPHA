@@ -5,7 +5,8 @@ sources:
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_free_cmds.py
-verified: da925d4f9e1b1ff3
+  - apps/alpha-cli/src/alpha_cli/context_derived_cmds.py
+verified: 96f2fe7a59fd5f97
 ---
 
 # Data layer invariants: context data
@@ -59,7 +60,7 @@ starts. First import 2026-11-17: 50 + 51 symbols, 2022-2026.
 ## CFTC positioning and FINRA short volume
 
 Two free, key-less sources, added 2026-11-19 on the owner's "grab all the free data". They are inputs only: no signal
-or statistic is defined on them and RD-Agent does not read them yet. Rows live in hashed tables under
+or statistic is defined on them. Only the derived series below read them; RD-Agent does not yet. Rows live in hashed tables under
 `context/cftc/cot/<market>.parquet` and `context/finra/short_volume/<symbol>.parquet`, written by `store_events` and
 read by `as_known_events` with an aware UTC cutoff, exactly as EDGAR and Binance rows are. Every row holds the period it
 describes (`report_date`, `trade_date`) and `known_from`, the time it became public. Network use is confined to
@@ -86,9 +87,72 @@ A day or market is fetched in full before anything is stored, and offline is a c
   duplicate or disordered dates, a changed header or column set, a date unlike its file's, a record count mismatch.
 - **Reads.** `alpha context show-cftc-cot --market 13874A --as-of <UTC date or minute>` and `show-finra-short-volume
   --symbol SPY --as-of ...` return only rows with `known_from <= as-of`; `alpha context list` shows them under
-  `free_context` with the caveat. Pull with `pull-cftc-cot` and `pull-finra-short-volume`. No research command reads
-  these yet. A research read must use the same `as_known_events` cutoff and reject periods from `RESERVED_DAY`
-  (2024-01-01) on, as `daily_funding.py` does; it must not add a second path.
+  `free_context` with the caveat. Pull with `pull-cftc-cot` and `pull-finra-short-volume`. The only join of these rows
+  to bars is `attach_context` (next section).
+
+## Derived series and the one join
+
+`alpha_data/context/derived.py` computes eight descriptive series (recipe `context-derived-v1`); `attach.py` is the one
+module that puts them on bars. Windows are fixed in the recipe; a change is a new recipe version. No command, rule test,
+setup or RD-Agent run uses them yet except `alpha context show-derived --series S --key K --asset SYMBOL`. It prints one
+row per daily bar: value, `known_from`, age in days, stale. A coverage line counts the nulls by cause.
+
+## Derived series: the eight
+
+| Series | Formula on the native timeline, window includes the current row | Warm-up |
+|---|---|---|
+| `cot_nc_net_oi` | (noncomm long - short) / open interest | 1 report |
+| `cot_nc_net_pct_156w` | percentile of `cot_nc_net_oi` over 156 reports: (average rank - 1) / (n - 1), from 0 to 1 | 156 |
+| `cot_comm_nc_gap_pct_156w` | same percentile of (comm net - noncomm net) / open interest | 156 |
+| `cot_nc_net_chg_4w` | `cot_nc_net_oi` minus its value 4 reports earlier | 5 |
+| `sv_ratio` | short volume / total volume | 1 day |
+| `sv_ratio_5d` | mean of `sv_ratio` over 5 rows | 5 |
+| `sv_ratio_z_60d` | (`sv_ratio` - mean) / sample std (ddof 1) over 60 rows; null if all 60 are equal | 60 |
+| `sv_breadth_z1` | share of stored names with `sv_ratio_z_60d` > 1 on that date, among names with a z that day | 60 |
+
+Keys: a COT market code, a FINRA symbol, or `ALL` (breadth). `SELF` means the bar symbol. Breadth carries the label
+"N stored names, not market-wide", with N the number of FINRA tables stored when it is read.
+
+## Derived series: the as-of join rule
+
+In order:
+1. Read each table with `load_events` (hash-checked), keep rows with `known_from` <= the cutoff. Callers pass the spine reserve `CUTOFF`.
+   A cutoff at or after the reserved instant is refused (`DataError`).
+2. Drop rows whose period (`report_date`, `trade_date`) is on or after `RESERVED_DAY`. This is a filter. Bars stamped on or
+   after that day are dropped too, so no output date reaches the reserved period.
+3. Derive on the native timeline, sorted by period. `known_eff` = running maximum of `known_from` over all rows up to and
+   including the row. It can be later than the window's own maximum: it is stricter, never looser. A value is never known
+   before its newest input. Breadth takes the newest `known_eff` of the names on that date, then a running maximum.
+   A COT `known_from` from the release rule alone (`known_basis` `rule` or `rule-only-era`) is moved one day later
+   first (`derived.RULE_MARGIN`): stamped weeks show releases after the 16:00 US Eastern close, which the rule cannot
+   see. Derived rows not known by the cutoff are dropped.
+4. Decision instant `d` = `bar_known_at(ts)`. Backward as-of join on `known_eff` <= `d`, inclusive. The latest known value
+   carries forward; that is not imputation, and `age_days` (date of `d` minus period) shows how old it is.
+5. Stale: age above 17 days (COT) or 5 days (FINRA) gives null and `stale` true. Age equal to the limit is not stale.
+   A null is never filled with zero. A bar before any known row is null with reason `not-yet-known`, not stale.
+6. FINRA day t is known at 12:00 UTC on t+1: stock bar t+1 uses it, bar t does not. The BTC COT Friday release is before
+   Saturday 00:00 UTC, so Friday's crypto bar (`ts` + 1 day) uses a stamped release; a rule-only one waits a day.
+7. Delayed releases (shutdown gap). COT rows with `known_basis` `rule-only-era` whose report date is in a window of
+   `derived.SHUTDOWN_WINDOWS` (2018-12-18 to 2019-03-05 and 2013-10-01 to 2013-10-29, inclusive) are unknown: null, reason
+   `cot-delayed-release-unverified`. The catch-up dates were not verified, so the windows are wide on purpose.
+   `cftc_cot.py` treats one-off closure days as holidays; this adds to that and does not change it. A percentile reads the
+   other rows of its window and ranks the available values (window positions still count, so warm-up does not change).
+   The 4-report change is null when either end is unknown.
+8. Invalid input fails loud (`DataError`): zero or non-finite open interest or volume. A standard deviation of 0 gives null.
+   Percentile ties use the average rank.
+
+The result holds `ctx_<alias>`, `_age_days`, `_stale`, `_known_from`, `_reason`, plus `used_rows_sha256` per alias,
+`source_table_sha256` per table and the recipe version. OSAP is not an input: at the cutoff it has no known rows, and
+`context.published_factors` keeps reading it as hindsight.
+
+## Derived series: result and guards
+
+Guards: `tests/unit/test_context_attach_guard.py` lets only `attach.py`, the two stores and the listed display reader
+`context_free_cmds.py` reach the COT or FINRA tables (`table_path`, `SOURCE` or `SCHEMA` under any alias, `getattr` on
+the store, or the table path or source name as text), and lets only `align.py` and `attach.py` use `join_asof` or
+`merge_asof`. A name built at run time escapes an AST scan; the future-poison guard checks behaviour.
+`test_context_attach_poison.py` sets every row known after bar k to a huge value and checks bars up to k do not change;
+a deliberately leaky join in the test does change. Outputs are readings, never verdicts or advice.
 
 ## Published factor returns (Open Source Asset Pricing)
 

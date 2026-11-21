@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified e8fcae37d8ef8e7b on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified ce16fc6ba51f6eb1 on 2026-11-21: calendar range sweep; text still correct
 
 apps/alpha-cli/README.md
-  verified e8fcae37d8ef8e7b on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified ce16fc6ba51f6eb1 on 2026-11-21: calendar range sweep; text still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -26,16 +26,13 @@ docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified 1cb6e10381b35847 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
-docs/reference/invariants/cli-paper.md
-  verified 4caf8e54aaa9be2b on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
-
 docs/reference/invariants/cli-research.md
-  verified 8b24ea73aadfa493 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -44,28 +41,28 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified 5ea412e7c3a8333b on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified d2a9036850a259f0 on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
 
 docs/reference/invariants/cli-toolbox.md
-  verified 1b2116e1c9c8fde0 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
-docs/reference/invariants/data-bar-timeframes.md
-  verified 7371622c07000ebb on 2026-11-21: calendar range sweep; text still correct
+docs/reference/invariants/data-context.md
+  verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/data-freeze-before-replace.md
-  verified c62e25685530b285 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
 docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 23dbf74c645b2c0c on 2026-11-21: calendar range sweep; text still correct
+  verified a87f8ed05950dad7 on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -152,7 +149,7 @@ docs/reference/project/components/strategies-and-signals.md
   verified 3e9c24abea15fc3e on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
 
 docs/reference/project/components/toolbox.md
-  verified 1b2116e1c9c8fde0 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
   verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
@@ -203,7 +200,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified aaf83ee0c9560850 on 2026-11-21: calendar range sweep; text still correct
+  verified 78d1543265456912 on 2026-11-21: calendar range sweep; text still correct
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
@@ -235,17 +232,14 @@ research/tools/benchmark-and-drawdowns.md
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
-research/tools/data-health.md
-  verified 6f0cb6ddf51fe20e on 2026-11-21: calendar range sweep; text still correct
-
 research/tools/deflated-sharpe-and-trials.md
-  verified 8504bc56b1cc9967 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 research/tools/diagnose-and-audit.md
   verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/follow.md
-  verified 78f81c105cb43f58 on 2026-11-21: calendar range sweep moved calendar calls to alpha_data.sessions; this page's text is unchanged and still correct
+  verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
 
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
@@ -258,6 +252,9 @@ research/tools/montecarlo-checks.md
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+
+research/tools/positioning-short-volume-context.md
+  verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -284,7 +281,7 @@ research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 8504bc56b1cc9967 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

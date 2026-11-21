@@ -7,7 +7,7 @@ from itertools import accumulate
 from typing import Any
 
 from alpha_cli.figures import _sources as src
-from alpha_cli.figures._builders import BuildContext, mult, pct
+from alpha_cli.figures._common import BuildContext, mult, pct
 from alpha_core import DataError
 from alpha_research.figures import (
     FigureDefinition,

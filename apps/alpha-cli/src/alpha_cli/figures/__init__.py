@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any
 
 from alpha_cli.figures import rule_periods
-from alpha_cli.figures._builders import BUILDERS, BuildContext
+from alpha_cli.figures._builders import BUILDERS
+from alpha_cli.figures._common import BuildContext
 from alpha_cli.run_store import find_run_dir, read_manifest, valid_run_id
 from alpha_core import DataError
 from alpha_research.figures import FigureDefinition, FigureSpec, figures_for_command

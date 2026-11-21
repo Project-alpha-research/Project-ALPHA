@@ -35,10 +35,7 @@ def newest_closed(calendar: str, now: datetime) -> date:
     if not calendar:
         return now.date() - timedelta(days=1)
     first, last = now.date() - timedelta(days=14), now.date()
-    with (
-        follow_source.calendar_guard(calendar, last),
-        follow_source.calendar_guard(calendar, first),
-    ):
+    with follow_source.calendar_guard(calendar):
         days = [
             d for d in sessions_between(calendar, first, last) if session_close(calendar, d) <= now
         ]
@@ -50,8 +47,7 @@ def _ago(calendar: str, session: date, newest: date) -> int:
         return 0
     if not calendar:
         return (newest - session).days
-    guard = follow_source.calendar_guard
-    with guard(calendar, newest), guard(calendar, session):
+    with follow_source.calendar_guard(calendar):
         return len(sessions_between(calendar, session + timedelta(days=1), newest))
 
 

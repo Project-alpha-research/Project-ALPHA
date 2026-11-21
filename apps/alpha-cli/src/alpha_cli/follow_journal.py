@@ -20,7 +20,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from alpha_cli.spine.errors import SpineError
 from alpha_core import DataError
-from alpha_data.sessions import session_bounds, sessions_between
+from alpha_data.sessions import session_after, session_bounds
+from alpha_data.sessions import session_close as home_session_close
 
 GENESIS = "0" * 64
 # A bar for session day D may be written on D or on the next calendar day. Later, it is `missed`.
@@ -216,15 +217,14 @@ def session_close(calendar: str, session: date) -> datetime:
     """The close of `session`. With no exchange calendar ("") a day closes at 00:00 UTC after it."""
     if not calendar:
         return datetime(session.year, session.month, session.day, tzinfo=UTC) + timedelta(days=1)
-    return session_bounds(calendar, session)[1]
+    return home_session_close(calendar, session)
 
 
 def next_open(calendar: str, session: date) -> datetime:
     """The open of the session after `session`: the open of the paper fill."""
     if not calendar:
         return session_close(calendar, session)
-    nxt = sessions_between(calendar, session + timedelta(1), session + timedelta(14))[0]
-    return session_bounds(calendar, nxt)[0]
+    return session_bounds(calendar, session_after(calendar, session))[0]
 
 
 def _check_bar_window(start: Entry | None, entry: Entry) -> None:

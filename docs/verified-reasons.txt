@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 3183d1c05d289d73 on 2026-11-21: price-signal window fix does not change what this document says
+  verified d633d82c7b98b89e on 2026-11-21: annotation clipping fix does not change what this document says
 
 apps/alpha-cli/README.md
-  verified 3183d1c05d289d73 on 2026-11-21: price-signal window fix does not change what this document says
+  verified d633d82c7b98b89e on 2026-11-21: annotation clipping fix does not change what this document says
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -47,7 +47,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 655e0dfacb1217f3 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-runs.md
-  verified 629ecd36db88da75 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 305efa30f4004004 on 2026-11-21: annotation clipping fix does not change what this document says
 
 docs/reference/invariants/cli-setups.md
   verified a9c64db705d810f7 on 2026-11-21: price-signal window fix does not change what this document says
@@ -86,7 +86,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 196a6ffe854ab8b0 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 87e75e0498974501 on 2026-11-21: annotation clipping fix does not change what this document says
 
 docs/reference/invariants/testing.md
   verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says

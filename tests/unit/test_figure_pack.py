@@ -677,7 +677,10 @@ def test_every_price_mark_shares_the_plotted_window_and_the_first_candle_stays(
     assert candle.x[0] == days[10].timestamp()  # the run's first candle is kept
     for mark in price.marks:
         if hasattr(mark, "x") and isinstance(mark.x, tuple):
-            assert min(mark.x) >= low - 1.0 and max(mark.x) <= high + 1.0
+            if mark.label == "ma":  # an annotation keeps its whole line; x-limits crop it
+                assert min(mark.x) <= high and max(mark.x) >= low
+            else:
+                assert min(mark.x) >= low - 1.0 and max(mark.x) <= high + 1.0
         if hasattr(mark, "x0"):
             assert mark.x0 >= low - 1.0 and mark.x1 <= high + 1.0
     assert spec.x_limits is not None

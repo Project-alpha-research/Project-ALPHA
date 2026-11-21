@@ -68,11 +68,7 @@ def _annotation_marks(
     ctx: BuildContext, span: tuple[float, float] | None
 ) -> tuple[list[Mark], int, int]:
     """The strategy's own annotations: marks, how many were drawn, how many exist."""
-    annotations = _clip(
-        src.frame(ctx.rdir, "chart_annotations.parquet", "annotation_id", "anchor_index"),
-        "ts",
-        span,
-    )
+    annotations = src.frame(ctx.rdir, "chart_annotations.parquet", "annotation_id", "anchor_index")
     if annotations is None or annotations.is_empty():
         return [], 0, 0
     marks: list[Mark] = []
@@ -81,16 +77,22 @@ def _annotation_marks(
     for group in groups[:40]:
         label = str(group["label"].to_list()[0])
         xs = src.epochs(group["ts"])
+        # Keep a whole annotation that touches the window: dropping its outside anchors
+        # would leave a one-point line. The explicit x-limits crop what lies outside.
+        if span is not None and (max(xs) < span[0] or min(xs) > span[1]):
+            continue
         ys = src.floats(group["value"], name="annotation value")
         first = label if drawn == 0 else None
         is_zone = str(group["kind"].to_list()[0]) == "zone"
-        if is_zone and max(xs) <= min(xs):
+        x0 = max(min(xs), span[0]) if span else min(xs)
+        x1 = min(max(xs), span[1]) if span else max(xs)
+        if is_zone and x1 <= x0:
             continue  # clipping left a single instant: nothing to shade
         if is_zone:
             marks.append(
                 ZoneMark(
-                    x0=min(xs),
-                    x1=max(xs),
+                    x0=x0,
+                    x1=x1,
                     role="feature",
                     alpha=0.12,
                     label=first,

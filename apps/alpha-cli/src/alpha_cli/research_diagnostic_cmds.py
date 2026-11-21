@@ -11,12 +11,12 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Annotated
 
-import exchange_calendars as xcals  # type: ignore[import-untyped]
 import typer
 
 from alpha_cli import _artifacts, _identity, _runner
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+from alpha_data.sessions import sessions_between
 from alpha_research.weekly_diagnostic import VERSION, weekly_diagnostic
 
 diagnostic_app = typer.Typer(
@@ -198,17 +198,9 @@ def weekly_classifier(
             symbol, data_dir=settings.data_dir, snapshot_id=snapshot, as_of=cutoff
         )
         first, last = bars[0].ts.date(), bars[-1].ts.date()
-        cal = xcals.get_calendar(
-            calendar,
-            start=(first - timedelta(days=10)).isoformat(),
-            end=(last + timedelta(days=20)).isoformat(),
+        sessions = sessions_between(
+            calendar, first, last + timedelta(days=10), {bar.ts.date() for bar in bars}
         )
-        sessions = [
-            s.date()
-            for s in cal.sessions_in_range(
-                first.isoformat(), (last + timedelta(days=10)).isoformat()
-            )
-        ]
         report = weekly_diagnostic(bars, sessions=sessions, cost_bps_per_side=cost_bps_per_side)
         identity = dict(
             version=VERSION,

@@ -40,7 +40,7 @@ WITH_RANGE: dict[str, Any] = {
         }
     ]
 }
-FACTORS = (3.0, 0.3)
+FACTORS = (1.3, 0.8)
 
 
 def bars(n: int, seed: int = 5, poison_from: int | None = None) -> list[Bar]:
@@ -67,6 +67,14 @@ def bars(n: int, seed: int = 5, poison_from: int | None = None) -> list[Bar]:
             )
         )
     return out
+
+
+def on_ticks(rows: Sequence[Bar]) -> list[Bar]:
+    """Prices on the cent grid, as stored equity bars are: the engine feed rounds to it."""
+    keys = ("open", "high", "low", "close")
+    return [
+        row.model_copy(update={key: round(getattr(row, key), 2) for key in keys}) for row in rows
+    ]
 
 
 def idea(spec: dict[str, Any]) -> IdeaSpec:
@@ -144,7 +152,7 @@ def run_owner(spec: dict[str, Any], rows: Sequence[Bar]) -> tuple[BacktestResult
 
 
 def test_engine_decisions_equal_rule_signal_over_the_same_prefixes() -> None:
-    rows = bars(500)
+    rows = on_ticks(bars(500))
     for spec in (CLOSE_ONLY, WITH_RANGE):
         result, history = run_owner(spec, rows)
         rules = rule_spec_from_json(canonical_json(parse_rule_spec({"name": "x", **spec})))
@@ -160,7 +168,7 @@ def test_engine_decisions_equal_rule_signal_over_the_same_prefixes() -> None:
 
 
 def test_tier1_surrogate_equals_the_engine_on_the_unshuffled_series() -> None:
-    rows = bars(500)
+    rows = on_ticks(bars(500))
     result, history = run_owner(CLOSE_ONLY, rows)
     closes = np.asarray([bar.close for bar in rows])
     pr = closes[1:] / closes[:-1] - 1.0
@@ -175,7 +183,7 @@ def test_tier1_surrogate_equals_the_engine_on_the_unshuffled_series() -> None:
 
 
 def test_high_low_rule_agrees_with_the_engine_only_on_closes() -> None:
-    """The Tier-1 null has no intrabar range: it reads closes for high and low. The label says so."""
+    """The Tier-1 null reads closes for high and low; the label says so."""
     assert idea(WITH_RANGE).rule.labels == ("null-closes-for-high-low",)
 
 
@@ -190,18 +198,18 @@ def _fills_to(result: BacktestResult, stamp: datetime) -> list[tuple[Any, ...]]:
 
 def test_prices_after_bar_k_change_no_decision_up_to_k_and_no_fill_up_to_k_plus_1() -> None:
     n, k = 400, 250
-    clean = bars(n)
+    clean = on_ticks(bars(n))
     owner = idea(CLOSE_ONLY)
     spec = assemble_run_spec(owner, "SPY", 252, n)
     history = spec.min_train
     base = _runner.run_full_backtest(clean, spec)
     assert len(base.fill_trace) > 4 and 0 in signals(base) and 1 in signals(base)
     # Bars from k+1 on are poisoned: decisions up to k read nothing of them.
-    after = _runner.run_full_backtest(bars(n, poison_from=k + 1), spec)
+    after = _runner.run_full_backtest(on_ticks(bars(n, poison_from=k + 1)), spec)
     assert _decisions_to(after, k, history) == _decisions_to(base, k, history)
     assert signals(after) != signals(base)
     # The fill at the open of k+1 needs that open: poison from k+2 and it still holds.
-    later = _runner.run_full_backtest(bars(n, poison_from=k + 2), spec)
+    later = _runner.run_full_backtest(on_ticks(bars(n, poison_from=k + 2)), spec)
     stamp = clean[k + 1].ts
     assert _fills_to(later, stamp) == _fills_to(base, stamp)
     assert _fills_to(later, stamp)
@@ -237,7 +245,7 @@ def _leaky_run(rows: Sequence[Bar], future: Sequence[float]) -> BacktestResult:
 
 def test_a_leaky_variant_does_change_and_is_caught() -> None:
     n, k = 400, 250
-    clean, poisoned = bars(n), bars(n, poison_from=k + 1)
+    clean, poisoned = on_ticks(bars(n)), on_ticks(bars(n, poison_from=k + 1))
     leaky_clean = _leaky_run(clean, [b.close for b in clean])
     leaky_poisoned = _leaky_run(clean, [b.close for b in poisoned])
     history = parse_rule_spec({"name": "x", **CLOSE_ONLY}).history
@@ -247,7 +255,7 @@ def test_a_leaky_variant_does_change_and_is_caught() -> None:
 def test_inverted_control_accepts_a_rules_spec(tmp_path: Path) -> None:
     from alpha_cli.spine.controls import run_inverted_backtest
 
-    rows = bars(400)
+    rows = on_ticks(bars(400))
     owner = idea(CLOSE_ONLY)
     spec = assemble_run_spec(owner, "SPY", 252, len(rows))
     original = _runner.run_full_backtest(rows, spec)

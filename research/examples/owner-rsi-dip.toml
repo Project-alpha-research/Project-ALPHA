@@ -1,0 +1,13 @@
+# Example spec for `alpha test`: an owner rule. Long while RSI(14) is under 30 and the close is above the 200-bar average.
+name = "rsi-dip-above-trend"
+idea = "Buy a deep short-term dip inside a long-term uptrend"
+assets = ["SPY", "QQQ"]
+
+[rule]
+kind = "owner"
+
+[rule.spec]
+long_when = [
+  { left = { indicator = "rsi", params = [14] }, op = "<", right = { value = 30 } },
+  { left = { source = "close" }, op = ">", right = { indicator = "sma", params = [200] } },
+]

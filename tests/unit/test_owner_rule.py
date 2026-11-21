@@ -244,8 +244,11 @@ def test_order_strictness_and_sides_do_not_change_the_family() -> None:
 
 
 def test_words_say_the_rule_in_plain_language() -> None:
-    from alpha_cli.spine.owner_rule import rule_words
+    from alpha_cli.spine.owner_rule import OwnerRule, rule_words
 
-    words = rule_words(idea(RSI_DIP).rule.spec)
+    rule = idea(RSI_DIP).rule
+    assert isinstance(rule, OwnerRule)
+    words = rule_words(rule.spec)
+    assert words == rule.words
     assert words == "Long while RSI(14) < 30 and close > SMA(200), flat otherwise."
     assert "profit" not in words

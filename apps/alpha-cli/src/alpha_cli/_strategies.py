@@ -350,7 +350,8 @@ def _rules_spec(spec: RunSpec) -> RuleSpec:
 
 
 def _rules_warmup(spec: RunSpec) -> int:
-    return max(_rules_spec(spec).history, spec.vol_window + 1)
+    history = _rules_spec(spec).history
+    return history if spec.sizing == "all_in" else max(history, spec.vol_window + 1)
 
 
 def _rules_build(spec: RunSpec, instrument_id: InstrumentId, bar_type: BarType) -> Strategy:
@@ -367,6 +368,7 @@ def _rules_build(spec: RunSpec, instrument_id: InstrumentId, bar_type: BarType) 
         rebalance_every=spec.rebalance_every,
         periods_per_year=spec.periods_per_year,
         allow_short=spec.allow_short,
+        sizing=spec.sizing,
         size_on_equity=spec.size_on_equity,
         halt_drawdown=spec.halt_drawdown,
     )
@@ -394,6 +396,7 @@ def _rules_surrogate(spec: RunSpec) -> Surrogate:
         max_leverage=spec.max_leverage,
         allow_short=spec.allow_short,
         cost_bps=spec.fee_bps + spec.slippage_bps,
+        unit_weight=spec.sizing == "all_in",
     )
 
 
@@ -487,7 +490,7 @@ def _check_params(spec: RunSpec, sdef: StrategyDef) -> None:
     if spec.sizing == "all_in":
         if spec.allow_short:
             raise DataError("all_in sizing is incompatible with allow_short=True")
-        if spec.strategy_name not in ("ts_momentum", "ma_crossover", "breakout"):
+        if spec.strategy_name not in ("ts_momentum", "ma_crossover", "breakout", "rules"):
             raise DataError(f"all_in sizing is unsupported for {spec.strategy_name!r}")
     unknown = {name for name, _ in spec.strategy_params} - sdef.params
     if unknown:

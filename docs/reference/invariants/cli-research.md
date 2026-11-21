@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/strategy_candidate*.py
   - tests/unit/test_research_*.py
   - tests/integration/test_research_*.py
-verified: 8b24ea73aadfa493
+verified: 1d320c10cd57b49f
 ---
 
 # Command line research invariants
@@ -151,6 +151,9 @@ this file holds the command-line specifics.
   registration fail loud, and QuantPad intraday loading is refused until retention evidence exists.
 - The crypto crowding lane re-verifies the bound qualified snapshot before every use (`research_crypto_binding.py`)
   and keeps the same mechanical-classification discipline as D1/D2. [ADR-0033](../../adr/0033-governed-crypto-crowding-research-and-sandbox-basis.md)
+- The data audit, the weekly classifier, the run-plan controller, the crypto reads and `strategy-candidate run` cut at
+  the reserved boundary. A new case's sealed split divides only what is left; an older case frozen on later bars fails
+  loud on reload ([reserved period](../project/reserved-period.md)).
 - The hedged-basis development candidate is sandbox-only: `hedged_basis_paper_preflight` always returns BLOCKED with
   no connection, order or readiness credit (`strategy_candidate.py`).
 

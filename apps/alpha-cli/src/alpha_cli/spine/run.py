@@ -27,6 +27,7 @@ from alpha_cli.spine.diagnose import staged_run, write_diagnostics
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
+from alpha_cli.spine.owner_rule import OwnerRule, manifest_fields
 from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
@@ -73,10 +74,13 @@ def _fields(obj: Any) -> dict[str, Any]:
 
 def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _runner.RunSpec:
     """Use the minimum strategy warm-up and near-annual folds covering almost all history."""
+    if idea.context is not None:
+        raise DataError("the gated engine is not built yet: a context spec cannot run ungated")
     params = idea.rule.params
+    owner = isinstance(idea.rule, OwnerRule)
     spec = _runner.RunSpec(
-        lookback=params.get("lookback", 252),
-        skip=params.get("skip", 21),
+        lookback=int(params.get("lookback", 252)),
+        skip=int(params.get("skip", 21)),
         vol_window=63,
         target_vol=0.15,
         rebalance_every=1,
@@ -92,10 +96,11 @@ def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _ru
         embargo=5,
         anchored=True,
         strategy_name=idea.rule.strategy,
-        strategy_params=tuple(sorted((key, float(value)) for key, value in params.items()))
-        if idea.rule.kind != "tsmom"
-        else (),
+        strategy_params=()
+        if owner or idea.rule.kind == "tsmom"
+        else tuple(sorted((key, float(value)) for key, value in params.items())),
         sizing="all_in",
+        rules_spec=idea.rule.rules_json if isinstance(idea.rule, OwnerRule) else None,
     )
     warmup = spec.min_train
     if n_bars < warmup + 60:
@@ -134,6 +139,7 @@ def prepare_asset(
     result.update(symbol=resolved.symbol, store=resolved.store_name, source=resolved.source)
     if resolved.defaulted:
         result["labels"].append("source-defaulted")
+    result["labels"].extend(idea.rule.labels)
     held_back = reserve.held_back_count(resolved)
     if held_back:
         result["labels"].append(reserve.HELD_BACK)
@@ -269,7 +275,7 @@ def write_run(
         store=result.get("store"),
         data_id=result.get("idea_id"),
     )
-    count = count_snapshot(snapshot, idea.rule.kind, current)
+    count = count_snapshot(snapshot, idea.rule.family_key, current)
     sharpes = family_sharpes(snapshot, count.family_id, ppy, current)
     n = count.prior_trials + count.this_run + count.unknown_rows
     out = _gauntlet.run_gauntlet(
@@ -335,6 +341,7 @@ def write_run(
                 "name": idea.name,
                 "idea": idea.idea,
                 "rule": idea.rule.model_dump(),
+                **manifest_fields(idea.rule),
                 "store": result["store"],
                 "deflation": result.get("deflation"),
                 "labels": list(result["labels"]),
@@ -465,7 +472,7 @@ def run_idea(
                 "name": idea.name,
                 "idea": idea.idea,
                 "spec_sha256": idea.spec_sha256,
-                "rule": idea.rule.kind,
+                "rule": idea.rule.family_key,
                 "params": idea.rule.params,
                 "costs": idea.costs.model_dump(),
                 **ledger_fields(result.get("reading")),

@@ -10,6 +10,7 @@ from typing import Annotated, Any
 import polars as pl
 import typer
 
+from alpha_cli import context_derived_cmds as derived_cmds
 from alpha_cli import context_free_cmds as free
 from alpha_cli import context_sources_cmds as sources
 from alpha_cli._cli_json import emit
@@ -213,3 +214,4 @@ def window(
 
 context_app.add_typer(sources.sources_app)
 context_app.add_typer(free.free_app)
+context_app.add_typer(derived_cmds.derived_app)

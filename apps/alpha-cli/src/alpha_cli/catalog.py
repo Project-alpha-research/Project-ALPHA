@@ -43,6 +43,7 @@ _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider", "ho
 _SAFE_ROOTS = frozenset(
     {
         "info",
+        "options",
         "risk",
         "report",
         "figures",

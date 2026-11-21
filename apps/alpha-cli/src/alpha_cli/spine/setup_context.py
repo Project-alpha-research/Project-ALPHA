@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import timedelta
+from collections.abc import Mapping
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +28,8 @@ from alpha_study.setup.context import condition_counts, parse_binding
 
 SHORT = "short-context-history"
 SHORT_YEARS = 3
-REASONS = ("not-yet-known", "stale", derived.UNVERIFIED, "series-warm-up")
+WARM_UP = "series-warm-up"
+REASONS = ("not-yet-known", "stale", derived.UNVERIFIED, WARM_UP)
 FRAME_SCHEMA: dict[str, Any] = {
     "ts": pl.Datetime("us", "UTC"),
     **dict.fromkeys(("open", "high", "low", "close", "volume"), pl.Float64),
@@ -50,17 +52,39 @@ def check_series(spec: Any) -> None:
         derived.series_source(binding.series)
 
 
-def attach(spec: Any, bars: list[Any], resolved: ResolvedAsset, home: Path) -> AttachResult:
-    """Attach the declared series to the bars; nothing after the reserve cutoff is read."""
+def calendar_of(resolved: ResolvedAsset) -> str | None:
     store = resolved.daily_store()
-    calendar = _runner._calendar_for(resolved.symbol, store.read_provenance(resolved.symbol))
+    return _runner._calendar_for(resolved.symbol, store.read_provenance(resolved.symbol))
+
+
+def attach_bindings(
+    frame: pl.DataFrame,
+    binds: Mapping[str, Binding],
+    *,
+    calendar: str | None,
+    home: Path,
+    symbol: str | None,
+    cutoff: datetime = reserve.CUTOFF,
+) -> AttachResult:
+    """The one call to `attach_context` for Setup Lab and the rule gate: daily, reserve cutoff."""
     return attach_context(
-        frame_of(bars),
+        frame,
         timeframe=DAILY,
         calendar=calendar,
-        bindings=bindings(spec),
+        bindings=binds,
         data_dir=home,
-        cutoff=reserve.CUTOFF,
+        cutoff=cutoff,
+        symbol=symbol,
+    )
+
+
+def attach(spec: Any, bars: list[Any], resolved: ResolvedAsset, home: Path) -> AttachResult:
+    """Attach the declared series to the bars; nothing after the reserve cutoff is read."""
+    return attach_bindings(
+        frame_of(bars),
+        bindings(spec),
+        calendar=calendar_of(resolved),
+        home=home,
         symbol=resolved.symbol,
     )
 
@@ -73,11 +97,11 @@ def fingerprint(result: AttachResult) -> str:
 
 def _nulls(frame: pl.DataFrame, alias: str) -> dict[str, int]:
     missing = frame.filter(pl.col(f"ctx_{alias}").is_null())
-    reasons = missing[f"ctx_{alias}_reason"].fill_null("series-warm-up").to_list()
+    reasons = missing[f"ctx_{alias}_reason"].fill_null(WARM_UP).to_list()
     return {r: reasons.count(r) for r in REASONS if r in reasons}
 
 
-def _span(frame: pl.DataFrame, aliases: list[str]) -> dict[str, Any] | None:
+def span(frame: pl.DataFrame, aliases: list[str]) -> dict[str, Any] | None:
     ok = frame.with_row_index("i").filter(
         pl.all_horizontal(pl.col(f"ctx_{a}").is_not_null() for a in aliases)
     )
@@ -104,7 +128,7 @@ def block(spec: Any, result: AttachResult) -> dict[str, Any]:
         bars=frame.height,
         null_by_reason={a: _nulls(frame, a) for a in aliases},
         with_value={a: frame.height - frame[f"ctx_{a}"].null_count() for a in aliases},
-        span=_span(frame, aliases),
+        span=span(frame, aliases),
         conditions=condition_counts(spec, frame),
     )
 

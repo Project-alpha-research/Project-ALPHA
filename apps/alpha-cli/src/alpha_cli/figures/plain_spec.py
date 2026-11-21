@@ -171,7 +171,15 @@ def _annotate(figure: Figure, spec: FigureSpec, axes_list: list[Axes]) -> None:
             continue
         tables = [m for m in panel.marks if isinstance(m, TableMark)]
         if tables:
-            ps.band(axes, 0.0, 1.0, f"stored evidence table: {len(tables[0].rows)} rows")
+            axes.annotate(
+                f"stored evidence table: {len(tables[0].rows)} rows",
+                xy=(0.99, 0.98),
+                xycoords="axes fraction",
+                ha="right",
+                va="top",
+                fontsize=8,
+                color="0.25",
+            )
             continue
         for call in plan.calls[:3]:
             xy = (float(pm.x_values((call.x,), spec.x_kind)[0]), call.y)

@@ -132,11 +132,19 @@ def _histogram_plan(spec: FigureSpec, panel: Panel, mark: HistogramMark) -> Plan
     rules = [m for m in panel.marks if isinstance(m, RuleMark) and m.orientation == "vertical"]
     for rule in rules[:1]:
         above = float(counts[edges[:-1] >= rule.position].sum()) / total if total else 0.0
+        # A rule that carries its own printed value ("mean 0.09%") keeps that wording.
+        printed = rule.annotate.text if rule.annotate is not None else None
         label = rule.label or "Marked value"
-        calls.append(Call(f"{label}: {rule.position:,.3g}", rule.position, counts[top] * 0.5))
+        calls.append(
+            Call(printed or f"{label}: {rule.position:,.3g}", rule.position, counts[top] * 0.5)
+        )
+        where = (
+            f"The marked line ({printed})" if printed else f"{label} sits at {rule.position:,.3g}"
+        )
         sentences.append(
-            f"{label} sits at {rule.position:,.3g}; about {pct(above)} of the binned "
-            "observations lie at or above it."
+            f"{where} has about {pct(above)} of the binned observations at or above it."
+            if printed
+            else f"{where}; about {pct(above)} of the binned observations lie at or above it."
         )
     cumulative = np.cumsum(counts) / total if total else counts
     cut = int(np.searchsorted(cumulative, 0.95))

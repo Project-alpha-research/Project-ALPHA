@@ -218,5 +218,6 @@ def draw_table(axes: Axes, mark: TableMark) -> None:
         cellText=cells, colLabels=list(mark.columns), loc="upper left", cellLoc="left"
     )
     table.auto_set_font_size(False)
-    table.set_fontsize(8)
+    table.set_fontsize(9)
     table.auto_set_column_width(list(range(len(mark.columns))))
+    table.scale(1.0, 1.5)

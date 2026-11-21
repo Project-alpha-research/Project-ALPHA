@@ -7,7 +7,7 @@ sources:
   - tests/bias_guards/test_market_state_future_poison.py
   - tests/bias_guards/test_poison_variants.py
   - tests/unit/test_figure_*.py
-verified: e864b50233aace50
+verified: 3c975a7a8dc73768
 ---
 
 # Research primitive invariants

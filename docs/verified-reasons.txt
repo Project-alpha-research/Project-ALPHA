@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 91618fc49c4ea4f9 on 2026-11-21: the change only holds the reserved period back inside reads; the text is still correct
 
 apps/alpha-cli/README.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 91618fc49c4ea4f9 on 2026-11-21: the change only holds the reserved period back inside reads; the text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -22,6 +22,9 @@ docs/CONTEXT.md
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
+docs/reference/invariants/cli-control-store.md
+  verified 339e36c39228dbe0 on 2026-11-21: the change only holds the reserved period back inside reads; the text is still correct
+
 docs/reference/invariants/cli-follow.md
   verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
 
@@ -32,7 +35,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 81e731f7fe513ee1 on 2026-11-21: the change only holds the reserved period back inside reads; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -75,6 +78,9 @@ docs/reference/invariants/rdagent.md
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
+docs/reference/invariants/research.md
+  verified 3c975a7a8dc73768 on 2026-11-21: the change only holds the reserved period back inside reads; the text is still correct
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged

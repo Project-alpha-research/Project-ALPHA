@@ -1,4 +1,4 @@
-"""`/api/ideas` and `/api/ideas/{card}` relay the CLI; the relay is faked except in the last test."""
+"""`/api/ideas` and `/api/ideas/{card}` relay the CLI; the relay is faked but for the last test."""
 
 from __future__ import annotations
 

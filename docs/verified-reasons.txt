@@ -86,10 +86,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 58b3bbb308dca16a on 2026-11-21: only a test docstring changed
 
 docs/reference/invariants/web-api.md
-  verified d0a387c44a9a3e8f on 2026-11-21: only the Ideas page, its two read routes and the ideas activity area were added; this page does not describe them
+  verified 48a909de9b25f6f5 on 2026-11-21: only a test docstring changed
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.

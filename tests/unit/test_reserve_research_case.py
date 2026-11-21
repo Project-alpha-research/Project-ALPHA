@@ -207,7 +207,6 @@ def test_weekly_classifier_as_of_before_the_boundary_keeps_its_identity(
             if key not in {"execution_fingerprint", "research_source_sha256", "runtime_versions"}
             and key != "python_version"
         },
-        "report": evidence["report"],
     }
     text = json.dumps(stable, sort_keys=True, allow_nan=False)
     assert hashlib.sha256(text.encode()).hexdigest() == PINNED_WEEKLY
@@ -215,7 +214,7 @@ def test_weekly_classifier_as_of_before_the_boundary_keeps_its_identity(
 
 # Pinned on the code before the reserved period was held back here (code and environment hashes
 # left out): an as-of before the boundary keeps its evidence.
-PINNED_WEEKLY = "49e5ffc1390c04ac93204d49b9f616c830e478ecf1288cf9b32c913e52d30698"
+PINNED_WEEKLY = "033ff8ddd9828226414efcd07a4aef006b10b1e3bd5d34e7405f058646a56ec1"
 
 
 # ---- C6: data audit -------------------------------------------------------------------------

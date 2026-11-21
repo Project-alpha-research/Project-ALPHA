@@ -24,9 +24,17 @@ Read `CLAUDE.md`, root `CONTEXT.md` and the workspace `CONTEXT.md` of each area 
   (`uv run python scripts/status.py`) and the OpenAPI file plus `apps/alpha-web/frontend/src/api/generated.ts` only when they change.
 - Set-up, if tools are missing: read, then run `bash scripts/cloud_setup.sh` (or `scripts/setup.sh`).
 - Checks before each push: the tests of the area; `uv run lint-imports`; `uv run python scripts/gate.py check --base origin/main`.
-- Land as a DRAFT pull request from a branch named in your brief; commits `type(scope): summary` ending with the exact line
-  `Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>`; merge commits only (never amend, rebase, squash or force-push); commit and
-  push early and often; the pull-request body uses the headings of `.github/pull_request_template.md`, ends with
-  `🤖 Generated with [Claude Code](https://claude.com/claude-code)` and names no model. Wait for the required check `ci-ok` (poll
+- Land as a pull request from a branch named in your brief. Open it as a DRAFT while you build: a draft runs only the quick `static` job
+  and its `ci-ok` fails on purpose (that is expected). When the work is complete and your local checks pass, mark it ready
+  (`gh pr ready <number>`): that starts the full run. Then wait for the required check `ci-ok` (poll
   `gh api repos/tradingsystem1880-eng/Project-ALPHA/commits/<sha>/check-runs` every 90 s; `gh pr checks` does not work here) and fix what
-  CI finds. Do NOT merge: an independent review lands it. When main moves, merge it in (`git merge origin/main`).
+  CI finds. Commits `type(scope): summary` ending with the exact line `Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>`; merge
+  commits only (never amend, rebase, squash or force-push); commit and push early and often; the pull-request body uses the headings of
+  `.github/pull_request_template.md`, ends with `🤖 Generated with [Claude Code](https://claude.com/claude-code)` and names no model.
+  Do NOT merge: an independent review lands it. When main moves, merge it in (`git merge origin/main`).
+- A deletion-only build: prove each deleted file is unreached before you delete it (grep for imports, for the command words, for
+  `python -m` and subprocess calls, in `apps`, `packages`, `workers`, `tests`, `scripts`, `docs`); delete the tests that only test deleted
+  code; never delete a named feature (Kronos, the Monte Carlos, patterns, lookalike, Setup Lab, RD-Agent, Qlib/ML, follow, the toolbox,
+  propfirm). A deletion makes functions and files shorter or absent: `tests/unit/test_code_size.py` will ask to LOWER or REMOVE baseline
+  entries in the protected `.claude/code-size-baseline.json`. Do not edit that file: list the exact entries in your report and leave only
+  that one test red; the orchestrator lowers them. Report lines removed and lines added.

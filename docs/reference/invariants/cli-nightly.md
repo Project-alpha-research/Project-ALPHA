@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: 33dad4906a4cd36c
+verified: 8b85ea173409eb4e
 ---
 
 # Command line nightly run invariants
@@ -82,7 +82,7 @@ verified: 33dad4906a4cd36c
 - `restore <archive> <dir>` (module `home_restore`) verifies first, then writes only regular files and folders into a new or empty folder,
   keeps file and folder modes and times, then reads every written file again from disk against the manifest. A failure leaves an incomplete folder, said so.
   It refuses a non-empty target, the live home, a folder inside it and a folder that holds it. Unsafe entry names are refused.
-  While it writes, the target folder is mode `0700` and each file starts at `0600`; a failed restore leaves the folder at `0700`.
+  The target folder is set to mode `0700` and stays so, also after a good restore; each file starts at `0600` while it is written.
 - `home_backup` (the only backup module that walks the home) is on the follow-store reader list (`test_follow_separation.py`)
   on purpose: it copies bytes, parses nothing and feeds no research result. The `nightly_*` modules stay off that list.
 - The Workstation launcher refuses every `alpha home` command (`catalog.classify_generic_command`: owner-only). Terminal only.

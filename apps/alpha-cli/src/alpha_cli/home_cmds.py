@@ -88,6 +88,7 @@ def restore_command(
     words = (
         f"Restored {facts['files']} files into {facts['target']}. Every file was read again from "
         f"disk and matches the manifest.{left}\n"
+        "The copy can be read by you only (folder mode 0700). "
         "The live data home was not changed. To look at the copy, run any command with "
         f"ALPHA_DATA_DIR={facts['target']} in front, for example:\n"
         f"  ALPHA_DATA_DIR={facts['target']} alpha nightly status\n"

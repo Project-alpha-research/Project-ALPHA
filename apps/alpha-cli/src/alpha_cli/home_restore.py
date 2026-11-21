@@ -204,8 +204,8 @@ def restore(archive: Path, target: Path, home: Path) -> dict[str, Any]:
             f"{checked['problems'][0]}"
         )
     target.mkdir(parents=True, exist_ok=True)
-    usual = stat.S_IMODE(target.stat().st_mode)
-    os.chmod(target, 0o700)  # owner only until every file is checked; a failed restore stays so
+    # Owner only, and it stays so: the archive does not record the mode of the home folder itself.
+    os.chmod(target, 0o700)
     found, seen, manifest, problems, folders = _read(archive, target)
     problems += _compare(found, seen, manifest)[0]
     problems = problems or _check_disk(target, manifest)
@@ -215,7 +215,6 @@ def restore(archive: Path, target: Path, home: Path) -> dict[str, Any]:
             "it and start again; the live data home was not touched."
         )
     _finish_folders(folders)
-    os.chmod(target, usual)
     return {
         "archive": str(archive),
         "target": str(target),

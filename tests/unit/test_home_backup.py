@@ -309,5 +309,5 @@ def test_restore_keeps_the_new_folder_private_while_it_writes(
     opened = [mode for _, mode in seen if mode]
     assert opened and set(opened) == {0o600}  # each file is private before its first byte
     assert {root for root, _ in seen} == {0o700}  # nobody else can enter while it is written
-    assert target.stat().st_mode & 0o777 == 0o755  # a finished restore has the usual mode
+    assert target.stat().st_mode & 0o777 == 0o700  # a finished restore is never widened
     assert other.stat().st_mode & 0o777 == 0o700  # a failed one stays closed

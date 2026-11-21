@@ -3186,6 +3186,7 @@ def compare(
 ) -> None:
     """Backtest each strategy on SYMBOL and rank them by total return."""
     from alpha_cli import _runner, _strategies
+    from alpha_cli.spine import reserve
 
     names = [s.strip() for s in strategies.split(",") if s.strip()] or [
         # kronos needs a precomputed forecast cache (built by backtest/validate/optim, not this
@@ -3197,7 +3198,8 @@ def compare(
     ]
     settings = AlphaSettings()
     try:
-        bars, _ = _runner.load_bars(symbol, data_dir=settings.data_dir)
+        held = reserve.hold(symbol, data_dir=settings.data_dir)
+        bars, _ = _runner.load_bars(symbol, data_dir=settings.data_dir, as_of=held.as_of)
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -3229,6 +3231,8 @@ def compare(
         "comparison_status": comparison_status,
         "preferred_strategy": preferred_strategy,
         "preference_reason": preference_reason,
+        **held.identity(),
+        **({"reserve_sentence": held.say()} if held.held_back else {}),
     }
     if json_out:
         typer.echo(json.dumps(payload))
@@ -3240,6 +3244,7 @@ def compare(
             typer.echo(
                 f"{r['strategy']:>16}: return={r['total_return']:+.4f} trades={r['n_trades']}"
             )
+    held.announce()
 
 
 def _draft_resolutions(

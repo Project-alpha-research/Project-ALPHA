@@ -84,9 +84,6 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("_native_daily_rule_projection.py", "chart_snapshot"): "exempt: checks a frozen chart query",
     ("comparison_acquisition_evidence.py", "_replay"): "exempt: verifies stored bytes; no research",
     ("comparison_acquisition_evidence.py", "_result"): "exempt: verifies stored bytes; no research",
-    ("ml_input.py", "_aligned_panel"): "open: ML input takes the user's --as-of; PR #353",
-    ("forecast_cmds.py", "_calibrated_artifacts"): "open: forecast eval universe; PR #353",
-    ("forecast_cmds.py", "evaluate"): "open: forecast eval takes the user's --as-of; PR #353",
     ("research_diagnostic_cmds.py", "weekly_classifier"): "open: user --as-of; PR #357",
     ("research_execution.py", "_collect"): "open: research-case plan.as_of; PR #357",
     ("research_execution.py", "execute_plan"): "open: research-case plan.as_of; PR #357",
@@ -262,10 +259,14 @@ class Package:
 
     def is_hold(self, mod: Module, fn: ast.FunctionDef, name: str) -> bool:
         values = _assigned(fn, name)
-        return bool(values) and all(
-            isinstance(v, ast.Call)
-            and (mod.is_reserve(v.func, HOLDS) or mod.target(v.func) in self.hold_helpers)
-            for v in values or []
+        return bool(values) and all(self.makes_hold(mod, v) for v in values or [])
+
+    def makes_hold(self, mod: Module, value: ast.expr) -> bool:
+        """A call of `reserve.hold`, `hold_many` or a hold helper; `a if c else b` of two."""
+        if isinstance(value, ast.IfExp):
+            return self.makes_hold(mod, value.body) and self.makes_hold(mod, value.orelse)
+        return isinstance(value, ast.Call) and (
+            mod.is_reserve(value.func, HOLDS) or mod.target(value.func) in self.hold_helpers
         )
 
     def is_cut(self, expr: ast.expr, mod: Module, fn: ast.FunctionDef | None, steps: int) -> bool:
@@ -471,6 +472,10 @@ FAILS: dict[str, tuple[str, ...]] = {
         RUN, RES, "def f(s, d, user):", "    held = reserve.hold(s, data_dir=d)",
         "    load_bars(s, data_dir=d, as_of=user.as_of)",
     ),
+    "a hold or None": (
+        RUN, RES, "def f(s, d, fwd):", "    held = None if fwd else reserve.hold(s, data_dir=d)",
+        "    load_bars(s, data_dir=d, as_of=held.as_of)",
+    ),
     "a helper also used as a value": (
         RUN, RES, "def f(s, d, a):", "    load_bars(s, data_dir=d, as_of=a)",
         "def g(s, d):", "    f(s, d, reserve.CUTOFF)", "h = f",
@@ -500,6 +505,11 @@ PROVES: dict[str, tuple[str, ...]] = {
     "a cut default": (
         RUN, RES, "def f(s, d, a=reserve.CUTOFF):", "    load_bars(s, data_dir=d, as_of=a)",
         "def g(s, d):", "    f(s, d)",
+    ),
+    "a hold from either branch": (
+        RUN, RES, "def f(ss, d, one):",
+        "    held = reserve.hold(ss[0], data_dir=d) if one else reserve.hold_many(ss, d)",
+        "    load_bars(ss[0], data_dir=d, as_of=held.as_of)",
     ),
     "a seam declaration": ("from alpha_cli import _runner", "seam = _runner.load_bars"),
     "another function": ("def f(other, s):", "    other.load_things(s)"),

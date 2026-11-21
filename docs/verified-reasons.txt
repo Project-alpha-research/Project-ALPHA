@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 1a4e2fe494640960 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
+  verified 428d5386de1bcca5 on 2026-11-21: merge of main (ML input and forecast eval hold-back) with group A; routing and code map unchanged
 
 apps/alpha-cli/README.md
-  verified 1a4e2fe494640960 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
+  verified 428d5386de1bcca5 on 2026-11-21: merge of main (ML input and forecast eval hold-back) with group A; routing and code map unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 7c0ac9ab4ea1f384 on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified 7c0ac9ab4ea1f384 on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 6e4f67fbffffc6ff on 2026-11-21: the read guard names PR 357 for its open entries; these pages do not describe the guard
+  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -76,9 +76,6 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
-docs/reference/invariants/research.md
-  verified f89e7a5283da2d4e on 2026-11-21: the read guard names PR 357 for its open entries; these pages do not describe the guard
-
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
@@ -89,10 +86,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 408c4aed7b6bb0cf on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified c6c5d819c84a5859 on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
@@ -215,7 +212,7 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified da404ba27f4862ce on 2026-11-21: compare, propfirm, labels and monte-carlo read bars up to the held-back boundary; the report model gains optional fields; this page's text is still correct
+  verified 18b5a96f258e443c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/PLAYBOOK.md
   verified 843e8be998d4058c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct

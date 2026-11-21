@@ -96,7 +96,8 @@ drafted answer against stored run facts, and the computed differences between ru
   It runs no engine, reads no bar and writes nothing. The maths is in `spine/book.py`, which opens no file.
 - For each pair it gives the Pearson correlation of simple daily returns, the number of common days, and the share of those days on
   which both runs were in the market. Returns are taken between the dates both runs have, so the intervals are the same for both.
-- The returns come from the stored walk-forward equity, which is net of fees. Days out of the market count as zero return and stay in. Dates only one run has are dropped; each pair says how many days were dropped from each run (`dropped_days`).
+- The returns come from the stored walk-forward equity, which is net of fees. Days out of the market count as zero return
+  and stay in. Dates only one run has are dropped; each pair says how many days were dropped from each run (`dropped_days`).
 - Under 60 common days the answer is "too few common days to read" and no correlation is given. When the returns of one run do not
   change, the correlation is "not defined". A run without a stored exposure file gets its correlation; the overlap says why it is absent.
 - A run keeps its labels. A run that saw the held-back period keeps `reserved-period-seen` and its sentence.

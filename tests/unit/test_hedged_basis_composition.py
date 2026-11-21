@@ -23,7 +23,7 @@ from alpha_strategies.hedged_basis import evaluate_hedged_basis
 
 
 def _crowding_rows() -> tuple[CryptoCrowdingObservationV1, ...]:
-    start = datetime(2025, 1, 1, tzinfo=UTC)
+    start = datetime(2023, 1, 1, tzinfo=UTC)
     rows: list[CryptoCrowdingObservationV1] = []
     for index in range(420):
         funding_time = start + timedelta(hours=8 * index)

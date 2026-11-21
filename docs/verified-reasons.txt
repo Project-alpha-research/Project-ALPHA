@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified ca3206ddf6b7567b on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
+  verified a0e1268a427e16fc on 2026-11-21: Merged main again; its changes are outside this page's claims, and this branch's home rows still hold
 
 apps/alpha-cli/README.md
-  verified ca3206ddf6b7567b on 2026-11-21: Merged main again; the changes on main are outside this page's claims, and this branch's home rows still hold
+  verified a0e1268a427e16fc on 2026-11-21: Merged main again; its changes are outside this page's claims, and this branch's home rows still hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-nightly.md
   verified bf467600edef19c2 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -78,6 +78,9 @@ docs/reference/invariants/rdagent.md
 
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+
+docs/reference/invariants/research.md
+  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged

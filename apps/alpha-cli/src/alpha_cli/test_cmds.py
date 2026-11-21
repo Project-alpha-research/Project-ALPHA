@@ -163,6 +163,7 @@ def test_rule(
             idea_card=idea_card,
             fee_bps=fee_bps,
             slippage_bps=slippage_bps,
+            data_dir=settings.data_dir,
         )
         if plan or parsed.context is not None:
             _plan_only(parsed, plan, recheck, settings, json_out)

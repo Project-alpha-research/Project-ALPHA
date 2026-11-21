@@ -87,9 +87,9 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("ml_input.py", "_aligned_panel"): "open: ML input takes the user's --as-of; PR #353",
     ("forecast_cmds.py", "_calibrated_artifacts"): "open: forecast eval universe; PR #353",
     ("forecast_cmds.py", "evaluate"): "open: forecast eval takes the user's --as-of; PR #353",
-    ("research_diagnostic_cmds.py", "weekly_classifier"): "open: user --as-of; research-case PR",
-    ("research_execution.py", "_collect"): "open: research-case plan.as_of; research-case PR",
-    ("research_execution.py", "execute_plan"): "open: research-case plan.as_of; research-case PR",
+    ("research_diagnostic_cmds.py", "weekly_classifier"): "open: user --as-of; PR #357",
+    ("research_execution.py", "_collect"): "open: research-case plan.as_of; PR #357",
+    ("research_execution.py", "execute_plan"): "open: research-case plan.as_of; PR #357",
 }
 # (file under alpha_cli/, enclosing function) that reads a bars store file with polars.
 PARQUET_ALLOWED: dict[tuple[str, str], str] = {

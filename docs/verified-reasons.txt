@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 6d94261733ecf7db on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
+  verified 6e4f67fbffffc6ff on 2026-11-21: the read guard names PR 357 for its open entries; these pages do not describe the guard
 
 docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -77,7 +77,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 7898479510264d27 on 2026-11-21: the read guard now proves the reserve cut positively and propfirm names its hold; these pages do not describe either
+  verified f89e7a5283da2d4e on 2026-11-21: the read guard names PR 357 for its open entries; these pages do not describe the guard
 
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged

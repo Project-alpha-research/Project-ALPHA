@@ -2525,7 +2525,7 @@ export async function preparePage(page: Page, options: MockOptions = {}): Promis
         get: async () => new DeterministicPublicKeyCredential(),
       },
     })
-  }, [options.initialSymbol === undefined ? 'XRP/USDT' : options.initialSymbol, options.settings ?? null] as [string | null, Record<string, unknown> | null])
+  }, [options.initialSymbol === undefined ? 'XRP/USDT' : options.initialSymbol, { profile: 'crypto', ...options.settings }] as [string | null, Record<string, unknown> | null])
 
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url())

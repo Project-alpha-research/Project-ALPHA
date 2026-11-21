@@ -22,6 +22,7 @@ figures: figure catalogue and metadata.
 market: the stored-bars Market overview.
 follow: the Today screen's reads of followed ideas.
 ideas: the Ideas page's reads of idea cards and the idea file.
+series: the stored series of one run for the interactive tear sheet.
 """
 
 from __future__ import annotations
@@ -428,6 +429,7 @@ from .scans_strategies import StrategyDefinition as StrategyDefinition
 from .semantic_reads import BlindSemanticProjectionV1 as BlindSemanticProjectionV1
 from .semantic_reads import SemanticPointV1 as SemanticPointV1
 from .semantic_reads import VerifiedBlindSemanticReadV1 as VerifiedBlindSemanticReadV1
+from .series import RunSeries as RunSeries
 from .setup_runs import SetupRun as SetupRun
 from .setup_runs import SetupRunDetail as SetupRunDetail
 from .setup_runs import SetupRunList as SetupRunList

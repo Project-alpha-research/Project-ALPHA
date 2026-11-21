@@ -7,9 +7,10 @@ apps/alpha-cli/CONTEXT.md
 apps/alpha-cli/README.md
   verified e51b66c1cc378fb6 on 2026-11-21: merge of main: main's own source changes were verified on main; this branch's changes (idea file follows, Ideas page) were checked against this page
   verified 8eb88e836f52fcad on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
+  verified 37b35df6dcdb0105 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-cli/README.md
-  verified 8eb88e836f52fcad on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
+  verified 37b35df6dcdb0105 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -20,15 +21,19 @@ apps/alpha-web/CONTEXT.md
 apps/alpha-web/README.md
   verified 278f313a49df9471 on 2026-11-21: merge of main: main's own source changes were verified on main; this branch's changes (idea file follows, Ideas page) were checked against this page
   verified 7aef8a227bb5053f on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 3b61fc50d4488d7a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-web/README.md
-  verified 7aef8a227bb5053f on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 3b61fc50d4488d7a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+
+docs/reference/invariants/cli-crypto-data.md
+  verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-follow.md
   verified c9f8e501367ee506 on 2026-11-21: updated for the idea workspace
@@ -54,6 +59,7 @@ docs/reference/invariants/cli-rule-readings.md
 
 docs/reference/invariants/cli-runs.md
   verified 437c8c8604ecf113 on 2026-11-21: merge of main: main's own source changes were verified on main; this branch's changes (idea file follows, Ideas page) were checked against this page
+  verified 33b3b7469ae5bcad on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -112,6 +118,13 @@ docs/reference/invariants/web-frontend.md
 docs/reference/invariants/web-research.md
   verified 4778c8b8e3105da1 on 2026-11-21: only the Ideas page, its two read routes and the ideas activity area were added; this page does not describe them
   verified 939a57e5a99340e9 on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+
+docs/reference/invariants/web-api.md
+  verified 1d408c8aad75a27a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+
+docs/reference/invariants/web-frontend.md
+  verified c8a2c1338d4a612d on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
   verified cca6bf82ef3277a8 on 2026-11-21: only the Ideas page, its two read routes and the ideas activity area were added; this page does not describe them

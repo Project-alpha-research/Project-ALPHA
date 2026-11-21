@@ -44,7 +44,7 @@ docs/reference/invariants/cli-runs.md
   verified 1d4e219f48a177f5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified c4c340353aa1ff50 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.

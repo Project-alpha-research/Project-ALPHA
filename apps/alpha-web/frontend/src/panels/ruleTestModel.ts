@@ -2,7 +2,7 @@
 
 import type { FigureCatalogueItem, RuleTest, RuleTestChecks } from '../api/types'
 import { GLOSSARY } from '../explain/glossary'
-import type { RecordedManifest } from '../explain/verdictStory'
+import type { RecordedManifest } from '../explain/types'
 import { isFiniteNum } from '../util/format'
 
 export const NOT_RECORDED = 'not recorded'

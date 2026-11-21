@@ -25,7 +25,7 @@ verified: 8739347cc6883a2a
 Rules for `alpha follow`. A tested idea is followed on paper as new bars arrive. Options are in the
 [command reference](../commands.md#alpha-follow). F1: the frozen record and the journal. F2: `follow update` for a followed
 rule test (below). F3: `follow today` and the nightly steps N4 and N0 (below).
-A followed setup trade is updated like a rule test (Setup follow, below). A setup find or a factor cannot be updated. Every screen of text says "paper".
+A followed setup trade is updated like a rule test (below). A setup find or a factor cannot be updated. Every screen says "paper".
 
 ## Separation (the integrity rule)
 - `<data_dir>/forward/` is one-way. Research writes nothing there and reads nothing from there.
@@ -142,11 +142,9 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   booked at the first update that sees it, never in an older entry. No carry. `follow show` states these terms and a rule long at the start in plain words.
 
 ## Setup follow
-- `follow start --trade <trade id> [--asset A]` follows a Setup Lab trade study: `kind` `setup_trade`, one asset, long only. A short
-  setup and a setup with context series are refused. The start entry keeps the study's `setup`: trade id, find id, labels, costs, exits.
-- `update` runs the study's own code (`find_candidates`, `prepare_exits`, `simulate`) on the bars up to each close. A trigger on the
-  last bar is an order for the next open. Stop and target fill at the study's prices; an opposite signal exits at the next open.
-
+- `follow start --trade <id> [--asset A]`: kind `setup_trade`, one asset, long only; a short setup or one with context is refused.
+  The start entry keeps the study's `setup` (ids, labels, costs, exits). `update` runs the study's own code on the bars up to each
+  close: a trigger on the last bar is an order for the next open; stop and target fill at the study's prices.
 ## Replay check
 - Each run replays the frozen rule over warm-up and forward bars and compares the journal with it: decision, readings, fills,
   `engine_code_sha256`, and the hash of the bars up to each session.

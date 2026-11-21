@@ -17,6 +17,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from alpha_cli._screen_trials import record_screen_trials, replay_note
 from alpha_cli.spine import reserve
 from alpha_core import DataError, UniverseMembership, members_as_of
 from alpha_research import panel
@@ -558,6 +559,11 @@ def _attempt(
             "result_digest": result_digest,
         }
         _publish(root / "result.json", payload)
+        counted = (
+            replay_note(result)
+            if replay_id is not None
+            else record_screen_trials(data_dir, spec, payload)
+        )
     except (KeyboardInterrupt, SystemExit) as exc:
         _publish(
             root / "finished.json",
@@ -594,7 +600,7 @@ def _attempt(
             "authority": "none",
         },
     )
-    return payload
+    return {**payload, "counted": counted}
 
 
 def run_hypotheses(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:

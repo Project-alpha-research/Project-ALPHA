@@ -179,6 +179,7 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
   cost-adjusted spread charges `4 x horizon_turnover x` the one-way cost, where `horizon_turnover` is the bucket replacement between dates one horizon apart
   (a book rebalanced every horizon); `turnover` keeps the one-row figure. Equity outcomes are split-adjusted price returns without dividends. Checked against
   pandas and SciPy by `tests/oracles/test_differential_hypothesis_screen.py`.
+- `scan hypotheses` adds one ledger row per hypothesis and asset ([rule](cli-trial-ledger.md#screen-tries)); `replay` adds none.
 - `alpha chart overlays` reads the same point-in-time window as `alpha data candles`, nulls warm-up values only at the head, filters patterns through their
   `*_known_by(last)` check, and fails loud on any other non-finite value. Only the indicators in `_NAN_AFTER_WARMUP` may null a legitimately undefined later
   window. Each indicator refuses a window shorter than its longest lookback, and each pattern names in `reason` the bar it became drawable. Enforced by

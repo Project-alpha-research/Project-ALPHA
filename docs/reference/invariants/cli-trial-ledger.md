@@ -105,6 +105,13 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   in its manifest, never today's grown ledger. No ledger history or immutable run is rewritten.
 - `alpha results show` adds the recorded count and live `family_counts` rows, outcomes and reader
   trials from the spine-only snapshot. Older runs have a null recorded count and an explicit reason.
+## Screen tries
+
+- `alpha scan hypotheses` appends one `screen_trial` row per evaluated hypothesis (signal at one horizon) and asset (`_screen_trials.py`), through
+  `append_trial`. The row has no Sharpe, so it never enters a spread. The spec hash is the hypothesis, the data id the frozen snapshot or manifests.
+  Same key as a rule test: the same screen on the same data counts once (label `repeat`). A failed screen and `scan replay` append nothing.
+  The same-asset count counts these rows by kind; the family count does not (`spine-screen`). The screen output says how many tries it added.
+
 ## Queries and factor rows
 
 - DuckDB is imported only for a query, connects to `:memory:` with external access disabled,

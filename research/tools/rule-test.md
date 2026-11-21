@@ -18,7 +18,7 @@ uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; ex
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
 (`fee_bps`, `slippage_bps`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
 (a `[rule.spec]` table, long or flat: [language](../../docs/reference/owner-rule-language.md), `research/examples/owner-rsi-dip.toml`).
-An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick` runs a small gauntlet, labelled `quick`. `idea_card` links an [idea card](idea-card.md).
+An asset is a symbol or symbol@store. A file and flags cannot be mixed. `--quick`: small gauntlet, labelled `quick`. `idea_card`: an [idea card](idea-card.md).
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates (walk-forward only).

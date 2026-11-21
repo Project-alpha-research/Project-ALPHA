@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified a57ca2eead765260 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 apps/alpha-cli/README.md
-  verified a57ca2eead765260 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 91c14de2f0adf148 on 2026-11-20: Sources changed by a chart-only frontend change and one added candles test; the text about the web layer, candles route and reads is still correct.
+  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 apps/alpha-web/README.md
-  verified ede5985947d74476 on 2026-11-20: added Gates chart code map line
+  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -38,10 +38,10 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 116a65532c20e237 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
+  verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified 5ecc3c34304b03ca on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified dacf8068e5efaf5b on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 docs/reference/invariants/cli-setups.md
   verified 3ce9c18e487a4a04 on 2026-11-20: Only a type-annotation and test-helper cleanup in a source this document names; its text is still correct.
@@ -52,12 +52,6 @@ docs/reference/invariants/cli-toolbox.md
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
 
-docs/reference/invariants/core.md
-  verified 1d240ec67a9c8784 on 2026-11-21: RESERVED_INSTANT now lives in alpha_core.reserve and spine/reserve.py imports it; the boundary value and every claim here are unchanged
-
-docs/reference/invariants/data-context.md
-  verified bba514c75548b7f8 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
-
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
@@ -65,7 +59,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 0f8397b39dd848a8 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified b8a07c28590d972a on 2026-11-20: A pipeline test now expects the loud RestoreFailed error that names the repair command; the page already states that behaviour.
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -92,7 +86,7 @@ docs/reference/invariants/web-api.md
   verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
-  verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail
+  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -155,7 +149,7 @@ docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 3aba818c98881fc5 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified a33dbe3faf96be3f on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -188,7 +182,7 @@ docs/reference/project/rd-agent-detail.md
   verified 949857d7112bc824 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/reserved-period.md
-  verified 274fe964cc5f6ccd on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 81433144d9570f50 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -202,20 +196,17 @@ docs/roadmap/production-scope.md
 docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
-packages/alpha-core/CONTEXT.md
-  verified 956e425a5da84c43 on 2026-11-21: RESERVED_INSTANT now lives in alpha_core.reserve and spine/reserve.py imports it; the boundary value and every claim here are unchanged
-
 packages/alpha-data/CONTEXT.md
-  verified a5f5dede17cf988f on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 3fbe94346180dd08 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
 
 packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 10353a631efd48c2 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 932c69a82c9e24f3 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/PLAYBOOK.md
-  verified 72da87393751e94c on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified b759bab6b62216a4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -227,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 1aaea54b940029b1 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified f423ed6d48b0f116 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 085db2a898edf8fd on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 18faad693b49c2c4 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified a92bfb42cbfe21cd on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 research/tools/diagnose-and-audit.md
-  verified 3920b90e14fbeee8 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 54393e6a996e518d on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -253,17 +244,11 @@ research/tools/idea-card.md
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
 
-research/tools/macro-context.md
-  verified 03a2da6392acf8a1 on 2026-11-21: reviewed against the new context_derived_cmds, attach and derived modules; text still correct
-
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
-
-research/tools/positioning-short-volume-context.md
-  verified 915dd71bb226c905 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
 
 research/tools/price-noise.md
   verified 5a1c8e404ca8c88e on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -272,7 +257,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified 3917c740f14da4e9 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
+  verified f36195ad4dbd9ce4 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -284,13 +269,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified cc1bf8933b1c8974 on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified 5c63d1ef8545f529 on 2026-11-20: merge of main (alpha validate reading word, report helper) into the recheck branch; both texts kept, statements still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified a92bfb42cbfe21cd on 2026-11-21: RESERVED_INSTANT is re-exported explicitly from alpha_core.reserve (type-check fix); the boundary and every claim here are unchanged
+  verified e048582ed79e73ec on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
 
 research/tools/setup-find.md
   verified 9f2ea6d08f1014de on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.

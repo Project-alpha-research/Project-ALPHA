@@ -31,6 +31,11 @@ def _run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     assert result.exit_code == 0, result.output
     assert "optim SPY -> run " in result.output
     assert "in-sample MCPT p" in result.output and "not OOS evidence" in result.output
+    assert "PASS" not in result.output and "FAIL" not in result.output
+    assert "The level used by the old grade: percentile at least 0.95." in result.output
+    assert ("percentile" in result.output) and (
+        " is at least 0.95" in result.output or " is below 0.95" in result.output
+    )
     (rdir,) = list((tmp_path / "optim").iterdir())
     return rdir
 

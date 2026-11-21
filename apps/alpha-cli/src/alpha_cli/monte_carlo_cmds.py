@@ -22,6 +22,7 @@ import typer
 from alpha_cli import _artifacts, _forecast, _forecast_cache, _runner
 from alpha_cli._seeds import semantic_seed, semantic_seeds
 from alpha_cli.artifact_contract import sha256_file
+from alpha_cli.spine import reserve
 from alpha_core import Bar, DataError
 from alpha_core.config import AlphaSettings
 from alpha_validation import (
@@ -59,6 +60,17 @@ def _regime_caveats(state_observations: tuple[int, int], horizon: int) -> tuple[
             "the OOS period; compare this family with the IID empirical family.",
         )
     return caveats
+
+
+def _source_as_of(cutoff: object) -> datetime:
+    """The source run's cut-off, and never later than the held-back boundary.
+
+    A source run that held nothing back records the user's cut-off, often none. Bars pulled
+    after it must not become readable here, so an absent cut-off means the boundary. A run that
+    read past the boundary then fails loud later (its dates are absent), never silently.
+    """
+    parsed = _runner.parse_as_of(str(cutoff) if cutoff is not None else None)
+    return reserve.CUTOFF if parsed is None else min(parsed, reserve.CUTOFF)
 
 
 def _verified_validation_source(data_dir: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
@@ -446,7 +458,7 @@ def classical(
             symbol,
             data_dir=settings.data_dir,
             snapshot_id=str(snapshot_id) if snapshot_id is not None else None,
-            as_of=_runner.parse_as_of(str(cutoff) if cutoff is not None else None),
+            as_of=_source_as_of(cutoff),
         )
         states, state_threshold, oos_volatility = _causal_regime_states(
             bars,
@@ -705,7 +717,7 @@ def kronos(
         symbol = str(metadata["symbol"])
         snapshot_id = metadata.get("snapshot_id")
         cutoff = source_manifest.get("research_cutoff")
-        as_of = _runner.parse_as_of(str(cutoff) if cutoff is not None else None)
+        as_of = _source_as_of(cutoff)
         bars, _ = _runner.load_bars(
             symbol,
             data_dir=settings.data_dir,

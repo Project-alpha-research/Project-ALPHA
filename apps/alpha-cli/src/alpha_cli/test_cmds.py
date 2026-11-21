@@ -90,6 +90,28 @@ def _recheck(
         raise typer.Exit(MISMATCH_EXIT)
 
 
+def _plan_only(
+    parsed: IdeaSpec, plan: bool, recheck: bool, settings: AlphaSettings, json_out: bool
+) -> None:
+    """`--plan`, and the refusal of a context spec without it. Never runs the engine."""
+    from alpha_cli._context_plan import REFUSAL, plan_idea, plan_lines
+
+    if not plan:
+        fail(SpineError("GATED_ENGINE_MISSING", REFUSAL, "Run alpha test <spec> --plan."), json_out)
+    if parsed.context is None or recheck:
+        message = (
+            "--plan describes a context gate; this spec has none."
+            if parsed.context is None
+            else "--plan cannot be used with --recheck."
+        )
+        fail(SpineError("BAD_OPTION", message, "Run alpha test without --plan."), json_out)
+    output = plan_idea(parsed, home=settings.data_dir)
+    if all(result["error"] is not None for result in output["results"]):
+        errors = "; ".join(result["error"] for result in output["results"])
+        fail(test_error(errors, list(_stores(settings.data_dir))), json_out)
+    emit(output, json_out=json_out, fallback="\n".join(plan_lines(output)))
+
+
 def test_rule(
     spec: Path | None = typer.Argument(None, help="Idea spec (.toml or .json)."),  # noqa: B008
     rule: str | None = typer.Option(None, help="ma_cross | breakout | tsmom"),
@@ -120,6 +142,12 @@ def test_rule(
         help="Compute the test again and compare it with the stored result. Writes nothing. "
         "Exit 4 if the two differ.",
     ),
+    plan: bool = typer.Option(
+        False,
+        "--plan",
+        help="For a spec with a context gate: describe the gate per asset. Runs no engine, "
+        "writes nothing.",
+    ),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
 ) -> None:
     """Test a long/flat trading rule on several assets and record every trial."""
@@ -136,6 +164,9 @@ def test_rule(
             fee_bps=fee_bps,
             slippage_bps=slippage_bps,
         )
+        if plan or parsed.context is not None:
+            _plan_only(parsed, plan, recheck, settings, json_out)
+            return
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return

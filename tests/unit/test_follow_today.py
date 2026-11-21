@@ -138,7 +138,8 @@ def test_next_prints_one_followed_line_only_when_follows_exist(tmp_path: Path) -
     _world(tmp_path)
     line = followed_line(followed_counts(tmp_path) or {})
     assert line == (
-        "Followed on paper: 5 (1 new signal, 1 open, 1 late or missed). See: alpha follow today"
+        "Followed on paper: 5 (1 new signal, 1 open, 1 late or missed). See: alpha follow today. "
+        "As one paper account: alpha follow book"
     )
     code, out = _cli(tmp_path, command="next")
     assert out.count("Followed on paper") == 1 and line in out

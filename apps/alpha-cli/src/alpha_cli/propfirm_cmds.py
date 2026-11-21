@@ -144,6 +144,7 @@ def run(
     except DataError as exc:  # missing run, unknown firm, degenerate returns, bad rule override
         raise typer.BadParameter(str(exc)) from exc
 
+    payload.update(_propfirm.held_identity(out.held))
     identity = _runner.run_identity_for(
         payload,
         source_fingerprint=out.source_fingerprint,
@@ -162,6 +163,7 @@ def run(
     )
     manifest = _manifest(out, run_id=run_id, seed=resolved_seed)
     manifest.update(identity.manifest_fields())
+    _propfirm.stamp_held(manifest, out.held)
     _artifacts.write_manifest(rdir, manifest)
 
     res = out.result
@@ -173,7 +175,7 @@ def run(
         f"payout {res.payout_probability:.1%}, median days-to-pass {days}\n"
         f"  expected payout ${res.expected_payout:,.0f} over {res.horizon_days} days "
         f"({res.n_paths} paths)\n"
-        f"  manifest at {rdir / 'manifest.json'}"
+        f"  manifest at {rdir / 'manifest.json'}" + (out.held.note() if out.held else "")
     )
 
 

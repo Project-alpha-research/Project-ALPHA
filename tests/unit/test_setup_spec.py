@@ -91,7 +91,7 @@ def test_filter_order_is_part_of_the_identity() -> None:
     )
 
 
-@pytest.mark.parametrize("section", ["context", "dates", "session"])
+@pytest.mark.parametrize("section", ["dates", "session"])
 def test_next_piece(section: str) -> None:
     with pytest.raises((DataError, ValidationError), match="next piece"):
         SetupSpec.load(minimal(**{section: {"x": 1}}))

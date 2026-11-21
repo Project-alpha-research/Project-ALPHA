@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 869e1f28fef2ca78 on 2026-11-21: price-chart fixes do not change what this document says
+  verified 830ba2759156900e on 2026-11-21: open-position fix does not change what this document says
 
 apps/alpha-cli/README.md
-  verified 869e1f28fef2ca78 on 2026-11-21: price-chart fixes do not change what this document says
+  verified 830ba2759156900e on 2026-11-21: open-position fix does not change what this document says
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -24,6 +24,9 @@ docs/reference/checks.md
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+
+docs/reference/invariants/cli-figures.md
+  verified 51fcf38f311a45fb on 2026-11-21: open-position fix does not change what this document says
 
 docs/reference/invariants/cli-follow.md
   verified 8739347cc6883a2a on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
@@ -86,7 +89,7 @@ docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
 docs/reference/invariants/research.md
-  verified 1364565e8457b632 on 2026-11-21: price-chart fixes do not change what this document says
+  verified 69c4d65527bce972 on 2026-11-21: open-position fix does not change what this document says
 
 docs/reference/invariants/testing.md
   verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says

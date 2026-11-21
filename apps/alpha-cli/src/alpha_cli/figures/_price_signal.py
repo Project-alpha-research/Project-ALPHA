@@ -128,7 +128,7 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
     fills = _clip(all_fills, "ts", span)
     if len(fills) > _MAX_FILL_MARKERS:
         zones = held_zones(ctx, span)
-        open_zone = open_position_zone(fills, span)
+        open_zone = open_position_zone(all_fills, span)
         if open_zone is not None:
             zones.append(open_zone)
         if zones:

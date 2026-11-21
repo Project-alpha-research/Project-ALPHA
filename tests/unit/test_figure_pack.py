@@ -751,3 +751,26 @@ def test_the_annotation_cap_counts_only_annotations_in_the_window(
     ).write_parquet(rdir / "chart_annotations.parquet")
     marks = _build(rdir, "price_signal").panels[0].marks
     assert sum(1 for m in marks if type(m).__name__ == "LineMark" and m.role == "feature") == 3
+
+
+def test_a_position_opened_before_the_window_is_not_mistaken_for_a_short(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rdir = _many_fill_run(tmp_path, monkeypatch, equity_from=1)
+    days = [datetime(2022, 1, 3, tzinfo=UTC) + timedelta(days=i) for i in range(80)]
+    # Fill 0 (the entry) sits before the window; 61 visible fills then end flat.
+    fills = [
+        {
+            "sequence_id": i,
+            "event_type": "fill",
+            "ts": days[i],
+            "side": "BUY" if i % 2 == 0 else "SELL",
+            "price": 1.0,
+            "quantity": 10.0,
+            "filled_quantity": 10.0,
+        }
+        for i in range(62)
+    ]
+    pl.DataFrame(fills).write_parquet(rdir / "execution_trace.parquet")
+    marks = _build(rdir, "price_signal").panels[0].marks
+    assert not any(getattr(m, "label", None) == "Open position" for m in marks)

@@ -40,7 +40,11 @@ def held_zones(ctx: BuildContext, span: tuple[float, float] | None) -> list[Mark
 
 
 def open_position_zone(fills: Any, span: tuple[float, float] | None) -> Mark | None:
-    """A position still open at the last fill: closed trades never list it, the fills do."""
+    """A position still open at the window's end: closed trades never list it, the fills do.
+
+    ``fills`` is the whole fill history. The balance is rebuilt from the first fill, then
+    the zone is cut to the plotted window, so an entry made before the window counts.
+    """
     column = next((name for name in ("filled_quantity", "quantity") if name in fills.columns), None)
     if column is None:
         return None  # without sizes the net position cannot be told; draw nothing, guess nothing
@@ -59,11 +63,14 @@ def open_position_zone(fills: Any, span: tuple[float, float] | None) -> Mark | N
     ):
         if quantity is None:
             return None
+        if span is not None and stamp > span[1]:
+            break
         before = position
         position += float(quantity) * (1.0 if side == "BUY" else -1.0)
         if abs(before) < 1e-9 <= abs(position):
             since = stamp
     end = span[1] if span else since
+    since = max(since, span[0]) if span else since
     if abs(position) < 1e-9 or end <= since:
         return None
     return ZoneMark(

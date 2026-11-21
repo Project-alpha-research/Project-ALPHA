@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 72924bc7096e5ba2 on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 apps/alpha-cli/README.md
-  verified 72924bc7096e5ba2 on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+  verified 0a99f556efa007b8 on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified cd31c55049ababfb on 2026-11-21: the pointer line to the reserved period was re-added after merging main; it states what the code does
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed

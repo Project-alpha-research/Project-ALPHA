@@ -1,4 +1,4 @@
-"""`alpha confirm`: the owner's one-shot test of one idea on the reserved period (2024-01-01 on).
+"""`alpha confirm`: the owner's one-shot test of one idea on the reserved period.
 
 `plan` and `list`/`show` only read. `request` issues the Touch ID challenge and prints the local
 link; the owner's touch on that page is the only yes. `run` spends the slot only with that yes, or
@@ -23,13 +23,15 @@ from alpha_cli.spine.confirm import plan, summary
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+from alpha_core.reserve import RESERVED_START
 
 confirm_app = typer.Typer(
-    help="Confirm one tested idea on the reserved period (2024-01-01 on): once, 10 slots in all."
+    help=f"Confirm one tested idea on the reserved period ({RESERVED_START} on): "
+    "once, 10 slots in all."
 )
 RESERVED_WORDS = (
-    "The reserved period is the data from 2024-01-01 on. It is held back from every test, so it "
-    "can serve once as a final check on data no test has seen."
+    f"The reserved period is the data from {RESERVED_START} on. It is held back from every test, "
+    "so it can serve once as a final check on data no test has seen."
 )
 
 

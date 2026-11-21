@@ -936,7 +936,7 @@ CREATE INDEX IF NOT EXISTS idx_research_launch_attempt_links_attempt
     ON research_launch_attempt_links(attempt_id);
 """
 
-# The owner's one-shot confirmation of a frozen idea on the reserved period (2024-01-01 on).
+# The owner's one-shot confirmation of a frozen idea on the reserved period.
 # Additive only: three tables beside the owner action receipts, created by `reserved_slots`
 # inside its own write transaction, so a store of any supported version accepts them without a
 # rebuild or a version change. The research-case receipt table and its action CHECK are not
@@ -960,7 +960,7 @@ CREATE TABLE IF NOT EXISTS reserved_period_authorizations (
     reason TEXT NOT NULL,
     assertion_json TEXT NOT NULL,
     assertion_hash TEXT NOT NULL CHECK (length(assertion_hash) = 64),
-    previous_sign_count INTEGER NOT NULL CHECK (previous_sign_count >= 0),
+    previous_sign_count INTEGER NOT NULL CHECK (0 <= previous_sign_count),
     authorized_at TEXT NOT NULL
 ) STRICT;
 

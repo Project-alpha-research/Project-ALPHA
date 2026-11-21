@@ -52,7 +52,7 @@ def _numbers(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 # The one stored field the earlier period may differ in: the count of bars held back. It is not a
-# computed result; it grows each time new bars from 2024-01-01 on are stored.
+# computed result; it grows each time new bars from the reserved day on are stored.
 COUNT_ONLY = "manifest.spine.reserve.held_back_bars"
 
 
@@ -114,7 +114,7 @@ def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, A
     spec = assemble_run_spec(frozen.idea, frozen.symbol, frozen.periods_per_year, len(bars))
     start = first - spec.min_train - spec.embargo
     if start < 0:
-        raise DataError("too few bars before 2024-01-01 to warm the rule up")
+        raise DataError(f"too few bars before {RESERVED_START} to warm the rule up")
     used = bars[start:]
     held = [d for d in dividends if d.ex_date >= used[0].ts.date()]
     resolved = resolve_asset(frozen.asset, data_dir=home)
@@ -142,7 +142,7 @@ def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, A
         manifest = write_run(frozen.idea, prepared, home, staged, knobs, test_id, result)
         scored = datetime.fromisoformat(manifest["spine"]["traded_period"]["first_ts"])
         if scored < RESERVED_INSTANT:
-            raise DataError("the scored days would start before 2024-01-01; nothing stored")
+            raise DataError(f"the scored days would start before {RESERVED_START}; nothing stored")
     return manifest
 
 

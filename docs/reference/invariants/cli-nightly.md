@@ -7,7 +7,7 @@ sources:
   - tests/unit/test_nightly*.py
   - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: 0c27ddf0593b7fcd
+verified: f8619b354424f05c
 ---
 
 # Command line nightly run invariants
@@ -49,7 +49,8 @@ verified: 0c27ddf0593b7fcd
 ## Failure marker and notice
 - `nightly_alert` owns `<home>/nightly/LAST_FAILED`: plain text, written atomically (`alpha_core.atomic`).
   Line one is "The last nightly run failed: run <date>-<n> …"; then the date, the run and one sentence per blocking defect.
-- A run with a blocking defect writes it. A run that stops with an exception writes it too, then raises the same exception:
+- A run with a blocking defect writes it. A run that stops with an exception (also Ctrl-C) writes it too, then raises the same exception;
+  a marker that cannot be written prints a warning and never hides that exception or changes the run's result:
   a crash leaves the marker even when no record exists.
 - A later full-attempt run (no `--only`) with no blocking defect removes it. A partial run never removes it.
 - `alpha nightly status` and `alpha next` show one line while it exists (`failed_line`). `alpha next` carries it in `last_night`.
@@ -70,12 +71,16 @@ verified: 0c27ddf0593b7fcd
   The manifest has the relative path, size and SHA-256 of every file, every folder, and each excluded entry with its reason.
 - Lock rule: the backup takes `flock` on `<home>/nightly/.lock` without waiting, the lock the crontab line holds for a nightly run.
   If it is held, the backup refuses and writes nothing. It holds the lock until the archive is complete.
+- Before writing, it estimates the size (every file plus 2 kB per entry plus 1 MB) and refuses if the target disk has less free.
+  A folder it cannot read stops it. A second name of one file (hard link) is stored in full: `tar.inodes` is cleared per file.
 - A file whose size or modification time changes while it is read stops the backup; the partial archive is removed.
 - It refuses a target inside the home. Symbolic links are never followed: each is excluded and listed. Nothing is excluded silently.
 - `verify-backup` re-reads the archive, compares every file with the manifest and the archive with its `.sha256`, and names
   each bad file. Exit code 1 on any problem. It extracts nothing.
-- `restore <archive> <dir>` verifies first, then writes only regular files and folders into a new or empty folder.
+- `verify-backup` also names a double entry, a folder missing from or extra to the manifest and an unreadable manifest row.
+- `restore <archive> <dir>` (module `home_restore`) verifies first, then writes only regular files and folders into a new or empty folder,
+  keeps file and folder modes and times, then reads every written file again from disk against the manifest. A failure leaves an incomplete folder, said so.
   It refuses a non-empty target, the live home, a folder inside it and a folder that holds it. Unsafe entry names are refused.
-- `home_backup` is on the follow-store reader list (`test_follow_separation.py`) on purpose: it copies bytes, parses nothing
+- `home_backup` (the only backup module that walks the home) is on the follow-store reader list (`test_follow_separation.py`) on purpose: it copies bytes, parses nothing
   and feeds no research result. The `nightly_*` modules stay off that list.
 - The Workstation launcher refuses every `alpha home` command (`catalog.classify_generic_command`: owner-only). Terminal only.

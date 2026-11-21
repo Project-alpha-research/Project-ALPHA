@@ -632,6 +632,8 @@ proof_synthetic = [
   "tests/unit/test_home_backup.py::test_a_corrupted_archive_fails_verification_and_names_the_file",
   "tests/unit/test_home_backup.py::test_backup_refuses_while_the_nightly_lock_is_held",
   "tests/unit/test_home_backup.py::test_restore_only_fills_a_new_empty_folder",
+  "tests/unit/test_home_backup_adversarial.py::test_a_hard_linked_file_is_stored_in_full_under_both_names",
+  "tests/unit/test_home_backup_adversarial.py::test_a_crafted_archive_cannot_write_outside_the_new_folder",
 ]
 proof_smoke = [
   "tests/smoke/test_home_backup_smoke.py::test_backup_verify_and_restore_round_trip",

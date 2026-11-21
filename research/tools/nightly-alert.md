@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/nightly_alert.py
   - apps/alpha-cli/src/alpha_cli/home_disk.py
-verified: 2ad9ba196cae3c31
+verified: 49356981eee1fc79
 ---
 # Nightly failure marker and disk trend
 

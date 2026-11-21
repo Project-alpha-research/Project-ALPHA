@@ -18,9 +18,8 @@ from alpha_cli.spine.stores import resolve_asset
 from alpha_cli.toolbox.runner import run
 from alpha_data.store import ParquetStore
 from alpha_data.timeframe import DAILY, store_dir
-from tests.unit.test_toolbox_run_level_checks import COSTS, RUN, stored_run
-
-NUM = {"rel": 1e-9, "abs": 1e-12}
+from tests.unit.test_spine_tools import RUN
+from tests.unit.test_toolbox_run_level_checks import COSTS, stored_run
 
 
 def _asset(home: Path, symbol: str, source: str, dataset: dict[str, str] | None) -> None:
@@ -100,8 +99,8 @@ def test_class_default_spec_value() -> None:
 def test_class_default_costs_reach_the_run_spec() -> None:
     row, _ = cc.class_row("us_stock")
     spec = assemble_run_spec(_idea("class-default"), "SPY", 252, 2000, costs=row)
-    assert spec.fee_bps == pytest.approx(2.0, **NUM)
-    assert spec.slippage_bps == pytest.approx(5.0, **NUM)
+    assert spec.fee_bps == pytest.approx(2.0, rel=1e-9, abs=1e-12)
+    assert spec.slippage_bps == pytest.approx(5.0, rel=1e-9, abs=1e-12)
 
 
 def test_reading_states_costs_and_periods() -> None:
@@ -158,7 +157,7 @@ def test_borrow_fact_for_a_run_with_shorts(tmp_path: Path) -> None:
     _short_run(tmp_path, short=True)
     values = run(tmp_path, COSTS, RUN)["values"]
     # One short: 73 days at 50 bp a year on a 1000 notional (10 / 0.01) is 1.0 in currency.
-    assert values["borrow_charge"] == pytest.approx(1000 * 0.005 * 73 / 365, **NUM)
+    assert values["borrow_charge"] == pytest.approx(1000 * 0.005 * 73 / 365, rel=1e-9, abs=1e-12)
     assert values["result_after_borrow"] is not None
     assert values["borrow_note"].startswith("A US stock")
 

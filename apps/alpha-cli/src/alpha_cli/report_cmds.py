@@ -235,9 +235,9 @@ def report(
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
         for text in monte_carlo_lines(manifest):
             typer.echo(text)
-    for text in (reading_line(manifest), costs_line(manifest)):
-        if text:
-            typer.echo(text)
+    for shown in (reading_line(manifest), costs_line(manifest)):
+        if shown:
+            typer.echo(shown)
     if "oos_metrics" in manifest:
         metrics = ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(manifest["oos_metrics"].items()))
         typer.echo(f"OOS metrics: {metrics}")

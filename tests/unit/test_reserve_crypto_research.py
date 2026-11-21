@@ -207,10 +207,10 @@ def test_audit_of_a_crypto_dataset_stops_at_the_boundary_and_says_so(
     assert 0 < frame.height < len(stamps)
     assert frame["ts"].max() < RESERVED_INSTANT
     monkeypatch.setattr("alpha_cli.research_crypto_data.snapshot_held_back_rows", lambda *a, **k: 7)
-    held = research_data_audit._audit_hold(tmp_path, ref)
+    held, notes = research_data_audit._audit_hold(tmp_path, ref)
     assert held.record_fields() == {"reserve": reserve.record(7, "rows")}
-    note = held.say()
-    assert note == reserve.sentence(7, "rows")
+    note = notes[0]
+    assert notes == [reserve.sentence(7, "rows")]
     assert "rows (bars, funding and open interest)" in note and SENTENCE in note
 
 

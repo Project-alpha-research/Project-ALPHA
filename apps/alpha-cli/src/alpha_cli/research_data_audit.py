@@ -150,8 +150,13 @@ def load_registered_dataset_frame(data_dir: Path, *, ref: Mapping[str, object]) 
     return frame.filter(frame["ts"] >= start_at)
 
 
-def _audit_hold(data_dir: Path, ref: Mapping[str, object]) -> reserve.Hold:
-    """What the cut held back from the registered range; only time columns are read."""
+def _audit_hold(data_dir: Path, ref: Mapping[str, object]) -> tuple[reserve.Hold, list[str]]:
+    """What the cut held back from the registered range, and its note; reads time columns only."""
+    held = _held_in_range(data_dir, ref)
+    return held, [reserve.sentence(held.held_back, held.unit)] if held.held_back else []
+
+
+def _held_in_range(data_dir: Path, ref: Mapping[str, object]) -> reserve.Hold:
     end = str(ref.get("end_ts", ""))[:10]
     value = ref.get("origin")
     origin: Mapping[str, object] = value if isinstance(value, Mapping) else {}
@@ -185,14 +190,12 @@ def run_data_audit(data_dir: Path, *, project_id: str, ref: Mapping[str, object]
     crypto_snapshot = "funding_rate" in frame.columns
     value_column = "funding_rate" if crypto_snapshot else "close"
     values = [float(value) for value in frame[value_column]]
-
     interval_seconds = 8 * 3_600.0 if crypto_snapshot else 86_400.0
     duration = ref.get("bar_duration_minutes")
     if isinstance(duration, int) and not isinstance(duration, bool) and duration > 0:
         interval_seconds = duration * 60.0
     coverage = coverage_summary(timestamps, expected_interval_seconds=interval_seconds)
-    held = _audit_hold(Path(data_dir), ref)
-    notes = [reserve.sentence(held.held_back, held.unit)] if held.held_back else []
+    held, notes = _audit_hold(Path(data_dir), ref)
     blocking: list[str] = []
     limiting: list[str] = []
     if int(coverage["n"]) < _MINIMUM_USABLE_SAMPLE:  # type: ignore[call-overload]

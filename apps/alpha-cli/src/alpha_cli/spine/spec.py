@@ -94,7 +94,8 @@ class IdeaSpec(FrozenModel):
     rule: Rule
     costs: Costs = Field(default_factory=Costs)
     # Context gate: `{alias: "series@key"}` and an expression over the aliases. A spec without
-    # them dumps without these keys, so its hash, run id and stored spec stay as before.
+    # them dumps without these keys, so its hash, run id and stored spec stay as before. The
+    # stored spec keeps the text as written; the hash takes the canonical form (see canonical).
     context: dict[str, str] | None = None
     when: str | None = None
     # A link to an idea card. Excluded from dumps, so it is in no hash, run id or stored spec.
@@ -126,8 +127,14 @@ class IdeaSpec(FrozenModel):
         return data
 
     def canonical(self) -> str:
+        data = self.model_dump(mode="json", exclude_none=True)
+        if self.context is not None and self.when is not None:
+            # Alias names and spacing are not identity: hash the canonical gate form.
+            from alpha_cli._context_gate import canonical_fields
+
+            data.update(canonical_fields(self.context, self.when))
         return json.dumps(
-            self.model_dump(mode="json", exclude_none=True),
+            data,
             sort_keys=True,
             separators=(",", ":"),
             allow_nan=False,

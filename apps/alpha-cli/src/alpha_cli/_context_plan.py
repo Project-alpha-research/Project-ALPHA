@@ -11,43 +11,31 @@ import json
 from pathlib import Path
 from typing import Any
 
-import polars as pl
-
 from alpha_cli import _context_gate, _runner
-from alpha_cli.spine import reserve
+from alpha_cli.spine import reserve, setup_context
 from alpha_cli.spine.deflation import spine_test_key
 from alpha_cli.spine.run import idea_id
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.stores import annualisation, resolve_asset
-from alpha_core import Bar, DataError
+from alpha_core import DataError
 from alpha_data.timeframe import DAILY
 
 REFUSAL = "Refused: the gated engine is not built yet; use --plan."
 
 
-def _frame(bars: list[Bar]) -> pl.DataFrame:
-    return pl.DataFrame(
-        {
-            "ts": [b.ts for b in bars],
-            "open": [b.open for b in bars],
-            "high": [b.high for b in bars],
-            "low": [b.low for b in bars],
-            "close": [b.close for b in bars],
-            "volume": [b.volume for b in bars],
-        }
-    )
-
-
-def sentence(first: str | None, last: str | None, years: float, on: int, n: int, runs: int) -> str:
-    if first is None or last is None:
+def sentence(span: dict[str, Any] | None, on: int, off: int, nulls: int, runs: int) -> str:
+    """Plain words about stored data; a reading, never a verdict."""
+    n = on + off + nulls
+    if span is None:
         return (
             "No bar has a usable value for every condition series. "
-            "There is no span to read, and the gate is false on every bar."
+            f"The gate is false on all {n} days."
         )
     return (
-        f"The condition data covers {first[:7]} to {last[:7]} (about {years:.1f} years). "
-        f"The condition was true on {on} of {n} days, in {runs} separate spells. "
-        "The reading uses this span only."
+        f"The condition data covers {span['first'][:7]} to {span['last'][:7]} "
+        f"(about {span['years']:.1f} years). The condition was true on {on} of {n} days, "
+        f"in {runs} separate spells; false on {off} days; no value on {nulls} days "
+        "(the gate is false there). The reading uses this span only."
     )
 
 
@@ -56,31 +44,23 @@ def _plan_asset(idea: IdeaSpec, asset: str, home: Path) -> dict[str, Any]:
         raise DataError("the plan needs context and when")
     resolved = resolve_asset(asset, data_dir=home)
     labels: list[str] = []
-    held_back = reserve.held_back_count(resolved)
-    if held_back:
+    if reserve.held_back_count(resolved):
         labels.append(reserve.HELD_BACK)
     bars, _ = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF)
+    if not bars:
+        raise DataError(f"{resolved.symbol}: no bars before the reserved period")
     dividends = _runner.load_dividends(
         resolved.symbol, data_dir=resolved.data_dir, as_of=reserve.CUTOFF
     )
-    store = resolved.daily_store()
-    calendar = _runner._calendar_for(resolved.symbol, store.read_provenance(resolved.symbol))
     gate = _context_gate.build_gate(
-        _frame(bars),
+        setup_context.frame_of(bars),
         context=idea.context,
         when=idea.when,
-        calendar=calendar,
+        calendar=setup_context.calendar_of(resolved),
         data_dir=home,
-        cutoff=reserve.CUTOFF,
         symbol=resolved.symbol,
     )
-    first, last = gate.first_value, gate.last_value
-    in_span = [ts for ts in gate.by_ts if first is not None and ts >= first]
-    on = sum(gate.by_ts[ts] for ts in in_span)
-    runs = _context_gate.spells(gate.by_ts)
-    years = (last - first).total_seconds() / (365.25 * 86400) if first and last else 0.0
-    if _context_gate.short_history(gate):
-        labels.append(_context_gate.SHORT_HISTORY)
+    labels += setup_context.labels({"span": gate.span})
     ppy, _ = annualisation([b.ts for b in bars], bar_size=DAILY)
     fingerprint = _runner.source_fingerprint(bars, dividends=dividends)
     data_id = idea_id(
@@ -95,25 +75,24 @@ def _plan_asset(idea: IdeaSpec, asset: str, home: Path) -> dict[str, Any]:
         store=resolved.store_name,
         data_id=data_id,
     )
-    first_text = first.date().isoformat() if first else None
-    last_text = last.date().isoformat() if last else None
+    nulls = sum(gate.null_reasons.values())
     return {
         "asset": asset,
         "symbol": resolved.symbol,
         "store": resolved.store_name,
         "error": None,
-        "bars": len(bars),
-        "context_span": {"first": first_text, "last": last_text, "years": round(years, 2)},
-        "span_bars": len(in_span),
-        "gate_true_bars": on,
-        "spells": runs,
+        "bars": len(gate.by_ts),
+        "context_span": gate.span,
+        "gate_true_bars": gate.true_bars,
+        "gate_false_bars": gate.false_bars,
+        "spells": gate.spells,
         "null_counts": gate.null_reasons,
         "labels": labels,
         "recipe": gate.attach.recipe,
         "context_fp": gate.fingerprint,
         "data_id": data_id,
         "test_key": list(key) if key is not None else None,
-        "sentence": sentence(first_text, last_text, years, on, len(in_span), runs),
+        "sentence": sentence(gate.span, gate.true_bars, gate.false_bars, nulls, gate.spells),
     }
 
 
@@ -125,12 +104,11 @@ def plan_idea(idea: IdeaSpec, *, home: Path) -> dict[str, Any]:
             results.append(_plan_asset(idea, asset, home))
         except DataError as exc:
             results.append({"asset": asset, "error": f"{type(exc).__name__}: {exc}"})
-    spec_key = json.dumps(idea.context, sort_keys=True)
     return {
         "plan": True,
         "spec_sha256": idea.spec_sha256,
         "name": idea.name,
-        "context": json.loads(spec_key),
+        "context": dict(idea.context or {}),
         "when": idea.when,
         "note": "A plan only. The engine did not run; no ledger row or run folder was written.",
         "results": results,
@@ -143,12 +121,12 @@ def plan_lines(output: dict[str, Any]) -> list[str]:
         if r["error"]:
             lines.append(f"{r['asset']}: {r['error']}")
             continue
-        span = r["context_span"]
+        span = r["context_span"] or {"first": None, "last": None, "years": 0.0}
         nulls = ", ".join(f"{k}: {n}" for k, n in r["null_counts"].items()) or "none"
         lines += [
             f"{r['asset']}: {r['bars']} bars; context span {span['first']} to {span['last']} "
             f"({span['years']} years)",
-            f"  gate true on {r['gate_true_bars']} of {r['span_bars']} span bars; "
+            f"  gate true on {r['gate_true_bars']} bars, false on {r['gate_false_bars']}; "
             f"{r['spells']} separate spells",
             f"  null gate bars by reason: {nulls}",
             f"  labels: {', '.join(r['labels']) or 'none'}",

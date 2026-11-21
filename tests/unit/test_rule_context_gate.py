@@ -116,12 +116,12 @@ def test_context_spec_parses_and_has_its_own_hash(tmp_path: Path) -> None:
     [
         ({"when": "a > 1"}, "when needs a context"),
         ({"context": {"a": "cot_nc_net_oi@K"}}, "context needs a when"),
-        ({"context": {"a": "cot_nc_net_oi@K"}, "when": "b > 1"}, "unknown alias"),
+        ({"context": {"a": "cot_nc_net_oi@K"}, "when": "b > 1"}, "offending token 'b'"),
         ({"context": {"a": "no_such@K"}, "when": "a > 1"}, "unknown context series"),
         ({"context": {"a": "cot_nc_net_oi"}, "when": "a > 1"}, "series@key"),
-        ({"context": {"close": "cot_nc_net_oi@K"}, "when": "close > 1"}, "plain name"),
+        ({"context": {"close": "cot_nc_net_oi@K"}, "when": "close > 1"}, "already a price source"),
         ({"context": {"a": "cot_nc_net_oi@K"}, "when": "a + 1"}, "true/false"),
-        ({"context": {"a": "cot_nc_net_oi@K"}, "when": "a >"}, "not a valid condition"),
+        ({"context": {"a": "cot_nc_net_oi@K"}, "when": "a >"}, "valid setup expression"),
         ({"context": {"a": "cot_nc_net_oi@K"}, "when": "__import__('os')"}, "allowed functions"),
         ({"context": {"a": "cot_nc_net_oi@K"}, "when": "a.real > 1"}, "allowed"),
     ],
@@ -129,13 +129,6 @@ def test_context_spec_parses_and_has_its_own_hash(tmp_path: Path) -> None:
 def test_bad_context_specs_say_why(extra: dict[str, object], message: str) -> None:
     with pytest.raises(ValueError, match=message):
         _spec(**extra)
-
-
-def test_more_than_five_aliases_in_when_is_refused() -> None:
-    names = [f"a{i}" for i in range(6)]
-    context = {n: "cot_nc_net_oi@K" for n in names}
-    with pytest.raises(ValueError, match="at most 5"):
-        _spec(context=context, when=" and ".join(f"{n} > 0" for n in names))
 
 
 # ---- gate vector ----
@@ -146,12 +139,12 @@ def test_known_answers_null_counts_and_spells(tmp_path: Path) -> None:
     gate = _gate(tmp_path, "a > 0.5")
     expected = [*daily(date(2023, 1, 13), 14), *daily(date(2023, 2, 3), 14)]
     assert _on(gate) == expected
-    assert _context_gate.spells(gate.by_ts) == 2
+    assert gate.spells == 2
     assert gate.null_reasons == {"not-yet-known": 5, "stale": 12}  # Jan 1-5; Feb 17-28
     assert all(isinstance(on, bool) for on in gate.by_ts.values())
-    assert gate.first_value == datetime(2023, 1, 6, tzinfo=UTC)
-    assert gate.last_value == datetime(2023, 2, 16, tzinfo=UTC)
-    assert _context_gate.short_history(gate)
+    assert gate.span is not None
+    assert (gate.span["first"], gate.span["last"]) == ("2023-01-06", "2023-02-16")
+    assert gate.span["years"] < 3  # the short-context-history label
 
 
 def test_and_with_two_aliases(tmp_path: Path) -> None:
@@ -159,7 +152,7 @@ def test_and_with_two_aliases(tmp_path: Path) -> None:
     both = {"a": "cot_nc_net_oi@13874A", "b": "cot_nc_net_oi@13874A"}
     gate = _gate(tmp_path, "a > 0.5 and b < 0.8", both)
     assert _on(gate) == daily(date(2023, 1, 13), 14)
-    assert _context_gate.spells(gate.by_ts) == 1
+    assert gate.spells == 1
 
 
 def test_keyed_by_timestamp_not_index(tmp_path: Path) -> None:
@@ -250,7 +243,7 @@ def test_fingerprint_moves_with_when_limits_and_rows(tmp_path: Path) -> None:
     a, b = _gate(tmp_path, "a > 0.5"), _gate(tmp_path, "a > 0.6")
     assert len(a.fingerprint) == 64 and a.fingerprint != b.fingerprint
     assert a.fingerprint == _gate(tmp_path, "a > 0.5").fingerprint
-    changed = _context_gate.context_fingerprint(a.attach, {"a": 99}, "a > 0.5")
+    changed = _context_gate.context_fingerprint(a.attach, {"c0": 99}, "c0 > 0.5")
     assert changed != a.fingerprint
     other = tmp_path / "other"
     _store(

@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 4e07f2fd3eb2f690 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 0e02ceaa92bd112e on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 4e07f2fd3eb2f690 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 0e02ceaa92bd112e on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 989e4deb8428953a on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified a92a80d1a205479f on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 apps/alpha-web/README.md
-  verified 989e4deb8428953a on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified a92a80d1a205479f on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -25,41 +25,44 @@ docs/reference/checks.md
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
+docs/reference/invariants/cli-cost-classes.md
+  verified 1feb169bd782f16b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+
 docs/reference/invariants/cli-crypto-data.md
   verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-follow.md
-  verified e2df583b5a2d335f on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified e8f80ddf444cf352 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
   verified 4e402cc8d1d62a08 on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
 
 docs/reference/invariants/cli-investigation-tools.md
-  verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
+  verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-nightly.md
-  verified 33dad4906a4cd36c on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
+  verified 5f1772a6b5e61c32 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-research.md
   verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
-  verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 31a9f5fdd9f3f626 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 66494f7f60c6b14f on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
+  verified e2d9558c73482a3b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified bbc7747add776889 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified a2881ebcc1fd0c45 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
 
 docs/reference/invariants/cli-toolbox.md
-  verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
+  verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-trial-ledger.md
   verified 85f323ffb7e0a2ae on 2026-11-20: review fixes keep setup words in reading.py, fix the family line wording and position; this page's statements are unchanged
@@ -113,7 +116,7 @@ docs/reference/invariants/web-frontend-ideas.md
   verified e24cae1f03437816 on 2026-11-21: merge: took the split pages from the remote branch; content unchanged in meaning
 
 docs/reference/invariants/web-frontend.md
-  verified 94759451dde81222 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 91e7ec152a854409 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -124,7 +127,7 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified 01a97526f63300cb on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified f6412a50483ac5dc on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/workers.md
   verified 9c856742539b975c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
@@ -181,10 +184,10 @@ docs/reference/project/components/strategies-and-signals.md
   verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/toolbox.md
-  verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
+  verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified feaf35d4b3d938e1 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 9ad0b7fa5d407c83 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -217,7 +220,7 @@ docs/reference/project/rd-agent-detail.md
   verified 949857d7112bc824 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged
 
 docs/reference/project/reserved-period.md
-  verified 81433144d9570f50 on 2026-11-19: reserved-period hold-back added to more commands; text still correct
+  verified f94caa3050e33424 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/roadmap/production-scope-2.md
   verified b3f783176e95487d on 2026-11-18: re-read: volume 3 gained four entries (outside projects approved, test ideas are system tests, delegation, licences); every anchor this checklist links still resolves and no row contradicts them
@@ -241,13 +244,13 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 4df529b166c468c3 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified fd0836c0602186f9 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/PLAYBOOK.md
-  verified d6e90465e4a4df33 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified f67466eaa9790c20 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/README.md
-  verified 4b2aeb9720445559 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -256,25 +259,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified bc99a8d2cd2ccf6b on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified cc1a8eac7869d020 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 6f88d73359542ce4 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 9eb94d34c9955f7b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/charts.md
-  verified 555f4dee9293a0be on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 874701b73cdea3df on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified e881f3293b7a9a5b on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 075c04b264c1db73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified 0b22cc43a40e9c80 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified a25b857dc8a06535 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -298,7 +301,7 @@ research/tools/nightly-run.md
   verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
 
 research/tools/portfolio-book.md
-  verified ac26c355506d5adb on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 3e28fafbe22c1d75 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/positioning-short-volume-context.md
   verified 74383e1154d820da on 2026-11-21: calendar range sweep; text still correct
@@ -310,7 +313,7 @@ research/tools/published-factors.md
   verified a5ffcba587102f16 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
 
 research/tools/random-price-null.md
-  verified f36195ad4dbd9ce4 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
+  verified 5fb05fc5476f8113 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
@@ -319,16 +322,16 @@ research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/results-and-cite.md
-  verified 4487a967b258939d on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified f9800b65c9ac7e66 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 5a75c4c7c7cb644f on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/run-level-checks.md
-  verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
+  verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified e881f3293b7a9a5b on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 075c04b264c1db73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -343,10 +346,10 @@ research/tools/setup-trade.md
   verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/toolbox-by-situation.md
-  verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged
+  verified a1934950ce3233d7 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/walk-forward.md
-  verified 0c8d836f06e60a81 on 2026-11-20: alpha validate now prints a reading word instead of PASS/FAIL and report moved Monte Carlo printing to a helper; these pages do not describe that text
+  verified da095a234bc224b3 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 scripts/CONTEXT.md
   verified 3686090948c9d166 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct

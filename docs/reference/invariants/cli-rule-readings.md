@@ -25,7 +25,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
   - apps/alpha-web/frontend/src/explain/gates.ts
-verified: 66494f7f60c6b14f
+verified: e2d9558c73482a3b
 ---
 
 # Command line rule-test readings invariants

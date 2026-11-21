@@ -338,7 +338,7 @@ def read_run(home: Path, find_id: str) -> SetupRunDetail:
         raise FileNotFoundError("setup run not found")
     ledger = _ledger(home, reader)
     names = manifest.get("files", {}).get("sheets")
-    sheets = None
+    sheets: list[SetupFigure] | None = None
     if names is not None:
         if not isinstance(names, list) or len(names) > 51:
             raise ValueError("setup sheet limit exceeded")

@@ -95,13 +95,13 @@ docs/reference/invariants/web-api.md
   verified d086391354f03fe5 on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
 
 docs/reference/invariants/web-frontend.md
-  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified e6af210aad01322e on 2026-11-21: Test-harness default profile only; the text still matches.
 
 docs/reference/invariants/web-research.md
   verified 7e380541e044a68a on 2026-11-21: Display-only web change; the text still matches its sources.
 
 docs/reference/invariants/web-run-detail.md
-  verified f8006d84195888da on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
+  verified c480e4b829ee4ef4 on 2026-11-21: Test-harness default profile only; the text still matches.
 
 docs/reference/invariants/workers.md
   verified f94d228fdcc45820 on 2026-11-19: m24 adds alpha rdagent run/status; this page's rules are unchanged

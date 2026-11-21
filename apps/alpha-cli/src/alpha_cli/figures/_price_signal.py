@@ -12,6 +12,7 @@ from alpha_cli.figures._common import (
     _indicator_unit,
     _truncation,
 )
+from alpha_cli.figures._held import held_zones, open_position_zone
 from alpha_core import DataError
 from alpha_research.figures import (
     CandleMark,
@@ -73,14 +74,19 @@ def _annotation_marks(
         return [], 0, 0
     marks: list[Mark] = []
     groups = annotations.partition_by("annotation_id", maintain_order=True)
+    if span is not None:
+        # Keep a whole annotation that touches the window: dropping its outside anchors
+        # would leave a one-point line. The explicit x-limits crop what lies outside.
+        # The cap comes after this, so the first 40 are the first 40 that can be seen.
+        groups = [
+            g
+            for g in groups
+            if max(src.epochs(g["ts"])) >= span[0] and min(src.epochs(g["ts"])) <= span[1]
+        ]
     drawn = 0
     for group in groups[:40]:
         label = str(group["label"].to_list()[0])
         xs = src.epochs(group["ts"])
-        # Keep a whole annotation that touches the window: dropping its outside anchors
-        # would leave a one-point line. The explicit x-limits crop what lies outside.
-        if span is not None and (max(xs) < span[0] or min(xs) > span[1]):
-            continue
         ys = src.floats(group["value"], name="annotation value")
         first = label if drawn == 0 else None
         is_zone = str(group["kind"].to_list()[0]) == "zone"
@@ -113,36 +119,6 @@ def _annotation_marks(
     return marks, drawn, len(groups)
 
 
-def _held_zones(ctx: BuildContext, span: tuple[float, float] | None) -> list[Mark]:
-    """Shade each closed trade's holding period: one block instead of two markers."""
-    trades = src.frame(ctx.rdir, "trades.parquet", "entry_ts")
-    if trades is None or trades.is_empty():
-        return []
-    zones: list[Mark] = []
-    labelled: set[str] = set()
-    for entry, exit_, side in zip(
-        src.epochs(trades["entry_ts"]),
-        src.epochs(trades["exit_ts"]),
-        src.strings(trades["side"]),
-        strict=True,
-    ):
-        if span is not None:
-            entry, exit_ = max(entry, span[0]), min(exit_, span[1])
-        if exit_ > entry:
-            name = "Held short" if side == "SELL" else "Held long"
-            zones.append(
-                ZoneMark(
-                    x0=entry,
-                    x1=exit_,
-                    role="down" if side == "SELL" else "up",
-                    alpha=0.14,
-                    label=name if name not in labelled else None,
-                )
-            )
-            labelled.add(name)
-    return zones
-
-
 def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[list[Mark], str, int]:
     """Fill markers, or shaded held periods when there are too many fills to read."""
     trace = src.frame(ctx.rdir, "execution_trace.parquet", "sequence_id")
@@ -151,7 +127,10 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
     all_fills = trace.filter(trace["event_type"] == "fill")
     fills = _clip(all_fills, "ts", span)
     if len(fills) > _MAX_FILL_MARKERS:
-        zones = _held_zones(ctx, span)
+        zones = held_zones(ctx, span)
+        open_zone = open_position_zone(fills, span)
+        if open_zone is not None:
+            zones.append(open_zone)
         if zones:
             return zones, f"{len(fills):,} fills shown as shaded held periods", len(all_fills)
     size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0

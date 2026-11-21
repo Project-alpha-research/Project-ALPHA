@@ -685,3 +685,69 @@ def test_every_price_mark_shares_the_plotted_window_and_the_first_candle_stays(
             assert mark.x0 >= low - 1.0 and mark.x1 <= high + 1.0
     assert spec.x_limits is not None
     assert spec.x_limits[0] < low < high < spec.x_limits[1]
+
+
+def _many_fill_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, equity_from: int) -> Path:
+    from alpha_cli.figures import _sources
+
+    first = datetime(2022, 1, 3, tzinfo=UTC)
+    days = [first + timedelta(days=i) for i in range(80)]
+    rows = [{"t": d.timestamp(), "o": 1.0, "h": 2.0, "l": 0.5, "c": 1.5, "v": 1.0} for d in days]
+    monkeypatch.setattr(_sources, "bars", lambda *a, **k: (rows, None))
+    rdir = _synthetic(tmp_path, snapshot_id="snap")
+    pl.DataFrame(
+        {"ts": days[equity_from:], "equity": [1.0 + i * 0.01 for i in range(80 - equity_from)]}
+    ).write_parquet(rdir / "equity_curve.parquet")
+    # 30 round trips (60 fills) then one open entry: 61 fills, the last never closed.
+    fills = [
+        {
+            "sequence_id": i,
+            "event_type": "fill",
+            "ts": days[i],
+            "side": "BUY" if i % 2 == 0 or i == 60 else "SELL",
+            "price": 1.0,
+            "quantity": 10.0,
+            "filled_quantity": 10.0,
+        }
+        for i in range(61)
+    ]
+    pl.DataFrame(fills).write_parquet(rdir / "execution_trace.parquet")
+    pl.DataFrame(
+        {
+            "entry_ts": [days[i] for i in range(0, 60, 2)],
+            "exit_ts": [days[i] for i in range(1, 60, 2)],
+            "side": ["BUY"] * 30,
+        }
+    ).write_parquet(rdir / "trades.parquet")
+    return rdir
+
+
+def test_many_fills_keep_the_position_that_is_still_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rdir = _many_fill_run(tmp_path, monkeypatch, equity_from=0)
+    marks = _build(rdir, "price_signal").panels[0].marks
+    open_zone = next(m for m in marks if getattr(m, "label", None) == "Open position")
+    assert open_zone.x1 > open_zone.x0
+
+
+def test_the_annotation_cap_counts_only_annotations_in_the_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rdir = _many_fill_run(tmp_path, monkeypatch, equity_from=50)
+    days = [datetime(2022, 1, 3, tzinfo=UTC) + timedelta(days=i) for i in range(80)]
+    ids = [f"a{i}" for i in range(48)]
+    early = [days[i] for i in range(45)] + [days[60]] * 3
+    pl.DataFrame(
+        {
+            "annotation_id": ids * 2,
+            "anchor_index": [0] * 48 + [1] * 48,
+            "label": ["x"] * 96,
+            "kind": ["line"] * 96,
+            "unit": ["price"] * 96,
+            "ts": early + [d + timedelta(days=1) for d in early],
+            "value": [1.2] * 96,
+        }
+    ).write_parquet(rdir / "chart_annotations.parquet")
+    marks = _build(rdir, "price_signal").panels[0].marks
+    assert sum(1 for m in marks if type(m).__name__ == "LineMark" and m.role == "feature") == 3

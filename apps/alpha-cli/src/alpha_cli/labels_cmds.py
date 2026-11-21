@@ -31,6 +31,7 @@ from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.stores import _stores, resolve_asset
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+from alpha_core.reserve import RESERVED_DAY, RESERVED_START
 
 labels_app = typer.Typer(
     help="Triple-barrier labels and overlap weights (López de Prado), from the AFML worker.",
@@ -191,6 +192,23 @@ def _read_bars(asset: str, home: Path) -> _BarsInput:
         **held.record_fields(),
     }
     return _BarsInput(frame, meta, labels)
+
+
+def _refuse_parent_that_saw_period(parent: Path, result_id: str) -> None:
+    """A barrier result holding a bar or event from the reserved day on is never used again.
+
+    Results made after the hold-back never do. An older one may; it is told apart here, by what
+    the files hold, and refused before any file is read for a number.
+    """
+    for name in ("bars.parquet", "events.parquet"):
+        newest = pl.scan_parquet(parent / name).select(pl.col("ts").max()).collect().item()
+        if newest is not None and newest.date() >= RESERVED_DAY:
+            raise SpineError(
+                "RESERVED_PERIOD_SEEN",
+                f"Labels result {result_id} used data from {RESERVED_START} on, "
+                "which is now held back.",
+                "Run alpha labels barrier again; the new result holds that data back.",
+            )
 
 
 def _theme_file(folder: Path) -> Path:
@@ -365,6 +383,7 @@ def weights(
                 "UNKNOWN_RESULT", f"No labels result {result_id!r}.",
                 "Run alpha labels barrier first and pass the result id it prints.",
             )  # fmt: skip
+        _refuse_parent_that_saw_period(parent, result_id)
         parent_result = json.loads((parent / "result.json").read_text("utf-8"))
         if parent_result["basis"] != "high_low":
             raise SpineError(
@@ -493,6 +512,7 @@ def importance_report(
                 f"No labels result {result_id!r}.",
                 "Run alpha labels barrier first and pass the result id it prints.",
             )
+        _refuse_parent_that_saw_period(parent, result_id)
         project = _worker(worker_project)
         params = {"factors_sha256": _sha256(factors), "n_groups": n_groups, "embargo": embargo,
                   "seed": seed}  # fmt: skip

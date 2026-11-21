@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/monte_carlo_cmds.py
   - apps/alpha-cli/src/alpha_cli/toolbox/registry.py
   - docs/operations/monte-carlo/README.md
-verified: 2cd4345d67d743e2
+verified: 9a82bee6fa7037b0
 ---
 
 # Monte Carlo
@@ -18,6 +18,7 @@ Three families resample the strategy's own recorded returns (`alpha monte-carlo 
 new price bars and has run only with a stand-in model. Of the four, the toolbox exposes two on stored returns: IID empirical
 (`resampling.drawdown_distribution`) and Student-t (`resampling.student_t_paths`, same function and seed as the command,
 but on a rule test's stored equity), plus block bootstrap ([resampling card](../../../../research/tools/resampling-checks.md)).
+Both commands read bars with the source run's cut-off, never later than 2023-12-31 ([reserved period](../reserved-period.md)).
 Regime is not an entry: the command labels states from market closes, and a check on stored equity has none. Nor is Kronos.
 
 ## Why it exists

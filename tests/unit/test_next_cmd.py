@@ -133,3 +133,9 @@ def test_last_night_line_shows_only_when_a_record_exists(tmp_path: Path) -> None
     (folder / "record.json").write_text(json.dumps({"summary_line": line}))
     assert _run(home)[1].splitlines()[0] == line
     assert json.loads(_run(home, "--json")[1])["last_night"] == line
+
+
+def test_two_recent_tests_point_to_the_correlation_command(tmp_path: Path) -> None:
+    _synthetic_home(tmp_path)
+    _, output = _run(tmp_path)
+    assert "alpha results correlate <run id> <run id>" in output

@@ -147,3 +147,28 @@ def test_plan_identity_ignores_alias_names_and_counts_thresholds(home: Path) -> 
         text = SPEC.replace('"es > 0.5"', f'"es > {t / 10}"')
         keys.add(json.dumps(json.loads(_plan(home, text)["out"])["results"][0]["test_key"]))
     assert len(keys) == 10
+
+
+OWNER_SPEC = (
+    'assets = ["SPY"]\nwhen = "es > 0.5"\n[rule]\nkind = "owner"\n[rule.spec]\nlong_when = [\n'
+    '  { left = { indicator = "rsi", params = [14] }, op = "<", right = { value = 30 } },\n]\n'
+    '[context]\nes = "cot_nc_net_oi@13874A"\n'
+)
+
+
+def test_an_owner_rule_with_a_gate_is_refused_like_the_other_kinds(home: Path) -> None:
+    from alpha_cli.spine.run import assemble_run_spec
+    from alpha_cli.spine.spec import load_spec
+    from alpha_core import DataError
+
+    (home / "spec.toml").write_text(OWNER_SPEC)
+    before = _listing(home)
+    result = _run(home)
+    assert result.exit_code == 1
+    assert "the gated engine is not built yet; use --plan" in result.output
+    assert _listing(home) == before
+    with pytest.raises(DataError, match="gated engine is not built yet"):
+        assemble_run_spec(load_spec(home / "spec.toml"), "SPY", 252, 1500)
+    planned = _run(home, "--plan", "--json")
+    assert planned.exit_code == 0, planned.output
+    assert _listing(home) == before

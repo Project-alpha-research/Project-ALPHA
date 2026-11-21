@@ -8129,6 +8129,8 @@ export interface components {
              * @default []
              */
             rows: components["schemas"]["IdeaAimRow"][];
+            /** Source */
+            source?: string | null;
         };
         /** IdeaReadingCheck */
         IdeaReadingCheck: {
@@ -8146,6 +8148,8 @@ export interface components {
         IdeaReadingCounts: {
             /** Best Of */
             best_of?: number | null;
+            /** Family Id */
+            family_id?: string | null;
             /** Family Trials */
             family_trials?: number | null;
             /** Trial N */

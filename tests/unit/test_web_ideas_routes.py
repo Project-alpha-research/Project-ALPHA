@@ -114,5 +114,7 @@ def test_the_real_cli_answers_the_models_end_to_end(
     assert body["card"]["claim"].startswith("Quiet weeks")
     assert body["readings"][0]["reading"]["evidence"]["word"] == "too little to read"
     assert body["readings"][0]["aim"]["observed"] == 0.75
+    assert body["readings"][0]["reading"]["aim"]["source"] == "default"
+    assert body["readings"][0]["reading"]["counts"]["family_id"] == "spine:ma_cross"
     assert body["readings"][0]["checks"][0]["tool"] == "costs.break_even"
     assert client.get("/api/ideas/ffffffffffff").status_code == 404

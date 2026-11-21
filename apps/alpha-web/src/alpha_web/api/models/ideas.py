@@ -96,11 +96,13 @@ class IdeaReadingCounts(_Relayed):
     family_trials: int | None = None
     variants_tried: int | None = None
     best_of: int | None = None
+    family_id: str | None = None
 
 
 class IdeaReadingAim(_Relayed):
     rows: list[IdeaAimRow] = []
     basis: str | None = None
+    source: str | None = None
 
 
 class IdeaReading(_Relayed):

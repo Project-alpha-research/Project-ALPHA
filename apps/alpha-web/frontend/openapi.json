@@ -10531,6 +10531,17 @@
             },
             "title": "Rows",
             "type": "array"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
           }
         },
         "title": "IdeaReadingAim",
@@ -10571,6 +10582,17 @@
               }
             ],
             "title": "Best Of"
+          },
+          "family_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Id"
           },
           "family_trials": {
             "anyOf": [

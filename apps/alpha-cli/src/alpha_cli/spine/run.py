@@ -338,7 +338,7 @@ def write_run(
         spine={
             "labels": result["labels"],
             "periods": result.get("periods", {}),
-            "costs": result["costs"],
+            "costs": result.get("costs"),
         },
     )
     reading = build_reading(stored, read_json(rdir / "diagnostics.json"))
@@ -369,7 +369,7 @@ def write_run(
                 "store": result["store"],
                 "deflation": result.get("deflation"),
                 "labels": list(result["labels"]),
-                "costs": result["costs"],
+                "costs": result.get("costs"),
                 "annualisation": {
                     "periods_per_year": prepared.spec.periods_per_year,
                     "basis": result["periods_per_year_basis"],

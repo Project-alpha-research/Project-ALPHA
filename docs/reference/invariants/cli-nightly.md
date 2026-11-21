@@ -78,3 +78,4 @@ verified: 0c27ddf0593b7fcd
   It refuses a non-empty target, the live home, a folder inside it and a folder that holds it. Unsafe entry names are refused.
 - `home_backup` is on the follow-store reader list (`test_follow_separation.py`) on purpose: it copies bytes, parses nothing
   and feeds no research result. The `nightly_*` modules stay off that list.
+- The Workstation launcher refuses every `alpha home` command (`catalog.classify_generic_command`: owner-only). Terminal only.

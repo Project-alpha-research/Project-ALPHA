@@ -38,7 +38,8 @@ _EMPIRICAL_ROOTS = frozenset(
         "setup",
     }
 )
-_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider"})
+# `home` reads and writes folders the caller names (backup, restore): terminal only.
+_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider", "home"})
 _SAFE_ROOTS = frozenset(
     {
         "info",

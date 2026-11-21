@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified d7dd5f180c2de399 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home and nightly alert rows, which hold
+  verified d0f799272cc39af6 on 2026-11-21: catalog.py now classifies the home group as owner-only for the Workstation launcher; the code map and reading list are unchanged
 
 apps/alpha-cli/README.md
-  verified d7dd5f180c2de399 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home and nightly alert rows, which hold
+  verified d0f799272cc39af6 on 2026-11-21: catalog.py now classifies the home group as owner-only for the Workstation launcher; the code map and reading list are unchanged
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified f3a73f61bfc54d3f on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
 
 apps/alpha-web/README.md
-  verified edfca80413a2c962 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified f3a73f61bfc54d3f on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -89,7 +89,7 @@ docs/reference/invariants/web-api.md
   verified 50e0cac3add2b5a3 on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
 
 docs/reference/invariants/web-frontend.md
-  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+  verified ea854d88754d9885 on 2026-11-21: The menu table gained the home group under Data; the rule text (every served group is mapped) is unchanged and holds
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data

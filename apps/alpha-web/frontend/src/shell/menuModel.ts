@@ -32,6 +32,7 @@ export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   data: 'Data',
   context: 'Data',
   'crypto-data': 'Data',
+  home: 'Data',
   provider: 'Data',
   research: 'Research',
   ledger: 'Research',

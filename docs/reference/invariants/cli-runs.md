@@ -32,7 +32,7 @@ sources:
   - tests/unit/test_figure*.py
   - tests/integration/test_validate_*.py
   - tests/integration/test_backtest_*.py
-verified: c36b70f415f95459
+verified: 33b3b7469ae5bcad
 ---
 
 # Command line runs invariants
@@ -71,6 +71,8 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - V1/v2 runs stay readable with `trace_unavailable`; never migrate or rewrite. No mutable state belongs in run directories.
 ## Validation and optimisation
 - `_gauntlet.py`/`_optim.py` refuse `--size-on-equity` and `--halt-drawdown`: the Tier-1 surrogate cannot model equity-path-dependent sizing.
+- `make_surrogate` takes an optional `path_signals`, one call per path; it must equal `signal_fn` on every prefix. The `rules`
+  strategy uses it (`rule_paths.py`, pinned bit for bit by `tests/unit/test_rule_paths.py`).
 - `--allow-short` on CASH fails loud (defaults: short-allowed MARGIN, long-flat CASH); `train_size` below the strategy warm-up floor fails loud.
 - `--snapshot` verifies and reads the frozen snapshot, never the live store.
 - The headline null must be beaten in every null tier that runs. [ADR-0006](../../adr/0006-two-tier-null-model.md); method rules in [research integrity §
@@ -95,6 +97,9 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - The test id hashes the spec hash and sorted prepared run ids. An identical retry verifies existing artifacts without rewriting them and appends a `repeat`
   trial; so does the same test after a code change ([test key](cli-trial-ledger.md#rule-test-counting));
   the manifest retains its original test association. `idea_id` hashes spec and data without code; `alpha results --idea-id` filters by it.
+- A spec rule is `ma_cross`, `breakout`, `tsmom` or `owner` ([language](../owner-rule-language.md)).
+  An owner rule runs the `rules` strategy; its ledger `rule` and family are `owner:<shape12>`.
+  The three old kinds keep canonical bytes, spec hash, test key and ledger keys (`tests/unit/test_spine_golden_pins.py`).
 - `alpha test` reads bars and dividends only up to 2023-12-31 ([reserved period](../project/reserved-period.md)).
   With held-back bars it adds the label `reserved-period-held-back`, prints one sentence, records `spine.reserve`
   and puts `research_cutoff` 2023-12-31 into the run identity. Without them the run id is unchanged.
@@ -163,6 +168,11 @@ and [deterministic identity](research-integrity.md#deterministic-seeds-and-ident
 - A run's price figure and chart candles read its snapshot at the run's own bar size: the manifest's `timeframe`, `source_timeframe` and `session` pass to
   `alpha data candles` as single `--option=value` arguments; a daily manifest has none, so its call is unchanged
   (`tests/unit/test_run_projection_security.py`).
+- A rule test saves no snapshot. `alpha data run-price <run_id> --json` (`run_price_cmds.py`; the web calls it through
+  `run_price.py`) reloads the stored bars at the research cut-off, cuts them at the run's last date, and returns them only
+  when `_runner.source_fingerprint` equals the manifest's `source_fingerprint`. Otherwise it returns a status and no bars
+  (`tests/unit/test_run_price_cmds.py`). `chart_bundle` keeps its older `bars_status` words; `run_projection.price_series`
+  gives the reason.
 ## Rules, scans and chart overlays
 - `alpha_strategies.rules` is the only rule parser; the CLI stores canonical JSON and interprets nothing.
 - `resolve_rules_spec` pairs the flags fail-closed: `--strategy rules` needs `--rules NAME`, `--rules` with any other strategy fails, and a frozen

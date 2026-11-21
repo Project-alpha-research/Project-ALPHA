@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/_context_plan.py
-verified: a91b14f6153dbbae
+verified: 91ae51daa0e3f098
 ---
 
 # Rule test
@@ -17,9 +17,9 @@ uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY -
 uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; exit 4 if the result differs
 ```
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
-(`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`).
-An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick` runs a small gauntlet, labelled `quick`.
-An optional `idea_card` links an [idea card](idea-card.md). `[context]` and `when` (see `research/examples/rule-context.example.toml`): `--plan` only.
+(`fee_bps`, `slippage_bps`). Kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`), and `owner`
+(a `[rule.spec]` table, long or flat: [language](../../docs/reference/owner-rule-language.md), `research/examples/owner-rsi-dip.toml`).
+Asset: symbol or symbol@store. No file with flags. `--quick`: small gauntlet. `idea_card`: [card](idea-card.md). `[context]`, `when`: `--plan` only.
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates (walk-forward only).
@@ -33,8 +33,8 @@ An optional `idea_card` links an [idea card](idea-card.md). `[context]` and `whe
 - `--recheck`: the test computed again and compared with the stored result; no ledger row, no file
   ([rule](../../docs/reference/invariants/cli-rule-readings.md#recheck)). `executed` is `true` if the engine ran; `repeat` is not that.
 **What it cannot tell you**
-- Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): three rule kinds,
-  daily bars, long only, all-in sizing. Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`
-  (intraday, or a saved rule with `--strategy rules`): a plain backtest, no diagnostics, not in the ledger. Label it so.
+- Today's limits, planned to be lifted ([checklist](../../docs/roadmap/production-scope.md#4-backtest)): daily bars, long only,
+  all-in sizing; no exits, shorts or volume in an owner rule. Say so, or use `alpha backtest run <SYMBOL> --timeframe 1h`
+  (intraday): a plain backtest, no diagnostics, not in the ledger. Label it so.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
 **Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.

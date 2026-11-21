@@ -3,7 +3,7 @@ owner: web frontend
 sources:
   - apps/alpha-web/frontend/src/panels/**
   - apps/alpha-web/frontend/e2e/**
-verified: 9786180e431c542e
+verified: b992a2b526e23e5f
 ---
 
 # Web run detail invariants
@@ -87,7 +87,7 @@ How the run detail, RD-Agent journey and Setup Lab panels bind to the selected r
 - The Stress test tab shows scenario numbers; its terms in `explain/glossary.ts` carry no grade bands. The glossary lists the old
   grade as "retired".
 - Covered by `readingEverywhere.test.tsx` (words and a lone letter, old and new style) and `e2e/readings-everywhere.spec.ts` (light, dim, dark).
-- `explain/bands.ts`, `explain/verdictStory.ts` and `util/verdict.ts` are no longer used by a screen. Their deletion is a separate step.
+- The grade display code (`explain/bands.ts`, `explain/verdictStory.ts`, `util/verdict.ts`, the `--verdict-*` tokens) is deleted.
 
 ## Gates check charts
 

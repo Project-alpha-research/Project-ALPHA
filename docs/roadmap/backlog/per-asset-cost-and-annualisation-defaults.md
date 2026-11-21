@@ -1,7 +1,12 @@
 # Per-asset-class cost and annualisation defaults
 
-**Status:** Partly built (M71): class table, costs line, `class-default` spec value; flat default kept. See [cost classes](../../reference/invariants/cli-cost-classes.md).
+**Status:** Scoped
 **Rough size:** S
+
+## Progress
+
+M71 built the class table, the costs line and `costs = "class-default"`. A spec without costs keeps the flat default:
+[cost classes](../../reference/invariants/cli-cost-classes.md).
 
 ## Problem / why
 

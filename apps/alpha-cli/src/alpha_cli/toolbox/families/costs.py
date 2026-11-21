@@ -251,8 +251,6 @@ BREAK_EVEN = ToolSpec(
     ),
     reading="{sentence}",
     caveats=(
-        "The borrow fact is present only when the run held short trades; it uses a class rate,"
-        " not a quote from a lender.",
         "Scaling costs cannot tell you how wider spreads in stressed markets, partial fills or"
         " whole-share rounding would affect the result.",
     ),

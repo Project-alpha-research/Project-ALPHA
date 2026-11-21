@@ -15,7 +15,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, _gauntlet, _runner
 from alpha_cli._identity import RunIdentity
-from alpha_cli.spine import idea_card, reserve
+from alpha_cli.spine import cost_classes, idea_card, reserve
 from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.deflation import (
     TrialFamily,
@@ -29,7 +29,6 @@ from alpha_cli.spine.facts import build_facts, read_json
 from alpha_cli.spine.ledger import append_trial, first_same_test, read_trials
 from alpha_cli.spine.reading import build_reading, ledger_fields, stored_reading
 from alpha_cli.spine.spec import IdeaSpec
-from alpha_cli.spine import cost_classes
 from alpha_cli.spine.stores import annualisation, resolve_asset
 from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_cli.validate_cmds import write_validation_run

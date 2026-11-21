@@ -16,12 +16,21 @@ the table below is that text. Every number is a working assumption of the owner'
 
 ## Table
 
-| Class | Fee per side | Slippage per side | Borrow per year | Periods per year | Source |
-|---|---|---|---|---|---|
-| US large ETF | 1 bp | 1 bp | 30 bp | 252 | Fee: the old flat default. Slippage: about half the spread of a liquid fund. Borrow: easy-to-borrow fund. |
-| US stock | 2 bp | 5 bp | 50 bp | 252 | Fee: small-order regulatory and exchange fees. Slippage: spread and impact of a mid-cap or small-cap. Borrow: the setup lane (`SHORT_BORROW_BPS_PER_YEAR`). |
-| Crypto spot (taker) | 10 bp | 5 bp | none: a spot position cannot be shorted | 365 | The setup lane (`CRYPTO_FEE_BPS`, `CRYPTO_SLIPPAGE_BPS`). |
-| Crypto perpetual | 5 bp | 5 bp | 1095 bp (3 bp a day of funding, times 365) | 365 | Fee: a common taker schedule. Funding: the setup lane (`SHORT_CARRY_BPS_PER_DAY`). |
+Per side, in basis points (bp). Borrow is a yearly rate. Periods are daily bars a year.
+
+| Class | Fee | Slippage | Borrow | Periods |
+|---|---|---|---|---|
+| US large ETF | 1 | 1 | 30 | 252 |
+| US stock | 2 | 5 | 50 | 252 |
+| Crypto spot (taker) | 10 | 5 | none: a spot position cannot be shorted | 365 |
+| Crypto perpetual | 5 | 5 | 1095 (3 bp a day of funding times 365) | 365 |
+
+Sources:
+- US large ETF: fee is the old flat default; slippage is about half the spread of a liquid fund; borrow is an easy-to-borrow fund.
+- US stock: fee is small-order regulatory and exchange fees; slippage is spread and impact of a mid-cap or small-cap;
+  borrow is the setup lane (`SHORT_BORROW_BPS_PER_YEAR`).
+- Crypto spot: the setup lane (`CRYPTO_FEE_BPS`, `CRYPTO_SLIPPAGE_BPS`).
+- Crypto perpetual: fee is a common taker schedule; funding is the setup lane (`SHORT_CARRY_BPS_PER_DAY`).
 
 ## Rules
 

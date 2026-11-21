@@ -38,3 +38,7 @@ So behaviour is unchanged: a spec without costs keeps the flat 1 and 2. I added 
   An unknown class takes the highest borrow rate (the perpetual's).
 - Fixture and golden change for `costs.break_even` is an output addition. The frontend line was tested with vitest; no browser check.
 - `fs.py stale` lists documents whose sources changed; per the rules I did not verify them.
+
+## CI note
+`tests/unit/test_filesystem_contract.py::test_work_folder_holds_only_task_folders` fails because `docs/work/_common-rules-2026-11-21.md` (from the briefs
+branch, not this build) is a loose file in `docs/work`. I left it: the briefs point to it. Moving it is the owner's or reviewer's call.

@@ -24,6 +24,7 @@ import typer
 from alpha_cli import _artifacts, _forecast, _forecast_eval, _runner
 from alpha_cli._artifacts import sanitize
 from alpha_cli.control_store import ControlStore
+from alpha_cli.spine import reserve
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_research import (
@@ -442,6 +443,32 @@ def _calibrated_artifacts(
     return documents, frames, summary
 
 
+def _origins_frame(
+    out: _forecast_eval.ForecastEvalOutput, *, include_samples: bool
+) -> pl.DataFrame:
+    """One row per scored origin; the sample paths only when a governed calibration needs them."""
+    return pl.DataFrame(
+        [
+            {
+                "origin_index": o.origin_index,
+                "origin_ts": o.origin_ts,
+                "pre_cutoff": o.pre_cutoff,
+                **(
+                    {
+                        "model_end_returns": list(o.model_end_returns),
+                        "random_walk_end_returns": list(o.random_walk_end_returns),
+                        "observed_end_return": o.observed_end_return,
+                    }
+                    if include_samples
+                    else {}
+                ),
+                **dataclasses.asdict(o.score),
+            }
+            for o in out.origins
+        ]
+    )
+
+
 @forecast_app.command(name="eval")
 def evaluate(
     symbol: str = typer.Argument(..., help="symbol in the store (run `alpha data pull` first)"),
@@ -508,12 +535,17 @@ def evaluate(
             raise typer.BadParameter(str(exc)) from exc
 
     try:
-        as_of_dt = _runner.parse_as_of(as_of)
+        # The reserved period is held back: cut the symbol, or the whole frozen universe.
+        held = (
+            reserve.hold_many(market_contract.universe, settings.data_dir, as_of, snapshot)
+            if market_contract is not None
+            else reserve.hold(symbol, data_dir=settings.data_dir, as_of=as_of, snapshot_id=snapshot)
+        )
         bars, snapshot_id = _load_bars(
             symbol,
             data_dir=settings.data_dir,
             snapshot_id=snapshot,
-            as_of=as_of_dt,
+            as_of=held.as_of,
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -556,7 +588,7 @@ def evaluate(
                 market_contract=market_contract,
                 calibration_contract=calibration_contract,
                 settings=settings,
-                as_of=as_of_dt,
+                as_of=held.as_of,
             )
         except DataError as exc:
             raise typer.BadParameter(str(exc)) from exc
@@ -579,7 +611,7 @@ def evaluate(
         "top_k": top_k,
         "mean_block": mean_block,
         "seed": master_seed,
-        "research_cutoff": as_of,
+        **held.identity(),
         "first_origin_ts": out.origins[0].origin_ts.isoformat(),
         "last_origin_ts": out.origins[-1].origin_ts.isoformat(),
     }
@@ -606,7 +638,7 @@ def evaluate(
         "command": "forecast_eval",
         "symbol": symbol,
         "snapshot_id": snapshot_id,
-        "research_cutoff": as_of,
+        "research_cutoff": held.research_cutoff,
         "model": prov,
         "params": {
             "context": resolved_context,
@@ -638,28 +670,10 @@ def evaluate(
     }
     if calibration_summary is not None:
         manifest_payload["governed_calibration"] = calibration_summary
+    held.stamp(manifest_payload)
     manifest = sanitize(manifest_payload)
     include_samples = calibration_summary is not None
-    origins = pl.DataFrame(
-        [
-            {
-                "origin_index": o.origin_index,
-                "origin_ts": o.origin_ts,
-                "pre_cutoff": o.pre_cutoff,
-                **(
-                    {
-                        "model_end_returns": list(o.model_end_returns),
-                        "random_walk_end_returns": list(o.random_walk_end_returns),
-                        "observed_end_return": o.observed_end_return,
-                    }
-                    if include_samples
-                    else {}
-                ),
-                **dataclasses.asdict(o.score),
-            }
-            for o in out.origins
-        ]
-    )
+    origins = _origins_frame(out, include_samples=include_samples)
     _artifacts.publish_artifact(rdir / "origins.parquet", origins.write_parquet)
     for name, document in calibration_documents.items():
         _artifacts.publish_artifact(rdir / name, partial(_write_json_artifact, document=document))
@@ -674,6 +688,8 @@ def evaluate(
         f"device={prov.get('device')} determinism={prov.get('determinism')}\n"
         f"  manifest at {rdir / 'manifest.json'}"
     )
+    if held.held_back:
+        typer.echo(held.say())
     if out.summary_pre is not None:
         typer.echo(f"  pre-cutoff  ({out.n_pre} origins): {_summary_line(out.summary_pre)}")
     if out.summary_post is not None:

@@ -288,9 +288,9 @@ def export_project_input(
 ) -> dict[str, object]:
     """Publish one immutable Qlib input draft from a verified ALPHA project snapshot.
 
-    The reserved period is held back: no bar from 2024-01-01 on enters the panel. When bars were
-    held back, the summary and a `reserve.json` file in the bundle record it; otherwise the
-    bundle and summary are the same as before.
+    The reserved period is held back: no bar from the reserved day on enters the panel. When
+    bars were held back, the summary and a `reserve.json` file in the bundle record it;
+    otherwise the bundle and summary are the same as before.
     """
     data_dir = Path(data_dir)
     output_dir = Path(output_dir)

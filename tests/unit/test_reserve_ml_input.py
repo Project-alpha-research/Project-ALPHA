@@ -162,7 +162,7 @@ def test_a_poisoned_store_gives_the_bundle_of_a_store_cut_at_the_boundary(
     assert held_summary["panel_sha256"] == plain_summary["panel_sha256"]
     assert held_summary["sessions"] == plain_summary["sessions"] == CUT_N
     panel = pl.read_parquet(held_bundle / "panel.parquet")
-    assert panel["session_ts"].max() < RESERVED_INSTANT
+    assert panel.select(pl.col("session_ts").max()).item() < RESERVED_INSTANT
 
 
 def test_no_bar_on_or_after_the_boundary_is_read(poisoned: World, spy: Spy) -> None:

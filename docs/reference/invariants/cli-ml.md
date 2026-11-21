@@ -10,7 +10,7 @@ sources:
   - tests/unit/test_forecast_*.py
   - tests/integration/test_ml_cli.py
   - tests/integration/test_forecast_*.py
-verified: 354772cfa35716bf
+verified: 2fd07b61c41d73e3
 ---
 
 # Command line model invariants
@@ -69,6 +69,7 @@ Kronos forecast composition (`alpha forecast ...`, `_forecast*` modules). Projec
   loudly when windows overlap, and evaluation splits metrics pre and post cutoff.
   [ADR-0009](../../adr/0009-forecast-leakage-and-tier2-cost-policy.md)
 - Rolling-origin evaluation seeds each origin independently of stride (`_forecast_eval.py`).
+- `alpha forecast eval` and `alpha ml export-input` hold the [reserved period](../project/reserved-period.md) back; `alpha forecast run` is forward use.
 - `--model fake` is the offline test double; never use it as evidence.
 - For `alpha validate` on `kronos`, Tier 1 and default Tier 2 replay the observed signal cache (an association test,
   recorded as `tier2_policy`); `--tier2-mode model` re-forecasts each synthetic path.

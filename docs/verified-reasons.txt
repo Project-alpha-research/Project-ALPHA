@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 4ec3f8ff330bc1c2 on 2026-11-21: reserved-period hold-back added to ML input and forecast eval; no text change needed
 
 apps/alpha-cli/README.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified 4ec3f8ff330bc1c2 on 2026-11-21: reserved-period hold-back added to ML input and forecast eval; no text change needed
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -27,6 +27,9 @@ docs/reference/invariants/cli-follow.md
 
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
+
+docs/reference/invariants/cli-ml.md
+  verified 2fd07b61c41d73e3 on 2026-11-21: reserved-period hold-back added to ML input and forecast eval; no text change needed
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct

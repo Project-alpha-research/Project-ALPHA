@@ -123,7 +123,6 @@ def us_asset_class(home: Path, target: Target) -> tuple[str | None, str]:
 def _us_sessions(first: date, last: date) -> list[date]:
     from alpha_data.sessions import daily_session_closes
 
-    # Unlike sessions_between, this builds the calendar from the first date, so old bars work.
     return sorted(daily_session_closes("XNYS", first, last))
 
 

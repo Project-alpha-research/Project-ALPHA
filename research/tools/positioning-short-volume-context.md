@@ -6,7 +6,7 @@ sources:
   - packages/alpha-data/src/alpha_data/context/finra_short.py
   - packages/alpha-data/src/alpha_data/context/attach.py
   - apps/alpha-cli/src/alpha_cli/context_derived_cmds.py
-verified: 915dd71bb226c905
+verified: 74383e1154d820da
 ---
 
 # Positioning and short-volume context

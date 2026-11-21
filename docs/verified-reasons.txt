@@ -2,16 +2,16 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 5402cff22f72110f on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 apps/alpha-cli/README.md
-  verified 76cf2e1d8faefd0b on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 5402cff22f72110f on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 1072dc7d0d427aad on 2026-11-21: Display-only web change; the text still matches its sources.
 
 apps/alpha-web/README.md
   verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
@@ -41,10 +41,10 @@ docs/reference/invariants/cli-rule-readings.md
   verified 4fc5f9a54156a764 on 2026-11-21: padding comments removed from holdout and grid; printed text unchanged
 
 docs/reference/invariants/cli-runs.md
-  verified 761e47f11c40bfa4 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
+  verified 06b132839efd56c4 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 docs/reference/invariants/cli-setups.md
-  verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
+  verified 83c0785fd70f70b5 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -76,6 +76,9 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
+docs/reference/invariants/research.md
+  verified 05c7d2373def7276 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
+
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
@@ -89,10 +92,13 @@ docs/reference/invariants/web-api-reads.md
   verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified b127191cf2a0b946 on 2026-11-21: Display-only web change; the text still matches its sources.
 
 docs/reference/invariants/web-frontend.md
   verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
+
+docs/reference/invariants/web-research.md
+  verified 7e380541e044a68a on 2026-11-21: Display-only web change; the text still matches its sources.
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -149,13 +155,13 @@ docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified f55ff8138cb891bc on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified b6a5a52c58838787 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 8b2cdd284e46ca40 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 5772bc7505c131a6 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -212,10 +218,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 18b5a96f258e443c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 0a95ab15b8bdd26a on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/PLAYBOOK.md
-  verified 843e8be998d4058c on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 79437982cb32b678 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -227,13 +233,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified c6083efa63d2229a on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified d622dafaed277bf2 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified c755da3b6e5b7fa8 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified edb4d136ec312ca4 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
@@ -242,10 +248,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified f8921edc0b6a6911 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/diagnose-and-audit.md
-  verified 1fdaca18c97b51db on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 75193e428e5e5b94 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -284,13 +290,13 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 68464bd8c45429e4 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified ab14ea00b97aaff7 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified 8661a0f8f45d2b55 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified f8921edc0b6a6911 on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
@@ -299,10 +305,10 @@ research/tools/setup-find.md
   verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 2b860a54588506e1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified ba754c77c8be3c3b on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/setup-trade.md
-  verified 36c3f24d94230ba1 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified be30789bc1ee85ba on 2026-11-21: Only the figure theme colour of setup study and trade changed; the behaviour the page describes is the same.
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

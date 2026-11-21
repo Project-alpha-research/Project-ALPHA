@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: ce3d3750e6615271
+verified: 4bcd81b4b45662b5
 ---
 
 # Web API reads and writes invariants
@@ -29,7 +29,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   The run detail lists journey availability by evaluation number, name and full code hash. Indexed ideas can be unbuilt after a filtered CLI build.
   GET `/api/rdagent/runs/{run_id}/journeys/{idea_id}` returns the stored document or the quoted CLI command for a missing journey.
   Its `/figures/{filename}` GET serves listed PNGs only. Both check identity and refuse symlinks. Source paths are display text. The server never builds.
-- Setup Lab's GET `/api/setup/runs` and `/{find_id}` use `_setup_runs` only: bounded, allowlisted reads, no CLI run. `setups/<id>/` files
+- Setup Lab's GET `/api/setup/runs`, `/{find_id}` and `/{find_id}/sheets/{kind}/{number}` use `_setup_runs` only:
+  bounded, allowlisted reads, no CLI run. `setups/<id>/` files
   (`manifest.json`, `spec.json`, `summary.json`, `candidates.parquet`, `sheets/*.png`) and the linked `setup-studies/`, `setup-trades/`
   manifests, summaries, rows and PNGs, plus `ledger/trials.jsonl`, are shown as stored. Missing files stay null; corrupt, linked or
   oversized files fail with 422. Trade rows pass through direction, initial risk fraction and R when recorded. Older rows keep missing values.

@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 410aefa61c91daab on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified cfb1eb556f9f6907 on 2026-11-21: the change only holds the reserved period back inside research reads and stamps the hold-back record; the text is still correct
 
 apps/alpha-cli/README.md
-  verified 410aefa61c91daab on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
+  verified cfb1eb556f9f6907 on 2026-11-21: the change only holds the reserved period back inside research reads and stamps the hold-back record; the text is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -143,7 +143,7 @@ docs/reference/project/components/rd-agent.md
   verified b3b868ba51472ece on 2026-11-19: post-judge set now writes its declaration before running; doc text about checks unchanged
 
 docs/reference/project/components/research-cases-and-approval.md
-  verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
+  verified fe3620faee2eed45 on 2026-11-21: re-read after the held-back change and main's merge: the case's D0 to D3 split and holdout text still hold; the reserved-period cut lives on its own page
 
 docs/reference/project/components/setup-lab.md
   verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct

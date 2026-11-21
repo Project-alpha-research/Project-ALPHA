@@ -27,7 +27,9 @@ families, its post-verdict checks and its journey figures lock it, and so do rul
 
 ## What locks it, what labels it, what holds nothing back
 
-Locks it out (the code refuses reserved rows or aborts):
+Three kinds: the code locks it out (it refuses reserved rows or aborts), only labels it, or holds nothing back.
+
+### Locks it out: RD-Agent
 
 - RD-Agent factor loop: the worker's prepare step and funding read (`alpha_factor_data.py`) and the daily funding reader refuse rows from the date on.
   The evaluator (`rdagent_factor_eval.py`) refuses a panel receipt or factor values that reach it. The judge (`_rdagent_judge.py`) refuses a panel,
@@ -35,6 +37,9 @@ Locks it out (the code refuses reserved rows or aborts):
 - RD-Agent rule families (`rdagent_rule_family.py`): the run aborts if the loader returns a bar or dividend on or after the date.
 - RD-Agent journeys: the figures stop at the date and a record that reaches it is refused (`rdagent_journey.py`, `figures/rdagent_journey_figures.py`).
 - RD-Agent post-verdict checks (`_rdagent_checks.py`): a replay with an exit on or after the date is refused (`RESERVED_PERIOD`).
+
+### Locks it out: rule tests and setups
+
 - Rule tests (`alpha test`) and setups (`alpha setup find|study|trade`): every bar and dividend read passes the cut-off 2023-12-31 (`spine/reserve.py`).
   `spine/reserve.py` uses one boundary, core's `RESERVED_INSTANT` (the first instant of the reserved day). A row stamped at or after it is held back.
   A row stamped before it is used once it is known. A daily store read keeps it by its stamp (`CUTOFF`, one microsecond before
@@ -45,6 +50,9 @@ Locks it out (the code refuses reserved rows or aborts):
   therefore gives other prices, and a new id, than before. Stores with no such action are byte-identical (the pinned run and find ids hold).
   A cited draft must say "held back" or "reserved period seen" when a cited run carries that label (`alpha results check`).
   Study and trade refuse an older find that used the period (`RESERVED_PERIOD_SEEN`). `alpha tool` reads a held-back run with the run's own cut-off.
+
+### Locks it out: search and score commands
+
 - Search and score commands: `alpha optim` (grid and mcpt), `alpha validate`, `alpha backtest oos`, `run`, `portfolio` and `cross-sectional`,
   `alpha scan run`, `alpha scan hypotheses` (and `replay`), `alpha backtest run --manifest-id`, `alpha rules explain`, `alpha lookalike`, `alpha
   unusual` and `alpha labels barrier`. They use the same helper
@@ -61,12 +69,17 @@ Locks it out (the code refuses reserved rows or aborts):
   the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
   A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
   only when the source run did.
+
+### Locks it out: research cases, ML input and forecasts
+
 - Research-case lane: the weekly classifier (`alpha research diagnostic weekly-classifier`), the data audit (`research_data_audit.py`), the
-  run-plan controller (`research_execution.py`) and the crypto crowding and hedged-basis reads cut at the same boundary and say so. The classifier and the
-  controller use `Hold`, record `reserve` and give the sentence; a plan or `--as-of` before the boundary keeps its record. The audit caps its read at
-  the boundary and puts the sentence in its notes. The crypto reads drop rows stamped on or after the boundary inside the parquet scan; the count reads time
-  columns only. `alpha strategy-candidate run` also caps its cut-off at the boundary. The case's sealed split (D1, D2, D3) divides only
-  the data left after the cut. The reserved period is a separate, later part of the calendar that no case split can reach.
+  run-plan controller (`research_execution.py`) and the crypto crowding and hedged-basis reads cut at the same boundary and say so. The classifier and
+  the controller use `Hold`, record `reserve` and give the sentence (`reserve_sentence`). The audit caps its read, puts the sentence in its notes and
+  records `reserve` and the label. A plan, `--as-of` or registered end before the boundary keeps its record. The crypto reads drop rows inside the
+  parquet scan: Bybit rows by their stamp, Binance spot bars when they close after the boundary. `alpha strategy-candidate run` (the sandbox-only
+  hedged-basis candidate of ADR-0033) cuts at 2023-12-31 by default and caps a later `--as-of`; it records `reserve` and the label. Its count reads time
+  columns only, up to the user's cut-off. A new case's sealed split (D1, D2, D3) divides only the data left after the cut. An older case frozen on later
+  bars fails loud on reload (its data hash or its group commitment no longer matches); its split never changes silently.
 - ML input and forecast evaluation: `alpha ml export-input` (`ml_input.py`) and `alpha forecast eval` (plain and governed) use the same `Hold`,
   cut-off and sentence. A Qlib bundle with held-back bars gains `reserve.json`; with none it is unchanged. `alpha ml prepare` copies that file into
   the exchange, and `alpha ml replay` records `reserve` and the label on its run; a later replay `--as-of` is recorded as 2023-12-31.
@@ -74,20 +87,23 @@ Locks it out (the code refuses reserved rows or aborts):
   manifest records `use: forward` (not part of the run id), and `alpha report` shows it; an older run shows "not recorded".
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
-Only labels it:
+### Only labels it
 
 - Older rule runs that saw the date, and `alpha tool` on them: the label `reserved-period-seen`. Nothing is rewritten. The label is derived when the
   run is read, from its last bar date and the lack of a hold-back record (`toolbox/inputs.py`, `alpha results show`).
 - A descriptive check that reads reference series published later never reads the held-back period:
   [descriptive reference reads](../invariants/cli-toolbox.md#descriptive-reference-reads).
 
-Holds nothing back (they still read bars from the date on):
+### Holds nothing back
+
+These still read bars from the date on.
 
 - Still to cover. Do not assume these hold anything back:
   - `alpha propfirm`: it reads every stored bar (no cut-off).
   - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose (tested:
     `test_alert_check_is_forward_use_and_still_reads_the_latest_bar`).
-  - Research case registration (`research_cmds.py`): `alpha research data register` does not check a dataset's end date against the boundary. Follow-up.
+  - Research case registration (`research_cmds.py`): `alpha research data register` does not check a dataset's end date against the boundary,
+    and a case approval reads the cut data without the sentence. Follow-up.
     `alpha backtest holdout` is the revealed holdout itself.
   - `alpha strategy-candidate run --analysis holdout`: it reads its own sealed window as given, and that window may lie past the boundary. Owner to decide.
   - `alpha labels weights` and `importance` read a stored barrier result; one built before this change can hold events from the date on.

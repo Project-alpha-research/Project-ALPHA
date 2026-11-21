@@ -11,7 +11,7 @@ import hashlib
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import polars as pl
@@ -390,3 +390,35 @@ def test_past_the_boundary_with_nothing_stored_there_keeps_the_plan_identity(
     digest = _baseline(receipt)
     assert "reserve" not in receipt
     assert digest["research_cutoff"] == "2024-04-30"
+
+
+def test_a_case_frozen_on_bars_past_the_boundary_fails_loud_instead_of_a_new_split(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The sealed split of an older case cannot silently change: its frozen data hash fails."""
+    from types import SimpleNamespace
+
+    from alpha_cli import research_cmds
+    from alpha_cli.control_store import ControlStore
+    from alpha_cli.research_d1 import load_registered_research_bars
+    from alpha_cli.spine import reserve
+    from alpha_core import DataError
+
+    poisoned, _ = _pair(tmp_path, _session_days(date(2024, 6, 28)))
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(poisoned))
+    ref = {**_ref(poisoned, end_ts="2024-04-30"), "bar_duration_minutes": 1440}
+    with monkeypatch.context() as before:  # the read as it was before the cut
+        before.setattr(reserve, "CUTOFF", datetime(2099, 1, 1, tzinfo=UTC))
+        frozen = load_registered_research_bars(poisoned, ref=ref)
+    now = load_registered_research_bars(poisoned, ref=ref)
+    assert max(bar.start for bar in frozen.bars).date() >= RESERVED_DAY
+    assert max(bar.start for bar in now.bars).date() < RESERVED_DAY
+    sha = frozen.dataset.content_sha256
+    assert now.dataset.content_sha256 != sha
+    store = SimpleNamespace(get_research_dataset=lambda _ref_id: ref)
+    payload = {
+        "protocol": {"empirical_dataset": {"ref_id": ref["ref_id"], "content_sha256": sha}},
+        "hashes": {"data": sha},
+    }
+    with pytest.raises(DataError, match="no longer reproduce the approval-frozen data hash"):
+        research_cmds._empirical_d1_bars(cast(ControlStore, store), payload)

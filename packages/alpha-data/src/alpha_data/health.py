@@ -23,7 +23,14 @@ from alpha_core import (
 from alpha_data.adapters.yfinance_adapter import split_discontinuity
 from alpha_data.corporate import known_actions
 from alpha_data.crypto.quality import missing_slot_ranges
-from alpha_data.sessions import daily_session_closes
+from alpha_data.sessions import (
+    EXACT_CLOSES_FROM,
+    OUTSIDE_RANGE_LABEL,
+    close_assumed,
+    daily_session_closes,
+    outside_supported_range,
+    supported_range,
+)
 from alpha_data.timeframe import DAILY
 
 SPLIT_RATIOS = (
@@ -644,6 +651,40 @@ def _mechanical_checks(
     ]
 
 
+def _range_checks(calendar: str | None, dates: Sequence[date]) -> list[HealthCheck]:
+    """Say so when a bar's close is assumed: before the calendar, or a pre-1993 early close."""
+    if calendar is None:
+        return []
+    held = sorted(set(dates))
+    old = [d for d in held if outside_supported_range(calendar, d)]
+    early = [d for d in held if close_assumed(calendar, d) and d not in old]
+    if not old and not early:
+        return []
+    parts = []
+    if old:
+        first = supported_range(calendar)[0]
+        parts.append(
+            f"{len(old)} bars from {old[0]} to {old[-1]} come before the first {calendar} "
+            f"session in the calendar ({first}). Each is taken as a session closing at the "
+            "regular close; holidays before it cannot be told apart."
+        )
+    if early:
+        parts.append(
+            f"{len(early)} bars on early-close days before {EXACT_CLOSES_FROM} "
+            f"({', '.join(str(d) for d in early[:5])}) are taken to close at the regular close."
+        )
+    return [
+        _item(
+            "calendar_range",
+            "gaps",
+            [*old, *early],
+            "pass",
+            f"{OUTSIDE_RANGE_LABEL}: " + " ".join(parts),
+            "Bars with an assumed close use the labelled fallback.",
+        )
+    ]
+
+
 def health_report(
     bars: pl.DataFrame,
     *,
@@ -674,6 +715,7 @@ def health_report(
             calendar,
             min([first, *(a.ex_date for a in splits)]),
             max([today, *(a.ex_date for a in splits)]),
+            present=set(dates),
         )
         if calendar
         else {
@@ -689,6 +731,7 @@ def health_report(
         *_adjustments(runs, splits, calendar is None, slots, moves),
         *_mechanical_checks(observed, closes, report_time, calendar, dates, timezone_check, future),
         *_price_checks(runs),
+        *_range_checks(calendar, dates),
         _survivorship(universe_bars, memberships, report_time),
     ]
     return HealthReport(

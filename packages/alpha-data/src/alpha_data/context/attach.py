@@ -146,21 +146,12 @@ def _used_hash(alias: str, used: pl.DataFrame) -> str:
 
 
 def _decision_instants(
-    frame: pl.DataFrame, timeframe: BarTimeframe, calendar: str | None, floor: datetime | None
+    frame: pl.DataFrame, timeframe: BarTimeframe, calendar: str | None
 ) -> list[datetime]:
-    """`bar_known_at` per bar. A bar that ends before any context is known gets `ts + duration`.
-
-    That stand-in is never earlier than its true instant and still precedes every known row, so
-    the join gives null either way; it spares bars older than the exchange calendar's range.
-    """
-    instants = []
-    for ts in frame["ts"].to_list():
-        early = floor is None or ts + timeframe.duration < floor
-        instants.append(
-            ts + timeframe.duration
-            if early
-            else bar_known_at(ts, timeframe=timeframe, calendar=calendar)
-        )
+    """`bar_known_at` per bar; the one calendar home answers old and new history alike."""
+    instants = [
+        bar_known_at(ts, timeframe=timeframe, calendar=calendar) for ts in frame["ts"].to_list()
+    ]
     if any(b <= a for a, b in zip(instants, instants[1:], strict=False)):
         raise DataError("bars must be strictly increasing in time")
     return instants
@@ -202,12 +193,8 @@ def attach_context(
         alias: _Source(s.frame.filter(pl.col("known_eff") <= cutoff), s.tables, s.note)
         for alias, s in sources.items()
     }
-    firsts: list[datetime] = [
-        min(s.frame["known_eff"].to_list()) for s in sources.values() if s.frame.height
-    ]
-    floor = min(firsts) if firsts else None
     left = frame.with_columns(
-        pl.Series("_d", _decision_instants(frame, timeframe, calendar, floor), dtype=TIME)
+        pl.Series("_d", _decision_instants(frame, timeframe, calendar), dtype=TIME)
     )
     used_hashes: dict[str, str] = {}
     tables: dict[str, str] = {}

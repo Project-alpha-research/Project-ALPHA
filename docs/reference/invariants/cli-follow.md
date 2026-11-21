@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 9a86a9c439695112
+verified: e58966a337a85cf9
 ---
 
 # Command line follow invariants

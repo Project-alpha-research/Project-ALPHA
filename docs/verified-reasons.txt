@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 82b3647c5ddc7893 on 2026-11-21: New home group and nightly alert modules are routed through the README code map; the reading list is unchanged.
+  verified d7dd5f180c2de399 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home and nightly alert rows, which hold
 
 apps/alpha-cli/README.md
-  verified 08d3395ef9d0235c on 2026-11-21: merge of main: this branch moved RESERVED_INSTANT into alpha_core.reserve and added show-derived; main changed CLI wording; both sets of claims hold
+  verified d7dd5f180c2de399 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home and nightly alert rows, which hold
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -23,7 +23,7 @@ docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
 docs/reference/invariants/cli-follow.md
-  verified 28ea5c965f28eef0 on 2026-11-20: N0 revised-history message names columns; text otherwise correct
+  verified e58966a337a85cf9 on 2026-11-21: Merged main into the nightly alert branch: main verified its source changes against this text; this branch added the home and nightly alert rows, which hold
 
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged

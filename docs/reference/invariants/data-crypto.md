@@ -4,7 +4,7 @@ sources:
   - packages/alpha-data/src/alpha_data/crypto/**
   - tests/unit/test_crypto_*.py
   - tests/bias_guards/test_crypto_*.py
-verified: b2ed2ed16a925ea1
+verified: 96e9a5ea05954496
 ---
 
 # Data layer invariants: crypto

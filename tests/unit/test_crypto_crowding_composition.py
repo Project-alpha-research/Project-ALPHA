@@ -22,7 +22,7 @@ from alpha_research import evaluate_crypto_crowding
 
 
 def _frames() -> dict[str, pl.DataFrame]:
-    start = datetime(2025, 1, 1, tzinfo=UTC)
+    start = datetime(2023, 1, 1, tzinfo=UTC)
     funding_times = [start + timedelta(hours=8 * index) for index in range(370)]
     hourly_times = [
         start - timedelta(hours=25) + timedelta(hours=index) for index in range(25 + 8 * 369 + 1)
@@ -151,8 +151,8 @@ def _snapshot_fixture(
             state="qualified",
             failures=(),
             warnings=(),
-            observed_start=datetime(2025, 1, 1, tzinfo=UTC),
-            observed_end=datetime(2025, 5, 4, tzinfo=UTC),
+            observed_start=datetime(2023, 1, 1, tzinfo=UTC),
+            observed_end=datetime(2023, 5, 4, tzinfo=UTC),
             row_count=frame.height,
             correction_lineage=(),
         )
@@ -254,7 +254,7 @@ def test_load_crowding_observations_reads_exact_snapshot_members(tmp_path: Path)
     observations = load_crypto_crowding_observations(snapshot, reports, bulk_root=tmp_path)
 
     assert len(observations) == 369
-    assert observations[-1].funding_time == datetime(2025, 5, 3, 16, tzinfo=UTC)
+    assert observations[-1].funding_time == datetime(2023, 5, 3, 16, tzinfo=UTC)
 
 
 def test_load_crowding_observations_rejects_correction_without_row_clock(tmp_path: Path) -> None:

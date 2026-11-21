@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 59f3561b6c8e4058 on 2026-11-21: line-wrap only in the coverage line
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-cli/README.md
-  verified 59f3561b6c8e4058 on 2026-11-21: line-wrap only in the coverage line
+  verified bbf5d939e244f9d4 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified ca6383c4925044ef on 2026-11-21: merge of main: only stamps conflicted; text still matches the merged sources (options derived command and menu entry)
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified ca6383c4925044ef on 2026-11-21: merge of main: only stamps conflicted; text still matches the merged sources (options derived command and menu entry)
+  verified 66231186fdebe163 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -32,7 +32,7 @@ docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 359fb99ad0e63cbf on 2026-11-20: Only the pinned MCP tool list in a test changed; nothing this page states about CLI research changed.
+  verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
@@ -62,7 +62,7 @@ docs/reference/invariants/data-options.md
   verified a0b335878dc73b1b on 2026-11-19: text matches the final tree code and measured numbers
 
 docs/reference/invariants/data.md
-  verified 0ab1a16847169311 on 2026-11-21: stale-quote filter, log-return realized vol and reason counts change no routing or ownership text
+  verified e4ab39b0d50fe178 on 2026-11-21: merge of main: only stamps conflicted; the options derived command and its stale-quote and log-return fixes change no text here
 
 docs/reference/invariants/documentation.md
   verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
@@ -76,6 +76,9 @@ docs/reference/invariants/rdagent.md
 docs/reference/invariants/research-integrity.md
   verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
 
+docs/reference/invariants/research.md
+  verified 8f8e9618bc0343ee on 2026-11-21: re-read after merging main and removing the three open guard entries: the reads they named are now cut; this page's statements still hold
+
 docs/reference/invariants/testing.md
   verified 51ba1e868da16b2f on 2026-11-20: the repeat loop moved into settle_exclusions; behaviour and the four-run cap are unchanged
 
@@ -86,13 +89,13 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 0aee59d54675bd30 on 2026-11-21: merge of main: only stamps conflicted; text still matches the merged sources (options derived command and menu entry)
+  verified ce3d3750e6615271 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified ff72ccda229d25ba on 2026-11-21: merge of main: only stamps conflicted; text still matches the merged sources (options derived command and menu entry)
+  verified da290d9f3c48e88d on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
-  verified 477b5bb4e917ed4e on 2026-11-21: merge of main: only stamps conflicted; text still matches the merged sources (options derived command and menu entry)
+  verified f16bfa1eca4431e4 on 2026-11-21: Only the printed wording of the holdout, optim and walk-forward lines changed; this page states none of it.
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -131,7 +134,7 @@ docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
 docs/reference/project/components/options-data.md
-  verified 051c334efe60cdb8 on 2026-11-21: stale-quote filter, log-return realized vol and reason counts change no routing or ownership text
+  verified 814a9b6c19ab1666 on 2026-11-20: Invariants page only split into a new section and rewrapped a line; the component summary (0.14 s solve, 21 s chain) still matches
 
 docs/reference/project/components/paper-and-live.md
   verified d9b582fb5efee922 on 2026-11-18: the document it names (docs/reference/invariants/cli-paper.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -203,7 +206,7 @@ docs/work/CONTEXT.md
   verified 67c86f235104b502 on 2026-11-18: handoff.py only changed how report.md is assembled (build round then fix rounds); the document's claims still hold
 
 packages/alpha-data/CONTEXT.md
-  verified 38a5cce811185261 on 2026-11-21: stale-quote filter, log-return realized vol and reason counts change no routing or ownership text
+  verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 packages/alpha-study/CONTEXT.md
   verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
@@ -261,9 +264,6 @@ research/tools/montecarlo-checks.md
 
 research/tools/nightly-run.md
   verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
-
-research/tools/options-derived.md
-  verified 041b146abe048deb on 2026-11-21: line-wrap only in the coverage line
 
 research/tools/portfolio-book.md
   verified ac26c355506d5adb on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed

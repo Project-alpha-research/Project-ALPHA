@@ -4,6 +4,9 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/owner_rule.py
   - packages/alpha-strategies/src/alpha_strategies/rules.py
   - packages/alpha-strategies/src/alpha_strategies/rule_paths.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
+  - apps/alpha-cli/src/alpha_cli/spine/spec.py
 verified: 01af7ad62633b879
 ---
 # Owner rule language in `alpha test`
@@ -23,6 +26,10 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
   history (their recursion starts at the window's first bar). The value is the same on every run and in every place that
   reads it: the engine, the random-price test and `alpha rules`.
 - Example: `research/examples/owner-rsi-dip.toml`.
+- A saved rule: `rule = {kind = "owner", saved = "<name>"}` in place of `spec`. The name is a rule that `alpha rules save` wrote.
+  It is read when the spec loads, and the full rule goes into the spec before hashing. So the hash, test key and family are those of
+  the same rule written inline, and the stored run keeps the full rule: a later edit of the saved rule never changes an old run or
+  its recheck. A missing or invalid saved rule fails with its name. `saved` and `spec` together are refused.
 
 ## Operands
 
@@ -59,6 +66,16 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
   condition once. The indicator name, its `field` and the source are part of the shape.
 - Thirty RSI thresholds are one family. A different structure is another family. The trial count for the deflated Sharpe is
   the larger of the family count and the count of all tests on the same asset.
+- Every owner-rule reading says it: "This rule shape: K tests on this data. All rules on <asset>: M tests. The deflated Sharpe
+  uses N = max(K, M)." Repeats of the same test count once. Parameter variants count as tries in K and M.
+
+## Parameter variants
+
+- `alpha test` re-runs the rule with each window and each non-zero constant at 0.8 and 1.2 times its value, one change at a time.
+  Windows are the params of `sma`, `ema`, `rsi`, `atr`, the first of `bbands` and all three of `macd`, and a lag. They round to whole
+  bars (at least 2; a lag at least 1). A variant equal to the original, or one the language refuses, is left out. At most 8 run.
+  A Bollinger width, a research indicator's params and a constant of 0 stay as written.
+- The reading shows them as a table of readings (Sharpe, total return, maximum drawdown). It picks no best one and gives no verdict.
 
 ## Engine and random-price test
 
@@ -74,5 +91,5 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 - Exits and time stops ("hold until RSI is above 60, or 10 days at most"). The rule only holds while its conditions hold.
 - Shorts in `alpha test`. Volume and open prices. Fixed price levels (`close > 400`). Crossings ("crossed above").
   Arithmetic on operands (`close > 1.02 * sma`).
-- OR groups. Calendar. Other assets as inputs. Parameter variants in `alpha diagnose` (only the doubled-cost variant runs).
+- OR groups. Calendar. Other assets as inputs.
 - Position sizing other than all-in.

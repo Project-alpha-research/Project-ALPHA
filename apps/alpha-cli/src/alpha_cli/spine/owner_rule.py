@@ -42,9 +42,6 @@ PRICE_LEVEL_REFUSED = (
     "against 0 or its signal line; or a fixed number against RSI or another scale-free indicator"
 )
 NULL_CLOSES = "null-closes-for-high-low"
-VARIANTS_NOTE = (
-    "Parameter variants are not built for owner rules yet; only the doubled-cost variant ran."
-)
 
 _PRICE_SCALED = frozenset({"sma", "ema", "atr", "bbands", "macd"})
 _READS_RANGE = frozenset({"atr", "hawkes", "cmma"})

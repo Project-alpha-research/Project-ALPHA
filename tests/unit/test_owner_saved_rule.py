@@ -91,7 +91,7 @@ def test_a_saved_rule_with_a_short_side_is_refused_with_its_name(tmp_path: Path)
 def test_saved_with_an_inline_spec_is_refused(tmp_path: Path) -> None:
     home = tmp_path / "home"
     _save(home, "rsi-dip", SPEC)
-    extra = '[rule.spec]\nlong_when = []\n'
+    extra = "[rule.spec]\nlong_when = []\n"
     with pytest.raises((ValueError, DataError), match="saved"):
         load_spec(_file(tmp_path, "rsi-dip", extra), data_dir=home)
 

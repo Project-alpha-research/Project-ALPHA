@@ -183,7 +183,7 @@ def _resolve_saved(raw: Any, data_dir: Path | None) -> Any:
     name = rule["saved"]
     if rule.get("kind") != "owner" or set(rule) - {"kind", "saved"}:
         raise ValueError(
-            f"saved rule {name!r}: write rule = {{kind = \"owner\", saved = NAME}} with no "
+            f'saved rule {name!r}: write rule = {{kind = "owner", saved = NAME}} with no '
             "other key (an inline [rule.spec] cannot go with saved)"
         )
     if data_dir is None or not isinstance(name, str):

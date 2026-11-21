@@ -46,6 +46,7 @@ verified: 8115bbcdee4c05e0
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
 | [cli-rule-readings.md](cli-rule-readings.md) | rule-test reading: words, aim, faults | `alpha test` text, the stored `reading` |
+| [cli-rule-context-gate.md](cli-rule-context-gate.md) | rule spec `context` and `when`, `--plan` | `alpha test --plan`, a context spec |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |

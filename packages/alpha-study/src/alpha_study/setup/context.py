@@ -48,6 +48,14 @@ def used_aliases(text: str, aliases: frozenset[str]) -> frozenset[str]:
     return frozenset(names & aliases)
 
 
+def reads_alias(text: str, aliases: frozenset[str]) -> bool:
+    """True when `text` parses and names one of `aliases`; a syntax error is left to the parser."""
+    try:
+        return bool(used_aliases(text, aliases))
+    except SyntaxError:
+        return False
+
+
 def condition_texts(spec: Any) -> dict[str, str]:
     """Boolean expressions of the spec that read a context alias, by name."""
     aliases = frozenset(spec.context)

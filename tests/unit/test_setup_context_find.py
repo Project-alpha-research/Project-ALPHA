@@ -47,14 +47,14 @@ def _no_sheets(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(setup_cmds, "draw_sheet", lambda rows, **kw: b"png")
 
 
-def seed_bars(home: Path, days: int = 1500) -> None:
-    """Calendar-day bars from 2020-01-01; an event bar every 15 days."""
+def seed_bars(home: Path, days: int = 1500, symbol: str = "SPY", start: date = START) -> None:
+    """Calendar-day bars from `start`; an event bar every 15 days."""
     rng = np.random.default_rng(7)
     close = 100.0 * np.cumprod(1.0 + rng.normal(0.0004, 0.01, days))
     frame = pl.DataFrame(
         {
             "ts": [
-                datetime.combine(START + timedelta(days=i), datetime.min.time(), UTC)
+                datetime.combine(start + timedelta(days=i), datetime.min.time(), UTC)
                 for i in range(days)
             ],
             "open": close,
@@ -65,8 +65,8 @@ def seed_bars(home: Path, days: int = 1500) -> None:
         }
     )
     store = ParquetStore(home / "store")
-    store.write_bars("SPY", frame)
-    store.write_provenance("SPY", source="alpaca", adapter_version="1", parser_version="1")
+    store.write_bars(symbol, frame)
+    store.write_provenance(symbol, source="alpaca", adapter_version="1", parser_version="1")
 
 
 def weeks(first: date, count: int, skip: Sequence[int] = ()) -> list[dict[str, Any]]:
@@ -204,6 +204,9 @@ def test_the_context_is_a_new_test_key_in_the_same_family(tmp_path: Path) -> Non
     ids = [run_study(f["find_id"], home=tmp_path) for f in (one, two)]
     assert ids[0]["family"]["family_id"] == ids[1]["family"]["family_id"]
     assert ids[1]["family"]["studies"] == 2
+    for level in ("0.4", "0.6", "0.65"):  # each threshold tried is one more test
+        last = run_study(find(tmp_path, SPEC.replace("0.5", level))["find_id"], home=tmp_path)
+    assert last["family"]["studies"] == 5
 
 
 def test_an_unknown_series_or_missing_table_fails_with_a_plain_error(tmp_path: Path) -> None:
@@ -228,3 +231,26 @@ def test_a_spec_without_context_gets_no_context_keys(tmp_path: Path) -> None:
     assert setup_find.source_keys(manifest["assets"]) == [
         f"SPY={manifest['assets'][0]['source_fingerprint']}"
     ]
+
+
+def test_random_controls_use_each_asset_own_context_span(tmp_path: Path) -> None:
+    """Controls may start and end only where the events could: the asset's own context span."""
+    seed_bars(tmp_path)
+    seed_bars(tmp_path, days=900, symbol="QQQ", start=date(2021, 1, 1))
+    store_cot(tmp_path, cot_rows(weeks(date(2020, 3, 3), 60)))  # stops in 2021, bars run on
+    found = find(tmp_path, SPEC.replace('assets = ["SPY"]', 'assets = ["SPY", "QQQ"]'))
+    _, manifest, spec = setup_find.load_find(tmp_path, found["find_id"])
+    bars, spans = setup_find.study_inputs(tmp_path, manifest, spec)
+    for asset in manifest["assets"]:
+        span, (start, stop) = asset["context"]["span"], spans[asset["asset"]]
+        series = bars[asset["asset"]]
+        assert series[start].ts.date().isoformat() == span["first"]
+        assert series[stop - 1].ts.date().isoformat() == span["last"]
+        assert stop < len(series)
+    assert spans["QQQ"][0] == 0  # QQQ bars start after the context: no other asset's start
+
+
+def test_null_counts_and_valued_bars_add_up_to_the_bar_count(tmp_path: Path) -> None:
+    seed(tmp_path, skip=range(60, 64))
+    info = find(tmp_path)["assets"][0]["context"]
+    assert sum(info["null_by_reason"]["pos"].values()) + info["with_value"]["pos"] == info["bars"]

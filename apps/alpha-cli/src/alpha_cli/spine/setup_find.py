@@ -292,8 +292,11 @@ def study_inputs(
     spec: Any,
     *,
     sources: dict[str, ResolvedAsset] | None = None,
-) -> tuple[dict[str, Any], int]:
-    """Reload the find's exact sources; compile only warm-up lengths, never detect again."""
+) -> tuple[dict[str, Any], dict[str, tuple[int, int | None]]]:
+    """Reload the find's exact sources; compile only warm-up lengths, never detect again.
+
+    Returns the bars and, per asset, the control bars `[start, stop)`; stop None is the data end.
+    """
     from alpha_cli import _runner
     from alpha_study.setup.expr import compile_expr
 
@@ -304,6 +307,7 @@ def study_inputs(
     names = frozenset(spec.context)
     warmup = max(compile_expr(text, names).warmup for text in texts)
     bars_by_asset = {}
+    spans: dict[str, tuple[int, int | None]] = {}
     for asset in manifest["assets"]:
         if asset["error"] is not None:
             continue  # Failed assets have no recorded candidates; preserve them in the manifest.
@@ -331,10 +335,12 @@ def study_inputs(
                 raise SpineError(
                     "DATA_CHANGED_SINCE_FIND", asset["asset"], "Run alpha setup find again."
                 )
-            # Random controls start where the context starts, as the find's own span does.
-            warmup = max(warmup, setup_context.study_start(spec, attached, bars))
+            # Random controls sit where this asset's events could: its own context span.
+            spans[asset["asset"]] = setup_context.control_span(spec, attached, bars, warmup)
+        else:
+            spans[asset["asset"]] = (warmup, None)
         bars_by_asset[asset["asset"]] = bars
-    return bars_by_asset, warmup
+    return bars_by_asset, spans
 
 
 def checked_study_inputs(
@@ -345,7 +351,7 @@ def checked_study_inputs(
     check_data: bool,
     accept_bad_data: str | None,
     report_time: datetime | None,
-) -> tuple[dict[str, Any], int, dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, tuple[int, int | None]], dict[str, Any]]:
     reserve.refuse_find_that_saw_period(manifest)
     sources = {
         a["asset"]: resolve_asset(a["asset"], data_dir=home)
@@ -356,9 +362,9 @@ def checked_study_inputs(
     record = run_health_record(
         assets, check_data=check_data, accept_bad_data=accept_bad_data, report_time=report_time
     )
-    bars, warmup = study_inputs(home, manifest, spec, sources=sources)
+    bars, spans = study_inputs(home, manifest, spec, sources=sources)
     verify_inputs(assets, record)
-    return bars, warmup, record
+    return bars, spans, record
 
 
 def find_identity(spec_sha256: str, keys: list[str], context_bars: int) -> str:

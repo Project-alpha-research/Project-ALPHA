@@ -107,6 +107,34 @@ def _window(node: ast.AST) -> int:
     return n
 
 
+def _reads(node: ast.AST, aliases: Aliases) -> bool:
+    return any(isinstance(n, ast.Name) and n.id in aliases for n in ast.walk(node))
+
+
+def _kleene(name: str, x: pl.Expr, n: int) -> pl.Expr:
+    """Three-valued window over context: a null may be anything, so it never decides the result.
+
+    `within_bars` is true on a known true, `for_bars` false on a known false; otherwise a null in
+    the window gives null, so `not` of the window cannot turn a missing context value into true.
+    """
+
+    def count(flags: pl.Expr) -> pl.Expr:
+        return flags.fill_null(False).cast(pl.Int64).rolling_sum(n, min_samples=n)
+
+    unknown = count(x.is_null())
+    decided = count(x) > 0 if name == "within_bars" else count(~x) > 0
+    none = pl.lit(None, dtype=pl.Boolean)
+    return (
+        pl.when(unknown.is_null())
+        .then(none)
+        .when(decided)
+        .then(pl.lit(name == "within_bars"))
+        .when(unknown > 0)
+        .then(none)
+        .otherwise(pl.lit(name != "within_bars"))
+    )
+
+
 def _call(node: ast.Call, aliases: Aliases) -> CompiledExpr:
     if not isinstance(node.func, ast.Name) or node.func.id not in FUNCTIONS:
         raise _error(node, f"functions {', '.join(FUNCTIONS)}")
@@ -151,6 +179,10 @@ def _call(node: ast.Call, aliases: Aliases) -> CompiledExpr:
         return _sized(node, x.expr.shift(n), x.kind, x.warmup + n, x.size + 1)
     if name in {"for_bars", "within_bars"}:
         _require(node, [x], "boolean")
+        if _reads(args[0], aliases):
+            return _sized(
+                node, _kleene(name, x.expr, n), "boolean", x.warmup + n - 1, 3 * x.size + 14
+            )
         # A missing value inside the window counts as false, never as "unknown for n bars".
         total = x.expr.fill_null(False).cast(pl.Int64).rolling_sum(n, min_samples=n)
         result = total == n if name == "for_bars" else total > 0

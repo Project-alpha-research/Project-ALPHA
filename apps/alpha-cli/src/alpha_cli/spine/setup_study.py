@@ -111,7 +111,7 @@ def _summarise(
     manifest: dict[str, Any],
     candidates: Any,
     bars: dict[str, Any],
-    warmup: int,
+    spans: dict[str, tuple[int, int | None]],
     study_id: str,
     control_seed: str,
     outcomes: Any,
@@ -122,7 +122,12 @@ def _summarise(
     for h in range(1, max(spec.study.horizons) + 1):
         eligible = {
             a: eligible_returns(
-                [b.open for b in s], [b.close for b in s], warmup, h, round_trip(costs[a])
+                [b.open for b in s],
+                [b.close for b in s],
+                spans[a][0],
+                h,
+                round_trip(costs[a]),
+                spans[a][1],
             )
             for a, s in bars.items()
         }
@@ -261,7 +266,7 @@ class Inputs:
     manifest: dict[str, Any]
     spec: Any
     bars: dict[str, Any]
-    warmup: int
+    spans: dict[str, tuple[int, int | None]]  # control bars [start, stop) per asset
     record: dict[str, Any]
     study_id: str
     control_seed: str
@@ -282,7 +287,7 @@ def read_inputs(
             "Add [study] horizons and primary to the spec, "
             "run alpha setup find again, then study that find.",
         )
-    bars, warmup, record = checked_study_inputs(
+    bars, spans, record = checked_study_inputs(
         home,
         manifest,
         spec,
@@ -291,7 +296,7 @@ def read_inputs(
         report_time=report_time,
     )
     study_id, control_seed = outcome_ids(manifest, STUDY_RULE_VERSION, record)
-    return Inputs(folder, manifest, spec, bars, warmup, record, study_id, control_seed)
+    return Inputs(folder, manifest, spec, bars, spans, record, study_id, control_seed)
 
 
 def compute_study(home: Path, find_id: str, item: Inputs) -> tuple[dict[str, Any], Any]:
@@ -308,7 +313,7 @@ def compute_study(home: Path, find_id: str, item: Inputs) -> tuple[dict[str, Any
         manifest,
         candidates,
         bars,
-        item.warmup,
+        item.spans,
         item.study_id,
         item.control_seed,
         outcomes,

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_context.py
   - packages/alpha-study/src/alpha_study/setup/context.py
   - packages/alpha-data/src/alpha_data/context/attach.py
-verified: 30e4105aac3d5c8f
+verified: ef74942249c5a8ba
 ---
 # Setup with a context condition
 
@@ -31,7 +31,7 @@ uv run alpha setup study <find_id> --json
 - `context` in the JSON lists bars with no value by reason: `not-yet-known`, `stale`, cot-delayed-release-unverified, `series-warm-up`.
   A stale value rejects the event as context-stale. A null is never a match.
 - Label `short-context-history`: under 3 years of condition data. Read it as a hint, say so.
-- Study and trade add the same sentence. Random controls start where the condition data starts.
+- Study and trade add the same sentence. Random controls start and end where the condition data has a value on that asset.
 
 **What it cannot tell you**
 - Cause. A reading is not a verdict and promises no profit. Different levels or series are new tests, counted in the same idea family.

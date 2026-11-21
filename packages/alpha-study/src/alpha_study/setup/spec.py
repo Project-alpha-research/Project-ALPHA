@@ -23,7 +23,7 @@ from pydantic import (
 )
 
 from alpha_core import DataError
-from alpha_study.setup.context import check_aliases
+from alpha_study.setup.context import check_aliases, reads_alias
 from alpha_study.setup.expr import Aliases, Kind, compile_expr
 
 RESERVED = frozenset({"warm-up", "no-trigger", "no-next-bar", "pending-trigger"})
@@ -148,6 +148,22 @@ class SetupSpec(_Frozen):
         if clash := RESERVED.intersection(value):
             raise ValueError(f"{sorted(clash)}: reserved for built-in rejection reasons")
         return MappingProxyType(dict(value))
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_context_in_exit(cls, value: Any) -> Any:
+        """Exits run on the price bars alone: name the limit instead of an unknown token."""
+        if isinstance(value, Mapping):
+            context, exits = value.get("context"), value.get("exit")
+            if isinstance(context, Mapping) and isinstance(exits, Mapping):
+                for field in ("stop", "target", "opposite"):
+                    text = exits.get(field)
+                    if isinstance(text, str) and reads_alias(text, frozenset(context)):
+                        raise ValueError(
+                            f"exit.{field} reads a context alias: [exit] uses price data only; "
+                            "put the context condition in [filters] or the trigger"
+                        )
+        return value
 
     @model_validator(mode="after")
     def _expressions(self) -> Self:

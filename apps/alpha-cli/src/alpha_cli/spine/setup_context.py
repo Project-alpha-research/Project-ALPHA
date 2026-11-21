@@ -103,6 +103,7 @@ def block(spec: Any, result: AttachResult) -> dict[str, Any]:
         notes={a: n for a, n in result.notes.items() if n},
         bars=frame.height,
         null_by_reason={a: _nulls(frame, a) for a in aliases},
+        with_value={a: frame.height - frame[f"ctx_{a}"].null_count() for a in aliases},
         span=_span(frame, aliases),
         conditions=condition_counts(spec, frame),
     )
@@ -154,11 +155,17 @@ def annotate(summary: dict[str, Any], spec: Any, manifest: dict[str, Any]) -> No
     )
 
 
-def study_start(spec: Any, result: AttachResult, bars: list[Any]) -> int:
-    """First bar where every declared series has a value: random controls start no earlier."""
+def control_span(spec: Any, result: AttachResult, bars: list[Any], warmup: int) -> tuple[int, int]:
+    """Bars `[start, stop)` where random controls may sit: this asset's own context span.
+
+    Events need every declared series to have a value, so controls start no earlier than the
+    first such bar and end at the last one. A gap inside the span stays drawable (see the docs).
+    """
     if result.frame.height != len(bars):
         raise DataError("context frame and bars differ in length")
     ok = result.frame.with_row_index("i").filter(
         pl.all_horizontal(pl.col(f"ctx_{a}").is_not_null() for a in spec.context)
     )
-    return int(ok["i"][0]) if ok.height else len(bars)
+    if not ok.height:
+        return len(bars), len(bars)
+    return max(warmup, int(ok["i"][0])), int(ok["i"][-1]) + 1

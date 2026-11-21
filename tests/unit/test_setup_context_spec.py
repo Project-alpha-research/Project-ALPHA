@@ -172,3 +172,46 @@ def test_condition_counts_report_true_bars_and_spells() -> None:
     values: list[float | None] = [None, 0.95, 0.95, 0.95, 0.2, 0.95, None, 0.95, 0.95]
     counts = condition_counts(spec_with_filter(), ctx_frame(values))
     assert counts == {"filter:es_hot": dict(true_bars=6, spells=3)}
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "not within_bars(es_pos > 0.9, 3)",
+        "not for_bars(es_pos > 0.9, 3)",
+        "not prev(within_bars(es_pos > 0.9, 2), 1)",
+        "within_bars(not (es_pos > 0.9), 3)",
+    ],
+)
+def test_a_window_over_a_null_context_value_is_never_true_even_negated(text: str) -> None:
+    compiled = compile_expr(text, frozenset({"es_pos"}))
+    frame = ctx_frame([None] * 8)
+    assert True not in frame.select(compiled.expr.alias("x"))["x"].to_list()
+
+
+def test_windows_over_context_use_three_valued_logic() -> None:
+    names = frozenset({"es_pos"})
+    frame = ctx_frame([0.95, None, 0.5, 0.95, 0.95, 0.95, None, 0.2])
+    within = compile_expr("within_bars(es_pos > 0.9, 2)", names).expr
+    every = compile_expr("for_bars(es_pos > 0.9, 2)", names).expr
+    # A known true makes `within` true and a known false makes `for` false; otherwise null.
+    assert frame.select(within.alias("x"))["x"].to_list() == [
+        None, True, None, True, True, True, True, None,
+    ]  # fmt: skip
+    assert frame.select(every.alias("x"))["x"].to_list() == [
+        None, None, False, False, True, True, None, False,
+    ]  # fmt: skip
+    # Price-only windows keep their old rule: a missing value inside the window is false.
+    plain = compile_expr("within_bars(volume > 0, 2)").expr
+    gaps = ctx_frame([0.1] * 3).with_columns(pl.Series("volume", [None, None, 1.0]))
+    assert gaps.select(plain.alias("x"))["x"].to_list() == [None, False, True]
+
+
+def test_an_alias_in_an_exit_says_context_is_not_read_by_exits() -> None:
+    for exit_table in (
+        dict(opposite="es_pos > 0.9"),
+        dict(target="es_pos * 100"),
+        dict(stop="low - es_pos"),
+    ):
+        with pytest.raises((DataError, ValidationError), match=r"\[exit\]"):
+            SetupSpec.load(with_context(BASE, exit=exit_table))

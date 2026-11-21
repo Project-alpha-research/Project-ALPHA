@@ -73,6 +73,8 @@ def _fields(obj: Any) -> dict[str, Any]:
 
 def assemble_run_spec(idea: IdeaSpec, symbol: str, ppy: int, n_bars: int) -> _runner.RunSpec:
     """Use the minimum strategy warm-up and near-annual folds covering almost all history."""
+    if idea.context is not None:
+        raise DataError("the gated engine is not built yet: a context spec cannot run ungated")
     params = idea.rule.params
     spec = _runner.RunSpec(
         lookback=params.get("lookback", 252),

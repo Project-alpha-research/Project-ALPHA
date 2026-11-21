@@ -1,0 +1,15 @@
+# Example for `alpha test rule-context.example.toml --plan`. Copy it, then change the asset, series and condition.
+# Only --plan works for a context spec today. It describes the gate; it runs no engine and writes nothing.
+name = "tsmom-60-when-es-positioning-high"
+idea = "Trend following on SPY, only when speculators hold a high share of their own 3-year range in S&P futures"
+assets = ["SPY"]
+# `when` is a condition over the aliases below. `and`, `or`, `not`, comparisons and + - * / are allowed.
+when = "es_pos > 0.8"
+
+[rule]
+kind = "tsmom"
+lookback = 60
+
+# alias = "series@key". The key is a CFTC market code or a FINRA symbol (SELF = the asset itself).
+[context]
+es_pos = "cot_nc_net_pct_156w@13874A"

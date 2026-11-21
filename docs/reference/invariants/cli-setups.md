@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 0375e4ab3fe2b99a
+verified: 6fb66d33274953a8
 ---
 
 # Command line setup invariants
@@ -74,7 +74,9 @@ Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alph
   asset's own symbol). Aliases are number sources in `event`, `filters`, `trigger` and `reference`, not in `[exit]`. An alias may not be a price
   source, a function or a filter or reference name. Without `[context]` the spec keeps its old identity, ids and files.
 - `spine/setup_context.py` makes the only call to `attach_context` (cut 2023-12-31) and hands plain `ctx_<alias>` columns to `alpha_study`, which
-  imports no data code. Context holds its own warm-up as null, so aliases add no warm-up. A null never makes a condition true:
+  imports no data code. The rule-test gate (`_context_gate`) uses the same `attach_bindings` call. The used rows hash includes the
+  alias name, so in Setup Lab a renamed alias gives a new context fingerprint; the rule gate hashes under canonical names.
+  Context holds its own warm-up as null, so aliases add no warm-up. A null never makes a condition true:
   `for_bars` and `within_bars` over context are three-valued, so `not` of a window with a missing value is not true.
   `[exit]` refuses an alias with a plain error: exits run on the price bars alone (a current limit, not a safety rule).
 - A filter that reads a context value older than its limit rejects the event as `context-stale`. Other nulls (not yet known, delayed release,

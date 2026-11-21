@@ -61,6 +61,11 @@ Locks it out (the code refuses reserved rows or aborts):
   the whole verified artifact (its hash and overlap checks need every row) but builds no bar that closes after the boundary.
   A replay of an older frozen scan is refused by its code hash, as before. `alpha monte-carlo` reads with its source run's cut-off, so it holds back
   only when the source run did.
+- ML input and forecast evaluation: `alpha ml export-input` (`ml_input.py`) and `alpha forecast eval` (plain and governed) use the same `Hold`,
+  cut-off and sentence. A Qlib bundle with held-back bars gains `reserve.json`; with none it is unchanged. `alpha ml prepare` copies that file into
+  the exchange, and `alpha ml replay` records `reserve` and the label on its run; a later replay `--as-of` is recorded as 2023-12-31.
+  Labels and fold targets come from the cut panel only, so the last panel session has no label. `alpha forecast run` stays forward use: its
+  manifest records `use: forward` (not part of the run id), and `alpha report` shows it; an older run shows "not recorded".
 - Not built: the owner's confirmation path. It is designed, not built. It needs a new owner action type and a second build with the owner's sign-off.
 
 Only labels it:
@@ -73,8 +78,6 @@ Only labels it:
 Holds nothing back (they still read bars from the date on):
 
 - Still to cover. Do not assume these hold anything back:
-  - ML input preparation (`ml_input.py`): tied to a project's frozen export.
-  - Forecast evaluation (`alpha forecast`): a forecast run is forward use; the evaluation sites need their own design.
   - Research diagnostics (`research_diagnostic_cmds.py`): tied to research cases and their sealed holdout.
   - `alpha propfirm`: it reads every stored bar (no cut-off).
   - `alpha scan check`: the alert watcher is forward use, so it reads the latest bars on purpose (tested:

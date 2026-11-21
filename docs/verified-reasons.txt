@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 263cb754a8ae4a7f on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
 
 apps/alpha-cli/README.md
-  verified 263cb754a8ae4a7f on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 1f7bbd308a0131d8 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -38,7 +38,7 @@ docs/reference/invariants/cli-results-check.md
   verified 7b73bfb411777416 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-rule-readings.md
-  verified b8cc3a5d04ffc0ef on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 69d7bd6f29afbcca on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py; no existing command, fact or reading changed
 
 docs/reference/invariants/cli-runs.md
   verified 24fad42f70b35806 on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed

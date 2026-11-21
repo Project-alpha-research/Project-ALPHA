@@ -14,7 +14,7 @@ Result: the four accounting modules, their tests and the optional accounting par
 - `run_backfill`: the parameters `fixture_accounting`, `fixture_http_accounting`, `fixture_http_response_evidence` and the code that used them.
 - Capability `download-bookkeeping`, its trace row, the production-scope row, and text in `data-layer.md` and `cli-crypto-data.md`.
   `docs/ARCHITECTURE.md` had no row for these modules. The triage sheet is history; I left it.
-- `scripts/gate_test_durations.json`: removed the deleted test's entry.
+- Protected, not edited: `scripts/gate_test_durations.json` still lists `tests/unit/test_market_data_acquisition_accounting.py` (line 371). The orchestrator should remove that entry.
 
 ## Decisions
 1. `FixtureAccountingBlocked` is still raised by live code in `crypto_data_cmds.py`. I moved it to the new

@@ -116,7 +116,13 @@ def _borrow(inputs: Inputs, equity: Any) -> tuple[dict[str, Value], dict[str, st
             strict=True,
         )
     ]
-    fact = cost_classes.borrow_fact(row, float(equity[0]), float(equity[-1]), shorts)
+    cash = manifest["metadata"].get("starting_cash")
+    if not isinstance(cash, int | float) or isinstance(cash, bool) or cash <= 0:
+        reason = (
+            "The run did not store its starting cash, so the charge cannot be set against equity."
+        )
+        return dict.fromkeys(keys), dict.fromkeys(keys, reason)
+    fact = cost_classes.borrow_fact(row, float(equity[0]), float(equity[-1]), shorts, float(cash))
     values: dict[str, Value] = {
         "result_after_borrow": fact["result_after_borrow"],
         "borrow_charge": fact["borrow_charge"],
@@ -216,7 +222,7 @@ BREAK_EVEN = ToolSpec(
     situations=("cost-fragile", "just-the-market"),
     family="costs",
     question="How much could costs rise before the result reached zero or matched buy and hold?",
-    needs=("stored_equity", "stored_benchmark"),
+    needs=("stored_equity", "stored_benchmark", "run_trades"),
     params=(),
     outputs=(
         Output(

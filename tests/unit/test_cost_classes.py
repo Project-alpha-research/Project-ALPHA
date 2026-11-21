@@ -193,3 +193,27 @@ def test_follow_refuses_class_default_costs(tmp_path: Path) -> None:
     with pytest.raises(SpineError) as raised:
         frozen_idea(tmp_path, "abcdef0123456789", idea.spec_sha256)
     assert raised.value.payload["code"] == "FOLLOW_COSTS_BY_CLASS"
+
+
+def test_borrow_charge_is_set_against_equity_in_starting_cash_units(tmp_path: Path) -> None:
+    """Review finding: equity is stored normalised, trades in currency."""
+    _asset(tmp_path, "SPY", "tiingo", {"asset_class": "stock", "venue": "US"})
+    _short_run(tmp_path, short=True)
+    manifest_path = tmp_path / "runs" / RUN / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["metadata"]["starting_cash"] = 1000.0
+    manifest_path.write_text(json.dumps(manifest))
+    values = run(tmp_path, COSTS, RUN)["values"]
+    charge = 1000 * 0.005 * 73 / 365
+    assert values["borrow_charge"] == pytest.approx(charge, rel=1e-9, abs=1e-12)
+    frame = pl.read_parquet(tmp_path / "runs" / RUN / "equity_curve.parquet")
+    start, end = frame["equity"][0], frame["equity"][-1]
+    assert values["result_after_borrow"] == pytest.approx(
+        (end - charge / 1000) / start - 1, rel=1e-9, abs=1e-12
+    )
+
+
+def test_break_even_declares_the_trade_file_as_an_input() -> None:
+    from alpha_cli.toolbox.families.costs import BREAK_EVEN
+
+    assert "run_trades" in BREAK_EVEN.needs

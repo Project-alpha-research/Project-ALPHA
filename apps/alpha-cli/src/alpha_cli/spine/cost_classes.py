@@ -173,12 +173,17 @@ def borrow_row(key: str | None) -> tuple[CostRow, bool]:
 
 
 def borrow_fact(
-    row: CostRow, start_equity: float, end_equity: float, shorts: list[tuple[float, float]]
+    row: CostRow,
+    start_equity: float,
+    end_equity: float,
+    shorts: list[tuple[float, float]],
+    starting_cash: float,
 ) -> dict[str, Any]:
     """Result after a borrow charge on short trades; a missing rate or notional is a reason.
 
-    `shorts` holds (entry notional, calendar days held) per short trade. The charge is a plain
-    sum in account currency, taken from the stored end equity.
+    `shorts` holds (entry notional, calendar days held) per short trade, in account currency. The
+    charge is a plain sum in account currency. The stored equity is normalised, so the charge is
+    divided by the run's starting cash before it is taken from the stored end equity.
     """
     if row.borrow_bps_per_year is None:
         return {"result_after_borrow": None, "borrow_charge": None, "reason": row.borrow_reason}
@@ -186,7 +191,7 @@ def borrow_fact(
         notional * row.borrow_bps_per_year / 10_000.0 * days / 365.0 for notional, days in shorts
     )
     return {
-        "result_after_borrow": (end_equity - charge) / start_equity - 1.0,
+        "result_after_borrow": (end_equity - charge / starting_cash) / start_equity - 1.0,
         "borrow_charge": charge,
         "reason": None,
     }

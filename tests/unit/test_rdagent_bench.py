@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,8 @@ from typer.testing import CliRunner
 from alpha_cli.rdagent_bench_model import (
     BenchError,
     FakeClient,
+    GatewayClient,
+    StoredPrompt,
     load_prices,
     load_prompts,
     make_plan,
@@ -20,6 +23,13 @@ from alpha_cli.rdagent_bench_score import score_store
 from alpha_cli.rdagent_cmds import rdagent_app
 
 RUNNER = CliRunner()
+
+
+def _spend(root: Path) -> Path:
+    """The one month ledger of a test home."""
+    return root / "home" / "rdagent-bench" / "spend.jsonl"
+
+
 GOOD_PROPOSAL = json.dumps(
     {
         "name": "Volume Surge",
@@ -126,16 +136,18 @@ def test_run_stores_resumes_and_never_touches_loop_state(tmp_path: Path) -> None
     ledger.write_text("row\n")
     memory = tmp_path / "memory"
     memory.mkdir()
-    before = sorted(p.name for p in tmp_path.iterdir() if p.name not in {"store"})
+    before = sorted(p.name for p in tmp_path.iterdir() if p.name not in {"store", "home"})
     store = tmp_path / "store"
-    first = run_bench(prompts, ["a", "b"], 2, prices, client, store, max_new_calls=5)
+    first = run_bench(
+        prompts, ["a", "b"], 2, prices, client, store, spend=_spend(tmp_path), max_new_calls=5
+    )
     assert first.new_calls == 5 and not first.finished
-    second = run_bench(prompts, ["a", "b"], 2, prices, client, store)
+    second = run_bench(prompts, ["a", "b"], 2, prices, client, store, spend=_spend(tmp_path))
     assert second.new_calls == 7 and second.finished
     assert client.calls == 12
-    third = run_bench(prompts, ["a", "b"], 2, prices, client, store)
+    third = run_bench(prompts, ["a", "b"], 2, prices, client, store, spend=_spend(tmp_path))
     assert third.new_calls == 0 and client.calls == 12
-    after = sorted(p.name for p in tmp_path.iterdir() if p.name not in {"store"})
+    after = sorted(p.name for p in tmp_path.iterdir() if p.name not in {"store", "home"})
     assert before == after and ledger.read_text() == "row\n" and not list(memory.iterdir())
     record = json.loads(next((store / "outputs" / "a").glob("p0.0.json")).read_text())
     assert record["provider"] == "fake-host" and record["usd"] == pytest.approx(0.002)
@@ -147,7 +159,7 @@ def test_store_inside_git_is_refused(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     (repo / ".git").mkdir(parents=True)
     with pytest.raises(BenchError, match="git"):
-        run_bench(prompts, ["a"], 1, prices, FakeClient({}), repo / "store")
+        run_bench(prompts, ["a"], 1, prices, FakeClient({}), repo / "store", spend=_spend(tmp_path))
 
 
 def test_paired_scoring_on_fixtures(tmp_path: Path) -> None:
@@ -155,7 +167,7 @@ def test_paired_scoring_on_fixtures(tmp_path: Path) -> None:
     prices = load_prices(_prices(tmp_path / "pr.toml"), ["a", "b"])
     client = FakeClient(json.loads(_fixture(tmp_path / "fx.json").read_text()))
     store = tmp_path / "store"
-    run_bench(prompts, ["a", "b"], 2, prices, client, store)
+    run_bench(prompts, ["a", "b"], 2, prices, client, store, spend=_spend(tmp_path))
     result = score_store(prompts, ["a", "b"], store, closed=set(), dropped=set())
     a, b = result.models["a"], result.models["b"]
     assert a.prompts == 3 and a.outputs == 6
@@ -196,7 +208,7 @@ def test_refusal_uses_closed_family_and_dropped_name(tmp_path: Path) -> None:
         }
     }
     store = tmp_path / "store"
-    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store)
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
     closed = score_store(
         prompts, ["a"], store, closed={"past return (momentum or reversal)"}, dropped=set()
     )
@@ -222,7 +234,7 @@ def test_missing_values_are_never_zero(tmp_path: Path) -> None:
         }
     }
     store = tmp_path / "store"
-    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store)
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
     record = json.loads(next((store / "outputs" / "a").glob("*.json")).read_text())
     assert record["usd"] is None and record["usd_reason"] and record["provider_reason"]
     reading = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
@@ -230,7 +242,10 @@ def test_missing_values_are_never_zero(tmp_path: Path) -> None:
     assert reading.cost_reason and reading.latency_reason
 
 
-def test_cli_plan_writes_nothing_and_refuses(tmp_path: Path) -> None:
+def test_cli_plan_writes_nothing_and_refuses(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path / "home"))
     folder = _prompts(tmp_path / "pr", 11)
     prices = _prices(tmp_path / "pr.toml")
     before = sorted(tmp_path.rglob("*"))
@@ -240,3 +255,82 @@ def test_cli_plan_writes_nothing_and_refuses(tmp_path: Path) -> None:
     over = RUNNER.invoke(rdagent_app, [*args, "3", "--models", "a,b"])
     assert over.exit_code == 2 and "60" in over.output
     assert before == sorted(tmp_path.rglob("*"))
+
+
+def _reply(prompt_tokens: object, completion_tokens: object) -> dict[str, object]:
+    return {
+        "text": GOOD_PROPOSAL,
+        "provider": "h",
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "latency_ms": 1.0,
+    }
+
+
+def test_month_cap_is_shared_by_every_store(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    spend = _spend(tmp_path)
+    spend.parent.mkdir(parents=True)
+    now = datetime.now(UTC).isoformat()
+    spend.write_text(json.dumps({"ts": now, "usd": 49.9999}) + "\n")
+    client = FakeClient({"a": {"p0": [_reply(1000, 500)]}})
+    # A new, empty output folder does not reset what was spent this month.
+    with pytest.raises(BenchError, match="50"):
+        run_bench(prompts, ["a"], 1, prices, client, tmp_path / "new-store", spend=spend)
+    assert client.calls == 0
+
+
+def test_actual_spend_over_the_run_cap_stops_the_run(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 3), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["b"])
+    # The model talks far more than the recorded counts: 2 million tokens out is 12 USD.
+    client = FakeClient({"b": {f"p{i}": [_reply(1000, 2_000_000)] for i in range(3)}})
+    with pytest.raises(BenchError, match="10"):
+        run_bench(prompts, ["b"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path))
+    assert client.calls == 1
+    assert len(list((tmp_path / "store" / "outputs" / "b").glob("*.json"))) == 1
+
+
+def test_a_call_without_token_counts_is_charged_its_estimate(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(None, None)]}})
+    spend = _spend(tmp_path)
+    run_bench(prompts, ["a"], 1, prices, client, tmp_path / "store", spend=spend)
+    rows = [json.loads(line) for line in spend.read_text().splitlines()]
+    assert [r["usd"] for r in rows] == [pytest.approx(0.002, rel=1e-9, abs=1e-12)]
+    assert rows[0]["estimated"] is True
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://localhost.example.com:8000", "http://127.0.0.1.example.com", "https://example.com"],
+)
+def test_gateway_address_off_this_machine_is_refused(
+    url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_BENCH_GATEWAY_TOKEN", "test-token")
+    prompt = StoredPrompt("p0", "proposal", [], 1, 1)
+
+    def no_network(*_: object, **__: object) -> None:
+        raise AssertionError("the bench opened a connection")
+
+    monkeypatch.setattr("urllib.request.urlopen", no_network)
+    with pytest.raises(BenchError, match="this machine"):
+        GatewayClient({"a": url}).complete("a", prompt, 0)
+
+
+def test_cli_run_refuses_a_store_outside_the_data_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path / "home"))
+    args = ["bench", "run", "--prompts", str(_prompts(tmp_path / "pr", 1)), "--models", "a"]
+    args += ["--prices", str(_prices(tmp_path / "pr.toml"))]
+    fixture = ["--fixture", str(_fixture(tmp_path / "fx.json", 1))]
+    outside = RUNNER.invoke(rdagent_app, [*args, *fixture, "--store", str(tmp_path / "out")])
+    assert outside.exit_code == 2 and "data home" in outside.output
+    assert not (tmp_path / "out").exists()
+    inside = RUNNER.invoke(rdagent_app, [*args, *fixture, "--store", str(tmp_path / "home" / "b")])
+    assert inside.exit_code == 0, inside.output
+    assert _spend(tmp_path).is_file()

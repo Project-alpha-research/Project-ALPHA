@@ -11,6 +11,7 @@ import math
 import os
 import time
 import tomllib
+import urllib.parse
 import urllib.request
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -22,6 +23,7 @@ RUN_MAX_CALLS = 60
 RUN_MAX_USD = 10.0
 MONTH_MAX_USD = 50.0
 TOKEN_VARIABLE = "ALPHA_BENCH_GATEWAY_TOKEN"
+LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 
 class BenchError(Exception):
@@ -188,7 +190,8 @@ class GatewayClient:
     def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
         if model not in self.urls or not self.token:
             raise BenchError(f"No gateway address for '{model}', or {TOKEN_VARIABLE} is not set.")
-        if not self.urls[model].startswith(("http://127.0.0.1", "http://localhost")):
+        address = urllib.parse.urlsplit(self.urls[model])
+        if address.scheme != "http" or address.hostname not in LOCAL_HOSTS:
             raise BenchError("The gateway address must be on this machine.")
         body = json.dumps({"model": model, "messages": prompt.messages}).encode()
         request = urllib.request.Request(
@@ -215,8 +218,13 @@ def check_outside_git(path: Path) -> None:
         raise BenchError("The bench store must be outside every git work tree.")
 
 
-def month_spent(store: Path, now: datetime) -> float:
-    spend = store / "spend.jsonl"
+def spend_ledger(data_dir: Path) -> Path:
+    """The one month ledger of bench spend. It is fixed under the data home, so a new output
+    folder cannot start the month again."""
+    return data_dir / "rdagent-bench" / "spend.jsonl"
+
+
+def month_spent(spend: Path, now: datetime) -> float:
     if not spend.exists():
         return 0.0
     stem = f"{now:%Y-%m}"
@@ -257,6 +265,20 @@ def _record(
     }
 
 
+def _estimate(p: StoredPrompt, price: tuple[float, float]) -> float:
+    return ((p.prompt_tokens or 0) * price[0] + (p.completion_tokens or 0) * price[1]) / 1e6
+
+
+def _charge(spend: Path, now: datetime, record: dict[str, Any], estimate: float) -> float:
+    """Write the spend of one call. A call without token counts is charged its estimate."""
+    usd = record["usd"] if record["usd"] is not None else estimate
+    spend.parent.mkdir(parents=True, exist_ok=True)
+    with spend.open("a", encoding="utf-8") as stream:
+        row = {"ts": now.isoformat(), "usd": usd, "estimated": record["usd"] is None}
+        stream.write(json.dumps(row) + "\n")
+    return float(usd)
+
+
 def run_bench(
     prompts: list[StoredPrompt],
     models: list[str],
@@ -264,13 +286,21 @@ def run_bench(
     prices: Mapping[str, tuple[float, float]],
     client: Client,
     store: Path,
+    *,
+    spend: Path,
     max_new_calls: int | None = None,
 ) -> RunResult:
-    """Send each stored prompt to each model `samples` times. An output already stored is kept."""
+    """Send each stored prompt to each model `samples` times. An output already stored is kept.
+
+    The plan is checked first. Then, before each call, the spend so far plus that call's
+    estimate must stay within the run cap and the month cap: a model that writes more than the
+    recorded counts stops the run, and the outputs stored so far are kept for a resume.
+    """
     check_outside_git(store)
     now = datetime.now(UTC)
-    make_plan(prompts, models, samples, prices, month_spent(store, now))
-    new = 0
+    month = month_spent(spend, now)
+    make_plan(prompts, models, samples, prices, month)
+    new, run_usd = 0, 0.0
     for model in models:
         for p in prompts:
             for sample in range(samples):
@@ -279,14 +309,18 @@ def run_bench(
                     continue
                 if max_new_calls is not None and new >= max_new_calls:
                     return RunResult(new_calls=new, finished=False)
+                estimate = _estimate(p, prices[model])
+                if run_usd + estimate > RUN_MAX_USD or month + run_usd + estimate > MONTH_MAX_USD:
+                    raise BenchError(
+                        f"Stopped after {new} calls: {run_usd:.2f} USD spent in this run and "
+                        f"{month + run_usd:.2f} USD this month. The next call would pass the cap "
+                        f"of {RUN_MAX_USD:g} USD per run or {MONTH_MAX_USD:g} USD per month. "
+                        "The stored outputs are kept."
+                    )
                 record = _record(model, p, sample, client.complete(model, p, sample), prices[model])
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
-                if record["usd"] is not None:
-                    with (store / "spend.jsonl").open("a", encoding="utf-8") as spend:
-                        spend.write(
-                            json.dumps({"ts": now.isoformat(), "usd": record["usd"]}) + "\n"
-                        )
+                run_usd += _charge(spend, now, record, estimate)
                 new += 1
     return RunResult(new_calls=new, finished=True)

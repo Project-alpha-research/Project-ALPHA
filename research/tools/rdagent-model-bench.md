@@ -13,7 +13,8 @@ verified: 0000000000000000
 
 **Commands** `alpha rdagent bench plan --prompts DIR --models a,b --prices prices.toml --samples 2 [--stages proposal,feedback]`
 prints the call count and the cost estimate. It refuses a plan over 60 calls or 10 USD per run, or 50 USD per month. It writes and calls nothing.
-`alpha rdagent bench run` (same options, plus `--store DIR` outside git, and `--fixture` or `--gateway model=URL`) sends each prompt to each model.
+Month spend is one ledger in the data home; a run stops before a call that would pass a cap.
+`alpha rdagent bench run` (same options, plus `--store DIR` under the data home, and `--fixture` or `--gateway model=URL`) sends each prompt to each model.
 A stored output is kept, so a second run resumes. `alpha rdagent bench report --prompts DIR --models a,b --store DIR` prints the readings.
 
 **Inputs** A prompt file is JSON: `id`, `stage`, `messages`, `prompt_tokens`, `completion_tokens`. Prices are TOML: `[model]` with

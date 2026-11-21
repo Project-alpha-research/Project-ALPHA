@@ -19,8 +19,10 @@ from alpha_cli.rdagent_bench_model import (
     make_plan,
     month_spent,
     run_bench,
+    spend_ledger,
 )
 from alpha_cli.rdagent_bench_score import score_store
+from alpha_core.config import AlphaSettings
 
 bench_app = typer.Typer(
     help="Replay stored RD-Agent prompts on several models. Not a research trial."
@@ -29,7 +31,9 @@ PROMPTS = Annotated[Path, typer.Option("--prompts", help="Folder of stored promp
 MODELS = Annotated[str, typer.Option("--models", help="Model names, separated by commas.")]
 SAMPLES = Annotated[int, typer.Option("--samples", help="Replies asked for each prompt and model.")]
 STAGES = Annotated[str | None, typer.Option("--stages", help="For example proposal,feedback.")]
-STORE = Annotated[Path, typer.Option("--store", help="Output folder, outside git.")]
+STORE = Annotated[
+    Path, typer.Option("--store", help="Output folder under the data home, outside git.")
+]
 
 
 def _names(text: str) -> list[str]:
@@ -50,15 +54,12 @@ def plan(
     ],
     samples: SAMPLES = 1,
     stages: STAGES = None,
-    store: Annotated[
-        Path | None, typer.Option("--store", help="Counts spend already there.")
-    ] = None,
 ) -> None:
     """Print the number of calls and the cost estimate. Writes nothing and calls no model."""
     try:
         names = _names(models)
         found = load_prompts(prompts, _names(stages) if stages else None)
-        spent = month_spent(store, datetime.now(UTC)) if store else 0.0
+        spent = month_spent(spend_ledger(AlphaSettings().data_dir), datetime.now(UTC))
         result = make_plan(found, names, samples, load_prices(prices, names), spent)
     except BenchError as error:
         raise _fail(error) from error
@@ -97,7 +98,11 @@ def run(
             client = FakeClient(json.loads(fixture.read_text(encoding="utf-8")))
         else:
             client = GatewayClient(dict(item.split("=", 1) for item in gateway or []))
-        done = run_bench(found, names, samples, load_prices(prices, names), client, store)
+        home = AlphaSettings().data_dir
+        if not store.resolve().is_relative_to(home.resolve()):
+            raise BenchError(f"The bench store must be under the data home ({home}).")
+        priced = load_prices(prices, names)
+        done = run_bench(found, names, samples, priced, client, store, spend=spend_ledger(home))
     except (BenchError, ValueError) as error:
         raise _fail(BenchError(str(error))) from error
     typer.echo(f"Sent {done.new_calls} new calls. Outputs are in {store}/outputs.")

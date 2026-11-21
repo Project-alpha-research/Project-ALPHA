@@ -35,8 +35,12 @@ project-wide rule is [research integrity § Models and isolated workers](researc
 ## Model replay bench
 
 - `alpha rdagent bench plan|run|report` (`rdagent_bench_*.py`) replays stored prompts on candidate models. It takes no ledger or
-  memory path and writes only to its own store, which must be outside git. It is a measurement, not a research trial.
+  memory path and writes only to its own store, which must be under the data home and outside git. It is a measurement,
+  not a research trial.
 - `plan` refuses over 60 calls or 10 USD per run, or 50 USD per month, and writes nothing. `run` keeps stored outputs, so it resumes.
+  Month spend is one ledger, `<data_dir>/rdagent-bench/spend.jsonl`, whatever the store. Before each call, the spend so far plus
+  that call's estimate must stay within both caps, so a model that writes more than the recorded counts stops the run. A call
+  without token counts is charged its estimate. A gateway address must be `http` on `127.0.0.1`, `localhost` or `::1`.
   Tests use the fake client (`--fixture`); no test calls a model. Real calls go through one local gateway per model.
 - `report` shows readings, never a winner. A missing cost, latency or provider is shown with its reason. The family check runs
   the worker's `idea_families.py` in a child process. The prefix check is named as not run.

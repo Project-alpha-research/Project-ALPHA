@@ -60,7 +60,7 @@ def test_empty_generic_command_is_unknown() -> None:
         (["data", "audit"], "safe"),
         (["data", "repair"], "owner_only"),
         (["paper", "run"], "owner_only"),
-        (["options", "price"], "unknown"),
+        (["pricing", "price"], "unknown"),
         (["screener", "run"], "unknown"),
     ],
 )

@@ -54,6 +54,9 @@ async function mock(page: Page, list: unknown[] = [{ id: CARD, claim: file.card.
 }
 
 test('the list opens one page that tells the whole story, and a click on a test changes the charts', async ({ page }) => {
+  const problems: string[] = []
+  page.on('pageerror', error => problems.push(error.message))
+  page.on('console', message => { if (message.type() === 'error') problems.push(message.text()) })
   await mock(page)
   await page.goto('/#page=research&pane=IdeaWorkspace')
   await expect(page.getByRole('heading', { name: 'Ideas', exact: true })).toBeVisible()
@@ -78,6 +81,7 @@ test('the list opens one page that tells the whole story, and a click on a test 
   await expect(page.getByText('Costs would have to reach 14 basis points a side.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Expand', exact: true })).toBeVisible()
   await expect(page.locator('.idea-story')).not.toContainText(/\b(supported|rejected|verdict|profit)\b/i)
+  expect(problems).toEqual([])
 })
 
 test('a figure opens full screen and nothing on the page sticks out at phone width', async ({ page }) => {

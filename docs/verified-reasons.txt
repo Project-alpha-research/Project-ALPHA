@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified f0f6ce2fec18c19a on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
+  verified a3393809e98f1702 on 2026-11-21: Typing and test-harness changes only; text still matches.
 
 apps/alpha-web/README.md
-  verified f0f6ce2fec18c19a on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
+  verified a3393809e98f1702 on 2026-11-21: Typing and test-harness changes only; text still matches.
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -89,10 +89,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 7ef16341dbcd507e on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
+  verified ded24a87bb3412f4 on 2026-11-21: Typing and test-harness changes only; text still matches.
 
 docs/reference/invariants/web-api.md
-  verified d086391354f03fe5 on 2026-11-21: Display and figure-colour changes only; the text still matches its sources (reviewed).
+  verified 13695984db3fdeb3 on 2026-11-21: Typing and test-harness changes only; text still matches.
 
 docs/reference/invariants/web-frontend.md
   verified e6af210aad01322e on 2026-11-21: Test-harness default profile only; the text still matches.

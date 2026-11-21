@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine import reserve
+from alpha_cli.spine import reserve, setup_context
 from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
@@ -274,7 +274,7 @@ class Inputs:
     manifest: dict[str, Any]
     spec: Any
     bars: dict[str, Any]
-    warmup: int
+    spans: dict[str, tuple[int, int | None]]  # control bars [start, stop) per asset
     record: dict[str, Any]
     trade_id: str
     control_seed: str
@@ -294,7 +294,7 @@ def read_inputs(
             "The find's spec has no exit fields.",
             "Add [exit] to the spec, run alpha setup find again, then trade that find.",
         )
-    bars, warmup, record = checked_study_inputs(
+    bars, spans, record = checked_study_inputs(
         home,
         manifest,
         spec,
@@ -303,14 +303,21 @@ def read_inputs(
         report_time=report_time,
     )
     trade_id, control_seed = outcome_ids(manifest, TRADE_RULE_VERSION, record)
-    return Inputs(folder, manifest, spec, bars, warmup, record, trade_id, control_seed)
+    return Inputs(folder, manifest, spec, bars, spans, record, trade_id, control_seed)
+
+
+def _control_bars(span: tuple[int, int | None], prepared: Any) -> range:
+    """Event bars a control trade may start from: the span, the exit warm-up, an entry bar."""
+    last = len(prepared.bars) - 1
+    stop = last if span[1] is None else min(span[1], last)
+    return range(max(span[0], prepared.warmup), stop)
 
 
 def compute_trade(home: Path, item: Inputs) -> tuple[dict[str, Any], list[Any]]:
     """The summary and trade rows, computed from the stored find. Writes nothing."""
     import polars as pl
 
-    spec, manifest, bars, warmup = item.spec, item.manifest, item.bars, item.warmup
+    spec, manifest, bars, spans = item.spec, item.manifest, item.bars, item.spans
     direction = spec.exit.direction
     other = "short" if direction == "long" else "long"
     costs, cost_labels = asset_costs(home, list(bars), direction=direction)
@@ -322,9 +329,7 @@ def compute_trade(home: Path, item: Inputs) -> tuple[dict[str, Any], list[Any]]:
         pl.read_parquet(item.folder / "candidates.parquet").to_dicts(), prepared, charges
     )
     cache = {
-        a: {
-            p: simulate(s, p + 1, charges[a]) for p in range(max(warmup, s.warmup), len(s.bars) - 1)
-        }
+        a: {p: simulate(s, p + 1, charges[a]) for p in _control_bars(spans[a], s)}
         for a, s in prepared.items()
     }
     reason = next((p.control_reason for p in prepared.values() if p.control_reason), None)
@@ -340,6 +345,7 @@ def compute_trade(home: Path, item: Inputs) -> tuple[dict[str, Any], list[Any]]:
     summary["labels"] = [
         label for label in summary["labels"] if not label.startswith("data-health-")
     ] + health_labels(item.record)
+    setup_context.annotate(summary, spec, manifest)
     summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
     return summary, rows
 

@@ -5,7 +5,7 @@ sources:
   - tests/unit/study/test_*.py
   - tests/bias_guards/test_study_double_bottom_future_poison.py
   - tests/bias_guards/test_verified_semantic_read_future_poison.py
-verified: 8f0c9a7d781ddcaa
+verified: e705d527f32e3fe1
 ---
 
 # Study invariants
@@ -56,6 +56,8 @@ registry, and the blind semantic-read contract. The package is a projection laye
 - Daily `setup/` expressions read only the current and earlier rows: shifts of n ≥ 1, trailing
   full windows, causal EWM and row-wise logic. Non-finite values become null; text length, nesting
   and emitted size are bounded so a pathological expression fails loud.
+- A spec's `[context]` aliases read `ctx_<alias>` columns the CLI attached ([rules](cli-setups.md#setup-context)). They add no warm-up and a null is never true.
+  `alpha_study` reads no table.
 - Exit direction defaults to long. Only short adds a direction key to the serialized spec, preserving the identity of earlier finds.
 - Filters decide the reason in file order. A trigger window that runs past the last bar is
   `pending` / `pending-trigger`, never `no-trigger`. Entry is only the next bar's open.
@@ -101,8 +103,9 @@ It owns no persistence, commands, approvals, evidence or trading authority.
 
 - Code: `packages/alpha-study/src/alpha_study/`.
 - `setup/`: frozen daily idea specs, causal expressions and candidate inspection; no exits simulated.
+  `setup/context.py`: the `[context]` alias rules and the true-bar and spell counts; it reads no table.
 - Tests: `tests/unit/study/` (its own folder), `tests/unit/test_study_*.py`,
-  `tests/unit/test_setup_{spec,expr,evaluate,known_on}.py`; bias guards
+  `tests/unit/test_setup_{spec,expr,evaluate,known_on,context_spec}.py`; bias guards
   `tests/bias_guards/test_study_double_bottom_future_poison.py`,
   `tests/bias_guards/test_verified_semantic_read_future_poison.py`,
   `tests/bias_guards/test_setup_future_poison.py`.

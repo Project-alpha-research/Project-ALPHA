@@ -42,6 +42,12 @@ def test_error(message: str, stores: list[str] | None = None) -> SpineError:
             "Run alpha test with a known --rule kind.",
             ["ma_cross", "breakout", "tsmom"],
         )
+    if "not built yet" in message or "reads volume" in message or "price level" in message:
+        return SpineError(
+            "RULE_NOT_SUPPORTED",
+            message,
+            "Edit the rule so it stays long or flat, uses no volume and meets no fixed price.",
+        )
     if "not found" in message or "unknown store" in message:
         return SpineError(
             "UNKNOWN_ASSET", message, "Run alpha test with an asset in a known store.", stores

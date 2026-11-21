@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 66fdcbb6ffd87165 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+  verified 37b35df6dcdb0105 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-cli/README.md
-  verified 66fdcbb6ffd87165 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+  verified 37b35df6dcdb0105 on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified eb0c978b96f92f0b on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+  verified 3b61fc50d4488d7a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 apps/alpha-web/README.md
-  verified eb0c978b96f92f0b on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+  verified 3b61fc50d4488d7a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -26,13 +26,16 @@ docs/reference/invariants/cli-crypto-data.md
   verified 6c209c3dd25568b8 on 2026-11-21: merge of main; this branch only adds the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-follow.md
-  verified f82b7658d6a7bebe on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed
+  verified 8739347cc6883a2a on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
 
 docs/reference/invariants/cli-investigation-tools.md
   verified e86438048ee2bf2e on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/invariants/cli-native.md
   verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
+
+docs/reference/invariants/cli-nightly.md
+  verified 33dad4906a4cd36c on 2026-11-21: Merge of main (options group) into the nightly alert branch took main's stamps: main verified its options changes against this text; this branch's home group, nightly alert and backup statements were re-read and hold
 
 docs/reference/invariants/cli-research.md
   verified 1d320c10cd57b49f on 2026-11-21: only the audit's hold-back helper was split to keep the function size; the text is still correct
@@ -44,7 +47,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified 655e0dfacb1217f3 on 2026-11-21: merge of main: this branch adds the rule-test context gate plan; main's text and this page's statements both still hold
 
 docs/reference/invariants/cli-runs.md
-  verified fdea7fc6240732e9 on 2026-11-21: merge of main; its rule-test context changes do not touch the run-price rule added here
+  verified 33b3b7469ae5bcad on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -98,7 +101,7 @@ docs/reference/invariants/web-api.md
   verified 1d408c8aad75a27a on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-frontend.md
-  verified 7207ef9c2eafc6ed on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
+  verified c8a2c1338d4a612d on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
   verified 80bd084013111523 on 2026-11-20: Gates cards show small charts of recorded data
@@ -256,6 +259,9 @@ research/tools/diagnose-and-audit.md
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
 
+research/tools/home-backup.md
+  verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
+
 research/tools/idea-card.md
   verified 3f0a08439aa088f3 on 2026-11-19: idea file read path and map wording corrected; page text re-read
 
@@ -265,8 +271,11 @@ research/tools/inverted-signal-control.md
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
+research/tools/nightly-alert.md
+  verified a976f66296419ad5 on 2026-11-21: Re-read after the hard-link helper and the BaseException type fix; the page's claims hold
+
 research/tools/nightly-run.md
-  verified 2e4d6ed6f1fc54c5 on 2026-11-20: recheck review fixes: stored-run selection, full comparison, nightly wording; this document's statements are unchanged
+  verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
 
 research/tools/portfolio-book.md
   verified ac26c355506d5adb on 2026-11-21: Merged main into the portfolio book branch; adds results correlate, follow book and spine/book.py with dropped-day counts and a net-of-fees label; no existing command, fact or reading changed

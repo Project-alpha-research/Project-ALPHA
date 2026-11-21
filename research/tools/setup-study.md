@@ -7,12 +7,11 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_controls.py
   - apps/alpha-cli/src/alpha_cli/spine/event_study_figure.py
   - apps/alpha-cli/src/alpha_cli/setup_cmds.py
-verified: 0bdf0ad6f34d2172
+verified: ee810b7ad1d03c2c
 ---
 # Setup study
 
-**Reach for it when** a recorded setup find has the intended matches and the owner wants to
-measure what followed each separate occurrence against ordinary dates.
+**Reach for it when** a recorded setup find has the intended matches and the owner wants to measure what followed each separate occurrence against ordinary dates.
 **Commands**
 ```text
 uv run alpha setup study <find_id> --json
@@ -30,6 +29,7 @@ uv run alpha results cite <study_id> setup_mean_net_return --json
 - Under 30 complete occurrences the word is `too little to read`. Overlapping outcomes and disagreeing halves are labels,
   not evidence to omit. Never say `clear of chance`: the p-value is not corrected for the setup variants tried.
 - Quote the evidence word, "Setup study K of N" and the adjusted random-date figure; other idea texts are not counted.
+  `alpha setup show <study_id> [<id> ...] --json` reads them again, for studies or trades, with no write.
 - Each study counts one trial; a repeat is labelled `repeat`. A held-back find passes its label on; a find that used reserved bars is refused.
 
 The study checks the inputs again before measuring returns. A failed report requires a reason on this invocation. [Data health](data-health.md)

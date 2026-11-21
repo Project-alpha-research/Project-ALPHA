@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/setup_runs.py
   - apps/alpha-web/frontend/src/panels/SetupLabPanel.tsx
   - packages/alpha-study/src/alpha_study/setup/**/*.py
-verified: a39365ca7312ac6b
+verified: 34c000f543018b05
 ---
 
 # Setup Lab
@@ -41,7 +41,7 @@ look at it, measure it, then trade it with declared exits. It is a way of workin
 - `alpha setup trade <find_id>` trades the occurrences long or short with declared exits (stop, target, time),
   after per-asset costs, in percent and in risk units of the initial stop (R). The opposite direction on the
   same entries is an uncounted control.
-- `alpha setup show <id>` reads one stored study or trade: its evidence word and place in the setup's family.
+- `alpha setup show <id> [<id> ...]` reads stored studies or trades: its evidence word and place in the setup's family.
 - The Workstation screen (Research → Setup Lab) only reads stored results through
   `GET /api/setup/runs`.
 

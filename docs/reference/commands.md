@@ -468,7 +468,7 @@ Rule scans over stored symbols and their deduplicated alerts.
 Find every match of a chart setup.
 
 - `alpha setup find <SPEC>` — Record every match and draw contact sheets ending at the entry open. Options: `--asset`, `--context-bars`, `--max-sheets`, +3 more
-- `alpha setup show <RUN_ID>` — Read one stored study or trade: its evidence word and its place in the setup's family. Options: `--json`
+- `alpha setup show <RUN_IDS>` — Read stored studies or trades: each evidence word and its place in the setup's family. Options: `--json`
 - `alpha setup study <FIND_ID>` — Measure forward returns and honest controls; record one exploratory trial. Options: `--check-data`, +3 more
 - `alpha setup trade <FIND_ID>` — Trade recorded occurrences with their exits and matched controls; one counted test. Options: `--check-data`, +3 more
 

@@ -224,21 +224,34 @@ def _indices(ledger: list[dict[str, Any]] | None, kind: str, run_id: str) -> lis
     ]
 
 
-def _reading(home: Path, summary: dict[str, Any] | None, run_id: str) -> SetupReading | None:
-    """The CLI's own reading of this outcome (``alpha setup show``); None without a summary."""
-    if summary is None:
-        return None
+def _readings(home: Path, outcomes: list[SetupOutcome]) -> list[SetupOutcome]:
+    """Each outcome with the CLI's own reading (``alpha setup show``), from one CLI call.
+
+    Outcomes without a stored summary get no reading. No call is made when none has one.
+    """
+    ids = [row.run_id for row in outcomes if row.summary is not None]
+    if not ids:
+        return outcomes
     try:
-        shown = _run_json(["setup", "show", run_id, "--json"], data_dir=home)
+        shown = _run_json(["setup", "show", *ids, "--json"], data_dir=home)["readings"]
     except RuntimeError as exc:
         raise ValueError("the setup reading could not be read from the command line") from exc
-    family = shown.get("family") or {}
-    return SetupReading(
-        evidence=shown["evidence"],
-        old_wording=shown["old_wording"],
-        family_position=family.get("position"),
-        family_count=family.get("studies"),
-    )
+    by_id = {item["id"]: item for item in shown}
+    result = []
+    for row in outcomes:
+        item = by_id.get(row.run_id)
+        if item is None:
+            result.append(row)
+            continue
+        family = item["family"] or {}
+        reading = SetupReading(
+            evidence=item["evidence"],
+            old_wording=item["old_wording"],
+            family_position=family.get("position"),
+            family_count=family.get("studies"),
+        )
+        result.append(row.model_copy(update={"reading": reading}))
+    return result
 
 
 def _outcomes(
@@ -286,7 +299,6 @@ def _outcomes(
                 figure=_figure(figure_name, data[figure_name]),
                 trial_indices=_indices(ledger, kind, folder.name),
                 trial_labels=_trial_labels(ledger, kind, folder.name),
-                reading=_reading(home, summary, folder.name),
             )
         )
     return result
@@ -315,6 +327,10 @@ def read_run(home: Path, find_id: str) -> SetupRunDetail:
             ):
                 raise ValueError("setup sheet name is invalid")
             sheets.append(_figure(name, reader.read(folder, name)))
+    studies = _outcomes(home, manifest, "study", ledger, reader)
+    trades = _outcomes(home, manifest, "trade", ledger, reader)
+    read = _readings(home, [*studies, *trades])
+    studies, trades = read[: len(studies)], read[len(studies) :]
     return SetupRunDetail(
         run=_run(manifest),
         summary=_object(reader.read(folder, "summary.json")),
@@ -323,8 +339,8 @@ def read_run(home: Path, find_id: str) -> SetupRunDetail:
         price_bars_reason="Price bars: not recorded as a setup-run snapshot. "
         "The stored sheets show only selected candidates up to entry.",
         sheets=sheets,
-        studies=_outcomes(home, manifest, "study", ledger, reader),
-        trades=_outcomes(home, manifest, "trade", ledger, reader),
+        studies=studies,
+        trades=trades,
         trial_indices=_indices(ledger, "find", find_id),
         trial_labels=_trial_labels(ledger, "find", find_id),
         limits=LIMITS,

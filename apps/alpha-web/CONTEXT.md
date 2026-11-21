@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: fd127a430e6d7cb6
+verified: f803104c942d3f96
 ---
 
 # alpha-web workspace

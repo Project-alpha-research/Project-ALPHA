@@ -14,7 +14,7 @@ from typing import Any
 
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.reading import OLD_SETUP_OUTCOMES, SETUP_WORDS, TOO_LITTLE, setup_evidence_of
-from alpha_cli.spine.trial_reader import spine_snapshot
+from alpha_cli.spine.trial_reader import LedgerSnapshot, spine_snapshot
 from alpha_validation.proportion import benjamini_hochberg
 
 NOUNS = {"setup_study": "study", "setup_trade": "trade"}
@@ -28,13 +28,19 @@ NOT_CORRECTED = (
 )
 
 
-def family_context(home: Path, kind: str, idea: str, run_id: str) -> dict[str, Any]:
+def family_context(
+    home: Path,
+    kind: str,
+    idea: str,
+    run_id: str,
+    snapshot: LedgerSnapshot | None = None,
+) -> dict[str, Any]:
     """This run's place among the counted runs of the same kind on the same setup idea.
 
     The adjusted figure needs the stored random-date p of every counted run in the family;
-    with one missing it is None.
+    with one missing it is None. Pass ``snapshot`` to read the ledger once for many runs.
     """
-    snapshot = spine_snapshot(home)
+    snapshot = snapshot or spine_snapshot(home)
     family = "setup:" + " ".join(idea.casefold().split())
     raws = [
         snapshot.raw_rows[(r.source_file, r.source_line)]
@@ -79,6 +85,8 @@ def owner_lines(output: dict[str, Any]) -> list[str]:
     if word != TOO_LITTLE:
         head += " " + NOT_CORRECTED
     count, adjusted = family["studies"], family["adjusted_random_date_p"]
+    if count is None:
+        return [head, f"Setup {noun}: no ledger is recorded, so its family is not counted."]
     plural = noun if count == 1 else f"{noun}s" if noun == "trade" else "studies"
     place = (
         f"Setup {noun} {family['position']} of {count} recorded for this idea."
@@ -99,11 +107,7 @@ def owner_lines(output: dict[str, Any]) -> list[str]:
     return lines
 
 
-def stored_reading(home: Path, run_id: str) -> dict[str, Any]:
-    """The reading of one stored study or trade, from its stored summary and the ledger.
-
-    A record with no readable word has ``evidence`` None; one with no idea text has no family.
-    """
+def _read_one(home: Path, run_id: str, snapshot: LedgerSnapshot | None) -> dict[str, Any]:
     unknown = SpineError(
         "UNKNOWN_SETUP_OUTCOME",
         f"No stored setup study or trade has the id {run_id}.",
@@ -126,7 +130,20 @@ def stored_reading(home: Path, run_id: str) -> dict[str, Any]:
     else:
         word, old = None, isinstance(outcome, str)
     idea = summary.get("idea")
-    family = (
-        family_context(home, kind, idea, run_id) if isinstance(idea, str) and idea.strip() else None
-    )
+    family = None
+    if isinstance(idea, str) and idea.strip():
+        family = family_context(home, kind, idea, run_id, snapshot)
+        if not (home / "ledger/trials.jsonl").is_file():
+            # No ledger is not an empty ledger: the count of trials is not recorded.
+            family |= {"studies": None, "position": None}
     return {"id": run_id, "kind": kind, "evidence": word, "old_wording": old, "family": family}
+
+
+def stored_readings(home: Path, run_ids: list[str]) -> list[dict[str, Any]]:
+    """The readings of stored studies or trades, in the order asked, reading the ledger once.
+
+    A record with no readable word has ``evidence`` None; one with no idea text has no family.
+    With no ledger file the family count and place are None; an empty ledger counts 0.
+    """
+    snapshot = spine_snapshot(home) if run_ids else None
+    return [_read_one(home, run_id, snapshot) for run_id in run_ids]

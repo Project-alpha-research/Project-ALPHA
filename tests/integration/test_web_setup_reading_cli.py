@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
 from alpha_cli.main import app
+from alpha_web import _catalog
 from alpha_web.api import setup_runs
 from alpha_web.app import create_app
 from tests.unit import _setup_reading_support as support
@@ -26,6 +27,13 @@ RUNNER = CliRunner()
 def cli(home: Path, *args: str) -> Any:
     result = RUNNER.invoke(app, [*args, "--json"], env={"ALPHA_DATA_DIR": str(home)})
     return result.exit_code, json.loads(result.stdout)
+
+
+def shown_one(home: Path, run_id: str) -> dict[str, Any]:
+    code, out = cli(home, "setup", "show", run_id)
+    assert code == 0
+    reading: dict[str, Any] = out["readings"][0]
+    return reading
 
 
 def web_detail(home: Path, monkeypatch: pytest.MonkeyPatch, find_id: str) -> dict[str, Any]:
@@ -61,8 +69,7 @@ def test_the_web_reading_is_the_command_lines_for_a_study_and_a_trade(
     home, find_id = lab
     detail = web_detail(home, monkeypatch, find_id)
     for outcome in (detail["studies"][0], detail["trades"][0]):
-        code, shown = cli(home, "setup", "show", outcome["run_id"])
-        assert code == 0
+        shown = shown_one(home, outcome["run_id"])
         assert shown["evidence"] == "some evidence" and shown["old_wording"] is False
         assert json.dumps(outcome["reading"], sort_keys=True) == json.dumps(
             as_web(shown), sort_keys=True
@@ -95,7 +102,7 @@ def test_an_old_record_reads_as_its_mapped_word_and_says_so(
         "sha256": hashlib.sha256(data).hexdigest(),
     }
     (folder / "manifest.json").write_text(json.dumps(manifest, allow_nan=False))
-    shown = cli(home, "setup", "show", study)[1]
+    shown = shown_one(home, study)
     assert (shown["evidence"], shown["old_wording"]) == (word, True)
     reading = web_detail(home, monkeypatch, find_id)["studies"][0]["reading"]
     assert reading == as_web(shown)
@@ -107,3 +114,47 @@ def test_a_missing_record_is_a_clear_error(tmp_path: Path, run_id: str) -> None:
     assert code == 1
     assert shown["error"]["code"] == "UNKNOWN_SETUP_OUTCOME"
     assert "alpha setup study" in shown["error"]["next"]
+
+
+def test_one_command_line_call_reads_every_outcome_of_a_find(
+    lab: tuple[Path, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, find_id = lab
+    calls: list[list[str]] = []
+    real = _catalog._run_json
+
+    def counting(args: list[str], **kwargs: Any) -> Any:
+        calls.append(args)
+        return real(args, **kwargs)
+
+    monkeypatch.setattr("alpha_web._setup_runs._run_json", counting)
+    detail = web_detail(home, monkeypatch, find_id)
+    assert len(calls) == 1
+    ids = {detail["studies"][0]["run_id"], detail["trades"][0]["run_id"]}
+    assert ids <= set(calls[0])
+    code, out = cli(home, "setup", "show", *sorted(ids))
+    assert code == 0 and [r["id"] for r in out["readings"]] == sorted(ids)
+
+
+def test_no_ledger_is_not_recorded_but_an_empty_ledger_counts_zero(
+    lab: tuple[Path, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, find_id = lab
+    study = web_detail(home, monkeypatch, find_id)["studies"][0]["run_id"]
+    ledger = home / "ledger/trials.jsonl"
+    kept = ledger.read_bytes()
+    ledger.write_bytes(b"")
+    empty = shown_one(home, study)["family"]
+    assert (empty["studies"], empty["position"]) == (0, None)
+    ledger.unlink()
+    absent = shown_one(home, study)["family"]
+    assert (absent["studies"], absent["position"]) == (None, None)
+    reading = web_detail(home, monkeypatch, find_id)["studies"][0]["reading"]
+    assert (reading["family_count"], reading["family_position"]) == (None, None)
+    ledger.write_bytes(kept)
+
+
+def test_a_mixed_bad_id_fails_the_whole_call(lab: tuple[Path, str]) -> None:
+    home, _ = lab
+    code, shown = cli(home, "setup", "show", "f" * 16, "bad")
+    assert code == 1 and shown["error"]["code"] == "UNKNOWN_SETUP_OUTCOME"

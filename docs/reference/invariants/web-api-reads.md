@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: 33960eaa8d6dfb90
+verified: 4ab2b5c00b8793aa
 ---
 
 # Web API reads and writes invariants
@@ -55,7 +55,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
   `alpha results show --json`. The reading is stored for a new run and derived by the CLI for an old one.
 - Each check carries the CLI's `status` (declared or exploratory). Nothing is derived here
   ([test](../../../tests/integration/test_web_api_reading.py)).
-- Setup Lab: each outcome carries `reading`, relayed from `alpha setup show <id> --json` (`_setup_runs.py`): the evidence word, or the old word
+- Setup Lab: each outcome carries `reading`, relayed from one `alpha setup show <id> ... --json` call per find (`_setup_runs.py`):
+  the evidence word, or the old word
   mapped to it with `old_wording`, and its place in the setup's family. The CLI computes it; the web keeps no copy
   ([test](../../../tests/integration/test_web_setup_reading_cli.py)).
 - The family-adjusted figure is the CLI's alone. The screen says so in one muted line.

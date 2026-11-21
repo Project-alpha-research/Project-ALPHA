@@ -19,7 +19,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_reading.py
   - apps/alpha-cli/src/alpha_cli/ledger_cmds.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 8c1a4ca1aa4ac9a4
+verified: 301b995b1ad4e373
 ---
 
 # Command line rule-test readings invariants
@@ -71,8 +71,10 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   a ledger with and without the new fields and requires equal results.
 - A setup row reads the same way: its `evidence` word, or its old word mapped to the evidence word it came from, with the note
   "recorded under the old wording". The reader accepts the three old words and the three new ones.
-  `alpha setup show <study_or_trade_id> [--json]` is the one read of it: evidence word, `old_wording`, and the family (place, count,
-  adjusted figure). The web relays that output and keeps no copy. An unknown id fails with `UNKNOWN_SETUP_OUTCOME`.
+  `alpha setup show <id> [<id> ...] [--json]` is the one read of it, any number of ids in one call (the ledger is read once): `readings`,
+  one per id with evidence word, `old_wording`, and the family (place, count, adjusted figure). The web relays that output in one call
+  per find and keeps no copy. An unknown or badly shaped id fails the call with `UNKNOWN_SETUP_OUTCOME`. With no ledger file the family
+  count and place are null (not recorded); an empty ledger counts 0.
 - RD-Agent wording unchanged for now: RD-Agent rows keep their old words, and the proposer's ledger text is byte-identical
   (a test pins it). That is a separate change.
 - `--outcome` takes an evidence word or an old word; both match, and the help text says so.

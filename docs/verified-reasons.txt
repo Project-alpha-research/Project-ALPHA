@@ -2,19 +2,19 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified db18e1b165b615df on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 22f962d272bf158d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 apps/alpha-cli/README.md
-  verified db18e1b165b615df on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 22f962d272bf158d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified fd127a430e6d7cb6 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified f803104c942d3f96 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 apps/alpha-web/README.md
-  verified ede5985947d74476 on 2026-11-20: added Gates chart code map line
+  verified f803104c942d3f96 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -38,13 +38,13 @@ docs/reference/invariants/cli-results-check.md
   verified 59361205e16dd2c1 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 8c1a4ca1aa4ac9a4 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 301b995b1ad4e373 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/invariants/cli-runs.md
-  verified c64f0fae10f29644 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified ae41156b9befcc2d on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/invariants/cli-setups.md
-  verified 16d7b409f676b0a7 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified ae0c9f15e49e5af4 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/invariants/cli-toolbox.md
   verified 91a23fece9fa0375 on 2026-11-20: Re-read after an import-order format fix in the published-factor entry; no statement changed.
@@ -80,10 +80,10 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified cd00232270d7640d on 2026-11-20: Only a formatting change to the added candles window test; the candles route text is still correct.
+  verified 4ab2b5c00b8793aa on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/invariants/web-api.md
-  verified 007f5a12dfa6ea67 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 1670e99e9b105d7b on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/invariants/web-frontend.md
   verified 66b44627b531091f on 2026-11-20: chart rules unchanged; Gates charts documented in web-run-detail
@@ -140,16 +140,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified a220681609de5f5b on 2026-11-19: Idea-card link is now written after the run stored its result; no identity, output or command changed for these documents.
+  verified 34c000f543018b05 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 5e9b29f151782d0c on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified c9fa89d4325d37c2 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/project/components/toolbox.md
   verified a4d03b98723d2851 on 2026-11-20: only the applicability rule of one toolbox entry changed; this page's statements are unchanged
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 484511043fd11a43 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified ffdfec375b90ec63 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -203,10 +203,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified 5a9f1111f49b1fc8 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 1b7e23e86db7f25c on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/PLAYBOOK.md
-  verified a4910b2254c40f6d on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 6f7c435d799d7fa9 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/README.md
   verified 060a243cb078f46d on 2026-11-20: Code moved inside run, setup and nightly steps and gained a recheck option; this page's text still holds.
@@ -218,22 +218,22 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 8e4eeadff087b5e0 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 6aa0704a509bc1d8 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified f02bcb2982c56ee3 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified f7d1c65c81a511c8 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/charts.md
   verified 2ed2bd950b59ba33 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified ae4726e3dcdf2820 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified b40da326eaf6a8be on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/diagnose-and-audit.md
-  verified efa2a5d4c24b3a09 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified d1f3a41ce0925a66 on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/follow.md
   verified 2b9af661fecd9902 on 2026-11-20: F3: today view, N4, N0 reviewed; this page's text is still correct
@@ -269,22 +269,22 @@ research/tools/results-and-cite.md
   verified 7e5f93f047b1cea7 on 2026-11-20: Read against the change: only words in the trial ledger and Setup Lab text changed; this document's statements are still correct.
 
 research/tools/rule-test.md
-  verified 04e32e9ec9dbbde9 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified 3159a2743c3cfe2b on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/run-level-checks.md
   verified 03e5435255680c46 on 2026-11-19: Only test files and the status label changed; this card's claims are unchanged.
 
 research/tools/sensitivity.md
-  verified ae4726e3dcdf2820 on 2026-11-21: Only the loop shape of the setup show read helper changed; behaviour and text are unchanged.
+  verified b40da326eaf6a8be on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/setup-find.md
-  verified c580e86c234dc123 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 53335879d2b48ede on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/setup-study.md
-  verified 0bdf0ad6f34d2172 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified ee810b7ad1d03c2c on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/setup-trade.md
-  verified 35d82cf8d7eb0a83 on 2026-11-21: Sources changed only by the setup show command, its read helper, the web relay of it and deleted grade display code; the text still matches.
+  verified 529eb8fdc5a584ff on 2026-11-21: Setup show takes several ids and reads the ledger once; text re-read and still correct
 
 research/tools/toolbox-by-situation.md
   verified d2125f681f66b760 on 2026-11-20: only the entry's applicability rule changed; its situations and ids are unchanged

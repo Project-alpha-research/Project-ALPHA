@@ -410,19 +410,20 @@ def trade_command(
 
 @setup_app.command("show")
 def show_command(
-    run_id: str,
+    run_ids: Annotated[list[str], typer.Argument(help="One or more study or trade ids.")],
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
-    """Read one stored study or trade: its evidence word and its place in the setup's family."""
-    from alpha_cli.spine.setup_reading import owner_lines, stored_reading
+    """Read stored studies or trades: each evidence word and its place in the setup's family."""
+    from alpha_cli.spine.setup_reading import owner_lines, stored_readings
 
     try:
-        output = stored_reading(AlphaSettings().data_dir, run_id)
+        readings = stored_readings(AlphaSettings().data_dir, run_ids)
     except SpineError as exc:
         fail(exc, json_out)
-    words = (
-        "\n".join(owner_lines(output))
-        if output["evidence"] and output["family"]
-        else "No evidence word or family is stored for this record."
-    )
-    emit(output, json_out=json_out, fallback=words)
+    blocks = [
+        f"{item['id']}\n" + "\n".join(owner_lines(item))
+        if item["evidence"] and item["family"]
+        else f"{item['id']}\nNo evidence word or family is stored for this record."
+        for item in readings
+    ]
+    emit({"readings": readings}, json_out=json_out, fallback="\n\n".join(blocks))

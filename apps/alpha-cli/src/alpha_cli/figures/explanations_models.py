@@ -255,4 +255,45 @@ TEXTS: Final[dict[str, Text]] = {
             "themselves fixed."
         ),
     ),
+    "lookalike": (
+        (
+            "The horizontal axis counts bars from the last bar of each stretch. The upper "
+            "vertical axis "
+            "is the stretch's shape, rescaled to mean 0 and spread 1; the lower vertical "
+            "axis is the "
+            "change in price after the stretch, in percent."
+        ),
+        (
+            "Each thin line is one earlier stretch that matched the latest window's outline. "
+            "The upper "
+            "panel shows the match itself and the lower panel shows what followed it. A line "
+            "marks the "
+            "median when enough matches exist."
+        ),
+        (
+            "Look at how close the outlines are to each other, and whether the paths after "
+            "them spread "
+            "in one direction or fan out both ways."
+        ),
+        (
+            "The chart cannot tell you what happens next: past lookalikes describe history, "
+            "and more "
+            "looks in the ledger mean more chance finds."
+        ),
+    ),
+    "unusual": (
+        (
+            "The horizontal axis is the date. The vertical axis is how far each stretch of "
+            "bars is "
+            "from its closest earlier stretch; a higher value means a more unusual shape."
+        ),
+        (
+            "Each point is one stretch scored only against earlier bars. The line joins the "
+            "scores in "
+            "date order and the last point is the latest stretch."
+        ),
+        "Look at where the last point sits against the rest of the line, and whether "
+        "high scores cluster.",
+        "The chart cannot tell you why a stretch was unusual, and it is not a forecast.",
+    ),
 }

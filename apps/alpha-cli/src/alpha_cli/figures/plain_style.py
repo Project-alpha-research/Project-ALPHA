@@ -21,9 +21,6 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
 
-#: Identity of the look; part of every cache key, so a look change re-renders everything.
-STYLE_ID: Final = "plain-notebook-v1"
-VARIANTS: Final = ("plain", "annotated")
 FIGURE_WIDTH_IN: Final = 12.0
 DPI: Final = 100
 BOX: Final = {"boxstyle": "square", "fc": "white", "ec": "0.4", "lw": 0.8}

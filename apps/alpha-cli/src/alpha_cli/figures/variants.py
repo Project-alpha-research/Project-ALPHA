@@ -10,9 +10,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
+from alpha_cli.figure_cache import validate_variant
 from alpha_cli.figures import explanations_checks, explanations_models, explanations_runs
 from alpha_cli.figures.plain_spec import draw_spec
-from alpha_cli.figures.plain_style import VARIANTS, to_bytes
+from alpha_cli.figures.plain_style import to_bytes
 from alpha_cli.figures.spec_facts import run_sentences
 from alpha_core import DataError
 
@@ -25,12 +26,6 @@ _FIXED: Final = {
     **explanations_models.TEXTS,
 }
 _RUN_SENTENCES: Final = 3
-
-
-def check_variant(variant: str) -> str:
-    if variant not in VARIANTS:
-        raise DataError(f"unsupported figure variant {variant!r}; expected one of {VARIANTS}")
-    return variant
 
 
 def fixed_text(figure_id: str) -> tuple[str, str, str, str]:
@@ -54,5 +49,5 @@ def render_variant(
     fixed: tuple[str, str, str, str] | None = None,
 ) -> bytes:
     """Render ``spec`` as the plain notebook chart or the annotated, explained chart."""
-    check_variant(variant)
+    validate_variant(variant)
     return to_bytes(draw_spec(spec, variant, explanation(spec, fixed)), fmt)

@@ -1,6 +1,6 @@
 # Brief: forward follow for setups, dividends in the paper book, plain follow words
 
-Branch: `feat/m70-follow-setups`. Rules: `docs/work/_common-rules-2026-11-21.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
+Branch: `feat/m70-follow-setups`. Rules: `docs/work/2026-11-21-common-build-rules/brief.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
 (follow rows), `docs/reference/invariants/cli-follow.md`, `research/tools/` follow cards.
 
 ## Why

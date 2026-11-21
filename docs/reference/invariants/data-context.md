@@ -97,6 +97,8 @@ module that puts them on bars. Windows are fixed in the recipe; a change is a ne
 setup or RD-Agent run uses them yet except `alpha context show-derived --series S --key K --asset SYMBOL`. It prints one
 row per daily bar: value, `known_from`, age in days, stale. A coverage line counts the nulls by cause.
 
+## Derived series: the eight
+
 | Series | Formula on the native timeline, window includes the current row | Warm-up |
 |---|---|---|
 | `cot_nc_net_oi` | (noncomm long - short) / open interest | 1 report |
@@ -111,7 +113,9 @@ row per daily bar: value, `known_from`, age in days, stale. A coverage line coun
 Keys: a COT market code, a FINRA symbol, or `ALL` (breadth). `SELF` means the bar symbol. Breadth carries the label
 "N stored names, not market-wide", with N the number of FINRA tables stored when it is read.
 
-The as-of rule, in order:
+## Derived series: the as-of join rule
+
+In order:
 1. Read each table with `load_events` (hash-checked), keep rows with `known_from` <= the cutoff. Callers pass the spine reserve `CUTOFF`.
    A cutoff at or after the reserved instant is refused (`DataError`).
 2. Drop rows whose period (`report_date`, `trade_date`) is on or after `RESERVED_DAY`. This is a filter. Bars stamped on or
@@ -137,6 +141,8 @@ The as-of rule, in order:
 The result holds `ctx_<alias>`, `_age_days`, `_stale`, `_known_from`, `_reason`, plus `used_rows_sha256` per alias,
 `source_table_sha256` per table and the recipe version. OSAP is not an input: at the cutoff it has no known rows, and
 `context.published_factors` keeps reading it as hindsight.
+
+## Derived series: result and guards
 
 Guards: `tests/unit/test_context_attach_guard.py` lets only `attach.py`, the two stores and the listed display reader
 `context_free_cmds.py` name the COT or FINRA `table_path`, and lets only `align.py` and `attach.py` use `join_asof`.

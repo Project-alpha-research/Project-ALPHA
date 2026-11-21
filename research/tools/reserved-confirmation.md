@@ -27,7 +27,9 @@ is spent. Then a slot receipt is written, and only then are the reserved bars re
 **How to read it**
 - Ten slots for the life of the reserved period. A slot is spent once and cannot be undone.
 - One rule on one asset can be confirmed once: after it, every test of that rule on that asset (tuned or not) carries
-  `reserved-period-confirmed-in-family`, and cannot be confirmed again.
+  `reserved-period-confirmed-in-family`, and cannot be confirmed again. The same idea on a similar asset (SPY, then VOO)
+  or in another rule kind is not blocked: `plan` lists every earlier confirmation so the owner can see it.
+- The confirmation scores the frozen rule only; no tuned neighbours are run on the reserved bars.
 - The output puts the earlier period and the reserved period side by side, as readings with the Sharpe. It is recorded
   whatever it is and cannot be discarded. The confirmation run carries `reserved-period-confirmation`; tools refuse it.
 - A slot spent without a finished run (a crash) is listed as not finished; `alpha confirm run <run id>` resumes it with

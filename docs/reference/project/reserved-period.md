@@ -7,6 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/inputs.py
   - apps/alpha-cli/src/alpha_cli/confirm_cmds.py
   - apps/alpha-cli/src/alpha_cli/reserved_slots.py
+  - apps/alpha-cli/src/alpha_cli/reserved_receipts.py
   - apps/alpha-cli/src/alpha_cli/spine/confirm*.py
   - packages/alpha-data/src/alpha_data/context/daily_funding.py
   - workers/rdagent/alpha_factor_data.py
@@ -125,8 +126,10 @@ These still read bars from the date on.
   store, dates, data content), costs and engine settings (seed, quick, diagnostics). Nothing can change. Setup Lab runs: not yet.
 - Span: from the first stored bar on or after 2024-01-01 to the last stored bar when the owner asks. It is fixed in the yes, so a
   later bar is never read (bars added afterwards are left out; the stamps up to it must still match).
-- Yes: Touch ID only. `request` (trusted CLI) issues a 60-second WebAuthn challenge bound to the frozen test's hash. The owner's
-  assertion on the local page goes to the existing perform route; `owner_auth` verifies it and records an authorization row.
+- Yes: Touch ID only. `request` (trusted CLI) issues a 60-second WebAuthn challenge. The challenge is the SHA-256 of its binding
+  (the frozen test's hash, the request and a nonce), so the owner's signature covers what they said yes to. The page shows only the
+  words inside the signed payload; before a slot is spent they must equal the words for the test as it is then (slots used, a code
+  change, every earlier confirmation, the consequences). `owner_auth` verifies the assertion and records an authorization row.
   No local click, MCP tool, generic web job, config flag or stand-in user can give it. The yes is valid for 30 minutes.
 - Recheck first: the earlier period is computed again (`spine/recheck.py`). It must match the stored run; only the count of
   held-back bars may differ. A mismatch spends nothing.
@@ -134,15 +137,23 @@ These still read bars from the date on.
   `BEGIN IMMEDIATE` transaction before any reserved bar is read. A crash after it resumes with the same receipt and bars.
 - Ten slots, ever: slot 1 to 10, each naming the one before it, so two processes cannot both take the last.
   One receipt per test key, per run, per authorization and per rule on one asset (the deflation family on that asset).
-- The read: only `reserve.open_with_receipt`. It checks the receipt hash and verifies the Touch ID assertion again on every
-  call. Only `spine/confirm_run.py` calls it. The structural guard lists it under its own kind, `receipt:`.
+- Every read and write checks every slot row (`reserved_receipts.py`): the hash chain over the slots, each frozen test against
+  its signed hash, and each owner assertion again. A row changed or removed by direct SQL makes them refuse; a removed last slot
+  is found from its ledger row. The store file is not trusted; the signature is the protection.
+- The read: only `reserve.open_with_receipt`, after those checks, on every call. Only `spine/confirm_run.py` calls it. The
+  structural guard lists it under its own kind, `receipt:`. It scores the frozen rule only: no parameter neighbours are run on
+  the reserved bars (they would show which tuning did best there). `alpha follow start` refuses the confirmation run.
 - The result: the same reading, scored on reserved bars only (the rule warms up on the bars just before 2024), beside the
   earlier reading. It is stored as a run labelled `reserved-period-confirmation`, shown whatever it is, and never
   discarded. Tools refuse that run. Its ledger kind is `reserved_confirmation`: not a research trial, and outside every
   family count used to deflate another test. Its own deflation uses the family count as it stood.
 - The family label: after a confirmation, every later `alpha test` of the same rule on the same asset carries
   `reserved-period-confirmed-in-family` (tuned settings are new test keys but the same idea), and cannot be confirmed.
-  `alpha next` shows the slots in use.
+  The family is the rule kind on one symbol, so all owner rules on one symbol are one family. Not covered: the same idea
+  on a similar asset (SPY, then VOO), or rewritten as another rule kind. `plan` and the Touch ID words list every earlier
+  confirmation, so the owner sees a near-duplicate before spending a slot; no similarity is computed. `alpha next` shows the slots.
+- Limits: the reserved bars are in store files the same OS user can read, so this guards the research pipeline, not the files.
+  Whoever can write the control store can also add a credential of their own (true for every owner act, not only this one).
 
 ## What the owner decided
 

@@ -4194,6 +4194,13 @@ export async function openTask(page: Page, section: string, task: string): Promi
   await page.getByRole('menuitem', { name: `${section} › ${task}`, exact: true }).click()
 }
 
+/** Real-backend specs use crypto symbols; a fresh browser now opens Equities unless the store is equity-only. */
+export async function useCryptoProfile(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('alpha.settings')) localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto' }))
+  })
+}
+
 export async function openDeskTool(page: Page, name: string): Promise<void> {
   const options = page.locator('details').filter({ has: page.locator('summary').filter({ hasText: /^Docks$/ }) })
   if (await options.getAttribute('open') === null) await page.getByText('Docks', { exact: true }).click()

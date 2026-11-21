@@ -80,9 +80,12 @@ function WorkstationApp() {
   useEffect(() => {
     // A fresh load follows the data: Equities when only equity bars are stored, else the last used profile.
     let live = true
+    const opened = getSettings().profile
     api.symbols().then(result => {
-      const next = profileForStore(result.symbols, getSettings().profile)
-      if (live && next !== getSettings().profile) setSettings({ profile: next })
+      // A profile the owner picked while the inventory loaded is never overridden.
+      if (!live || getSettings().profile !== opened) return
+      const next = profileForStore(result.symbols, opened)
+      if (next !== opened) setSettings({ profile: next })
     }).catch(() => { /* Without an inventory the saved profile stays. */ })
     return () => { live = false }
   }, [])

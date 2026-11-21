@@ -27,9 +27,9 @@ export function sourceTag(input: SourceTagInput): SourceTag {
       tone: 'kind',
       title:
         'These bars were stored before ALPHA recorded the exact market and data identity. They are usable, but not provably the same series. '
-        + 'Pulling the symbol again with `alpha data pull` stores it with its identity recorded.',
+        + `Source id: ${input.source}. Pulling the symbol again with "alpha data pull" stores it with its identity recorded.`,
     }
   }
   const venue = input.venue ? ` · ${input.venue}` : ''
-  return { text: `${bars}${venue} · ${input.quality_status.replace(/_/g, ' ')}`, tone: 'pass', title: 'Identity and quality are recorded for these bars.' }
+  return { text: `${bars}${venue} · ${input.quality_status.replace(/_/g, ' ')}`, tone: 'pass', title: `Identity and quality are recorded for these bars. Source id: ${input.source}.` }
 }

@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/owner_rule.py
   - packages/alpha-strategies/src/alpha_strategies/rules.py
   - packages/alpha-strategies/src/alpha_strategies/rule_paths.py
-verified: bdcb713befa5d419
+verified: d5e58cf9806d0166
 ---
 # Owner rule language in `alpha test`
 

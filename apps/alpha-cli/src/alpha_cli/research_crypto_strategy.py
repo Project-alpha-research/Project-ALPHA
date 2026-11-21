@@ -13,6 +13,7 @@ from pathlib import Path
 import polars as pl
 
 from alpha_core import DataError
+from alpha_core.reserve import RESERVED_INSTANT
 from alpha_data.crypto.contracts import (
     CryptoFamily,
     CryptoQualityReportV1,
@@ -162,13 +163,29 @@ def _member_digest(members: tuple[CryptoSnapshotMemberV1, ...]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _read_spot(path: Path, *, before_reserved: bool) -> pl.DataFrame:
+    lazy = pl.scan_parquet(path)
+    dtype = lazy.collect_schema().get("close_time")
+    if before_reserved and isinstance(dtype, pl.Datetime):
+        stamp = pl.col("close_time")
+        if dtype.time_zone is None:
+            stamp = stamp.dt.replace_time_zone("UTC")
+        lazy = lazy.filter(stamp <= RESERVED_INSTANT)
+    return lazy.collect()
+
+
 def load_hedged_basis_observations(
     snapshot: CryptoSnapshotV1,
     quality_reports: Mapping[str, CryptoQualityReportV1],
     *,
     bulk_root: Path,
+    before_reserved: bool = True,
 ) -> tuple[HedgedBasisObservationV1, ...]:
-    """Load one exact qualified nine-family candidate bundle from verified external bytes."""
+    """Load one exact qualified nine-family candidate bundle from verified external bytes.
+
+    Spot bars that close after the reserved instant are dropped inside the scan, as the
+    Bybit rows are; ``before_reserved=False`` is for a sealed holdout window read on purpose.
+    """
     from alpha_cli.research_crypto_data import load_crypto_crowding_observations
 
     by_family = {member.dataset.family: member for member in snapshot.members}
@@ -214,9 +231,10 @@ def load_hedged_basis_observations(
         bybit_snapshot,
         quality_reports,
         bulk_root=bulk_root,
+        before_reserved=before_reserved,
     )
     try:
-        spot_frame = pl.read_parquet(bulk_root / spot.artifact_key)
+        spot_frame = _read_spot(bulk_root / spot.artifact_key, before_reserved=before_reserved)
     except (OSError, pl.exceptions.PolarsError) as exc:
         raise DataError("hedged basis Binance spot member is unreadable") from exc
     return compose_hedged_basis_observations(

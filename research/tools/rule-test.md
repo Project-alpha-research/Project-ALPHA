@@ -3,7 +3,8 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/spine/*.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-verified: 8bf149d0b81880e3
+  - apps/alpha-cli/src/alpha_cli/_context_plan.py
+verified: 379a7af49c1484bc
 ---
 
 # Rule test
@@ -18,7 +19,7 @@ uv run alpha test <spec.toml> --recheck --json   # system check, not a trial; ex
 A spec file holds `name`, `idea`, `assets`, a `[rule]` table (`kind` plus its numbers) and an optional `[costs]` table
 (`fee_bps`, `slippage_bps`). Rule kinds: `ma_cross` (`fast`, `slow`), `breakout` (`window`), `tsmom` (`lookback`, `skip`).
 An asset is a symbol, or symbol@store. A file and rule flags cannot be mixed. `--quick` runs a small gauntlet, labelled `quick`.
-An optional `idea_card` links an [idea card](idea-card.md).
+An optional `idea_card` links an [idea card](idea-card.md). `[context]` and `when` (see `research/examples/rule-context.example.toml`): `--plan` only.
 **How to read it**
 - Each asset carries its own [data health verdict](data-health.md). Use `--check-data` to check missing or changed inputs before testing.
 - The headline starts at the first open after warm-up; tiles, Sharpe and charts share each row’s dates (walk-forward only).
@@ -36,5 +37,4 @@ An optional `idea_card` links an [idea card](idea-card.md).
   daily bars, long only, all-in sizing. Say so and offer the nearest kind, or `alpha backtest run <SYMBOL> --timeframe 1h`
   (intraday, or a saved rule with `--strategy rules`): a plain backtest, no diagnostics, not in the ledger. Label it so.
 - Whether the result is real. Read [diagnose and audit](diagnose-and-audit.md) first.
-
 **Next** `uv run alpha diagnose <run_id> --json`, then the card that matches the first flag.

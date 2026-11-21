@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_context.py
   - packages/alpha-study/src/alpha_study/setup/context.py
   - packages/alpha-data/src/alpha_data/context/attach.py
-verified: ac071062a7a24370
+verified: 346d6900dd873041
 ---
 # Setup with a context condition
 

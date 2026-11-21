@@ -495,7 +495,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +10 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +11 more
 
 ## alpha tool
 

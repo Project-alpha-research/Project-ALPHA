@@ -6,7 +6,7 @@ sources:
   - packages/alpha-strategies/CONTEXT.md
   - packages/alpha-patterns/CONTEXT.md
   - packages/alpha-study/CONTEXT.md
-verified: be784d1b3cd68915
+verified: e496e97a78f2211b
 ---
 
 # Strategies and signals

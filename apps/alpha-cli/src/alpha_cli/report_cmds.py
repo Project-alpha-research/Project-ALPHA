@@ -22,6 +22,7 @@ import typer
 from alpha_cli.artifact_contract import verify_manifest_artifacts
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest
 from alpha_cli.spine.report_readings import gate_lines, monte_carlo_lines, null_line, reading_line
+from alpha_cli.spine.reserve import describe
 from alpha_core.config import AlphaSettings
 
 _DAILY_RULE_COMMANDS = frozenset(
@@ -51,6 +52,16 @@ def _find_manifest(data_dir: Path, run_id: str) -> dict[str, Any] | None:
 
 def _echo_json(value: Any) -> None:
     typer.echo(json.dumps(value, sort_keys=True, allow_nan=False))
+
+
+def _forecast_use(manifest: dict[str, Any]) -> str:
+    """How a forecast run used the reserved period: a run is forward use, an evaluation holds it."""
+    if manifest.get("command") == "forecast_eval":
+        block = manifest.get("reserve")
+        return describe(block) if isinstance(block, dict) else "reserve: no hold-back recorded"
+    if manifest.get("use") == "forward":
+        return "use: forward (the reserved period is not held back)"
+    return "use: not recorded"
 
 
 def report(
@@ -169,8 +180,8 @@ def report(
             f"params: context={params.get('context')} horizon={params.get('horizon')} "
             f"samples={params.get('samples')} seed={params.get('seed')}"
         )
-        summary = manifest.get("summary")
-        if isinstance(summary, dict):
+        typer.echo(_forecast_use(manifest))
+        if isinstance(summary := manifest.get("summary"), dict):
             typer.echo(
                 "summary: " + ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(summary.items()))
             )

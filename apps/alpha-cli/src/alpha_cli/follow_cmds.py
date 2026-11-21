@@ -15,6 +15,7 @@ from alpha_cli import follow_show, follow_source, follow_today, follow_update
 from alpha_cli import follow_store as store
 from alpha_cli._cli_json import emit
 from alpha_cli.follow_journal import JournalRefusal
+from alpha_cli.spine import book as book_math
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core.config import AlphaSettings
 
@@ -208,6 +209,32 @@ def today(json_out: JSON = False) -> None:
     """What is active today: one row per active follow, grouped. Reads journals only."""
     facts = follow_today.build(AlphaSettings().data_dir, _clock())
     emit(facts, json_out=json_out, fallback=follow_today.text(facts))
+
+
+@follow_app.command("book")
+def book(json_out: JSON = False) -> None:
+    """Every active follow as a share of ONE paper account, and the sum per asset. Read-only."""
+    home = AlphaSettings().data_dir
+    sizes = {f["follow_id"]: f for f in store.list_facts(home) if f["state"] != "broken"}
+    today_rows = follow_today.build(home, _clock())["rows"]
+    rows: list[book_math.AccountRow] = [
+        {
+            "follow_id": r["follow_id"],
+            "name": r["name"],
+            "assets": list(sizes[r["follow_id"]]["assets"]),
+            "size_pct": float(sizes[r["follow_id"]]["paper_account_percent"]),
+            "open": bool(r["paper"]["open"]),
+        }
+        for r in today_rows
+        if r["entry_kind"] != "broken"
+    ]
+    facts = {
+        **book_math.account_view(rows),
+        "paper": True,
+        "unreadable": [r["follow_id"] for r in today_rows if r["entry_kind"] == "broken"],
+        "notice": book_math.ACCOUNT_NOTICE,
+    }
+    emit(facts, json_out=json_out, fallback=book_math.render_account(facts))
 
 
 @follow_app.command("stop")

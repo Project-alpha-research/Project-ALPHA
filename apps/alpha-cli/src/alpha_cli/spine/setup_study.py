@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine import reserve
+from alpha_cli.spine import reserve, setup_context
 from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError, study_error
 from alpha_cli.spine.event_study_figure import draw_event_study
@@ -327,6 +327,7 @@ def compute_study(home: Path, find_id: str, item: Inputs) -> tuple[dict[str, Any
     summary["labels"] = [
         label for label in summary["labels"] if not label.startswith("data-health-")
     ] + health_labels(item.record)
+    setup_context.annotate(summary, spec, manifest)
     summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
     return summary, outcomes
 

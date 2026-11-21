@@ -93,8 +93,9 @@ A day or market is fetched in full before anything is stored, and offline is a c
 ## Derived series and the one join
 
 `alpha_data/context/derived.py` computes eight descriptive series (recipe `context-derived-v1`); `attach.py` is the one
-module that puts them on bars. Windows are fixed in the recipe; a change is a new recipe version. No command, rule test,
-setup or RD-Agent run uses them yet except `alpha context show-derived --series S --key K --asset SYMBOL`. It prints one
+module that puts them on bars. Windows are fixed in the recipe; a change is a new recipe version. Only
+`alpha context show-derived --series S --key K --asset SYMBOL` and a Setup Lab `[context]` table use them
+([rules](cli-setups.md#setup-context)); no rule test or RD-Agent run does yet. It prints one
 row per daily bar: value, `known_from`, age in days, stale. A coverage line counts the nulls by cause.
 
 ## Derived series: the eight

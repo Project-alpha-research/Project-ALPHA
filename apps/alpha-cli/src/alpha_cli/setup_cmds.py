@@ -30,6 +30,8 @@ def setup_group() -> None:
 
 
 def _text(output: dict[str, Any]) -> str:
+    from alpha_cli.spine import setup_context
+
     lines = []
     for asset in output["assets"]:
         if asset["error"]:
@@ -41,6 +43,8 @@ def _text(output: dict[str, Any]) -> str:
                 f"({asset['accepted']} matching days); {asset['pending']} pending; "
                 f"rejected: {reasons or 'none'}"
             )
+            if asset.get("context"):
+                lines.append(setup_context.sentence(asset["context"], asset["asset"]))
     if "repeat" in output["labels"]:
         lines.append(
             "Repeat of an earlier find on the same spec and data: nothing was redrawn "

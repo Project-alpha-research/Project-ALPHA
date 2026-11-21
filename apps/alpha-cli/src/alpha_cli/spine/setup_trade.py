@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine import reserve
+from alpha_cli.spine import reserve, setup_context
 from alpha_cli.spine.data_health import health_labels
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import add_study_trial_fact, read_study
@@ -340,6 +340,7 @@ def compute_trade(home: Path, item: Inputs) -> tuple[dict[str, Any], list[Any]]:
     summary["labels"] = [
         label for label in summary["labels"] if not label.startswith("data-health-")
     ] + health_labels(item.record)
+    setup_context.annotate(summary, spec, manifest)
     summary["facts"] = [{**fact, "labels": summary["labels"]} for fact in summary["facts"]]
     return summary, rows
 

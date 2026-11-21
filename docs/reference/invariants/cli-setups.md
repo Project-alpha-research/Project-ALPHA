@@ -5,7 +5,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/setup_*.py
   - tests/unit/test_setup_*.py
   - tests/unit/test_reading_ledger_setup.py
-verified: 677438cb29863fd7
+verified: 29680b98b313f65e
 ---
 
 # Command line setup invariants
@@ -65,3 +65,18 @@ Rules for `alpha setup find`, `alpha setup study` and `alpha setup trade`. Other
 - Hash find id with `setup-trade-1`; publish parquet, summary and deterministic 1600 × 900 PNG before a hash-bound manifest in `setup-trades/<trade_id>`.
 - Repeats preserve records. New exits or direction count in `setup:<idea>`. R divides net return by initial stop risk. No currency sizing.
 - Find output derives `outcomes-viewed` from sibling study/trade manifests without rewriting its folder.
+## Setup context
+- A spec may add `[context]`: alias → `series@key` (a [derived series](data-context.md#derived-series-and-the-one-join); the key is declared, `SELF` is the
+  asset's own symbol). Aliases are number sources in `event`, `filters`, `trigger` and `reference`, not in `[exit]`. An alias may not be a price
+  source, a function or a filter or reference name. Without `[context]` the spec keeps its old identity, ids and files.
+- `spine/setup_context.py` makes the only call to `attach_context` (cut 2023-12-31) and hands plain `ctx_<alias>` columns to `alpha_study`, which
+  imports no data code. Context holds its own warm-up as null, so aliases add no warm-up. A null never makes a condition true.
+- A filter that reads a context value older than its limit rejects the event as `context-stale`. Other nulls (not yet known, delayed release,
+  series warm-up) are `warm-up` and are not drawn. Each find asset records `context`: nulls by reason, the span with a value, and for each condition
+  the bars where it was true and its separate spells. The text always says days overstate the sample.
+- Label `short-context-history` when the span with a value is under 3 years. Study and trade carry the label, the block and the sentence.
+- Identity: a context spec adds the hash of the rows used and the recipe version to each asset's data key, never a table file hash, so rows added after
+  the reserved day do not make a new find or test. The spec change itself is a new test in the same `setup:<idea>` family.
+- Study and trade attach again and compare that hash with the find's. A difference is `DATA_CHANGED_SINCE_FIND`; `--recheck` raises it too.
+  Random controls start at the first bar where every alias has a value, the span the find used.
+- Reading only: no pass or fail, no advice, never `clear of chance`. [Tool card](../../../research/tools/setup-find.md).

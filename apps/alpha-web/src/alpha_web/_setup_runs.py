@@ -51,6 +51,7 @@ LABELS = {
     "dev-machine-data": "Uses data stored on the development machine.",
     "source-defaulted": "The source was selected by the stored-data default.",
     "short-history": "The recorded data spans less than three years.",
+    "short-context-history": "The condition data spans less than three years; read it as a hint.",
     "outcomes-not-viewed": "This find recorded that outcomes had not been viewed.",
     "outcomes-viewed": "Outcomes have been viewed in a study or trade run.",
     "pending-at-end": "Some candidates were still waiting at the end of the data.",

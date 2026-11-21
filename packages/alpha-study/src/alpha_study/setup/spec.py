@@ -23,7 +23,8 @@ from pydantic import (
 )
 
 from alpha_core import DataError
-from alpha_study.setup.expr import Kind, compile_expr
+from alpha_study.setup.context import check_aliases
+from alpha_study.setup.expr import Aliases, Kind, compile_expr
 
 RESERVED = frozenset({"warm-up", "no-trigger", "no-next-bar", "pending-trigger"})
 
@@ -31,8 +32,8 @@ PositiveInt = Annotated[int, Field(strict=True, ge=1)]
 Text = Annotated[str, Field(strict=True, min_length=1)]
 
 
-def _expression(text: str, kind: Kind) -> str:
-    if compile_expr(text).kind != kind:
+def _expression(text: str, kind: Kind, aliases: Aliases = frozenset()) -> str:
+    if compile_expr(text, aliases).kind != kind:
         raise DataError(f"{text!r}: expected {kind} expression")
     return text
 
@@ -45,7 +46,7 @@ class _Frozen(BaseModel):
     def _keys(cls, value: Any) -> Any:
         if isinstance(value, Mapping):
             for key in value:
-                if key in {"context", "dates", "session"}:
+                if key in {"dates", "session"}:
                     raise ValueError(f"{key}: supported in the next piece")
                 if key not in cls.model_fields:
                     raise ValueError(
@@ -59,22 +60,12 @@ class Setup(_Frozen):
     idea: Text
     assets: tuple[Text, ...] = Field(min_length=1)
     timeframe: Literal["1D"]
-    event: Text
-
-    @field_validator("event")
-    @classmethod
-    def _event(cls, value: str) -> str:
-        return _expression(value, "boolean")
+    event: Text  # checked by SetupSpec, which knows the context aliases
 
 
 class Trigger(_Frozen):
     when: Text
     within: Annotated[int, Field(strict=True, ge=0)]
-
-    @field_validator("when")
-    @classmethod
-    def _when(cls, value: str) -> str:
-        return _expression(value, "boolean")
 
 
 @dataclass(frozen=True)
@@ -143,6 +134,9 @@ class SetupSpec(_Frozen):
     reference: Mapping[str, str] = Field(default_factory=dict)
     exit: Exit | None = None
     study: Study | None = None
+    # alias -> "series@key". Part of the identity only when present, so a spec without it keeps
+    # its old bytes and ids.
+    context: Mapping[str, str] = Field(default_factory=dict, exclude_if=lambda value: not value)
     # A link to an idea card. Excluded from dumps, so it is in no hash and no stored spec.
     idea_card: str = Field(default="", exclude=True)
 
@@ -157,16 +151,21 @@ class SetupSpec(_Frozen):
 
     @model_validator(mode="after")
     def _expressions(self) -> Self:
+        check_aliases(self.context, [*self.filters, *self.reference])
+        names = frozenset(self.context)
+        _expression(self.setup.event, "boolean", names)
+        if self.trigger is not None:
+            _expression(self.trigger.when, "boolean", names)
         for text in self.filters.values():
-            _expression(text, "boolean")
+            _expression(text, "boolean", names)
         for text in self.reference.values():
-            _expression(text, "number")
+            _expression(text, "number", names)
         # Defaults must be immutable too, without sharing a mutable empty dictionary.
-        object.__setattr__(self, "filters", MappingProxyType(dict(self.filters)))
-        object.__setattr__(self, "reference", MappingProxyType(dict(self.reference)))
+        for name in ("filters", "reference", "context"):
+            object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
         return self
 
-    @field_serializer("filters", "reference")
+    @field_serializer("filters", "reference", "context")
     def _mapping(self, value: Mapping[str, str]) -> dict[str, str]:
         return dict(value)
 

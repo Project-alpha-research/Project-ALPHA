@@ -48,5 +48,4 @@ None changed. The protected renderer, its catalogue and their pins are untouched
 - Held-back band: shown only when the data end within 10% of the span before 2024-01-01. Not seen on a real run.
 - The two-sentence tail-region ("upper 5% tail") is computed from histogram bins, so it is bin-accurate, not exact.
 - Side-by-side display of both charts on wide screens was not built; the card uses the toggle.
-- `docs/work/2026-11-21-m68-figure-pairs/reference_make_pairs.py` fails ruff (87 findings). `pyproject.toml` now excludes that one file from ruff.
-- Six pairs from a synthetic run are in `pairs/`.
+- The reference script and the six sample pairs were removed from the folder when the pull request landed (a task folder holds only plan and stage files). The reference script stays in the branch history (commit `8c64207e`).

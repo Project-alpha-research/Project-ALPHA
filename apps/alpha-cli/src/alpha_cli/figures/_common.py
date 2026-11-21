@@ -150,3 +150,51 @@ def _observed_label(observed: float, percentile: object) -> str:
 def _hist(values: np.ndarray, *, bins: int = 31) -> tuple[tuple[float, ...], tuple[float, ...]]:
     counts, edges = np.histogram(values, bins=bins)
     return tuple(float(value) for value in edges), tuple(float(value) for value in counts)
+
+
+_INDICATOR_UNITS = {
+    "price",
+    "ratio",
+    "percent",
+    "count",
+    "days",
+    "sharpe",
+    "weight",
+    "correlation",
+    "probability",
+    "z_score",
+    "index",
+    "seconds",
+    "multiple",
+    "account_currency",
+}
+
+
+#: An axis label must carry a unit a reader recognises, not the vocabulary token -- and it
+#: must fit: these are budgeted for a short stacked panel, so every one stays under about
+#: 22 characters rather than eliding into a shrug.
+_UNIT_LABELS = {
+    "account_currency": "Amount (account ccy)",
+    "correlation": "Correlation (-1 to 1)",
+    "count": "Count (n)",
+    "days": "Duration (days)",
+    "index": "Level (index points)",
+    "multiple": "Multiple (x)",
+    "percent": "Percent (%)",
+    "price": "Price (native quote)",
+    "probability": "Probability (0-1)",
+    "ratio": "Ratio (unitless)",
+    "seconds": "Duration (seconds)",
+    "sharpe": "Sharpe (annualised)",
+    "weight": "Weight (fraction)",
+    "z_score": "Z-score (sigma)",
+}
+
+
+def _indicator_unit(raw: str) -> str:
+    """Map a strategy-declared indicator unit onto the closed panel vocabulary.
+
+    Strategies author their own unit strings; anything unrecognised is shown as a plain
+    ratio rather than silently claiming to be a price.
+    """
+    return raw if raw in _INDICATOR_UNITS else "ratio"

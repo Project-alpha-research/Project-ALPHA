@@ -104,22 +104,38 @@ def monthly_heatmap(ctx: BuildContext) -> FigureSpec:
         )
     }
     ordered = sorted(grid)
-    rows = tuple(str(year) for year in ordered)
+    # The figure has a fixed height, so a long history must thin its labels instead of
+    # printing 30 rows of text into the same few inches. Every row stays; only the label
+    # is dropped, and only on years that are not a multiple of the step.
+    step = 1 if len(ordered) <= 14 else 2 if len(ordered) <= 24 else 5
+    rows = tuple(
+        str(year) if (year - ordered[0]) % step == 0 or year == ordered[-1] else " "
+        for year in ordered
+    )
     # The annual total is deliberately excluded from the colour scale: a +9.7% year on the
     # same ramp as monthly returns saturates it and flattens every month into one shade.
     # It keeps its number and sits on the neutral background, which also reads correctly
     # as "this column is a summary, not a thirteenth month".
-    values = tuple(tuple([*grid[year], None]) for year in ordered)
-    cell_text = tuple(
-        tuple(
-            [
-                *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
-                "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
-            ]
-        )
+    # Colour scale in percent, like the cell text and the colour bar label.
+    values = tuple(
+        tuple([*(None if cell is None else cell * 100.0 for cell in grid[year]), None])
         for year in ordered
     )
-    flat = [cell for row in values for cell in row[:12] if cell is not None]
+    # Cell numbers need about 0.2 inch of height each; below that they collide.
+    cell_text = (
+        tuple(
+            tuple(
+                [
+                    *("" if cell is None else f"{cell * 100:.1f}" for cell in grid[year]),
+                    "" if annual.get(year) is None else f"{annual[year] * 100:.1f}",
+                ]
+            )
+            for year in ordered
+        )
+        if len(ordered) <= 12
+        else ()
+    )
+    flat = [cell for year in ordered for cell in grid[year] if cell is not None]
     best, worst = max(flat), min(flat)
     return ctx.spec(
         "monthly_heatmap",

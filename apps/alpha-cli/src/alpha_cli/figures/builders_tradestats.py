@@ -30,6 +30,13 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
     wins = sum(1 for value in pnl if value > 0)
     best, worst = max(pnl), min(pnl)
     share = abs(best) / sum(abs(value) for value in pnl) if any(pnl) else 0.0
+    # Plot in thousands or millions: matplotlib prints a "1e6" offset above the axis for
+    # raw currency amounts, and that offset is one more text that can leave the figure.
+    peak = max(abs(value) for value in (*pnl, *cumulative))
+    divisor, unit = (1e6, "M") if peak >= 1e6 else (1e3, "k") if peak >= 1e5 else (1.0, "")
+    shown_pnl = tuple(value / divisor for value in pnl)
+    shown_cumulative = tuple(value / divisor for value in cumulative)
+    suffix = f"{unit} ccy" if unit else "ccy"
     return ctx.spec(
         "trade_pnl",
         x_label="Trade (chronological)",
@@ -43,25 +50,27 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="pnl",
-                y_label="Realised P&L (account currency)",
+                y_label=f"P&L ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,
-                marks=(BarMark(x=ordinal, y=pnl, signed_colour=True, width=0.8),),
+                marks=(BarMark(x=ordinal, y=shown_pnl, signed_colour=True, width=0.8),),
             ),
             Panel(
                 panel_id="cumulative",
-                y_label="Cumulative P&L (account currency)",
+                y_label=f"Cum. P&L ({suffix})",
                 y_unit="account_currency",
                 y_zero_rule=True,
                 legend=False,
                 marks=(
                     LineMark(
                         x=ordinal,
-                        y=tuple(cumulative),
+                        y=shown_cumulative,
                         role="subject",
                         step=True,
-                        end_label=ValueLabel(text=money(cumulative[-1])),
+                        end_label=ValueLabel(
+                            text=money(cumulative[-1]), dx_pt=-4.0, dy_pt=-11.0, ha="right"
+                        ),
                     ),
                 ),
             ),
@@ -94,25 +103,39 @@ def holding_period(ctx: BuildContext) -> FigureSpec:
     ordered = sorted(days)
     median = ordered[len(ordered) // 2]
     marks: list[Mark] = []
+    # One colour family: the accent hue, solid for profitable trades and faint for the rest.
     if winners:
         marks.append(
             HistogramMark(
-                edges=edges, counts=counts(winners), role="up", alpha=0.75, label="Profitable"
+                edges=edges,
+                counts=counts(winners),
+                role="categorical",
+                palette_index=0,
+                alpha=0.85,
+                label="Profitable",
             )
         )
     if losers:
         marks.append(
             HistogramMark(
-                edges=edges, counts=counts(losers), role="down", alpha=0.55, label="Unprofitable"
+                edges=edges,
+                counts=counts(losers),
+                role="categorical",
+                palette_index=0,
+                alpha=0.35,
+                label="Unprofitable",
+                z=-1,
             )
         )
+    # The median is named in the legend, not printed beside the rule: a label placed at the
+    # axis top lands on whichever bar is tallest there.
     marks.append(
         RuleMark(
             orientation="vertical",
             position=median,
             role="feature",
             width=1.2,
-            annotate=ValueLabel(text=f"median {median:.0f}d"),
+            label=f"Median {median:.0f} d",
         )
     )
     return ctx.spec(
@@ -129,6 +152,8 @@ def holding_period(ctx: BuildContext) -> FigureSpec:
                 panel_id="holding",
                 y_label="Trades (count)",
                 y_unit="count",
+                # Head room above the tallest bar keeps the median label off the bars.
+                y_limits=(0.0, 1.3 * max(counts(tuple(days)))),
                 marks=tuple(marks),
             ),
         ),
@@ -161,7 +186,7 @@ def trade_runs_test(ctx: BuildContext) -> FigureSpec:
                 position=0.0,
                 role="feature",
                 width=0.8,
-                annotate=ValueLabel(text=f"runs z = {z:+.2f}", dy_pt=8.0),
+                annotate=ValueLabel(text=f"runs z = {z:+.2f}", ha="right", dx_pt=-6.0, dy_pt=2.0),
             )
         )
     else:
@@ -179,7 +204,7 @@ def trade_runs_test(ctx: BuildContext) -> FigureSpec:
         panels=(
             Panel(
                 panel_id="signs",
-                y_label="Trade sign (win +1 / loss -1)",
+                y_label="Trade sign (+1/-1)",
                 y_unit="index",
                 y_zero_rule=True,
                 legend=False,

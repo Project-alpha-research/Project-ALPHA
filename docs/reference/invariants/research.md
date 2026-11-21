@@ -144,7 +144,7 @@ General rule: [research integrity § Statistical evidence](research-integrity.md
 - Bump `RENDERER_VERSION` on any visual change; it is folded into `svg.hashsalt`, so old cached figures become
   unreachable rather than stale. Change `FIGURES_CACHE_VERSION` only with `alpha_cli.figure_cache`, kept equal by a drift test.
 - `terminal_classic.json` is the renderer's own default.
-  The CLI figure pack uses the light and dark variants of `alpha_dark.json` ([theme rule](cli-runs.md#figures)).
+  The CLI figure pack uses the light and dark variants of `alpha_dark.json` ([theme rule](cli-figures.md)).
 - The default theme is `terminal_classic.json`; `alpha_dark.json` remains loadable. The SPA canvas tokens are
   generated from the default theme and drift-guarded by `tests/unit/test_theme_drift.py`.
 - `render_research_line_chart` emits a byte-stable PNG with no creation timestamp. It seeds every

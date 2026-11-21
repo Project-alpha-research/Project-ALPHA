@@ -176,7 +176,7 @@ docs/reference/project/decisions-by-topic.md
   verified 8466046f3449a55d on 2026-11-19: Re-read: the new owner entry and removed route add no change to this page's content
 
 docs/reference/project/file-system-measurement.md
-  verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+  verified 8a77650b29ee8769 on 2026-11-21: ceiling and doc split do not change what this document says
 
 docs/reference/project/ideas-and-considered.md
   verified 83e6af903a0351b6 on 2026-11-19: Merge of main: the new volume-5 entry is a build-process decision, not an idea weighed; the RD-Agent toolbox row still holds
@@ -341,7 +341,7 @@ workflow/CONTEXT.md
   verified f4cf3670944b0e52 on 2026-11-21: price-signal window fix does not change what this document says
 
 workflow/README.md
-  verified bb945d1901fa6d5f on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
+  verified 79a8cfc6cb6d9b89 on 2026-11-21: ceiling and doc split do not change what this document says
 
 workflow/stages/03-build/CONTEXT.md
   verified 4bb90e5006d5dce5 on 2026-11-21: price-signal window fix does not change what this document says

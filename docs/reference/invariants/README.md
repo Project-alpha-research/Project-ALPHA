@@ -45,7 +45,7 @@ verified: 8115bbcdee4c05e0
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
-| [cli-rule-readings.md](cli-rule-readings.md), [cli-idea-file.md](cli-idea-file.md) | rule-test reading; the idea file | `alpha test` text, `alpha idea file` |
+| [cli-rule-readings.md](cli-rule-readings.md), [cost classes](cli-cost-classes.md), [idea file](cli-idea-file.md) | readings; costs; idea file | `alpha test`, `alpha idea file` |
 | [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |

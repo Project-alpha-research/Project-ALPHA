@@ -244,6 +244,7 @@ def test_random_controls_use_each_asset_own_context_span(tmp_path: Path) -> None
     for asset in manifest["assets"]:
         span, (start, stop) = asset["context"]["span"], spans[asset["asset"]]
         series = bars[asset["asset"]]
+        assert stop is not None
         assert series[start].ts.date().isoformat() == span["first"]
         assert series[stop - 1].ts.date().isoformat() == span["last"]
         assert stop < len(series)

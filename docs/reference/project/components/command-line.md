@@ -55,7 +55,7 @@ let the user choose the ideas a waiting worker builds and read the verdict for e
 ## Where it lives
 
 - **Workspaces:** `apps/alpha-cli`, `packages/alpha-core`
-- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`, `idea-card`, `forward-follow`, `idea-library`, `nightly-run`
+- **Capabilities:** `rule-test`, `one-trial-ledger`, `front-door`, `idea-card`, `forward-follow`, `idea-library`, `nightly-run`, `home-backup`
 - Code: `apps/alpha-cli/src/alpha_cli/`, `packages/alpha-core/src/alpha_core/`.
 - Commands: [command reference](../../commands.md) (generated).
 - How to change it: [apps/alpha-cli/CONTEXT.md](../../../../apps/alpha-cli/CONTEXT.md),

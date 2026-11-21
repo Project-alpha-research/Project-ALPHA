@@ -16,7 +16,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 20caec04a878080f
+verified: 9a86a9c439695112
 ---
 
 # Command line follow invariants
@@ -29,7 +29,8 @@ A followed setup or factor cannot be updated yet. Every screen of text says "pap
 ## Separation (the integrity rule)
 - `<data_dir>/forward/` is one-way. Research writes nothing there and reads nothing from there.
 - Only the modules on the explicit `READERS` list in `tests/unit/test_follow_separation.py` may name the follow store
-  modules or open a path under `forward/`. Today that is the twelve `follow_*.py` modules, each with a one-line reason in `READER_REASONS`.
+  modules or open a path under `forward/`. Today that is the twelve `follow_*.py` modules, each with a one-line reason in `READER_REASONS`,
+  and `home_backup.py`: `alpha home backup` copies every file of the home byte for byte, parses no journal and feeds no research result.
   A new reader (a Today page) is added on purpose, in review.
   The nightly modules and `next_cmds.py` are not readers: they call `alpha follow ...` as child commands, or `follow_counts`.
 - The guard reads source text under `apps/*/src`, `packages/*/src` and `workers/`. It also fails on the store's file names

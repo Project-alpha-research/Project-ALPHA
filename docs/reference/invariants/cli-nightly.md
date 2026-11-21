@@ -2,10 +2,12 @@
 owner: command line runs and validation
 sources:
   - apps/alpha-cli/src/alpha_cli/nightly_*.py
+  - apps/alpha-cli/src/alpha_cli/home_*.py
   - apps/alpha-cli/src/alpha_cli/spine/recheck*.py
   - tests/unit/test_nightly*.py
+  - tests/unit/test_home_backup.py
   - tests/unit/test_recheck*.py
-verified: f2aa65efff65a727
+verified: 0c27ddf0593b7fcd
 ---
 
 # Command line nightly run invariants
@@ -43,3 +45,36 @@ verified: f2aa65efff65a727
   A computed rule test is a matched recheck, or a first normal run with `executed: true`.
 - N4 (follow update) counts only if a follow exists; N0 is an opt-in refresh: [cli-follow.md](cli-follow.md#nightly-n4-n0).
 - Partial `--only` runs are ignored. Old records read `unknown` and never qualify.
+
+## Failure marker and notice
+- `nightly_alert` owns `<home>/nightly/LAST_FAILED`: plain text, written atomically (`alpha_core.atomic`).
+  Line one is "The last nightly run failed: run <date>-<n> …"; then the date, the run and one sentence per blocking defect.
+- A run with a blocking defect writes it. A run that stops with an exception writes it too, then raises the same exception:
+  a crash leaves the marker even when no record exists.
+- A later full-attempt run (no `--only`) with no blocking defect removes it. A partial run never removes it.
+- `alpha nightly status` and `alpha next` show one line while it exists (`failed_line`). `alpha next` carries it in `last_night`.
+- `notify = true` in the config calls `notify-send` (found on PATH) with one line, for a failed night only.
+  A missing program, a non-zero exit or a timeout is never an error and never changes the record or the exit code.
+  No network, no e-mail, no schedule is installed.
+
+## Disk trend
+- Each new record keeps `home_bytes`: the sum of file sizes under the data home at the end of the run. Links are not followed.
+  Old records have no such field and read "not recorded".
+- `alpha nightly status` adds `disk`: size now, free and total bytes of the file system, the reserve and its source, and the trend
+  (first and last recorded size, the change). It only reads (`home_disk`).
+- The reserve is read from `<home>/crypto/storage-config.json` (`free_space_reserve`, ADR-0043); with none, the ADR-0032 default.
+  Under the reserve, status prints one `LOW DISK SPACE` line. An unreadable settings file is said in words; nothing is refused here.
+
+## Backup and restore
+- `alpha home backup <dir>` writes one tar (`home/<path>` entries, then `manifest.json`) and `<archive>.sha256` beside it.
+  The manifest has the relative path, size and SHA-256 of every file, every folder, and each excluded entry with its reason.
+- Lock rule: the backup takes `flock` on `<home>/nightly/.lock` without waiting, the lock the crontab line holds for a nightly run.
+  If it is held, the backup refuses and writes nothing. It holds the lock until the archive is complete.
+- A file whose size or modification time changes while it is read stops the backup; the partial archive is removed.
+- It refuses a target inside the home. Symbolic links are never followed: each is excluded and listed. Nothing is excluded silently.
+- `verify-backup` re-reads the archive, compares every file with the manifest and the archive with its `.sha256`, and names
+  each bad file. Exit code 1 on any problem. It extracts nothing.
+- `restore <archive> <dir>` verifies first, then writes only regular files and folders into a new or empty folder.
+  It refuses a non-empty target, the live home, a folder inside it and a folder that holds it. Unsafe entry names are refused.
+- `home_backup` is on the follow-store reader list (`test_follow_separation.py`) on purpose: it copies bytes, parses nothing
+  and feeds no research result. The `nightly_*` modules stay off that list.

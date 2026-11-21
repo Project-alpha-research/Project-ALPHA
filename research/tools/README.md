@@ -19,6 +19,8 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Which check fits my situation?" | [toolbox by situation](toolbox-by-situation.md), or `alpha tool find "<words>"` |
 | An idea to test (write the [idea card](idea-card.md) first; [library](library.md) has published ones) | [rule test](rule-test.md), then [follow](follow.md) |
 | "Does the whole pipeline still work on real data?" | [nightly run](nightly-run.md) |
+| "Did last night fail?", "is the disk filling up?" | [nightly failure marker and disk trend](nightly-alert.md) |
+| A copy of everything stored here, and proof the copy is good | [back up and restore the data home](home-backup.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |
 | A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |

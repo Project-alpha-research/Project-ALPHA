@@ -22,6 +22,7 @@ class NightlyConfig:
     rdagent_config: Path | None = None
     rdagent_timeout: float = 14400.0
     refresh_followed: bool = False  # N0: pull fresh bars for followed assets only
+    notify: bool = False  # call the local `notify-send` program when a night fails
     source: Path | None = None  # the file this was read from; not a setting
 
 
@@ -35,6 +36,7 @@ KEYS = (
     "rdagent_config",
     "rdagent_timeout_seconds",
     "refresh_followed",
+    "notify",
 )
 
 
@@ -81,6 +83,9 @@ def load_config(path: Path) -> NightlyConfig:
     refresh = table.get("refresh_followed", False)
     if not isinstance(refresh, bool):
         raise NightlyConfigError("`refresh_followed` must be true or false.")
+    notify = table.get("notify", False)
+    if not isinstance(notify, bool):
+        raise NightlyConfigError("`notify` must be true or false.")
     rdagent = table.get("rdagent_config")
     return NightlyConfig(
         assets=assets,
@@ -92,5 +97,6 @@ def load_config(path: Path) -> NightlyConfig:
         rdagent_config=_file(rdagent, "rdagent_config", base) if rdagent else None,
         rdagent_timeout=_seconds(table, "rdagent_timeout_seconds", 14400.0),
         refresh_followed=refresh,
+        notify=notify,
         source=path.resolve(),
     )

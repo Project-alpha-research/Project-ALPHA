@@ -32,3 +32,7 @@ step_timeout_seconds = 1800
 # Each asset is frozen first with `alpha data snapshot` (about 0.3 MB for 30 years of daily bars);
 # if that fails, the pull is not run. Snapshots are never deleted by the nightly run.
 # refresh_followed = true
+
+# Off by default. true calls the local `notify-send` program with one line when a night fails.
+# A missing program is not an error. The file <data home>/nightly/LAST_FAILED is written either way.
+# notify = true

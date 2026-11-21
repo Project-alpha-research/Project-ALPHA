@@ -134,6 +134,7 @@ def test_full_app_keeps_every_command_group() -> None:
             "figures",
             "follow",
             "forecast",
+            "home",
             "info",
             "labels",
             "ledger",

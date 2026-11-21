@@ -628,6 +628,9 @@ proof_synthetic = [
   "tests/unit/test_nightly.py::test_two_computed_three_path_runs_on_two_dates_are_ready",
   "tests/unit/test_nightly_follow.py::test_a_rewritten_journal_and_head_break_the_third_anchor",
   "tests/unit/test_nightly_follow.py::test_n4_is_required_only_when_follows_exist",
+  "tests/unit/test_nightly_alert.py::test_a_blocking_defect_writes_the_marker_in_plain_words",
+  "tests/unit/test_nightly_alert.py::test_a_crashing_step_still_leaves_the_marker_and_fails_loud",
+  "tests/unit/test_nightly_alert.py::test_low_free_space_is_one_plain_line_against_the_owner_reserve",
 ]
 proof_smoke = [
   "tests/smoke/test_nightly_smoke.py::test_nightly_rule_path_runs_the_real_commands",
@@ -636,7 +639,34 @@ real_data = "not yet confirmed (to check on the Mac later)"
 real_data_needs = "The RD-Agent path stays off until the owner sets rdagent_config with a key file and a spend cap."
 needs = []
 state = "Working"
-docs = ["research/tools/nightly-run.md"]
+docs = ["research/tools/nightly-run.md", "research/tools/nightly-alert.md"]
+
+[[capability]]
+id = "home-backup"
+name = "Back up and restore the data home (alpha home)"
+what = "Write one checked archive of everything stored in the data home, prove later that the archive is still good, and restore it into a new empty folder without touching the live home."
+see_it = ["uv run alpha home backup <folder outside the data home>"]
+entry_points = [
+  "cli: alpha home backup",
+  "cli: alpha home verify-backup",
+  "cli: alpha home restore",
+]
+proof_synthetic = [
+  "tests/unit/test_home_backup.py::test_round_trip_is_byte_identical",
+  "tests/unit/test_home_backup.py::test_a_corrupted_archive_fails_verification_and_names_the_file",
+  "tests/unit/test_home_backup.py::test_backup_refuses_while_the_nightly_lock_is_held",
+  "tests/unit/test_home_backup.py::test_restore_only_fills_a_new_empty_folder",
+  "tests/unit/test_home_backup_adversarial.py::test_a_hard_linked_file_is_stored_in_full_under_both_names",
+  "tests/unit/test_home_backup_adversarial.py::test_a_crafted_archive_cannot_write_outside_the_new_folder",
+]
+proof_smoke = [
+  "tests/smoke/test_home_backup_smoke.py::test_backup_verify_and_restore_round_trip",
+]
+real_data = "not yet confirmed (synthetic home only; not yet run on the owner's data home)"
+real_data_needs = "A run on the Dell's data home with a second disk for the archive."
+needs = []
+state = "Working"
+docs = ["research/tools/home-backup.md", "docs/operations/data-home-backup.md"]
 
 [[capability]]
 id = "risk-numbers"

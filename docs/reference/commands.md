@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-306 commands in 42 groups. Options marked (required) are
+308 commands in 42 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -154,6 +154,7 @@ Render publication-quality figures for a stored run.
 
 Follow a tested idea forward on paper.
 
+- `alpha follow book` — Every active follow as a share of ONE paper account, and the sum per asset. Options: `--json`
 - `alpha follow list` — One row per follow, with its state. Options: `--json`
 - `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--json`
 - `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--factor`, `--card`, `--size-pct`, `--json`
@@ -431,6 +432,7 @@ List rule tests and quote their stored results.
 - `alpha results check <PATH>` — Check a draft's tagged numbers, required labels and flags against stored facts. Options: `--json`, `--allow-untagged`
 - `alpha results cite <RUN_ID> <METRIC>` — Quote exactly one stored fact; never recompute a metric. Options: `--tool-output`, `--json`
 - `alpha results compare <RUN_IDS>` — Compare stored values, differences and ratios, with bases and run labels. Options: `--metric`, `--json`
+- `alpha results correlate <RUN_IDS>` — How stored runs moved together: correlation of daily returns, common days, over… Options: `--json`
 - `alpha results show <RUN_ID>` — Show sourced facts, observations, audit checks, tool outputs and chart names. Options: `--json`
 
 ## alpha risk
@@ -492,7 +494,7 @@ Preview and run immutable, allowlisted Strategy Development workflows.
 
 ## alpha test
 
-- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +10 more
+- `alpha test <SPEC>` — Test a long/flat trading rule on several assets and record every trial. Options: `--rule`, `--param`, `--asset`, `--name`, +11 more
 
 ## alpha tool
 

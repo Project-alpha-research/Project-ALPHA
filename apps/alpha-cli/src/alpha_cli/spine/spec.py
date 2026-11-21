@@ -13,6 +13,7 @@ from pydantic import (
     ConfigDict,
     Discriminator,
     Field,
+    SerializerFunctionWrapHandler,
     Tag,
     model_serializer,
     model_validator,
@@ -119,6 +120,11 @@ class IdeaSpec(FrozenModel):
     assets: tuple[Annotated[str, Field(min_length=1)], ...] = Field(min_length=1)
     rule: AnyRule
     costs: Costs = Field(default_factory=Costs)
+    # Context gate: `{alias: "series@key"}` and an expression over the aliases. A spec without
+    # them dumps without these keys, so its hash, run id and stored spec stay as before. The
+    # stored spec keeps the text as written; the hash takes the canonical form (see canonical).
+    context: dict[str, str] | None = None
+    when: str | None = None
     # A link to an idea card. Excluded from dumps, so it is in no hash, run id or stored spec.
     idea_card: str = Field(default="", exclude=True)
 
@@ -128,9 +134,32 @@ class IdeaSpec(FrozenModel):
             object.__setattr__(self, "name", self.rule.default_name)
         return self
 
+    @model_validator(mode="after")
+    def check_gate(self) -> Self:
+        if self.context is None and self.when is None:
+            return self  # most specs: keep the heavy context code unloaded
+        from alpha_cli._context_gate import check_context
+
+        check_context(self.context, self.when)
+        return self
+
+    @model_serializer(mode="wrap")
+    def omit_absent_gate(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        for key in ("context", "when"):
+            if data.get(key) is None:
+                data.pop(key, None)
+        return data
+
     def canonical(self) -> str:
+        data = self.model_dump(mode="json", exclude_none=True)
+        if self.context is not None and self.when is not None:
+            # Alias names and spacing are not identity: hash the canonical gate form.
+            from alpha_cli._context_gate import canonical_fields
+
+            data.update(canonical_fields(self.context, self.when))
         return json.dumps(
-            self.model_dump(mode="json", exclude_none=True),
+            data,
             sort_keys=True,
             separators=(",", ":"),
             allow_nan=False,

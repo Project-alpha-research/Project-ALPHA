@@ -24,6 +24,8 @@ import polars as pl
 CONTRACT_SCHEMA_VERSION = 1
 SUPPORTED_CONTRACT_SCHEMA_VERSIONS = frozenset({1, 2, 3})
 INPUT_ANCHOR_FILENAME = "input_anchor.json"
+# The hold-back record an exported bundle carries; prepare copies it so the replay run records it.
+RESERVE_FILENAME = "reserve.json"
 MIN_SYMBOLS = 20
 MIN_ALIGNED_SESSIONS = 756
 MIN_LABEL_BOUNDARY_GAP_SESSIONS = 1
@@ -752,6 +754,9 @@ def prepare_exchange(
     )
     try:
         shutil.copyfile(panel_path, temp_dir / "panel.parquet")
+        held = spec_path.parent / RESERVE_FILENAME
+        if held.is_file() and not held.is_symlink():
+            shutil.copyfile(held, temp_dir / RESERVE_FILENAME)
         (temp_dir / "request.json").write_bytes(canonical_json_bytes(request))
         _write_input_anchor(temp_dir)
         validate_request_bundle(temp_dir)

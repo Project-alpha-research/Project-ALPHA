@@ -204,6 +204,8 @@ def _text(facts: dict[str, Any]) -> str:
     lines.extend(
         f"  {t['date']}  {t['kind']}  {t['name']}  ({t['outcome']})" for t in facts["recent_trials"]
     )
+    if len(facts["recent_trials"]) >= 2:
+        lines.append("  Do two rule tests move together? alpha results correlate <run id> <run id>")
     waiting = facts["waiting"]["rdagent_proposals"]
     if waiting:
         lines.append("Waiting for you")

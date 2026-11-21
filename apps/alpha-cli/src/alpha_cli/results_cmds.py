@@ -10,7 +10,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
-from alpha_cli.spine import reserve
+from alpha_cli.spine import book, reserve
 from alpha_cli.spine.check import FlagLookup, check_text, render_check
 from alpha_cli.spine.compare import (
     DEFAULT_METRICS,
@@ -500,5 +500,76 @@ def compare_results(
             run_ids, fact_lookup(AlphaSettings().data_dir), metric or DEFAULT_METRICS
         )
         emit(result, json_out=json_out, fallback=render_compare(result))
+    except (ValueError, OSError, DataError) as exc:
+        _error(exc, json_out)
+
+
+def _daily_series(home: Path, run_id: str) -> book.DailySeries:
+    """One stored rule test's walk-forward equity and exposure. No bar is read, nothing is run."""
+    import polars as pl
+
+    from alpha_cli.toolbox import inputs
+
+    target = inputs.resolve(home, run_id)
+    frame = target.table("stored_equity", "ts", "equity")
+    stamps = target.dates(frame, "stored_equity")
+    held: tuple[bool, ...] | None = None
+    path = target.directory / "exposure_turnover.parquet"
+    if path.is_file():
+        try:
+            rows = pl.read_parquet(
+                path, columns=["start_ts", "end_ts", "net_exposure", "exposure_available"]
+            )
+        except pl.exceptions.PolarsError as exc:
+            raise ValueError(f"Cannot read exposure_turnover.parquet: {exc}") from exc
+        if rows["start_ts"].to_list() != stamps[:-1] or rows["end_ts"].to_list() != stamps[1:]:
+            raise ValueError(
+                f"Run {run_id}: stored exposure does not match the stored equity dates"
+            )
+        if all(rows["exposure_available"].to_list()):
+            net = rows["net_exposure"].to_list()
+            if any(value is None or value != value for value in net):
+                raise ValueError(f"Run {run_id}: stored exposure has a missing value")
+            held = (False, *(value != 0 for value in net))
+    return book.DailySeries(
+        run_id,
+        tuple(ts.date() for ts in stamps),
+        tuple(float(value) for value in frame["equity"].to_list()),
+        held,
+        tuple(reserve.read_labels(target.manifest)),
+    )
+
+
+@results_app.command("correlate")
+def correlate_results(
+    run_ids: Annotated[list[str], typer.Argument(help="Two to eight rule-test runs.")],
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """How stored runs moved together: correlation of daily returns, common days, overlap.
+
+    Reads the stored walk-forward equity and exposure of each run. It runs no test and reads
+    no bar. Under 60 common days it gives no correlation. Readings only, not advice."""
+    try:
+        home = AlphaSettings().data_dir
+        if not 2 <= len(run_ids) <= 8:
+            raise SpineError(
+                "INVALID_RUN_COUNT",
+                "Correlate needs 2 to 8 runs.",
+                "Run alpha results correlate with 2 to 8 run ids.",
+            )
+        paths = _run_paths(home)
+        ids = [resolve_run(run_id, paths) for run_id in run_ids]
+        if len(set(ids)) != len(ids):
+            raise SpineError(
+                "DUPLICATE_RUN",
+                "A run is named twice.",
+                "Run alpha results correlate with different run ids.",
+            )
+        result = book.correlate([_daily_series(home, run_id) for run_id in ids])
+        for run in result["runs"]:
+            if reserve.SEEN in run["labels"]:
+                run["reserve_sentence"] = reserve.SEEN_SENTENCE
+        result["basis"] = "stored walk-forward equity (net of fees) and exposure of each run"
+        emit(result, json_out=json_out, fallback=book.render_correlate(result))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

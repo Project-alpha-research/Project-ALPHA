@@ -42,10 +42,10 @@ def test_cli_links_the_card_from_the_flag_and_says_so(
 ) -> None:
     import json
 
-    from alpha_data.store import ParquetStore
     from typer.testing import CliRunner
 
     from alpha_cli.main import app
+    from alpha_data.store import ParquetStore
     from tests.fixtures.cli_fixtures import seed_store
 
     home = tmp_path / "home"

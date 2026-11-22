@@ -56,7 +56,7 @@ describe('control-plane API client', () => {
   it('surfaces non-success responses for panel error states', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('offline', { status: 503 })))
 
-    await expect(api.providers()).rejects.toThrow('503')
+    await expect(api.providers()).rejects.toThrow('The Workstation server could not answer this request. Try again. If it keeps failing, restart the Workstation.')
   })
 
   it('uses bounded artifact endpoints for causal charts and native analytics', async () => {
@@ -99,7 +99,8 @@ describe('control-plane API client', () => {
   it('extracts ApiErrorV1 messages without leaking JSON response framing', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(apiError('run has no equity stream', 422)))
 
-    await expect(api.providers()).rejects.toThrow('422 — run has no equity stream')
+    await expect(api.providers()).rejects.toThrow('run has no equity stream')
+    await expect(api.providers()).rejects.not.toThrow('422')
     await expect(api.providers()).rejects.not.toThrow('{"message"')
   })
 
@@ -140,7 +141,7 @@ describe('control-plane API client', () => {
 
     await api.projects()
     await api.mlStatus()
-    const accepted = await api.createMlExperiment('project/id')
+    const accepted = await api.createMlExperiment({ snapshot_id: 'snap' })
     await api.developmentJob(accepted.job_id)
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/projects?limit=50&offset=0')
@@ -148,7 +149,7 @@ describe('control-plane API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/ml/experiments', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project_id: 'project/id' }),
+      body: JSON.stringify({ spec: { snapshot_id: 'snap' } }),
     })
     expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/development/jobs/job-1?event_tail=true')
   })
@@ -157,11 +158,11 @@ describe('control-plane API client', () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({})))
     vi.stubGlobal('fetch', fetchMock)
     await api.mlCapabilities()
-    await api.createMlExperiment('project-1', 'linear', { alpha: 2 })
+    await api.createMlExperiment({ snapshot_id: 'snap' }, 'linear', { alpha: 2 })
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/ml/capabilities')
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/ml/experiments', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ project_id: 'project-1', model: 'linear', parameters: { alpha: 2 } }),
+      body: JSON.stringify({ spec: { snapshot_id: 'snap' }, model: 'linear', parameters: { alpha: 2 } }),
     })
   })
 

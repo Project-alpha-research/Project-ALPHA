@@ -2739,19 +2739,6 @@
             "title": "Base",
             "type": "string"
           },
-          "case_id": {
-            "anyOf": [
-              {
-                "maxLength": 80,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Case Id"
-          },
           "category": {
             "default": "linear",
             "enum": [
@@ -2774,18 +2761,6 @@
               }
             ],
             "title": "End"
-          },
-          "expected_case_revision": {
-            "anyOf": [
-              {
-                "pattern": "^[0-9a-f]{64}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Case Revision"
           },
           "family": {
             "$ref": "#/components/schemas/CryptoFamilyValue"
@@ -2873,19 +2848,6 @@
             "pattern": "^[A-Za-z0-9._-]+$",
             "title": "Quote",
             "type": "string"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
           },
           "start": {
             "anyOf": [
@@ -12125,18 +12087,6 @@
       "MlExperimentGenerateRequest": {
         "additionalProperties": false,
         "properties": {
-          "experiment_id": {
-            "anyOf": [
-              {
-                "pattern": "^ex_[0-9a-f]{64}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Experiment Id"
-          },
           "model": {
             "anyOf": [
               {
@@ -12179,11 +12129,10 @@
             "title": "Parameters",
             "type": "object"
           },
-          "project_id": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Project Id",
-            "type": "string"
+          "spec": {
+            "additionalProperties": true,
+            "title": "Spec",
+            "type": "object"
           },
           "timeout_seconds": {
             "default": 3600,
@@ -12194,7 +12143,7 @@
           }
         },
         "required": [
-          "project_id"
+          "spec"
         ],
         "title": "MlExperimentGenerateRequest",
         "type": "object"
@@ -12212,11 +12161,6 @@
             "title": "Exchange Id",
             "type": "string"
           },
-          "experiment_id": {
-            "pattern": "^ex_[0-9a-f]{64}$",
-            "title": "Experiment Id",
-            "type": "string"
-          },
           "input_bundle_id": {
             "pattern": "^[0-9a-f]{16,64}$",
             "title": "Input Bundle Id",
@@ -12224,10 +12168,6 @@
           },
           "job_id": {
             "title": "Job Id",
-            "type": "string"
-          },
-          "project_id": {
-            "title": "Project Id",
             "type": "string"
           },
           "status": {
@@ -12240,8 +12180,6 @@
           "job_id",
           "status",
           "action",
-          "project_id",
-          "experiment_id",
           "input_bundle_id",
           "exchange_id"
         ],
@@ -12374,10 +12312,6 @@
             ],
             "title": "Experiment Id"
           },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string"
-          },
           "ready": {
             "title": "Ready",
             "type": "boolean"
@@ -12407,7 +12341,6 @@
         },
         "required": [
           "schema_version",
-          "project_id",
           "experiment_id",
           "snapshot_id",
           "universe_count",
@@ -13110,11 +13043,6 @@
       "MlInputGenerateRequest": {
         "additionalProperties": false,
         "properties": {
-          "experiment_id": {
-            "pattern": "^ex_[0-9a-f]{64}$",
-            "title": "Experiment Id",
-            "type": "string"
-          },
           "input_bundle_id": {
             "anyOf": [
               {
@@ -13127,11 +13055,10 @@
             ],
             "title": "Input Bundle Id"
           },
-          "project_id": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Project Id",
-            "type": "string"
+          "spec": {
+            "additionalProperties": true,
+            "title": "Spec",
+            "type": "object"
           },
           "timeout_seconds": {
             "default": 3600,
@@ -13142,8 +13069,7 @@
           }
         },
         "required": [
-          "project_id",
-          "experiment_id"
+          "spec"
         ],
         "title": "MlInputGenerateRequest",
         "type": "object"
@@ -13156,11 +13082,6 @@
             "title": "Action",
             "type": "string"
           },
-          "experiment_id": {
-            "pattern": "^ex_[0-9a-f]{64}$",
-            "title": "Experiment Id",
-            "type": "string"
-          },
           "input_bundle_id": {
             "pattern": "^[0-9a-f]{16,64}$",
             "title": "Input Bundle Id",
@@ -13168,10 +13089,6 @@
           },
           "job_id": {
             "title": "Job Id",
-            "type": "string"
-          },
-          "project_id": {
-            "title": "Project Id",
             "type": "string"
           },
           "status": {
@@ -13184,8 +13101,6 @@
           "job_id",
           "status",
           "action",
-          "project_id",
-          "experiment_id",
           "input_bundle_id"
         ],
         "title": "MlInputJobAccepted",
@@ -14039,6 +13954,21 @@
           "message"
         ],
         "title": "MlServiceStatus",
+        "type": "object"
+      },
+      "MlSpecRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "spec": {
+            "additionalProperties": true,
+            "title": "Spec",
+            "type": "object"
+          }
+        },
+        "required": [
+          "spec"
+        ],
+        "title": "MlSpecRequest",
         "type": "object"
       },
       "MlTabularModelRecipe": {
@@ -17593,6 +17523,173 @@
           "minutes"
         ],
         "title": "RdAgentStory",
+        "type": "object"
+      },
+      "RecentRun": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "first_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Ts"
+          },
+          "idea": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idea"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ts"
+          },
+          "mtime": {
+            "title": "Mtime",
+            "type": "number"
+          },
+          "oos_sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oos Sharpe"
+          },
+          "rule_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Name"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "spark": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Spark",
+            "type": "array"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "trades": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trades"
+          },
+          "tries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tries"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "mtime",
+          "display_name",
+          "symbol",
+          "idea",
+          "rule_name",
+          "first_ts",
+          "last_ts",
+          "trades",
+          "tries",
+          "oos_sharpe",
+          "evidence",
+          "spark"
+        ],
+        "title": "RecentRun",
+        "type": "object"
+      },
+      "RecentRunList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecentRun"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "items"
+        ],
+        "title": "RecentRunList",
         "type": "object"
       },
       "RecordedFact": {
@@ -30888,36 +30985,19 @@
       }
     },
     "/api/ml/experiments/preflight": {
-      "get": {
-        "description": "Recompute project, data, gate, worker, and capacity prerequisites without launching.",
-        "operationId": "get_experiment_preflight_api_ml_experiments_preflight_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "project_id",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string"
+      "post": {
+        "description": "Recompute spec, data, worker, and capacity prerequisites without launching.",
+        "operationId": "post_experiment_preflight_api_ml_experiments_preflight_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MlSpecRequest"
+              }
             }
           },
-          {
-            "in": "query",
-            "name": "experiment_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Experiment Id"
-            }
-          }
-        ],
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -30940,7 +31020,7 @@
             "description": "Stable, redacted Workstation error"
           }
         },
-        "summary": "Get Experiment Preflight",
+        "summary": "Post Experiment Preflight",
         "tags": [
           "ml-research"
         ]
@@ -32823,6 +32903,62 @@
         "summary": "Journey Figure",
         "tags": [
           "rdagent"
+        ]
+      }
+    },
+    "/api/recent-runs": {
+      "get": {
+        "description": "The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.",
+        "operationId": "recent_runs_api_recent_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "spark",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Spark",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentRunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Recent Runs",
+        "tags": [
+          "runs"
         ]
       }
     },
@@ -37537,36 +37673,19 @@
       }
     },
     "/api/v3/ml/experiments/preflight": {
-      "get": {
-        "description": "Recompute project, data, gate, worker, and capacity prerequisites without launching.\n\nVersioned Workstation-v3 alias of `/api/ml/experiments/preflight`.",
-        "operationId": "v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "project_id",
-            "required": true,
-            "schema": {
-              "title": "Project Id",
-              "type": "string"
+      "post": {
+        "description": "Recompute spec, data, worker, and capacity prerequisites without launching.\n\nVersioned Workstation-v3 alias of `/api/ml/experiments/preflight`.",
+        "operationId": "v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MlSpecRequest"
+              }
             }
           },
-          {
-            "in": "query",
-            "name": "experiment_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Experiment Id"
-            }
-          }
-        ],
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -37589,7 +37708,7 @@
             "description": "Stable, redacted Workstation error"
           }
         },
-        "summary": "V3 Get Experiment Preflight",
+        "summary": "V3 Post Experiment Preflight",
         "tags": [
           "workstation-v3",
           "ml-research"

@@ -47,3 +47,8 @@ Failing before my change on main too (not mine): `test_rdagent_funding_columns::
 
 `docs/reference/invariants/cli-cost-classes.md` (new section "Other readers of the table") and `rdagent.md` (one sentence). ADR-0049/0050 are
 decision records and keep their dated text. No baseline entry in `.claude/code-size-baseline.json` asked to change.
+
+## Review fix
+
+A repeat copies its first trial's replay, so it now keeps that trial's `costs` (none recorded stays none) instead of today's. Test:
+`test_a_repeat_keeps_the_costs_of_its_first_trial` (fails without the change).

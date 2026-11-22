@@ -110,12 +110,3 @@ test('an empty store and a failed read are said in words', async ({ page }) => {
   await page.reload()
   await expect(page.getByRole('alert')).toBeVisible()
 })
-
-test('the research front screen shows the idea cards when there are no research cases', async ({ page }) => {
-  await mock(page)
-  await page.route('**/api/research/cases*', route => route.fulfill({ json: { items: [], next_cursor: null } }))
-  await page.goto('/#page=research&pane=ResearchBacklog')
-  await expect(page.getByText('NO RESEARCH CASES YET')).toBeVisible()
-  await expect(page.getByText('1 idea card written.')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Open Ideas' })).toHaveAttribute('href', '#page=research&pane=IdeaWorkspace')
-})

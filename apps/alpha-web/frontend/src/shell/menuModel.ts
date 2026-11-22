@@ -73,16 +73,12 @@ export type MenuItem =
   | { kind: 'open'; window: WindowId; label: string }
   | { kind: 'shell'; id: ShellItemId; label: string; checked?: boolean }
   | { kind: 'dock'; id: DockId; label: string; open: boolean }
-  | { kind: 'mode'; id: WorkspaceMode; label: string; active: boolean; disabled: boolean }
 
-export type WorkspaceMode = 'guided' | 'advanced'
-export type ShellItemId = 'palette' | 'settings' | 'new-idea' | 'indicators' | 'new-chart' | 'tile'
+export type ShellItemId = 'palette' | 'settings' | 'indicators' | 'new-chart' | 'tile'
 
 /** The shell state the View and Research menus reflect; both parts are optional. */
 export interface ShellMenuState {
   docks?: readonly { id: DockId; label: string; open: boolean }[]
-  /** Current detail mode and whether Advanced can be chosen (it needs a linked project). */
-  mode?: { current: WorkspaceMode; advancedAvailable: boolean }
   /** Whether the chart documents are tiled side by side (Window › Tile charts). */
   tiled?: boolean
 }
@@ -106,22 +102,12 @@ export function assignCommands(catalog: readonly CommandDef[]): Record<MenuName,
   return menus
 }
 
-/**
- * The full menu bar: catalog commands, the shell's own entries (New Idea under Research, the
- * dock toggles, Guided/Advanced and Settings under View, the palette under Help), the documents
- * the profile can open (View, Governance among them) and the open documents (Window).
- */
 export type CommandHome = { kind: 'window'; id: WindowId } | { kind: 'dock'; id: 'DataManager' }
 
 const COMMAND_HOMES: Readonly<Record<string, CommandHome>> = {
-  project: { kind: 'window', id: 'build' },
-  suite: { kind: 'window', id: 'build' },
-  evidence: { kind: 'window', id: 'build' },
-  research: { kind: 'window', id: 'research' },
   assistant: { kind: 'window', id: 'chart' },
   rules: { kind: 'window', id: 'builder' },
   provider: { kind: 'window', id: 'jobs' },
-  ml: { kind: 'window', id: 'ml-lab' },
   data: { kind: 'dock', id: 'DataManager' },
   'crypto-data': { kind: 'dock', id: 'DataManager' },
 }
@@ -133,25 +119,23 @@ export function commandHome(commandId: string): CommandHome | null {
   return COMMAND_HOMES[root] ?? null
 }
 
+/**
+ * The menu bar the owner sees: the documents the profile can open, the dock toggles and Settings
+ * (View), Indicators (Insert), the open documents (Window) and the palette (Help). Raw CLI
+ * commands are not listed: they are terminal steps, not screens. A menu with no item is hidden.
+ */
 export function menuBar(
-  catalog: readonly CommandDef[],
   open: readonly OpenDocument[],
   active: string | null,
   available: readonly { id: WindowId; title: string }[],
   shell: ShellMenuState = {},
 ): Record<MenuName, MenuItem[]> {
-  const menus = assignCommands(catalog)
+  const menus = Object.fromEntries(MENUS.map((name) => [name, [] as MenuItem[]])) as Record<MenuName, MenuItem[]>
   for (const item of available) menus.View.push({ kind: 'open', window: item.id, label: item.title })
   for (const dock of shell.docks ?? []) menus.View.push({ kind: 'dock', id: dock.id, label: dock.label, open: dock.open })
-  if (shell.mode) {
-    const { current, advancedAvailable } = shell.mode
-    menus.View.push({ kind: 'mode', id: 'guided', label: 'Guided', active: current === 'guided', disabled: false })
-    menus.View.push({ kind: 'mode', id: 'advanced', label: 'Advanced', active: current === 'advanced', disabled: !advancedAvailable })
-  }
   menus.View.push({ kind: 'shell', id: 'settings', label: 'Settings' })
-  menus.Insert.unshift({ kind: 'shell', id: 'indicators', label: 'Indicators…' })
-  menus.Research.unshift({ kind: 'shell', id: 'new-idea', label: 'New Idea…' })
-  menus.Help.unshift({ kind: 'shell', id: 'palette', label: 'Search commands  Ctrl+K' })
+  menus.Insert.push({ kind: 'shell', id: 'indicators', label: 'Indicators…' })
+  menus.Help.push({ kind: 'shell', id: 'palette', label: 'Search  Ctrl+K' })
   menus.Window.push({ kind: 'shell', id: 'new-chart', label: 'New chart window' })
   if (shell.tiled !== undefined) {
     menus.Window.push({ kind: 'shell', id: 'tile', label: 'Tile charts', checked: shell.tiled })
@@ -160,4 +144,9 @@ export function menuBar(
     menus.Window.push({ kind: 'document', key: item.key, label: item.title, active: item.key === active })
   }
   return menus
+}
+
+/** The menus that have at least one item, in menu-bar order. */
+export function visibleMenus(menus: Record<MenuName, MenuItem[]>): MenuName[] {
+  return MENUS.filter((name) => menus[name].length > 0)
 }

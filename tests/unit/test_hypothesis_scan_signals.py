@@ -113,7 +113,7 @@ def test_frozen_scan_replay_distinct_attempts_and_live_store_independence(tmp_pa
     specs = list((tmp_path / "scans" / "hypotheses" / "specs").glob("*.json"))
     assert len(specs) == 1
     frozen = json.loads(specs[0].read_text())
-    assert len(frozen["snapshot_hash"]) == 64 and len(frozen["code_hash"]) == 64
+    assert len(frozen["data_hash"]) == 64 and len(frozen["code_hash"]) == 64
     assert len(frozen["lock_hash"]) == 64
 
 

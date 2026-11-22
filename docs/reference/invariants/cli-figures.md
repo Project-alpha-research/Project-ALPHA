@@ -24,6 +24,11 @@ How `alpha figures` builds, caches and draws the figure pack. The drawing itself
   `--variant plain|annotated`; the cache key and the JSON sidecar carry the variant, and the sidecar carries
   the explanation. `--dark` is accepted and changes nothing: charts stay white on both screen themes.
   `figures list --json` lists both variants and the four fixed sentences of the explanation.
+- The standard is the owner's approved sample set (`owner/workstation/2026-11-21-chart-pairs/`, outside git).
+  The title reads "SYMBOL idea-name: chart"; the grey line under it keeps the period and dates. Legends take
+  the free corner; held periods are shaded; histograms get head room and parts of one set of bars stack.
+  The monthly heatmap keeps every year and every cell number and grows a row at a time. The reading box counts
+  real sentences: the run's own numbers fill what the fixed sentences leave of seven, at least one.
 - The drawing lives in `figures/plain_*.py` (look, marks, layout), `spec_facts.py` (numbers read from the
   stored marks) and `explanations_*.py` (fixed sentences). The protected renderer in `alpha_research.figures`
   is no longer used for display. Setup trade and event-study sheets and journey figures use the same white

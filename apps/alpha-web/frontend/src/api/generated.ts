@@ -1173,13 +1173,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Experiment Preflight
-         * @description Recompute project, data, gate, worker, and capacity prerequisites without launching.
-         */
-        get: operations["get_experiment_preflight_api_ml_experiments_preflight_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Post Experiment Preflight
+         * @description Recompute spec, data, worker, and capacity prerequisites without launching.
+         */
+        post: operations["post_experiment_preflight_api_ml_experiments_preflight_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1850,6 +1850,26 @@ export interface paths {
          * @description Read one published PNG belonging to this idea.
          */
         get: operations["journey_figure_api_rdagent_runs__run_id__journeys__idea_id__figures__filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recent-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Runs
+         * @description The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.
+         */
+        get: operations["recent_runs_api_recent_runs_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3492,15 +3512,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
-         * V3 Get Experiment Preflight
-         * @description Recompute project, data, gate, worker, and capacity prerequisites without launching.
+         * V3 Post Experiment Preflight
+         * @description Recompute spec, data, worker, and capacity prerequisites without launching.
          *
          *     Versioned Workstation-v3 alias of `/api/ml/experiments/preflight`.
          */
-        get: operations["v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get"];
-        put?: never;
-        post?: never;
+        post: operations["v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5117,8 +5137,6 @@ export interface components {
         CryptoAcquisitionRequest: {
             /** Base */
             base: string;
-            /** Case Id */
-            case_id?: string | null;
             /**
              * Category
              * @default linear
@@ -5127,8 +5145,6 @@ export interface components {
             category: "spot" | "linear" | "inverse" | "option";
             /** End */
             end?: string | null;
-            /** Expected Case Revision */
-            expected_case_revision?: string | null;
             family: components["schemas"]["CryptoFamilyValue"];
             /**
              * Frequency
@@ -5149,8 +5165,6 @@ export interface components {
             provider: components["schemas"]["CryptoProviderValue"];
             /** Quote */
             quote: string;
-            /** Reason */
-            reason?: string | null;
             /** Start */
             start?: string | null;
         };
@@ -8189,16 +8203,16 @@ export interface components {
         };
         /** MlExperimentGenerateRequest */
         MlExperimentGenerateRequest: {
-            /** Experiment Id */
-            experiment_id?: string | null;
             /** Model */
             model?: ("lightgbm" | "linear" | "catboost" | "xgboost" | "double_ensemble") | null;
             /** Parameters */
             parameters?: {
                 [key: string]: number | ("ols" | "ridge" | "lasso" | "nnls");
             };
-            /** Project Id */
-            project_id: string;
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
             /**
              * Timeout Seconds
              * @default 3600
@@ -8214,14 +8228,10 @@ export interface components {
             action: "generate-experiment";
             /** Exchange Id */
             exchange_id: string;
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id: string;
             /** Job Id */
             job_id: string;
-            /** Project Id */
-            project_id: string;
             /**
              * Status
              * @constant
@@ -8260,8 +8270,6 @@ export interface components {
             checks: components["schemas"]["MlPreflightCheck"][];
             /** Experiment Id */
             experiment_id: string | null;
-            /** Project Id */
-            project_id: string;
             /** Ready */
             ready: boolean;
             /**
@@ -8523,12 +8531,12 @@ export interface components {
         };
         /** MlInputGenerateRequest */
         MlInputGenerateRequest: {
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id?: string | null;
-            /** Project Id */
-            project_id: string;
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
             /**
              * Timeout Seconds
              * @default 3600
@@ -8542,14 +8550,10 @@ export interface components {
              * @constant
              */
             action: "export-input";
-            /** Experiment Id */
-            experiment_id: string;
             /** Input Bundle Id */
             input_bundle_id: string;
             /** Job Id */
             job_id: string;
-            /** Project Id */
-            project_id: string;
             /**
              * Status
              * @constant
@@ -8890,6 +8894,13 @@ export interface components {
             min_symbols: 20;
             /** Worker Ready */
             worker_ready: boolean;
+        };
+        /** MlSpecRequest */
+        MlSpecRequest: {
+            /** Spec */
+            spec: {
+                [key: string]: unknown;
+            };
         };
         /** MlTabularModelRecipe */
         MlTabularModelRecipe: {
@@ -10097,6 +10108,44 @@ export interface components {
             minutes: components["schemas"]["RecordedFact"];
             /** Missing Links */
             missing_links: string[];
+        };
+        /** RecentRun */
+        RecentRun: {
+            /** Display Name */
+            display_name: string;
+            /** Evidence */
+            evidence: string | null;
+            /** First Ts */
+            first_ts: string | null;
+            /** Idea */
+            idea: string | null;
+            /** Kind */
+            kind: string;
+            /** Last Ts */
+            last_ts: string | null;
+            /** Mtime */
+            mtime: number;
+            /** Oos Sharpe */
+            oos_sharpe: number | null;
+            /** Rule Name */
+            rule_name: string | null;
+            /** Run Id */
+            run_id: string;
+            /** Spark */
+            spark: number[];
+            /** Symbol */
+            symbol: string | null;
+            /** Trades */
+            trades: number | null;
+            /** Tries */
+            tries: number | null;
+        };
+        /** RecentRunList */
+        RecentRunList: {
+            /** Items */
+            items: components["schemas"]["RecentRun"][];
+            /** Total */
+            total: number;
         };
         /** RecordedFact */
         RecordedFact: {
@@ -15434,17 +15483,18 @@ export interface operations {
             };
         };
     };
-    get_experiment_preflight_api_ml_experiments_preflight_get: {
+    post_experiment_preflight_api_ml_experiments_preflight_post: {
         parameters: {
-            query: {
-                project_id: string;
-                experiment_id?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MlSpecRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -16612,6 +16662,38 @@ export interface operations {
                 };
                 content: {
                     "image/png": string;
+                };
+            };
+            /** @description Stable, redacted Workstation error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorV1"];
+                };
+            };
+        };
+    };
+    recent_runs_api_recent_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                spark?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentRunList"];
                 };
             };
             /** @description Stable, redacted Workstation error */
@@ -19550,17 +19632,18 @@ export interface operations {
             };
         };
     };
-    v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get: {
+    v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post: {
         parameters: {
-            query: {
-                project_id: string;
-                experiment_id?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MlSpecRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

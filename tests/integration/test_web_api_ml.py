@@ -106,8 +106,6 @@ def test_project_generation_post_returns_opaque_pipeline_job(
         "job_id": "00000000-0000-4000-8000-000000000003",
         "status": "queued",
         "action": "generate-experiment",
-        "project_id": "project-1",
-        "experiment_id": "ex_" + "a" * 64,
         "input_bundle_id": "b" * 32,
         "exchange_id": "c" * 32,
     }
@@ -115,7 +113,7 @@ def test_project_generation_post_returns_opaque_pipeline_job(
     monkeypatch.setattr(_ml, "launch_experiment_generation", lambda **kwargs: accepted)
     client = _client(tmp_path, monkeypatch)
 
-    response = client.post("/api/ml/experiments", json={"project_id": "project-1"})
+    response = client.post("/api/ml/experiments", json={"spec": {"snapshot_id": "snapshot-1"}})
 
     assert response.status_code == 202, response.text
     assert response.json() == accepted
@@ -133,8 +131,6 @@ def test_project_generation_without_model_requests_no_override(
             "job_id": "00000000-0000-4000-8000-000000000003",
             "status": "queued",
             "action": "generate-experiment",
-            "project_id": "project-1",
-            "experiment_id": "ex_" + "a" * 64,
             "input_bundle_id": "b" * 32,
             "exchange_id": "c" * 32,
         }
@@ -143,11 +139,15 @@ def test_project_generation_without_model_requests_no_override(
     monkeypatch.setattr(_ml, "launch_experiment_generation", launch)
     client = _client(tmp_path, monkeypatch)
 
-    assert client.post("/api/ml/experiments", json={"project_id": "project-1"}).status_code == 202
+    assert (
+        client.post("/api/ml/experiments", json={"spec": {"snapshot_id": "snapshot-1"}}).status_code
+        == 202
+    )
     assert launches[0]["model"] is None
     assert launches[0]["parameters"] == {}
     rejected = client.post(
-        "/api/ml/experiments", json={"project_id": "project-1", "parameters": {"alpha": 2.0}}
+        "/api/ml/experiments",
+        json={"spec": {"snapshot_id": "snapshot-1"}, "parameters": {"alpha": 2.0}},
     )
     assert rejected.status_code == 422
     assert len(launches) == 1
@@ -158,7 +158,6 @@ def test_project_generation_preflight_route_is_typed(
 ) -> None:
     projection = {
         "schema_version": 1,
-        "project_id": "project-1",
         "experiment_id": None,
         "snapshot_id": None,
         "universe_count": 0,
@@ -167,17 +166,19 @@ def test_project_generation_preflight_route_is_typed(
         "ready": False,
         "checks": [
             {
-                "check_id": "experiment",
+                "check_id": "snapshot",
                 "state": "blocked",
-                "message": "No current immutable experiment is selected.",
-                "recovery_action": "Create or select an experiment in Development Center.",
+                "message": "The experiment snapshot is missing or unreadable.",
+                "recovery_action": "Name a verified frozen snapshot in the experiment spec.",
             }
         ],
     }
     monkeypatch.setattr(_ml, "experiment_preflight", lambda **_: projection)
     client = _client(tmp_path, monkeypatch)
 
-    response = client.get("/api/ml/experiments/preflight?project_id=project-1")
+    response = client.post(
+        "/api/ml/experiments/preflight", json={"spec": {"snapshot_id": "snapshot-1"}}
+    )
 
     assert response.status_code == 200, response.text
     assert response.json() == projection
@@ -194,7 +195,7 @@ def test_project_generation_revalidates_preflight_before_creating_a_job(
             "checks": [
                 {
                     "state": "blocked",
-                    "message": "The project research gate is still open.",
+                    "message": "The experiment snapshot is missing or unreadable.",
                 }
             ],
         },
@@ -209,7 +210,7 @@ def test_project_generation_revalidates_preflight_before_creating_a_job(
     monkeypatch.setattr(_ml, "launch_experiment_generation", launch)
     client = _client(tmp_path, monkeypatch)
 
-    response = client.post("/api/ml/experiments", json={"project_id": "project-1"})
+    response = client.post("/api/ml/experiments", json={"spec": {"snapshot_id": "snapshot-1"}})
 
     assert response.status_code == 422
     assert response.json()["code"] == "request_invalid"
@@ -223,8 +224,6 @@ def test_snapshot_input_generation_post_uses_opaque_bundle_id(
         "job_id": "00000000-0000-4000-8000-000000000002",
         "status": "queued",
         "action": "export-input",
-        "project_id": "project-1",
-        "experiment_id": "ex_" + "a" * 64,
         "input_bundle_id": "b" * 32,
     }
     monkeypatch.setattr(_ml, "launch_input_generation", lambda **kwargs: accepted)
@@ -233,8 +232,7 @@ def test_snapshot_input_generation_post_uses_opaque_bundle_id(
     response = client.post(
         "/api/ml/inputs/generate",
         json={
-            "project_id": "project-1",
-            "experiment_id": "ex_" + "a" * 64,
+            "spec": {"snapshot_id": "snapshot-1"},
             "input_bundle_id": "b" * 32,
         },
     )

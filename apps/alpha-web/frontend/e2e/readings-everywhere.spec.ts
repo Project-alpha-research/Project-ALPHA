@@ -85,23 +85,6 @@ test('a gate card never takes a good or bad colour and keeps its fact check as a
 })
 
 for (const theme of THEMES) {
-  test(`the Pipeline shows an evidence word or a muted old-rules line, never a chip, in the ${theme} theme`, async ({ page }) => {
-    await preparePage(page, { runs: [
-      listed('a'.repeat(16), { command: 'validate', evidence: 'some evidence', verdict: 'B', passed: true }),
-      listed('b'.repeat(16), { command: 'backtest_run', evidence: null, verdict: 'C', passed: false }),
-    ], initialSymbol: null })
-    await page.goto('/#page=strategies&pane=Pipeline')
-    await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption(theme)
-    const stages = page.locator('.pipeline')
-    await expect(stages).toContainText('some evidence')
-    await expect(stages).toContainText('graded C under the old rules')
-    await expect(stages).toContainText('The gauntlet: five checks, read in context')
-    await expect(page.locator('.pipeline .chip.pass, .pipeline .chip.fail, .pipeline .verdict')).toHaveCount(0)
-    assertOwnerText(await stages.innerText())
-  })
-}
-
-for (const theme of THEMES) {
   test(`the toast shows the evidence word, not a verdict or a gate result, in the ${theme} theme`, async ({ page }) => {
     await preparePage(page)
     await page.goto('/#page=operations&pane=JobMonitor')

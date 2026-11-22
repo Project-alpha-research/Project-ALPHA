@@ -83,3 +83,7 @@ kept in the store (`unsettled-spend.jsonl`), so a rerun counts it against the 10
 ## Review round 6 (Codex)
 Each gateway makes its own token, so one shared token failed on the second model. The client now reads `ALPHA_BENCH_TOKEN_<MODEL>` per model.
 With a single gateway, `ALPHA_BENCH_GATEWAY_TOKEN` still works. Tokens are never stored.
+
+## Review round 7 (Codex)
+A coder reply is often a JSON envelope `{"code": "..."}`. The buildability check now parses the `code` string inside, not the envelope
+(the envelope alone is a valid Python expression, so a broken program used to count as buildable).

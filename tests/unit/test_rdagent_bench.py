@@ -657,3 +657,20 @@ def test_each_gateway_gets_its_own_token(monkeypatch: pytest.MonkeyPatch) -> Non
         GatewayClient({"a": "http://127.0.0.1:1", "d": "http://127.0.0.1:3"}).complete(
             "d", prompt, 0
         )
+
+
+def test_a_code_reply_in_a_json_envelope_is_checked_on_the_code_inside(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 4, "code")
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    texts = {
+        "p0": json.dumps({"code": "def f():\n    return 1\n"}),
+        "p1": json.dumps({"code": "def f(:\n pass"}),
+        "p2": json.dumps({"code": ""}),
+        "p3": "def g():\n    return 2\n",
+    }
+    data = {"a": {k: [{**_reply(1, 1), "text": v}] for k, v in texts.items()}}
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
+    reading = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
+    assert reading.by_prompt == {"p0": 1.0, "p1": 0.0, "p2": 0.0, "p3": 1.0}

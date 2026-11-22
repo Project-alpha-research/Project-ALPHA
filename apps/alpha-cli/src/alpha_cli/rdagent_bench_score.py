@@ -115,13 +115,26 @@ def _proposals(text: str) -> list[dict[str, Any]] | None:
     return None if any(x is None for x in found) else [x for x in found if x is not None]
 
 
-def _code_builds(text: str) -> bool:
-    match = FENCE.search(text)
+def _code_text(text: str) -> str:
+    """The Python in a coder reply: the `code` string of a JSON envelope, else a fenced block,
+    else the reply itself."""
     try:
-        ast.parse(match.group(1) if match else text)
+        raw = json.loads(text)
+    except ValueError:
+        raw = None
+    if isinstance(raw, dict) and "code" in raw:
+        return raw["code"] if isinstance(raw["code"], str) else ""
+    match = FENCE.search(text)
+    return match.group(1) if match else text
+
+
+def _code_builds(text: str) -> bool:
+    code = _code_text(text)
+    try:
+        ast.parse(code)
     except SyntaxError:
         return False
-    return bool(text.strip())
+    return bool(code.strip())
 
 
 def _mean(values: list[float]) -> float | None:

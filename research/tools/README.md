@@ -34,7 +34,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | Fragile to costs, to a one-bar delay or to nearby settings | [sensitivity](sensitivity.md), [break-even cost](run-level-checks.md) |
 | "Does it hold up out of sample?" | [walk-forward efficiency](walk-forward.md) |
 | "Is this just the market going up?", "a known factor?" | [inverted control](inverted-signal-control.md), [published factors](published-factors.md) |
-| Market beta, calm or turbulent regimes, "when did it change?" | [attribution, regimes and change points](attribution-regimes-changepoints.md) |
+| Market beta, calm or turbulent regimes, "when did it change?" | [beta, regimes, changes](attribution-regimes-changepoints.md), [more](toolbox-regimes.md) |
 | How wide is the return range, or how deep the drop? | [resampling](resampling-checks.md), [fat tails](montecarlo-checks.md), [path risk](path-risk.md) |
 | Why a judged RD-Agent idea stopped; a picture for the owner | [one idea’s journey](rdagent-journey.md), [charts](charts.md) (`trade_pnl`: profit by trade) |
 | Overfitting; resampling; time series | [overfit](toolbox-overfit-controls.md), [resampling](toolbox-resampling-more.md), [series](toolbox-timeseries.md) |

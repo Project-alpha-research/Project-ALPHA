@@ -32,10 +32,12 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
   `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `timeseries.normality`,
   `resampling.moving_block_paths`, `resampling.wild_bootstrap`
 - Works in some years or windows only: `attribution.weekday`, `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`,
-  `resampling.calendar_year_shuffle`, `resampling.interleaved_halves`, `resampling.year_jackknife`
+  `regimes.annual_returns`, `regimes.day_of_week`, `regimes.calendar_month`, `regimes.bull_bear`, `regimes.trend_range`, `regimes.sub_period_stability`,
+  `regimes.turn_of_month`, `regimes.halloween`, `resampling.calendar_year_shuffle`, `resampling.interleaved_halves`, `resampling.year_jackknife`
 - Does it earn in calm or turbulent markets: `risk.vol_target`, `market.vol_regimes`, `timeseries.arch_lm`
 - When did the behaviour change: `market.changepoints`, `timeseries.dfa`, `timeseries.long_memory`, `timeseries.sample_entropy`,
-  `timeseries.permutation_entropy`, `timeseries.hurst`
+  `timeseries.permutation_entropy`, `timeseries.hurst`, `regimes.chow_test`, `regimes.cusum_mean`, `regimes.cusum_variance`, `regimes.sup_f`,
+  `regimes.break_count`
 - Few trades: `risk.kelly`, `risk.optimal_f`, `risk.loss_streaks`, `attribution.hold_period`, `attribution.weekday`, `overfit_controls.trade_count`,
   `overfit_controls.sequential_test`, `trades.concentration`, `resampling.sharpe_interval`, `resampling.return_interval`, `trades.dependence`,
   `resampling.wild_bootstrap`, `resampling.trade_order_drawdown`, `resampling.trade_jackknife`
@@ -44,7 +46,7 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
   `risk.var_independence`, `trades.dependence`, `timeseries.ljung_box`, `timeseries.variance_ratio`, `timeseries.up_down_runs`, `resampling.return_shuffle`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `performance.holding_period`, `costs.break_even`
-- Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`
+- Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`, `regimes.bull_bear`, `regimes.asymmetric_beta`
 - Return compared with the risk taken: `overfit_controls.required_history`, `overfit_controls.shrunk_sharpe`, `risk.kelly`, `risk.fractional_kelly`,
   `risk.optimal_f`, `risk.vol_target`, `performance.ulcer`, `performance.pain`, `performance.sterling_burke`, `performance.gain_to_pain`, `performance.kappa`,
   `performance.lo_sharpe`, `performance.cornish_fisher_sharpe`, `performance.payoff_expectancy`, `overfit_controls.probabilistic_sharpe`,

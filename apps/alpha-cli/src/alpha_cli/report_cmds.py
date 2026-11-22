@@ -241,11 +241,11 @@ def report(
             typer.echo(text)
     plain = isinstance(manifest.get("verdict"), dict)
     if plain:  # a rule test or gauntlet run: the plain summary; --json has every field
-        found = None
+        found, diagnostics = None, None
         if isinstance(manifest.get("oos_metrics"), dict):
             diagnostics = read_json(Path(manifest["__dir"]) / "diagnostics.json")
             found = stored_reading(manifest, diagnostics)
-        for text in plain_report_lines(manifest, found):
+        for text in plain_report_lines(manifest, found, diagnostics):
             typer.echo(text)
     else:
         for shown in (reading_line(manifest), costs_line(manifest)):

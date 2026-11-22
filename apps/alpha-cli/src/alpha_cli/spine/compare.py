@@ -116,6 +116,22 @@ def compare_runs(
     return {"runs": runs, "metrics": rows, "warnings": warnings}
 
 
+_PERCENT = re.compile(r"return|drawdown|cagr|vol|exposure|share", re.IGNORECASE)
+
+
+def _plain_number(metric: str, operation: str, value: Any) -> str:
+    """A stored number for the screen: 2 decimals, or 1 decimal of a percent, with its unit."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return str(value)
+    if operation == "ratio":
+        return f"{value:.2f}x"
+    if isinstance(value, int):
+        return str(value)
+    if _PERCENT.search(metric):
+        return f"{value * 100:.1f} pts" if operation == "diff" else f"{value * 100:.1f}%"
+    return f"{value:.2f}"
+
+
 def render_compare(result: Fact) -> str:
     headers = ["metric"]
     for run in result["runs"]:
@@ -125,8 +141,10 @@ def render_compare(result: Fact) -> str:
         row = [metric]
         for cell in cells:
             row.extend(
-                str(f["value"]) if f["value"] is not None else f"null ({f['reason']})"
-                for f in cell.values()
+                _plain_number(metric, operation, f["value"])
+                if f["value"] is not None
+                else f"null ({f['reason']})"
+                for operation, f in cell.items()
             )
         lines.append("\t".join(row))
     lines.extend(

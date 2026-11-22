@@ -82,6 +82,19 @@ QUESTIONS = {
 }
 
 
+TRIES = "tries"  # computed, not SQL: the count the deflated Sharpe uses, per asset
+
+
+def _tries_per_asset(snapshot: LedgerSnapshot, limit: int) -> list[dict[str, Any]]:
+    from collections import Counter
+
+    from alpha_cli.spine.tries import distinct_asset_tests
+
+    kept, _, _ = distinct_asset_tests(snapshot, None)
+    counts = Counter(str(row["symbol"]) for _, row in kept)
+    return [{"asset": name, "tries": n} for name, n in sorted(counts.items())][:limit]
+
+
 def _frame(snapshot: LedgerSnapshot) -> Any:
     import polars as pl
 
@@ -136,13 +149,24 @@ def query(
     measure: str | None = None,
     limit: int = 50,
 ) -> list[dict[str, Any]]:
-    if question not in QUESTIONS:
+    names = sorted([*QUESTIONS, TRIES])
+    if question not in QUESTIONS and question != TRIES:
         raise SpineError(
             "UNKNOWN_QUESTION",
             f"Unknown question {question!r}.",
-            f"Choose one of these questions: {', '.join(sorted(QUESTIONS))}.",
-            sorted(QUESTIONS),
+            f"Choose one of these questions: {', '.join(names)}.",
+            names,
         )
+    if question == TRIES:
+        if any(value is not None for value in (asset, family, measure)) or not (
+            type(limit) is int and 1 <= limit <= 200
+        ):
+            raise SpineError(
+                "BAD_PARAMETER",
+                "The question 'tries' takes no asset, family or measure.",
+                "Run alpha ledger tries <asset> for one asset, or use a limit from 1 to 200.",
+            )
+        return _tries_per_asset(snapshot, limit)
     definition = QUESTIONS[question]
     provided = {
         k: v for k, v in dict(asset=asset, family=family, measure=measure).items() if v is not None

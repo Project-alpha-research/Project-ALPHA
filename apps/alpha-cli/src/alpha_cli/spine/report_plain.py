@@ -37,12 +37,6 @@ def _sentence(text: str) -> str:
     return text if text.endswith((".", "!", "?")) else f"{text}."
 
 
-def _tries(count: Any) -> str | None:
-    if isinstance(count, bool) or not isinstance(count, int):
-        return None
-    return f"{count} {'try' if count == 1 else 'tries'}"
-
-
 def reading_sentence(manifest: Mapping[str, Any], found: Mapping[str, Any] | None) -> str:
     """``Reading: <word>.`` plus the stored caveat sentence, when the run has one."""
     text = f"Reading: {reading_word(found) if found else 'not recorded'}."
@@ -95,10 +89,8 @@ def _deflated_line(manifest: Mapping[str, Any]) -> str | None:
     value = _x(block.get("dsr"))
     if value is None:
         return None
-    counted = _tries(block.get("n_trials"))
-    after = f" after counting {counted}" if counted else ""
     return (
-        f"Luck adjustment: the Sharpe ratio, adjusted for the ideas tried{after}, scores {value} "
+        f"Luck adjustment: the Sharpe ratio, adjusted for the ideas tried, scores {value} "
         "on a scale from 0 to 1."
     )
 
@@ -122,7 +114,24 @@ def _folds_count(manifest: Mapping[str, Any]) -> str | None:
     return f"Walk-forward: the rule was scored on {len(folds)} later {noun}, one after another."
 
 
-def plain_report_lines(manifest: Mapping[str, Any], found: Mapping[str, Any] | None) -> list[str]:
+def _count_paragraph(
+    manifest: Mapping[str, Any], diagnostics: Mapping[str, Any] | None
+) -> str | None:
+    """The one paragraph about the counts, the same as `alpha test` prints."""
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    family = _map(_map(diagnostics).get("trials")).get("family")
+    symbol = _map(manifest.get("metadata")).get("symbol") or manifest.get("symbol")
+    if not isinstance(family, Mapping) or not isinstance(symbol, str):
+        return None
+    return reading_count_sentence(dict(family), symbol)
+
+
+def plain_report_lines(
+    manifest: Mapping[str, Any],
+    found: Mapping[str, Any] | None,
+    diagnostics: Mapping[str, Any] | None = None,
+) -> list[str]:
     """The summary of a stored gauntlet run: what was checked, the number, one sentence each."""
     spine = _map(manifest.get("spine"))
     costs = _map(spine.get("costs")).get("line")
@@ -133,6 +142,7 @@ def plain_report_lines(manifest: Mapping[str, Any], found: Mapping[str, Any] | N
         _luck_line(manifest),
         _range_line(manifest),
         _deflated_line(manifest),
+        _count_paragraph(manifest, diagnostics),
         _folds_line(manifest),
         costs if isinstance(costs, str) else None,
     ]

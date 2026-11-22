@@ -114,7 +114,7 @@ def test_the_summary_has_plain_sentences_and_no_raw_field_names(tmp_path: Path) 
     text = report(tmp_path, gauntlet())
     assert "random prices did as well as the rule in up to 2% of draws" in text
     assert "its likely range is" in text and "which is above zero" in text
-    assert "scores 0.99" in text and "after counting 3 tries" in text
+    assert "scores 0.99" in text and "tries" not in text
     assert "the mean Sharpe ratio over the test splits is -0.10; 40% of the splits" in text
     for raw in ("old grade", "dsr:", "reason=", "None", "null[", "gate[", "CI[", "psr", "=n/a"):
         assert raw not in text, raw

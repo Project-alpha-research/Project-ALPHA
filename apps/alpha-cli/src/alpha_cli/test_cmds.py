@@ -13,6 +13,7 @@ import typer
 from alpha_cli._cli_json import emit
 from alpha_cli.spine.data_health import health_sentence
 from alpha_cli.spine.errors import SpineError, fail, test_error
+from alpha_cli.spine.label_meaning import label_lines
 from alpha_cli.spine.owner_reading import variant_lines
 from alpha_cli.spine.reading import reading_text, reading_word
 from alpha_cli.spine.recheck import MISMATCH_EXIT, recheck_idea
@@ -240,22 +241,24 @@ def test_rule(
                     result["run_id"] or "—",
                     reading_word(result["reading"]) if result.get("reading") else "—",
                     f"{sharpe:.3f}" if sharpe is not None else "—",
-                    result["error"] or ", ".join(result["labels"]),
+                    result["error"]
+                    or (f"{len(result['labels'])} labels, below" if result["labels"] else "—"),
                 )
             )
         )
         if result.get("reading"):
             lines.append(reading_text(result["reading"]))
-            if result["reading"].get("count_sentence"):
-                lines.append(result["reading"]["count_sentence"])
             lines.extend(variant_lines(result["reading"]))
         if result.get("data_health"):
             lines.append(health_sentence(result["data_health"]))
         if not result.get("executed", True) and result["run_id"]:
             lines.append("The engine did not run: the stored run for this test was returned.")
         if result.get("symbol"):
-            lines.append(sentence(tries(snapshot, result["symbol"])))
-            lines.extend(_reading_count(settings.data_dir, result))
+            counted = _reading_count(settings.data_dir, result)
+            lines.extend(counted or [sentence(tries(snapshot, result["symbol"]))])
+        if result["labels"] and not result["error"]:
+            lines.append("Labels on this run:")
+            lines.extend(label_lines(result["labels"]))
     emit(output, json_out=json_out, fallback="\n".join(lines))
     if not json_out:
         _echo_notes(notes.getvalue())

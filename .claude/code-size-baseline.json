@@ -2,7 +2,6 @@
   "files": {
     "apps/alpha-cli/src/alpha_cli/control_store.py": 14025,
     "apps/alpha-cli/src/alpha_cli/crypto_data_cmds.py": 4704,
-    "apps/alpha-cli/src/alpha_cli/figures/_builders.py": 2530,
     "apps/alpha-cli/src/alpha_cli/research_cmds.py": 3539,
     "apps/alpha-cli/src/alpha_cli/research_gate_packet.py": 1568,
     "apps/alpha-web/src/alpha_web/_ml.py": 1763,
@@ -48,7 +47,6 @@
     "apps/alpha-cli/src/alpha_cli/crypto_data_cmds.py::_freeze_binance_liquidity": 156,
     "apps/alpha-cli/src/alpha_cli/daily_native_cmds.py::run_daily_deep": 156,
     "apps/alpha-cli/src/alpha_cli/daily_rule_report.py::daily_rule_evidence": 193,
-    "apps/alpha-cli/src/alpha_cli/figures/_builders.py::price_signal": 164,
     "apps/alpha-cli/src/alpha_cli/forecast_cmds.py::_calibrated_artifacts": 180,
     "apps/alpha-cli/src/alpha_cli/forecast_cmds.py::evaluate": 231,
     "apps/alpha-cli/src/alpha_cli/forecast_cmds.py::run": 163,

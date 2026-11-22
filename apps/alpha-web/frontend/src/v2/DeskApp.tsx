@@ -36,7 +36,7 @@ function Rail({ place, onPlace }: { place: Place; onPlace(place: Place): void })
 }
 
 function Legacy({ title, children }: { title: string; children: ReactNode }) {
-  return <Panel title={title} className="d-legacy-place"><div className="d-legacy">{children}</div></Panel>
+  return <section className="d-panel d-legacy-place" aria-label={title}><div className="d-legacy">{children}</div></section>
 }
 
 export function DeskApp() {

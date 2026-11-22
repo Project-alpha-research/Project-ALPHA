@@ -34,7 +34,7 @@ html[data-desk="v2"] :focus-visible { outline: 2px solid var(--d-focus); outline
 
 .d-symbol { position: relative; }
 .d-symbol-input { width: 150px; height: 32px; padding: 0 var(--d-sp-3); border: 1px solid var(--d-border); border-radius: var(--d-r-md); background: var(--d-bg); color: var(--d-text); font-size: var(--d-fs-sm); text-transform: uppercase; }
-.d-symbol-input::placeholder { color: var(--d-text-2); }
+.d-symbol-input::placeholder { color: var(--d-text-2); text-transform: none; font-family: var(--d-font); }
 .d-symbol-input:hover { border-color: var(--d-border-strong); }
 .d-symbol-list { position: absolute; top: 36px; left: 0; z-index: 30; width: 220px; margin: 0; padding: var(--d-sp-1); list-style: none; background: var(--d-surface-2); border: 1px solid var(--d-border-strong); border-radius: var(--d-r-md); box-shadow: 0 10px 30px var(--d-shadow); }
 .d-symbol-list li { display: flex; justify-content: space-between; padding: 6px var(--d-sp-2); border-radius: var(--d-r-sm); cursor: pointer; }
@@ -84,4 +84,4 @@ html[data-desk="v2"] :focus-visible { outline: 2px solid var(--d-focus); outline
 .d-legacy h1, .d-legacy h2, .d-legacy h3 { font-weight: 600; letter-spacing: 0; }
 .d-legacy .btn { border-radius: var(--d-r-sm); background: var(--d-surface-2); border-color: var(--d-border-strong); color: var(--d-text); }
 .d-legacy .field, .d-legacy select, .d-legacy input[type="text"], .d-legacy input[type="search"] { border-radius: var(--d-r-sm); background: var(--d-bg); border-color: var(--d-border-strong); color: var(--d-text); }
-.d-legacy-place .d-panel-body { padding-top: var(--d-sp-2); }
+.d-legacy-place { padding: var(--d-sp-2) var(--d-sp-4) var(--d-sp-4); }

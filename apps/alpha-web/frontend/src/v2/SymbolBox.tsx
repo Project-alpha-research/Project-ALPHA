@@ -15,7 +15,7 @@ export function SymbolBox({ symbols, current, onPick }: { symbols: readonly stri
   }
   return <div className="d-symbol">
     <input className="d-symbol-input mono" role="combobox" aria-label="Symbol" aria-expanded={open && matches.length > 0} aria-controls={list}
-      aria-activedescendant={open && matches[active] ? `${list}-${active}` : undefined} placeholder={current || 'Symbol'} value={text}
+      aria-activedescendant={open && matches[active] ? `${list}-${active}` : undefined} placeholder={current || 'Symbol…'} value={text}
       onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 120)}
       onChange={event => { setText(event.target.value); setActive(0); setOpen(true) }}
       onKeyDown={event => {

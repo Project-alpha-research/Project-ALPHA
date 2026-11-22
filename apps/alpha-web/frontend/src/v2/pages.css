@@ -4,7 +4,7 @@
 .d-table { width: 100%; border-collapse: collapse; font-size: var(--d-fs-sm); }
 .d-table th { height: 32px; padding: 0 var(--d-sp-3); border-bottom: 1px solid var(--d-border); color: var(--d-muted); font-size: var(--d-fs-xs); font-weight: 500; text-align: left; white-space: nowrap; }
 .d-table td { height: var(--d-row); padding: 4px var(--d-sp-3); border-bottom: 1px solid var(--d-border); vertical-align: middle; }
-.d-table tbody tr:last-child td { border-bottom: 0; }
+.d-table tbody tr:last-child td, .d-table tbody tr:last-child th { border-bottom: 0; }
 .d-table th.r, .d-table td.r { text-align: right; }
 .d-sort { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .d-sort:hover { color: var(--d-text); }
@@ -36,7 +36,7 @@ th[aria-sort] .d-sort { color: var(--d-text); }
 /* Tests */
 .d-filters { display: flex; flex-wrap: wrap; align-items: end; gap: var(--d-sp-3); padding-bottom: var(--d-sp-3); }
 .d-field { display: flex; flex-direction: column; gap: 4px; color: var(--d-muted); font-size: var(--d-fs-xs); }
-.d-field select { min-width: 160px; height: 32px; padding: 0 var(--d-sp-2); border: 1px solid var(--d-border-strong); border-radius: var(--d-r-md); background: var(--d-bg); color: var(--d-text); font: inherit; font-size: var(--d-fs-sm); }
+.d-field select { min-width: 160px; max-width: 340px; height: 32px; padding: 0 var(--d-sp-2); border: 1px solid var(--d-border-strong); border-radius: var(--d-r-md); background: var(--d-bg); color: var(--d-text); font: inherit; font-size: var(--d-fs-sm); }
 .d-crumbs { display: flex; align-items: center; gap: var(--d-sp-2); color: var(--d-muted); font-size: var(--d-fs-xs); }
 
 /* Run report */

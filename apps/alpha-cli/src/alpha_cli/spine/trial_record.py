@@ -114,7 +114,7 @@ def _row_bar_size(row: dict[str, Any]) -> str | None:
 
 def row_test_key(row: dict[str, Any]) -> TestKey | None:
     """The test key of a raw spine rule-test ledger row; None for any other row or a thin one."""
-    if row.get("kind", "rule_test") != "rule_test":
+    if row.get("kind", "rule_test") not in {"rule_test", "screen_trial"}:
         return None
     spec, symbol = row.get("spec_sha256"), row.get("symbol")
     start, end = row.get("first_ts"), row.get("last_ts")
@@ -202,6 +202,8 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         legacy = next((name for name, tool in ALIASES.items() if tool == subkind), subkind)
         family = f"spine-tool:{legacy}"
         outcome = row.get("outcome", "recorded")
+    elif kind == "other" and subkind == "screen_trial":
+        family = "spine-screen"
     elif kind == "setup_find":
         family = f"spine-setup:{row['name']}"
     elif kind in {"setup_study", "setup_trade"}:

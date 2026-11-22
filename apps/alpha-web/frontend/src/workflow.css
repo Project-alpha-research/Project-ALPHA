@@ -245,3 +245,4 @@
 .workflow-overview-block { padding: var(--pad-sm) var(--pad); border: 1px solid var(--line-strong); background: var(--panel); min-width: 0; }
 .workflow-overview-block > h2 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 var(--pad-sm); font-size: 14px; }
 .workflow-overview-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 6px; align-items: start; }
+.workflow-topbar select[aria-label="Market profile"] { width: auto; min-width: 150px; }

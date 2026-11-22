@@ -1,5 +1,5 @@
 .recent-tests { min-width: 0; }
-.recent-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pad); margin-bottom: var(--pad-sm); }
+.recent-filters { padding: var(--pad-sm) var(--pad) 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--pad); margin-bottom: var(--pad-sm); }
 .recent-filters label { display: inline-flex; gap: 6px; align-items: center; }
 .recent-filters select { max-width: 320px; }
 .recent-table { width: 100%; }

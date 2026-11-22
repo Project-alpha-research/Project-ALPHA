@@ -1,7 +1,7 @@
 import { ThemeSwitch } from './theme/ThemeSwitch'
 /** Workflow pages over the existing CLI-backed panels. Only the selected task mounts. */
 import { useCallback, useEffect, useState, useRef, type ReactNode } from 'react'
-import type { ArchiveChartDataset } from './api/client'
+import { api, type ArchiveChartDataset } from './api/client'
 import { createPortal } from 'react-dom'
 import { CommandPalette } from './components/CommandPalette'
 import { IndicatorsDialog } from './components/IndicatorsDialog'
@@ -19,7 +19,7 @@ import { registerNavigator } from './panels/actions'
 import { ContextBar } from './shell/ContextBar'
 import { DOCUMENTS } from './shell/documents'
 import { PanelHost } from './shell/PanelHost'
-import { showsWindow, symbolFitsProfile, type WindowId } from './shell/profiles'
+import { profile as profileManifest, showsWindow, symbolFitsProfile, type WindowId } from './shell/profiles'
 import { WorkspaceModeAttribute } from './shell/Toolbar'
 import { StatusBar } from './shell/StatusBar'
 import { functionEntries } from './shell/terminalModel'
@@ -94,6 +94,19 @@ function WorkstationApp() {
   useEffect(() => {
     const symbol = getLinked().symbol
     if (symbol && !symbolFitsProfile(profile, symbol)) setLinked({ symbol: null })
+  }, [profile])
+  // The chart always has a stored symbol to show: the market's default when it is stored, else the first stored one.
+  useEffect(() => {
+    if (getLinked().symbol) return
+    let live = true
+    api.symbols().then(result => {
+      if (!live || getLinked().symbol) return
+      const fitting = result.symbols.filter(symbol => symbolFitsProfile(profile, symbol))
+      const wanted = profileManifest(profile).defaultSymbol
+      const symbol = fitting.includes(wanted) ? wanted : fitting[0]
+      if (symbol) setLinked({ symbol })
+    }).catch(() => undefined)
+    return () => { live = false }
   }, [profile])
   useEffect(() => { document.title = `ALPHA · ${page.title}` }, [page.title])
   useEffect(() => {

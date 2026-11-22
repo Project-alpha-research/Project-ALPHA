@@ -622,6 +622,10 @@ def test_ml_experiment_preflight_is_server_authoritative_and_complete(
         "experiment_id": experiment_id,
         "snapshot_id": "snapshot-1",
         "universe": [f"S{index:02d}" for index in range(20)],
+        "split_policy": {},
+        "stage_config": {},
+        "costs": {"fee_bps": 1.0, "slippage_bps": 2.0},
+        "seeds": {},
     }
 
     result = _ml.experiment_preflight(spec=spec, data_dir=tmp_path)
@@ -633,6 +637,7 @@ def test_ml_experiment_preflight_is_server_authoritative_and_complete(
     assert result["universe_count"] == 20
     assert result["aligned_sessions"] == 800
     assert [check["check_id"] for check in result["checks"]] == [
+        "spec",
         "snapshot",
         "worker",
         "universe",
@@ -683,6 +688,7 @@ def test_ml_experiment_preflight_returns_actionable_blockers_without_launching(
     assert result["experiment_id"] is None
     states = {check["check_id"]: check["state"] for check in result["checks"]}
     assert states == {
+        "spec": "blocked",
         "snapshot": "blocked",
         "worker": "blocked",
         "universe": "blocked",

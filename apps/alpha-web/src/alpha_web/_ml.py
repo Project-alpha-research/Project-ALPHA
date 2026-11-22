@@ -766,6 +766,19 @@ def _store_spec(spec: Mapping[str, Any], *, data_dir: Path) -> Path:
     return path
 
 
+def _spec_complete(spec: Mapping[str, Any]) -> bool:
+    """The objects the CLI input export reads; a spec without them cannot succeed."""
+    if not all(
+        isinstance(spec.get(key), dict) for key in ("split_policy", "stage_config", "seeds")
+    ):
+        return False
+    costs = spec.get("costs")
+    return isinstance(costs, dict) and all(
+        isinstance(costs.get(key), int | float) and not isinstance(costs.get(key), bool)
+        for key in ("fee_bps", "slippage_bps")
+    )
+
+
 def experiment_preflight(*, spec: Mapping[str, Any], data_dir: Path) -> dict[str, Any]:
     """Recompute every local prerequisite before the UI can launch an ML experiment."""
     status = service_status(data_dir=data_dir)
@@ -800,7 +813,16 @@ def experiment_preflight(*, spec: Mapping[str, Any], data_dir: Path) -> dict[str
     universe_ready = len(universe) >= MIN_SYMBOLS
     history_ready = history_readable and history_count >= MIN_ALIGNED_SESSIONS
     capacity_ready = active_job_id is None
+    spec_ready = _spec_complete(experiment)
     checks = [
+        _preflight_check(
+            "spec",
+            spec_ready,
+            "The experiment spec has its split, stage, cost and seed objects."
+            if spec_ready
+            else "The experiment spec lacks split_policy, stage_config, costs or seeds objects.",
+            "Add split_policy, stage_config, costs (fee_bps, slippage_bps) and seeds objects.",
+        ),
         _preflight_check(
             "snapshot",
             snapshot_ready,

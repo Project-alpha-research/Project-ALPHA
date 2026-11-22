@@ -127,8 +127,9 @@ test('@reference-only every real workflow task opens in both market profiles', a
   await writeFile(inventory, JSON.stringify({ audit, failures, errors }, null, 2))
   await info.attach('real-task-inventory', { path: inventory, contentType: 'application/json' })
   expect(errors).toEqual([])
-  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(30)
-  expect(audit.filter(item => item.profile === 'equities').length).toBeGreaterThan(25)
+  // Both markets show the same tasks since the crypto-only windows were removed.
+  expect(audit.filter(item => item.profile === 'crypto').length).toBeGreaterThan(15)
+  expect(audit.filter(item => item.profile === 'equities').length).toBe(audit.filter(item => item.profile === 'crypto').length)
   expect(failures).toEqual([])
   expect(audit.filter(item => item.alerts.length)).toEqual([])
 })

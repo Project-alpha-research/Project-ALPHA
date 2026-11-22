@@ -17,7 +17,6 @@ from typing import Any
 from alpha_cli.run_context import RUN_CONTEXT_ENV
 
 
-
 def alpha_executable() -> list[str]:
     """The argv prefix that runs `alpha` with this server's own interpreter, never through PATH.
 

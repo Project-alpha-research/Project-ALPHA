@@ -67,7 +67,8 @@ SCHEDULE = make(
     "Commission would be {commission:.2f} {commission_bps:.1f} basis points "
     "of traded value; {min_ticket_share:.0%} of orders pay the minimum.",
     "The schedule is an assumption you set. It replaces, not adds to, the fee in the run, and "
-    "leaves out exchange and regulatory fees and slippage.",
+    "leaves out exchange and regulatory fees and slippage. It counts two orders for each closed "
+    "trade, so it is a lower bound when a position was scaled in or out.",
     schedule,
 )
 

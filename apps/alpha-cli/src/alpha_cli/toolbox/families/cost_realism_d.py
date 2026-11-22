@@ -148,9 +148,14 @@ def capacity(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> R
     """Profit(m) = m P - 2 m^1.5 C, where C sums notional x impact of one side at m = 1."""
     from alpha_cli.toolbox.families.cost_realism_common import equity_at
 
-    found, _, why = entries(inputs, params["window"], params["coefficient"])
+    found, skipped, why = entries(inputs, params["window"], params["coefficient"])
     if why or not found:
         return _none(CAPACITY_OUTPUTS, why or _nothing())
+    if skipped:
+        return _none(
+            CAPACITY_OUTPUTS,
+            f"Too little to read: {skipped} trades lack volume history, so profit is partial.",
+        )
     first = min(inputs.stored.table("run_trades", "entry_ts")["entry_ts"])
     start = float(equity_at(inputs, [first])[0])
     profit = math.fsum(e.pnl for e in found)

@@ -303,7 +303,8 @@ def test_market_impact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_capacity_curve(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    impact_run(tmp_path, monkeypatch)
+    make_run(tmp_path, [trade(8, 9, 10, 100, 40), trade(9, 10, 40, 100, 60)])
+    serve_bars(monkeypatch, tmp_path, bars_from(alternating()))
     got = values(tmp_path, "capacity_curve", *PARAMS)
     cost, profit = (1000 * 0.1 + 4000 * 0.2) * SIGMA, 100.0
     for m in (1, 10, 100):
@@ -407,3 +408,11 @@ def test_registry_lists_every_check() -> None:
         spec = get(PREFIX + name)
         assert spec.look == "describe" and spec.kind == "diagnostic" and spec.question.endswith("?")
         assert replace(spec) == spec
+
+
+def test_capacity_curve_refuses_a_partial_profit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    impact_run(tmp_path, monkeypatch)  # the third trade has no volume history
+    doc = run(tmp_path, PREFIX + "capacity_curve", RUN, list(PARAMS))
+    assert all(v is None and "1 trades lack" in doc["reasons"][k] for k, v in doc["values"].items())

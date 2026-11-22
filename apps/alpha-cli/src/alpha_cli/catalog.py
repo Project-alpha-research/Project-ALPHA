@@ -38,7 +38,7 @@ _EMPIRICAL_ROOTS = frozenset(
         "setup",
     }
 )
-# `confirm` spends a reserved-period slot; only the Touch ID route may run it (with the yes).
+# `confirm` spends a reserved-period slot: terminal only (never the web launcher or MCP).
 # `home` reads and writes folders the caller names (backup, restore): terminal only.
 _OWNER_ONLY_ROOTS = frozenset({"owner-auth", "confirm", "project", "suite", "provider", "home"})
 _SAFE_ROOTS = frozenset(

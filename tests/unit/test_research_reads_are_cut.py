@@ -15,7 +15,7 @@ scans `apps/alpha-cli/src` and enforces the cut positively. Every call to `load_
   (passed, stored) or has no caller is not proven.
 
 One read is of its own kind and listed in RECEIPT_READS: the owner's one-shot confirmation reads
-bars after the boundary through `reserve.open_with_receipt`, which checks a slot receipt in the
+bars after the boundary through `reserve.open_with_receipt`, which reads its slot receipt from the
 control store on every call. Only `spine/confirm_run.py` may call it (a test below).
 
 Any other read is listed in ALLOWED with one reason. `exempt:` means forward use, a display, a
@@ -93,8 +93,8 @@ ALLOWED: dict[tuple[str, str], str] = {
 # The one read of bars after the boundary: never `exempt:` or `open:`, a kind of its own.
 RECEIPT_READS: dict[tuple[str, str], str] = {
     ("spine/reserve.py", "open_with_receipt"): (
-        "receipt: the owner's one-shot confirmation of a frozen test; the slot receipt, its hash "
-        "and the owner's Touch ID assertion are checked against the store on every call"
+        "receipt: the one-shot confirmation of a frozen test; the slot receipt is read from the "
+        "store and its asset and frozen bars are checked on every call"
     ),
 }
 RECEIPT_READ = (RESERVE, "open_with_receipt")
@@ -438,7 +438,7 @@ def test_the_receipt_read_is_one_named_function_of_its_own_kind() -> None:
     assert all(why.startswith("receipt: ") for why in RECEIPT_READS.values())
     assert not set(RECEIPT_READS) & set(ALLOWED)
     body = ast.unparse(package().module("spine/reserve.py").functions["open_with_receipt"])
-    assert "verified_receipt(" in body  # it checks the receipt before its loader calls
+    assert "reserved_slots.receipt(" in body  # it reads the receipt before its loader calls
 
 
 def test_only_the_confirmation_run_calls_the_receipt_read() -> None:

@@ -936,52 +936,27 @@ CREATE INDEX IF NOT EXISTS idx_research_launch_attempt_links_attempt
     ON research_launch_attempt_links(attempt_id);
 """
 
-# The owner's one-shot confirmation of a frozen idea on the reserved period.
-# Additive only: three tables beside the owner action receipts, created by `reserved_slots`
-# inside its own write transaction, so a store of any supported version accepts them without a
-# rebuild or a version change. The research-case receipt table and its action CHECK are not
-# changed: this one action type lives only here. No trigger is used, because the read-only store
-# seam refuses undeclared triggers; the rules are constraints instead. WebAuthn only (a
-# credential is required); one receipt per authorization, per test key, per rule family on one
-# asset and per run; slots 1 to 10 only, each one naming the slot before it (a foreign key), so
-# they are taken in order. Rows are only ever inserted; each receipt carries its own hash.
-_SCHEMA_RESERVED_CONFIRMATION = """
-CREATE TABLE IF NOT EXISTS reserved_period_authorizations (
-    authorization_id TEXT PRIMARY KEY,
-    challenge_id TEXT NOT NULL UNIQUE REFERENCES owner_auth_challenges(challenge_id),
-    credential_id TEXT NOT NULL REFERENCES owner_credentials(credential_id),
-    actor TEXT NOT NULL,
-    action_type TEXT NOT NULL CHECK (action_type = 'confirm_reserved_period'),
-    authorization_method TEXT NOT NULL CHECK (authorization_method = 'webauthn'),
-    artifact_hash TEXT NOT NULL CHECK (length(artifact_hash) = 64),
-    request_hash TEXT NOT NULL CHECK (length(request_hash) = 64),
-    payload_json TEXT NOT NULL,
-    consequence_summary TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    assertion_json TEXT NOT NULL,
-    assertion_hash TEXT NOT NULL CHECK (length(assertion_hash) = 64),
-    previous_sign_count INTEGER NOT NULL CHECK (0 <= previous_sign_count),
-    authorized_at TEXT NOT NULL
-) STRICT;
 
-CREATE TABLE IF NOT EXISTS reserved_period_receipts (
+# The one-shot confirmation of a frozen idea on the reserved period: ten slots, ever.
+# Additive only: two insert-only tables, created by `reserved_slots` inside its own write
+# transaction, so a store of any supported version accepts them without a rebuild or a version
+# change. No trigger (the read-only store seam refuses undeclared triggers); the rules are
+# constraints: slots 1 to 10, one receipt per slot, per test key, per rule family on one asset and
+# per run.
+_SCHEMA_RESERVED_CONFIRMATION = """
+CREATE TABLE IF NOT EXISTS reserved_slot_receipts (
     receipt_id TEXT PRIMARY KEY,
-    authorization_id TEXT NOT NULL UNIQUE
-        REFERENCES reserved_period_authorizations(authorization_id),
     slot INTEGER NOT NULL UNIQUE CHECK (slot BETWEEN 1 AND 10),
-    previous_slot INTEGER REFERENCES reserved_period_receipts(slot),
     test_key_sha256 TEXT NOT NULL UNIQUE CHECK (length(test_key_sha256) = 64),
     family_asset TEXT NOT NULL UNIQUE,
     run_id TEXT NOT NULL UNIQUE,
     spec_sha256 TEXT NOT NULL CHECK (length(spec_sha256) = 64),
     frozen_json TEXT NOT NULL,
-    receipt_sha256 TEXT NOT NULL CHECK (length(receipt_sha256) = 64),
-    created_at TEXT NOT NULL,
-    CHECK (CASE WHEN slot = 1 THEN previous_slot IS NULL ELSE previous_slot IS slot - 1 END)
+    created_at TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS reserved_period_results (
-    receipt_id TEXT PRIMARY KEY REFERENCES reserved_period_receipts(receipt_id),
+CREATE TABLE IF NOT EXISTS reserved_slot_results (
+    receipt_id TEXT PRIMARY KEY REFERENCES reserved_slot_receipts(receipt_id),
     confirmation_run_id TEXT NOT NULL UNIQUE,
     result_json TEXT NOT NULL,
     completed_at TEXT NOT NULL

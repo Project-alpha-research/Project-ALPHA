@@ -1,10 +1,11 @@
-"""Run one owner-confirmed frozen test on the reserved period, once, and record what it shows.
+"""Run one frozen test on the reserved period, once, and record what it shows.
 
-Order, each step before the next: the owner's Touch ID yes (an authorization row), the frozen test
-read again, the recheck of the earlier period (it must MATCH the stored run, else nothing is
-spent), the slot receipt, and only then the read of reserved bars (`reserve.open_with_receipt`).
-A run that stops after the receipt resumes with the same receipt and the same bars; it never takes
-a new slot. The result is stored and shown whatever it is.
+Order, each step before the next: the frozen test and the slot checks (`refuse_spent`), the
+recheck of the earlier period (it must MATCH the stored run, else nothing is spent), the slot
+receipt, the frozen test read again (its hash must equal the receipt's), and only then the read of
+reserved bars (`reserve.open_with_receipt`). A run that stops after the receipt resumes with the
+same receipt and the same bars; it never takes a new slot. The result is stored and shown, whatever
+it is.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from typing import Any
 
 from alpha_cli import _artifacts, reserved_slots
 from alpha_cli.spine import reserve
-from alpha_cli.spine.confirm import KIND, Frozen, frozen_test, plan, summary
+from alpha_cli.spine.confirm import KIND, Frozen, frozen_test, refuse_spent
 from alpha_cli.spine.data_health import health_labels, run_health_record, verify_inputs
 from alpha_cli.spine.diagnose import staged_run
 from alpha_cli.spine.errors import SpineError
@@ -68,23 +69,14 @@ def _matches(found: dict[str, Any]) -> bool:
     )
 
 
-def _receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
+def receipt_for(home: Path, run_id: str) -> dict[str, Any] | None:
     return next((r for r in reserved_slots.receipts(home) if r["run_id"] == run_id), None)
 
 
-def _take(home: Path, run_id: str, authorization_id: str, now: datetime) -> dict[str, Any]:
+def _take(home: Path, run_id: str, now: datetime) -> dict[str, Any]:
     """Recheck the earlier period, then spend the slot. A refusal here spends nothing."""
-    payload = reserved_slots.authorization_payload(home, authorization_id)
-    reserved_end = str(payload["reserved_end"])
-    if payload.get("summary") != summary(plan(home, run_id, reserved_end=reserved_end)):
-        raise SpineError(
-            "OWNER_WORDS_DIFFER",
-            "The words the owner read before the touch do not describe this test as it is now "
-            "(the slots, the code or the data changed, or the link was not from alpha confirm "
-            "request). No slot was used.",
-            f"Run alpha confirm plan {run_id}, then alpha confirm request {run_id} again.",
-        )
-    frozen = frozen_test(home, run_id, reserved_end=reserved_end)
+    frozen = frozen_test(home, run_id)
+    refuse_spent(frozen, home)
     found = recheck_one(
         frozen.idea,
         frozen.asset,
@@ -102,9 +94,7 @@ def _take(home: Path, run_id: str, authorization_id: str, now: datetime) -> dict
             f"({why}; compared with {found.get('compared_with')}). No slot was used.",
             "Run alpha test <spec> --recheck to see the differences.",
         )
-    return reserved_slots.take_slot(
-        home, authorization_id=authorization_id, frozen=frozen.record(), now=now
-    )
+    return reserved_slots.take_slot(home, frozen=frozen.record(), now=now)
 
 
 def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, Any]:
@@ -176,20 +166,12 @@ def _ledger(home: Path, frozen: Frozen, receipt: dict[str, Any], manifest: dict[
     )
 
 
-def confirm_run(
-    home: Path, run_id: str, *, authorization_id: str | None, now: datetime | None = None
-) -> dict[str, Any]:
+def confirm_run(home: Path, run_id: str, *, now: datetime | None = None) -> dict[str, Any]:
     """Confirm one frozen test once, or resume or show the one confirmation it already has."""
     stamp = now or datetime.now(UTC)
-    receipt = _receipt_for(home, run_id)
+    receipt = receipt_for(home, run_id)
     if receipt is None:
-        if authorization_id is None:
-            raise SpineError(
-                "NO_OWNER_YES",
-                "Confirming on the reserved period needs the owner's own Touch ID yes.",
-                f"Run alpha confirm plan {run_id}, then alpha confirm request {run_id}.",
-            )
-        receipt = _take(home, run_id, authorization_id, stamp)
+        receipt = _take(home, run_id, stamp)
     if receipt["result"] is None:
         frozen = frozen_test(home, run_id, reserved_end=str(receipt["frozen"]["reserved_end"]))
         if frozen.record()["artifact_hash"] != receipt["frozen"]["artifact_hash"]:
@@ -208,7 +190,7 @@ def confirm_run(
 
 def shown(home: Path, run_id: str) -> dict[str, Any]:
     """A finished confirmation as stored: both periods side by side. Reads no reserved bar."""
-    receipt = _receipt_for(home, run_id)
+    receipt = receipt_for(home, run_id)
     if receipt is None or receipt["result"] is None:
         raise DataError(f"run {run_id} has no finished confirmation")
     done = receipt["result"]
@@ -225,4 +207,4 @@ def shown(home: Path, run_id: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["confirm_run", "shown"]
+__all__ = ["confirm_run", "receipt_for", "shown"]

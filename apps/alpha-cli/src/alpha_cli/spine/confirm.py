@@ -1,9 +1,9 @@
-"""What the owner may confirm on the reserved period: one frozen, stored rule test.
+"""What can be confirmed on the reserved period: one frozen, stored rule test.
 
 The frozen test is the exact stored `alpha test` run: its spec (rule, parameters, costs), its asset
-and store, its data identity (the test key) and its engine settings (seed, quick, diagnostics). The
-owner can change none of these. The reserved span is fixed when the owner asks (its last stored
-bar), so a resumed run reads the same bars. Nothing here reads a price from the reserved period.
+and store, its data identity (the test key) and its engine settings (seed, quick, diagnostics).
+None of these can change. The reserved span is fixed when the slot is spent (its last stored bar),
+so a resumed run reads the same bars. Nothing here reads a price from the reserved period.
 """
 
 from __future__ import annotations
@@ -61,7 +61,7 @@ class Frozen:
     code_changed: bool
 
     def record(self) -> dict[str, Any]:
-        """The canonical frozen test: what the owner's yes and the slot receipt are bound to."""
+        """The canonical frozen test: what the slot receipt is bound to."""
         body = {
             "kind": "reserved-period-confirmation",
             "run_id": self.run_id,
@@ -168,25 +168,10 @@ def frozen_test(home: Path, run_id: str, *, reserved_end: str | None = None) -> 
     )
 
 
-def _refuse_removed(home: Path, found: list[dict[str, Any]]) -> None:
-    """Each confirmation in the ledger must still have its slot receipt (a removed last slot)."""
-    known = {item["receipt_id"] for item in found}
-    for row in read_trials_readonly(home):
-        if row.get("kind") == KIND and row.get("receipt_id") not in known:
-            raise _refuse(
-                "RESERVED_RECORDS_CHANGED",
-                f"The ledger records confirmation slot {row.get('slot')} (run "
-                f"{row.get('confirmed_run_id')}), but its receipt is gone from the control store. "
-                "The slot records were changed outside ALPHA; nothing can be confirmed.",
-                "Restore the control store from a backup (alpha home restore).",
-            )
-
-
 def refuse_spent(frozen: Frozen, home: Path) -> None:
-    """A test, run or family already confirmed, or no slot left: refuse before asking anyone."""
+    """A test, run or family already confirmed, or no slot left: refuse before spending."""
     record = frozen.record()
     found = reserved_slots.receipts(home)
-    _refuse_removed(home, found)
     for item in found:
         if item["family_asset"] == record["family_asset"] or item["run_id"] == frozen.run_id:
             raise _refuse(
@@ -224,8 +209,8 @@ def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[st
         "consequences": list(CONSEQUENCES),
         "earlier_reading": frozen.reading,
         "code_changed": frozen.code_changed,
-        # Every earlier confirmation, so the owner sees a near-duplicate (another asset, another
-        # rule shape) before spending a slot. No similarity is computed: the owner judges.
+        # Every earlier confirmation, so a near-duplicate (another asset, another rule shape) is
+        # seen before a slot is spent. No similarity is computed: the owner judges.
         "earlier_confirmations": [
             {
                 "slot": item["slot"],
@@ -239,30 +224,4 @@ def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[st
     }
 
 
-def summary(found: dict[str, Any]) -> str:
-    """The words the owner reads before the touch. Bound to the yes and checked before spending."""
-    frozen, slots = found["frozen"], found["slots"]
-    earlier = "; ".join(
-        f"slot {e['slot']}: {e['rule']} on {e['symbol']} ({e['date']})"
-        for e in found["earlier_confirmations"]
-    )
-    code = (
-        "The code changed since the stored test; the earlier period must still compute the same."
-        if found["code_changed"]
-        else "The code is the same as for the stored test."
-    )
-    return " ".join(
-        [
-            f"Test run {frozen['run_id']} ({frozen['rule']} {found['rule']['params']} on "
-            f"{frozen['symbol']}, store {frozen['store']}) once on the reserved period: "
-            f"{frozen['reserved_first'][:10]} to {frozen['reserved_end'][:10]}, "
-            f"{frozen['reserved_bars']} bars.",
-            f"Slots: {slots['used']} of {slots['total']} used, {slots['left']} left.",
-            f"Already confirmed: {earlier or 'none'}.",
-            code,
-            *found["consequences"],
-        ]
-    )
-
-
-__all__ = ["CONSEQUENCES", "KIND", "Frozen", "frozen_test", "plan", "refuse_spent", "summary"]
+__all__ = ["CONSEQUENCES", "KIND", "Frozen", "frozen_test", "plan", "refuse_spent"]

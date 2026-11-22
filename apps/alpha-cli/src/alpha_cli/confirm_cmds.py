@@ -1,25 +1,21 @@
-"""`alpha confirm`: the owner's one-shot test of one idea on the reserved period.
+"""`alpha confirm`: the one-shot test of one idea on the reserved period (the final check).
 
-`plan` and `list`/`show` only read. `request` issues the Touch ID challenge and prints the local
-link; the owner's touch on that page is the only yes. `run` spends the slot only with that yes, or
-resumes a confirmation whose slot is already spent. Nothing here is reachable from MCP or from a
-web route without the owner's assertion.
+`plan`, `list` and `show` only read. `run` prints the plan, then spends one slot and scores the
+frozen test once; it also resumes a confirmation whose slot is already spent. The owner asks for
+it in chat; there is no confirmation step. MCP, web routes and the web launcher cannot reach it.
 """
 
 from __future__ import annotations
 
-import base64
-import json
 import sys
 from contextlib import redirect_stdout
 from typing import Any
-from urllib.parse import urlencode
 
 import typer
 
 from alpha_cli import reserved_slots
 from alpha_cli._cli_json import emit
-from alpha_cli.spine.confirm import plan, summary
+from alpha_cli.spine.confirm import plan
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
@@ -33,11 +29,6 @@ RESERVED_WORDS = (
     f"The reserved period is the data from {RESERVED_START} on. It is held back from every test, "
     "so it can serve once as a final check on data no test has seen."
 )
-
-
-def _b64(value: object) -> str:
-    raw = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
 def _rule_words(rule: dict[str, Any]) -> str:
@@ -105,77 +96,34 @@ def plan_cmd(
     except (DataError, OSError, ValueError) as exc:
         fail(SpineError("CONFIRM_REFUSED", str(exc), "Run alpha confirm list."), json_out)
     lines = [*_plan_lines(found), "Nothing was written."]
-    lines.append(f'To go ahead: alpha confirm request {run_id} --reason "<why this idea>".')
+    lines.append(f"To spend the slot: alpha confirm run {run_id}. It cannot be undone.")
     emit(found, json_out=json_out, fallback="\n".join(lines))
-
-
-@confirm_app.command("request")
-def request_cmd(
-    run_id: str = typer.Argument(..., help="The stored `alpha test` run to confirm."),
-    reason: str = typer.Option(..., help="Why this idea, in your words (kept with the receipt)."),
-    json_out: bool = typer.Option(False, "--json", help="Emit one JSON object."),
-) -> None:
-    """Ask for the owner's Touch ID yes: prints a local link that works for 60 seconds."""
-    from alpha_cli.owner_auth import OWNER_ORIGIN, reserved_confirmation_options
-
-    home = _settings().data_dir
-    try:
-        found = plan(home, run_id)
-        frozen = found["frozen"]
-        # The words the owner reads on the Touch ID page are part of the signed payload.
-        words = summary(found)
-        payload = {"run_id": run_id, "reserved_end": frozen["reserved_end"], "summary": words}
-        options = reserved_confirmation_options(
-            data_dir=home,
-            payload=payload,
-            artifact_hash=frozen["artifact_hash"],
-            consequence_summary=words,
-            reason=reason,
-        )
-    except SpineError as exc:
-        fail(exc, json_out)
-    except (DataError, OSError, ValueError) as exc:
-        fail(SpineError("CONFIRM_REFUSED", str(exc), "Run alpha confirm plan first."), json_out)
-    fragment = urlencode(
-        {
-            "challenge": options["challenge_id"],
-            "options": _b64(options["public_key"]),
-            "payload": _b64(payload),
-        }
-    )
-    url = f"{OWNER_ORIGIN}/owner-auth/confirm#{fragment}"
-    lines = [
-        *_plan_lines(found),
-        "Open this local link in the Workstation browser and touch Touch ID to say yes.",
-        "It works for 60 seconds. If it expires, run this command again; nothing is spent.",
-        url,
-    ]
-    emit(
-        {**found, "url": url, "expires_at": options["expires_at"]},
-        json_out=json_out,
-        fallback="\n".join(lines),
-    )
 
 
 @confirm_app.command("run")
 def run_cmd(
-    run_id: str = typer.Argument(..., help="The stored `alpha test` run the owner confirmed."),
-    authorization: str | None = typer.Option(
-        None, help="The owner's Touch ID yes (the Workstation passes it). Not needed to resume."
-    ),
+    run_id: str = typer.Argument(..., help="The stored `alpha test` run to confirm."),
     json_out: bool = typer.Option(False, "--json", help="Emit one JSON object."),
 ) -> None:
-    """Run the confirmed test on the reserved period once, or resume it. Shows the reading."""
-    from alpha_cli.spine.confirm_run import confirm_run
+    """Print the plan, then spend 1 slot and test once on the reserved period (or resume)."""
+    from alpha_cli.spine import confirm_run
 
+    home = _settings().data_dir
+    found = None
     try:
+        if confirm_run.receipt_for(home, run_id) is None:
+            found = plan(home, run_id)
+            left = found["slots"]["left"] - 1
+            if not json_out:
+                typer.echo("\n".join(_plan_lines(found)))
+                typer.echo(f"Spending 1 slot now. After this, {left} slots are left.")
         with redirect_stdout(sys.stderr):
-            output = confirm_run(_settings().data_dir, run_id, authorization_id=authorization)
+            output = confirm_run.confirm_run(home, run_id)
     except SpineError as exc:
         fail(exc, json_out)
     except (DataError, OSError, ValueError) as exc:
         fail(SpineError("CONFIRM_REFUSED", str(exc), f"Run alpha confirm plan {run_id}."), json_out)
-    emit(output, json_out=json_out, fallback="\n".join(result_lines(output)))
+    emit({**output, "plan": found}, json_out=json_out, fallback="\n".join(result_lines(output)))
 
 
 def result_lines(output: dict[str, Any]) -> list[str]:

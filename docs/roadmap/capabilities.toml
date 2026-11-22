@@ -527,26 +527,25 @@ missing = "Proven with in-process unit tests only; no smoke test through the ins
 [[capability]]
 id = "reserved-period-confirmation"
 name = "Confirm one tested idea once on the reserved period"
-what = "Test one frozen rule test once on the held-back data from 2024-01-01 on, with the owner's own Touch ID: ten slots in all, each idea once, the result recorded whatever it is."
+what = "Test one frozen rule test once on the held-back data from 2024-01-01 on, when the owner asks: ten slots in all, each idea once, the result recorded whatever it is."
 see_it = [
   "uv run alpha confirm plan <run id>",
   "uv run alpha confirm list",
 ]
 entry_points = [
   "cli: alpha confirm",
-  "panel: apps/alpha-web/frontend/src/auth/ReservedConfirmation.tsx",
   "code: apps/alpha-cli/src/alpha_cli/reserved_slots.py",
 ]
 proof_synthetic = [
   "tests/bias_guards/test_reserved_confirmation_future_poison.py::test_one_confirmation_reads_reserved_bars_only_after_its_receipt",
   "tests/unit/test_reserved_slots.py::test_two_processes_cannot_both_take_the_last_slot",
-  "tests/unit/test_reserved_confirmation_surfaces.py::test_the_owner_reads_what_is_spent_before_saying_yes",
+  "tests/unit/test_reserved_confirmation_surfaces.py::test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends",
 ]
 docs = ["docs/reference/project/reserved-period.md"]
 real_data = "not yet: no real slot may be used in a test; the owner's first use is the real run"
-needs = ["The owner's enrolled Touch ID credential (alpha owner-auth enroll)."]
+needs = []
 state = "Partial"
-missing = "tested in-process with a Touch ID test double; the browser page has no end-to-end check yet; Setup Lab runs cannot be confirmed yet."
+missing = "tested in-process on synthetic data only; Setup Lab runs cannot be confirmed yet."
 
 [[capability]]
 id = "follow-today-screen"

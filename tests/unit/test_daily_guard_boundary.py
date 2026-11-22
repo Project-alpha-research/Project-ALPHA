@@ -71,10 +71,6 @@ REVIEWED_OUTSIDE: dict[tuple[str, str], str] = {
     ): "Research D0/D1/D2 evidence; rule contracts return earlier through is_rule_contract.",
     ("control_store.py", "research_gate_packet.py"): "Strategy promotion packets.",
     ("control_store.py", "study_semantic.py"): "Blind semantic resolver.",
-    ("owner_auth.py", "reserved_slots.py"): (
-        "Imported only inside the reserved-period confirmation's own branches "
-        "(action confirm_reserved_period); daily approvals never issue or verify that action."
-    ),
 }
 
 

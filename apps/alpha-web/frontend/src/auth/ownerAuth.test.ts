@@ -8,7 +8,6 @@ import {
   contentAddressHash,
   registrationCreationOptions,
   researchCaseRevision,
-  reservedConfirmationRequest,
 } from './ownerAuth'
 
 function bytes(value: BufferSource): number[] {
@@ -76,27 +75,5 @@ describe('local action confirmation', () => {
       expect(challenge).toHaveBeenCalledWith(request)
       expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Launch D1'))
     } finally { vi.restoreAllMocks(); vi.unstubAllGlobals() }
-  })
-})
-
-describe('reserved-period confirmation link', () => {
-  function encoded(value: unknown): string {
-    return btoa(JSON.stringify(value)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '')
-  }
-
-  it('reads the challenge, options and payload from the fragment only', () => {
-    const payload = { run_id: 'r1', summary: 'Uses 1 of 10' }
-    const hash = `#challenge=c1&options=${encoded({ challenge: 'AQID' })}&payload=${encoded(payload)}&summary=Other+words`
-    const request = reservedConfirmationRequest(hash)
-    expect(request?.challengeId).toBe('c1')
-    expect(request?.payload).toEqual(payload)
-    expect(request?.publicKey).toEqual({ challenge: 'AQID' })
-    // Words outside the signed payload are never shown.
-    expect(request?.summary).toBe('Uses 1 of 10')
-  })
-
-  it('refuses a link without a challenge or with a damaged payload', () => {
-    expect(reservedConfirmationRequest('#options=x')).toBeNull()
-    expect(() => reservedConfirmationRequest(`#challenge=c&options=${encoded([1])}&payload=${encoded({})}`)).toThrow('damaged')
   })
 })

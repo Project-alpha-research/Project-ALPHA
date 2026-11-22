@@ -235,9 +235,7 @@ def reserved_span(
 
 def family_asset(rule_kind: str, symbol: str) -> str:
     """The idea family on one asset: the unit that can be confirmed once (deflation family)."""
-    from alpha_cli import reserved_receipts
-
-    return reserved_receipts.family_asset(rule_kind, symbol)
+    return f"spine:{rule_kind}|{symbol}"
 
 
 def confirmed_in_family(home: Path, rule_kind: str, symbol: str) -> dict[str, Any] | None:
@@ -262,13 +260,12 @@ def open_with_receipt(
 ) -> tuple[list[Bar], list[CorporateAction], str | None]:
     """The one read of bars after the boundary. Only `spine/confirm_run.py` may call it.
 
-    Every call checks the receipt against the store: its hash, the owner's Touch ID assertion
-    (verified again), the asset and the exact reserved bars the owner confirmed. A structural test
-    keeps every other module from calling this function.
+    Every call reads the slot receipt from the store and checks the asset and the exact reserved
+    bars it froze. A structural test keeps every other module from calling this function.
     """
     from alpha_cli import _runner, reserved_slots
 
-    frozen = reserved_slots.verified_receipt(home, receipt_id)["frozen"]
+    frozen = reserved_slots.receipt(home, receipt_id)["frozen"]
     resolved = resolve_asset(str(frozen["asset"]), data_dir=home)
     if (resolved.symbol, resolved.store_name) != (frozen["symbol"], frozen["store"]):
         raise DataError("the receipt names another asset or store; nothing was read")
@@ -277,9 +274,9 @@ def open_with_receipt(
     end = datetime.combine(last_day, time.max, tzinfo=UTC)
     n, _, last = reserved_span(resolved, end)
     if n != frozen["reserved_bars"] or last is None or last.isoformat() != frozen["reserved_end"]:
-        raise DataError("the stored reserved bars changed since the owner confirmed them")
+        raise DataError("the stored reserved bars changed since the slot was spent")
     bars, snapshot_id = _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
     dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=end)
     if bars[-1].ts.isoformat() != frozen["reserved_end"]:
-        raise DataError("the reserved bars read are not the ones the owner confirmed")
+        raise DataError("the reserved bars read are not the ones the slot froze")
     return bars, dividends, snapshot_id

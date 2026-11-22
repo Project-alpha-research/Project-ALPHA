@@ -216,6 +216,32 @@ def summary(rdagent_ledger: RD = None, json_out: JSON = False) -> None:
     _run(rdagent_ledger, json_out, _summary)
 
 
+def _share_per_kind(records: list[TrialRecord], limit: int) -> list[TrialRecord]:
+    """Newest rows, with every kind of try given an equal share so none is pushed out of view.
+
+    Never more than `limit` rows: with more kinds than slots, the newest rows of all kinds win.
+    """
+    kinds = sorted({r.kind for r in records})
+    if not kinds:
+        return []
+    share = max(1, limit // len(kinds))
+    taken = {id(r) for kind in kinds for r in [x for x in records if x.kind == kind][:share]}
+    chosen = [r for r in records if id(r) in taken]
+    spare = [r for r in records if id(r) not in taken][: max(0, limit - len(chosen))]
+    return sorted(
+        [*chosen, *spare],
+        key=lambda r: (r.created_at is not None, r.created_at or "", r.source, r.source_line),
+        reverse=True,
+    )[:limit]
+
+
+@ledger_app.callback(invoke_without_command=True)
+def default_view(ctx: typer.Context, rdagent_ledger: RD = None, json_out: JSON = False) -> None:
+    """With no subcommand, list the newest trials of every kind (same as `ledger list`)."""
+    if ctx.invoked_subcommand is None:
+        list_trials(rdagent_ledger=rdagent_ledger, json_out=json_out)
+
+
 @ledger_app.command("list")
 def list_trials(
     kind: str | None = None,
@@ -247,7 +273,11 @@ def list_trials(
             key=lambda r: (r.created_at is not None, r.created_at or "", r.source, r.source_line),
             reverse=True,
         )
-        return {"records": [asdict(r) for r in records[:limit]]}
+        shown = records[:limit] if kind else _share_per_kind(records, limit)
+        return {
+            "records": [asdict(r) for r in shown],
+            "note": f"Showing {len(shown)} of {len(records)} rows (newest first within each kind).",
+        }
 
     _run(rdagent_ledger, json_out, select)
 

@@ -67,6 +67,8 @@ def test_the_slot_line_is_printed_when_the_receipt_is_written(
     assert ran.output.count(SPENDING) == 1
     assert ran.output.index("It cannot be undone.") < ran.output.index(SPENDING)
     assert ran.output.index(SPENDING) < ran.output.index("Slot 1 of 10")
+    # The stored relation words are shown in plain words, in the plan and in both readings.
+    assert "Default aim: beat buy-and-hold;" in ran.output and "this reading is" not in ran.output
 
 
 def test_an_older_run_of_the_test_names_the_newest_run(

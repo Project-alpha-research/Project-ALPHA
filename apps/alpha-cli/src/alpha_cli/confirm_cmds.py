@@ -54,7 +54,9 @@ def _rate_lines(rate: dict[str, Any]) -> list[str]:
 def _plan_lines(found: dict[str, Any]) -> list[str]:
     frozen, slots, earlier = found["frozen"], found["slots"], found["earlier_reading"]
     engine = "the small (quick) gauntlet" if frozen["quick"] else "the full gauntlet"
-    sentence = earlier.get("sentence") or "no reading was stored"
+    from alpha_cli.spine.reading import plain  # lazy: reading pulls in scipy
+
+    sentence = plain(earlier.get("sentence") or "no reading was stored")
     return [
         RESERVED_WORDS,
         "",
@@ -147,6 +149,7 @@ def run_cmd(
 
 def result_lines(output: dict[str, Any]) -> list[str]:
     """Both periods side by side, as readings: numbers in context, no pass or fail."""
+    from alpha_cli.spine.reading import plain  # lazy: reading pulls in scipy
 
     def one(name: str, part: dict[str, Any]) -> list[str]:
         sharpe = part.get("oos_sharpe")
@@ -155,7 +158,7 @@ def result_lines(output: dict[str, Any]) -> list[str]:
             f"{str(part.get('scored_to'))[:10]} (run {part.get('run_id')})",
             "  Sharpe (return per unit of risk, per year): "
             + (f"{sharpe:.3f}" if isinstance(sharpe, float) else "not computed"),
-            f"  Reading: {part.get('reading')}. {part.get('sentence') or ''}".rstrip(),
+            f"  Reading: {part.get('reading')}. {plain(part.get('sentence') or '')}".rstrip(),
         ]
 
     return [

@@ -212,7 +212,10 @@ def test_repeat_summary_reads_recorded_count(
     )
     assert result["resized_entries"] == (count or 0)
     expected = (
-        "SPY: 2 cash entries resized to fit the opening price including fees.\n" if count else ""
+        "SPY: 2 entries were made smaller, because the cash did not cover the full order at the "
+        "next open plus fees. The result already uses the smaller size.\n"
+        if count
+        else ""
     )
     assert capsys.readouterr().out == expected
 

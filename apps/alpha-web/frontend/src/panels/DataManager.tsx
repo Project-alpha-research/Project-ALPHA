@@ -1,7 +1,7 @@
 import { Timestamp } from '../util/formatTime'
 // Data Manager — one home for getting data into ALPHA: pull OHLC bars through the CLI (the
 // profile picks the defaults, the venue's first listed bar sizes the request and names the retry
-// start), the stored pairs, the Storage research datasets and the reviewed crypto assets.
+// start), the stored pairs, the Storage research datasets.
 // The second tab keeps the governed Research Data explorer (Crypto Data Center + research dataset
 // bindings) intact. Every read is a CLI projection; nothing here holds authority.
 
@@ -11,7 +11,6 @@ import { AssetSelect } from '../components/AssetSelect'
 import { api } from '../api/client'
 import { useAreaVersion } from '../state/activity'
 import type { CryptoCoverage, CryptoStorage, DataSnapshots, DataSourceStatus, ProviderDefinition } from '../api/types'
-import { CopyCommand } from '../components/CopyCommand'
 import { JobConsole } from '../components/JobConsole'
 import { Placeholder } from '../components/Placeholder'
 import { setLinked, useLinked } from '../context/linked'
@@ -29,7 +28,6 @@ import {
   storageRow,
   validateDates,
 } from './dataManagerModel'
-import { CLI_ONLY } from './researchCockpitModel'
 import { ResearchDataExplorer } from './ResearchDataExplorer'
 
 type Tab = 'Pull' | 'Snapshots' | 'Quality' | 'Storage'
@@ -37,17 +35,8 @@ const TAB_HELP: Readonly<Record<Tab, string>> = {
   Pull: 'Pull OHLC into the store and see the stored pairs',
   Snapshots: 'Every immutable data snapshot (alpha data snapshots), verify one, or freeze a new one',
   Quality: 'The governed Research Data explorer: datasets, quality checks, snapshots',
-  Storage: 'Storage research datasets and the reviewed crypto assets',
+  Storage: 'Storage research datasets',
 }
-const REVIEWED_ASSETS = ['BTC', 'ETH', 'XRP', 'SOL']
-const ASSET_MASTER_RECIPE = [
-  '# 1. Extend with_reviewed_native_assets() in alpha_data.crypto.asset_master (ADR-0032 review).',
-  '# 2. Regenerate the receipted cross-provider asset master:',
-  'uv run alpha crypto-data asset-master-create \\',
-  '  --coingecko-manifest-id <qualified asset_metadata manifest> \\',
-  '  --geckoterminal-manifest-id <qualified DEX pool catalog manifest> --json',
-].join('\n')
-
 function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -103,7 +92,6 @@ function PullAndStore({ profile, section }: { profile: Profile; section: 'pull' 
   const [error, setError] = useState<string | null>(null)
   const [hint, setHint] = useState<ListingHint | null>(null)
   const [retryFrom, setRetryFrom] = useState<string | null>(null)
-  const [assets, setAssets] = useState<Record<string, string> | null>(null)
 
   const loadGeneration = useRef(0)
   const load = useCallback(() => {
@@ -199,18 +187,6 @@ function PullAndStore({ profile, section }: { profile: Profile; section: 'pull' 
     void api.job(id).then((job) => {
       if (job.status === 'failed') setRetryFrom(retryStartFrom(job.current_step))
     })
-  }
-
-  function checkAssets(): void {
-    const asOf = today()
-    void Promise.all(
-      REVIEWED_ASSETS.map((asset) =>
-        api
-          .cryptoAsset(asset, asOf)
-          .then((identity) => [asset, identity.coingecko_id] as const)
-          .catch(() => [asset, 'not reviewed'] as const),
-      ),
-    ).then((rows) => setAssets(Object.fromEntries(rows)))
   }
 
   const ssd = storageRow(storage)
@@ -357,26 +333,6 @@ function PullAndStore({ profile, section }: { profile: Profile; section: 'pull' 
         )
       ) : null}
 
-      <div className="rd-head de-pull">Reviewed crypto assets</div>
-      <div className="lab-row">
-        {REVIEWED_ASSETS.map((asset) => {
-          const status = assets?.[asset]
-          const tone = status === undefined ? 'kind' : status === 'not reviewed' ? 'warn' : 'pass'
-          return (
-            <span key={asset} className={`chip ${tone}`}>
-              {status === undefined ? asset : `${asset} · ${status}`}
-            </span>
-          )
-        })}
-        <button className="btn" onClick={checkAssets}>
-          check
-        </button>
-      </div>
-      <details>
-        <summary className="muted">Add a reviewed asset — CLI recipe (nothing is changed here)</summary>
-        <pre className="mono">{ASSET_MASTER_RECIPE}</pre>
-        <CopyCommand command={ASSET_MASTER_RECIPE.split('\n').filter((line) => !line.startsWith('#')).join(' ')} why={CLI_ONLY.assetMaster.why} />
-      </details>
         </>
       )}
     </div>

@@ -13,8 +13,6 @@ import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
 import { ActivityFeed } from '../panels/ActivityFeed'
-import { AiConsole } from '../panels/AiConsole'
-import { CodexBench } from '../panels/CodexBench'
 import { CompareRuns } from '../panels/CompareRuns'
 import { DataManager } from '../panels/DataManager'
 import { EvidenceHub } from '../panels/EvidenceHub'
@@ -23,8 +21,6 @@ import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
 import { MlDiagnostics } from '../panels/MlDiagnostics'
 import { NativeJobResult } from '../panels/NativeJobResult'
-import { NativeQlibDemo } from '../panels/NativeQlibDemo'
-import { NativeNautilusDemo, NativeQlibNautilusDemo } from '../panels/NativeNautilusDemo'
 import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
@@ -134,7 +130,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
       { name: 'StrategyLab', title: 'Strategy Development', component: StrategyLab },
       { name: 'DevelopmentCenter', title: 'Development Center', component: DevelopmentCenter },
       { name: 'Pipeline', title: 'Development Next Step', component: Pipeline, area: 'side' },
-      { name: 'AiConsole', title: 'Standalone Sandbox', component: AiConsole, area: 'side' },
     ],
   },
   {
@@ -153,7 +148,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
         params: { initialSection: 'literature', compactLiterature: true },
         area: 'side',
       },
-      { name: 'CodexBench', title: 'Codex Research', component: CodexBench, area: 'side' },
     ],
   },
   {
@@ -175,9 +169,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     panes: [
       { name: 'MlResearch', title: 'ML lab', component: MlResearch },
       { name: 'MlDiagnostics', title: 'ML diagnostics', component: MlDiagnostics },
-      { name: 'NativeQlibDemo', title: 'Native Qlib demo', component: NativeQlibDemo },
-      { name: 'NativeNautilusDemo', title: 'Native Nautilus demo', component: NativeNautilusDemo },
-      { name: 'NativeQlibNautilusDemo', title: 'Qlib → Nautilus pipeline', component: NativeQlibNautilusDemo },
       { name: 'RiskMonitor', title: 'Risk', component: RiskMonitor },
       { name: 'AssetMemory', title: 'Findings', component: AssetMemory, area: 'side' },
     ],

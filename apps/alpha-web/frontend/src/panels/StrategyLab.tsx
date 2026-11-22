@@ -171,7 +171,7 @@ export function StrategyLab(_props: PanelHandleProps) {
         {!linked.projectId ? (
           <div className="workbench-notice" role="note">
             <strong>SELECT A PROMOTED PROJECT</strong>
-            <span>Governed strategy development requires a linked project. Use the separate Standalone Sandbox for permanently unqualified experiments.</span>
+            <span>Governed strategy development requires a linked project.</span>
           </div>
         ) : null}
         <div className="lab-row">
@@ -288,7 +288,7 @@ export function StrategyLab(_props: PanelHandleProps) {
           <button
             className="btn primary"
             disabled={Boolean(gate.lock) || !linked.projectId}
-            title={gate.lock?.reason ?? (!linked.projectId ? 'Select a promoted project or use Standalone Sandbox' : undefined)}
+            title={gate.lock?.reason ?? (!linked.projectId ? 'Select a promoted project' : undefined)}
             onClick={() => launch()}
           >
             ▶ Launch {cmdId}

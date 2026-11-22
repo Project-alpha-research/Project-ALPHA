@@ -49,8 +49,6 @@ _PROVIDER_ENV_NAMES = {
 
 
 def _credential_names_for_command(args: list[str]) -> frozenset[str]:
-    if args[:3] == ["research", "investigations", "acquire"]:
-        return _PROVIDER_ENV_NAMES["tiingo"]
     if args[:2] == ["info", "providers"]:
         return frozenset().union(*_PROVIDER_ENV_NAMES.values())
     if args[:2] == ["provider", "check"] and len(args) > 2:
@@ -61,11 +59,6 @@ def _credential_names_for_command(args: list[str]) -> frozenset[str]:
             return _PROVIDER_ENV_NAMES.get(args[source_index].strip().lower(), frozenset())
     if args[:2] == ["crypto-data", "acquire"] and len(args) > 2:
         return _PROVIDER_ENV_NAMES.get(args[2].strip().lower(), frozenset())
-    if tuple(args[:2]) in {
-        ("crypto-data", "profile-run"),
-        ("crypto-data", "profile-resume"),
-    }:
-        return _PROVIDER_ENV_NAMES["coingecko"]
     return frozenset()
 
 
@@ -77,10 +70,6 @@ def _cli_environment(
 ) -> dict[str, str]:
     """Build the command-scoped environment allowed to cross the web-to-CLI boundary."""
     allowed = _PROCESS_ENV_NAMES | _DATA_ENV_NAMES | _credential_names_for_command(args)
-    if args[:3] == ["research", "investigations", "run"]:
-        # prepare() resolves the owner's auth reference, then replaces this with its
-        # dedicated runtime home. Do not forward owner configuration to other commands.
-        allowed = allowed | frozenset({"CODEX_HOME"})
     if args[:1] == ["assistant"]:
         allowed = allowed | frozenset({"HOME", "CODEX_HOME", "ALPHA_CODEX_MODEL"})
     environment = {name: value for name, value in os.environ.items() if name in allowed}

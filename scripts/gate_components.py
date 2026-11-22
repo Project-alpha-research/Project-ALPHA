@@ -53,6 +53,8 @@ PATH_FILTERS: dict[str, tuple[str, ...]] = {
     # The worker job also runs ALPHA's root checks over the installed worker (the `alpha labels`
     # smoke check, its poison guard, parity with ALPHA's statistics); the root job skips them.
     "afml": ("workers/afml/", "apps/alpha-cli/src/alpha_cli/labels_cmds.py", *AFML_ROOT_TESTS),
+    # The web build and browser journeys: on a pull request only when the web app changed.
+    "web": ("apps/alpha-web/", "pyproject.toml", "uv.lock"),
 }
 
 
@@ -231,6 +233,9 @@ def _backend_tests(root: Path, shard: tuple[int, int] | None) -> list[Step]:
     return [(f"pytest shard {index}/{total}", root, command)]
 
 
+_MUTATE = ["uv", "run", "python", "scripts/gate.py", "mutate"]
+
+
 def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
     """Slow oracles and the mutation gate, only when quant-tier source changed."""
     paths = (context or comparison_context(root))["paths"]
@@ -243,7 +248,8 @@ def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
         (
             "mutation gate",
             root,
-            ["uv", "run", "python", "scripts/gate.py", "mutate", "--require-measured", *modules],
+            # 90 minutes per module: about 400 mutants need about 60 on a CI runner.
+            [*_MUTATE, "--require-measured", "--timeout=5400", *modules],
         ),
     ]
 
@@ -267,7 +273,11 @@ def component_steps(
     if component == "backend-tests":
         return [("uv sync", root, ["uv", "sync", "--locked"]), *_backend_tests(root, shard)]
     if component == "backend-quant":
-        return [("uv sync", root, ["uv", "sync", "--locked"]), *_backend_quant(root, context)]
+        # The pull request runs the slow oracles only. The mutation gate stays in the local
+        # `backend` run and in the weekly sweep (owner decision, 2026-11-22): it takes 20 to 90
+        # minutes a module, and a change should not wait that long to land.
+        quant = [step for step in _backend_quant(root, context) if step[0] != "mutation gate"]
+        return [("uv sync", root, ["uv", "sync", "--locked"]), *quant]
     if component in {"frontend", "frontend-full"}:
         cwd = root / "apps/alpha-web/frontend"
         # Pull requests run one viewport; nightly runs all four (frontend-full).

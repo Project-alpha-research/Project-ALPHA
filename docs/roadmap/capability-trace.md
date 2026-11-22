@@ -71,7 +71,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `quick-screening` | Quick recorded first look at many ideas |
 | `literature` | Find papers, screen their claims, tie a claim to its test, keep the PDF |
 | `paper-to-experiment` | Find papers, screen their claims, tie a claim to its test, keep the PDF |
-| `ai-investigations` | Ask an in-product assistant about a recorded run |
 | `ai-tools-connection` | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs |
 | `providers-and-jobs` | Provider checks and a job list for long downloads |
 | `paper-trading` | Paper trading: local crypto practice account or a broker practice account |
@@ -80,7 +79,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `alpha158-v3` | Qlib's upstream price features (Alpha158) |
 | `qlib-refit` | Qlib's full model list, with retraining fold by fold |
 | `qlib-in-research-cases` | Staged research cases with an approval at each stage (the old lane) |
-| `native-engine-demos` | Chat panels and demo views folded away once their content shows elsewhere |
 | `ai-stock-research` | RD-Agent's factor loop with a real model on real bars, judged by ALPHA |
 | `ai-stock-research` | Trial ledger for RD-Agent's factors, failures kept |
 | `one-trial-ledger` | Every test, tool and variant counted in one ledger; the count printed on each result |

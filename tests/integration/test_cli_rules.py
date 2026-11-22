@@ -78,29 +78,26 @@ def test_resolve_rules_spec_pairs_strategy_and_flag(tmp_path: Path) -> None:
     assert resolve_rules_spec("breakout", None, tmp_path) is None
 
 
-@pytest.mark.parametrize("frozen", [False, True])
-def test_validate_runs_the_gauntlet_on_a_saved_rule_set(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, frozen: bool
+def test_validate_runs_the_gauntlet_on_a_frozen_rule_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    import hashlib
+
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     seed_store(tmp_path, symbol="SPY", n=220)
     assert runner.invoke(app, ["rules", "save", "trend", "--spec", TREND]).exit_code == 0
-    rule_args = ["--rules", "trend"]
-    if frozen:
-        import hashlib
-
-        text = resolve_rules_spec("rules", "trend", tmp_path)
-        assert text is not None
-        path = tmp_path / "frozen.json"
-        path.write_text(text)
-        rule_args = [
-            "--rules-file",
-            str(path),
-            "--rules-sha256",
-            hashlib.sha256(text.encode()).hexdigest(),
-        ]
-        # Changing the saved name after freezing cannot affect either execution.
-        (tmp_path / "rules" / "trend.json").write_text("{}")
+    text = resolve_rules_spec("rules", "trend", tmp_path)
+    assert text is not None
+    path = tmp_path / "frozen.json"
+    path.write_text(text)
+    rule_args = [
+        "--rules-file",
+        str(path),
+        "--rules-sha256",
+        hashlib.sha256(text.encode()).hexdigest(),
+    ]
+    # Changing the saved name after freezing cannot affect the execution.
+    (tmp_path / "rules" / "trend.json").write_text("{}")
     result = runner.invoke(
         app,
         [

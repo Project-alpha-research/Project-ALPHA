@@ -13,8 +13,8 @@ verified: 9bab39f345a7e8c9
 
 **Commands**
 ```text
-uv run alpha scan hypotheses --as-of 2020-04-09 --symbols A,B,C --snapshot <SNAPSHOT> --signals rev_1m --horizons 1,5,10
-uv run alpha scan replay <scan_id>
+alpha scan hypotheses --as-of 2020-04-09 --symbols A,B,C --snapshot <SNAPSHOT> --signals rev_1m --horizons 1,5,10
+alpha scan replay <scan_id>
 ```
 
 **How to read it**

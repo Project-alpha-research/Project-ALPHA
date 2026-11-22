@@ -75,6 +75,6 @@ test('hourly source discovery and scientific UTC links preserve native identity'
   await page.mouse.move(resized.x + resized.width / 2, resized.y + resized.height / 2)
   await cursorGeometry(primary); await cursorGeometry(peer)
   expect(await primary.getAttribute('data-visible-range')).toBe(range)
-  await page.getByRole('menuitem', { name: 'File', exact: true }).hover()
+  await page.getByRole('menuitem', { name: 'View', exact: true }).hover()
   await expect(peerReadout).toHaveText(lastBar)
 })

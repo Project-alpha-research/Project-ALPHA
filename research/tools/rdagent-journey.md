@@ -11,8 +11,8 @@ verified: 2d16c5abab942e68
 **Reach for it when** you want to see why an idea stopped and which observations the judge used.
 
 ```text
-uv run alpha ledger journey --run-dir <run-dir>
-uv run alpha ledger journey --run-dir <run-dir> --factor <name> --out <directory>
+alpha ledger journey --run-dir <run-dir>
+alpha ledger journey --run-dir <run-dir> --factor <name> --out <directory>
 ```
 
 The command prints the path to the index. Each entry identifies an iteration, a factor name

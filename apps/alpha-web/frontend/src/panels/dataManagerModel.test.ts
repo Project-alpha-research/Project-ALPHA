@@ -10,9 +10,9 @@ import {
 } from './dataManagerModel'
 
 describe('pull defaults', () => {
-  it('starts the crypto profile on XRP/USDT at Binance and equities on AAPL at Tiingo', () => {
-    expect(pullDefaults('crypto')).toEqual({ symbol: 'XRP/USDT', source: 'ccxt', exchange: 'binance' })
-    expect(pullDefaults('equities')).toEqual({ symbol: 'AAPL', source: 'tiingo', exchange: 'binance' })
+  it('starts the crypto profile on BTC/USDT at Binance and stocks on SPY at Tiingo', () => {
+    expect(pullDefaults('crypto')).toEqual({ symbol: 'BTC/USDT', source: 'ccxt', exchange: 'binance' })
+    expect(pullDefaults('equities')).toEqual({ symbol: 'SPY', source: 'tiingo', exchange: 'binance' })
   })
 })
 

@@ -12,14 +12,14 @@ verified: 3e53a2ada31a328f
 
 **Command**
 ```text
-uv run alpha idea new --claim "<owner's words>" --disproved-by "<what would kill it>" --json
-uv run alpha idea new --from research/examples/idea-card.example.toml
-uv run alpha idea show <id>
-uv run alpha idea list --json
-uv run alpha idea file <id>
-uv run alpha idea new --from-rdagent <run>/<idea>
-uv run alpha idea link <id> --rdagent <run>/<idea>
-uv run alpha idea note <id> "<text>"
+alpha idea new --claim "<owner's words>" --disproved-by "<what would kill it>" --json
+alpha idea new --from research/examples/idea-card.example.toml
+alpha idea show <id>
+alpha idea list --json
+alpha idea file <id>
+alpha idea new --from-rdagent <run>/<idea>
+alpha idea link <id> --rdagent <run>/<idea>
+alpha idea note <id> "<text>"
 ```
 
 A card holds nine short fields: the idea, why it could work, the other side, what disproves it, the baseline, four clocks.
@@ -37,4 +37,4 @@ A card holds nine short fields: the idea, why it could work, the other side, wha
 
 **What it cannot tell you** Whether the idea is good. A card is a note made before the data.
 
-**Next** `uv run alpha test <spec.toml> --json` with the card id in the spec ([rule test](rule-test.md)).
+**Next** `alpha test <spec.toml> --json` with the card id in the spec ([rule test](rule-test.md)).

@@ -13,8 +13,8 @@ verified: f4762e62775591a8
 
 **Command**
 ```text
-uv run alpha nightly run --config nightly.toml [--only N1,N2,N3,N4,N0] [--json]
-uv run alpha nightly status [--json]
+alpha nightly run --config nightly.toml [--only N1,N2,N3,N4,N0] [--json]
+alpha nightly status [--json]
 ```
 Start from [the example](../examples/nightly.example.toml).
 **What it runs.** Each step is the real command in a child process, with a time limit.
@@ -37,4 +37,4 @@ Start from [the example](../examples/nightly.example.toml).
 
 **What it cannot tell you** Whether any idea has an edge. A clean night says the system works, nothing more.
 **Schedule** Installs nothing; `status` prints one crontab line. Run after the close and the provider's bar, before the next open.
-**Next** `uv run alpha nightly status` lists 5 runs and names the missing item, (a) to (d). A failed night: [marker](nightly-alert.md).
+**Next** `alpha nightly status` lists 5 runs and names the missing item, (a) to (d). A failed night: [marker](nightly-alert.md).

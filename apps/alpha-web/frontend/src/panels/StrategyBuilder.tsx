@@ -17,7 +17,7 @@ import { useLinked } from '../context/linked'
 import type { PanelHandleProps } from '../context/panelHandle'
 import { symbolFitsProfile } from '../shell/profiles'
 import { useSettings } from '../state/settings'
-import { openRunDetail, openStrategyLab } from './actions'
+import { openRunDetail } from './actions'
 import {
   EMPTY_FORM,
   EMPTY_ROW,
@@ -284,21 +284,12 @@ export function StrategyBuilder(_props: PanelHandleProps) {
               disabled={!savedIsCurrent || !symbol.trim() || !symbolFitsProfile(profile, symbol)}
               title={
                 savedIsCurrent
-                  ? 'alpha backtest run --strategy rules in the standalone sandbox (permanently unqualified)'
+                  ? 'Run a backtest of the saved rule set on this symbol'
                   : 'Save the current rule set before testing'
               }
               onClick={testInSandbox}
             >
-              Test in sandbox
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={!savedIsCurrent}
-              title="Open the Strategy Lab prefilled for a governed run under the linked project"
-              onClick={() => openStrategyLab({ command: 'backtest run', args: `${symbol.trim()} --strategy rules --rules ${form.id.trim()}` })}
-            >
-              Open in Strategy Lab
+              Run a backtest
             </button>
           </div>
           {error ? <p className="builder-error" role="alert">{error}</p> : null}

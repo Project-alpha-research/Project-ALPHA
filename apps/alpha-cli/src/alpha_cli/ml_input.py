@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import tempfile
@@ -13,7 +14,6 @@ from typing import cast
 import polars as pl
 
 from alpha_cli import _runner
-from alpha_cli.control_store import ControlStore
 from alpha_cli.ml_contract import (
     DECISION_CLOSE_OFFSET,
     MIN_ALIGNED_SESSIONS,
@@ -63,15 +63,21 @@ def _finite_nonnegative(value: object, label: str) -> float:
     return resolved
 
 
-def _experiment(control: ControlStore, project_id: str, experiment_id: str) -> dict[str, object]:
-    project = control.get_project(project_id)
-    experiments = project.get("experiments")
-    if not isinstance(experiments, list):
-        raise DataError(f"project {project_id!r} has corrupt experiment projections")
-    for candidate in experiments:
-        if isinstance(candidate, dict) and candidate.get("experiment_id") == experiment_id:
-            return cast(dict[str, object], candidate)
-    raise DataError(f"experiment {experiment_id!r} is not linked to project {project_id!r}")
+_MAX_SPEC_BYTES = 1_000_000
+
+
+def _read_spec(spec_path: Path) -> dict[str, object]:
+    """Read the experiment spec file: one regular JSON object, bounded in size."""
+    path = Path(spec_path)
+    if path.is_symlink() or not path.is_file():
+        raise DataError(f"ML spec file must be a regular file: {path.name}")
+    raw = path.read_bytes()
+    if len(raw) > _MAX_SPEC_BYTES:
+        raise DataError(f"ML spec file is larger than {_MAX_SPEC_BYTES} bytes")
+    try:
+        return _object(json.loads(raw), "ML spec file")
+    except ValueError as exc:
+        raise DataError(f"ML spec file is not valid JSON: {exc}") from exc
 
 
 def _aligned_panel(
@@ -277,16 +283,15 @@ def _draft_spec(
     }
 
 
-def export_project_input(
+def export_input(
     *,
     data_dir: Path,
-    project_id: str,
-    experiment_id: str,
+    spec_path: Path,
     output_dir: Path,
     worker_project: Path | None = None,
     as_of: str | None = None,
 ) -> dict[str, object]:
-    """Publish one immutable Qlib input draft from a verified ALPHA project snapshot.
+    """Publish one immutable Qlib input draft from an experiment spec file and its frozen snapshot.
 
     The reserved period is held back: no bar from the reserved day on enters the panel. When
     bars were held back, the summary and a `reserve.json` file in the bundle record it;
@@ -304,7 +309,7 @@ def export_project_input(
     worker_lock = project / "uv.lock"
     if worker_lock.is_symlink() or not worker_lock.is_file():
         raise DataError("isolated Qlib worker lock is unavailable")
-    experiment = _experiment(ControlStore(data_dir), project_id, experiment_id)
+    experiment = _read_spec(spec_path)
     snapshot_id = experiment.get("snapshot_id")
     universe_value = experiment.get("universe")
     if not isinstance(snapshot_id, str) or not snapshot_id:
@@ -362,8 +367,6 @@ def export_project_input(
     return {
         "status": "generated",
         "input_bundle_id": output_dir.name,
-        "project_id": project_id,
-        "experiment_id": experiment_id,
         "snapshot_id": snapshot_id,
         "snapshot_hash": snapshot_hash,
         "symbols": len(universe),
@@ -384,4 +387,4 @@ def _reserve_summary(held: reserve.Hold) -> dict[str, object]:
     return {**held.fields(), "reserve_sentence": held.say()}
 
 
-__all__ = ["export_project_input"]
+__all__ = ["export_input"]

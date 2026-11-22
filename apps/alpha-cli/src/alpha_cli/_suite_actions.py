@@ -30,6 +30,7 @@ from alpha_cli._suite_types import (
     _strategy_options,
     _workload,
 )
+from alpha_cli.ml_contract import canonical_json_bytes
 from alpha_core import DataError
 
 
@@ -636,6 +637,7 @@ def _qlib_steps(ctx: _PlanContext) -> tuple[list[SuiteStep], dict[str, object]]:
     ml_root = ctx.data_dir / "control" / "ml"
     input_bundle = ml_root / "inputs" / managed_id
     exchange = ml_root / "exchanges" / managed_id
+    spec_file = ml_root / "specs" / f"{managed_id}.json"
     worker_lock = Path(__file__).resolve().parents[4] / "workers" / "qlib" / "uv.lock"
     if input_bundle.exists() or exchange.exists():
         ctx.blockers.append(
@@ -644,21 +646,26 @@ def _qlib_steps(ctx: _PlanContext) -> tuple[list[SuiteStep], dict[str, object]]:
         )
     if worker_lock.is_symlink() or not worker_lock.is_file():
         ctx.blockers.append("isolated Qlib worker lock is unavailable")
+    elif not ctx.blockers:
+        spec_file.parent.mkdir(parents=True, exist_ok=True)
+        spec_file.write_bytes(canonical_json_bytes(ctx.experiment))
     input_marker = f"<managed-input:{managed_id}>"
+    spec_marker = f"<managed-spec:{managed_id}>"
     exchange_marker = f"<managed-exchange:{managed_id}>"
     lock_marker = "<isolated-worker-lock>"
     redactions = (
         (str(input_bundle), input_marker),
         (str(exchange), exchange_marker),
+        (str(spec_file), spec_marker),
         (str(worker_lock), lock_marker),
         (ctx.window.cutoff, ctx.window.public_cutoff),
     )
     export = (
         "ml",
         "export-input",
-        ctx.project_id,
-        ctx.experiment_id,
         str(input_bundle),
+        "--spec",
+        str(spec_file),
         "--as-of",
         ctx.window.cutoff,
         "--json",
@@ -683,9 +690,9 @@ def _qlib_steps(ctx: _PlanContext) -> tuple[list[SuiteStep], dict[str, object]]:
                 (
                     "ml",
                     "export-input",
-                    ctx.project_id,
-                    ctx.experiment_id,
                     input_marker,
+                    "--spec",
+                    spec_marker,
                     "--as-of",
                     ctx.window.public_cutoff,
                     "--json",

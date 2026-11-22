@@ -7,22 +7,16 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import polars as pl
 import pytest
 from typer.testing import CliRunner
 
 from alpha_cli import _runner, forecast_cmds
-from alpha_cli.control_store import ControlStore
 from alpha_cli.main import app
 from alpha_core import Bar
 from alpha_core.reserve import RESERVED_DAY, RESERVED_INSTANT, RESERVED_START
-from alpha_data.snapshot import create_snapshot
 from alpha_data.store import ParquetStore
-from alpha_research import MarketStateContractV1
-from alpha_validation import ForecastCalibrationContractV1
 from tests.fixtures.cli_fixtures import seed_store
-from tests.fixtures.control_store_fixtures import mark_project_as_migrated_legacy
 
 runner = CliRunner()
 START = date(2020, 1, 1)
@@ -148,123 +142,6 @@ def _sessions(extra: int) -> list[datetime]:
     return [
         datetime.combine(d, datetime.min.time(), tzinfo=UTC) for d in weekdays[: before + extra]
     ]
-
-
-def _governed_world(root: Path, extra: int) -> tuple[str, str]:
-    stamps = _sessions(extra)
-    total = len(stamps)
-    poison_from = sum(1 for stamp in stamps if stamp.date() < RESERVED_DAY) if extra else None
-    store = ParquetStore(root / "store")
-    for offset, symbol in enumerate(("AAPL", "SPY")):
-        rng = np.random.default_rng(10 + offset)
-        closes = 100.0 * np.cumprod(1.0 + 0.001 + rng.normal(0.0, 0.01, total))
-        if poison_from is not None:
-            closes[poison_from:] *= 1000.0
-        store.write_bars(
-            symbol,
-            pl.DataFrame(
-                {
-                    "ts": stamps,
-                    "open": closes,
-                    "high": closes * 1.01,
-                    "low": closes * 0.99,
-                    "close": closes,
-                    "volume": [1_000_000.0] * total,
-                }
-            ),
-        )
-    create_snapshot(
-        store,
-        root / "snapshots",
-        "governed-forecast",
-        ["AAPL", "SPY"],
-        source="fixture",
-        adapter_version="1",
-        parser_version="1",
-        created_at=datetime(2026, 8, 11, tzinfo=UTC),
-    )
-    control = ControlStore(root)
-    project = control.create_project(
-        name="Governed Kronos calibration",
-        hypothesis="Calibrated forecasts conditionally clear their frozen hurdle.",
-        falsification_criterion="Reject when calibrated OOS skill or coverage misses its floor.",
-        at=datetime(2026, 7, 1, tzinfo=UTC),
-    )
-    project_id = str(project["project_id"])
-    mark_project_as_migrated_legacy(control, project_id)
-    version = control.create_strategy_version(
-        project_id,
-        strategy_name="kronos_calibrated",
-        source_fingerprint="git:test",
-        definition={"authority": "research_candidate_only"},
-        parameter_space={},
-    )
-    market = MarketStateContractV1(
-        universe=("AAPL", "SPY"),
-        benchmark="SPY",
-        calendar="equity",
-        volatility_window=3,
-        trend_window=3,
-        correlation_window=3,
-        annualization_sessions=252,
-        volatility_thresholds=(0.10, 0.25),
-        trend_threshold=0.01,
-        breadth_thresholds=(0.25, 0.75),
-        correlation_thresholds=(0.25, 0.75),
-        minimum_state_samples=3,
-    )
-    calibration = ForecastCalibrationContractV1(
-        coverage_level=0.8,
-        residual_window=4,
-        blend_weights=(0.0, 0.5, 1.0),
-        minimum_validation_origins=8,
-        minimum_empirical_coverage=0.5,
-        minimum_edge=0.0,
-        maximum_interval_width=1.0,
-        minimum_state_samples=3,
-    )
-    experiment = control.create_experiment_spec(
-        project_id,
-        strategy_version_id=str(version["version_id"]),
-        snapshot_id="governed-forecast",
-        universe=["AAPL", "SPY"],
-        split_policy={"validation": 16, "test": 32},
-        costs={"fee_bps": 1.0, "slippage_bps": 2.0},
-        seeds={"master": 7},
-        stage_config={
-            "market_state": market.to_dict(),
-            "kronos_calibration": calibration.to_dict(),
-        },
-    )
-    return project_id, str(experiment["experiment_id"])
-
-
-def test_the_governed_path_cuts_every_universe_symbol(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, spy: Spy
-) -> None:
-    held_ids = _governed_world(tmp_path / "held", EXTRA)
-    plain_ids = _governed_world(tmp_path / "cut", 0)
-    outputs: list[tuple[str, dict[str, Any]]] = []
-    for name, (project_id, experiment_id) in (("held", held_ids), ("cut", plain_ids)):
-        spy.latest.clear()
-        outputs.append(
-            _eval(
-                tmp_path / name,
-                monkeypatch,
-                "--project-id",
-                project_id,
-                "--experiment-id",
-                experiment_id,
-            )
-        )
-        assert len(spy.latest) == 3  # the symbol, then AAPL and SPY for the market state
-        if name == "held":
-            assert max(spy.latest) < RESERVED_INSTANT
-    (held_out, held), (_, plain) = outputs
-    assert f"Held back {EXTRA * 2} bars from {RESERVED_START} on" in held_out
-    for key in ("calibration_fit_sha256", "market_state_artifact_sha256", "oos_origins"):
-        assert held["governed_calibration"][key] == plain["governed_calibration"][key]
-    assert held["summary"] == plain["summary"]
 
 
 def test_forecast_run_is_forward_use_and_still_reads_the_latest_bar(

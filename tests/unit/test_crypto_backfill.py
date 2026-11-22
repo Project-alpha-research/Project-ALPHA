@@ -253,9 +253,6 @@ def test_cli_wrapper_makes_every_unused_typer_default_an_explicit_none(
         "network",
         "pool_address",
         "metrics",
-        "case_id",
-        "expected_case_revision",
-        "reason",
     ):
         assert key in seen and seen[key] is None
 

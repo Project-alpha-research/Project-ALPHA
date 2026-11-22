@@ -1,0 +1,113 @@
+/* Workstation desk design tokens: the one place the desk declares colours, type, spacing and
+   radii. Every desk screen uses only these names. The second block maps the older panel tokens
+   onto the desk palette, so reused panels sit on the same dark surfaces. The browser charts keep
+   their own surface; stored figures stay white (owner decision). */
+html[data-desk="v2"] {
+  color-scheme: dark;
+  --d-bg: #0e1117;
+  --d-surface: #151a23;
+  --d-surface-2: #1b212c;
+  --d-surface-3: #222a37;
+  --d-border: #262e3b;
+  --d-border-strong: #3a4456;
+  --d-text: #e4e8ef;
+  --d-text-2: #c3cad6;
+  --d-muted: #929cad;
+  --d-accent: #3d7eff;
+  --d-accent-text: #7ea8ff;
+  --d-accent-soft: #1a2a4a;
+  --d-up: #26b08f;
+  --d-up-soft: #12302b;
+  --d-down: #f0605d;
+  --d-down-soft: #3a1c1f;
+  --d-warn: #e2b54a;
+  --d-warn-soft: #3a3020;
+  --d-focus: #8ab4ff;
+  --d-held: #e2b54a;
+  --d-scrim: rgba(5, 7, 11, 0.86);
+  --d-shadow: rgba(0, 0, 0, 0.45);
+  --d-paper: #ffffff;
+
+  --d-font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --d-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --d-fs-xs: 13px;
+  --d-fs-sm: 14px;
+  --d-fs-md: 15px;
+  --d-fs-lg: 18px;
+  --d-fs-xl: 22px;
+  --d-sp-1: 4px;
+  --d-sp-2: 8px;
+  --d-sp-3: 12px;
+  --d-sp-4: 16px;
+  --d-sp-5: 24px;
+  --d-sp-6: 32px;
+  --d-r-sm: 4px;
+  --d-r-md: 6px;
+  --d-r-lg: 10px;
+  --d-rail: 76px;
+  --d-top: 48px;
+  --d-row: 34px;
+
+  /* Older panel tokens, mapped onto the desk palette. */
+  --bg: var(--d-bg);
+  --panel: var(--d-surface);
+  --panel-2: var(--d-surface-2);
+  --elevated: var(--d-surface-2);
+  --title: var(--d-surface);
+  --line: var(--d-border);
+  --line-strong: var(--d-border-strong);
+  --bevel-light: var(--d-border);
+  --bevel-dark: var(--d-border);
+  --selection: var(--d-accent-soft);
+  --selection-ink: var(--d-text);
+  --ink: var(--d-text);
+  --ink-dim: var(--d-text-2);
+  --muted: var(--d-muted);
+  --faint: var(--d-muted);
+  --accent: var(--d-accent);
+  --accent-strong: var(--d-accent-text);
+  --accent-soft: var(--d-accent-soft);
+  --accent-line: var(--d-accent);
+  --accent-text: var(--d-accent-text);
+  --up: var(--d-up);
+  --up-soft: var(--d-up-soft);
+  --down: var(--d-down);
+  --down-soft: var(--d-down-soft);
+  --negative-text: var(--d-down);
+  --gold: var(--d-warn);
+  --gold-soft: var(--d-warn-soft);
+  --field-bg: var(--d-bg);
+  --shadow: var(--d-shadow);
+  --scrim: var(--d-scrim);
+  --font-sans: var(--d-font);
+  --font-size: 14px;
+  --r: var(--d-r-sm);
+  --r-lg: var(--d-r-md);
+}
+
+/* The desk's own browser-chart surface, read by the price chart through `readTokens`. */
+.d-chart-surface {
+  --chart-bg: #10141c;
+  --chart-ink: #e4e8ef;
+  --chart-dim: #c3cad6;
+  --chart-muted: #929cad;
+  --chart-grid: #1c2230;
+  --chart-line: #2a3242;
+  --chart-accent: #3d7eff;
+  --chart-up: #26b08f;
+  --chart-down: #f0605d;
+  --chart-gold: #e2b54a;
+  --chart-link: #7ea8ff;
+  --chart-negative: #f0605d;
+  --chart-orange: #f0a35a;
+  --chart-purple: #c792ea;
+  --chart-teal: #4fc1c9;
+  --chart-border: #2a3242;
+  --chart-threshold: #5a6478;
+  --chart-volumeUp: #1d4a40;
+  --chart-volumeUpEdge: #26b08f;
+  --chart-volumeDown: #52272a;
+  --chart-volumeDownEdge: #f0605d;
+  --chart-classicHist: #4fa3d1;
+  --chart-defaultHist: #8fb8b3;
+}

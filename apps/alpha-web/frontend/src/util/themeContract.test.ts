@@ -30,7 +30,7 @@ const literal = /#[\da-f]{3,8}\b|\brgba?\(|\bhsla?\(/i
 
 describe('preserved dark terminal palette', () => {
   it('has no literal colours outside explicit token definitions', () => {
-    const exempt = new Set(['theme.generated.css', 'theme/themes.ts', 'api/generated.ts'])
+    const exempt = new Set(['theme.generated.css', 'theme/themes.ts', 'api/generated.ts', 'v2/tokens.css'])
     const failures: string[] = []
     for (const file of files(root)) {
       const name = relative(root, file)

@@ -164,7 +164,7 @@ def _ladder_spec(
         needs=("run_rerun",),
         params=(),
         outputs=(*outputs, common.RUNS, common.TRIES),
-        reading=reading + " This check added {tries_added:.0f} tries to the count.",
+        reading=reading + common.TRY_SENTENCE,
         caveats=CAVEATS,
         cost="minutes",
         time_safety="hindsight",

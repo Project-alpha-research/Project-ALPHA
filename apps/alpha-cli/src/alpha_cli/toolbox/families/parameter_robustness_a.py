@@ -160,8 +160,9 @@ ONE_AT_A_TIME = settings_spec(
         "times its value "
         "({engine_runs:.0f} re-runs), the Sharpe ratio ran from {sharpe_min:.2f} to "
         "{sharpe_max:.2f} (as tested {sharpe:.2f}) and the return from {return_min:.1%} to "
-        "{return_max:.1%}. This check added {tries_added:.0f} tries to the count."
-    ),
+        "{return_max:.1%}."
+    )
+    + common.TRY_SENTENCE,
     reference=common.TESTS + "test_flat_rule_gives_a_flat_sensitivity",
     compute=one_at_a_time,
     evaluations=lambda params: 16,
@@ -191,8 +192,9 @@ NEIGHBOUR_STABILITY = settings_spec(
     ),
     reading=(
         "{same_sign_share:.0%} of {neighbours:.0f} nearest settings had a return of the same "
-        "sign as the rule's own {total_return:.1%}. This check added {tries_added:.0f} tries."
-    ),
+        "sign as the rule's own {total_return:.1%}."
+    )
+    + common.TRY_SENTENCE,
     reference=common.TESTS + "test_neighbours_of_a_flat_rule_agree",
     compute=neighbour_stability,
     evaluations=lambda params: 8,
@@ -223,9 +225,9 @@ WORST_NEIGHBOUR = settings_spec(
     ),
     reading=(
         "The weakest nearest setting returned {worst_return:.1%} with a Sharpe "
-        "ratio of {worst_sharpe:.2f}, against {total_return:.1%} and {sharpe:.2f} as tested. "
-        "This check added {tries_added:.0f} tries."
-    ),
+        "ratio of {worst_sharpe:.2f}, against {total_return:.1%} and {sharpe:.2f} as tested."
+    )
+    + common.TRY_SENTENCE,
     reference=common.TESTS + "test_worst_neighbour_is_the_lowest_return",
     compute=worst_neighbour,
     evaluations=lambda params: 8,

@@ -169,9 +169,9 @@ PLATEAU = settings_spec(
     ),
     reading=(
         "{within_share:.0%} of {grid_points:.0f} nearby grid settings had a Sharpe ratio within "
-        "a fifth of the rule's own {sharpe:.2f}; the lowest was {sharpe_min:.2f}. This check added "
-        "{tries_added:.0f} tries to the count."
-    ),
+        "a fifth of the rule's own {sharpe:.2f}; the lowest was {sharpe_min:.2f}."
+    )
+    + common.TRY_SENTENCE,
     reference=common.TESTS + "test_plateau_of_a_flat_rule_is_whole",
     compute=plateau,
     evaluations=lambda params: 24 if params.get("grid") == "full" else 8,
@@ -209,8 +209,9 @@ SKIP_ENTRIES = ToolSpec(
         "with a fifth "
         "and {sharpe_low_30:.2f} to {sharpe_high_30:.2f} with three tenths "
         "({engine_runs:.0f} re-runs; "
-        "as tested {sharpe:.2f}). This check added {tries_added:.0f} tries to the count."
-    ),
+        "as tested {sharpe:.2f})."
+    )
+    + common.TRY_SENTENCE,
     caveats=(*CAVEATS, "A skipped entry stays out until the rule's next entry."),
     reference=common.TESTS + "test_skipping_no_entry_reproduces_the_rule",
     compute=skip_entries,
@@ -249,8 +250,9 @@ PRICE_NOISE = ToolSpec(
         "from {p05_sharpe:.2f} to {p95_sharpe:.2f} across the middle nine tenths of "
         "{engine_runs:.0f} "
         "copies (median {median_sharpe:.2f}, as tested {sharpe:.2f}); the sign flipped in "
-        "{sign_flip_share:.0%}. This check added {tries_added:.0f} tries to the count."
-    ),
+        "{sign_flip_share:.0%}."
+    )
+    + common.TRY_SENTENCE,
     caveats=(*CAVEATS, "The noise is independent from bar to bar; real data errors may not be."),
     reference=common.TESTS + "test_price_noise_spreads_around_the_rule",
     compute=price_noise,

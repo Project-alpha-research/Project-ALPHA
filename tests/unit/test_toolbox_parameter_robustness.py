@@ -432,3 +432,10 @@ def test_cost_ladder_on_a_stored_run_matches_its_diagnostics(stored: tuple[Path,
     stored_x2 = next(v for v in diagnostics["sensitivity"]["variants"] if v["name"] == "costs_x2")
     assert doc["values"]["return_2"] == pytest.approx(stored_x2["total_return"], rel=REL, abs=ABS)
     assert get("parameters.cost_ladder").needs == ("run_rerun",)
+
+
+@pytest.mark.parametrize("spec", CHECKS, ids=lambda spec: spec.id)
+def test_reading_says_runs_and_tries_and_that_a_repeat_adds_none(spec: ToolSpec) -> None:
+    # A repeat shows the stored reading: its try count is of the first look, never of this one.
+    assert "{engine_runs:.0f} engine runs" in spec.reading
+    assert "shown again, it adds none" in spec.reading

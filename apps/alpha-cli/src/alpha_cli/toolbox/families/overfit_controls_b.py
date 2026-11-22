@@ -79,6 +79,8 @@ def hurdle(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Res
     if data.reason:
         return blank(keys, data.reason, bars=data.bars)
     level = params["hurdle"]
+    if level <= 0.0:
+        return blank(keys, "The reference t-statistic must be above zero.", bars=data.bars)
     t_stat = data.sharpe_bar * math.sqrt(data.bars)
     values: dict[str, Value] = {
         "t_stat": t_stat,

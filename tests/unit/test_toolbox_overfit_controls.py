@@ -410,3 +410,9 @@ def test_required_history_needs_no_return_spread(tmp_path: Path) -> None:
     z = stats.norm.ppf(0.95) + stats.norm.ppf(0.9)
     assert values["required_bars"] == math.ceil((z / (0.5 / math.sqrt(PPY))) ** 2)
     assert values["detectable_sharpe"] == pytest.approx(z / math.sqrt(60 / PPY), rel=1e-9)
+
+
+def test_a_negative_reference_t_statistic_is_refused(tmp_path: Path) -> None:
+    prepare(tmp_path)
+    doc = go(tmp_path, HURDLE, "hurdle=-3")
+    assert doc["values"]["hurdle_p_value"] is None and "above zero" in doc["reasons"]["hurdle"]

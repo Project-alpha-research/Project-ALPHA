@@ -29,7 +29,7 @@ verified: 8a77650b29ee8769
 | [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
 | [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
-| [web-frontend.md](web-frontend.md), [web-frontend-ideas.md](web-frontend-ideas.md) | Workstation single-page app; the Ideas page | editing the browser app |
+| [web-frontend.md](web-frontend.md), [web-frontend-ideas.md](web-frontend-ideas.md) | Workstation app; the Ideas page | editing the browser app |
 | [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |

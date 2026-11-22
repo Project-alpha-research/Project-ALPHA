@@ -36,4 +36,7 @@
 - Not run: `fs.py verify` (as ordered).
 
 ## Screenshots (synthetic data, dark theme)
-- `home-today.png`, `home-full.png`.
+- Two screenshots of the new home page (Overview with the Today view) were taken. The task-folder guard
+  (`test_task_folders_hold_a_plan_and_only_stage_files`) allows no image files, so they are not committed.
+- `brief.md` in this folder is a byte-identical copy of this task's own brief. The same guard needs a brief or plan in the folder.
+  Both branches add the same bytes, so the merge has no conflict.

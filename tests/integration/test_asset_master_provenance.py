@@ -39,9 +39,9 @@ def evidence(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
     store.bulk_root.mkdir()
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path / "control"))
     monkeypatch.setattr(crypto_data_cmds, "_bulk_store", lambda: store)
-    for name in ["_control_store", "fetch_bybit_public", "_acquire_result"]:
+    for name in ["fetch_bybit_public", "_acquire_result"]:
         monkeypatch.setattr(
-            crypto_data_cmds, name, lambda *a, **k: pytest.fail("no provider/control-store action")
+            crypto_data_cmds, name, lambda *a, **k: pytest.fail("no provider action")
         )
     cg = CryptoDatasetIdentityV1(
         provider="coingecko",

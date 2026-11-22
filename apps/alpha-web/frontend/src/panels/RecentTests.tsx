@@ -7,7 +7,7 @@ import { getJSON } from '../api/client'
 import type { components } from '../api/generated'
 import { openRunDetail } from './actions'
 import {
-  filterChoices, filterRuns, formatDay, formatSharpe, ideaName, nextSort, NO_FILTER, plainError, sortRuns, sparkPath,
+  filterChoices, filterRuns, formatDay, formatSharpe, ideaName, nextSort, NO_FILTER, plainError, readingCell, sortRuns, sparkPath,
   type RecentRun, type RunFilter, type Sort, type SortKey,
 } from './recentTestsModel'
 import './RecentTests.css'
@@ -82,7 +82,12 @@ export function RecentTests({ limit = 10, filters = false }: { limit?: number; f
         <td className="recent-date">{formatDay(row.mtime)}</td>
         <td className="num mono">{row.trades ?? '—'}</td>
         <td className="num mono">{formatSharpe(row.oos_sharpe)}</td>
-        <td>{row.evidence ?? <span className="muted">not stored</span>}</td>
+        <td>{(() => {
+          const cell = readingCell(row)
+          return cell.link
+            ? <button type="button" className="link-button" onClick={event => { event.stopPropagation(); openRunDetail(row.run_id) }}>{cell.link}</button>
+            : cell.words
+        })()}</td>
         <td><Spark values={row.spark} /></td>
       </tr>)}</tbody>
     </table>}

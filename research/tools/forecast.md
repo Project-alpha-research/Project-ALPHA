@@ -12,22 +12,24 @@ or wants to know how that model scored on past origins.
 **Commands**
 ```text
 alpha data pull SPY --start 2015-01-01 --end 2024-01-01     # bars must be stored first
-alpha forecast run SPY --horizon 21 --samples 100 --as-of 2023-12-29
-alpha forecast eval SPY --horizon 21 --stride 21 --samples 30
+alpha forecast run SPY --as-of 2023-12-31                   # 100 paths, 21 sessions, plus the cone picture
+alpha forecast eval SPY                                     # quick look: the latest 6 origins
+alpha forecast eval SPY --origins 0                         # every origin: hours on a CPU
 ```
-`run` writes an outcome cone: many sampled paths for the next `--horizon` sessions (default 21).
+`run` writes an outcome cone and prints the paths of two pictures: the plain cone and the cone with notes.
 `eval` scores the model at rolling origins, `--stride` bars apart, against what happened and against baselines.
 
-**Context length rule** The model reads the last `--context` bars (default 400; the model caps it at 512).
-The stored series must hold at least that many bars, or the command stops with "need >= N context bars".
-Pull more history, or lower `--context`.
+**Dates and context** An `--as-of` date with no bar (a weekend, a holiday) uses the last trading day before it, and says so.
+The model reads the last `--context` bars (default 400; the model caps it at 512). With fewer bars the default
+is lowered to what is there, and the output says so. A `--context` you set that is too long stops and names the largest that works.
 
-**How long it takes** The model runs on the CPU by default. Time grows with `--samples` and `--horizon`.
-`eval` repeats the run at every origin, so it takes far longer than `run`. Try a small `--samples` first.
-The first run may download the model weights. The program does not record timings.
+**How long it takes** The model runs on the CPU. Each command prints an expected time first, then a progress
+line every 10 seconds. Time grows with `--samples`, `--horizon`, `--context` and the number of origins.
+The eval output says how long the full run (`--origins 0`) would take.
 
 **How to read it**
-- Read the cone (median and quartile band), not one path. Eval compares the model with the baselines.
+- Read the cone (median and quartile band), not one path. Each skill number has a sentence under it:
+  above 0% the model's error was smaller than the baseline's; below 0% it was larger.
 - Eval holds the 2024-01-01 reserved bars back. `run` is forward use and records it. Both warn about overlap with the model's training period.
 - The same seed and the CPU give the same paths. `--model fake` is a test double: never use it as evidence.
 

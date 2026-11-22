@@ -115,7 +115,9 @@ describe('Market view', () => {
 
   it('shows plain-word empty, loading and error states', () => {
     expect(render({ data: { ...data, assets: [], eligible_assets: 0 } })).toContain('No stored bars to show')
-    expect(render({ data: null, loading: true })).toContain('Loading stored bars')
+    const loading = render({ data: null, loading: true })
+    expect(loading).not.toContain('Loading')
+    expect(loading.match(/class="market-tile market-tile-skeleton"/g)).toHaveLength(8)
     const error = render({ data: null, error: 'Cannot read stored bars' })
     expect(error).toContain('role="alert"')
     expect(error).toContain('Cannot read stored bars')

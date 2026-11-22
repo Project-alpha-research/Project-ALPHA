@@ -26,7 +26,7 @@ alpha risk scenario --from-run <run_id> --periods-per-year 365 --json
   It writes a new run and prints its id. It reads bars up to the source run's cut-off, never past 2023-12-31
   (the held-back boundary). A short warm-up cuts the 63-day regime window to about half the warm-up (stated).
   Unit: one daily account return (flat days included), so a trade is not kept whole; Kronos recomputes trades.
-- `alpha monte-carlo kronos` replays the rule on synthetic Kronos price paths. It needs an `alpha forecast eval` run.
+- `alpha monte-carlo kronos` replays the rule on 8 Kronos price paths over the first test window; it prints the time. It needs an `alpha forecast eval` run.
 - `alpha risk scenario` re-scores the stored equity curve under higher volatility and shocks, with value at risk
   and expected shortfall. Pass the run's `periods_per_year`; it assumes 252 otherwise.
 - Read the range, not the median. A wide range on a short history is the honest answer.

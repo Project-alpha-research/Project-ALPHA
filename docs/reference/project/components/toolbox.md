@@ -62,15 +62,12 @@ The Workstation report shows a rule test's stored checks.
 
 ## What is real today
 
-Sixteen checks make the first batch: three market descriptions, five that read a rule test's stored files, seven tests on
-that stored history, and one that sets a run beside published factors ([rule](../../invariants/cli-toolbox.md#descriptive-reference-reads)).
-Eleven overfitting controls (`overfit_controls.*`) follow: Sharpe probability, haircut, record and backtest length, and more.
-`alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
-`find`, `situations` and `declare` ([how](../../invariants/cli-toolbox.md#finding-checks-and-recording-the-plan))
-help choose and record checks. Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after
-each judged RD-Agent idea with a shown trading replay, it never changes the verdict. To add a check, follow
-"Adding a check" in the [toolbox rules](../../invariants/cli-toolbox.md#adding-a-check). Not built: two named tests,
-agent-chosen checks in the proposal, and most of the 480-entry catalogue ([STATUS.md](../../../../STATUS.md)).
+The first batch (market descriptions, reads of a rule test's stored files, tests on its history, a published-factor
+comparison) and the eleven overfitting controls are built; the list is in the [toolbox rules](../../invariants/cli-toolbox.md#registered-checks).
+`alpha tool` lists, describes and runs them; every attempt is logged and stored answers are reused. Two predeclared sets
+exist (`sets.py`): `market-context` and `rdagent-post-judge`, which runs two fixed checks after each judged RD-Agent idea
+and never changes the verdict. Not built: agent-chosen checks in the proposal and most of the 480-entry catalogue
+([STATUS.md](../../../../STATUS.md)). To add a check, see [Adding a check](../../invariants/cli-toolbox.md#adding-a-check).
 
 ## Where it lives
 

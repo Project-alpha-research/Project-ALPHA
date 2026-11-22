@@ -53,6 +53,7 @@ grants authority.
 - The Today screen (Research › Today) is `panels/FollowToday.tsx` with helpers in `panels/followTodayModel.ts`. It reads `GET /api/follow/today` and
   `GET /api/follow/{id}` (`api/follow.py`, `api/models/follow.py`), which relay `alpha follow today|show`. Browser spec: `e2e/follow-today.spec.ts`.
   Rules: [Today screen](../../docs/reference/invariants/web-frontend.md#today-screen), [reads](../../docs/reference/invariants/web-api-reads.md#follow-today-read).
+- The Machine learning screen (Research › Machine learning) is `panels/MachineLearning.tsx` with helpers in `panels/mlRunsModel.ts`. It reads `GET /api/ml-runs` (`api/ml_runs.py`, `_ml_runs.py`, `api/models/ml_runs.py`) and `GET /api/runs/{id}/equity`. Tests: `mlRunsModel.test.ts`, `tests/unit/test_web_ml_runs.py`.
 - The Ideas page (View → Research → Ideas) is `panels/idea/IdeaWorkspace.tsx` (sections in `IdeaSections.tsx`, run charts and checks in `IdeaRunPanels.tsx`, pure helpers in `ideaModel.ts`). It reads `GET /api/ideas` and `GET /api/ideas/{card}` (`api/ideas.py`, `api/models/ideas.py`), which relay `alpha idea list|file`. Browser spec: `e2e/idea-workspace.spec.ts`.
   Rules: [Ideas page](../../docs/reference/invariants/web-frontend-ideas.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).

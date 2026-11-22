@@ -13,6 +13,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli._setup_spec_build import SpecOptions, direct_spec, write_new
 from alpha_cli.spine.contact_sheet import draw_sheet
 from alpha_cli.spine.data_health import health_labels, health_sentence
 from alpha_cli.spine.errors import SpineError, fail, setup_error
@@ -67,10 +68,94 @@ def _text(output: dict[str, Any]) -> str:
     )
 
 
+WHEN = Annotated[
+    str | None, typer.Option("--when", help="The condition, e.g. 'close > sma(close, 50)'.")
+]
+HORIZON = Annotated[int | None, typer.Option("--horizon", help="Bars to hold and measure (10).")]
+STOP = Annotated[
+    str | None, typer.Option("--stop", help="Stop distance, e.g. '5 %' or '2 atr(14)'.")
+]
+TARGET = Annotated[str | None, typer.Option("--target", help="Target distance (10 %).")]
+NOT_BOTH = "Give a spec file or the options --when, --horizon, --stop and --target, not both."
+
+
+def _options(
+    name: str,
+    asset: list[str] | None,
+    when: str | None,
+    horizon: int | None,
+    stop: str | None,
+    target: str | None,
+) -> SpecOptions:
+    """The options given; each one left out keeps its default."""
+    base = SpecOptions(name=name)
+    return SpecOptions(
+        name=name,
+        assets=tuple(asset) if asset else base.assets,
+        when=base.when if when is None else when,
+        horizon=base.horizon if horizon is None else horizon,
+        stop=base.stop if stop is None else stop,
+        target=base.target if target is None else target,
+    )
+
+
+@setup_app.command("new")
+def new_command(
+    name: Annotated[str, typer.Argument(help="A short name for the setup.")],
+    asset: Annotated[
+        list[str] | None, typer.Option("--asset", help="A stored symbol (SPY).")
+    ] = None,
+    when: WHEN = None,
+    horizon: HORIZON = None,
+    stop: STOP = None,
+    target: TARGET = None,
+    json_out: bool = typer.Option(False, "--json", help="Emit one JSON result object."),
+) -> None:
+    """Write a complete, commented spec file from options; print its path and the command to run."""
+    home = AlphaSettings().data_dir
+    try:
+        path = write_new(home, _options(name, asset, when, horizon, stop, target))
+    except SpineError as exc:
+        fail(exc, json_out)
+    command = f"alpha setup find {path}"
+    emit(
+        {"path": str(path), "command": command},
+        json_out=json_out,
+        fallback=f"Wrote {path}\nOpen it to change any value. To run it, type:\n  {command}",
+    )
+
+
+def _find_from_options(
+    home: Path,
+    options: SpecOptions,
+    *,
+    check_data: bool = False,
+    accept_bad_data: str | None = None,
+    json_out: bool = False,
+) -> dict[str, Any]:
+    """Run a find on the spec file the options describe; return the find result."""
+    with redirect_stdout(sys.stderr if json_out else sys.stdout):
+        return run_find(
+            direct_spec(home, options),
+            home=home,
+            check_data=check_data,
+            accept_bad_data=accept_bad_data,
+        )
+
+
 @setup_app.command("find")
 def find_command(
-    spec: Path,
-    asset: Annotated[list[str] | None, typer.Option("--asset", help="Keep a spec asset.")] = None,
+    spec: Annotated[
+        Path | None, typer.Argument(help="A spec file; or give options instead.")
+    ] = None,
+    when: WHEN = None,
+    horizon: HORIZON = None,
+    stop: STOP = None,
+    target: TARGET = None,
+    asset: Annotated[
+        list[str] | None,
+        typer.Option("--asset", help="With a spec file: keep a spec asset. Without: the symbol."),
+    ] = None,
     context_bars: int = typer.Option(60, min=5, max=250, help="Bars before the event."),
     max_sheets: int = typer.Option(10, min=1, max=50, help="Maximum accepted sheets."),
     check_data: bool = typer.Option(
@@ -87,7 +172,13 @@ def find_command(
     from alpha_cli.spine.stores import _stores
 
     home = AlphaSettings().data_dir
+    direct = any(v is not None for v in (when, horizon, stop, target))
     try:
+        if spec is not None and direct:
+            raise SpineError("BAD_OPTION", NOT_BOTH, "Remove one of the two and run it again.")
+        if spec is None:
+            spec = direct_spec(home, _options("quick", asset, when, horizon, stop, target))
+            asset = None
         with redirect_stdout(sys.stderr if json_out else sys.stdout):
             output = run_find(
                 spec,
@@ -98,6 +189,8 @@ def find_command(
                 check_data=check_data,
                 accept_bad_data=accept_bad_data,
             )
+    except SpineError as exc:
+        fail(exc, json_out)
     except (DataError, ValueError, OSError) as exc:
         fail(setup_error(exc, list(_stores(home))), json_out)
     emit(output, json_out=json_out, fallback=_text(output))
@@ -326,9 +419,61 @@ def _recheck(
         raise typer.Exit(MISMATCH_EXIT)
 
 
+def _find_id(
+    find_id: str | None,
+    given: tuple[Any, ...],
+    check_data: bool,
+    accept_bad_data: str | None,
+    recheck: bool,
+    json_out: bool,
+) -> str:
+    """The find to measure: the one named, or a find run now from the options given."""
+    asset, when, horizon, stop, target = given
+    try:
+        if find_id is not None and any(v is not None for v in given):
+            raise SpineError("BAD_OPTION", NOT_BOTH, "Remove one of the two and run it again.")
+        if find_id is not None:
+            return find_id
+        if recheck:
+            raise SpineError(
+                "BAD_OPTION",
+                "--recheck needs a find id: a recheck writes nothing, and options run a find.",
+                "Run the find first, then recheck it by its id.",
+            )
+        if all(v is None for v in given):
+            raise SpineError(
+                "BAD_OPTION",
+                "Give a find id, or options such as --when to run a find first.",
+                'Run alpha setup find first, or add --when "<condition>".',
+            )
+        home = AlphaSettings().data_dir
+        options = _options("quick", asset, when, horizon, stop, target)
+        found = _find_from_options(
+            home,
+            options,
+            check_data=check_data,
+            accept_bad_data=accept_bad_data,
+            json_out=json_out,
+        )
+        return str(found["find_id"])
+    except (DataError, ValueError, OSError) as exc:
+        fail(setup_error(exc), json_out)
+    except SpineError as exc:
+        fail(exc, json_out)
+
+
 @setup_app.command("study")
 def study_command(
-    find_id: str,
+    find_id: Annotated[
+        str | None, typer.Argument(help="A find id; or give options instead.")
+    ] = None,
+    asset: Annotated[
+        list[str] | None, typer.Option("--asset", help="A stored symbol (SPY).")
+    ] = None,
+    when: WHEN = None,
+    horizon: HORIZON = None,
+    stop: STOP = None,
+    target: TARGET = None,
     check_data: bool = typer.Option(
         False, "--check-data", help="Compute missing or out-of-date daily health reports."
     ),
@@ -349,6 +494,8 @@ def study_command(
     from alpha_cli.spine.setup_study import run_study
     from alpha_cli.spine.setup_trade_figure import study_text
 
+    given = (asset, when, horizon, stop, target)
+    find_id = _find_id(find_id, given, check_data, accept_bad_data, recheck, json_out)
     if recheck:
         _recheck("study", find_id, check_data, accept_bad_data, json_out)
         return
@@ -371,7 +518,16 @@ def study_command(
 
 @setup_app.command("trade")
 def trade_command(
-    find_id: str,
+    find_id: Annotated[
+        str | None, typer.Argument(help="A find id; or give options instead.")
+    ] = None,
+    asset: Annotated[
+        list[str] | None, typer.Option("--asset", help="A stored symbol (SPY).")
+    ] = None,
+    when: WHEN = None,
+    horizon: HORIZON = None,
+    stop: STOP = None,
+    target: TARGET = None,
     check_data: bool = typer.Option(
         False, "--check-data", help="Compute missing or out-of-date daily health reports."
     ),
@@ -392,6 +548,8 @@ def trade_command(
     from alpha_cli.spine.setup_trade import run_trade
     from alpha_cli.spine.setup_trade_figure import trade_text
 
+    given = (asset, when, horizon, stop, target)
+    find_id = _find_id(find_id, given, check_data, accept_bad_data, recheck, json_out)
     if recheck:
         _recheck("trade", find_id, check_data, accept_bad_data, json_out)
         return

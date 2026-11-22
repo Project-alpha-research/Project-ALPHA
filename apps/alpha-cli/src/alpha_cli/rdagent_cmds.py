@@ -17,6 +17,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.rdagent_bench_cmds import bench_app
+from alpha_cli.rdagent_init import init_text, write_init
 from alpha_cli.rdagent_run_config import (
     RdagentConfig,
     RdagentConfigError,
@@ -30,10 +31,15 @@ from alpha_cli.rdagent_run_config import (
     runs_root,
 )
 from alpha_cli.rdagent_run_status import NotARunFolder, read_status, status_text
+from alpha_core.config import AlphaSettings
 
 rdagent_app = typer.Typer(help="Start RD-Agent with one command and watch the run.")
 rdagent_app.add_typer(bench_app, name="bench")
-CONFIG = Annotated[Path, typer.Option("--config", help="The rdagent.toml file.")]
+CONFIG = Annotated[
+    Path | None,
+    typer.Option("--config", help="An rdagent.toml file. Default: the one in the data folder."),
+]
+CONFIG_NAME = "rdagent.toml"
 
 
 def _plain(config: RdagentConfig, argv: list[str], run_dir: Path) -> str:
@@ -55,21 +61,41 @@ def _plain(config: RdagentConfig, argv: list[str], run_dir: Path) -> str:
     return "\n".join(lines)
 
 
-def _load(path: Path) -> RdagentConfig:
+def _config_path(path: Path | None) -> Path | None:
+    """The file to read: the one named, else the data folder's, else none (all defaults)."""
+    if path is not None:
+        return path
+    home_file = AlphaSettings().data_dir / CONFIG_NAME
+    return home_file if home_file.is_file() else None
+
+
+def _load(path: Path | None) -> RdagentConfig:
     try:
-        return load_config(path, dict(os.environ))
+        return load_config(_config_path(path), dict(os.environ))
     except RdagentConfigError as error:
         typer.echo(f"The RD-Agent config has a problem:\n{error}", err=True)
         raise typer.Exit(2) from error
 
 
+@rdagent_app.command("init")
+def init(config: CONFIG = None) -> None:
+    """Write a config with every path filled in; say which ones are not installed yet."""
+    path = config or AlphaSettings().data_dir / CONFIG_NAME
+    try:
+        paths = write_init(path, dict(os.environ))
+    except RdagentConfigError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+    typer.echo(init_text(path, paths))
+
+
 @rdagent_app.command("run")
 def run(
-    config: CONFIG = Path("rdagent.toml"),
+    config: CONFIG = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Print what would start.")] = False,
     run_id: Annotated[str | None, typer.Option("--run-id", help="Default: date-number.")] = None,
 ) -> None:
-    """Start the RD-Agent factor loop from rdagent.toml. --dry-run shows it without starting."""
+    """Start the RD-Agent factor loop. No config file is needed. --dry-run shows it only."""
     settings = _load(config)
     default_id, default_dir = next_run(settings, datetime.now(UTC).date())
     try:
@@ -83,7 +109,8 @@ def run(
         typer.echo(_plain(settings, argv, run_dir))
         typer.echo("Nothing was started.")
         return
-    runs_root(settings).mkdir(parents=True, exist_ok=True)
+    for folder in (runs_root(settings), settings.trial_ledger.parent, settings.gateway_data_dir):
+        folder.mkdir(parents=True, exist_ok=True)
     typer.echo(f"Starting RD-Agent. Run folder: {run_dir}")
     typer.echo("When it asks for you, or when it ends, type:")
     typer.echo(f"  alpha ledger proposal --run-dir {shlex.quote(str(run_dir))}")
@@ -102,7 +129,7 @@ def status(
     run_dir: Annotated[
         Path | None, typer.Option("--run-dir", help="Default: the last run.")
     ] = None,
-    config: CONFIG = Path("rdagent.toml"),
+    config: CONFIG = None,
     json_out: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Say where a run is: working, waiting for you, finished or stopped, and what to type next."""

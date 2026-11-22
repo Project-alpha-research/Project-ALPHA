@@ -17,7 +17,7 @@ tools.md). Why the toolbox exists: [toolbox](../project/components/toolbox.md).
 ## Adding a check
 
 1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`context`, `costs`, `market`, `overfit`,
-   `overfit_controls`, `performance`, `resampling`, `robustness`, `trades`).
+   `overfit_controls`, `parameter_robustness`, `performance`, `resampling`, `robustness`, `trades`).
 2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The first sixteen
    registered ids: `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`,
    `robustness.start_end_dates`, `trades.side_contribution`, `trades.concentration`, `costs.break_even`,
@@ -73,6 +73,23 @@ of published US stock signals (source `osap-portfolios`): a joint reading on sev
 separate search across all signals marked exploratory. It never gives a pass or fail. It does not apply to assets that
 are not US stocks or ETFs by the stored dataset identity. See the
 [card](../../../research/tools/published-factors.md).
+
+## Checks that re-run the engine
+
+A check that declares the input `run_rerun` gets the run's bars and dividends, its idea spec and its run spec
+(`inputs.load_rerun`). They are read as `alpha test` reads them, at `reserve.CUTOFF`, up to the run's last bar. If they do not give
+the run's stored data fingerprint, the check refuses (`RUN_DATA_CHANGED`). The data fingerprint is part of the result's key.
+The `parameters.*` checks (`toolbox/families/parameter_robustness*.py`) re-run through the diagnostic pass's own engine path
+(`price_noise.engine_runs`, `run_full_backtest`). Variants come from `diagnose.variant_specs` and `owner_variants`. A delayed entry, a
+delayed exit or a skipped entry wraps the built strategy's own signal causally (`parameter_robustness_signals.py`).
+A try is another setting of the rule; a control is the same rule and settings on changed data or execution. Unlike the
+honesty rule (3) above, the four settings checks (`one_at_a_time`, `neighbour_stability`, `worst_neighbour`, `plateau`) add tries:
+before it runs, each re-run is appended to the one trial ledger as a `screen_trial` row
+([trial ledger](cli-trial-ledger.md#screen-tries)), and a re-run already there adds nothing. The other seven are controls, as in
+the diagnostic pass: they write no ledger row, and each says a control is not a way to pick a better variant. Each output says
+how many engine runs it made and whether they were tries or controls. A run with fewer than 10 closed trades is too little to
+read: nothing is run. The checks say in advance how many engine runs they make, and print a progress line at least every 10 seconds. See the
+[card](../../../research/tools/toolbox-parameter-robustness.md).
 
 ## Descriptive reference reads
 

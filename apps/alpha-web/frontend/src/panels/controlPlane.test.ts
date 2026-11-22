@@ -5,9 +5,7 @@ import {
   buildDataPullArgs,
   historicalProviders,
   livePaperStrategies,
-  missingCredentialNames,
   providerOptionDefault,
-  providerReadinessLabel,
 } from './controlPlane'
 
 const PROVIDERS: ProviderDefinition[] = [
@@ -89,13 +87,6 @@ describe('provider-driven Data Explorer', () => {
   it('uses the registry option default', () => {
     expect(providerOptionDefault(PROVIDERS[1], 'exchange')).toBe('coinbase')
     expect(providerOptionDefault(PROVIDERS[0], 'exchange')).toBeNull()
-  })
-
-  it('reports missing credential names without carrying any secret values', () => {
-    expect(missingCredentialNames(PROVIDERS[0])).toEqual(['ALPHA_NEWSFEED_API_KEY'])
-    expect(providerReadinessLabel(PROVIDERS[0])).toBe('OPTIONAL DISABLED')
-    expect(providerReadinessLabel(PROVIDERS[2])).toBe('NOT INSTALLED')
-    expect(providerReadinessLabel(PROVIDERS[1])).toBe('UNVERIFIED')
   })
 
   it('threads the CCXT venue into the CLI and omits it for other sources', () => {

@@ -25,7 +25,7 @@ import { onNewIdea } from '../context/newIdea'
 import type { PanelHandleProps } from '../context/panelHandle'
 import { usePanelLinked } from '../context/usePanelLinked'
 import { findingChipClass } from './researchChipModel'
-import { openProviderCenter, openResearchData, openResearchSources } from './actions'
+import { openResearchData, openResearchSources } from './actions'
 import {
   researchBudgetRows,
   researchBudgetValueRows,
@@ -79,9 +79,6 @@ function blockerRecovery(code: string): { label: string; action: () => void } | 
   }
   if (normalized.includes('DATA')) {
     return { label: 'Open Research Data', action: openResearchData }
-  }
-  if (normalized.includes('PROVIDER')) {
-    return { label: 'Open Provider Readiness', action: openProviderCenter }
   }
   return null
 }

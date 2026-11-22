@@ -12,7 +12,6 @@
 import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
-import { ActivityFeed } from '../panels/ActivityFeed'
 import { AiConsole } from '../panels/AiConsole'
 import { CodexBench } from '../panels/CodexBench'
 import { CompareRuns } from '../panels/CompareRuns'
@@ -28,7 +27,6 @@ import { NativeNautilusDemo, NativeQlibNautilusDemo } from '../panels/NativeNaut
 import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
-import { ProviderSystem } from '../panels/ProviderSystem'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
 import { ResearchBacklog } from '../panels/ResearchBacklog'
@@ -185,12 +183,8 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
   {
     id: 'jobs',
     kind: 'jobs',
-    title: 'Jobs & providers',
-    panes: [
-      { name: 'JobMonitor', title: 'Jobs', component: JobMonitor },
-      { name: 'ProviderSystem', title: 'Providers & system', component: ProviderSystem },
-      { name: 'ActivityFeed', title: 'Activity', component: ActivityFeed, area: 'side' },
-    ],
+    title: 'Jobs',
+    panes: [{ name: 'JobMonitor', title: 'Jobs', component: JobMonitor }],
   },
   {
     id: 'paper',
@@ -297,7 +291,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Log', 'Alerts'],
+    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Alerts'],
   },
 ]
 

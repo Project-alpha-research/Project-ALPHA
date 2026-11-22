@@ -12,7 +12,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   onLabPrefill,
   openDevelopmentCenter,
-  openProviderCenter,
   openResearchData,
   openResearchSources,
   openStrategyLab,
@@ -32,7 +31,6 @@ function stub() {
     showResearchData: vi.fn(),
     showDataSymbol: vi.fn(),
     showCompare: vi.fn(),
-    showProviders: vi.fn(),
     showIndicators: vi.fn(),
   }
   registerNavigator(navigator)
@@ -51,12 +49,10 @@ describe('navigation intents', () => {
     openDevelopmentCenter()
     openResearchSources()
     openResearchData()
-    openProviderCenter()
     expect(navigator.showStrategyLab).toHaveBeenCalledTimes(1)
     expect(navigator.showProjects).toHaveBeenCalledTimes(1)
     expect(navigator.showResearchSources).toHaveBeenCalledTimes(1)
     expect(navigator.showResearchData).toHaveBeenCalledTimes(1)
-    expect(navigator.showProviders).toHaveBeenCalledTimes(1)
   })
 
   it('opens the stored market chart and clears unrelated window and run context', () => {

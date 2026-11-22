@@ -44,7 +44,7 @@ grants authority.
   It reads `GET /api/runs/{id}/series` (`_run_series.py`, `api/models/series.py`). Browser spec: `e2e/rule-test-summary.spec.ts`.
 - The reading block (`components/ReadingBlock.tsx`, model `panels/readingModel.ts`) is used by `RuleTestReport.tsx` and `SetupLabPanel.tsx`. The rule-test reading
   and the declared or exploratory word come with `GET /api/runs/{id}/checks` (`_checks.py`); Setup Lab's come from `alpha setup show` (`_setup_runs.py`). Browser spec: `e2e/reading-block.spec.ts`.
-- The other places that show a run's reading (Navigator run list `panels/navigatorModel.ts`, Pipeline, activity feed, toasts, command palette, Gates tab
+- The other places that show a run's reading (Navigator run list `panels/navigatorModel.ts`, Pipeline, toasts, command palette, Gates tab
   `explain/gates.ts`, Summary and edge review rows) use the helpers in `panels/readingModel.ts`. Rules: [readings in the remaining places](../../docs/reference/invariants/web-run-detail.md#readings-in-the-remaining-places). Specs: `panels/readingEverywhere.test.tsx`, `e2e/readings-everywhere.spec.ts`.
 - The Gates tab charts (`panels/rundetail/WalkForward.tsx`, `CheckCharts.tsx`, `NullChart.tsx`; pure models `walkForwardModel.ts`, `checkChartModel.ts`, `nullChartModel.ts`; reads in `useCheckChartData.ts`) use `GET /api/candles` and `GET /api/runs/{id}/nulls`, no new route. Browser spec: `e2e/check-charts.spec.ts`.
 - The Market screen (Data & Assets › Market) is `panels/MarketOverview.tsx` with pure helpers in `panels/marketModel.ts`. It reads `GET /api/market/overview`

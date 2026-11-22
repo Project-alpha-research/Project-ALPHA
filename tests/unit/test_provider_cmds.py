@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -11,8 +10,6 @@ from typer.testing import CliRunner
 from alpha_cli import provider_readiness
 from alpha_cli.main import app
 from alpha_core import DataError
-from alpha_web import _catalog
-from alpha_web.api import control
 
 runner = CliRunner()
 
@@ -50,16 +47,3 @@ def test_provider_check_cli_supports_json_human_and_safe_error(
     rejected = runner.invoke(app, ["provider", "check", "unknown"])
     assert rejected.exit_code != 0
     assert "unsupported provider" in rejected.output
-
-
-def test_provider_check_http_handler_is_an_explicit_thin_boundary(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
-
-    def checked(*, data_dir: Path, provider_id: str) -> dict[str, object]:
-        assert data_dir == tmp_path
-        return {"provider_id": provider_id}
-
-    monkeypatch.setattr(_catalog, "provider_check", checked)
-    assert control.check_provider("tiingo") == {"provider_id": "tiingo"}

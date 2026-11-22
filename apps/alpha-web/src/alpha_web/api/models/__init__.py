@@ -143,7 +143,6 @@ from .data_sources import DataSnapshots as DataSnapshots
 from .data_sources import DataSourceStatus as DataSourceStatus
 from .data_sources import FirstBar as FirstBar
 from .data_sources import KronosCacheStatus as KronosCacheStatus
-from .data_sources import ProviderCheckReceipt as ProviderCheckReceipt
 from .data_sources import ProviderDefinition as ProviderDefinition
 from .data_sources import ProviderOption as ProviderOption
 from .data_sources import Symbols as Symbols

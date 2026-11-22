@@ -38,7 +38,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     { id: 'results', title: 'Results', description: 'Review recorded evidence, compare runs and export reports.', panes: [
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
     ] },
-    { id: 'operations', title: 'Operations', description: 'Track jobs, providers, activity and paper sessions.', panes: [] },
+    { id: 'operations', title: 'Operations', description: 'Track jobs, alerts and paper sessions.', panes: [] },
     { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },
   ]
   for (const doc of DOCUMENTS) {

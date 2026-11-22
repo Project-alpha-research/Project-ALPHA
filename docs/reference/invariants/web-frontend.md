@@ -80,7 +80,7 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 
 ## Today screen
 
-- The Today screen (Research › Today, pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.
+- The Today screen (Overview, and Research › Today; pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.
   A selected card loads `GET /api/follow/{id}`. It computes nothing: decisions, readings, paper figures and the replay check
   are shown as the command gives them.
 - It says `Paper only. Forward use; not research. Not advice.` Groups run NEW SIGNAL, OPEN PAPER POSITION, NOTHING TODAY,

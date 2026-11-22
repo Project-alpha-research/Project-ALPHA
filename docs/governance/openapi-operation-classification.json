@@ -848,13 +848,6 @@
       "reason": "Safe read exercised against an isolated temporary store."
     },
     {
-      "method": "POST",
-      "mode": "excluded",
-      "operation_id": "check_provider_api_providers__provider_id__check_post",
-      "path": "/api/providers/{provider_id}/check",
-      "reason": "Requires an explicitly injected provider credential or local broker gateway; covered by redacted receipt contract tests."
-    },
-    {
       "method": "GET",
       "mode": "automatic",
       "operation_id": "list_runs_api_rdagent_runs_get",

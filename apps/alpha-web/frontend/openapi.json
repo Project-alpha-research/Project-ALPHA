@@ -17595,75 +17595,6 @@
         "title": "PropfirmPaths",
         "type": "object"
       },
-      "ProviderCheckReceipt": {
-        "additionalProperties": false,
-        "properties": {
-          "checked_at": {
-            "title": "Checked At",
-            "type": "string"
-          },
-          "content_sha256": {
-            "title": "Content Sha256",
-            "type": "string"
-          },
-          "details": {
-            "additionalProperties": true,
-            "title": "Details",
-            "type": "object"
-          },
-          "granted_capabilities": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Granted Capabilities",
-            "type": "array"
-          },
-          "provider_id": {
-            "title": "Provider Id",
-            "type": "string"
-          },
-          "receipt_id": {
-            "title": "Receipt Id",
-            "type": "string"
-          },
-          "recovery_action": {
-            "title": "Recovery Action",
-            "type": "string"
-          },
-          "schema_version": {
-            "const": 1,
-            "title": "Schema Version",
-            "type": "integer"
-          },
-          "verification_state": {
-            "enum": [
-              "verified",
-              "unverified",
-              "authentication_failed",
-              "entitlement_denied",
-              "rate_limited",
-              "connectivity_failed",
-              "schema_drift",
-              "optional_disabled"
-            ],
-            "title": "Verification State",
-            "type": "string"
-          }
-        },
-        "required": [
-          "schema_version",
-          "provider_id",
-          "verification_state",
-          "checked_at",
-          "granted_capabilities",
-          "recovery_action",
-          "details",
-          "receipt_id",
-          "content_sha256"
-        ],
-        "title": "ProviderCheckReceipt",
-        "type": "object"
-      },
       "ProviderDefinition": {
         "additionalProperties": false,
         "properties": {
@@ -34544,49 +34475,6 @@
           }
         },
         "summary": "Get Providers",
-        "tags": [
-          "control-plane"
-        ]
-      }
-    },
-    "/api/providers/{provider_id}/check": {
-      "post": {
-        "description": "Perform one explicit bounded check; ordinary provider reads never enter this path.",
-        "operationId": "check_provider_api_providers__provider_id__check_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "provider_id",
-            "required": true,
-            "schema": {
-              "title": "Provider Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProviderCheckReceipt"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "default": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorV1"
-                }
-              }
-            },
-            "description": "Stable, redacted Workstation error"
-          }
-        },
-        "summary": "Check Provider",
         "tags": [
           "control-plane"
         ]

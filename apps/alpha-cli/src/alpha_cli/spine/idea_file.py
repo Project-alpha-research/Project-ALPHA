@@ -71,14 +71,17 @@ def _checks(home: Path, run_id: str) -> tuple[list[dict[str, Any]], str | None]:
     ], None
 
 
-def _figure_ids(rdir: Path, manifest: dict[str, Any]) -> list[str]:
-    """The ids of the figures that can be drawn for the run. Ids only; nothing is rendered."""
+def _figure_ids(rdir: Path, manifest: dict[str, Any]) -> tuple[list[str], str | None]:
+    """The ids of the figures that can be drawn, or why they could not be found. Ids only."""
+    from polars.exceptions import PolarsError
+
     from alpha_cli.figures import available_figures
 
     try:
-        return [f.definition.figure_id for f in available_figures(rdir, manifest) if f.available]
-    except _READ_ERRORS:
-        return []
+        found = available_figures(rdir, manifest)
+    except (*_READ_ERRORS, PolarsError) as exc:
+        return [], f"the figures of this run could not be listed: {exc}"
+    return [f.definition.figure_id for f in found if f.available], None
 
 
 def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, Any]:
@@ -107,7 +110,7 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
     except _READ_ERRORS as exc:
         entry["problem"] = f"the stored run could not be read: {exc}"
         return entry
-    entry["figures_available"] = _figure_ids(rdir, manifest)
+    entry["figures_available"], figure_problem = _figure_ids(rdir, manifest)
     spine = manifest.get("spine") or {}
     entry["labels"] = [str(label) for label in spine.get("labels") or []]
     data, traded = spine.get("data_period") or {}, spine.get("traded_period") or {}
@@ -136,7 +139,8 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
         "aim": rows[0] if rows else None,
         "_manifest": manifest,
     }
-    entry["checks"], entry["problem"] = _checks(home, run_id)
+    entry["checks"], check_problem = _checks(home, run_id)
+    entry["problem"] = "; ".join(p for p in (figure_problem, check_problem) if p) or None
     return entry
 
 

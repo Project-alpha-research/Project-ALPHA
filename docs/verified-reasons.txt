@@ -2,10 +2,10 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 9cc54c07a2c5890f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 859eaf8b4ca24830 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 9cc54c07a2c5890f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 859eaf8b4ca24830 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
@@ -35,7 +35,7 @@ docs/reference/invariants/cli-follow.md
   verified e8f80ddf444cf352 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified c53c8ed6385c7a07 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified f74f8f26a9d2a859 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -56,7 +56,7 @@ docs/reference/invariants/cli-rule-readings.md
   verified e2d9558c73482a3b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified edc5ef52b277d8a6 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 9c995979923cb8f9 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 docs/reference/invariants/cli-setups.md
   verified 0375e4ab3fe2b99a on 2026-11-21: Test narrowed for mypy; rules unchanged
@@ -187,7 +187,7 @@ docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 164831af99f0120e on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 59be35d8f5ab7a7a on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -244,10 +244,10 @@ packages/alpha-validation/CONTEXT.md
   verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 research/CONTEXT.md
-  verified c6266e13d9cdd5b9 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 3256f468eb42b745 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/PLAYBOOK.md
-  verified ca6053a0ce875702 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 296d6bc719de3ae2 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/README.md
   verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -259,13 +259,13 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 74819dd07f14aa8d on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 13f166d391e654f2 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 115bc752ec1680e7 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 8bccc2eff7f63544 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/charts.md
   verified 874701b73cdea3df on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -274,10 +274,10 @@ research/tools/data-health.md
   verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 29afe053d1eed621 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 412675c706395a91 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified 7346c720627963bf on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 573d9dbb85e99bfa on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/follow.md
   verified dc6f99f581b1ef4c on 2026-11-21: Merged main (calendar range) into the portfolio book branch; both sides' source changes re-read; text still correct
@@ -286,7 +286,7 @@ research/tools/home-backup.md
   verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
 
 research/tools/idea-card.md
-  verified c93fb4bc74375a4c on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified f4f4e893262fe1be on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -325,13 +325,13 @@ research/tools/results-and-cite.md
   verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified 86b297ebc5d0b35f on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified ce032b4952d9b107 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/run-level-checks.md
   verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified 29afe053d1eed621 on 2026-11-22: rule tests now carry their stored labels on the idea file and the Ideas page refetches once a minute; this page is still correct
+  verified 412675c706395a91 on 2026-11-22: the idea file now reports a figure-listing failure as that run's fault; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct

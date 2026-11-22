@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+import pytest
 from typer.testing import CliRunner
 
 from alpha_cli.main import app
@@ -390,3 +391,22 @@ def test_each_rule_test_carries_the_labels_stored_with_it(tmp_path: Path) -> Non
     card = synthetic_home(tmp_path)
     rows = json.loads(_file(tmp_path, card, "--json")[1])["readings"]
     assert [r["labels"] for r in rows] == [["quick"], ["quick"]]
+
+
+def test_a_damaged_figure_artifact_is_one_runs_fault_not_the_end_of_the_page(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from polars.exceptions import ComputeError
+
+    import alpha_cli.figures as figures
+
+    def broken(rdir: Path, manifest: dict[str, Any]) -> tuple[()]:
+        raise ComputeError("bad parquet")
+
+    monkeypatch.setattr(figures, "available_figures", broken)
+    card = synthetic_home(tmp_path)
+    code, output = _file(tmp_path, card, "--json")
+    assert code == 0, output
+    rows = json.loads(output)["readings"]
+    assert len(rows) == 2 and all(r["figures_available"] == [] for r in rows)
+    assert all("could not be listed: bad parquet" in r["problem"] for r in rows)

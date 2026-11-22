@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/idea_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/idea_card.py
   - apps/alpha-cli/src/alpha_cli/spine/idea_file.py
-verified: c93fb4bc74375a4c
+verified: f4f4e893262fe1be
 ---
 # Idea card
 

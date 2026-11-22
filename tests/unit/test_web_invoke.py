@@ -201,6 +201,19 @@ def test_web_cli_matplotlib_directory_reaches_subprocess(
     assert not any(directory.iterdir())  # stdlib-only child, not renderer/cache verification
 
 
+def test_web_command_environment_forwards_codex_home_only_to_the_assistant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    auth_home = str(tmp_path / "synthetic-codex-home")
+    monkeypatch.setenv("CODEX_HOME", auth_home)
+    monkeypatch.setenv("ALPHA_TIINGO_API_KEY", "synthetic-provider-key")
+    assistant = _catalog._cli_environment(tmp_path, ["assistant", "ask"])
+    assert assistant.get("CODEX_HOME") == auth_home
+    for command in (["backtest", "run", "SPY"], ["research", "list"]):
+        other = _catalog._cli_environment(tmp_path, command)
+        assert not {"CODEX_HOME", "HOME", "ALPHA_TIINGO_API_KEY"}.intersection(other)
+
+
 def test_launch_captures_output_and_parses_run_id(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

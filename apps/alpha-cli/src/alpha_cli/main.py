@@ -45,7 +45,9 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("idea", "alpha_cli.idea_cmds", "idea_app"),
     ("library", "alpha_cli.library_cmds", "library_app"),
     ("nightly", "alpha_cli.nightly_cmds", "nightly_app"),
+    ("home", "alpha_cli.home_cmds", "home_app"),
     ("follow", "alpha_cli.follow_cmds", "follow_app"),
+    ("options", "alpha_cli.options_cmds", "options_app"),
 )
 COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("diagnose", "alpha_cli.results_cmds", "diagnose_run"),
@@ -60,11 +62,19 @@ COMMANDS: tuple[tuple[str, str, str], ...] = (
 
 def _group(name: str, module: str, attribute: str) -> typer.Typer:
     group: typer.Typer = getattr(importlib.import_module(module), attribute)
+    if name == "library":
+        importlib.import_module("alpha_cli.library_papers_cmds")
     if name == "research":
         from alpha_cli.local_pdf_cmds import import_pdf_command
 
         if not any(info.name == "import-pdf" for info in group.registered_commands):
             group.command(name="import-pdf")(import_pdf_command)
+        from alpha_cli.moved_notice import announce
+        from alpha_cli.research_cmds import sources_app
+
+        announce(group, "import-pdf", "alpha library import-pdf")
+        announce(sources_app, "discover", "alpha library search")
+        announce(sources_app, "acquire", "alpha library import-pdf")
         from alpha_cli.native_stock_cmds import native_result_command
         from alpha_cli.research_diagnostic_cmds import diagnostic_app
 

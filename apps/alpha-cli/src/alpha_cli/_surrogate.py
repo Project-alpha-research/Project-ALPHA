@@ -29,6 +29,9 @@ from alpha_validation import FloatArray
 
 # a pure signal from a close-path prefix (closes[: t+1]); must read trailing closes only
 SignalOfCloses = Callable[[FloatArray], int]
+# the same signal for every bar of a close path at once: entry t is the signal of closes[: t+1],
+# or the DataError message that bar raises, or None before the signal's warm-up
+SignalsOfPath = Callable[[FloatArray, int], Sequence[int | str | None]]
 
 
 class Surrogate:
@@ -67,8 +70,12 @@ def make_surrogate(
     allow_short: bool = True,
     cost_bps: float = 0.0,
     unit_weight: bool = False,
+    path_signals: SignalsOfPath | None = None,
 ) -> Surrogate:
     """Build ``f(price_returns) -> strategy_returns`` for any vol-targeted long/flat/short signal.
+
+    ``path_signals``, when given, must equal ``signal_fn`` on every prefix; it is called once per
+    path (with the closes and ``warmup``) instead of ``signal_fn`` once per bar.
 
     ``unit_weight=True`` models plain all-in sizing instead: the weight is exactly 1 while the
     signal is long and 0 otherwise, with no volatility estimate.
@@ -99,11 +106,12 @@ def make_surrogate(
         weights = np.zeros(n, dtype=np.float64)
         costs = np.zeros(n, dtype=np.float64)
         weight = 0.0
+        decide = signal_fn if path_signals is None else _table(path_signals(closes[:n], warmup))
         for t in range(n):  # decision at close t applies to pr[t] (close t -> close t+1)
             if t >= warmup and (t - warmup) % rebalance_every == 0:
                 target = _target_weight(
                     closes[: t + 1],
-                    signal_fn=signal_fn,
+                    signal_fn=decide,
                     vol_window=vol_window,
                     target_vol=target_vol,
                     periods_per_year=periods_per_year,
@@ -118,6 +126,18 @@ def make_surrogate(
         return weights, costs
 
     return Surrogate(weights_and_costs)
+
+
+def _table(signals: Sequence[int | str | None]) -> SignalOfCloses:
+    """Read a path's precomputed signal by the prefix length; a stored message raises here."""
+
+    def signal_fn(closes_prefix: FloatArray) -> int:
+        value = signals[len(closes_prefix) - 1]
+        if value is None or isinstance(value, str):
+            raise DataError(value or f"no signal for bar {len(closes_prefix) - 1}")
+        return value
+
+    return signal_fn
 
 
 def make_replay_surrogate(

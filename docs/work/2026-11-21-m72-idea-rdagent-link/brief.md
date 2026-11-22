@@ -1,6 +1,6 @@
 # Brief: link RD-Agent work and notes to an idea
 
-Branch: `feat/m72-idea-rdagent-link`. Rules: `docs/work/_common-rules-2026-11-21.md`. Workspace: `apps/alpha-cli/CONTEXT.md` (idea
+Branch: `feat/m72-idea-rdagent-link`. Rules: `docs/work/2026-11-21-common-build-rules/brief.md`. Workspace: `apps/alpha-cli/CONTEXT.md` (idea
 rows), `workers/rdagent/CONTEXT.md` (read only: do not edit `workers/**`), `apps/alpha-web/CONTEXT.md`.
 
 ## Why

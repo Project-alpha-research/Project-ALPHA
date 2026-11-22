@@ -222,6 +222,8 @@ def _text(facts: dict[str, Any]) -> str:
         f"Idea cards: {ideas['cards']} idea card{plural}, {ideas['without_test']} with no test yet."
         " Write one: alpha idea new. See one: alpha idea file <id>."
     )
+    lines.append("  Link RD-Agent work: alpha idea link <id> --rdagent <run>/<idea>")
+    lines.append('  Keep a note or decision: alpha idea note <id> "<text>" [--decision]')
     paths = facts["paths"]
     lines += [
         "Three ways to start",
@@ -234,6 +236,7 @@ def _text(facts: dict[str, Any]) -> str:
         "  3. Let RD-Agent propose ideas.",
         "     Say: Let RD-Agent propose ideas.",
         f"     First command: {paths['rdagent_idea']['command']} ({paths['rdagent_idea']['note']})",
+        "     Compare models on stored prompts: alpha rdagent bench plan --help",
         NOTICE,
     ]
     return "\n".join(lines)

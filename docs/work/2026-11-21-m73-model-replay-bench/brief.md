@@ -1,6 +1,6 @@
 # Brief: a replay bench to compare models for RD-Agent's jobs
 
-Branch: `feat/m73-model-replay-bench`. Rules: `docs/work/_common-rules-2026-11-21.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
+Branch: `feat/m73-model-replay-bench`. Rules: `docs/work/2026-11-21-common-build-rules/brief.md`. Workspace: `apps/alpha-cli/CONTEXT.md`
 (RD-Agent rows), `workers/rdagent/CONTEXT.md` (read only: do not edit `workers/**`).
 
 ## Why

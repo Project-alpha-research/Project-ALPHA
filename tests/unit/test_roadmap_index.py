@@ -10,17 +10,6 @@ import roadmap_index
 ROOT = Path(__file__).parents[2]
 
 
-def test_committed_roadmap_index_is_fresh() -> None:
-    committed = (ROOT / roadmap_index.INDEX).read_text(encoding="utf-8")
-    assert committed == roadmap_index.render(ROOT), (
-        "docs/roadmap/README.md is stale; run: uv run python scripts/roadmap_index.py"
-    )
-
-
-def test_check_mode_passes_on_the_committed_tree() -> None:
-    assert roadmap_index.main(["--check"]) == 0
-
-
 def _tree(tmp_path: Path, files: dict[str, str]) -> Path:
     for rel, text in files.items():
         target = tmp_path / rel

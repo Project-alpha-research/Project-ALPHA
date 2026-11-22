@@ -23,14 +23,19 @@ READER_REASONS = {
     "follow_update.py": "F2: writes one entry per new session of a followed rule test",
     "follow_update_check.py": "F2: the replay check of the journal against the stored bars",
     "follow_replay.py": "F2: replays the frozen rule with the rule test's engine step",
+    "follow_session.py": "F2: the sessions to write and the loop shared by rule and setup follows",
+    "follow_setup.py": "F2: replays a followed setup trade with the study's own code",
+    "follow_setup_update.py": "F2: writes one entry per new session of a followed setup trade",
     "follow_book.py": "F2: the paper account arithmetic that goes into each entry",
     "follow_show.py": "F2: prints the last entries and the paper equity of a follow",
     "follow_today.py": "F3: reads every journal to build the what-is-active-today view",
     "follow_counts.py": "F3: the one-line count `alpha next` prints, through follow_today",
+    "home_backup.py": "`alpha home backup`: copies every file of the home, byte for byte, into "
+    "one archive; it parses no journal and feeds no research result",
 }
 READERS = frozenset(CLI + name for name in READER_REASONS)
 STORE_IMPORT = re.compile(
-    r"follow_(store|chain|journal|source|update|update_check|replay|book|show|today)\b"
+    r"follow_(store|chain|journal|source|update|update_check|replay|session|setup|setup_update|book|show|today)\b"
 )
 FORWARD_PATH = re.compile(
     r"""/\s*["']forward["']|["']forward/|/forward/|(Path|joinpath)\([^)\n]*["']forward["']"""

@@ -134,7 +134,8 @@ def test_rule_test_and_tool_read_no_held_back_bar(
     }
     reference = run_idea(_idea(symbol), home=cut, quick=True)["results"][0]
     assert reference["error"] is None, reference
-    assert out["run_id"] != reference["run_id"]  # the cut-off is part of the run identity
+    # Changed 2026-11-22: the identity holds the cut-off and the rows read, not held-back rows.
+    assert out["run_id"] == reference["run_id"]
     for key in ("oos_sharpe", "dsr", "verdict", "resized_entries", "n_bars"):
         assert out.get(key) == pytest.approx(reference.get(key), rel=1e-9, abs=1e-12) or (
             out.get(key) == reference.get(key)

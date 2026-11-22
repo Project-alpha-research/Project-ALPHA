@@ -88,8 +88,8 @@ by the program and the tool server. For the rest see the capabilities below on
   ([log](../owner-decisions-3.md#2026-11-15-what-production-grade-means)). Earlier entries are in
   the [owner decisions log](../owner-decisions.md).
 - 2026-11-15: the in-product assistant panel is removed once the investigation trail screen
-  exists ([log](../owner-decisions-3.md#2026-11-15-five-scope-answers), answer 3).
-- 2026-11-21: the owner retired the in-app AI (Codex Bench, investigations, Standalone Sandbox).
+  exists; 2026-11-21: the owner retired the in-app AI (Codex Bench, investigations, Standalone Sandbox)
+  ([log](../owner-decisions-3.md#2026-11-15-five-scope-answers), answer 3).
 
 ## Never
 

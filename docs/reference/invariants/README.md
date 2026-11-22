@@ -2,7 +2,7 @@
 owner: invariants router
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 8115bbcdee4c05e0
+verified: 8a77650b29ee8769
 ---
 # Invariants: which file to load
 | file | owns | load when |
@@ -38,15 +38,15 @@ verified: 8115bbcdee4c05e0
 ## Command line
 | file | owns | load when |
 |---|---|---|
-| [cli-runs.md](cli-runs.md), [cli-nightly.md](cli-nightly.md) | runs, publication; the nightly run | `alpha run`, `alpha nightly` |
+| [cli-runs.md](cli-runs.md), [cli-figures.md](cli-figures.md), [cli-nightly.md](cli-nightly.md) | runs; figures; nightly | `alpha run`, `figures`, `nightly` |
 | [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |
 | [cli-toolbox.md](cli-toolbox.md) | toolbox catalogue: adding a check, honesty rules | `alpha tool`, adding a check |
 | [cli-investigation-tools.md](cli-investigation-tools.md) | follow-up questions on one rule test | investigating a recorded rule test |
-| [cli-rule-readings.md](cli-rule-readings.md) | rule-test reading: words, aim, faults | `alpha test` text, the stored `reading` |
-| [cli-results-check.md](cli-results-check.md) | draft checks and run comparisons | `alpha results check` or `compare` |
+| [cli-rule-readings.md](cli-rule-readings.md), [cli-cost-classes.md](cli-cost-classes.md) | readings; costs by class | `alpha test` text, costs line |
+| [cli-results-check.md](cli-results-check.md), [cli-rule-context-gate.md](cli-rule-context-gate.md) | checks; context gate | `alpha results`, `--plan` |
 | [cli-crypto-data.md](cli-crypto-data.md) | `alpha data`, crypto data house | `alpha data`, `alpha crypto-data` |
 | [cli-ml.md](cli-ml.md) | Qlib exchange, Kronos composition | `alpha ml`, `alpha forecast` |
 | [cli-native.md](cli-native.md) | native upstream lanes: RD-Agent loop, rule studies | native loops, costed rule studies |

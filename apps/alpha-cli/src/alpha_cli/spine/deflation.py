@@ -121,11 +121,9 @@ def same_asset_tests(
     seen: set[TestKey] = set()
     tests = repeats = 0
     for row in snapshot.raw_rows.values():
-        if not (
-            row.get("symbol") == symbol
-            and row.get("oos_sharpe") is not None
-            and bool(row.get("periods_per_year"))
-        ):
+        scored = row.get("oos_sharpe") is not None and bool(row.get("periods_per_year"))
+        # A screen try has no Sharpe; it is a try on this asset all the same (never a zero).
+        if not (row.get("symbol") == symbol and (scored or row.get("kind") == "screen_trial")):
             continue
         key = row_test_key(row)
         # A keyed row is matched by its key alone, so a labelled repeat whose earlier row has no

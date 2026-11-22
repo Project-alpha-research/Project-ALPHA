@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: ffdba1d4ac6a715e
+verified: e2d46b2d8544373c
 ---
 
 # Web frontend invariants
@@ -111,7 +111,13 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - Archive, run and snapshot contexts never silently fall back to canonical stored bars. A run without a recorded price snapshot cannot borrow current candles.
   The one exception is the small walk-forward chart on the Gates tab: it draws the bars stored now, cut at the run's last date,
   and its legend says the run's own bars were not saved.
+  A rule test records no snapshot, so its price comes from the same exception: the bars stored now, cut at the research cut-off and the run's
+  last date, drawn only when their source fingerprint equals the one the run recorded. Otherwise the pane says why (`bars_changed_since_run`,
+  `price_not_saved_with_run`) and draws nothing. A bar at or after the cut-off is never read.
   Archive charts stay separate from strategy context.
+- `components/tearsheet/TearSheetStack.tsx` draws one BokehJS grid from `GET /api/runs/{id}/series`: price with entry and exit markers,
+  equity against buy and hold (Log toggle), and drawdown, on one x-range with one crosshair and one readout. Tested periods and
+  walk-forward tests are shaded and named. It draws stored values only; the model (`tearSheetModel.ts`) computes no statistic. Colours come from the theme.
 - In `ChartWorkspace` (at most four panels) only the primary panel follows canonical market navigation. Comparison panels stay pinned, and changing a panel's
   source never changes canonical research context.
 - Keep chart creation separate from option, evidence and selection updates; fit/reset happens only on request.
@@ -125,6 +131,9 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
 - Bokeh views own standalone documents. Release the views and the document/model registries on cancel, failure and disposal.
 - A canvas is invisible to a screen reader. Every canvas chart needs a real-markup alternative: `panels/ChartDataAlternative.tsx` for price bars, and
   `components/FigureCard.tsx` alt text, caveats and value tables for server figures.
+- A figure card shows the plain chart with a "Show annotated" toggle, the long explanation beside it and an "Open full screen" action.
+  Charts stay white (system `Canvas` under `color-scheme: light`) on every screen theme. The variant is part of the image URL and the cache key;
+  `components/figureVariant.ts` holds the pure choices.
 - Never change timing budgets or aggregate bars to make a performance test pass. The `@perf-budget` specs run only with `ALPHA_PERF_BUDGETS=1` on an idle
   reference machine.
 - Screenshot baselines are kept per platform (`*-darwin.png`, `*-linux.png`). Re-take Linux images in the Playwright Linux container; never copy macOS images

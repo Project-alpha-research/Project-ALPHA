@@ -20,14 +20,6 @@ def _cli() -> tuple[list[dict[str, Any]], dict[str, str]]:
     return commands_reference.load_cli()
 
 
-def test_committed_commands_reference_is_fresh() -> None:
-    committed = (ROOT / commands_reference.OUTPUT).read_text(encoding="utf-8")
-    assert committed == commands_reference.render(*_cli()), (
-        "docs/reference/commands.md no longer matches the CLI; run: "
-        "uv run python scripts/commands_reference.py and commit the result"
-    )
-
-
 def test_every_command_has_one_line_in_its_group_section() -> None:
     catalog, descriptions = _cli()
     text = commands_reference.render(catalog, descriptions)

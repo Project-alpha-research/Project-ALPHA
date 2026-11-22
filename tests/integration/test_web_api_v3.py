@@ -32,7 +32,7 @@ def test_openapi_publishes_every_v3_alias_without_removing_legacy_routes() -> No
         for path in paths
         if path.startswith(("/api/projects", "/api/development", "/api/evidence"))
         or path.startswith("/api/stage-links")
-        or path.startswith("/api/ml")
+        or path.startswith("/api/ml/")  # not /api/ml-runs: the stored-run list has no v3 copy
     ]
     assert legacy_paths
     for legacy_path in legacy_paths:

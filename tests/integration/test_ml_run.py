@@ -184,7 +184,7 @@ def test_a_finished_build_is_reused_under_its_lock_file(home: Path, tmp_path: Pa
     """A second run on the same key reuses the finished exchange; a lock file guards builds."""
     spec = _spec(tmp_path)
     first = ml_run.run_spec(spec, data_dir=home)
-    base = next((home / "ml_runs").iterdir())
+    base = next(path for path in (home / "ml_runs").iterdir() if path.is_dir())
     assert (base / "done").is_file()
     assert (home / "ml_runs" / f"{base.name}.lock").is_file()
     assert ml_run.run_spec(spec, data_dir=home)["run_id"] == first["run_id"]

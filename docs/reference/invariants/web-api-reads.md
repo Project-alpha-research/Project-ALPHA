@@ -5,7 +5,7 @@ sources:
   - apps/alpha-web/src/alpha_web/api/**
   - tests/unit/test_web_*.py
   - tests/integration/test_web_api_*.py
-verified: e7f27b18a6b2d4a1
+verified: 8459c58a6bf6c4ba
 ---
 
 # Web API reads and writes invariants
@@ -80,3 +80,14 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 
 - GET `/api/runs/{id}/series` (`_run_series.py`) reads stored equity, trades, benchmark, bands and, through `run_projection.price_series`, verified price bars.
   It is bounded (`limit` 2 to 5,000; trades capped at 2,000) and computes no statistic. Route shape: [web-api.md](web-api.md#chart-data).
+
+## Ideas read
+
+- `GET /api/ideas` and `GET /api/ideas/{card}` relay `alpha idea list|file --json` as a subprocess (`api/ideas.py`, 30 s timeout).
+  The web never opens the ideas folder. The id must match 4 to 12 lowercase hex characters. An unknown card is a 404 with the command's words;
+  another failure is a 409; a timeout is a 504.
+- Bounds: the list keeps the newest 500 cards (`total`, `truncated`); the file keeps the newest 200 readings and 100 follows
+  (`readings_total`, `readings_shown_from`). No route writes a card or links a test.
+- The activity stream has an `ideas` area: the ideas folder, `diagnostics`, `setups`, `setup-studies` and the trial ledger. It is walked one level deep
+  (`_activity.SHALLOW_AREAS`): 46 000 entries cost 0.43 s a tick walked in full, 0.02 s this way. A follow change does not move it (the web never
+  opens `forward/`); the page looks again once a minute for that. Enforced by `tests/unit/test_web_ideas_routes.py` and `tests/unit/test_web_activity_areas.py`.

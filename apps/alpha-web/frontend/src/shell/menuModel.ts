@@ -26,6 +26,7 @@ export type MenuName = (typeof MENUS)[number]
 export const GROUP_MENU: Readonly<Record<string, MenuName>> = Object.freeze({
   report: 'File',
   'owner-auth': 'File',
+  confirm: 'File',
   project: 'Edit',
   suite: 'Edit',
   evidence: 'Insert',

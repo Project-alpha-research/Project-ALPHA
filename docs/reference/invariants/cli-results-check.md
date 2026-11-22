@@ -21,7 +21,7 @@ sources:
   - tests/unit/test_results_correlate.py
   - tests/unit/test_book_math.py
   - tests/unit/test_spine_results_cmds.py
-verified: af0344ef55aa33c8
+verified: 31a9f5fdd9f3f626
 ---
 
 # Command line draft checks and run comparisons invariants

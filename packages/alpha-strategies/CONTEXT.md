@@ -3,7 +3,7 @@ owner: strategy layer
 sources:
   - packages/alpha-strategies/src/**
   - packages/alpha-strategies/pyproject.toml
-verified: 3b2f49208f161d62
+verified: 4b5baf8a13749484
 ---
 
 # alpha-strategies workspace

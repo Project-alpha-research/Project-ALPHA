@@ -170,7 +170,13 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         kind, subkind = "tool", raw_kind[5:]
         if not subkind:
             raise ValueError("missing tool name")
-    elif raw_kind not in {"rule_test", "setup_find", "setup_study", "setup_trade"}:
+    elif raw_kind not in {
+        "rule_test",
+        "setup_find",
+        "setup_study",
+        "setup_trade",
+        "reserved_confirmation",
+    }:
         kind, subkind = "other", raw_kind
     labels = _strings(row["labels"])
     outcome, status = "recorded", row.get("verdict")
@@ -206,6 +212,10 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         family = "spine-screen"
     elif kind == "setup_find":
         family = f"spine-setup:{row['name']}"
+    elif kind == "reserved_confirmation":
+        # The owner's one look at the reserved period: its own family, never a counted trial, so
+        # it changes no family count used to deflate another test.
+        family = f"spine-confirmation:{row['rule']}"
     elif kind in {"setup_study", "setup_trade"}:
         family = "setup:" + " ".join(row["idea"].casefold().split())
         machine_outcome, outcome, note = _setup_words(row)

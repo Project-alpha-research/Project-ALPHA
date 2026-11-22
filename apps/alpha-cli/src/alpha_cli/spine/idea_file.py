@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from alpha_cli.follow_counts import follows_of_card
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_cli.spine import idea_card as cards
 from alpha_cli.spine import idea_notes, idea_rdagent, papers, reserve
@@ -70,6 +71,19 @@ def _checks(home: Path, run_id: str) -> tuple[list[dict[str, Any]], str | None]:
     ], None
 
 
+def _figure_ids(rdir: Path, manifest: dict[str, Any]) -> tuple[list[str], str | None]:
+    """The ids of the figures that can be drawn, or why they could not be found. Ids only."""
+    from polars.exceptions import PolarsError
+
+    from alpha_cli.figures import available_figures
+
+    try:
+        found = available_figures(rdir, manifest)
+    except (*_READ_ERRORS, PolarsError) as exc:
+        return [], f"the figures of this run could not be listed: {exc}"
+    return [f.definition.figure_id for f in found if f.available], None
+
+
 def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, Any]:
     entry: dict[str, Any] = {
         "kind": "rule test",
@@ -77,6 +91,8 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
         "recorded_at": ledger.get("recorded_at"),
         "tested": {"asset": ledger.get("symbol") or UNKNOWN},
         "reading": None,
+        "labels": [],
+        "figures_available": [],
         "word": None,
         "sentence": None,
         "aim": None,
@@ -94,7 +110,9 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
     except _READ_ERRORS as exc:
         entry["problem"] = f"the stored run could not be read: {exc}"
         return entry
+    entry["figures_available"], figure_problem = _figure_ids(rdir, manifest)
     spine = manifest.get("spine") or {}
+    entry["labels"] = [str(label) for label in spine.get("labels") or []]
     data, traded = spine.get("data_period") or {}, spine.get("traded_period") or {}
     block = manifest.get("reserve") or spine.get("reserve")
     labels = reserve.read_labels(manifest)
@@ -121,7 +139,8 @@ def _rule_entry(home: Path, run_id: str, ledger: dict[str, Any]) -> dict[str, An
         "aim": rows[0] if rows else None,
         "_manifest": manifest,
     }
-    entry["checks"], entry["problem"] = _checks(home, run_id)
+    entry["checks"], check_problem = _checks(home, run_id)
+    entry["problem"] = "; ".join(p for p in (figure_problem, check_problem) if p) or None
     return entry
 
 
@@ -209,7 +228,8 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
     entries.sort(key=lambda e: str(e.get("recorded_at") or ""))
     runs = [e for e in entries if e["kind"] == "rule test"]
     finds = [e for e in entries if e["kind"] == "setup find"]
-    steps = build_map(identity, runs, finds)
+    follows = follows_of_card(home, identity)
+    steps = build_map(identity, runs, finds, follows)
     worked = idea_rdagent.entries(home, identity)
     if worked:
         steps.insert(1, idea_rdagent.map_line(worked))
@@ -239,6 +259,7 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
             "superseded_by": newer[0] if newer else None,
         },
         "map": steps,
+        "follows": follows,
         "readings": readings,
         "counts": {
             "tests_linked": len(entries),

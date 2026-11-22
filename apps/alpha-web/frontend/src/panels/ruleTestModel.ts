@@ -40,6 +40,8 @@ const LABEL_MEANING: Record<string, string> = {
   'ad-hoc': 'Run on its own, not as part of a predeclared set of checks.',
   'non-default-params': 'Run with a setting other than the default, or with another random seed.',
   'reserved-period-seen': 'The data reaches into the reserved period, which starts on 2024-01-01.',
+  'reserved-period-confirmation': "The owner's one confirmation of a frozen test on the reserved period (2024-01-01 on). It is recorded whatever it shows.",
+  'reserved-period-confirmed-in-family': 'This rule was already confirmed on this asset in the reserved period; this test is not independent of that result.',
   'benchmark-is-same-asset': 'The market used for comparison is the asset the rule traded.',
   hindsight: 'Part of this result uses the whole history, which was not knowable at the time.',
   'hindsight-disagrees': 'The hindsight split tells a different story from the split made at the time.',

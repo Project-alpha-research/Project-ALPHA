@@ -83,6 +83,9 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   The wider count is of distinct keys: `same_asset_tests` (counted) and `same_asset_repeats` (rows not
   counted: key-equal, or key-less and labelled repeat) in `trials.family`. `total_trials` is the ledger row number
   (audit sequence, no statistic reads it).
+- One headline count of tries (`spine/tries.py`): the distinct tests on an asset, exactly the rows `same_asset_tests`
+  counts (`distinct_asset_tests`). `alpha test`, `alpha results`, `ledger summary`, `ledger families` and `ledger tries
+  <ASSET>` print it; row counts stay in the JSON only. The summary's `by_kind` and `by_family` add up to it.
 - `trial_dsr` uses exactly the verdict's inputs below, so for a rule test with diagnostics it equals
   the verdict's `dsr`. The public expected-maximum and PSR functions compute the probability.
   Diagnostics and `spine.deflation` store the count, components, ledger rows and reader version;

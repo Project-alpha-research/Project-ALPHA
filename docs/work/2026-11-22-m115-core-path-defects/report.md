@@ -51,3 +51,18 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
 - Test: `tests/unit/test_repeat_adds_nothing.py` (fail first: rows 1 to 2, family rows 1 to 2, same-asset repeats 0 to 1).
   Updated to the new rule: `test_run_identity_held_back.py`, `test_idea_card.py` (they asserted the repeat row).
 - Docs: `cli-trial-ledger.md`.
+
+### 5. Four different "how many tries" numbers
+
+- Cause: each command printed its own count: `ledger families` the deflation total over every family (rdagent included),
+  `ledger summary` the record count by kind, `alpha results` the ledger row count, `alpha test` the ledger row number.
+- Change: one definition in `spine/tries.py`: a try is one distinct test on an asset, the same rows `same_asset_tests`
+  counts for the deflated Sharpe (the loop moved to `deflation.distinct_asset_tests`, shared by both). `alpha test` (per
+  asset), `alpha results`, `ledger summary` (with by kind and by family; they add up to the total), `ledger families` and the
+  new `alpha ledger tries <ASSET>` print it as "Tries on SPY: N tries (family n, ...)". The other counts stay in the JSON only.
+  `alpha ledger query` lists the valid question names in plain text when it rejects one. Unknown rows are still disclosed.
+- Not changed: the reading sentence's "family counted as N tries" is the deflated Sharpe's own N (it adds the sensitivity
+  variants). It is part of the stored reading and of the recheck comparison; changing it would move every stored reading.
+- Tests: `tests/unit/test_tries_headline.py` (fail first: 4 of 5 failed); `test_ledger_cmds.py` wording updated.
+- Docs: `cli-trial-ledger.md`, `research/tools/deflated-sharpe-and-trials.md`, `research/PLAYBOOK.md` example.
+  `docs/reference/commands.md` is not regenerated (brief); it will list `ledger tries` when it is next regenerated.

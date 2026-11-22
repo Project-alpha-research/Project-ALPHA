@@ -124,7 +124,8 @@ def test_totals_wording_and_grouping_note(tmp_path: Path, monkeypatch: pytest.Mo
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
-    assert "9 trials, including 2 rows ALPHA could not interpret (counted anyway)" in out
+    assert "2 ledger rows ALPHA could not interpret; the deflated Sharpe counts them anyway." in out
+    assert "Tries on all assets:" in out  # the one headline number, not the row total
     out = CliRunner().invoke(ledger_app, ["query", "by-asset", "--rdagent-ledger", str(rd)]).output
     assert "Grouping normalises names" in out
 

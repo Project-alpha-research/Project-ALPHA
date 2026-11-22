@@ -110,20 +110,24 @@ def _distinct_tests(snapshot: LedgerSnapshot, family_id: str) -> tuple[list[Tria
     return kept, repeats
 
 
-def same_asset_tests(
-    snapshot: LedgerSnapshot, symbol: str, current: TestKey | None = None
-) -> tuple[int, int, bool]:
-    """Distinct scored tests on one asset (any rule), rows not counted, and if ``current`` is one.
+def distinct_asset_tests(
+    snapshot: LedgerSnapshot, symbol: str | None
+) -> tuple[list[tuple[tuple[str, int], dict[str, Any]]], int, set[TestKey]]:
+    """The distinct tests on one asset (every asset when ``symbol`` is None): the rows kept, with
+    their ledger keys, the rows not counted, and the test keys seen.
 
     A row is scored when it has a Sharpe and a bar size. Scored rows of one test key count once;
     a row without a key counts as its own test unless it is labelled repeat (same run id).
     """
     seen: set[TestKey] = set()
-    tests = repeats = 0
-    for row in snapshot.raw_rows.values():
+    kept: list[tuple[tuple[str, int], dict[str, Any]]] = []
+    repeats = 0
+    for where, row in snapshot.raw_rows.items():
         scored = row.get("oos_sharpe") is not None and bool(row.get("periods_per_year"))
         # A screen try has no Sharpe; it is a try on this asset all the same (never a zero).
-        if not (row.get("symbol") == symbol and (scored or row.get("kind") == "screen_trial")):
+        if not (scored or row.get("kind") == "screen_trial"):
+            continue
+        if not row.get("symbol") or (symbol is not None and row.get("symbol") != symbol):
             continue
         key = row_test_key(row)
         # A keyed row is matched by its key alone, so a labelled repeat whose earlier row has no
@@ -133,8 +137,16 @@ def same_asset_tests(
             continue
         if key is not None:
             seen.add(key)
-        tests += 1
-    return tests, repeats, current is not None and current in seen
+        kept.append((where, row))
+    return kept, repeats, seen
+
+
+def same_asset_tests(
+    snapshot: LedgerSnapshot, symbol: str, current: TestKey | None = None
+) -> tuple[int, int, bool]:
+    """Distinct scored tests on one asset (any rule), rows not counted, and if ``current`` is in."""
+    kept, repeats, seen = distinct_asset_tests(snapshot, symbol)
+    return len(kept), repeats, current is not None and current in seen
 
 
 def count_snapshot(

@@ -195,8 +195,12 @@ def test_rule(
         fail(exc, json_out)
     except (ValueError, OSError, DataError) as exc:
         fail(test_error(str(exc)), json_out)
+    from alpha_cli.spine.trial_reader import spine_snapshot
+    from alpha_cli.spine.tries import sentence, tries
+
+    snapshot = spine_snapshot(settings.data_dir)
     lines = [
-        f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
+        f"Test {output['test_id']} — {output['name']}",
         "ASSET\tRUN\tREADING\tOOS SHARPE\tLABELS / ERROR",
     ]
     for result in output["results"]:
@@ -221,4 +225,6 @@ def test_rule(
             lines.append(health_sentence(result["data_health"]))
         if not result.get("executed", True) and result["run_id"]:
             lines.append("The engine did not run: the stored run for this test was returned.")
+        if result.get("symbol"):
+            lines.append(sentence(tries(snapshot, result["symbol"])))
     emit(output, json_out=json_out, fallback="\n".join(lines))

@@ -9,6 +9,7 @@ from alpha_cli.toolbox.families import parameter_robustness_common as common
 from alpha_cli.toolbox.families import parameter_robustness_signals as signals
 from alpha_cli.toolbox.families.parameter_robustness_a import settings_spec
 from alpha_cli.toolbox.families.parameter_robustness_b import CAVEATS
+from alpha_cli.toolbox.families.parameter_robustness_grid import grid
 
 if TYPE_CHECKING:
     from numpy.random import Generator
@@ -34,7 +35,7 @@ def plateau(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Re
     if reason := common.too_little(run):
         return common.unavailable(keys, reason, engine_runs=0, tries_added=0)
     base = common.original(run)
-    moved, points = common.grid(run, GRIDS[params["grid"]])
+    moved, points = grid(run, GRIDS[params["grid"]])
     variants = [common.Variant(label, spec) for label, spec in points if spec is not None]
     left_out = [label for label, spec in points if spec is None]
     if base["sharpe"] is None or base["sharpe"] == 0 or not variants:

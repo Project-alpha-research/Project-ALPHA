@@ -137,6 +137,26 @@ def test_plateau_of_a_flat_rule_is_whole(series: inputs.RunSeries, flat_engine: 
     assert full.details["settings_moved"] == 2
 
 
+def test_plateau_runs_each_rounded_setting_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # fast 3 at 0.6 and 0.8 times both round to 2, and at 1.2 and 1.4 times both round to 4; slow
+    # 10 gives 6, 8, 12 and 14. So the full grid has 3 x 5 distinct settings, the rule left out.
+    series = synthetic_series(tmp_path, {"kind": "ma_cross", "fast": 3, "slow": 10})
+    runs: list[int] = []
+
+    def engine(tasks: list[Any], pool: int) -> list[tuple[Any, int]]:
+        runs.append(len(tasks))
+        return [(list(series.equity), 9) for _ in tasks]
+
+    monkeypatch.setattr(common, "engine", engine)
+    result = _compute(BY_ID["parameters.plateau"], series, grid="full")
+    assert result.values["grid_points"] == result.values["engine_runs"] == 14
+    assert runs == [14]
+    names = [row["name"] for row in result.details["grid"]]
+    assert len(set(names)) == len(names) == 14
+
+
 def test_plateau_counts_points_within_a_fifth(
     series: inputs.RunSeries, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -311,6 +311,9 @@ def test_classical_non_estimable_regime_publishes_fail_contract(
     assert regime["caveats"][0].startswith("state 0 needs at least 1000 observations")
     assert regime["caveats"][1].startswith("Causal states: calm")
     assert f"  regime_switching: not estimable; {regime['caveats'][0]}" in result.output
+    report = (rdir / "report.md").read_text()
+    assert f"| regime_switching | not estimable: {regime['caveats'][0]} |" in report
+    assert "nan" not in report.lower()
     assert pl.read_parquet(rdir / "paths.parquet")["family"].unique().sort().to_list() == [
         "iid_empirical",
         "student_t",

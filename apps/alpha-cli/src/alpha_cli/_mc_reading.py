@@ -54,7 +54,9 @@ def classical_report(
         if caveat.startswith(("Causal states:", "One state holds"))
     ]
     rows = "\n".join(
-        f"| {row.family} | {row.terminal_return_q50:.6f} | {row.maximum_drawdown_q95:.6f} | "
+        f"| {row.family} | not estimable: {row.caveats[0]} |"
+        if row.status == "not_estimable"
+        else f"| {row.family} | {row.terminal_return_q50:.6f} | {row.maximum_drawdown_q95:.6f} | "
         f"{row.ruin_probability.point:.6f} |"
         for row in summaries
     )

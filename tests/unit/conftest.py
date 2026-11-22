@@ -31,3 +31,14 @@ def harness_repo(_harness_repo_template: Path, tmp_path: Path) -> Path:
 def repo(harness_repo: Path) -> Path:
     """Short alias every harness test module reads through."""
     return harness_repo
+
+
+@pytest.fixture()
+def pre_table_costs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The judge's old costs (10 bp fee, 6 bp slippage), so its byte pins keep their meaning."""
+    import dataclasses
+
+    from alpha_cli.spine import cost_classes
+
+    row = dataclasses.replace(cost_classes.ROWS["crypto_spot"], fee_bps=10.0, slippage_bps=6.0)
+    monkeypatch.setitem(cost_classes.ROWS, "crypto_spot", row)

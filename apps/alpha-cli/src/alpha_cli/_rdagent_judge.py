@@ -31,6 +31,7 @@ from alpha_cli._rdagent_clocks import (
     clock_samples,
     clock_targets,
 )
+from alpha_cli._rdagent_costs import judge_costs
 from alpha_cli._rdagent_stats import autocorrelation_effective_size, screen_statistics
 from alpha_cli.crypto_bulk_store import configured_crypto_bulk_store
 from alpha_cli.toolbox.reserve import RESERVED_DAY, RESERVED_START
@@ -51,7 +52,6 @@ CUTS = (
     )
     + ("2023-12-24",)
 )
-FEE_BPS, SLIPPAGE_BPS = 10.0, 6.0
 TOP_FRACTION, ANNUAL_DAYS, MIN_NAMES = 1 / 3, 365, 5
 Q_THRESHOLD, BOOTSTRAP_RESAMPLES = 0.10, 2000
 LABEL = "exploratory, not admitted, not yet confirmed"
@@ -78,8 +78,6 @@ CONFIG: dict[str, Any] = {
         "residual trades, executed and charged."
     ),
     "cuts": CUTS,
-    "fee_bps": FEE_BPS,
-    "slippage_bps": SLIPPAGE_BPS,
     "top_fraction": TOP_FRACTION,
     "annual_days": ANNUAL_DAYS,
     "min_names": MIN_NAMES,
@@ -750,7 +748,10 @@ def replay(
         top_fraction=TOP_FRACTION,
         min_names=MIN_NAMES,
     )
-    result = run_weight_replay(bars, targets, fee_bps=FEE_BPS, slippage_bps=SLIPPAGE_BPS)
+    costs = judge_costs()
+    result = run_weight_replay(
+        bars, targets, fee_bps=costs["fee_bps"], slippage_bps=costs["slippage_bps"]
+    )
     if series is not None:
         series.update(periods=result.periods, targets=targets)
     net = np.array([p.excess_return for p in result.periods])
@@ -870,6 +871,8 @@ def spread(
         for (a, _), (b, k) in zip(members, members[1:], strict=False)
     ]
     turnover = math.fsum(changed) / len(changed)
+    costs = judge_costs()
+    round_trip_bps = costs["fee_bps"] + costs["slippage_bps"]
     passed = mean > 0 and alternate > 0
     result = {
         "status": "PASS" if passed else "FAIL",
@@ -884,7 +887,7 @@ def spread(
         "t": t,
         "mean_ci_95": asdict(interval),
         "top_share_changed_per_rebalance": turnover,
-        "estimated_annual_cost": turnover * 2 * (FEE_BPS + SLIPPAGE_BPS) / 1e4 * annual / horizon,
+        "estimated_annual_cost": turnover * 2 * round_trip_bps / 1e4 * annual / horizon,
         "warnings": [f"low_sample: n={values.size}"] if values.size < 20 else [],
         "basis": "before costs; mean over decision days; non-overlapping forward windows",
     }
@@ -979,6 +982,7 @@ def _gap_replay(
         raise DataError("replay needs two trailing panel days")
     sessions = [days[0] + timedelta(days=i) for i in range((last - days[0]).days + 1)]
     eligible = panel_membership(panel, days, symbols)
+    costs = judge_costs()
     scores = np.where(eligible, signal, np.nan)
     data = membership.run_gap_replay(
         matrix(panel, "open", sessions, symbols),
@@ -991,8 +995,8 @@ def _gap_replay(
         direction=direction,
         min_names=MIN_NAMES,
         fraction=TOP_FRACTION,
-        fee_bps=FEE_BPS,
-        slippage_bps=SLIPPAGE_BPS,
+        fee_bps=costs["fee_bps"],
+        slippage_bps=costs["slippage_bps"],
         identity_segments=identity_segments,
     )
     periods = data["periods"]

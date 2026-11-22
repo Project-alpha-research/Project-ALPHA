@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from alpha_cli.figures import _sources as src
 from alpha_cli.figures._common import BuildContext, money, pct
 from alpha_core import DataError
@@ -39,7 +41,7 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
     shown_pnl = tuple(value / divisor for value in pnl)
     shown_cumulative = tuple(value / divisor for value in cumulative)
     suffix = f"{unit}account currency"
-    return ctx.spec(
+    spec = ctx.spec(
         "trade_pnl",
         x_label="Trade (chronological)",
         x_kind="numeric",
@@ -78,6 +80,8 @@ def trade_pnl(ctx: BuildContext) -> FigureSpec:
             ),
         ),
     )
+    # Both panels on one trade axis, so a bar sits above its step of the running total.
+    return replace(spec, x_limits=(0.5, len(pnl) + 0.5))
 
 
 def holding_period(ctx: BuildContext) -> FigureSpec:

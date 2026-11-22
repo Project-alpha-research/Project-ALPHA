@@ -35,7 +35,7 @@ CRISES: Final = (
 DIRECTIONS: Final = ((1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1))
 _OFFSET_PX: Final = 22.0  # how far a callout box sits from its point
 _EDGE: Final = 0.01  # axes-fraction margin a box keeps from the frame
-_WRAP: Final = 34
+_WRAP: Final = 44
 HOW_WIDTH: Final = 165
 
 
@@ -293,8 +293,19 @@ def how_to_read(
     )
 
 
-def title_lines(title: str, subtitle: str) -> str:
-    return f"{title}\n{wrap(subtitle, 120)}" if subtitle else title
+def title_block(axes: Axes, title: str, subtitle: str) -> None:
+    """The sample's heading: "SPY idea-name: Chart title" large, the rest of the line in grey.
+
+    A subtitle reads "symbol  ·  idea  ·  dates ..."; the symbol and idea move into the title.
+    """
+    parts = subtitle.split("  ·  ") if subtitle else []
+    if len(parts) >= 2 and parts[0] != "-":
+        title, parts = f"{parts[0]} {parts[1]}: {title}", parts[2:]
+    rest = wrap("  ·  ".join(parts), 130)
+    lines = rest.count("\n") + 1 if rest else 0
+    axes.set_title(title, loc="left", fontsize=13, pad=8 + 15 * lines)
+    if rest:
+        axes.text(0, 1.012, rest, transform=axes.transAxes, fontsize=10, color="0.3", va="bottom")
 
 
 def hide_alternate_ticks(axes: Axes, which: str = "x", limit: int = 14) -> None:

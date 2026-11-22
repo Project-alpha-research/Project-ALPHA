@@ -128,15 +128,15 @@ def _fill_marks(ctx: BuildContext, span: tuple[float, float] | None) -> tuple[li
         return [], "", 0
     all_fills = trace.filter(trace["event_type"] == "fill")
     fills = _clip(all_fills, "ts", span)
-    if len(fills) > _MAX_FILL_MARKERS:
-        zones = held_zones(ctx, span)
-        open_zone = open_position_zone(all_fills, span)
-        if open_zone is not None:
-            zones.append(open_zone)
-        if zones:
-            return zones, f"{len(fills):,} fills shown as shaded held periods", len(all_fills)
+    # Held periods are always shaded, as in the approved sample; markers too when few enough.
+    zones = held_zones(ctx, span)
+    open_zone = open_position_zone(all_fills, span)
+    if open_zone is not None:
+        zones.append(open_zone)
+    if len(fills) > _MAX_FILL_MARKERS and zones:
+        return zones, f"{len(fills):,} fills shown as shaded held periods", len(all_fills)
     size = 26.0 if len(fills) <= _MAX_FILL_MARKERS else 9.0
-    marks: list[Mark] = []
+    marks: list[Mark] = list(zones)
     sides: tuple[tuple[str, Literal["^", "v"], Role, str], ...] = (
         ("BUY", "^", "up", "Buy fill"),
         ("SELL", "v", "down", "Sell fill"),

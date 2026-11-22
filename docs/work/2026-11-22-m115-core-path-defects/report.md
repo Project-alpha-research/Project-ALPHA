@@ -90,3 +90,11 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   `--online`, and only it needs `--unpaywall-email` (refused in plain words without it).
 - Test: `tests/unit/test_library_offline_search.py` (fail first: all 3 failed); `test_library_papers.py` now passes `--online`.
 - Docs: `research/tools/library.md`.
+
+### 8. Nightly example config named files that were not shipped
+
+- Cause: `research/examples/nightly.example.toml` named `nightly-rule.toml` and `nightly-setup.toml`, which did not exist.
+- Change: the two specs are shipped beside it (a fixed `ma_cross` 50/200 rule; the 20-day reclaim setup with an `[exit]`
+  table), all on `SPY`; the config's assets are `SPY` and its header says the three files work together as they are.
+- Test: `tests/unit/test_nightly_example_set.py` loads the config with `load_config`, parses both specs and checks the
+  `[exit]` table and the shared assets (fail first: `rule_spec names .../nightly-rule.toml, which is not a file`).

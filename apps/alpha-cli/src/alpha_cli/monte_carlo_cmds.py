@@ -372,7 +372,12 @@ def _summarize_families(
 @with_heartbeat("Monte Carlo (classical)")
 def classical(
     from_run: str = typer.Option(..., "--from-run", help="completed validation run id"),
-    paths: int = typer.Option(10_000, "--paths", min=1),
+    paths: int = typer.Option(
+        2000,
+        "--paths",
+        min=1,
+        help="paths per family; 10000 is available and takes about 7 minutes",
+    ),
     regime_window: int = typer.Option(63, "--regime-window", min=2),
     min_state_observations: int = typer.Option(20, min=1),
     min_state_transitions: int = typer.Option(10, min=1),
@@ -382,6 +387,7 @@ def classical(
     """Publish IID, causal regime-Markov, and Student-t OOS account-return paths."""
     settings = AlphaSettings()
     resolved_seed = settings.random_seed if seed is None else seed
+    typer.echo(_mc_reading.time_estimate(paths))
     try:
         source_dir, source_manifest = _verified_validation_source(settings.data_dir, from_run)
         metadata = source_manifest["metadata"]

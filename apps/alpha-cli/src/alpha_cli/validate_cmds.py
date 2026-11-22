@@ -52,9 +52,6 @@ def validate(
     embargo: int = 5,
     anchored: bool = False,
     param: list[str] | None = None,
-    rules: str | None = typer.Option(
-        None, "--rules", help="saved rule set for --strategy rules (alpha rules save NAME)"
-    ),
     rules_file: Path | None = typer.Option(  # noqa: B008
         None, "--rules-file", help="canonical frozen rule file (local path)"
     ),
@@ -95,7 +92,7 @@ def validate(
     resolved_seed = seed if seed is not None else settings.random_seed
     try:
         rules_spec = rules_cmds.resolve_rules_spec(
-            strategy, rules, settings.data_dir, rules_file=rules_file, rules_sha256=rules_sha256
+            strategy, None, settings.data_dir, rules_file=rules_file, rules_sha256=rules_sha256
         )
     except DataError as exc:
         raise typer.BadParameter(str(exc)) from exc

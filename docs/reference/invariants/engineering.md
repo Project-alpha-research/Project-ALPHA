@@ -99,9 +99,10 @@ Project-wide coding rules. Area files add their own detail and link here. The re
 - `packages/alpha-validation/src` and `packages/alpha-research/src` are the quant tier, plus any
   `packages/*/src` file whose name matches a statistic (`dsr`, `pbo`, `bootstrap`, `cpcv`, ...;
   `scripts/gate.py::matches_quant`).
-- A pull request that changes a quant source module makes CI also run the slow oracles and the
-  mutation gate on the touched modules: each needs a mutation kill-rate of at least 0.90, or its
-  recorded floor in `.claude/mutation-baseline.json`.
+- A pull request that changes a quant source module makes CI also run the slow oracles. The
+  mutation gate runs in the weekly sweep and in the local `backend` run, not on a pull request
+  (owner decision, 2026-11-22): each module needs a kill-rate of at least 0.90, or its recorded
+  floor in `.claude/mutation-baseline.json`.
 - Growth of `# noqa` or `type: ignore` in quant modules is blocked by `gate.py lint-harness`
   against `.claude/harness-baseline.json`.
 - Float-literal equality is banned in quant code (semgrep rule `alpha-float-literal-equality`).

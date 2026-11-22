@@ -35,6 +35,17 @@ Sources:
 - Crypto spot: the setup lane (`CRYPTO_FEE_BPS`, `CRYPTO_SLIPPAGE_BPS`).
 - Crypto perpetual: fee is a common taker schedule; funding is the setup lane (`SHORT_CARRY_BPS_PER_DAY`).
 
+## Other readers of the table
+
+- The RD-Agent factor judge (`_rdagent_costs.py`) reads the crypto spot row at each call. It keeps no cost numbers of its own, so a
+  change of the row reaches its next score.
+- The native daily rule study (`_native_daily_rule_study.py`) states 10 bp fee and 5 bp slippage itself: the file is hash-bound for
+  daily approvals and may not import the unbound table. A unit test holds its terms equal to the crypto spot row.
+- A judge trial stores `costs` (`fee_bps`, `slippage_bps`, `source: class-default`, `asset_class`). A stored trial keeps the costs it was
+  made with and is never rewritten; one without `costs` was made before the table (10 bp fee, 6 bp slippage). The judge feedback says how
+  many earlier trials used other costs: they stay in the trial count and are not re-scored.
+- Not on the table: `research_cmds.py` (old research-case lane, flat 1 and 2 bp) and the judge's worker prompt text in `workers/rdagent`.
+
 ## Rules
 
 - The class comes from the store's dataset identity (`asset_class` and `venue`): US `etf` is the large ETF row, US `stock` the stock row,

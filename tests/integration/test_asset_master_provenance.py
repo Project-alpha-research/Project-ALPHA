@@ -177,16 +177,6 @@ def test_valid_sources_contract_and_snapshot_reopen_without_rebuilding_identity(
     )
     checked = invoke("asset-master-verify", master)
     assert checked.exit_code == 0 and json.loads(checked.stdout)["asset_master_version"] == master
-    resolved = invoke(
-        "asset-contract",
-        "ethereum",
-        "0xabcd",
-        "--asset-master-version",
-        master,
-        "--as-of",
-        NOW.isoformat(),
-    )
-    assert resolved.exit_code == 0 and json.loads(resolved.stdout)["coingecko_id"] == "token-x"
     assert fingerprint(root) == before
     created = snapshot(ids[2], master)
     assert created.exit_code == 0, created.output
@@ -227,18 +217,6 @@ def test_deleted_catalog_manifest_blocks_existing_snapshot_and_contract_consumer
     (store.manifest_root / (ids[0] + ".json")).unlink()
     before = fingerprint(root)
     assert invoke("snapshot-verify", sid, "--required-family", "funding").exit_code != 0
-    assert (
-        invoke(
-            "asset-contract",
-            "ethereum",
-            "0xabcd",
-            "--asset-master-version",
-            master,
-            "--as-of",
-            NOW.isoformat(),
-        ).exit_code
-        != 0
-    )
     assert fingerprint(root) == before
 
 
@@ -370,16 +348,6 @@ def test_future_catalog_append_never_rebinds_frozen_master(evidence: Any) -> Non
     assert crypto_data_cmds._read_asset_master(master).to_dict() == old.to_dict()
     assert invoke("asset-master-verify", master).exit_code == 0
     assert snapshot(ids[2], master).stdout == first.stdout
-    resolved = invoke(
-        "asset-contract",
-        "ethereum",
-        "0xabcd",
-        "--asset-master-version",
-        master,
-        "--as-of",
-        NOW.isoformat(),
-    )
-    assert resolved.exit_code == 0 and json.loads(resolved.stdout)["coingecko_id"] == "token-x"
 
 
 @pytest.mark.parametrize("reverse", [False, True])

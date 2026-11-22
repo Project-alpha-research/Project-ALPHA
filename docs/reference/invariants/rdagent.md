@@ -84,7 +84,8 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   and deflation. Other choices are diagnostics only. Failed deflation is `DEFLATION_FAIL`; a nonpositive top-minus-bottom spread is
   `SPREAD_FAIL` whatever its replay shows (still replayed and counted as a trial; a stricter gate, never a pass;
   [ADR-0055](../../adr/0055-spread-check-family-brief-and-universe-file.md)); the universe, calendar and year length
-  come from a frozen universe file, optionally selecting its own store directory.
+  come from a frozen universe file, optionally selecting its own store directory. The replay costs per side come from the one cost table
+  (crypto spot row: 10 bp fee, 5 bp slippage; [cost classes](cli-cost-classes.md#other-readers-of-the-table)), not from a constant in the judge.
   Frozen counts correct stale scenario text; write-offs reach feedback. Identical-input mismatches are `UNSTABLE`, an invalid trial like `LOOKAHEAD`.
   Every record is `exploratory, not admitted, not yet confirmed`, with authority flags false and survivorship disclosed. The runtime is built only by
   `--with-factor-runtime` from `factor-requirements.lock`, recorded by `install_stock_profile.py --profile factor`. Generated factor code has no gateway

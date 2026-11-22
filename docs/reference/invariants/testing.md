@@ -71,7 +71,7 @@ isolated workers keep their own suites. Tests must never read the guarded
   - CI (`gate.py component backend-tests --shard I/4`, four shards of whole files):
     `pytest -q -n auto --dist worksteal -m "not network and not slow_oracle" --cov`. Changed lines of
     product source must be 85% covered (`[tool.diff_cover]`); the global figure is reported, not gated.
-    The `quant` job adds `-m slow_oracle` and the mutation gate only when a quant source module changed.
+    The `quant` job adds `-m slow_oracle` only when a quant source module changed; the mutation gate runs weekly.
     Every job and tier: [checks](../checks.md).
   - `network` tests never run in CI.
 - `gate_select.py` always runs `tests/bias_guards`, `tests/oracles` and `tests/acceptance`, plus changed

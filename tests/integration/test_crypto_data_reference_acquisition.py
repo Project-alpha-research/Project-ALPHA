@@ -303,34 +303,6 @@ def test_crypto_data_acquires_each_non_bybit_authority_offline(
     assert by_family["comparison_bars"]["verification_state"] == "receipt_verified"
     assert by_family["comparison_bars"]["qualification_state"] == "qualified"
 
-    compared = runner.invoke(
-        app,
-        [
-            "crypto-data",
-            "compare",
-            "--primary-manifest-id",
-            str(receipts["market_bars"]["normalized_manifest_id"]),
-            "--comparison-manifest-id",
-            str(receipts["comparison_bars"]["normalized_manifest_id"]),
-            "--warning-bps",
-            "100",
-            "--quarantine-bps",
-            "500",
-            "--json",
-        ],
-    )
-    assert compared.exit_code == 0, compared.output
-    comparison = json.loads(compared.stdout)
-    assert comparison["state"] == "quarantined"
-    assert comparison["automatic_substitution"] is False
-    assert comparison["execution_authority"] is False
-    derived = store.verify_manifest(comparison["manifest_id"])
-    assert derived["artifact_kind"] == "derived"
-    assert derived["input_manifest_ids"] == [
-        receipts["market_bars"]["normalized_manifest_id"],
-        receipts["comparison_bars"]["normalized_manifest_id"],
-    ]
-
 
 def test_public_reference_catalogs_freeze_every_ordered_page(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

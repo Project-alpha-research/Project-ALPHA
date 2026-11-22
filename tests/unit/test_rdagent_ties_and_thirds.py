@@ -72,6 +72,7 @@ def test_boundary_ties_are_order_independent_in_spread_and_replays() -> None:
         np.testing.assert_array_equal(weights, [t.target_weight for t in targets])
 
 
+@pytest.mark.usefixtures("pre_table_costs")
 def test_tie_free_spread_matches_pinned_original_bytes() -> None:
     rng = np.random.default_rng(18)
     signal = rng.normal(size=(12, 10))
@@ -145,7 +146,7 @@ def test_fractional_turnover_and_cost_are_weighted() -> None:
     )
     # One third of one slot in a three-slot portfolio changes per rebalance.
     assert result["top_share_changed_per_rebalance"] == pytest.approx(1 / 9)
-    assert result["estimated_annual_cost"] == pytest.approx((1 / 9) * 2 * 16 / 10000 * 365 / 7)
+    assert result["estimated_annual_cost"] == pytest.approx((1 / 9) * 2 * 15 / 10000 * 365 / 7)
 
 
 def replay_inputs() -> tuple[Any, np.ndarray, list[date]]:
@@ -203,6 +204,7 @@ def test_tied_replay_returns_costs_turnover_ignore_name_order() -> None:
         (True, "49cb008b5989a77654702f8f1c629fdbb00767b6f1568b3d9589c83d6ce795ab"),
     ],
 )
+@pytest.mark.usefixtures("pre_table_costs")
 def test_tie_free_replay_metrics_match_original_bytes(gaps: bool, digest: str) -> None:
     # Pinned using HEAD's original clock_targets and replay_weights before this change.
     panel, signal, days = replay_inputs()

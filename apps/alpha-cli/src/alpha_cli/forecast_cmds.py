@@ -264,14 +264,23 @@ def _summary_line(summary: Any) -> str:
         f"CRPS {summary.crps_mean:.4f} (skill vs RW {summary.skill_vs_rw:+.1%}, "
         f"vs bootstrap {summary.skill_vs_bootstrap:+.1%}), coverage 50/80/90 "
         f"{summary.coverage50:.0%}/{summary.coverage80:.0%}/{summary.coverage90:.0%}, "
-        f"hit rate {summary.hit_rate:.0%}\n"
+        f"hit rate {summary.hit_rate:.0%}"
+    )
+
+
+def _explained(summary: Any) -> str:
+    """The summary line, then one plain sentence for each number in it."""
+    return (
+        f"{_summary_line(summary)}\n"
         "    RW is a random walk: it expects tomorrow to equal today, plus the recent average "
         "drift, with the recent day-to-day spread.\n"
         f"{_skill_sentence(summary.skill_vs_rw, 'random walk')}\n"
         "    Bootstrap re-draws blocks of the recent daily returns to build its paths.\n"
         f"{_skill_sentence(summary.skill_vs_bootstrap, 'bootstrap')}\n"
         "    Coverage: how often the real outcome fell inside the model's 50%, 80% and 90% "
-        "ranges. Near 50/80/90 is well calibrated."
+        "ranges. Near 50/80/90 is well calibrated.\n"
+        "    Hit rate: how often the median path pointed the same way (up or down) as the "
+        "real move."
     )
 
 
@@ -463,7 +472,7 @@ def evaluate(
 
     typer.echo(
         f"forecast-eval {symbol} -> run {run_id}: {len(out.origins)} origins, "
-        f"{_summary_line(out.summary)}\n"
+        f"{_explained(out.summary)}\n"
         f"  model {prov.get('model_id')}@{prov.get('model_revision')} "
         f"device={prov.get('device')} determinism={prov.get('determinism')}\n"
         f"  manifest at {rdir / 'manifest.json'}"

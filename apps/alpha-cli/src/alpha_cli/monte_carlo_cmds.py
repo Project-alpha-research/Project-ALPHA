@@ -209,13 +209,15 @@ def _project_forecast_path(
             for name in ("open", "high", "low", "close")
         ):
             raise DataError(f"Kronos path {path_index} step {step} contains an invalid price")
-        if not math.isfinite(raw["volume"]) or raw["volume"] < 0.0:
+        if not math.isfinite(raw["volume"]):
             raise DataError(f"Kronos path {path_index} step {step} contains invalid volume")
+        # The model can sample a small negative volume; a bar holds at least zero (raw kept).
+        volume_adjusted = raw["volume"] < 0.0
         projected_high = max(raw["high"], raw["open"], raw["close"])
         projected_low = min(raw["low"], raw["open"], raw["close"])
         high_adjusted = projected_high != raw["high"]
         low_adjusted = projected_low != raw["low"]
-        adjustments += int(high_adjusted) + int(low_adjusted)
+        adjustments += int(high_adjusted) + int(low_adjusted) + int(volume_adjusted)
         bar = Bar(
             symbol=symbol,
             ts=timestamp,
@@ -223,7 +225,7 @@ def _project_forecast_path(
             high=projected_high,
             low=projected_low,
             close=raw["close"],
-            volume=raw["volume"],
+            volume=max(raw["volume"], 0.0),
         )
         bars.append(bar)
         rows.append(
@@ -239,6 +241,7 @@ def _project_forecast_path(
                 "projected_volume": bar.volume,
                 "high_adjusted": high_adjusted,
                 "low_adjusted": low_adjusted,
+                "volume_adjusted": volume_adjusted,
             }
         )
     return bars, rows, adjustments
@@ -898,7 +901,9 @@ def kronos(
             "forecast_eval_manifest_hash": eval_manifest_hash,
             "forecast_eval_origins_hash": eval_origins_hash,
             "raw_values_preserved": True,
-            "candle_projection": "expand high/low only to enclose open/close",
+            "candle_projection": (
+                "expand high/low only to enclose open/close; raise a negative volume to zero"
+            ),
             "projection_adjustments": adjustment_count,
         }
         encoded_diagnostics = json.dumps(
@@ -922,7 +927,8 @@ def kronos(
             "Signals are recomputed from each synthetic OHLCV path; observed signals are never "
             "replayed. Weak calibration is a caveat to read, not a reason to drop the run.\n\n"
             f"Caveats: {'; '.join(summary.caveats)}. Raw model values are retained alongside "
-            f"projected candles; {adjustment_count} high/low enclosure adjustments were recorded.\n"
+            f"projected candles; {adjustment_count} high/low enclosure or negative-volume "
+            "adjustments were recorded.\n"
         )
         _artifacts.publish_artifact(
             rdir / "report.md", lambda path: path.write_text(report, encoding="utf-8")

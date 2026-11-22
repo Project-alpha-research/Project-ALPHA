@@ -27,17 +27,32 @@ MIN_STREAK_TRADES = 10
 
 
 def prob_streak(n: int, p: float, length: int) -> float:
-    """Chance that n independent trades with loss rate p hold a losing streak of this length."""
-    import numpy as np
+    """Chance that n independent trades with loss rate p hold a losing streak of this length.
 
-    live = np.zeros(length)
-    live[0] = 1.0
-    for _ in range(n):
-        step = np.zeros(length)
-        step[0] = live.sum() * (1 - p)
-        step[1:] = live[:-1] * p
-        live = step
-    return max(0.0, 1.0 - float(live.sum()))
+    Uses the linear recurrence u[m] = u[m-1] - (1-p) p^length u[m-length-1] for the chance of no
+    such streak in m trades (Feller 1968, ch. XIII.7), so the cost is linear in n.
+    """
+    if length > n:
+        return 0.0
+    tail = (1 - p) * p**length
+    none = [1.0] * (n + 1)
+    none[length] = 1.0 - p**length
+    for m in range(length + 1, n + 1):
+        none[m] = none[m - 1] - tail * none[m - length - 1]
+    return min(1.0, max(0.0, 1.0 - none[n]))
+
+
+def expected_longest(n: int, p: float) -> float:
+    """Average longest losing streak in n independent trades: the sum of P(longest >= k)."""
+    if p >= 1.0:
+        return float(n)
+    total = 0.0
+    for k in range(1, n + 1):
+        chance = prob_streak(n, p, k)
+        if chance < 1e-15:  # the chance only falls as k grows
+            break
+        total += chance
+    return total
 
 
 def loss_streaks(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
@@ -57,13 +72,12 @@ def loss_streaks(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
         run = run + 1 if lost else 0
         longest = max(longest, run)
     p = float((pnl < 0).mean())
-    chances = [prob_streak(n, p, k) for k in range(1, n + 1)]
     values: dict[str, Any] = {
         "trades": n,
         "loss_rate": p,
         "longest_losing_streak": longest,
-        "expected_longest": math.fsum(c for c in chances if c > 1e-15),
-        "p_observed_or_longer": chances[longest - 1] if longest else 1.0,
+        "expected_longest": expected_longest(n, p),
+        "p_observed_or_longer": prob_streak(n, p, longest) if longest else 1.0,
         "p_streak": prob_streak(n, p, params["streak"]),
     }
     return Result(values, {}, basis=TRADE_BASIS)

@@ -78,6 +78,13 @@ def test_optimal_f(tmp_path: Path) -> None:
     assert values["geometric_hpr"] == pytest.approx(math.sqrt(1.125), rel=REL, abs=ABS)
 
 
+def test_optimal_f_without_an_edge_is_zero(tmp_path: Path) -> None:
+    with_trades(tmp_path, [0.1, -0.2] * 10)
+    values = read(tmp_path, "risk.optimal_f")["values"]
+    assert values["optimal_f"] == 0.0
+    assert values["terminal_multiple"] == pytest.approx(1.0, rel=REL, abs=ABS)
+
+
 def test_optimal_f_needs_a_loss(tmp_path: Path) -> None:
     with_trades(tmp_path, [0.1] * 25)
     doc = read(tmp_path, "risk.optimal_f")
@@ -112,6 +119,15 @@ def test_loss_streaks(tmp_path: Path) -> None:
     assert values["p_streak"] == pytest.approx(streak_probability(10, 0.5, 4), rel=REL, abs=ABS)
     expected = sum(streak_probability(10, 0.5, k) for k in range(1, 11))
     assert values["expected_longest"] == pytest.approx(expected, rel=REL, abs=ABS)
+
+
+def test_loss_streaks_on_many_trades_stays_fast(tmp_path: Path) -> None:
+    stored(tmp_path)
+    pnl = [-1.0 if i % 3 else 2.0 for i in range(900)]
+    put_trades(tmp_path, pnl, entry_days=list(range(900)), hold_days=[1] * 900)
+    values = read(tmp_path, "risk.loss_streaks")["values"]
+    assert values["longest_losing_streak"] == 2
+    assert 0.0 < values["expected_longest"] < 900
 
 
 def test_loss_streaks_ends_a_streak_at_a_flat_trade(tmp_path: Path) -> None:

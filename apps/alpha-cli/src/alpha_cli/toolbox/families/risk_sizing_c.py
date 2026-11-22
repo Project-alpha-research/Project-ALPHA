@@ -121,8 +121,9 @@ def optimal_f(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> 
     if ret is None:
         return unavailable(keys, why, TRADE_BASIS)
     worst = float(-ret.min())
-    grid = np.arange(1, 100) / 100
-    # Vince (1990): holding period return 1 + f * r / |worst loss|; the grid keeps f below 1.
+    grid = np.arange(0, 100) / 100
+    # Vince (1990): holding period return 1 + f * r / |worst loss|. The grid runs from 0 (no
+    # stake) to 0.99, so trades without an edge give 0 rather than a losing stake.
     logs = np.log1p(np.outer(grid, ret / worst)).sum(axis=1)
     best = int(logs.argmax())
     values: dict[str, Any] = {
@@ -244,7 +245,7 @@ CHECKS = (
             Output(
                 "optimal_f",
                 "Optimal f",
-                "Fraction (0.01 to 0.99) of the amount that loses the largest loss that grew the"
+                "Fraction (0 to 0.99) of the amount that loses the largest loss that grew the"
                 " trades fastest.",
                 "fraction",
             ),

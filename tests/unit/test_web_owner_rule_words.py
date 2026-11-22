@@ -94,7 +94,7 @@ def test_every_operator_has_words(op: str, words: str) -> None:
         ),
         (
             {"indicator": "cmma", "params": [20, 168]},
-            "the close minus the 20-day average, scaled by the 168-day ATR",
+            "the close minus the 20-day average, divided by the 168-day ATR times the square root of 20",
         ),
         ({"indicator": "runs_z", "params": [30]}, "the 30-day runs z-score"),
         (

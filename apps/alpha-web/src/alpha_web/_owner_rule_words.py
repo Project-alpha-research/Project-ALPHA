@@ -75,7 +75,10 @@ def _indicator(operand: Mapping[str, Any]) -> str | None:
     if name == "hawkes" and len(p) == 2 and field is None:
         return f"the Hawkes activity measure (decay {p[0]}, {_days(p[1])})"
     if name == "cmma" and len(p) == 2 and field is None:
-        return f"the close minus the {n}-day average, scaled by the {p[1]}-day ATR"
+        return (
+            f"the close minus the {n}-day average, divided by the {p[1]}-day ATR "
+            f"times the square root of {n}"
+        )
     if name == "perm_entropy" and len(p) == 2 and field is None:
         order = float(raw[0])
         if order.is_integer() and 1 <= order <= 12:

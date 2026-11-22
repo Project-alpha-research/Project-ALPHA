@@ -17,12 +17,13 @@ tools.md). Why the toolbox exists: [toolbox](../project/components/toolbox.md).
 ## Adding a check
 
 1. Write a `ToolSpec` (`toolbox/contract.py`) in a module under `toolbox/families/` (`context`, `costs`, `market`, `overfit`,
-   `performance`, `resampling`, `robustness`, `trades`).
-2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The sixteen
+   `overfit_controls`, `performance`, `resampling`, `robustness`, `trades`).
+2. Add it to the explicit tuple `SPECS` in `toolbox/registry.py`. Nothing is found automatically. The first sixteen
    registered ids: `market.attribution`, `market.vol_regimes`, `market.changepoints`, `performance.downside_ratios`,
    `robustness.start_end_dates`, `trades.side_contribution`, `trades.concentration`, `costs.break_even`,
    `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.drawdown_distribution`,
    `trades.dependence`, `overfit.deflated_sharpe`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`, `context.published_factors`.
+   The `overfit_controls` family adds eleven more ids (its [card](../../../research/tools/toolbox-overfit-controls.md)).
    Named sets and their execution order live in `toolbox/sets.py`.
 3. The entry declares its id, version, question, kind, required inputs (`needs`), settings, outputs (key, label, unit,
    gloss), reading, caveats, cost class, seeded or not, time safety, look class, a poison test when time order
@@ -48,7 +49,7 @@ equity; the `excess-over-equal-weight-basket` label marks the factor series.
 
 ## Registered checks
 
-Sixteen entries are registered. Three describe one recorded rule test. `market.attribution` measures exposure against
+Sixteen entries make the first batch. Three describe one recorded rule test. `market.attribution` measures exposure against
 full-history buy and hold, including eligible cash dividends. `market.vol_regimes` compares calm and turbulent
 markets. `market.changepoints` identifies when behaviour shifted. The named set `market-context` runs all three. Five
 more read the run's stored walk-forward files instead of replaying it: `performance.downside_ratios` (Sortino, Calmar,
@@ -63,6 +64,9 @@ is available to RD-Agent but not in `rdagent-post-judge`. `trades.dependence` te
 closed-trade outcomes. `overfit.deflated_sharpe` reuses the verdict's family correction on the ledger count and prior
 comparable Sharpes frozen in the run, and states that count. See the [family counting
 card](../../../research/tools/deflated-sharpe-and-trials.md).
+`overfit_controls.*` are eleven readings on a finished run's scored returns or trades: probabilistic Sharpe, record length,
+Bonferroni haircut, backtest length, best-of-noise Sharpe, deflated probability at a stated try count, t-statistic reference, trade
+count, required history, a sequential test and a shrunk Sharpe. `n_trials` 0 uses the count recorded in the manifest.
 
 `context.published_factors` sets a run's complete calendar-month returns beside the stored monthly long-short returns
 of published US stock signals (source `osap-portfolios`): a joint reading on seven fixed well-known factors, and a
@@ -118,7 +122,7 @@ figures render` and the family DSR reported by `alpha results cite`. Each comman
 **Other work outstanding:** letting the agent name checks in its proposal before judging, showing checks in the
 proposal discussion, and more input adapters. Other gaps include a Workstation and MCP listing, a generated catalogue, counting sweep variants in
 deflation, a budget for agent-selected checks, exporting causal tools as factor inputs, and remaining first-batch
-entries (minimum track record length waits for a function in `alpha_validation`); and the growth plan. The 480-entry
+entries; and the growth plan. The 480-entry
 catalogue (ALPHA has 149, has part of 103, lacks 228) is the backlog but is not yet in the repository; random-exit
 control remains among its highest-value gaps.
 

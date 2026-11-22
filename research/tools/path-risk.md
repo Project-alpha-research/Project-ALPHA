@@ -13,9 +13,9 @@ rests on one history.
 
 **Commands**
 ```text
-uv run alpha monte-carlo classical --from-run <run_id> --paths 10000
-uv run alpha monte-carlo kronos --from-run <run_id> --forecast-eval-run <eval_run_id>
-uv run alpha risk scenario --from-run <run_id> --periods-per-year 365 --json
+alpha monte-carlo classical --from-run <run_id> --paths 10000
+alpha monte-carlo kronos --from-run <run_id> --forecast-eval-run <eval_run_id>
+alpha risk scenario --from-run <run_id> --periods-per-year 365 --json
 ```
 **How to read it**
 - `<run_id>` is the id of an `alpha test` run (rule test or owner-rule test). Both monte-carlo commands print the

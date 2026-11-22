@@ -12,10 +12,10 @@ verified: 891ec5a16067d2ff
 
 **Commands**
 ```text
-uv run alpha results --symbol <SYMBOL> --json
-uv run alpha results cite <run_id> trial_dsr
-uv run alpha results cite <run_id> family_trials
-uv run alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=100,200
+alpha results --symbol <SYMBOL> --json
+alpha results cite <run_id> trial_dsr
+alpha results cite <run_id> family_trials
+alpha optim grid <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=100,200
 ```
 
 **How to read it**

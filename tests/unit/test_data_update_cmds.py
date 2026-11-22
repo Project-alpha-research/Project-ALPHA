@@ -131,3 +131,9 @@ def test_coverage_says_why_a_series_cannot_be_read_instead_of_showing_zero(
     assert row["bars"] is None and "cannot be read" in row["note"]
     text = _run(home, "coverage")[1]
     assert "cannot be read" in text
+
+
+def test_coverage_says_the_dates_stop_at_the_held_back_boundary(tmp_path: Path) -> None:
+    code, out = _run(_home(tmp_path), "coverage")
+    assert code == 0
+    assert out.splitlines()[0].startswith("Dates and bars stop before 2024-01-01")

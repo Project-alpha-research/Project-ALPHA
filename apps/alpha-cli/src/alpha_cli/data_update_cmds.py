@@ -75,6 +75,12 @@ def run_coverage(json_out: bool) -> None:
             "No data is stored yet. Pull some with: alpha data pull SYMBOL --start ... --end ..."
         )
         return
+    from alpha_core.reserve import RESERVED_START
+
+    typer.echo(
+        f"Dates and bars stop before {RESERVED_START}: later bars are stored but held back "
+        "for the final check (alpha confirm)."
+    )
     typer.echo(f"{'symbol':<14}{'first date':<12}{'last date':<12}{'bars':>6}  health")
     for row in rows:
         bars = "-" if row["bars"] is None else str(row["bars"])

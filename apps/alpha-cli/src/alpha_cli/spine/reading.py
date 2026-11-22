@@ -86,6 +86,13 @@ def relation_text(relation: str) -> str:
     }[relation]
 
 
+def plain(sentence: str) -> str:
+    """A stored reading sentence with its relation words in plain words, for the screen."""
+    for relation in RELATIONS:
+        sentence = sentence.replace(f"this reading is {relation}.", f"{relation_text(relation)}.")
+    return sentence
+
+
 def _num(value: Any) -> float | None:
     """A finite float, or None for a missing or non-finite statistic."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -294,7 +301,8 @@ def _sentence(
             f"Out-of-sample Sharpe {_f(row['observed'])}; buy-and-hold over the same days "
             f"{_f(row['aim'])}."
         )
-        parts.append(f"Default aim: beat buy-and-hold; {relation_text(row['relation'])}.")
+        # Stored words: a recheck compares them, so they never change; `plain` reworks them.
+        parts.append(f"Default aim: beat buy-and-hold; this reading is {row['relation']}.")
     parts.append(f"Evidence strength: {evidence['word']}.")
     tail = [
         part
@@ -353,7 +361,7 @@ def reading_text(reading: Mapping[str, Any]) -> str:
     extra = [
         costs[key] for key in ("line", "periods") if isinstance(costs, Mapping) and costs.get(key)
     ]
-    return "\n".join([reading["sentence"], *extra])
+    return "\n".join([plain(reading["sentence"]), *extra])
 
 
 def stored_reading(

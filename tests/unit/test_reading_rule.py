@@ -97,7 +97,10 @@ def test_below_buy_and_hold_reads_below_the_aim_with_no_positive_word() -> None:
         pytest.approx(0.75, rel=1e-9, abs=1e-12),
         "below the aim",
     )
-    assert "below buy-and-hold" in result["sentence"]
+    # The stored sentence keeps its words: a recheck compares it with every run stored before.
+    assert "this reading is below the aim." in result["sentence"]
+    assert "below buy-and-hold" in reading.reading_text(result)
+    assert "this reading is" not in reading.reading_text(result)
     assert "Default aim: beat buy-and-hold" in result["sentence"]
     assert not FORBIDDEN_WORDS.search(result["sentence"])
     assert not LETTER_GRADE.search(result["sentence"])

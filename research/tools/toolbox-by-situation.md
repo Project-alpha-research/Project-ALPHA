@@ -56,6 +56,24 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.
 - Would a slightly different data feed change the answer: No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.
 - Is this just a known published factor: `context.published_factors`
+- How much should I bet on each trade: `risk.kelly`, `risk.fractional_kelly`, `risk.optimal_f`, `risk.vol_target`, `cost_realism.capacity_curve`,
+  `cost_realism.share_rounding`
+- How big can the loss on one bar get: `risk.parametric_var`, `risk.cornish_fisher_var`, `attribution.drawdown_causes`, `performance.worst_windows`,
+  `risk.tail_fit`, `risk.var_coverage`, `risk.var_independence`, `resampling.student_t_paths`, `timeseries.normality`, `resampling.risk_of_ruin`,
+  `resampling.stress_shocks`
+- Is there enough history to trust the result: `overfit_controls.min_backtest_length`, `overfit_controls.required_history`, `overfit_controls.shrunk_sharpe`,
+  `overfit_controls.probabilistic_sharpe`, `overfit_controls.min_track_record`, `overfit_controls.trade_count`, `overfit_controls.sequential_test`,
+  `resampling.sharpe_interval`
+- Do returns trend, reverse or repeat: `timeseries.autocorrelation`, `timeseries.dfa`, `timeseries.long_memory`, `timeseries.sample_entropy`,
+  `timeseries.compressibility`, `timeseries.permutation_entropy`, `timeseries.hurst`, `timeseries.ljung_box`, `timeseries.arch_lm`,
+  `timeseries.variance_ratio`, `timeseries.up_down_runs`, `resampling.return_shuffle`
+- Does it depend on the weekday or the month: `attribution.weekday`, `regimes.annual_returns`, `regimes.day_of_week`, `regimes.calendar_month`,
+  `regimes.turn_of_month`, `regimes.halloween`
+- Would real fills, spreads and taxes change the result: `costs.break_even`, `cost_realism.cost_sweep`, `cost_realism.churn_budget`,
+  `cost_realism.financing_cost`, `cost_realism.after_tax`, `cost_realism.spread_estimates`, `cost_realism.gap_stress`, `cost_realism.commission_schedule`,
+  `cost_realism.limit_fill`
+- Could I trade this size: `cost_realism.market_impact`, `cost_realism.capacity_curve`, `cost_realism.share_rounding`, `cost_realism.volume_share`,
+  `cost_realism.limit_fill`
 <!-- situations:end -->
 
 Rule: [toolbox rules](../../docs/reference/invariants/cli-toolbox.md#finding-checks-and-recording-the-plan).

@@ -739,3 +739,48 @@ def test_each_call_reserves_against_the_month_it_is_made_in(tmp_path: Path) -> N
             clock=lambda: next(times),
         )
     assert client.calls == 1
+
+
+class _InterruptedClient:
+    """A client stopped by Ctrl-C while the paid request is in flight."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def complete(self, model: str, prompt: StoredPrompt, sample: int) -> Reply:
+        self.calls += 1
+        raise KeyboardInterrupt
+
+
+def test_an_interrupted_dispatch_still_counts_against_the_call_cap(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = _InterruptedClient()
+    store = tmp_path / "store"
+    for _ in range(60):
+        with pytest.raises(KeyboardInterrupt):
+            run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    with pytest.raises(BenchError, match="60"):
+        run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 60
+
+
+def test_the_report_refuses_outputs_made_from_a_different_prompt(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    store = tmp_path / "store"
+    run_bench(
+        prompts,
+        ["a"],
+        1,
+        prices,
+        FakeClient({"a": {"p0": [_reply(1000, 500)]}}),
+        store,
+        spend=_spend(tmp_path),
+    )
+    row = json.loads((folder / "p0.json").read_text())
+    row["messages"] = [{"role": "user", "content": "a different request"}]
+    (folder / "p0.json").write_text(json.dumps(row))
+    with pytest.raises(BenchError, match="changed"):
+        score_store(load_prompts(folder, None), ["a"], store, closed=set(), dropped=set())

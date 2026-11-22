@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.rdagent_bench_model import BenchError, StoredPrompt, output_path
+from alpha_cli.rdagent_bench_model import BenchError, StoredPrompt, output_path, prompt_sha
 
 WORKER = Path(__file__).resolve().parents[4] / "workers" / "rdagent"
 HELPER = """
@@ -150,7 +150,13 @@ def _load(store: Path, model: str, prompt: StoredPrompt) -> list[dict[str, Any]]
         for p in (folder.iterdir() if folder.is_dir() else [])
         if (m := exact.fullmatch(p.name))
     ]
-    return [json.loads(p.read_text(encoding="utf-8")) for _, p in sorted(found)]
+    records = [json.loads(p.read_text(encoding="utf-8")) for _, p in sorted(found)]
+    if any(r.get("prompt_sha256") != prompt_sha(prompt) for r in records):
+        raise BenchError(
+            f"Prompt '{prompt.id}' changed since an output was stored for {model}. "
+            "The readings would compare different requests."
+        )
+    return records
 
 
 def _feedback_ok(text: str) -> bool:

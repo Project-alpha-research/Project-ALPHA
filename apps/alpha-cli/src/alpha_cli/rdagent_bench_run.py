@@ -104,12 +104,13 @@ def _settle(spend: Path, now: datetime, estimate: float, record: dict[str, Any])
             _append(spend, now, delta, record["usd_source"] != "reported by the gateway")
 
 
-def _note_failed(store: Path, now: datetime, estimate: float) -> None:
-    """A call that failed after dispatch may still have been billed. Its reservation stays in the
-    month ledger; the store keeps it so a rerun counts it against the run's cost and call caps."""
+def _note(store: Path, now: datetime, usd: float, calls: int) -> None:
+    """Keep a dispatched call in the store before the request is sent, so Ctrl-C or a crash cannot
+    erase it. A settled call or a refusal before dispatch writes the opposite row. What stays is
+    a call that may have been billed: a rerun counts it against the run's cost and call caps."""
     store.mkdir(parents=True, exist_ok=True)
     with (store / UNSETTLED).open("a", encoding="utf-8") as stream:
-        stream.write(json.dumps({"ts": now.isoformat(), "usd": estimate}) + "\n")
+        stream.write(json.dumps({"ts": now.isoformat(), "usd": usd, "calls": calls}) + "\n")
 
 
 def _unsettled(store: Path) -> tuple[float, int]:
@@ -117,7 +118,7 @@ def _unsettled(store: Path) -> tuple[float, int]:
     if not path.exists():
         return 0.0, 0
     rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
-    return sum(float(r["usd"]) for r in rows), len(rows)
+    return sum(float(r["usd"]) for r in rows), sum(int(r["calls"]) for r in rows)
 
 
 def _stored(
@@ -185,14 +186,13 @@ def _run(
                     )
                 now = clock()  # each call reserves against the month it is made in
                 _reserve(spend, now, estimate)
+                _note(store, now, estimate, 1)
                 try:
                     reply = client.complete(model, p, sample)
                 except BenchError:
                     # Refused before dispatch: nothing was sent, so the reservation is released.
                     _settle(spend, now, estimate, {"charged_usd": 0.0, "usd_source": None})
-                    raise
-                except Exception:
-                    _note_failed(store, now, estimate)
+                    _note(store, now, -estimate, -1)
                     raise
                 if reply.cost is not None and not (
                     isinstance(reply.cost, int | float)
@@ -201,7 +201,6 @@ def _run(
                 ):
                     # The call was made: charge its estimate, then stop. A bad charge never
                     # lowers the spend so far.
-                    _note_failed(store, now, estimate)
                     raise BenchError(
                         f"{model} reported the cost {reply.cost!r} for prompt '{p.id}'. A cost "
                         "must be a finite number of zero or more. The run stopped; its estimate "
@@ -209,6 +208,7 @@ def _run(
                     )
                 record = _record(model, p, sample, reply, prices[model], estimate)
                 _settle(spend, now, estimate, record)  # a billed reply is booked before it is saved
+                _note(store, now, -estimate, -1)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")

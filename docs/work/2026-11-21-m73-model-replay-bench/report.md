@@ -95,3 +95,8 @@ A coder reply is often a JSON envelope `{"code": "..."}`. The buildability check
 
 ## Review round 9 (Codex)
 Each call now reads the clock itself, so a run that crosses a UTC month boundary reserves and settles against the month the call is made in.
+
+## Review round 10 (Codex)
+1. The report checks each stored output's prompt hash against the prompt it is given, and refuses on a mismatch, so a pair never mixes two requests.
+2. A dispatched call is written to the store before the request is sent and cancelled after a settled reply or a refusal before dispatch.
+   Ctrl-C or a crash in flight therefore leaves the attempt and its estimated charge counted against the run's cost and call caps.

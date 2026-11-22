@@ -38,3 +38,21 @@ def test_an_exact_repeat_writes_no_ledger_row_and_moves_no_count(tmp_path: Path)
     assert result["run_id"] == first["results"][0]["run_id"]
     assert _counts(tmp_path) == before
     assert again["trials_total"] == first["trials_total"] == before["rows"] == 1
+
+
+def test_a_stored_run_without_a_ledger_row_is_recorded_once(tmp_path: Path) -> None:
+    """A run published before its ledger row was written (a crash between the two) is recorded
+    by the next attempt, once; it is not skipped as a repeat forever."""
+    seed_store(tmp_path, symbol="SPY", n=1100)
+    ParquetStore(tmp_path / "store").write_provenance(
+        "SPY", source="alpaca", adapter_version="1", parser_version="1"
+    )
+    spec = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    first = run_idea(spec, home=tmp_path, quick=True)
+    (tmp_path / "ledger" / "trials.jsonl").write_text("", encoding="utf-8")  # the row was lost
+    again = run_idea(spec, home=tmp_path, quick=True)
+    rows = read_trials(tmp_path)
+    assert again["results"][0]["executed"] is False
+    assert [row["run_id"] for row in rows] == [first["results"][0]["run_id"]]
+    run_idea(spec, home=tmp_path, quick=True)
+    assert len(read_trials(tmp_path)) == 1

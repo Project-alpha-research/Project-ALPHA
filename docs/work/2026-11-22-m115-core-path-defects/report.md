@@ -133,3 +133,6 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
 - Proven on a copy of the real data home: idea card, `--quick` SPY test linked to it, recheck "the same result, bit for
   bit", an exact repeat added no ledger row, plan and final check ran (both readings shown, slot listed), and a rule
   with no trades in the held-back years read "made no trades ... nothing can be concluded", with the warning before.
+- Review (Codex, P2, `spine/run.py`): a run stored before its ledger row was written (a stop between the two) was skipped as
+  a repeat forever. Fixed: a served run skips the row only when a non-error row already records it; otherwise it is recorded
+  once, without the `repeat` label. Test: `test_a_stored_run_without_a_ledger_row_is_recorded_once` (fail first: no row).

@@ -40,6 +40,7 @@ SKILLS = (
 )
 PLAYBOOK_MAX_LINES = 120
 CARD_MAX_LINES = 40
+SITUATION_CARD_MAX_LINES = 200
 SKILL_BODY_MAX_LINES = 40
 INDEX_MAX_LINES = 60
 MAX_LINE_CHARS = 160
@@ -235,6 +236,7 @@ def test_instruction_files_stay_within_their_limits() -> None:
         LESSONS_INDEX: INDEX_MAX_LINES,
     }
     limits |= dict.fromkeys(card_files(), CARD_MAX_LINES)
+    limits[f"{TOOLS_DIR}/toolbox-by-situation.md"] = SITUATION_CARD_MAX_LINES  # a generated list
     problems = []
     for rel, limit in limits.items():
         lines = _text(rel).splitlines()
@@ -341,8 +343,11 @@ def test_skills_name_only_real_metrics_flags_and_audit_checks() -> None:
     card = _parts(f"{TOOLS_DIR}/diagnose-and-audit.md")[0]
     missing = sorted((checks | flags) - set(card))
     assert not missing, f"the diagnose card must explain every check and flag; missing: {missing}"
-    card = _parts(f"{TOOLS_DIR}/results-and-cite.md")[0]
-    missing = sorted(set(METRICS) - set(card))
+    listed = set(_parts(f"{TOOLS_DIR}/results-and-cite.md")[0])
+    # A toolbox check is documented where its card names the check; its metrics follow from that.
+    for family in sorted((ROOT / TOOLS_DIR).glob("toolbox-*.md")):
+        listed |= set(_parts(f"{TOOLS_DIR}/{family.name}")[0])
+    missing = sorted(m for m in METRICS if m not in listed and m.rsplit(".", 1)[0] not in listed)
     assert not missing, f"the results card must list every metric; missing: {missing}"
 
 

@@ -86,6 +86,8 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
 - One headline count of tries (`spine/tries.py`): the distinct tests on an asset, exactly the rows `same_asset_tests`
   counts (`distinct_asset_tests`). `alpha test`, `alpha results`, `ledger summary`, `ledger families` and `ledger tries
   <ASSET>` print it; row counts stay in the JSON only. The summary's `by_kind` and `by_family` add up to it.
+  The deflated Sharpe of one reading counts at least this: the larger of its family's tests on any asset and the
+  tries on the asset, plus its nearby settings; `alpha test` prints that count and its parts under the headline.
 
 ## Deflated Sharpe inputs
 

@@ -55,4 +55,26 @@ def sentence(found: dict[str, Any]) -> str:
     return f"Tries {where}: {total} {noun}" + (f" ({parts})." if parts else ".")
 
 
-__all__ = ["DEFINITION", "sentence", "tries"]
+def reading_count_sentence(family: dict[str, Any], symbol: str) -> str | None:
+    """How one stored reading's deflated-Sharpe count relates to the headline on ``symbol``.
+
+    The deflated Sharpe counts the larger of its rule family's tests on any asset and the tries on
+    the asset, plus the nearby settings it scored. ``family`` is `diagnostics.trials.family`."""
+    used = family.get("n_trials_used")
+    if not isinstance(used, int) or isinstance(used, bool):
+        return None
+    this_run = int(family.get("this_run") or 0)
+    variants = int(family.get("variants_scored") or 0)
+    unknown = int(family.get("unknown_rows") or 0)
+    on_family = int(family.get("prior_trials") or 0) + this_run + unknown
+    on_asset = int(family.get("same_asset_tests") or 0) + this_run
+    head = f"This reading's deflated Sharpe counts {used} tries: "
+    settings = f"plus {variants} nearby settings."
+    if on_family >= on_asset and used == on_family + variants:
+        return f"{head}{on_family} tests of {family.get('family_id')} on any asset, {settings}"
+    if used == on_asset + variants:
+        return f"{head}the {on_asset} tries on {symbol}, {settings}"
+    return f"{head}see alpha ledger families for its parts."
+
+
+__all__ = ["DEFINITION", "reading_count_sentence", "sentence", "tries"]

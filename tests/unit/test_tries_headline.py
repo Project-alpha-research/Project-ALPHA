@@ -109,3 +109,26 @@ def test_an_unknown_ledger_question_lists_the_valid_names(home: Path) -> None:
     code, text = _cli(home, "ledger", "query", "no-such-question")
     assert code == 1
     assert "by-family" in text and "Choose one of these questions:" in text
+
+
+def test_alpha_test_ties_the_headline_to_the_deflated_sharpe_count(home: Path) -> None:
+    code, text = _cli(
+        home,
+        "test",
+        "--rule",
+        "tsmom",
+        "--param",
+        "lookback=60",
+        "--param",
+        "skip=5",
+        "--asset",
+        "SPY",
+        "--quick",
+    )
+    assert code == 0, text
+    last = read_trials(home)[-1]
+    family = read_json(home / "runs" / last["run_id"] / "diagnostics.json")["trials"]["family"]
+    used = family["n_trials_used"]
+    line = next(x for x in text.splitlines() if x.startswith("This reading's deflated Sharpe"))
+    assert line.startswith(f"This reading's deflated Sharpe counts {used} tries: ")
+    assert f"{family['variants_scored']} nearby settings" in line

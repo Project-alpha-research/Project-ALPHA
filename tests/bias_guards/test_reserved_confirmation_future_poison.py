@@ -1,14 +1,16 @@
-"""The owner's one-shot confirmation of a frozen rule test on the reserved period, end to end.
+"""The one-shot confirmation of a frozen rule test on the reserved period, end to end.
 
-Temporary data homes and the Touch ID test double only: no real store and no real slot. A
-bias guard: bars after the confirmed span are poisoned, and no reserved bar is read before the
-slot is spent (the owner approved this file's place in tests/bias_guards on 2026-11-22).
+Temporary data homes only: no real store and no real slot. One stored rule test is made once per
+module and copied into each test's own home. A bias guard: bars after the frozen span are
+poisoned, and no reserved bar is read before the slot is spent (the owner approved this file's
+place in tests/bias_guards on 2026-11-22).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+import shutil
+from dataclasses import dataclass, field, replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +20,7 @@ import pytest
 from alpha_cli import _runner, next_cmds, reserved_slots
 from alpha_cli.spine import confirm_run as confirm_module
 from alpha_cli.spine import reserve
-from alpha_cli.spine.confirm import plan
+from alpha_cli.spine.confirm import frozen_test, plan
 from alpha_cli.spine.confirm_run import confirm_run
 from alpha_cli.spine.deflation import count_snapshot
 from alpha_cli.spine.errors import SpineError
@@ -31,7 +33,6 @@ from alpha_core import Bar, DataError
 from alpha_core.reserve import RESERVED_INSTANT
 from alpha_data.store import ParquetStore
 from tests.fixtures.cli_fixtures import seed_store
-from tests.fixtures.reserved_owner import enroll, install_double, owner_yes
 
 pytestmark = pytest.mark.bias_guard
 
@@ -50,14 +51,36 @@ class Reads:
         return [item for item in self.seen if item[0] >= RESERVED_INSTANT]
 
 
-@pytest.fixture
-def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    install_double(monkeypatch)
-    seed_store(tmp_path, symbol="SPY", n=LONG)
-    ParquetStore(tmp_path / "store").write_provenance(
+def _test(home: Path, *params: str) -> dict[str, Any]:
+    spec = load_spec(
+        None, rule="ma_cross", param=list(params or ("fast=5", "slow=20")), asset=["SPY"]
+    )
+    out: dict[str, Any] = run_idea(spec, home=home, quick=True, no_diagnose=True)["results"][0]
+    assert out["error"] is None, out
+    return out
+
+
+@pytest.fixture(scope="module")
+def stored(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, Any]]:
+    """One home with one stored rule test, made once; each test works on its own copy."""
+    home = tmp_path_factory.mktemp("stored")
+    seed_store(home, symbol="SPY", n=LONG)
+    ParquetStore(home / "store").write_provenance(
         "SPY", source="alpaca", adapter_version="1", parser_version="1"
     )
-    return tmp_path
+    return home, _test(home)
+
+
+@pytest.fixture
+def home(stored: tuple[Path, dict[str, Any]], tmp_path: Path) -> Path:
+    copy = tmp_path / "home"
+    shutil.copytree(stored[0], copy)
+    return copy
+
+
+@pytest.fixture
+def run_id(stored: tuple[Path, dict[str, Any]]) -> str:
+    return str(stored[1]["run_id"])
 
 
 @pytest.fixture
@@ -74,23 +97,8 @@ def reads(home: Path, monkeypatch: pytest.MonkeyPatch) -> Reads:
     return found
 
 
-def _test(home: Path, *params: str) -> dict[str, Any]:
-    spec = load_spec(
-        None, rule="ma_cross", param=list(params or ("fast=5", "slow=20")), asset=["SPY"]
-    )
-    out: dict[str, Any] = run_idea(spec, home=home, quick=True, no_diagnose=True)["results"][0]
-    assert out["error"] is None, out
-    return out
-
-
-def _yes(home: Path, run_id: str) -> str:
-    frozen = plan(home, run_id)["frozen"]
-    payload = {"run_id": run_id, "reserved_end": frozen["reserved_end"]}
-    return owner_yes(home, payload, frozen["artifact_hash"])
-
-
 def _poison_after_end(home: Path, extra: int) -> None:
-    """Add bars after the confirmed span with prices times 1,000 (still valid bars)."""
+    """Add bars after the frozen span with prices times 1,000 (still valid bars)."""
     store = ParquetStore(home / "store")
     now = store.read_bars("SPY")
     seed_store(home, symbol="SPY", n=LONG + extra)
@@ -101,8 +109,9 @@ def _poison_after_end(home: Path, extra: int) -> None:
     store.write_bars("SPY", pl.concat([now, tail]))
 
 
-def test_plan_reads_only_and_writes_nothing(home: Path) -> None:
-    run_id = _test(home)["run_id"]
+def test_plan_reads_no_reserved_bar_and_writes_nothing(
+    home: Path, run_id: str, reads: Reads
+) -> None:
     before = (home / "ledger" / "trials.jsonl").read_bytes()
     found = plan(home, run_id)
     assert found["slots"] == {"used": 0, "left": 10, "total": 10}
@@ -110,24 +119,26 @@ def test_plan_reads_only_and_writes_nothing(home: Path) -> None:
     assert frozen["reserved_bars"] == RESERVED and frozen["reserved_first"].startswith("2024-01-01")
     assert frozen["run_id"] == run_id and frozen["family_asset"] == "spine:ma_cross|SPY"
     assert "cannot be undone" in " ".join(found["consequences"])
-    assert not (home / "control").exists()
+    assert not (home / "control").exists() and not reads.reserved()
     assert (home / "ledger" / "trials.jsonl").read_bytes() == before
 
 
 def test_one_confirmation_reads_reserved_bars_only_after_its_receipt(
-    home: Path, reads: Reads
+    home: Path, run_id: str, reads: Reads, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stored = _test(home)
-    run_id = stored["run_id"]
-    enroll(home)
     family_before = count_snapshot(spine_snapshot(home), "ma_cross")
-    authorization = _yes(home, run_id)
     end = plan(home, run_id)["frozen"]["reserved_end"]
-    _poison_after_end(home, 20)
-    assert not reads.reserved()
-    output = confirm_run(home, run_id, authorization_id=authorization)
+    take_slot = reserved_slots.take_slot
+
+    def poison_then_take(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        # Bars stored after the span is frozen and before the read must never be scored.
+        _poison_after_end(home, 20)
+        return take_slot(*args, **kwargs)
+
+    monkeypatch.setattr(reserved_slots, "take_slot", poison_then_take)
+    output = confirm_run(home, run_id)
     # Receipt before read: every read that reached the period ran with the slot already spent,
-    # and none reached past the span the owner confirmed (the poisoned bars).
+    # and none reached past the frozen span (the poisoned bars).
     assert reads.reserved() and all(spent == 1 for _, spent in reads.reserved())
     assert max(ts for ts, _ in reads.seen).isoformat() == end
     assert output["slot"] == 1 and output["slots_left"] == 9
@@ -151,7 +162,7 @@ def test_one_confirmation_reads_reserved_bars_only_after_its_receipt(
     )
     # One-shot: asking again shows the same stored result and spends nothing.
     seen = len(reads.seen)
-    again = confirm_run(home, run_id, authorization_id=None)
+    again = confirm_run(home, run_id)
     assert again["reserved"] == output["reserved"] and len(reads.seen) == seen
     assert len(reserved_slots.receipts(home)) == 1
     line = "Reserved period: 1 of 10 confirmation slots used, 9 left. See them: alpha confirm list"
@@ -164,48 +175,57 @@ def test_one_confirmation_reads_reserved_bars_only_after_its_receipt(
 
 
 def test_a_recheck_that_does_not_match_spends_nothing(
-    home: Path, reads: Reads, monkeypatch: pytest.MonkeyPatch
+    home: Path, run_id: str, reads: Reads, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    run_id = _test(home)["run_id"]
-    enroll(home)
-    authorization = _yes(home, run_id)
-
     def differs(*_: Any, **__: Any) -> dict[str, Any]:
         return {"recheck": {"match": False, "compared_with": run_id, "differences_total": 3}}
 
     monkeypatch.setattr(confirm_module, "recheck_one", differs)
     with pytest.raises(SpineError, match="No slot was used"):
-        confirm_run(home, run_id, authorization_id=authorization)
+        confirm_run(home, run_id)
     assert reserved_slots.receipts(home) == [] and not reads.reserved()
 
 
-def test_a_crash_after_the_receipt_resumes_with_the_same_slot(
-    home: Path, reads: Reads, monkeypatch: pytest.MonkeyPatch
+def test_a_crash_after_the_receipt_resumes_with_the_same_slot_and_span(
+    home: Path, run_id: str, reads: Reads, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    run_id = _test(home)["run_id"]
-    enroll(home)
-    authorization = _yes(home, run_id)
-
     def crash(*_: Any, **__: Any) -> dict[str, Any]:
         raise OSError("power cut")
 
     monkeypatch.setattr(confirm_module, "write_run", crash)
     with pytest.raises(OSError, match="power cut"):
-        confirm_run(home, run_id, authorization_id=authorization)
+        confirm_run(home, run_id)
     [spent] = reserved_slots.receipts(home)
     assert spent["slot"] == 1 and spent["result"] is None
-    with pytest.raises(DataError, match="already used for a slot"):
-        reserved_slots.take_slot(
-            home, authorization_id=authorization, frozen=spent["frozen"], now=datetime.now(UTC)
-        )
+    end = spent["frozen"]["reserved_end"]
+    # Bars stored after the crash are left out of the resumed run: the span stays frozen.
+    _poison_after_end(home, 20)
     monkeypatch.setattr(confirm_module, "write_run", real_write_run)
-    done = confirm_run(home, run_id, authorization_id=None)
+    done = confirm_run(home, run_id)
     assert done["receipt_id"] == spent["receipt_id"] and done["slot"] == 1
     assert len(reserved_slots.receipts(home)) == 1
+    assert max(ts for ts, _ in reads.seen).isoformat() == end
+    assert abs(done["reserved"]["oos_sharpe"]) < 50
 
 
-def test_no_yes_no_confirmation(home: Path, reads: Reads) -> None:
-    run_id = _test(home)["run_id"]
-    with pytest.raises(SpineError, match="Touch ID yes"):
-        confirm_run(home, run_id, authorization_id=None)
+def test_a_test_changed_after_its_slot_was_spent_cannot_resume(
+    home: Path, run_id: str, reads: Reads, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def crash(*_: Any, **__: Any) -> dict[str, Any]:
+        raise OSError("power cut")
+
+    monkeypatch.setattr(confirm_module, "write_run", crash)
+    with pytest.raises(OSError, match="power cut"):
+        confirm_run(home, run_id)
+    reads.seen.clear()
+    monkeypatch.setattr(confirm_module, "write_run", real_write_run)
+    # The stored test now reads as another one (its engine seed changed on disk).
+
+    def changed(*args: Any, **kwargs: Any) -> Any:
+        found = frozen_test(*args, **kwargs)
+        return replace(found, seed=found.seed + 1)
+
+    monkeypatch.setattr(confirm_module, "frozen_test", changed)
+    with pytest.raises(DataError, match="changed after its slot was spent"):
+        confirm_run(home, run_id)
     assert not reads.reserved()

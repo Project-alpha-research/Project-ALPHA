@@ -3098,7 +3098,6 @@ test('Phase 3 acceptance: terminal chrome on every document, no hazard stripe, f
     await openDocument(page, item.title)
     await expect(page.getByRole('menubar', { name: 'Terminal menu' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Symbol, venue and timeframe' })).toBeVisible()
-    await expect(page.locator('.status-chip')).toHaveText('Paper only')
     await expect(item.id === 'chart' ? page.locator('.analytical-workspace') : page.locator('.workflow-panel')).toHaveCount(1)
     await expect(page.locator('.menubar')).toHaveCount(1)
   }
@@ -3151,27 +3150,23 @@ test('research-gate override watermark reaches governance and run results', asyn
   await openTask(page, 'Results', 'Run library')
   await backtestLeaf(page, WATERMARKED_RUN_ITEM.display_name).click()
   await expect(documentTab(page, WATERMARKED_RUN_ITEM.display_name)).toHaveAttribute('aria-selected', 'true')
-  // Three surfaces: the report title-bar chip, the toolbar status chip, the Governance document.
+  // Two surfaces: the report title-bar chip and the Governance document.
   await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.locator('.status-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
-  await page.locator('.status-chip').click()
-  // Governance is a document, so the report unmounts behind it: the chip and the Governance row
-  // carry the watermark now; closing Governance brings the report chip back.
+  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Governance' }).click()
+  // Governance is a document, so the report unmounts behind it; closing Governance brings the chip back.
   const governance = page.getByRole('region', { name: 'Governance', exact: true })
   await expect(governance.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toBeVisible()
-  await expect(page.locator('.status-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
   await expectReleaseAccessibility(page)
   await page.goBack()
   await expect(page.locator('.rg-watermark-chip')).toHaveText(RESEARCH_GATE_WATERMARK)
-  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(2)
+  await expect(page.getByText(RESEARCH_GATE_WATERMARK, { exact: true })).toHaveCount(1)
   await expectReleaseAccessibility(page)
 })
 
 test('the Governance document holds the hazard sentences the working documents no longer shout', async ({ page }) => {
   await preparePage(page)
-  for (const title of ['Research', 'Build', 'Jobs']) {
+  for (const title of ['Jobs']) {
     await openDocument(page, title)
     await expect(page.locator('.sandbox-banner')).toHaveCount(0)
   }

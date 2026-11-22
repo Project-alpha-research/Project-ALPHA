@@ -99,7 +99,6 @@ SLOW_FILES: frozenset[str] = frozenset(
         "tests/integration/test_tearsheet_html.py",
         "tests/integration/test_validate_determinism.py",
         "tests/unit/test_cli_entry_lazy_groups.py",
-        "tests/unit/test_investigation_lifecycle.py",
         "tests/unit/test_w09_durable_observations.py",
     }
 )

@@ -71,7 +71,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `quick-screening` | Quick recorded first look at many ideas |
 | `literature` | Find papers, screen their claims, tie a claim to its test, keep the PDF |
 | `paper-to-experiment` | Find papers, screen their claims, tie a claim to its test, keep the PDF |
-| `ai-investigations` | Ask an in-product assistant about a recorded run |
 | `ai-tools-connection` | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs |
 | `providers-and-jobs` | Provider checks and a job list for long downloads |
 | `paper-trading` | Paper trading: local crypto practice account or a broker practice account |

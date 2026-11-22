@@ -1,7 +1,7 @@
 import { openDeskTool } from './support/workstationHarness'
 import { expect, test } from '@playwright/test'
 
-test('real CLI conditions, scan drilldown and assistant context share recorded inputs', async ({ page, request, baseURL }) => {
+test('real CLI conditions and scan drilldown share recorded inputs', async ({ page, request }) => {
   test.setTimeout(120_000)
   const name = `edge-${test.info().project.name}`
   const saved = await request.post('/api/rules', { data: { name, spec: { name, history: 5, long_when: [{ left: { source: 'close' }, op: '>', right: { value: 1 } }], short_when: [] } } })
@@ -28,20 +28,4 @@ test('real CLI conditions, scan drilldown and assistant context share recorded i
   await expect(page.getByRole('complementary', { name: 'Research tools', exact: true })).toBeVisible()
   await expect(dock).toBeVisible()
   await expect(checklist).toContainText(record.sha256.slice(0, 12), { timeout: 60_000 })
-  const headers = { Origin: new URL(baseURL!).origin }
-  const session = await request.post('/api/assistant/sessions', { headers, data: { context: { symbol: 'BTC/USDT', as_of: '2020-05-01T23:59:59.999999Z', rules_name: name, rules_sha256: record.sha256 } } })
-  expect(session.ok(), await session.text()).toBe(true)
-  const body = await session.json()
-  expect(body.authority).toBe('none')
-  expect(body.attachments.map((item: { ref: string }) => item.ref)).toContain('chart')
-  const checked = await request.post(`/api/assistant/sessions/${body.session_id}/check`, { headers, data: {} })
-  expect(checked.ok()).toBe(true)
-  expect(await checked.json()).toMatchObject({ valid: true, context_hash: body.context_hash })
-  const forbidden = await request.post('/api/assistant/sessions', { headers: { Origin: 'https://untrusted.example' }, data: { context: { symbol: 'BTC/USDT', as_of: '2020-05-01T23:59:59Z' } } })
-  expect(forbidden.status()).toBe(403)
-  const revised = await request.post('/api/rules', { data: { name, spec: { name, history: 5, long_when: [{ left: { source: 'close' }, op: '>', right: { value: 2 } }], short_when: [] } } })
-  expect(revised.ok()).toBe(true)
-  const stale = await request.post('/api/assistant/sessions', { headers, data: { context: body.context } })
-  expect(stale.status()).toBe(422)
-  expect(await stale.text()).toContain('Saved rules changed since the selected scan')
 })

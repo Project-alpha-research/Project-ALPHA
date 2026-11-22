@@ -351,7 +351,7 @@ proof_synthetic = [
   "tests/integration/test_cli_rules.py::test_rules_lifecycle",
   "tests/integration/test_cli_scan.py::test_scan_lifecycle",
   "tests/unit/test_reserve_holdback_commands.py::test_alpha_scan_and_rules_explain_hold_the_period_back",
-  "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions, scan drilldown and assistant context share recorded inputs",
+  "apps/alpha-web/frontend/e2e/edge-real.spec.ts::real CLI conditions and scan drilldown share recorded inputs",
 ]
 real_data = "not yet confirmed (to check on the Mac later)"
 needs = []
@@ -791,37 +791,12 @@ missing = "no test takes one paper all the way to an experiment"
 triage = { card = "6", recommendation = "KEEP", owner_decision = "KEEP" }
 
 [[capability]]
-id = "ai-investigations"
-name = "Ask the AI assistant about a recorded run"
-codes = ["Codex"]
-what = "Ask the built-in AI assistant to investigate a finished run; its answers are advice and cite the recorded evidence."
-see_it = [
-  "Workstation: open a run, then \"Investigate this run\"",
-  "Workstation: View → Research → Codex Research",
-]
-entry_points = [
-  "cli: alpha research investigations create",
-  "cli: alpha assistant turn",
-  "api: POST /api/investigations",
-  "panel: apps/alpha-web/frontend/src/panels/RunInvestigation.tsx",
-  "panel: apps/alpha-web/frontend/src/panels/CodexBench.tsx",
-]
-proof_synthetic = [
-  "apps/alpha-web/frontend/e2e/investigations-real.spec.ts::real persisted investigation supports followup, cancel, refresh and comparison handoff",
-]
-real_data = "Recorded: on 2026-10-04 live checks against the real Codex service passed for the command line and the web app (docs/BUILD-STATUS.md, 2026-10-04 managed investigations entry)."
-real_data_needs = "A signed-in Codex command-line tool."
-needs = []
-state = "Partial"
-missing = "tested in a browser against a test server only; no end-to-end smoke check yet"
-
-[[capability]]
 id = "ai-tools-connection"
 name = "Let an AI assistant use ALPHA's tools"
 codes = ["MCP"]
 what = "Connect an AI assistant so it can run ALPHA commands, including the main research path (rule test, checks, results, trial ledger, data health) and the front door (where the project stands, idea cards, the library, finding a check, what is active today, nightly status); it can suggest and run, but never approve."
 see_it = ["uv run alpha-mcp (started by an MCP-capable AI client)"]
-entry_points = ["script: alpha-mcp"]
+entry_points = ["script: alpha-mcp", "cli: alpha assistant"]
 proof_synthetic = [
   "tests/integration/test_mcp_server.py::test_backtest_run_tool_returns_a_manifest",
   "tests/integration/test_research_mcp.py::test_research_mcp_capture_propose_status_and_report_round_trip",

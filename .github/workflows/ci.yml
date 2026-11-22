@@ -63,7 +63,8 @@ jobs:
     # ready (owner decision 2026-11-21: every push to a draft filled the queue with 20-minute runs).
     if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 40, not 25: with many runs active a shard that needs 23 minutes was cancelled and repeated.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -125,11 +126,11 @@ jobs:
           retention-days: 14
 
   quant:
-    # Slow oracles and the mutation gate on the touched quant-tier modules, as before.
+    # Slow oracles when a quant-tier module changed. The mutation gate runs in the weekly sweep.
     needs: changes
     if: needs.changes.outputs.quant == 'true' && github.event.pull_request.draft != true
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6.0.3
         with:

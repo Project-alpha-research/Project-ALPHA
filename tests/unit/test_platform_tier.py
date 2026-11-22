@@ -63,7 +63,6 @@ def test_platform_shaped_paths_are_platform(path: str) -> None:
         "tests/integration/test_backtest_cli.py",
         # prefixes are scoped per directory: a non-process sibling stays fast
         "tests/integration/test_accounted_backfill.py",
-        "tests/unit/test_investigation_lifecycle_unit.py",
     ],
 )
 def test_alpha_paths_stay_in_the_fast_tier(path: str) -> None:

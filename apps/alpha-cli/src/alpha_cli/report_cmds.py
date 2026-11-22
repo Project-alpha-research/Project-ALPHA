@@ -21,6 +21,9 @@ import typer
 
 from alpha_cli.artifact_contract import verify_manifest_artifacts
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest
+from alpha_cli.spine.facts import read_json
+from alpha_cli.spine.reading import stored_reading
+from alpha_cli.spine.report_plain import plain_report_lines
 from alpha_cli.spine.report_readings import (
     costs_line,
     gate_lines,
@@ -85,7 +88,7 @@ def report(
     limit: int = 100,
     offset: int = 0,
 ) -> None:
-    """Print the stored result for RUN_ID (any run type: gauntlet, backtest, portfolio, etc.)."""
+    """Print a plain summary of the stored result for RUN_ID (any run type)."""
     settings = AlphaSettings()
     if daily_rule_evidence_out:
         from alpha_cli.daily_rule_report import daily_rule_evidence
@@ -120,9 +123,10 @@ def report(
     symbol = metadata.get("symbol") or manifest.get("symbol")
     symbols = manifest.get("symbols")
     label = symbol or (", ".join(symbols) if symbols else "?")
+    version = manifest.get("schema_version")
     typer.echo(
-        f"run {run_id}  {manifest.get('command', 'gauntlet')}  "
-        f"[{label}]  schema_version={manifest.get('schema_version')}"
+        f"run {run_id}  {manifest.get('command', 'gauntlet')}  [{label}]"
+        + ("" if isinstance(manifest.get("verdict"), dict) else f"  schema_version={version}")
     )
 
     research_gate = manifest.get("research_gate")
@@ -235,10 +239,19 @@ def report(
     if manifest.get("command") in {"monte_carlo_classical", "monte_carlo_kronos"}:
         for text in monte_carlo_lines(manifest):
             typer.echo(text)
-    for shown in (reading_line(manifest), costs_line(manifest)):
-        if shown:
-            typer.echo(shown)
-    if "oos_metrics" in manifest:
+    plain = isinstance(manifest.get("verdict"), dict)
+    if plain:  # a rule test or gauntlet run: the plain summary; --json has every field
+        found = None
+        if isinstance(manifest.get("oos_metrics"), dict):
+            diagnostics = read_json(Path(manifest["__dir"]) / "diagnostics.json")
+            found = stored_reading(manifest, diagnostics)
+        for text in plain_report_lines(manifest, found):
+            typer.echo(text)
+    else:
+        for shown in (reading_line(manifest), costs_line(manifest)):
+            if shown:
+                typer.echo(shown)
+    if "oos_metrics" in manifest and not plain:
         metrics = ", ".join(f"{k}={_fmt(v)}" for k, v in sorted(manifest["oos_metrics"].items()))
         typer.echo(f"OOS metrics: {metrics}")
     if "metrics" in manifest:  # portfolio / cross-sectional
@@ -250,22 +263,22 @@ def report(
         # loop below — printing it here would emit a spurious, contradictory `dsr: n/a` line.
         if isinstance(val, int | float) and not isinstance(val, bool):
             typer.echo(f"{key}: {_fmt(val)}")
-    if manifest.get("folds"):
+    if manifest.get("folds") and not plain:
         typer.echo(f"walk-forward: {len(manifest['folds'])} OOS folds")
-    for n in manifest.get("nulls", []):
+    for n in [] if plain else manifest.get("nulls", []):
         typer.echo(null_line(n))
     for key in ("sharpe_ci", "cagr_ci"):  # portfolio / cross-sectional intervals
         ci = manifest.get(key)
         if isinstance(ci, dict):
             typer.echo(f"{key}: [{_fmt(ci.get('lower'))}, {_fmt(ci.get('upper'))}]")
-    for c in manifest.get("cis", []):  # gauntlet intervals
+    for c in [] if plain else manifest.get("cis", []):  # gauntlet intervals
         typer.echo(
             f"CI[{c['metric']}]: {_fmt(c['point'])} [{_fmt(c['lower'])}, {_fmt(c['upper'])}] "
             f"@ {_fmt(c['confidence'])}"
         )
     for key in ("dsr", "pbo", "spa", "reality_check"):  # optim verdict blocks (nested dicts)
         block = manifest.get(key)
-        if isinstance(block, dict):
+        if isinstance(block, dict) and not plain:
             # Headline value first; a recorded list (trial Sharpes) shows as its length.
             items = sorted(
                 ((k, v) for k, v in block.items() if k != "passed"), key=lambda item: item[0] != key
@@ -278,7 +291,7 @@ def report(
     for leg in manifest.get("legs", []):
         sharpe = _fmt(leg.get("oos_sharpe"))
         typer.echo(f"leg[{leg['symbol']}]: weight={_fmt(leg['weight'])} oos_sharpe={sharpe}")
-    for gate in gate_lines(manifest):
+    for gate in [] if plain else gate_lines(manifest):
         typer.echo(gate)
     if "orders" in manifest:  # plain backtest run
         typer.echo(

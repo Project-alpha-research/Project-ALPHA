@@ -79,7 +79,7 @@ def report(home: Path, manifest: dict[str, Any]) -> str:
     return result.output
 
 
-def test_new_style_manifest_prints_the_stored_reading_word_and_the_old_grade(
+def test_new_style_manifest_prints_the_stored_reading_word_without_the_old_grade(
     tmp_path: Path,
 ) -> None:
     stored = gauntlet()
@@ -92,13 +92,14 @@ def test_new_style_manifest_prints_the_stored_reading_word_and_the_old_grade(
         "sentence": "x",
     }
     text = report(tmp_path, stored)
-    assert "reading: some evidence (old grade: B)" in text
+    assert "Reading: some evidence." in text
+    assert "old grade" not in text
     assert_owner_text(text)
 
 
 def test_old_style_manifest_derives_the_word_on_read(tmp_path: Path) -> None:
     text = report(tmp_path, gauntlet())
-    assert re.search(r"^reading: (clear of chance|some evidence) \(old grade: B\)$", text, re.M)
+    assert re.search(r"^Reading: (clear of chance|some evidence)\.", text, re.M)
     assert_owner_text(text)
 
 
@@ -106,23 +107,23 @@ def test_a_fault_reads_as_fault(tmp_path: Path) -> None:
     broken = gauntlet()
     broken["oos_metrics"]["sharpe"] = None
     text = report(tmp_path, broken)
-    assert "reading: fault (old grade: B)" in text
-    assert "gate[walk_forward_oos]: fault" in text
+    assert "Reading: fault." in text
 
 
-def test_gates_show_numbers_and_plain_comparisons_not_a_pass_mark(tmp_path: Path) -> None:
+def test_the_summary_has_plain_sentences_and_no_raw_field_names(tmp_path: Path) -> None:
     text = report(tmp_path, gauntlet())
-    assert "null[returns_level]: percentile=0.9900 p=0.0200" in text
-    assert "random data did as well in 2.0% of draws" in text
-    assert "the level used by the old grade: 0.9500" in text
-    assert "gate[walk_forward_oos]: sound, out-of-sample Sharpe 0.7500" in text
-    assert "the interval is above zero" in text
-    assert "deflated Sharpe 0.9900 after 3 tries" in text
-    assert "mean Sharpe across folds -0.1000, 40% of folds above zero" in text
+    assert "random prices did as well as the rule in up to 2% of draws" in text
+    assert "its likely range is" in text and "which is above zero" in text
+    assert "scores 0.99" in text and "after counting 3 tries" in text
+    assert "the mean Sharpe ratio over the test splits is -0.10; 40% of the splits" in text
+    for raw in ("old grade", "dsr:", "reason=", "None", "null[", "gate[", "CI[", "psr", "=n/a"):
+        assert raw not in text, raw
     assert_owner_text(text)
 
 
-def test_an_old_manifest_with_only_a_grade_keeps_its_caveat_beside_it(tmp_path: Path) -> None:
+def test_an_old_manifest_with_only_a_grade_prints_its_caveat_without_the_grade(
+    tmp_path: Path,
+) -> None:
     only = {
         "command": "validate",
         "verdict": {
@@ -132,8 +133,18 @@ def test_an_old_manifest_with_only_a_grade_keeps_its_caveat_beside_it(tmp_path: 
         },
     }
     text = report(tmp_path, only)
-    line = next(row for row in text.splitlines() if row.startswith("reading:"))
-    assert "(old grade: C)" in line and "too-few-trades" in line and "Only 4 closed trades" in line
+    line = next(row for row in text.splitlines() if row.startswith("Reading:"))
+    assert line == "Reading: not recorded. Only 4 closed trades."
+    assert "old grade" not in text
+
+
+def test_json_keeps_the_full_machine_output(tmp_path: Path) -> None:
+    rdir = tmp_path / "runs" / RUN
+    rdir.mkdir(parents=True)
+    (rdir / "manifest.json").write_text(json.dumps(gauntlet()))
+    result = RUNNER.invoke(app, ["report", RUN, "--json"], env={"ALPHA_DATA_DIR": str(tmp_path)})
+    stored = json.loads(result.output)
+    assert stored["verdict"]["overall"] == "B" and "nulls" in stored and "dsr" in stored
 
 
 def test_monte_carlo_family_prints_percentiles_without_a_grade(tmp_path: Path) -> None:
@@ -191,3 +202,23 @@ def test_realized_profit_shows_as_gain_or_loss_while_the_stored_text_is_untouche
         == "full-sample closed-trade realized gain or loss"
     )
     assert plain_basis("no such words") == "no such words"
+
+
+def test_diagnose_prints_a_plain_summary_and_json_keeps_the_raw_file(tmp_path: Path) -> None:
+    rdir = tmp_path / "runs" / RUN
+    rdir.mkdir(parents=True)
+    (rdir / "manifest.json").write_text(json.dumps(gauntlet()))
+    diagnostics = {
+        "audit": [{"check": "enough-trades", "detail": "4 closed trades.", "status": "FLAG"}],
+        "delay": {"base_sharpe": 2.0, "delayed_sharpe": 1.5, "delayed_share_of_base": 0.75},
+        "macro_window": {"available": False, "reason": None},
+        "inverted_signal": {"inverted_sharpe": None, "sentence": "Opposite rule: no result."},
+    }
+    (rdir / "diagnostics.json").write_text(json.dumps(diagnostics))
+    env = {"ALPHA_DATA_DIR": str(tmp_path)}
+    text = RUNNER.invoke(app, ["diagnose", RUN], env=env).output
+    assert "One bar later" in text and "75% kept" in text
+    assert "look closer: Enough closed trades. 4 closed trades." in text
+    assert "{" not in text and "None" not in text and "null" not in text
+    raw = json.loads(RUNNER.invoke(app, ["diagnose", RUN, "--json"], env=env).output)
+    assert raw["audit"][0]["check"] == "enough-trades"

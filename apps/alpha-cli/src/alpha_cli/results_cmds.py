@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -430,11 +429,12 @@ def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             )
         output = read_json(rdir / "diagnostics.json")
         found = stored_reading(manifest, output)
-        text = json.dumps(_plain_audit(output), indent=2, allow_nan=False)
+        from alpha_cli.spine.report_plain import plain_diagnose_lines
+
         emit(
             {**output, "reading": found},
             json_out=json_out,
-            fallback=f"{found['sentence']}\n{text}",
+            fallback="\n".join(plain_diagnose_lines(output, found)),
         )
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

@@ -38,10 +38,9 @@ def test_report_prints_stored_run_without_re_running(
     result = runner.invoke(app, ["report", run_id])
     assert result.exit_code == 0, result.output
     assert run_id in result.output
-    assert "reading: " in result.output and "verdict:" not in result.output
-    assert "null[returns_level]" in result.output and "null[full_engine]" in result.output
-    assert "CI[sharpe]" in result.output
-    assert "gate[randomized_price_null]" in result.output
+    assert "Reading: " in result.output and "verdict:" not in result.output
+    assert "Random-data check:" in result.output and "Range check:" in result.output
+    assert "old grade" not in result.output and "null[" not in result.output
 
 
 def test_report_unknown_run_fails_loud(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

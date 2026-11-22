@@ -105,6 +105,12 @@ class IdeaReadingAim(_Relayed):
     source: str | None = None
 
 
+class IdeaReadingCosts(_Relayed):
+    line: str | None = None
+    periods: str | None = None
+    reason: str | None = None
+
+
 class IdeaReading(_Relayed):
     sentence: str | None = None
     evidence: IdeaEvidence = IdeaEvidence()
@@ -112,6 +118,7 @@ class IdeaReading(_Relayed):
     checks: list[IdeaReadingCheck] = []
     counts: IdeaReadingCounts = IdeaReadingCounts()
     aim: IdeaReadingAim = IdeaReadingAim()
+    costs: IdeaReadingCosts = IdeaReadingCosts()
 
 
 class IdeaToolCheck(_Relayed):

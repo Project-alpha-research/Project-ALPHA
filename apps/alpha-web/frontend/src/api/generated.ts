@@ -8125,6 +8125,8 @@ export interface components {
              */
             checks: components["schemas"]["IdeaReadingCheck"][];
             /** @default {} */
+            costs: components["schemas"]["IdeaReadingCosts"];
+            /** @default {} */
             counts: components["schemas"]["IdeaReadingCounts"];
             /**
              * @default {
@@ -8163,6 +8165,15 @@ export interface components {
             name: string;
             /** State */
             state: string;
+        };
+        /** IdeaReadingCosts */
+        IdeaReadingCosts: {
+            /** Line */
+            line?: string | null;
+            /** Periods */
+            periods?: string | null;
+            /** Reason */
+            reason?: string | null;
         };
         /** IdeaReadingCounts */
         IdeaReadingCounts: {

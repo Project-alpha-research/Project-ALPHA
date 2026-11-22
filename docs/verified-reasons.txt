@@ -11,10 +11,10 @@ apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified cdc5ce8ab62ae370 on 2026-11-21: the Ideas page now shows stored warning labels; this page does not describe them
+  verified 1b579e1cb5d72fc5 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 apps/alpha-web/README.md
-  verified cdc5ce8ab62ae370 on 2026-11-21: the Ideas page now shows stored warning labels; this page does not describe them
+  verified 1b579e1cb5d72fc5 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
@@ -107,16 +107,16 @@ docs/reference/invariants/validation.md
   verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
 
 docs/reference/invariants/web-api-reads.md
-  verified 460058791f9d52af on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified 710f6a9dc3599220 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/web-api.md
-  verified 055b8aa9b58624c8 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
+  verified dfa61a5271106013 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/web-frontend-ideas.md
-  verified 37eadd75e3af8fda on 2026-11-21: the Ideas page now shows stored warning labels; this page does not describe them
+  verified aff28f3c4b3183e9 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified c6efe4eef90394e9 on 2026-11-21: the Ideas page now shows stored warning labels; this page does not describe them
+  verified fc1d782471bcf88a on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -127,7 +127,7 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified f725a2cbdf230966 on 2026-11-21: the Ideas page now shows stored warning labels; this page does not describe them
+  verified e6e3da8a1a134040 on 2026-11-22: the Ideas read now relays the reading's costs block and the timeline lists every linked study; this page is still correct
 
 docs/reference/invariants/workers.md
   verified 9c856742539b975c on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct

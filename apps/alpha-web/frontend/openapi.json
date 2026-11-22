@@ -10478,6 +10478,10 @@
             "title": "Checks",
             "type": "array"
           },
+          "costs": {
+            "$ref": "#/components/schemas/IdeaReadingCosts",
+            "default": {}
+          },
           "counts": {
             "$ref": "#/components/schemas/IdeaReadingCounts",
             "default": {}
@@ -10568,6 +10572,45 @@
           "state"
         ],
         "title": "IdeaReadingCheck",
+        "type": "object"
+      },
+      "IdeaReadingCosts": {
+        "properties": {
+          "line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "periods": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Periods"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "IdeaReadingCosts",
         "type": "object"
       },
       "IdeaReadingCounts": {

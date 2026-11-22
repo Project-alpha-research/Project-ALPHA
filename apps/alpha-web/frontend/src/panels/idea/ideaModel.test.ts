@@ -66,11 +66,20 @@ describe('ideaModel', () => {
     const damaged = { ...find, studies: [{ id: 's1', reading: null, labels: [], problem: 'the stored study could not be read: bad file' }] } as unknown as IdeaTest
     const row = timeline(file({ readings: [damaged] }))[0]
     expect(row.problem).toBe('study s1: the stored study could not be read: bad file')
-    expect(row.word).toBe('a linked study could not be read')
+    expect(row.word).toBe('1 linked study')
+    expect(row.studies).toEqual([{ id: 's1', reading: 'no reading stored', labels: [], problem: 'the stored study could not be read: bad file' }])
   })
   it('carries the warning labels of a find and its studies onto the timeline row', () => {
     const labelled = { ...find, labels: ['exploratory'], studies: [{ id: 's1', reading: 'r', labels: ['overlapping-outcomes', 'exploratory'] }] } as unknown as IdeaTest
-    expect(timeline(file({ readings: [labelled] }))[0].labels).toEqual(['exploratory', 'overlapping-outcomes'])
+    const row = timeline(file({ readings: [labelled] }))[0]
+    expect(row.labels).toEqual(['exploratory'])
+    expect(row.studies[0].labels).toEqual(['overlapping-outcomes', 'exploratory'])
+  })
+  it('lists every linked study, not only the first', () => {
+    const many = { ...find, studies: [{ id: 's1', reading: 'first', labels: [] }, { id: 's2', reading: 'second, contradicts', labels: ['overlapping-outcomes'] }] } as unknown as IdeaTest
+    const row = timeline(file({ readings: [many] }))[0]
+    expect(row.studies.map(s => s.reading)).toEqual(['first', 'second, contradicts'])
+    expect(row.word).toBe('2 linked studies')
   })
   it('handles a missing aim and missing counts in words', () => {
     expect(aimText(run('a', '2026-11-19', { aim: null }))).toBe('no aim stored')

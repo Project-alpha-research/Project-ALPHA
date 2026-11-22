@@ -118,3 +118,14 @@ def test_the_real_cli_answers_the_models_end_to_end(
     assert body["readings"][0]["reading"]["counts"]["family_id"] == "spine:ma_cross"
     assert body["readings"][0]["checks"][0]["tool"] == "costs.break_even"
     assert client.get("/api/ideas/ffffffffffff").status_code == 404
+
+
+def test_the_readings_cost_line_and_annualisation_reach_the_page(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    answer = _file(1)
+    costs = {"line": "Costs: 1 bp a side.", "periods": "252 days a year."}
+    answer["readings"] = [{"kind": "rule test", "id": "a" * 16, "reading": {"costs": costs}}]
+    body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
+    assert body["readings"][0]["reading"]["costs"]["line"] == "Costs: 1 bp a side."
+    assert body["readings"][0]["reading"]["costs"]["periods"] == "252 days a year."

@@ -96,7 +96,8 @@ export function triesText(test: IdeaTest): string {
   return parts.length ? parts.join(' · ') : 'tries not recorded'
 }
 
-export interface TimelineRow { labels: string[]; id: string; kind: string; day: string; word: string; aim: string; tries: string; problem: string | null; checks: number }
+export interface StudyRow { id: string; reading: string; labels: string[]; problem: string | null }
+export interface TimelineRow { studies: StudyRow[]; labels: string[]; id: string; kind: string; day: string; word: string; aim: string; tries: string; problem: string | null; checks: number }
 
 export function timeline(file: IdeaFile): TimelineRow[] {
   return file.readings.map(test => {
@@ -106,8 +107,9 @@ export function timeline(file: IdeaFile): TimelineRow[] {
     const problem = [test.problem, ...faults].filter(Boolean).join('; ') || null
     return {
       id: test.id, kind: test.kind, day: shortDay(test.recorded_at), problem, checks: test.checks.length,
-      labels: find ? [...new Set([...test.labels, ...test.studies.flatMap(s => s.labels)])] : [],
-      word: find ? test.studies.find(s => !s.problem)?.reading ?? (faults.length ? 'a linked study could not be read' : 'no study yet') : evidenceWord(test),
+      labels: find ? test.labels : [],
+      studies: test.studies.map(s => ({ id: s.id, reading: s.reading ?? 'no reading stored', labels: s.labels, problem: s.problem ?? null })),
+      word: find ? (test.studies.length ? plural(test.studies.length, 'linked study', 'linked studies') : 'no study yet') : evidenceWord(test),
       aim: find ? `${t.accepted ?? '?'} accepted, ${t.pending ?? '?'} pending, ${t.set_aside ?? '?'} set aside` : aimText(test),
       tries: find ? `${plural(test.studies.length, 'study', 'studies')} linked` : triesText(test),
     }

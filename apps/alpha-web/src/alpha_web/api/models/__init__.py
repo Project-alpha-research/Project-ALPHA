@@ -183,6 +183,7 @@ from .ideas import IdeaOpenPoints as IdeaOpenPoints
 from .ideas import IdeaReading as IdeaReading
 from .ideas import IdeaReadingAim as IdeaReadingAim
 from .ideas import IdeaReadingCheck as IdeaReadingCheck
+from .ideas import IdeaReadingCosts as IdeaReadingCosts
 from .ideas import IdeaReadingCounts as IdeaReadingCounts
 from .ideas import IdeaStudy as IdeaStudy
 from .ideas import IdeaTest as IdeaTest

@@ -2,32 +2,34 @@
 # --reason`, one entry per document (the latest); `git log -p` on this file keeps the rest.
 
 apps/alpha-cli/CONTEXT.md
-  verified 5ba684f583649fdd on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified b75b520921d8c168 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 apps/alpha-cli/README.md
-  verified 5ba684f583649fdd on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified b75b520921d8c168 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 apps/alpha-mcp/CONTEXT.md
   verified dbae13496c19ad79 on 2026-11-20: Only argument safety, a write cap and error text changed in the front-door relays; the summary stays true.
 
 apps/alpha-web/CONTEXT.md
-  verified d906602e7706cd6a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 4886f8c5e04fe3b8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 apps/alpha-web/README.md
-  verified d906602e7706cd6a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 4886f8c5e04fe3b8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/CONTEXT.md
   verified 7a5bda0bea5e0d33 on 2026-11-19: docs README only re-pointed one link; page still correct
 
 docs/reference/checks.md
-  verified a4c1654f3db3846b on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified a4c1654f3db3846b on 2026-11-21: price-signal window fix does not change what this document says
+  verified 8196fa71e1d308a1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/README.md
   verified 8115bbcdee4c05e0 on 2026-11-20: re-read after a cram ceiling in test_filesystem_contract.py was removed and invariants pages were rewrapped; the document's claims still hold
 
+docs/reference/invariants/cli-control-store.md
+  verified 70adf2e5c99b1a5f on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+
 docs/reference/invariants/cli-cost-classes.md
-  verified 1feb169bd782f16b on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified 48051fd15ae9622c on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-crypto-data.md
   verified f031d0d564fa51a8 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
@@ -39,31 +41,31 @@ docs/reference/invariants/cli-follow.md
   verified d7b2fc56f2f23b5b on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/cli-idea-file.md
-  verified 1360d683025ba488 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified ece293da5c8e23c6 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-investigation-tools.md
   verified fd5f1de814c19725 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-native.md
-  verified 802c31b3ac77f10b on 2026-11-19: only a help string and line wrapping changed after the last verify; the text is still correct
+  verified a98a873ffec4cfd5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-nightly.md
-  verified 5f1772a6b5e61c32 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified d81855ca969acd8e on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-research.md
-  verified 632781ed90e24c77 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 87714b0666bd11f9 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-results-check.md
   verified 31a9f5fdd9f3f626 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/invariants/cli-rule-readings.md
-  verified 4a174ac317ae341c on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified ebeeee198cd7a836 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-runs.md
-  verified fea476f4018e929c on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 76593438fc21ab3c on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-setups.md
-  verified 74c7d81adc77154d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 8b8c6a743cca6299 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/cli-toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -75,7 +77,7 @@ docs/reference/invariants/data-context.md
   verified 96f2fe7a59fd5f97 on 2026-11-21: calendar range sweep; text still correct
 
 docs/reference/invariants/data-crypto.md
-  verified 15be891d490388ff on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 31604d0ea6cb98b5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/data-freeze-before-replace.md
   verified 5efe89cf0d49bb54 on 2026-11-20: Only formatting and a mypy-only callback change in the sources after the review edit; the freeze page text already states the reviewed behaviour.
@@ -87,45 +89,46 @@ docs/reference/invariants/data.md
   verified 663c4103493f9199 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/documentation.md
-  verified 52546db6818984d6 on 2026-11-19: Re-read after the One home per fact table moved to docs/README.md; rules unchanged
+  verified ceb51c1ae476edc9 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/engineering.md
-  verified eeaf1119cdc62ef4 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified eeaf1119cdc62ef4 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 0a282d681aa7abfd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/patterns.md
   verified ec724060a0cafaaa on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 docs/reference/invariants/rdagent.md
-  verified 9caaba5ecf2b6203 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified 9caaba5ecf2b6203 on 2026-11-21: price-signal window fix does not change what this document says
+  verified b60cf511e1f46afc on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/research-integrity.md
-  verified 9ac190b6407b526a on 2026-11-21: one new bias guard added for the context-data join; no rule on this page changed
+  verified 6da3c17b2fb74ddd on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/research.md
-  verified 7d77ec24788f7154 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 727d3f5df374816c on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+
+docs/reference/invariants/strategies.md
+  verified 187c14109a01a7d0 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/testing.md
-  verified 64a42f2eb7d3858e on 2026-11-21: price-signal window fix does not change what this document says
+  verified 3534652e5380cc60 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/validation-factor-statistics.md
   verified 29fbabfa2cb71320 on 2026-11-20: tests added that pin whole error messages and the stated assumption text; the rules are unchanged
 
 docs/reference/invariants/validation.md
-  verified ab6b046291b29b88 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
+  verified 616fefec1929f74b on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-api-reads.md
-  verified e2d40de5b0aeaf8a on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 8459c58a6bf6c4ba on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-api.md
-  verified 9932eaf90ba312d1 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified e437a567bae8eef8 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-frontend-ideas.md
-  verified 319638e83a814588 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 84e09ac30d685a71 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-frontend.md
-  verified 708c163d1295a38d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 8cd3ea2164dc85ab on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/web-ideas.md
   verified e24cae1f03437816 on 2026-11-21: new page: the section moved here unchanged except the follow line, which is now true
@@ -136,16 +139,19 @@ docs/reference/invariants/web-research.md
   verified 8cfe152731a9e4fb on 2026-11-21: merge of main; this branch adds only the run-price command and the series route, described in the owning pages
 
 docs/reference/invariants/web-run-detail.md
-  verified e4dc7d713fd36e33 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 25d4664ae908e940 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/invariants/workers.md
-  verified 9c856742539b975c on 2026-11-21: price-signal window fix does not change what this document says
+  verified c01dbc5e2f18b2e1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/model-routing-codex.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
 
 docs/reference/model-routing.md
   verified 7fb7aae6a6b242b5 on 2026-11-19: AGENTS.md now links the roles and brief template on this page and says the Codex hand-off is paused; both pages already say the same
+
+docs/reference/owner-rule-language.md
+  verified fc4ba062ee9ec61a on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/project/components/afml-worker.md
   verified 9f89aa701b270578 on 2026-11-18: the document it names (workers/afml/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
@@ -168,6 +174,9 @@ docs/reference/project/components/forecasting.md
 docs/reference/project/components/literature-worker.md
   verified 106c2e769585e532 on 2026-11-18: the document it names (workers/literature/CONTEXT.md) has the same text as when this page was last verified; the fingerprint now counts it
 
+docs/reference/project/components/monte-carlo.md
+  verified 1dda58e7854fb24a on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+
 docs/reference/project/components/nautilus.md
   verified 1c97096a41ae97d5 on 2026-11-18: re-read: packages/alpha-backtest/CONTEXT.md only gained a test path; this page states nothing about it
 
@@ -187,16 +196,16 @@ docs/reference/project/components/research-cases-and-approval.md
   verified 5089fe31329290e9 on 2026-11-19: research routing row added for the library; this page's claims are unchanged
 
 docs/reference/project/components/setup-lab.md
-  verified 50d5da70210ce0b5 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 05b3e2b526bcc1aa on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/project/components/strategies-and-signals.md
-  verified 78a2703c0128ef97 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 761d7d0863981395 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/project/components/toolbox.md
   verified a9b38e6041cf26ee on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 docs/reference/project/components/validation-and-evidence.md
-  verified 22656583f20fc4da on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 751467f3e2800908 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 docs/reference/project/components/web-workstation.md
   verified 6a4d2d82a3dd6f31 on 2026-11-19: routing only: the Setup Lab row wording in the web CONTEXT.md changed; this page's claims stand
@@ -249,20 +258,23 @@ docs/work/CONTEXT.md
 packages/alpha-data/CONTEXT.md
   verified ce00c08a576e3208 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
 
+packages/alpha-strategies/CONTEXT.md
+  verified 4b5baf8a13749484 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+
 packages/alpha-study/CONTEXT.md
   verified f318b48fa850c879 on 2026-11-21: Context review fixes: three-valued windows over context, per-asset control span, plain exit error; controls on specs without context unchanged
 
 packages/alpha-validation/CONTEXT.md
-  verified 01354e66ff89d242 on 2026-11-20: only a pointer to the factor-statistics page; that page carries the new edge labels
+  verified 6c22cebe38d9a545 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/CONTEXT.md
-  verified ca0022ae2d890aed on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified ff72adf3b24734b5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/PLAYBOOK.md
-  verified 0df874f4c73fe3c0 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified fbc7d9dc2bc1d1ad on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/README.md
-  verified 3e955276bb8eea08 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
+  verified d40f9c3c6086d864 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/lessons/README.md
   verified 6b5e6d5653188a52 on 2026-11-19: Re-read after merging main: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
@@ -271,25 +283,25 @@ research/library/README.md
   verified 6ca504cc9457bc0d on 2026-11-19: only the line layout of the library module changed; this page's claims are unchanged
 
 research/tools/README.md
-  verified 1633fb4a40e2514f on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 661aaca963b74726 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/attribution-regimes-changepoints.md
   verified 96231f129d35a504 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
 research/tools/benchmark-and-drawdowns.md
-  verified 9abcd7a62076e408 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 23d56ad7ad814512 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/charts.md
   verified 26313c47945d6bb7 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
 
 research/tools/data-health.md
-  verified 4d2e75bfba89e609 on 2026-11-21: Calendar home now keeps the regular close for pre-1993 early closes; these pages name the modules and checks, not that rule, so their text stays correct.
+  verified 26641097485296d3 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/deflated-sharpe-and-trials.md
-  verified 43cc6d1ac6a077ba on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 891ec5a16067d2ff on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/diagnose-and-audit.md
-  verified fd9daf1f382e50ad on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 6f65c02a0cb1b6bb on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/follow.md
   verified 03f12254bb58b8f0 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
@@ -298,10 +310,13 @@ research/tools/home-backup.md
   verified a3faa58f0d76f0d5 on 2026-11-21: home_restore now keeps the restored folder at mode 0700 after a good restore too; this page states nothing that this changes, so its text holds
 
 research/tools/idea-card.md
-  verified 31a1d4b1239c41ea on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
+  verified 3e53a2ada31a328f on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/inverted-signal-control.md
   verified 1d2269669bfaf71a on 2026-11-19: Re-read: the test key adds store and data content and results show reads the repeat label from the ledger row; this page names no key fields or label source, so it stays correct
+
+research/tools/library.md
+  verified 563e9cc54e1c1da5 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/montecarlo-checks.md
   verified ab30ac63504a14e1 on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
@@ -311,6 +326,9 @@ research/tools/nightly-alert.md
 
 research/tools/nightly-run.md
   verified f4762e62775591a8 on 2026-11-21: Merged main and fixed the backup (hard links stored in full, disk-room check, unreadable folders refused, modes kept on restore, written files re-read) and the marker (Ctrl-C, unwritable marker); this page's claims were re-read against the code and hold
+
+research/tools/path-risk.md
+  verified 928cb9390bc4690b on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/portfolio-book.md
   verified 43519cc7a5a9beb8 on 2026-11-22: the Ideas read now relays what_this_means of each RD-Agent step; this page is still correct
@@ -333,6 +351,9 @@ research/tools/random-price-null.md
 research/tools/rdagent-journey.md
   verified d6b968982525a9e8 on 2026-11-19: Re-read after review: the page already describes run-wide choices, drop-only feedback, result lines and usage; nothing else changed in its sources
 
+research/tools/rdagent-model-bench.md
+  verified 39466b01fc7203b1 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
+
 research/tools/resampling-checks.md
   verified 2645349a67ce29bf on 2026-11-19: Only added find, declare, results and result-status code to the toolbox and results commands; this page's claims are unchanged.
 
@@ -340,25 +361,25 @@ research/tools/results-and-cite.md
   verified dcf452de93fa0890 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/rule-test.md
-  verified a358e38a2bd7753d on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified d240366b057727b7 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/run-level-checks.md
   verified 67c21050f541ec73 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 research/tools/sensitivity.md
-  verified 43cc6d1ac6a077ba on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified 891ec5a16067d2ff on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/setup-context.md
   verified ac071062a7a24370 on 2026-11-21: Merged main (calendar range fix) into the setup context branch; text re-read and still correct
 
 research/tools/setup-find.md
-  verified 0eb84ea138f66e14 on 2026-11-21: Merged main (setup show, context guard) into the setup context branch; text re-read and still correct
+  verified 767300ba8e2c3dab on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/setup-study.md
-  verified 456c9ca0ef311c90 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified ca6c27cc70fdb13b on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/setup-trade.md
-  verified ad91ed08449da8b2 on 2026-11-22: merge of main plus an unreadable follow journal now shows as broken on the idea file; this page is still correct
+  verified cdf90b3582b6d226 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 research/tools/toolbox-by-situation.md
   verified a1934950ce3233d7 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
@@ -367,15 +388,13 @@ research/tools/walk-forward.md
   verified da095a234bc224b3 on 2026-11-21: merge of the remote branch: its source changes were verified there; this page is still correct
 
 scripts/CONTEXT.md
-  verified 3686090948c9d166 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified 3686090948c9d166 on 2026-11-21: price-signal window fix does not change what this document says
+  verified c354bd2d393be499 on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 workers/rdagent/CONTEXT.md
   verified 095f2f22bb96915a on 2026-11-19: Re-read after merging main: the launcher change from main only removes a stopped gateway's own session files, and this page's discussion text still matches the worker
 
 workflow/CONTEXT.md
-  verified f4cf3670944b0e52 on 2026-11-21: only the follow listing of the idea file now reads the frozen record on its own (broken journals keep their card) and the idea timeline shows study faults; this page is still correct
-  verified f4cf3670944b0e52 on 2026-11-21: price-signal window fix does not change what this document says
+  verified 4da938fdf3e92d0d on 2026-11-22: the idea file command now receives the RD-Agent record store setting; this page is still correct
 
 workflow/README.md
   verified 79a8cfc6cb6d9b89 on 2026-11-21: ceiling and doc split do not change what this document says

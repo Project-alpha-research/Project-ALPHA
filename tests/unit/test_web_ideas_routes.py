@@ -173,3 +173,14 @@ def test_the_stored_outcome_of_an_rdagent_step_reaches_the_page(
     answer["rdagent"] = [{"ref": "run/1-x", "steps": [step]}]
     body = _client(tmp_path, monkeypatch, Relay(answer)).get(f"/api/ideas/{CARD}").json()
     assert body["rdagent"][0]["steps"][0]["what_this_means"] == "The trading test failed."
+
+
+def test_the_rdagent_store_setting_crosses_to_the_idea_file_command_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web._catalog import _cli_environment
+
+    monkeypatch.setenv("ALPHA_RDAGENT_RUNS_DIR", "/custom/runs")
+    assert _cli_environment(tmp_path, ["idea", "file", CARD, "--json"])["ALPHA_RDAGENT_RUNS_DIR"]
+    assert "ALPHA_RDAGENT_RUNS_DIR" not in _cli_environment(tmp_path, ["idea", "list", "--json"])
+    assert "ALPHA_RDAGENT_RUNS_DIR" not in _cli_environment(tmp_path, ["results", "list"])

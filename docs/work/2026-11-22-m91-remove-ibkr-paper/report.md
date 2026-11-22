@@ -38,7 +38,7 @@ Regenerated: `commands.md`, `STATUS.md`, `openapi.json`, `generated.ts`, the Ope
    any edit moves every run id and breaks pinned ids in `test_reading_rule`, `test_reserve_scan_and_archive`.
    About 250 lines of unused paper-risk code remain there. Remove them in a separate build that accepts the id change.
 2. **Kept `paper_resources.py`**: it holds links to academic papers, not paper trading.
-3. **Kept the project stage `paper`, `strategy-candidate paper-preflight` and the `paper_preflight` suite action**:
+3. **Kept the project stage `paper`, `strategy-candidate paper-preflight` and the `paper_preflight` suite action name**; the non-hedged suite action no longer builds a `paper preflight` step and returns a blocker (Codex review finding, fixed):
    they are lifecycle and hedged-basis blockers, not a broker path. They need an owner decision.
 4. **Kept `Paper only` status chip** (no-live-capital label) and the `Follow` paper text.
 5. **Edited `tests/unit/test_research_reads_are_cut.py`**: removed 3 exemptions for the deleted files. No guard was weakened.

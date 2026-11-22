@@ -584,34 +584,6 @@
     {
       "method": "GET",
       "mode": "automatic",
-      "operation_id": "get_paper_readiness_api_paper_readiness_get",
-      "path": "/api/paper/readiness",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
-      "operation_id": "list_paper_sessions_api_paper_sessions_get",
-      "path": "/api/paper/sessions",
-      "reason": "Safe read exercised against an isolated temporary store."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "get_paper_session_api_paper_sessions__session_id__get",
-      "path": "/api/paper/sessions/{session_id}",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "GET",
-      "mode": "fixture_backed",
-      "operation_id": "get_paper_events_api_paper_sessions__session_id__events_get",
-      "path": "/api/paper/sessions/{session_id}/events",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
-    },
-    {
-      "method": "GET",
-      "mode": "automatic",
       "operation_id": "list_projects_api_projects_get",
       "path": "/api/projects",
       "reason": "Safe read exercised against an isolated temporary store."

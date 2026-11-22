@@ -145,14 +145,11 @@ import type {
   MlCapabilities,
   MlModelName,
   MlModelParameters,
+  JobSummary,
   MlTearSheetProjection,
   NativeTearSheetProjection,
   NullTiers,
   OptimTrials,
-  PaperEvent,
-  PaperJobSummary,
-  PaperReadinessReport,
-  PaperSession,
   PortfolioAnalyticsProjection,
   PropfirmPaths,
   ProviderDefinition,
@@ -544,7 +541,7 @@ export const api = {
   ): Promise<CryptoSnapshotRegister> =>
     postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/register`, { symbol }),
   system: (): Promise<SystemStatus> => getJSON('/api/system'),
-  jobs: (): Promise<PaperJobSummary[]> => getJSON('/api/jobs'),
+  jobs: (): Promise<JobSummary[]> => getJSON('/api/jobs'),
   job: (id: string): Promise<JobDetail> => getJSON(`/api/jobs/${id}`),
   async launch(
     command: string,
@@ -787,10 +784,4 @@ export const api = {
   },
   createMlExperiment: (projectId: string, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
     postJSON('/api/ml/experiments', { project_id: projectId, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
-  paperSessions: (): Promise<PaperSession[]> => getJSON('/api/paper/sessions'),
-  paperReadiness: (): Promise<PaperReadinessReport> => getJSON('/api/paper/readiness'),
-  paperSession: (id: string): Promise<PaperSession> =>
-    getJSON(`/api/paper/sessions/${encodeURIComponent(id)}`),
-  paperEvents: (id: string, after = 0): Promise<PaperEvent[]> =>
-    getJSON(`/api/paper/sessions/${encodeURIComponent(id)}/events?after=${after}`),
 }

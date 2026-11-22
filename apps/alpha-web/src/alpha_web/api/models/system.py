@@ -30,8 +30,6 @@ class SystemStatus(StrictModel):
     counts: SystemCounts
     nautilus: NautilusStatus
     kronos_cache: KronosCacheStatus
-    paper_enabled: bool
-    ibkr_paper_enabled: bool
 
 
 class CommandOption(StrictModel):

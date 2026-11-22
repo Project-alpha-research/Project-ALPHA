@@ -27,7 +27,7 @@ test('the report and Gates screens state an owner rule in words, with its family
   await page.route(`**/api/runs/${runId}/figures`, route => route.fulfill({ json: { run_id: runId, items: [] } }))
   await page.route(`**/api/runs/${runId}/series**`, route => route.fulfill({ status: 404, json: { detail: 'no series' } }))
   await page.route(`**/api/runs/${runId}/nulls`, route => route.fulfill({ status: 404, json: { detail: 'none' } }))
-  await page.route('**/api/candles/TEST**', route => route.fulfill({ json: { symbol: 'TEST', snapshot_id: null, provenance: {}, paper_markers: [], bars: [] } }))
+  await page.route('**/api/candles/TEST**', route => route.fulfill({ json: { symbol: 'TEST', snapshot_id: null, provenance: {}, bars: [] } }))
   await page.goto(`/#run=${runId}`)
   const words = page.getByRole('region', { name: 'The rule in words' })
   await expect(words).toContainText(SENTENCE)

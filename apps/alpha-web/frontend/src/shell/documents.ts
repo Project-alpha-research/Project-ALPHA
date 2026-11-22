@@ -20,7 +20,6 @@ import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
 import { MlDiagnostics } from '../panels/MlDiagnostics'
 import { NativeJobResult } from '../panels/NativeJobResult'
-import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
@@ -49,7 +48,6 @@ export type DocumentKind =
   | 'forecast'
   | 'ml'
   | 'jobs'
-  | 'paper'
   | 'data'
   | 'tools'
 
@@ -65,7 +63,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'forecast',
   'ml',
   'jobs',
-  'paper',
   'data',
   'tools',
 ])
@@ -179,12 +176,6 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
     title: 'Jobs',
     panes: [{ name: 'JobMonitor', title: 'Jobs', component: JobMonitor }],
   },
-  {
-    id: 'paper',
-    kind: 'paper',
-    title: 'Paper sessions',
-    panes: [{ name: 'PaperMonitor', title: 'Paper sessions', component: PaperMonitor }],
-  },
   // Equities-only windows.
   {
     // Split/dividend actions arrive with a Tiingo pull; the Data Manager is where they are pulled
@@ -284,7 +275,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Alerts'],
+    tabs: ['Jobs', 'Backtests', 'Data pulls', 'Alerts'],
   },
 ]
 

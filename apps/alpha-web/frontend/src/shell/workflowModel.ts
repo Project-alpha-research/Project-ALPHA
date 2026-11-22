@@ -21,7 +21,7 @@ export interface WorkflowPage { id: PageId; title: string; description: string; 
 const DOCUMENT_PAGE: Record<WindowId, PageId> = {
   chart: 'data', report: 'results', compare: 'results', builder: 'strategies', scanner: 'strategies',
   build: 'strategies', research: 'research', rdagent: 'research', ideas: 'research', 'setup-lab': 'research', governance: 'settings', forecast: 'results',
-  'ml-lab': 'results', jobs: 'operations', paper: 'operations', 'corporate-actions': 'data',
+  'ml-lab': 'results', jobs: 'operations', 'corporate-actions': 'data',
   funding: 'data', 'open-interest': 'data', onchain: 'data', dex: 'data', crowding: 'research',
 }
 
@@ -38,7 +38,7 @@ export function workflowPages(profile: Profile): WorkflowPage[] {
     { id: 'results', title: 'Results', description: 'Review recorded evidence, compare runs and export reports.', panes: [
       { name: 'Navigator', title: 'Run library', component: RunLibrary },
     ] },
-    { id: 'operations', title: 'Operations', description: 'Track jobs, alerts and paper sessions.', panes: [] },
+    { id: 'operations', title: 'Operations', description: 'Track jobs and alerts.', panes: [] },
     { id: 'settings', title: 'Settings', description: 'Display preferences, owner authentication and research safeguards.', panes: [{ name: 'Workspaces', title: 'Saved workspaces', component: Workspaces }] },
   ]
   for (const doc of DOCUMENTS) {

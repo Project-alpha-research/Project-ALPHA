@@ -31,7 +31,6 @@ class ProviderDefinition(StrictModel):
     asset_classes: list[str]
     timeframes: list[str]
     research_authority: bool
-    paper_execution: bool
     budget_tier: str
     installed: bool
     configured: bool

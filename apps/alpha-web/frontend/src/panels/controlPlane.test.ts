@@ -4,7 +4,6 @@ import type { ProviderDefinition } from '../api/types'
 import {
   buildDataPullArgs,
   historicalProviders,
-  livePaperStrategies,
   providerOptionDefault,
 } from './controlPlane'
 
@@ -20,7 +19,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['stock', 'etf'],
     timeframes: ['quote'],
     research_authority: false,
-    paper_execution: false,
     budget_tier: 'free_optional',
     installed: true,
     configured: false,
@@ -44,7 +42,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['crypto'],
     timeframes: ['1D'],
     research_authority: true,
-    paper_execution: false,
     budget_tier: 'free_public',
     installed: true,
     configured: true,
@@ -66,7 +63,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['stock', 'etf'],
     timeframes: ['1D'],
     research_authority: false,
-    paper_execution: false,
     budget_tier: 'free_audit_only',
     installed: false,
     configured: false,
@@ -120,15 +116,5 @@ describe('provider-driven Data Explorer', () => {
         exchange: 'coinbase',
       }),
     ).toThrow('end 2026-06-31 is not a real calendar date')
-  })
-
-  it('keeps unsupported model strategies out of the live-paper launcher', () => {
-    const strategies = [
-      { name: 'ts_momentum', supports_live_paper: true },
-      { name: 'kronos', supports_live_paper: false },
-    ]
-    expect(livePaperStrategies(strategies).map((strategy) => strategy.name)).toEqual([
-      'ts_momentum',
-    ])
   })
 })

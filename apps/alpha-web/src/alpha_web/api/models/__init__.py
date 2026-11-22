@@ -12,7 +12,6 @@ data_sources: data sources, providers and kronos.
 system: system status and command definitions.
 crypto_data: crypto data contracts.
 projects: projects, control-plane jobs, suites and evidence.
-paper: paper sessions, events, readiness and candle markers.
 workspaces: workspace documents and linked contexts.
 risk: risk reports and their nested contracts.
 research_cases: research cases, proposals and study status.
@@ -173,13 +172,6 @@ from .market import MarketAsset as MarketAsset
 from .market import MarketOverview as MarketOverview
 from .market import MarketTooFewBars as MarketTooFewBars
 from .market import MarketUnreadable as MarketUnreadable
-from .paper import PaperCandleMarker as PaperCandleMarker
-from .paper import PaperEvent as PaperEvent
-from .paper import PaperReadinessBlocker as PaperReadinessBlocker
-from .paper import PaperReadinessEvidence as PaperReadinessEvidence
-from .paper import PaperReadinessReport as PaperReadinessReport
-from .paper import PaperReadinessRequirement as PaperReadinessRequirement
-from .paper import PaperSession as PaperSession
 from .projects import ActiveResearchGateOverride as ActiveResearchGateOverride
 from .projects import AgentBrief as AgentBrief
 from .projects import AgentScope as AgentScope

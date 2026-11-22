@@ -65,9 +65,6 @@ HOLD_HELPERS: dict[tuple[str, str], str] = {
 ALLOWED: dict[tuple[str, str], str] = {
     ("_data_health.py", "_stock_peers"): "exempt: data health checks every stored bar by design",
     ("_data_health.py", "compute_report"): "exempt: data health checks every stored bar by design",
-    ("_ibkr_paper.py", "load_ibkr_warmup"): "exempt: forward paper use reads the newest bars",
-    ("_paper.py", "load_paper_warmup"): "exempt: forward paper use reads the newest bars",
-    ("daily_scheduler.py", "execute_cycle"): "exempt: the daily scheduler is forward paper use",
     ("follow_source.py", "latest_bar_hashes"): "exempt: follow is forward use (follow separation)",
     ("follow_source.py", "forward_bars"): "exempt: follow is forward use; as_of is now",
     ("follow_source.py", "forward_dividends"): "exempt: follow is forward use; as_of is now",

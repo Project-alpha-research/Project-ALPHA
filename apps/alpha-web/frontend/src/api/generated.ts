@@ -1434,86 +1434,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/paper/readiness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Readiness
-         * @description Machine-derived paper acceptance state; elapsed time cannot mark it passed.
-         */
-        get: operations["get_paper_readiness_api_paper_readiness_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Paper Sessions
-         * @description Every complete paper session, newest first, with computed heartbeat staleness.
-         */
-        get: operations["list_paper_sessions_api_paper_sessions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions/{session_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Session
-         * @description One validated paper session. Reading a stale session never signals its recorded PID.
-         */
-        get: operations["get_paper_session_api_paper_sessions__session_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/paper/sessions/{session_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Paper Events
-         * @description Validated operational events whose sequence is strictly greater than ``after``.
-         */
-        get: operations["get_paper_events_api_paper_sessions__session_id__events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -4789,8 +4709,6 @@ export interface components {
         Candles: {
             /** Bars */
             bars: components["schemas"]["Candle"][];
-            /** Paper Markers */
-            paper_markers: components["schemas"]["PaperCandleMarker"][];
             provenance: components["schemas"]["CandleProvenance"];
             /** Snapshot Id */
             snapshot_id: string | null;
@@ -7788,7 +7706,6 @@ export interface components {
         JsonObject: {
             [key: string]: components["schemas"]["JsonValue"];
         };
-        JsonScalar: string | number | boolean | null;
         JsonValue: unknown;
         /** KronosCacheStatus */
         KronosCacheStatus: {
@@ -9621,206 +9538,6 @@ export interface components {
             /** Token */
             token: string;
         };
-        /** PaperCandleMarker */
-        PaperCandleMarker: {
-            /**
-             * Event Type
-             * @enum {string}
-             */
-            event_type: "intent" | "order" | "fill" | "cancel" | "expired";
-            /** Exact Ts */
-            exact_ts: number;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Intent Id */
-            intent_id: string | null;
-            /** Price */
-            price: number | null;
-            /** Quantity */
-            quantity: number | null;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-            /** Side */
-            side: string | null;
-            /** T */
-            t: number;
-        };
-        /** PaperEvent */
-        PaperEvent: {
-            /**
-             * Event Type
-             * @enum {string}
-             */
-            event_type: "lifecycle" | "intent" | "risk_check" | "connection" | "account_snapshot" | "order" | "fill" | "cancel" | "expired" | "rejection" | "position" | "reconciliation" | "reconciliation_warning";
-            /** Payload */
-            payload: {
-                [key: string]: components["schemas"]["JsonScalar"];
-            };
-            /** Recorded At */
-            recorded_at: string;
-            /** Schema Version */
-            schema_version: number;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-            /** Ts Event Ns */
-            ts_event_ns: number | null;
-        };
-        /** PaperReadinessBlocker */
-        PaperReadinessBlocker: {
-            /** Event Type */
-            event_type: string;
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-        };
-        /** PaperReadinessEvidence */
-        PaperReadinessEvidence: {
-            /** Event Type */
-            event_type: string;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Sequence */
-            sequence: number;
-            /** Session Id */
-            session_id: string;
-        };
-        /** PaperReadinessReport */
-        PaperReadinessReport: {
-            /** Blocking Events */
-            blocking_events: components["schemas"]["PaperReadinessBlocker"][];
-            /**
-             * Derived From Elapsed Time
-             * @constant
-             */
-            derived_from_elapsed_time: false;
-            /**
-             * Futures Research Supported
-             * @constant
-             */
-            futures_research_supported: false;
-            /**
-             * Legacy Journals
-             * @constant
-             */
-            legacy_journals: "monitoring_only";
-            /**
-             * Live Capital Routing
-             * @constant
-             */
-            live_capital_routing: "absent";
-            /** Paper Passed */
-            paper_passed: boolean;
-            /** Plans */
-            plans: {
-                [key: string]: unknown;
-            }[];
-            /** Predicates */
-            predicates: {
-                [key: string]: boolean;
-            };
-            /** Requirements */
-            requirements: components["schemas"]["PaperReadinessRequirement"][];
-            /**
-             * Schema Version
-             * @constant
-             */
-            schema_version: 2;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "passed" | "pending";
-            /** Tamper Detected */
-            tamper_detected: boolean;
-            /**
-             * What If Credit
-             * @constant
-             */
-            what_if_credit: false;
-        };
-        /** PaperReadinessRequirement */
-        PaperReadinessRequirement: {
-            /** Evidence */
-            evidence: components["schemas"]["PaperReadinessEvidence"][];
-            /** Id */
-            id: string;
-            /** Passed */
-            passed: boolean;
-        };
-        /** PaperSession */
-        PaperSession: {
-            /** Account Alias */
-            account_alias: string | null;
-            /** Decision Artifact Id */
-            decision_artifact_id: string | null;
-            /** Ended At */
-            ended_at: string | null;
-            /**
-             * Execution Mode
-             * @enum {string}
-             */
-            execution_mode: "local_sandbox" | "ibkr_paper";
-            /** Heartbeat At */
-            heartbeat_at: string;
-            /** Instrument Id */
-            instrument_id: string;
-            /** Last Sequence */
-            last_sequence: number;
-            /**
-             * Paper
-             * @constant
-             */
-            paper: true;
-            /** Pid */
-            pid: number | null;
-            /** Provider */
-            provider: string;
-            /**
-             * Reconciliation State
-             * @enum {string}
-             */
-            reconciliation_state: "not_applicable" | "pending" | "matched" | "mismatch" | "halted";
-            /** Risk Profile Id */
-            risk_profile_id: string;
-            /** Sandbox */
-            sandbox: boolean;
-            /** Schema Version */
-            schema_version: number;
-            /** Session Id */
-            session_id: string;
-            /** Snapshot Id */
-            snapshot_id: string;
-            /** Stale */
-            stale: boolean;
-            /** Started At */
-            started_at: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "starting" | "running" | "stopping" | "completed" | "cancelled" | "failed";
-            /** Strategy */
-            strategy: string;
-            /** Strategy Params */
-            strategy_params: {
-                [key: string]: components["schemas"]["JsonScalar"];
-            };
-            /** Symbol */
-            symbol: string;
-            /** Terminal Error */
-            terminal_error: string | null;
-        };
         /** ParamDefinition */
         ParamDefinition: {
             /** Default */
@@ -10163,8 +9880,6 @@ export interface components {
             options: {
                 [key: string]: components["schemas"]["ProviderOption"];
             };
-            /** Paper Execution */
-            paper_execution: boolean;
             /** Recovery Action */
             recovery_action: string;
             /** Research Authority */
@@ -13153,8 +12868,6 @@ export interface components {
             name: string;
             /** Params */
             params: components["schemas"]["ParamDefinition"][];
-            /** Supports Live Paper */
-            supports_live_paper: boolean;
         };
         /** StrategyProjectWorkspace */
         StrategyProjectWorkspace: {
@@ -13349,12 +13062,8 @@ export interface components {
         SystemStatus: {
             counts: components["schemas"]["SystemCounts"];
             data_dir: components["schemas"]["SystemDataDirectory"];
-            /** Ibkr Paper Enabled */
-            ibkr_paper_enabled: boolean;
             kronos_cache: components["schemas"]["KronosCacheStatus"];
             nautilus: components["schemas"]["NautilusStatus"];
-            /** Paper Enabled */
-            paper_enabled: boolean;
         };
         /**
          * Ticker
@@ -16173,128 +15882,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_paper_readiness_api_paper_readiness_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperReadinessReport"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    list_paper_sessions_api_paper_sessions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperSession"][];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_paper_session_api_paper_sessions__session_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperSession"];
-                };
-            };
-            /** @description Stable, redacted Workstation error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorV1"];
-                };
-            };
-        };
-    };
-    get_paper_events_api_paper_sessions__session_id__events_get: {
-        parameters: {
-            query?: {
-                after?: number;
-            };
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperEvent"][];
                 };
             };
             /** @description Stable, redacted Workstation error */

@@ -19,19 +19,6 @@ test('real backend captures a case and renders all material questions without ve
 
   const system = await request.get('/api/system')
   expect(system.ok()).toBe(true)
-  expect((await system.json()) as Record<string, unknown>).toMatchObject({
-    paper_enabled: false,
-    ibkr_paper_enabled: false,
-  })
-  const readiness = await request.get('/api/paper/readiness')
-  expect(readiness.ok()).toBe(true)
-  expect((await readiness.json()) as Record<string, unknown>).toMatchObject({
-    schema_version: 2,
-    status: 'pending',
-    paper_passed: false,
-    legacy_journals: 'monitoring_only',
-  })
-
   await page.goto('')
   // New Idea lives at the top of the Research menu (artboard: no titlebar button).
   await page.getByRole('menuitem', { name: 'Research', exact: true }).click()

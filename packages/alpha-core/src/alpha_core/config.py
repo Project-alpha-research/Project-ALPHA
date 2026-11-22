@@ -26,16 +26,6 @@ class AlphaSettings(BaseSettings):
     bulk_cloud_mount_source: str | None = None
     bulk_cloud_durability_reference: str | None = None
     random_seed: int = 7
-    # Operational paper sessions are network-bound and nondeterministic. They require an explicit
-    # owner opt-in and never enter deterministic research run ids or manifests.
-    paper_enabled: bool = False
-    # Independent IBKR order-authority flag. Both flags must be true before execution clients may
-    # be constructed; read-only preflight remains available while this is false.
-    ibkr_paper_enabled: bool = False
-    # A signed local Gateway is an alternative reviewed installation to a pinned container image.
-    # Its path stays machine-local and never enters receipts or manifests.
-    ibkr_gateway_app: Path | None = None
-
     # Kronos forecasting (alpha_forecast). "main" revisions are recorded verbatim in every
     # manifest; pin to HF commit hashes via env for byte-stable provenance. Device defaults
     # to cpu because torch sampling is only reproducible there — mps/cuda are opt-in and

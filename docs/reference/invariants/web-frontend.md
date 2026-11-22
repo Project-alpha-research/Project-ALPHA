@@ -12,7 +12,7 @@ sources:
   - scripts/run_frontend_browser_lanes.py
   - tests/integration/test_web_spa_assets.py
   - tests/unit/test_web_menu_groups.py
-verified: e2d46b2d8544373c
+verified: 8cd3ea2164dc85ab
 ---
 
 # Web frontend invariants

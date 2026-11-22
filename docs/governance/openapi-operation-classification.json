@@ -346,6 +346,20 @@
     {
       "method": "GET",
       "mode": "automatic",
+      "operation_id": "list_ideas_api_ideas_get",
+      "path": "/api/ideas",
+      "reason": "Safe read exercised against an isolated temporary store."
+    },
+    {
+      "method": "GET",
+      "mode": "fixture_backed",
+      "operation_id": "idea_file_api_ideas__card__get",
+      "path": "/api/ideas/{card}",
+      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+    },
+    {
+      "method": "GET",
+      "mode": "automatic",
       "operation_id": "list_jobs_api_jobs_get",
       "path": "/api/jobs",
       "reason": "Safe read exercised against an isolated temporary store."

@@ -3,7 +3,7 @@ owner: research pipeline
 sources:
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/facts.py
-verified: ae1a3c951301e3f0
+verified: dcf452de93fa0890
 ---
 # Results and cite
 **Reach for it when** quoting a run. **Commands** `alpha results show <run_id>`, `cite <run_id> <metric>`, `compare <a> <b>`, `check <file>`.

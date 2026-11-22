@@ -7,7 +7,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/follow_chain.py
   - apps/alpha-cli/src/alpha_cli/follow_update.py
   - apps/alpha-cli/src/alpha_cli/follow_show.py
-verified: dc6f99f581b1ef4c
+verified: 03f12254bb58b8f0
 ---
 # Follow a tested idea on paper
 

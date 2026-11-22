@@ -29,7 +29,7 @@ verified: 8a77650b29ee8769
 | [mcp.md](mcp.md) | alpha-mcp tools and their limits | editing the MCP server |
 | [web-api.md](web-api.md) | Workstation backend: CLI relay, JSON, SSE | editing alpha_web routes |
 | [web-api-reads.md](web-api-reads.md) | what the backend reads, writes and relays | changing what a route reads or writes |
-| [web-frontend.md](web-frontend.md) | Workstation single-page app | editing the browser app |
+| [web-frontend.md](web-frontend.md), [web-frontend-ideas.md](web-frontend-ideas.md) | Workstation app; the Ideas page | editing the browser app |
 | [web-run-detail.md](web-run-detail.md) | run detail, journey, Setup Lab, RD-Agent panel fields | editing the run detail panels |
 | [web-research.md](web-research.md) | assistant, rule conditions, scans, case read plane | editing research surfaces in the web app |
 | [workers.md](workers.md) | shared rules; Qlib, literature, AFML workers | editing anything under workers/ |
@@ -39,7 +39,7 @@ verified: 8a77650b29ee8769
 | file | owns | load when |
 |---|---|---|
 | [cli-runs.md](cli-runs.md), [cli-figures.md](cli-figures.md), [cli-nightly.md](cli-nightly.md) | runs; figures; nightly | `alpha run`, `figures`, `nightly` |
-| [cli-setups.md](cli-setups.md) | `alpha setup find`, `study`, `trade` | `alpha setup` |
+| [cli-setups.md](cli-setups.md), [cli-idea-file.md](cli-idea-file.md) | `alpha setup`; `alpha idea file` | `alpha setup`, `alpha idea file` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |
 | [cli-trial-ledger.md](cli-trial-ledger.md) | one trial ledger over spine and RD-Agent | `alpha ledger` |

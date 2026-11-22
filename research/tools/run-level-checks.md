@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/toolbox/families/robustness.py
   - apps/alpha-cli/src/alpha_cli/toolbox/families/trades.py
   - tests/unit/test_toolbox_run_level_checks.py
-verified: 03e5435255680c46
+verified: 67c21050f541ec73
 ---
 # Costs, downside risk, date sensitivity and closed trades
 **Reach for these checks when** a rule-test result depends on costs, dates, losses or a few profitable trades.

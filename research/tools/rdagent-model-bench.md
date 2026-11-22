@@ -4,7 +4,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/rdagent_bench_cmds.py
   - apps/alpha-cli/src/alpha_cli/rdagent_bench_model.py
   - apps/alpha-cli/src/alpha_cli/rdagent_bench_score.py
-verified: 0000000000000000
+verified: 39466b01fc7203b1
 ---
 
 # RD-Agent model replay bench

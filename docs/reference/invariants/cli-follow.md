@@ -17,7 +17,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/nightly_follow.py
   - apps/alpha-cli/src/alpha_cli/nightly_refresh.py
   - tests/unit/test_follow_separation.py
-verified: 8739347cc6883a2a
+verified: d7b2fc56f2f23b5b
 ---
 
 # Command line follow invariants
@@ -161,7 +161,7 @@ and every append fails loud on it. Nothing repairs it on its own, and no data is
   position and equity change, the session date and its age ("as of the close of D; 1 session ago").
 - The header gives the newest closed session per market (the calendar sealed in the start entry; no calendar: 00:00 UTC) and how many
   follows are behind it. JSON keys: `as_of`, `groups`, `rows`, `behind` (also `markets`, `followed`).
-- `alpha next` adds one line when follows exist. It calls `follow_counts` only; `next_cmds.py` is not a reader.
+- `alpha next` adds one line when follows exist; `alpha idea file` lists the follows naming a card (`follows_of_card`). Both call `follow_counts` only.
 - `today` is a safe read in the generic launcher. `follow update` stays owner-only.
 
 ## Book

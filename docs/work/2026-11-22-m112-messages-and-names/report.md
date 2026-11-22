@@ -37,3 +37,6 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 
 ## 9. Lookalike "Now"
 When bars were held back, the first line of `alpha lookalike` says "The comparison ends at the held-back boundary (DATE), not today: later bars are kept for the owner's confirmation of an idea." The figure subtitle gets a short form ("Ends at the held-back boundary, DATE, not today"). Nothing changes when no bar is held back. Test: `test_the_headline_says_the_comparison_ends_at_the_held_back_boundary` (failed first).
+
+## 10. Deflated Sharpe wording
+Finding: the toolbox number and the test's stored deflated Sharpe come from the same function (`family_deflation`), the same frozen trial count and the same prior Sharpes; the toolbox reads the after-cost scored returns of the stored equity. Neither number is wrong. The test's word "not clear of chance" has more gates than the deflated Sharpe (Sharpe interval above 0, every null test, then deflated Sharpe at least 0.95), so a high deflated Sharpe can sit next to it. I could not compare the two on the owner's real run (no data). The toolbox sentence now says so. Neither statistic changed. Test: `test_the_deflated_sharpe_sentence_says_what_it_is_and_why_the_test_can_differ`.

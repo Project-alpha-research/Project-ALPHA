@@ -117,10 +117,6 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 
 ## Read-only queries
 
-- `crypto-data snapshot-query` reopens one `defi_tvl` member only after verifying snapshot membership, normalized bytes,
-  raw lineage, units and schema. Limits: 32 MiB per Parquet artifact, 50,000 input rows, 1,000 rows per page.
-  [ADR-0036](../../adr/0036-defillama-tvl-supplemental-research-family.md)
-- Its `available_at` filter follows the parser's next-UTC-day convention; it does not prove a publication time.
 - `crypto_price_snapshot_query.py`, `_chart_data.py` and `_crypto_bar_coverage.py` are bounded diagnostics. They never
   write to snapshots or artifacts and grant no admission.
 - The daily price query reads one caller-named normalized manifest per BTCUSDT month member, in observed-start order:

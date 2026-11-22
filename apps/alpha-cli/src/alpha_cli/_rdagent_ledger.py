@@ -21,6 +21,7 @@ from alpha_cli._rdagent_clocks import (
     trial_family,
     validate_clock_row,
 )
+from alpha_cli._rdagent_costs import judge_costs
 from alpha_cli._rdagent_judge import (
     AUTHORITY,
     LABEL,
@@ -376,6 +377,7 @@ def new_factor_row(
         "label": LABEL,
         "survivorship": survivorship,
         "authority": AUTHORITY,
+        "costs": judge_costs(),
         "clocks": {
             c: {"status": "ERROR", "p": 1.0, "q": 1.0, "screen": {}, "replay": {}} for c in CLOCKS
         },

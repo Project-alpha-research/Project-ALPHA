@@ -510,10 +510,10 @@ def test_gap_free_replay_first_period_is_hand_computed() -> None:
     metrics, net = judge.replay(bars, scores, days, 1, series=series, gap_policy=True)
     assert metrics["haircuts_applied"] == 0 and metrics["unrankable_instrument_rebalances"] == 0
     # Decide on the 2021-01-01 close: k = round(5/3) = 2 names, C0 (close 131) and C4 (100), half
-    # each, sized at that close. Fill at the 2021-01-02 open (C0 132) with 6 bps slippage and
+    # each, sized at that close. Fill at the 2021-01-02 open (C0 132) with 5 bps slippage and
     # 10 bps fee, buys scaled pro rata to the cash; value at the 2021-01-03 open (C0 133).
     q0, q4 = 500_000 / 131, 500_000 / 100
-    net_return = (q0 * 133 + q4 * 100) / ((q0 * 132 + q4 * 100) * 1.0006 * 1.001) - 1
+    net_return = (q0 * 133 + q4 * 100) / ((q0 * 132 + q4 * 100) * 1.0005 * 1.001) - 1
     benchmark = (133 / 132 - 1) / 5
     first = series["periods"][0]
     assert first.gross_return == pytest.approx(0.5 * (133 / 132 - 1), rel=1e-12)

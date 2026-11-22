@@ -59,11 +59,6 @@ def _credential_names_for_command(args: list[str]) -> frozenset[str]:
             return _PROVIDER_ENV_NAMES.get(args[source_index].strip().lower(), frozenset())
     if args[:2] == ["crypto-data", "acquire"] and len(args) > 2:
         return _PROVIDER_ENV_NAMES.get(args[2].strip().lower(), frozenset())
-    if tuple(args[:2]) in {
-        ("crypto-data", "profile-run"),
-        ("crypto-data", "profile-resume"),
-    }:
-        return _PROVIDER_ENV_NAMES["coingecko"]
     return frozenset()
 
 

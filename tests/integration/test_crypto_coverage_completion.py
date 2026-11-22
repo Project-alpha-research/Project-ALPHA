@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import io
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 from urllib.request import Request
 
-import polars as pl
 import pytest
 from typer.testing import CliRunner
 
@@ -19,7 +17,6 @@ from alpha_data.crypto.contracts import (
     CryptoFamily,
     CryptoQualityReportV1,
 )
-from alpha_data.crypto.ingestion import ingest_provider_payload
 from alpha_data.crypto.storage import Capacity, CryptoBulkStore
 
 runner = CliRunner()
@@ -330,100 +327,6 @@ def test_asset_master_rejects_requested_detail_as_a_catalog_source(tmp_path: Pat
     assert DetailStore.active_checks == ["b" * 64]
 
 
-def test_latest_profile_and_hourly_sources_are_selected_from_immutable_artifacts(
-    tmp_path: Path,
-) -> None:
-    store = CryptoBulkStore(
-        bulk_root=tmp_path / "bulk",
-        manifest_root=tmp_path / "control" / "crypto" / "manifests",
-        expected_volume_uuid="TEST-UUID",
-        volume_uuid=lambda _: "TEST-UUID",
-        capacity=lambda _: Capacity(total_bytes=20_000_000, free_bytes=10_000_000),
-        minimum_free_bytes=100,
-    )
-    store.bulk_root.mkdir()
-    fetched_at = datetime.fromisoformat("2026-08-14T00:00:00+00:00")
-    source = ingest_provider_payload(
-        store,
-        dataset=CryptoDatasetIdentityV1(
-            provider="bybit",
-            venue="bybit",
-            market_type="linear",
-            family="funding",
-            instrument="BTCUSDT",
-            base_asset="BTC",
-            quote_asset="USDT",
-            frequency="funding_interval",
-            units="dimensionless_rate",
-            timestamp_convention="provider_event_utc",
-        ),
-        payload=b"funding-source",
-        request=(),
-        fetched_at=fetched_at,
-        provider_schema="fixture",
-        parser_version="fixture-v1",
-        logical_name="funding.json",
-        parser=lambda _payload: pl.DataFrame(
-            {"timestamp": [fetched_at], "available_at": [fetched_at], "funding_rate": [0.001]}
-        ),
-        observed_column="timestamp",
-        key_columns=("timestamp",),
-        availability_column="available_at",
-    )
-    source_id, dataset, frame = crypto_data_cmds._latest_profile_source(
-        store,
-        provider="bybit",
-        family="funding",
-        instrument="BTCUSDT",
-        as_of=fetched_at + timedelta(days=1),
-    )
-    assert source_id == source.normalized_manifest["manifest_id"]
-    assert dataset.family == "funding"
-    assert frame.height == 1
-    with pytest.raises(DataError, match="no qualified"):
-        crypto_data_cmds._latest_profile_source(
-            store,
-            provider="bybit",
-            family="funding",
-            instrument="ETHUSDT",
-            as_of=fetched_at + timedelta(days=1),
-        )
-
-    membership = pl.DataFrame(
-        {
-            "session": [fetched_at],
-            "rank": [1],
-            "category": ["spot"],
-            "symbol": ["BTCUSDT"],
-            "base_asset": ["BTC"],
-            "quote_asset": ["USDT"],
-            "liquidity_score": [1.0],
-            "liquidity_units": ["quote_volume"],
-        }
-    )
-    output = io.BytesIO()
-    membership.write_parquet(output)
-    derived = store.publish_derived(
-        output.getvalue(),
-        derived_kind="binance-liquidity-membership",
-        input_manifest_ids=(source_id,),
-        metadata={
-            "schema_version": 1,
-            "method_version": "binance-prior-day-liquidity-v1",
-            "session": "2026-08-14",
-            "category": "spot",
-            "quote_asset": "USDT",
-            "execution_authority": False,
-        },
-    )
-    selected = crypto_data_cmds._latest_binance_liquidity_sources(
-        store, as_of=fetched_at + timedelta(days=1)
-    )
-    assert selected[0][0] == derived["manifest_id"]
-    assert selected[0][1] == ("spot", "USDT")
-    assert selected[0][2].height == 1
-
-
 def test_crypto_cli_surfaces_storage_and_artifact_failures_without_tracebacks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -440,15 +343,6 @@ def test_crypto_cli_surfaces_storage_and_artifact_failures_without_tracebacks(
         ["crypto-data", "quality", "a" * 64, "--json"],
         ["crypto-data", "features", "--json"],
         ["crypto-data", "feature-show", "a" * 64, "--json"],
-        [
-            "crypto-data",
-            "compare",
-            "--primary-manifest-id",
-            "a" * 64,
-            "--comparison-manifest-id",
-            "b" * 64,
-            "--json",
-        ],
         [
             "crypto-data",
             "snapshot-create",
@@ -484,7 +378,6 @@ def test_crypto_cli_translates_immutable_control_artifact_failures(
 
     monkeypatch.setattr(crypto_data_cmds, "_read_asset_master", blocked)
     monkeypatch.setattr(crypto_data_cmds, "_read_snapshot", blocked)
-    monkeypatch.setattr(crypto_data_cmds, "_read_coverage_profile", blocked)
 
     class UnusedStore:
         # Asset-master commands now open the bulk store to verify sources; the control
@@ -494,32 +387,8 @@ def test_crypto_cli_translates_immutable_control_artifact_failures(
 
     monkeypatch.setattr(crypto_data_cmds, "_bulk_store", UnusedStore)
     commands = (
-        [
-            "crypto-data",
-            "asset-contract",
-            "ethereum",
-            "0xabc",
-            "--asset-master-version",
-            "a" * 64,
-            "--as-of",
-            "2026-08-15T00:00:00Z",
-            "--json",
-        ],
         ["crypto-data", "asset-master-verify", "a" * 64, "--json"],
         ["crypto-data", "snapshot-verify", "a" * 64, "--json"],
-        ["crypto-data", "profile-show", "a" * 64, "--json"],
-        [
-            "crypto-data",
-            "liquidity-freeze",
-            "a" * 64,
-            "--category",
-            "spot",
-            "--quote-asset",
-            "USDT",
-            "--session",
-            "2026-08-14",
-            "--json",
-        ],
     )
     for command in commands:
         result = runner.invoke(app, command)

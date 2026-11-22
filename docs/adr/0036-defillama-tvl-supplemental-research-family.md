@@ -61,3 +61,5 @@ disables acquisition first and tombstones dependent snapshots through the existi
 - `CryptoFamilyValue`, `CryptoProviderValue`, and `CryptoFeatureNameValue` in the web contract gain
   one member each; the generated OpenAPI/TypeScript is regenerated in the same change.
 - MCP stays pinned at 62 tools; acquisition remains CLI-only.
+
+Removed 2026-11-22: the `snapshot-query` command and `yield-pools` search. DefiLlama acquisition stays.

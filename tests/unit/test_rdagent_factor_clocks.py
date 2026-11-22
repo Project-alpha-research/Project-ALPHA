@@ -64,6 +64,7 @@ def test_locked_open_and_value_dates_refused(clock: str) -> None:
         )
 
 
+@pytest.mark.usefixtures("pre_table_costs")
 def test_daily_matches_prechange_fixture(tmp_path: Path) -> None:
     run = tmp_path / "run"
     req = fixture(run)

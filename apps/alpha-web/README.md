@@ -56,6 +56,12 @@ grants authority.
 - The Ideas page (View → Research → Ideas) is `panels/idea/IdeaWorkspace.tsx` (sections in `IdeaSections.tsx`, run charts and checks in `IdeaRunPanels.tsx`, pure helpers in `ideaModel.ts`). It reads `GET /api/ideas` and `GET /api/ideas/{card}` (`api/ideas.py`, `api/models/ideas.py`), which relay `alpha idea list|file`. Browser spec: `e2e/idea-workspace.spec.ts`.
   Rules: [Ideas page](../../docs/reference/invariants/web-frontend-ideas.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
+- The desk (the default app since slice 1 of Workstation v2) lives in `frontend/src/v2/`: frame and routing `DeskApp.tsx`, pure model
+  `deskModel.ts` (places, URLs, plain errors, table sort and filter, status dot), tokens `tokens.css`, pages `HomePage.tsx`, `TestsPage.tsx`,
+  `RunReport.tsx` (with `FigureGallery.tsx`), `ChartsPage.tsx` (held-back shading `heldBackPrimitive.ts`) and `SystemPage.tsx`. Ideas, Setup Lab and
+  RD-Agent mount the existing panels. It reads `GET /api/desk/runs` and `GET /api/desk/status` (`api/desk.py`, `_desk.py`, `api/models/desk.py`).
+  The old shell (`App.tsx`) opens at `#legacy` and for its own `#page=` and `#run=` links until later slices replace it.
+  Specs: `src/v2/deskModel.test.ts`, `tests/unit/test_web_desk_routes.py`, `e2e/desk-journey.spec.ts`.
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.
 

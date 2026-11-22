@@ -78,9 +78,35 @@ CONFIRMATION_NOTE = (
 )
 
 
+def classic_variant(
+    idea: IdeaSpec, spec: _runner.RunSpec, changes: dict[str, int]
+) -> _runner.RunSpec | None:
+    """The run spec of a classic rule with some parameters changed; None when the rule refuses."""
+    if isinstance(idea.rule, OwnerRule):
+        raise DataError("classic_variant takes a classic rule")
+    try:
+        rule = Rule.model_validate({"kind": idea.rule.kind, **idea.rule.params, **changes})
+    except ValidationError:
+        # Invalid neighbours are explicitly excluded by the diagnostic protocol.
+        return None
+    return (
+        replace(spec, lookback=rule.params["lookback"], skip=rule.params["skip"])
+        if rule.kind == "tsmom"
+        else replace(
+            spec,
+            strategy_params=tuple(sorted((k, float(v)) for k, v in rule.params.items())),
+        )
+    )
+
+
 def variant_specs(
-    idea: IdeaSpec, spec: _runner.RunSpec, *, costs_only: bool = False
+    idea: IdeaSpec,
+    spec: _runner.RunSpec,
+    *,
+    costs_only: bool = False,
+    factors: tuple[float, ...] = (0.8, 1.2),
 ) -> list[tuple[str, str, _runner.RunSpec]]:
+    """The costs-doubled run, then one-at-a-time parameter neighbours at each of ``factors``."""
     variants = [
         (
             "costs_x2",
@@ -92,31 +118,18 @@ def variant_specs(
         return variants
     if isinstance(idea.rule, OwnerRule):
         # Each parameter variant is a full-sample re-run of the neighbour rule, one try each.
-        for label, changed_spec in owner_variants(idea.rule.spec):
+        for label, changed_spec in owner_variants(idea.rule.spec, factors=factors):
             moved = OwnerRule(kind="owner", spec=changed_spec)
             variants.append((label, "parameter", replace(spec, rules_spec=moved.rules_json)))
         return variants
     for key, value in idea.rule.params.items():
-        for factor in (0.8, 1.2):
+        for factor in factors:
             neighbour = round(value * factor)
             if neighbour == value:
                 continue
-            try:
-                rule = Rule.model_validate(
-                    {"kind": idea.rule.kind, **idea.rule.params, key: neighbour}
-                )
-            except ValidationError:
-                # Invalid neighbours are explicitly excluded by the diagnostic protocol.
-                continue
-            changed = (
-                replace(spec, lookback=rule.params["lookback"], skip=rule.params["skip"])
-                if rule.kind == "tsmom"
-                else replace(
-                    spec,
-                    strategy_params=tuple(sorted((k, float(v)) for k, v in rule.params.items())),
-                )
-            )
-            variants.append((f"{key}={neighbour}", "parameter", changed))
+            changed = classic_variant(idea, spec, {key: neighbour})
+            if changed is not None:
+                variants.append((f"{key}={neighbour}", "parameter", changed))
     return variants
 
 

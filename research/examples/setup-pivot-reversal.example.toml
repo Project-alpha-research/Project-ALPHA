@@ -1,0 +1,16 @@
+# Example spec: a swing low was confirmed while the close sat below the 50-day average.
+# Copy it, then change the asset. The values here are placeholders, not results.
+# A swing low is known only 5 bars after it formed. The event is on that later bar, never on the low itself.
+[setup]
+name = "swing-low-below-average"
+idea = "A confirmed swing low while the close is under the 50-day average (placeholder idea)"
+assets = ["SPY"]
+timeframe = "1D"
+event = "low_seen == 1"
+[context]
+low_seen = "swing_low@SELF"
+[filters]
+below_average = "close < sma(close, 50)"
+[study]
+horizons = [5, 10, 20]
+primary = 10

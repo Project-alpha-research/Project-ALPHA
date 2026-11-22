@@ -24,6 +24,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A chart setup: "show me every time this happened"; its TOML file | [setup find](setup-find.md), [spec file](setup-spec.md), [context](setup-context.md) |
 | What followed each setup occurrence; a setup traded with stops, targets and a time limit | [setup study](setup-study.md), [setup trade](setup-trade.md) |
+| "Show me the trend lines, flags or head and shoulders"; test one as a condition | [chart patterns](chart-patterns.md) |
 | "Did we test this?", "what was the number?", "do two runs move together?" | [results and cite](results-and-cite.md), [portfolio book](portfolio-book.md) |
 | The result looks too good | [diagnose and audit](diagnose-and-audit.md), then [random-price null](random-price-null.md) |
 | Too good after many tries; a first look at many signals | [deflated Sharpe, trials](deflated-sharpe-and-trials.md), [quick screen](quick-screen.md) |

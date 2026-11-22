@@ -11,7 +11,7 @@ dated at the open that starts its bar. Known answers are in `tests/unit/test_too
 
 | Check id | Catalogue row | Known-answer source |
 |---|---|---|
-| `regimes.year_by_year` | I16 * | Hand: compound of constant yearly returns, `1.001**365 - 1` etc. |
+| `regimes.annual_returns` | I16 * | Hand: compound of constant yearly returns, `1.001**365 - 1` etc. |
 | `regimes.sub_period_stability` | I19 * | scipy `ttest_ind(equal_var=False)`; Sharpe by hand |
 | `regimes.day_of_week` | I11 | scipy `kruskal` (Kruskal and Wallis 1952); group means by hand |
 | `regimes.calendar_month` | I12 (month part) | scipy `kruskal` |
@@ -44,7 +44,7 @@ future-date rejection test (the poison test named in each spec).
 7. **Situations:** the find tests require tags. I used existing tags only (`works-only-sometimes`, `behaviour-change`,
    `just-the-market`) and regenerated the block in `research/tools/toolbox-by-situation.md`, as its test demands.
    `situations.py` is unchanged. Check ids and questions are worded so `alpha tool find "only works some years"` still ranks
-   `robustness.start_end_dates` in the top six (the reason for `regimes.calendar_month`, not `month_of_year`).
+   `robustness.start_end_dates` in the top six (the reason for `regimes.calendar_month` and `regimes.annual_returns`, not `month_of_year` and `year_by_year`).
 8. **One existing test edited:** `test_toolbox_montecarlo_checks.py::test_listed_and_described` asserted exactly 16 checks;
    it now asserts at least 16. The other builders must make the same one-word change (merge conflicts there are identical).
 9. The card's `verified:` field is a placeholder; `fs.py verify` was not run, as the common brief says.

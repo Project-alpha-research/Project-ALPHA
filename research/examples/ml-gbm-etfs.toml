@@ -1,0 +1,16 @@
+# alpha ml run research/examples/ml-gbm-etfs.toml
+# Train a gradient-boosting model on 20 liquid ETFs and replay it with costs.
+# Needs the stored daily bars of every asset (alpha data pull) and the Qlib worker (bash scripts/setup.sh).
+name = "gbm on 20 ETFs"
+assets = [
+  "SPY", "QQQ", "IWM", "DIA", "EFA", "EEM", "TLT", "IEF", "LQD", "HYG",
+  "GLD", "SLV", "USO", "XLE", "XLF", "XLK", "XLV", "XLI", "XLP", "XLU",
+]
+features = "alpha158"   # the default recipe
+horizon_days = 1        # the worker trains on the next day only
+model = "lightgbm"      # the gradient-boosting model
+
+[split]                 # days; the test days come last and are never trained on
+train_days = 504
+validation_days = 120
+test_days = 63

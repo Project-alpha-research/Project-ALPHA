@@ -16,7 +16,7 @@ buy-and-hold line.
 
 | Check | Question |
 |---|---|
-| `regimes.year_by_year` | Does it work in most years or only a few? |
+| `regimes.annual_returns` | Did it gain in most annual periods, or in a handful? |
 | `regimes.sub_period_stability` | Do the early and late halves of the history agree? |
 | `regimes.day_of_week` | Do certain weekdays earn more than the others? |
 | `regimes.calendar_month` | Do certain calendar months earn more than the others? |

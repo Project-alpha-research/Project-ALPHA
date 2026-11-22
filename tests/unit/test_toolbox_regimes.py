@@ -17,7 +17,7 @@ from alpha_cli.toolbox.runner import run
 from tests.unit.test_spine_tools import RUN
 from tests.unit.test_toolbox_run_level_checks import END, PRICE_ONLY, START, stored_run
 
-YEAR = "regimes.year_by_year"
+YEAR = "regimes.annual_returns"
 HALVES = "regimes.sub_period_stability"
 WEEKDAY = "regimes.day_of_week"
 MONTH = "regimes.calendar_month"

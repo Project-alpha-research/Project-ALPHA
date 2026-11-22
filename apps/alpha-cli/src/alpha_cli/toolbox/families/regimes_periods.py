@@ -51,8 +51,8 @@ def year_by_year(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
 
 
 YEAR_BY_YEAR = spec(
-    "regimes.year_by_year",
-    "Does it work in most years or only a few?",
+    "regimes.annual_returns",
+    "Did it gain in most annual periods, or in a handful?",
     ("stored_equity",),
     (
         Output("years", "Calendar years", "Calendar years with at least one scored bar.", "count"),

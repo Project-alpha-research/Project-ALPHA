@@ -46,7 +46,7 @@ test('real rule validation, persistence, scanner and workspace round trip', asyn
   await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /BTC\/USDT/ }).click()
   await editor.getByLabel('File name').fill(rule)
   await editor.getByRole('button', { name: 'Save rule set' }).click()
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeEnabled({ timeout: 30_000 })
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeEnabled({ timeout: 30_000 })
   const persisted = await request.get(`/api/rules/${rule}`)
   expect(persisted.ok()).toBe(true)
   expect((await persisted.json()).long_conditions).toEqual(['sma:5 > sma:20'])
@@ -136,7 +136,7 @@ test('@reference-only real sandbox execution produces a persisted report and one
   await page.getByRole('combobox', { name: 'Test asset' }).click()
   await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /SPY/ }).click()
   const accepted = page.waitForResponse(response => response.url().endsWith('/api/jobs') && response.request().method() === 'POST')
-  await page.getByRole('button', { name: 'Test in sandbox', exact: true }).click()
+  await page.getByRole('button', { name: 'Run a backtest', exact: true }).click()
   const response = await accepted
   expect(response.ok(), await response.text()).toBe(true)
   const { job_id: jobId } = await response.json() as { job_id: string }

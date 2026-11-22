@@ -61,5 +61,5 @@ test('mounted Builder clears linked and independently selected assets when the m
   await page.getByRole('listbox', { name: 'Stored assets' }).getByRole('option', { name: /BTC\/USDT/ }).click()
   await page.getByLabel('Market profile').selectOption('equities')
   await expect(asset).toHaveValue('')
-  await expect(page.getByRole('button', { name: 'Test in sandbox' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Run a backtest' })).toBeDisabled()
 })

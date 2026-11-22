@@ -2660,7 +2660,7 @@ test('Strategy Builder validates through the CLI, saves, and tests in the sandbo
   await expect(save).toBeDisabled()
   await editor.getByLabel('File name').fill('trend')
   await save.click()
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeEnabled()
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeEnabled()
   expect(posts.filter((entry) => entry.path === '/api/rules')).toEqual([
     {
       path: '/api/rules',
@@ -2676,14 +2676,13 @@ test('Strategy Builder validates through the CLI, saves, and tests in the sandbo
   ])
   await editor.getByRole('combobox', { name: 'Test asset' }).fill('XRP/USDT')
   await editor.getByRole('combobox', { name: 'Test asset' }).press('Enter')
-  await editor.getByRole('button', { name: 'Test in sandbox' }).click()
+  await editor.getByRole('button', { name: 'Run a backtest' }).click()
   await expect.poll(() => posts.some(entry => entry.path === '/api/jobs')).toBe(true)
   const job = posts.find((entry) => entry.path === '/api/jobs')
   expect(job?.body).toMatchObject({ command: 'backtest run', args: 'XRP/USDT --strategy rules --rules trend --account-type MARGIN' })
   expect((job?.body.run_context as { kind?: string } | undefined)?.kind ?? 'standalone_sandbox').toBeTruthy()
   await editor.getByLabel('long condition 1 left').fill('sma:10')
-  await expect(editor.getByRole('button', { name: 'Test in sandbox' })).toBeDisabled()
-  await expect(editor.getByRole('button', { name: 'Open in Strategy Lab' })).toBeDisabled()
+  await expect(editor.getByRole('button', { name: 'Run a backtest' })).toBeDisabled()
 })
 
 test('Insert › Indicators draws CLI-computed overlays and chart windows tile', async ({ page }) => {

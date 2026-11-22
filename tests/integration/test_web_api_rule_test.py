@@ -282,3 +282,47 @@ def test_rule_sentence_states_the_rule_or_nothing(
     kind: str, params: dict[str, int], metadata: dict[str, Any], expected: str | None
 ) -> None:
     assert _rule_test.rule_sentence(kind, params, metadata) == expected
+
+
+OWNER_SPEC: dict[str, Any] = {
+    "version": 1,
+    "name": "owner-rule",
+    "history": 300,
+    "short_when": [],
+    "long_when": [
+        {
+            "left": {"indicator": "atr", "params": [14]},
+            "op": "<",
+            "right": {"indicator": "atr", "params": [50]},
+        }
+    ],
+}
+
+
+def test_owner_rule_run_relays_its_sentence_family_and_labels(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    spine = {
+        **SPINE,
+        "rule": {"kind": "owner", "spec": OWNER_SPEC},
+        "family": "owner:0123456789ab",
+        "labels": ["null-closes-for-high-low"],
+    }
+    client = _client(tmp_path, monkeypatch, {**MANIFEST, "spine": spine}, DIAGNOSTICS)
+    test = client.get(f"/api/runs/{RUN_ID}").json()["rule_test"]
+    assert test["rule_sentence"] == (
+        "Buy at the next open when the 14-day ATR is below the 50-day ATR. "
+        "Sell at the next open when that stops being true. Long or flat."
+    )
+    assert test["rule_family"] == "owner:0123456789ab"
+    assert test["labels"] == ["null-closes-for-high-low"]
+
+
+def test_owner_rule_run_without_a_stored_spec_has_no_sentence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    spine = {**SPINE, "rule": {"kind": "owner"}}
+    client = _client(tmp_path, monkeypatch, {**MANIFEST, "spine": spine}, DIAGNOSTICS)
+    test = client.get(f"/api/runs/{RUN_ID}").json()["rule_test"]
+    assert test["rule_sentence"] is None
+    assert test["rule_family"] is None

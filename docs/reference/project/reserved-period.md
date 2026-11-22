@@ -45,7 +45,12 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   A row stamped before it is used once it is known. A daily store read keeps it by its stamp (`CUTOFF`, one microsecond before
   the boundary). An intraday store, archive or crypto read keeps it when its interval closes by the boundary.
   Every command applies this one rule. The count of held-back bars comes from a timestamp-only scan.
-  A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence. A run with no held-back bars keeps its id.
+  A store with held-back bars gives the label `reserved-period-held-back` and one printed sentence.
+  The identity of a test is built only from what it may read: the bars and dividends before the boundary. A later row, the held-back count, the label,
+  the cut-off note, a data-health verdict and a fingerprint of the whole bar file never enter the run id, the test key, the family or a setup find id
+  (`tests/unit/test_run_identity_held_back.py`). A nightly pull that only adds or revises held-back rows keeps every id, so a repeat stays one repeat.
+  The manifest still describes the held-back part (`reserve.held_back_bars`). `alpha test --recheck` leaves that description out of the comparison and
+  says in `identity_note` when the stored run used the older whole-file fingerprint rule; it then compares the numbers only. Stored runs are never rewritten.
   Exception: a split or dividend known only from the date on is never applied. A store that ends before 2024 but records such an action
   therefore gives other prices, and a new id, than before. Stores with no such action are byte-identical (the pinned run and find ids hold).
   A cited draft must say "held back" or "reserved period seen" when a cited run carries that label (`alpha results check`).
@@ -111,7 +116,7 @@ These still read bars from the date on.
 - Label only (display or forward use): `alpha chart`, `alpha data` reads, the assistant context.
 - Exempt (forward paper use): paper trading, IBKR Paper and the daily scheduler.
 - Data health (`alpha data health`, and `--check-data` on a rule test or setup) checks every stored bar, the held-back ones too.
-  Its verdict can label or stop a run; its numbers do not enter a result.
+  Its verdict can label or stop a run; its numbers do not enter a result, and neither its verdict nor its fingerprint enters an identity.
 - `alpha project reveal-holdout` is a separate owner-only action on a project's sealed holdout. Whether it is tied to this date: not verified.
 
 ## What the owner decided

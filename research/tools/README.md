@@ -16,7 +16,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | What you see or need | Open |
 |---|---|
 | Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
-| "Which check fits my situation?" | [toolbox by situation](toolbox-by-situation.md), or `alpha tool find "<words>"` |
+| "Which check fits my situation?", "a better model for RD-Agent?" | [toolbox by situation](toolbox-by-situation.md), [model bench](rdagent-model-bench.md) |
 | An idea to test (write the [idea card](idea-card.md) first; [library](library.md) has published ones) | [rule test](rule-test.md), then [follow](follow.md) |
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A copy of everything stored here, and proof the copy is good | [back up and restore the data home](home-backup.md) |

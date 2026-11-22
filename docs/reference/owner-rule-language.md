@@ -29,6 +29,8 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 | Operand | Meaning |
 |---|---|
 | `{source = "close"}` (or `high`, `low`), optional `lag = n` | the price n completed bars before the decision bar; 0 is today's close |
+| any indicator below, optional `lag = n` | the indicator's value n bars before the decision bar; never a later bar |
+| `highest`, `lowest` with `params = [n]`, `field` high, low or close | the highest or lowest value of that price over the last n bars |
 | `{value = x}` | a constant |
 | `sma`, `ema` with `params = [n]` | simple or exponential average of closes over n bars |
 | `rsi` with `params = [n]` | RSI of closes, 0 to 100 |
@@ -38,26 +40,35 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 | `hawkes`, `cmma`, `runs_z`, `perm_entropy`, `vg_path`, `reversibility` | research indicators; ask the owner before use |
 | `vsa` | refused: it reads volume, which the rule window does not keep |
 
+- `highest` and `lowest` include the bar they are read on. So `close > highest(20, high)` can never be true for the same bar.
+  Write `lag = 1` on the channel for a true breakout: `{indicator = "highest", params = [20], field = "high", lag = 1}` is the
+  highest high of the 20 bars before today. The channel window is at least 2 bars.
+- "Crossed above 30" is two conditions: `rsi(14) > 30` and `rsi(14, lag = 1) <= 30`.
+- Warm-up: the history a rule needs is its longest window plus its lag. Before that the value is undefined, the condition is
+  false and no trade happens; it is never zero. A `history` below that is refused.
+- A lagged indicator is read on the same decision window, so it starts its recursion at the window's first bar like the
+  unlagged one. `lag = 0` is the default and is not written in the stored form: older specs keep their hash.
 - A condition is `left`, `op` (`>`, `<`, `>=`, `<=`) and `right`. A side is the AND of at most 12 conditions.
 - `short_when` that is present and not empty is refused: "the short side is not built yet in alpha test".
 - A price-sized operand compared with a fixed number (`close > 400`) or with a scale-free indicator (`close > rsi`) is refused.
   The first random-price test rebuilds prices from returns, starting at 1, so a fixed price level has no meaning there.
-  Price-sized: a source, `sma`, `ema`, `atr`, `bbands`, `macd`. Scale-free: `rsi` and the research indicators.
+  Price-sized: a source, `sma`, `ema`, `atr`, `bbands`, `macd`, `highest`, `lowest`. Scale-free: `rsi` and the research indicators.
 - Allowed: price-sized against price-sized (`close > sma`, `atr 5 < atr 20`, `macd line > macd signal`), price-sized against 0
   (`macd histogram > 0`), and scale-free against a number (`rsi < 30`).
 - Example: "RSI(14) below 30 and close above the 200-day average" is two conditions in `long_when`.
 
 ## Labels
 
-- `null-closes-for-high-low`: the rule reads high or low (`atr`, `hawkes`, `cmma`, a high or low source). The first random-price
+- `null-closes-for-high-low`: the rule reads high or low (`atr`, `hawkes`, `cmma`, a high or low source, a channel of high or low). The first random-price
   null has no intrabar range, so it uses closes for high and low. The engine runs and the other nulls use the real bars.
 
 ## Family
 
 - The ledger family of an owner rule is `owner:<12 hex>` (so `spine:owner:<12 hex>` in the reader). The hex is a hash of the
   rule shape: no name, no history, every number a hole, `<` as `<=`, a constant on the right, conditions sorted, a repeated
-  condition once. The indicator name, its `field` and the source are part of the shape.
-- Thirty RSI thresholds are one family. A different structure is another family. The trial count for the deflated Sharpe is
+  condition once. The indicator name, its `field` and the source are part of the shape. A lag is a number (a hole) but
+  whether a lag is present is part of the shape. A window is a hole too.
+- Thirty RSI thresholds, or thirty channel windows, are one family. A different structure is another family. The trial count for the deflated Sharpe is
   the larger of the family count and the count of all tests on the same asset.
 
 ## Engine and random-price test
@@ -72,7 +83,7 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 ## What it cannot say yet
 
 - Exits and time stops ("hold until RSI is above 60, or 10 days at most"). The rule only holds while its conditions hold.
-- Shorts in `alpha test`. Volume and open prices. Fixed price levels (`close > 400`). Crossings ("crossed above").
-  Arithmetic on operands (`close > 1.02 * sma`).
+- Shorts in `alpha test`. Volume and open prices. Fixed price levels (`close > 400`). A one-word crossing
+  (write the two conditions above). Arithmetic on operands (`close > 1.02 * sma`).
 - OR groups. Calendar. Other assets as inputs. Parameter variants in `alpha diagnose` (only the doubled-cost variant runs).
 - Position sizing other than all-in.

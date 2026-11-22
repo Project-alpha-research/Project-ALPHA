@@ -12,7 +12,7 @@ from typing import Any
 from alpha_cli.follow_counts import follows_of_card
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_cli.spine import idea_card as cards
-from alpha_cli.spine import idea_notes, idea_rdagent, reserve
+from alpha_cli.spine import idea_notes, idea_rdagent, papers, reserve
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import read_json, read_study, tool_outputs
 from alpha_cli.spine.idea_map import DONE, build_map, next_steps
@@ -246,6 +246,9 @@ def build(home: Path, wanted: str) -> dict[str, Any]:
         extra["rdagent"] = worked
     if notes:
         extra["notes"] = notes
+    linked = papers.papers_of(home, identity)
+    if linked:  # an idea file with no linked paper keeps its old shape
+        extra["papers"] = linked
     return {
         **extra,
         "card": {

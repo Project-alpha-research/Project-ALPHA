@@ -13106,6 +13106,8 @@ export interface components {
             n_bars: number | null;
             /** Name */
             name: string | null;
+            /** Rule Family */
+            rule_family?: string | null;
             /** Rule Kind */
             rule_kind: string | null;
             /** Rule Params */

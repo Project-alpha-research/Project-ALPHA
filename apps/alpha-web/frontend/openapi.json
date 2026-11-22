@@ -25299,6 +25299,17 @@
             ],
             "title": "Name"
           },
+          "rule_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Family"
+          },
           "rule_kind": {
             "anyOf": [
               {

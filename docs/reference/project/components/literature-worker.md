@@ -38,8 +38,9 @@ See the capabilities below on [STATUS.md](../../../../STATUS.md).
 
 - **Workspaces:** `workers/literature`
 - **Capabilities:** `literature`, `paper-to-experiment`
-- Code: [`workers/literature/`](../../../../workers/literature/README.md); the `alpha research sources`
-  commands in `apps/alpha-cli/`.
+- Code: [`workers/literature/`](../../../../workers/literature/README.md); `alpha library search`, `import-pdf` and
+  `papers` in `apps/alpha-cli/` (no project or case; see the [library card](../../../../research/tools/library.md)).
+  The old `alpha research sources discover` and `research import-pdf` still run and name the new commands.
 - Tests: `workers/literature/tests/`, and the literature tests under `tests/unit/`.
 - How to change it: [workers/literature/CONTEXT.md](../../../../workers/literature/CONTEXT.md).
 - Plans: the `plans` of each capability above in `docs/roadmap/capabilities.toml`.

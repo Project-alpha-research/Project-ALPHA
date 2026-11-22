@@ -16,13 +16,15 @@ import { NullView } from './NullChart'
 import { useCheckChartData } from './useCheckChartData'
 import { WalkForwardView } from './WalkForward'
 import { walkForwardChart } from './walkForwardModel'
+import type { RuleTest } from '../../api/types'
+import { RuleWords } from './RuleWords'
 import { ExplainCard, Section } from './common'
 
 function show<T>(model: Chart<T>, view: (chart: T & { status: 'ok' }) => ReactNode): ReactNode {
   return model.status === 'ok' ? view(model) : <NotAvailable model={model} />
 }
 
-export function Gates({ manifest, runId }: { manifest: ValidateManifest; runId: string }) {
+export function Gates({ manifest, runId, test }: { manifest: ValidateManifest; runId: string; test?: RuleTest | null }) {
   const stories = useMemo(() => gateStories(manifest), [manifest])
   const { bars, nulls } = useCheckChartData(runId, manifest)
   const charts = useMemo<Record<string, ReactNode>>(() => {
@@ -44,6 +46,7 @@ export function Gates({ manifest, runId }: { manifest: ValidateManifest; runId: 
   }, [manifest, bars, nulls])
   return (
     <Section title="The five checks behind the reading">
+      {test && <RuleWords test={test} />}
       <div className="gate-cards">
         {stories.map((story) => (
           <ExplainCard key={story.gate} story={story} title={story.title} stats={story.stats} tests={story.tests} chart={charts[story.gate]} />

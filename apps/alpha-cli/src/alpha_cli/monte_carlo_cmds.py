@@ -19,7 +19,7 @@ import numpy as np
 import polars as pl
 import typer
 
-from alpha_cli import _artifacts, _forecast, _forecast_cache, _runner
+from alpha_cli import _artifacts, _forecast, _forecast_cache, _mc_reading, _runner
 from alpha_cli._seeds import semantic_seed, semantic_seeds
 from alpha_cli.artifact_contract import sha256_file
 from alpha_cli.spine import reserve
@@ -125,7 +125,8 @@ def _spec_from_validation(manifest: dict[str, Any]) -> _runner.RunSpec:
         lookback=int(metadata["lookback"]),
         skip=int(metadata["skip"]),
         vol_window=int(metadata["vol_window"]),
-        target_vol=float(metadata["target_vol"]),
+        # an `alpha test` run sizes all-in and stores no target volatility: that field goes unused
+        target_vol=float(metadata.get("target_vol", 0.15)),
         rebalance_every=int(metadata["rebalance_every"]),
         max_leverage=float(metadata["max_leverage"]),
         allow_short=bool(metadata["allow_short"]),
@@ -140,6 +141,8 @@ def _spec_from_validation(manifest: dict[str, Any]) -> _runner.RunSpec:
         anchored=bool(metadata["anchored"]),
         strategy_name=str(metadata["strategy_name"]),
         strategy_params=params,
+        rules_spec=manifest.get("rules_spec"),
+        sizing=str(metadata.get("sizing", "vol_target")),
     )
 
 
@@ -346,49 +349,6 @@ def _metric_frame(families: Sequence[tuple[str, np.ndarray]]) -> pl.DataFrame:
     )
 
 
-def _report_text(
-    *,
-    source_run_id: str,
-    summaries: Sequence[MonteCarloFamilySummaryV1],
-    n_paths: int,
-    horizon: int,
-) -> str:
-    regime_caveats = [
-        caveat
-        for row in summaries
-        if row.family == "regime_switching"
-        for caveat in row.caveats
-        if caveat.startswith(("Causal states:", "One state holds"))
-    ]
-    rows = "\n".join(
-        f"| {row.family} | {row.status} | "
-        f"{row.terminal_return_q50:.6f} | {row.maximum_drawdown_q95:.6f} | "
-        f"{row.ruin_probability.point:.6f} |"
-        for row in summaries
-    )
-    return (
-        "# Classical Monte Carlo path-risk report\n\n"
-        "Question: how does the validated OOS account-return stream behave under alternate "
-        "sequencing, causal volatility regimes, and a fitted heavy-tailed marginal model?\n\n"
-        f"Source validation run: `{source_run_id}`. Paths per family: {n_paths}. "
-        f"OOS horizon: {horizon}.\n\n"
-        "| Family | Status | Median terminal return | "
-        "95th percentile max drawdown | Ruin probability |\n"
-        "|---|---:|---:|---:|---:|\n"
-        f"{rows}\n\n"
-        f"Regime states: {' '.join(regime_caveats)}\n\n"
-        "Interpretation: these simulations measure path and scenario risk. They do not establish "
-        "edge, replace randomized-price null tests, authorize holdout access, or confer execution "
-        "authority. Uncertainty for loss and ruin probabilities is reported with Wilson "
-        "intervals.\n\n"
-        "Assumptions: IID empirical resampling; a two-state first-order Markov chain with "
-        "empirical "
-        "state emissions and a training-frozen causal volatility boundary; and IID Student-t draws "
-        "fitted to OOS log-account-return location, scale, and tail thickness, then mapped back "
-        "to valid simple returns.\n"
-    )
-
-
 def _summarize_families(
     families: Sequence[tuple[str, np.ndarray]], states: np.ndarray, *, confidence: float
 ) -> tuple[tuple[int, int], tuple[str, ...], dict[str, MonteCarloFamilySummaryV1]]:
@@ -405,28 +365,6 @@ def _summarize_families(
         for name, values in families
     }
     return state_observations, regime_caveats, summaries
-
-
-def _echo_family_lines(
-    summaries: Sequence[MonteCarloFamilySummaryV1], regime_caveats: tuple[str, ...]
-) -> None:
-    for row in summaries:
-        if row.status == "not_estimable":
-            typer.echo(f"  {row.family}: not estimable; {row.caveats[0]}")
-        else:
-            typer.echo(
-                f"  {row.family}: {row.status} "
-                f"median terminal {row.terminal_return_q50:+.4f} "
-                f"(5%-95% {row.terminal_return_q05:+.4f} to {row.terminal_return_q95:+.4f}), "
-                f"drawdown median {row.maximum_drawdown_q50:.4f} "
-                f"95th {row.maximum_drawdown_q95:.4f}, "
-                f"P(loss) {row.loss_probability.point:.3f} "
-                f"[{row.loss_probability.lower:.3f}, {row.loss_probability.upper:.3f}], "
-                f"P(ruin, drawdown >= 50%) {row.ruin_probability.point:.3f} "
-                f"[{row.ruin_probability.lower:.3f}, {row.ruin_probability.upper:.3f}]"
-            )
-    if len(regime_caveats) > 1:
-        typer.echo(f"regime_switching warning: {regime_caveats[1]}")
 
 
 @monte_carlo_app.command("classical")
@@ -449,8 +387,10 @@ def classical(
         account_returns = to_returns([value for _, value in equity])
         if account_returns.size < 20:
             raise DataError(
-                f"Monte Carlo requires at least 20 OOS account returns, got {account_returns.size}"
+                f"Monte Carlo requires at least 20 OOS account returns; run {from_run} has "
+                f"{account_returns.size}"
             )
+        source = _mc_reading.built_from(from_run, source_dir, equity, "classical")
         symbol = str(metadata["symbol"])
         snapshot_id = metadata.get("snapshot_id")
         cutoff = source_manifest.get("research_cutoff")
@@ -460,11 +400,13 @@ def classical(
             snapshot_id=str(snapshot_id) if snapshot_id is not None else None,
             as_of=_source_as_of(cutoff),
         )
+        train_size = int(metadata["train_size"])
+        fit = _mc_reading.fit_regime_window(regime_window, train_size)
         states, state_threshold, oos_volatility = _causal_regime_states(
             bars,
             [timestamp for timestamp, _ in equity][1:],
-            train_size=int(metadata["train_size"]),
-            window=regime_window,
+            train_size=train_size,
+            window=int(fit["causal_window"]),
         )
         seeds = semantic_seeds(
             resolved_seed,
@@ -537,6 +479,7 @@ def classical(
         payload: dict[str, object] = {
             "command": "monte_carlo_classical",
             "source_run_id": from_run,
+            "built_from": source,
             "source_equity_hash": source_equity_hash,
             "symbol": symbol,
             "strategy_name": str(metadata["strategy_name"]),
@@ -616,11 +559,8 @@ def classical(
         _artifacts.publish_artifact(rdir / "path_metrics.parquet", metric_frame.write_parquet)
         _artifacts.publish_artifact(rdir / "regime_diagnostics.parquet", diagnostics.write_parquet)
         _artifacts.publish_artifact(rdir / "regime_emissions.parquet", emissions.write_parquet)
-        report = _report_text(
-            source_run_id=from_run,
-            summaries=summaries,
-            n_paths=paths,
-            horizon=int(account_returns.size),
+        report = _mc_reading.classical_report(
+            source=source, summaries=summaries, n_paths=paths, window_note=fit["window_note"]
         )
         _artifacts.publish_artifact(
             rdir / "report.md", lambda path: path.write_text(report, encoding="utf-8")
@@ -652,7 +592,7 @@ def classical(
                 "state_shares": [count / int(account_returns.size) for count in state_observations],
                 "state_outbound_transitions": state_outbound,
                 "transition_matrix": None if regime is None else regime.transition_matrix.tolist(),
-                "causal_window": regime_window,
+                **fit,
             },
             "explanation": (
                 "Scenario and path-risk evidence only; this run neither proves edge nor replaces "
@@ -665,11 +605,9 @@ def classical(
         raise typer.BadParameter(str(exc)) from exc
 
     typer.echo(
-        f"monte-carlo classical -> run {identity.run_id}: "
-        + ", ".join(f"{row.family}={row.status}" for row in summaries)
-        + f"; manifest at {rdir / 'manifest.json'}"
+        f"monte-carlo classical -> run {identity.run_id}: manifest at {rdir / 'manifest.json'}"
     )
-    _echo_family_lines(summaries, regime_caveats)
+    _mc_reading.echo_family_lines(source, summaries, regime_caveats, fit["window_note"])
 
 
 @monte_carlo_app.command("kronos")
@@ -811,7 +749,9 @@ def kronos(
             )
             engine_paths.append(oos.oos_returns)
         path_matrix = np.asarray(engine_paths, dtype=np.float64)
-        source_horizon = len(_artifacts.read_equity(source_dir)) - 1
+        source_equity = _artifacts.read_equity(source_dir)
+        source_info = _mc_reading.built_from(from_run, source_dir, source_equity, "kronos")
+        source_horizon = source_info["n_returns"]
         if path_matrix.shape != (paths, source_horizon):
             raise DataError(
                 f"Kronos engine path shape {path_matrix.shape} differs from source OOS geometry "
@@ -866,6 +806,7 @@ def kronos(
         payload: dict[str, object] = {
             "command": "monte_carlo_kronos",
             "source_run_id": from_run,
+            "built_from": source_info,
             "forecast_eval_run_id": forecast_eval_run,
             "source_equity_hash": source_equity_hash,
             "forecast_eval_manifest_hash": eval_manifest_hash,
@@ -900,7 +841,6 @@ def kronos(
         rdir = _artifacts.run_dir(settings.data_dir, identity.run_id)
         synthetic_frame = pl.DataFrame(synthetic_rows)
         family_paths = (("kronos_synthetic", path_matrix),)
-        source_equity = _artifacts.read_equity(source_dir)
         observed_oos = pl.DataFrame(
             {
                 "step": range(len(source_equity)),
@@ -948,12 +888,11 @@ def kronos(
             "Question: how does the unchanged strategy behave when its future market tail is "
             "generated by the pinned Kronos forecaster and every path is replayed through a fresh "
             "canonical engine portfolio?\n\n"
-            f"Source validation run: `{from_run}`. Forecast evaluation run: "
-            f"`{forecast_eval_run}`. Paths: {paths}. OOS account-return horizon: "
-            f"{source_horizon}. Status: {summary.status}.\n\n"
+            f"{_mc_reading.built_from_sentence(source_info)} Evaluation run `{forecast_eval_run}`. "
+            f"Paths: {paths}.\n\n"
             "Interpretation: Kronos is a calibrated stochastic generator, not a market oracle. "
             "Signals are recomputed from each synthetic OHLCV path; observed signals are never "
-            "replayed. Weak calibration is a review warning, not automatic rejection.\n\n"
+            "replayed. Weak calibration is a caveat to read, not a reason to drop the run.\n\n"
             f"Caveats: {'; '.join(summary.caveats)}. Raw model values are retained alongside "
             f"projected candles; {adjustment_count} high/low enclosure adjustments were recorded.\n"
         )
@@ -983,8 +922,7 @@ def kronos(
     except (DataError, KeyError, TypeError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
 
+    typer.echo(f"monte-carlo kronos -> run {identity.run_id}: {paths} full-engine paths")
     typer.echo(
-        f"monte-carlo kronos -> run {identity.run_id}: "
-        f"{summary.status}, {paths} full-engine paths; "
-        f"manifest at {rdir / 'manifest.json'}"
+        f"{_mc_reading.built_from_sentence(source_info)}\nmanifest at {rdir / 'manifest.json'}"
     )

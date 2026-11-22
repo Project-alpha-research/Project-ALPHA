@@ -479,3 +479,16 @@ def test_duplicate_model_names_are_refused_before_any_call(tmp_path: Path) -> No
             prompts, ["a", "a"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path)
         )
     assert client.calls == 0
+
+
+@pytest.mark.parametrize("cost", [-5.0, float("nan"), float("inf")])
+def test_a_reported_cost_that_is_negative_or_not_finite_is_refused(
+    tmp_path: Path, cost: float
+) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 2), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    # A negative or NaN charge would lower the spend so far and open the caps.
+    client = FakeClient({"a": {f"p{i}": [{**_reply(1, 1), "cost": cost}] for i in range(2)}})
+    with pytest.raises(BenchError, match="cost"):
+        run_bench(prompts, ["a"], 1, prices, client, tmp_path / "store", spend=_spend(tmp_path))
+    assert not _spend(tmp_path).exists() or "NaN" not in _spend(tmp_path).read_text()

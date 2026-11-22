@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -145,9 +146,21 @@ def run_bench(
                         f"of {RUN_MAX_USD:g} USD per run or {MONTH_MAX_USD:g} USD per month. "
                         "The stored outputs are kept."
                     )
-                record = _record(
-                    model, p, sample, client.complete(model, p, sample), prices[model], estimate
-                )
+                reply = client.complete(model, p, sample)
+                if reply.cost is not None and not (
+                    isinstance(reply.cost, int | float)
+                    and math.isfinite(reply.cost)
+                    and reply.cost >= 0
+                ):
+                    # The call was made: charge its estimate, then stop. A bad charge never
+                    # lowers the spend so far.
+                    _charge(spend, now, {"charged_usd": estimate, "usd_source": None})
+                    raise BenchError(
+                        f"{model} reported the cost {reply.cost!r} for prompt '{p.id}'. A cost "
+                        "must be a finite number of zero or more. The run stopped; its estimate "
+                        "was charged."
+                    )
+                record = _record(model, p, sample, reply, prices[model], estimate)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")

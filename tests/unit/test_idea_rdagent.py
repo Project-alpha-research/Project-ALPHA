@@ -133,7 +133,7 @@ def test_notes_are_append_only_and_newest_first(tmp_path: Path) -> None:
 def test_old_idea_files_are_unchanged_when_nothing_is_linked(tmp_path: Path) -> None:
     card = synthetic_home(tmp_path)
     facts = _facts(tmp_path, card)
-    assert sorted(facts) == ["card", "counts", "map", "open_points", "papers", "readings"]
+    assert sorted(facts) == ["card", "counts", "map", "open_points", "readings"]
     assert "worked on by RD-Agent" not in {row["step"] for row in facts["map"]}
 
 

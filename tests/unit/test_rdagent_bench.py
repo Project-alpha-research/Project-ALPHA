@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -622,3 +623,37 @@ def test_failed_dispatches_count_against_the_call_cap(tmp_path: Path) -> None:
     with pytest.raises(BenchError, match="60"):
         run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
     assert client.calls == 60
+
+
+def test_each_gateway_gets_its_own_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, str] = {}
+
+    class _Response:
+        def __enter__(self) -> _Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            body = {"choices": [{"message": {"content": "x"}}], "usage": {}}
+            return json.dumps(body).encode()
+
+    def fake_urlopen(request: Any, timeout: float) -> _Response:
+        seen[request.full_url] = request.get_header("Authorization")
+        return _Response()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.delenv("ALPHA_BENCH_GATEWAY_TOKEN", raising=False)
+    monkeypatch.setenv("ALPHA_BENCH_TOKEN_A_B", "token-one")
+    monkeypatch.setenv("ALPHA_BENCH_TOKEN_C", "token-two")
+    client = GatewayClient({"a/b": "http://127.0.0.1:1", "c": "http://127.0.0.1:2"})
+    prompt = StoredPrompt("p0", "proposal", [], 1, 1)
+    client.complete("a/b", prompt, 0)
+    client.complete("c", prompt, 0)
+    assert seen["http://127.0.0.1:1/v1/chat/completions"] == "Bearer token-one"
+    assert seen["http://127.0.0.1:2/v1/chat/completions"] == "Bearer token-two"
+    with pytest.raises(BenchError, match="ALPHA_BENCH_TOKEN_D"):
+        GatewayClient({"a": "http://127.0.0.1:1", "d": "http://127.0.0.1:3"}).complete(
+            "d", prompt, 0
+        )

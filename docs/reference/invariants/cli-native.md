@@ -41,7 +41,8 @@ project-wide rule is [research integrity § Models and isolated workers](researc
   Month spend is one ledger, `<data_dir>/rdagent-bench/spend.jsonl`, whatever the store. Before each call, the spend so far plus
   that call's estimate must stay within both caps, so a model that writes more than the recorded counts stops the run. A call
   without token counts is charged its estimate. A gateway address must be `http` on `127.0.0.1`, `localhost` or `::1`.
-  Tests use the fake client (`--fixture`); no test calls a model. Real calls go through one local gateway per model.
+  Tests use the fake client (`--fixture`); no test calls a model. Real calls go through one local gateway per model,
+  each with its own token in `ALPHA_BENCH_TOKEN_<MODEL>`.
 - `report` shows readings, never a winner. A missing cost, latency or provider is shown with its reason. The family check runs
   the worker's `idea_families.py` in a child process. The prefix check is named as not run.
 - Recording prompts (`log_content`) and stage labels live in the worker's gateway and launcher, not here.

@@ -9,7 +9,7 @@ both live in `workers/**`, which the common rules protect. No real model was cal
 2. `plan` prints the call count and cost from recorded token counts and your prices. It refuses over 60 calls, 10 USD per run, 50 USD per month.
    It writes and calls nothing. A missing price or token count refuses the plan.
 3. `run` stores each output once (exclusive create), so a rerun resumes. It has no ledger or memory option. The store must be outside git.
-   The fake client (`--fixture`) needs no network. The real client posts to one local gateway per model; the token comes from `ALPHA_BENCH_GATEWAY_TOKEN`.
+   The fake client (`--fixture`) needs no network. The real client posts to one local gateway per model; each gateway's token comes from `ALPHA_BENCH_TOKEN_<MODEL>` (see round 6).
 4. `report` shows, per model: refusal rate, buildable share, cost per call, median latency. It shows the within-prompt difference per pair
    with the prompt count, and a plain sentence on what 30 pairs can show. No winner label. A missing value shows its reason.
 5. Docs: tool card `research/tools/rdagent-model-bench.md`, a section in `rdagent.md` and `cli-native.md`, `alpha next` line, `commands.md` regenerated.
@@ -40,7 +40,7 @@ Not tested because the code is not mine to change: recording off by default, sta
 (a) Record prompts on nightly runs: add `log_content = true` to `rdagent.toml`. This does NOT work yet; see item 1 above.
 (b) Bench with real models, one gateway per model, prompts exported to `PROMPTS/*.json`:
 1. `alpha rdagent bench plan --prompts PROMPTS --models m1,m2 --prices prices.toml --samples 2`
-2. `export ALPHA_BENCH_GATEWAY_TOKEN=<gateway token>`
+2. For each model, `export ALPHA_BENCH_TOKEN_<MODEL>=<that gateway's token>` (the model name in capitals, other characters as `_`)
 3. `alpha rdagent bench run --prompts PROMPTS --models m1,m2 --prices prices.toml --samples 2 --store ~/alpha-bench --gateway m1=http://127.0.0.1:PORT1 --gateway m2=http://127.0.0.1:PORT2`
 4. `alpha rdagent bench report --prompts PROMPTS --models m1,m2 --store ~/alpha-bench --closed "<family>"`
 
@@ -79,3 +79,7 @@ kept in the store (`unsettled-spend.jsonl`), so a rerun counts it against the 10
 1. Each call now reserves its estimate in the shared month ledger under a file lock before it is sent, and settles to the reported or token-based
    charge after. A second bench process sees the reservation, so two runs cannot both take the last dollars. A refusal before dispatch releases it.
 2. Failed dispatches are counted (in `unsettled-spend.jsonl`) against the 60-call cap on a rerun, as well as against the cost cap.
+
+## Review round 6 (Codex)
+Each gateway makes its own token, so one shared token failed on the second model. The client now reads `ALPHA_BENCH_TOKEN_<MODEL>` per model.
+With a single gateway, `ALPHA_BENCH_GATEWAY_TOKEN` still works. Tokens are never stored.

@@ -6,6 +6,7 @@ import textwrap
 from typing import Any
 
 from alpha_cli.spine import idea_card as cards
+from alpha_cli.spine.reading import relation_text
 
 SHOWN_EACH_END = 10
 CAP = 2 * SHOWN_EACH_END
@@ -80,7 +81,7 @@ def _rule(n: int, total: int, e: dict[str, Any]) -> list[str]:
     aim = e["aim"]
     lines.append(
         f"    Aim: out-of-sample Sharpe {aim['observed']:.2f} against buy-and-hold "
-        f"{aim['aim']:.2f}: {aim['relation']}."
+        f"{aim['aim']:.2f}; {relation_text(aim['relation'])}."
         if aim
         else "    Aim: none stored for this run."
     )

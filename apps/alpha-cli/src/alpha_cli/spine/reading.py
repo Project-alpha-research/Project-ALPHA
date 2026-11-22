@@ -74,6 +74,18 @@ AIM_BASIS = (
 )
 
 
+def relation_text(relation: str) -> str:
+    """The plain sentence for a stored relation word: what it says, and what it does not."""
+    return {
+        RELATIONS[0]: "this rule's Sharpe is above buy-and-hold's by more than the uncertainty "
+        "in the estimate",
+        RELATIONS[1]: "this rule's Sharpe is below buy-and-hold's by more than the uncertainty "
+        "in the estimate",
+        RELATIONS[2]: "buy-and-hold's Sharpe is inside this rule's 95% range, so this test "
+        "cannot tell the two apart",
+    }[relation]
+
+
 def _num(value: Any) -> float | None:
     """A finite float, or None for a missing or non-finite statistic."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -282,7 +294,7 @@ def _sentence(
             f"Out-of-sample Sharpe {_f(row['observed'])}; buy-and-hold over the same days "
             f"{_f(row['aim'])}."
         )
-        parts.append(f"Default aim: beat buy-and-hold; this reading is {row['relation']}.")
+        parts.append(f"Default aim: beat buy-and-hold; {relation_text(row['relation'])}.")
     parts.append(f"Evidence strength: {evidence['word']}.")
     tail = [
         part

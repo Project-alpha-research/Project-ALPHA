@@ -96,7 +96,7 @@ def test_below_buy_and_hold_reads_below_the_aim_with_no_positive_word() -> None:
         pytest.approx(0.75, rel=1e-9, abs=1e-12),
         "below the aim",
     )
-    assert "below the aim" in result["sentence"]
+    assert "below buy-and-hold" in result["sentence"]
     assert "Default aim: beat buy-and-hold" in result["sentence"]
     assert not FORBIDDEN_WORDS.search(result["sentence"])
     assert not LETTER_GRADE.search(result["sentence"])
@@ -352,7 +352,7 @@ def test_owner_text_has_no_grade_and_no_verdict_words(home: Path, first_run: str
         assert not FORBIDDEN_WORDS.search(new_text), (name, FORBIDDEN_WORDS.search(new_text))
         assert not LETTER_GRADE.search(text), (name, LETTER_GRADE.search(text))
         assert '"PASS"' not in text, name
-    assert "within the uncertainty of the aim" in texts["test"]
+    assert "inside this rule's 95% range" in texts["test"]
     assert "Evidence strength: " in texts["show"]
     assert "Evidence strength: " in texts["diagnose"]
     assert "(too little to read)" in texts["next"]

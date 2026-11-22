@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -20,6 +21,14 @@ from alpha_cli.spine.spec import IdeaSpec, load_spec
 from alpha_cli.spine.stores import _stores
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+
+
+def _echo_notes(text: str) -> None:
+    """What the run printed while it worked: warnings first, then the places files were saved."""
+    lines = [line for line in text.splitlines() if line.strip()]
+    paths = [line for line in lines if "saved to:" in line or line.startswith("Figure")]
+    for line in [*(line for line in lines if line not in paths), *paths]:
+        typer.echo(line)
 
 
 def _recheck_lines(output: dict[str, Any]) -> list[str]:
@@ -155,6 +164,7 @@ def test_rule(
 ) -> None:
     """Test a long/flat trading rule on several assets and record every trial."""
     settings = AlphaSettings()
+    notes = io.StringIO()
     try:
         parsed = load_spec(
             spec,
@@ -173,7 +183,7 @@ def test_rule(
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
-        with redirect_stdout(sys.stderr if json_out else sys.stdout):
+        with redirect_stdout(sys.stderr if json_out else notes):
             output = run_idea(
                 parsed,
                 home=settings.data_dir,
@@ -184,6 +194,7 @@ def test_rule(
                 no_diagnose=no_diagnose,
             )
         if all(result["error"] is not None for result in output["results"]):
+            _echo_notes(notes.getvalue())
             fail(
                 test_error(
                     "; ".join(result["error"] for result in output["results"]),
@@ -192,8 +203,10 @@ def test_rule(
                 json_out,
             )
     except SpineError as exc:
+        _echo_notes(notes.getvalue())
         fail(exc, json_out)
     except (ValueError, OSError, DataError) as exc:
+        _echo_notes(notes.getvalue())
         fail(test_error(str(exc)), json_out)
     lines = [
         f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
@@ -222,3 +235,5 @@ def test_rule(
         if not result.get("executed", True) and result["run_id"]:
             lines.append("The engine did not run: the stored run for this test was returned.")
     emit(output, json_out=json_out, fallback="\n".join(lines))
+    if not json_out:
+        _echo_notes(notes.getvalue())

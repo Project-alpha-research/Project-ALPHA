@@ -298,8 +298,9 @@ def _execute(
         print(f"{result['sentence']} [too-few-trades]")
     if result["resized_entries"] > 0:
         print(
-            f"{result['asset']}: {result['resized_entries']} cash entries resized to fit "
-            "the opening price including fees."
+            f"{result['asset']}: {result['resized_entries']} entries were made smaller, because "
+            "the cash did not cover the full order at the next open plus fees. "
+            "The result already uses the smaller size."
         )
 
 

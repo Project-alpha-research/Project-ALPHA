@@ -13,7 +13,7 @@ from typing import Any
 
 import polars as pl
 
-from alpha_cli.ml_run import split_sentence
+from alpha_cli.ml_split import split_sentence
 from alpha_core import DataError
 from alpha_web import _runs
 
@@ -78,8 +78,9 @@ def _row(record: Mapping[str, Any], *, data_dir: Path) -> dict[str, Any]:
     manifest = _runs._verified_manifest(rdir)
     stored = manifest.get("metrics")
     stored = stored if isinstance(stored, Mapping) else {}
-    metrics = {name: _number(stored.get(name)) for name in _METRICS}
-    metrics["benchmark_total_return"] = _number(stored.get("benchmark_total_return"))
+    metrics: dict[str, float | str | None] = {
+        name: _number(stored.get(name)) for name in (*_METRICS, "benchmark_total_return")
+    }
     metrics["sharpe_reason"] = (
         "Fewer than two scored periods, or no variation in returns."
         if metrics["sharpe"] is None

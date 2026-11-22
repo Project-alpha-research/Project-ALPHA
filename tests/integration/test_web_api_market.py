@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 import pytest
@@ -86,18 +87,20 @@ def test_overview_on_an_empty_store_is_a_409_not_a_500(
 def test_overview_is_cached_until_a_bar_file_changes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from alpha_web import _catalog
     from alpha_web.api import market
 
     market._cache.clear()
     client = _client(tmp_path, monkeypatch)
     calls: list[list[str]] = []
-    real = market._run_json
+    real = _catalog._run_json
 
-    def counting(args: list[str], **kwargs: object) -> dict[str, object]:
+    def counting(args: list[str], **kwargs: Any) -> dict[str, Any]:
         calls.append(args)
-        return real(args, **kwargs)
+        result: dict[str, Any] = real(args, **kwargs)
+        return result
 
-    monkeypatch.setattr(market, "_run_json", counting)
+    monkeypatch.setattr("alpha_web.api.market._run_json", counting)
     first = client.get("/api/market/overview", params={"window": "30"}).json()
     second = client.get("/api/market/overview", params={"window": "30"}).json()
     assert len(calls) == 1 and first == second

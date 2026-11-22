@@ -2,16 +2,17 @@
 
 A bounded, read-only read of what is already stored (run manifests and equity curves). Nothing here
 computes a statistic: the trade count, the out-of-sample Sharpe and the evidence word are relayed as
-the run stored them. An older run without a stored reading gets its word from the report's own function. The sparkline is the stored equity curve thinned to a fixed number of points.
+the run stored them. An older run without a stored reading gets its word from the report's own
+function. The sparkline is the stored equity curve thinned to a fixed number of points.
 """
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.reading import build_reading, reading_word
 from alpha_core import DataError
 from alpha_web import _rule_test, _runs
@@ -35,6 +36,17 @@ def thin(values: list[float], points: int = SPARK_POINTS) -> list[float]:
     return [values[round(index * step)] for index in range(points)]
 
 
+def _diagnostics(rdir: Path) -> Mapping[str, Any]:
+    """The stored diagnostics of a run, or an empty map when it has none."""
+    path = rdir / "diagnostics.json"
+    if not path.is_file():
+        return {}
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("diagnostics.json must contain an object")
+    return value
+
+
 def _derived_word(manifest: Mapping[str, Any], rdir: Path) -> str | None:
     """The reading word an older run did not store, worked out from its stored numbers.
 
@@ -44,7 +56,7 @@ def _derived_word(manifest: Mapping[str, Any], rdir: Path) -> str | None:
     if not isinstance(manifest.get("oos_metrics"), Mapping):
         return None
     try:
-        return reading_word(build_reading(manifest, read_json(rdir / "diagnostics.json")))
+        return reading_word(build_reading(manifest, _diagnostics(rdir)))
     except (AttributeError, KeyError, TypeError, ValueError, DataError):
         return None
 

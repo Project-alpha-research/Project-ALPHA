@@ -20,7 +20,7 @@ const DOCUMENTS = [
   { title: 'Compare', id: 'compare' },
   { title: 'Forecast', id: 'forecast' },
   { title: 'Machine learning', id: 'ml-lab' },
-  { title: 'Jobs & providers', id: 'jobs' },
+  { title: 'Jobs', id: 'jobs' },
   { title: 'Paper sessions', id: 'paper' },
   { title: 'Governance', id: 'governance' },
 ] as const
@@ -32,7 +32,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
     'Build': ['Strategies & Tests', 'Strategy Development'], 'Strategy Builder': ['Strategies & Tests', 'Builder'],
     'Scanner': ['Strategies & Tests', 'Scanner'], 'Strategy Performance Report': ['Results', 'Report'],
     'Compare': ['Results', 'Compare'], 'Forecast': ['Results', 'Forecast'], 'Machine learning': ['Results', 'ML lab'],
-    'Jobs & providers': ['Operations', 'Jobs'], 'Paper sessions': ['Operations', 'Paper sessions'],
+    'Jobs': ['Operations', 'Jobs'], 'Paper sessions': ['Operations', 'Paper sessions'],
     'Governance': ['Settings', 'Governance'], 'Funding': ['Data & Assets', 'Funding'],
     'Corporate actions': ['Data & Assets', 'Data downloads'],
   }
@@ -44,7 +44,7 @@ export async function openDocument(page: Page, title: string): Promise<void> {
 }
 
 function documentTab(page: Page, title: string) {
-  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Build: 'Strategy Development', 'Jobs & providers': 'Jobs', Governance: 'Governance' }
+  const titles: Record<string, string> = { Research: 'Research Case', Chart: 'Price', Build: 'Strategy Development', Jobs: 'Jobs', Governance: 'Governance' }
   return page.locator('.document-tabs').getByRole('tab', { name: titles[title] ?? /^Report(?: ·|$)/, exact: true })
 }
 
@@ -2252,6 +2252,7 @@ function responseFor(route: Route, options: MockOptions): unknown {
   }
   if (url.pathname === '/api/strategies' || url.pathname === '/api/commands') return []
   if (url.pathname === '/api/providers') return []
+  if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
   if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []
   if (url.pathname === '/api/workspaces') return []
@@ -3126,7 +3127,7 @@ test('running jobs expose exact runtime, bounded ETA, progress, and live output'
     ],
   })
   // Jobs sit in the Toolbox under every document; its tab expands the collapsed strip.
-  await openDocument(page, 'Jobs & providers')
+  await openDocument(page, 'Jobs')
 
   const row = page.getByRole('row').filter({ hasText: 'forecast eval AMZN' })
   const cells = row.getByRole('cell')
@@ -3166,7 +3167,7 @@ test('a failed job row shows the CLI error message, never a box border', async (
       },
     ],
   })
-  await openDocument(page, 'Jobs & providers')
+  await openDocument(page, 'Jobs')
   const row = page.getByRole('row').filter({ hasText: 'data pull XRP/USDT' })
   await expect(row.getByRole('cell').nth(6)).toHaveText(message)
   await expect(page.getByTitle(message)).toBeVisible()
@@ -3411,12 +3412,12 @@ test('the run report is a tree with a summary table and one watermark chip', asy
   await expectReleaseAccessibility(page)
 })
 
-test('research-gate override watermark reaches provider governance and run results', async ({ page }) => {
+test('research-gate override watermark reaches governance and run results', async ({ page }) => {
   await preparePage(page, { researchGateOverride: true })
 
-  // Provider governance lists every active override with actor + recorded reason (spec §15).
-  await openDocument(page, 'Jobs & providers')
-  await openTask(page, 'Operations', 'Providers & system')
+  // Governance lists every active override with actor + recorded reason (spec §15).
+  await openDocument(page, 'Governance')
+  await page.getByRole('button', { name: /^Overrides \(1\)/ }).click()
   await expect(page.getByText('SPY exploratory probe')).toBeVisible()
   await expect(
     page.getByText('Owner accepted exploratory-only engine work before research completes.'),
@@ -3446,7 +3447,7 @@ test('research-gate override watermark reaches provider governance and run resul
 
 test('the Governance document holds the hazard sentences the working documents no longer shout', async ({ page }) => {
   await preparePage(page)
-  for (const title of ['Research', 'Build', 'Jobs & providers']) {
+  for (const title of ['Research', 'Build', 'Jobs']) {
     await openDocument(page, title)
     await expect(page.locator('.sandbox-banner')).toHaveCount(0)
   }
@@ -3476,7 +3477,7 @@ test('the Governance document holds the hazard sentences the working documents n
   // Closing the Governance tab activates its neighbour and moves focus onto that tab.
   await page.goBack()
   await expect(page.getByRole('region', { name: 'Governance', exact: true })).toHaveCount(0)
-  await expect(documentTab(page, 'Jobs & providers')).toHaveAttribute('aria-selected', 'true')
+  await expect(documentTab(page, 'Jobs')).toHaveAttribute('aria-selected', 'true')
 })
 
 test('open research gates lock strategy affordances on Develop and link to the case', async ({ page }) => {
@@ -3820,7 +3821,7 @@ test('a store change outside the browser refreshes the panel watching its area',
       },
     ],
   })
-  await openDocument(page, 'Jobs & providers')
+  await openDocument(page, 'Jobs')
   // Data pulls is the jobs table filtered to data work.
   await openTask(page, 'Operations', 'Data jobs')
   await expect(page.getByRole('row').filter({ hasText: 'data pull XRP/USDT' })).toHaveCount(1)
@@ -3840,10 +3841,6 @@ test('a store change outside the browser refreshes the panel watching its area',
     )
   })
   await expect.poll(() => sessionReads).toBeGreaterThan(before)
-
-  // The Log names what changed.
-  await openTask(page, 'Operations', 'Activity')
-  await expect(page.getByText('paper journal changed')).toBeVisible()
 })
 
 test('a running case offers confirmed pause and cancel where the next action is printed', async ({ page }) => {

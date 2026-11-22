@@ -20,20 +20,6 @@ export function providerOptionDefault(
   return provider?.options[option]?.default ?? null
 }
 
-export function missingCredentialNames(provider: ProviderDefinition): string[] {
-  return provider.credential_env
-    .filter((credential) => !credential.present)
-    .map((credential) => credential.name)
-}
-
-export function providerReadinessLabel(provider: ProviderDefinition): string {
-  if (provider.verification_state === 'verified') return 'VERIFIED'
-  if (provider.configuration_state === 'optional_disabled') return 'OPTIONAL DISABLED'
-  if (provider.configuration_state === 'needs_process_injection') return 'NEEDS PROCESS INJECTION'
-  if (provider.configuration_state === 'not_installed') return 'NOT INSTALLED'
-  return provider.verification_state.replaceAll('_', ' ').toUpperCase()
-}
-
 interface PullArgs {
   symbol: string
   source: string

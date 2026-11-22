@@ -12,7 +12,6 @@
 import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
-import { ActivityFeed } from '../panels/ActivityFeed'
 import { CompareRuns } from '../panels/CompareRuns'
 import { DataManager } from '../panels/DataManager'
 import { EvidenceHub } from '../panels/EvidenceHub'
@@ -24,7 +23,6 @@ import { NativeJobResult } from '../panels/NativeJobResult'
 import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
-import { ProviderSystem } from '../panels/ProviderSystem'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
 import { IdeaWorkspace } from '../panels/idea/IdeaWorkspace'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
@@ -178,12 +176,8 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
   {
     id: 'jobs',
     kind: 'jobs',
-    title: 'Jobs & providers',
-    panes: [
-      { name: 'JobMonitor', title: 'Jobs', component: JobMonitor },
-      { name: 'ProviderSystem', title: 'Providers & system', component: ProviderSystem },
-      { name: 'ActivityFeed', title: 'Activity', component: ActivityFeed, area: 'side' },
-    ],
+    title: 'Jobs',
+    panes: [{ name: 'JobMonitor', title: 'Jobs', component: JobMonitor }],
   },
   {
     id: 'paper',
@@ -290,7 +284,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Log', 'Alerts'],
+    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Alerts'],
   },
 ]
 

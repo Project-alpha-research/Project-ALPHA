@@ -156,7 +156,6 @@ import type {
   PortfolioAnalyticsProjection,
   PropfirmPaths,
   ProviderDefinition,
-  ProviderCheckReceipt,
   ProjectDetail,
   ProjectPage,
   ProjectSummary,
@@ -544,8 +543,6 @@ export const api = {
     symbol: string,
   ): Promise<CryptoSnapshotRegister> =>
     postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/register`, { symbol }),
-  providerCheck: (providerId: string): Promise<ProviderCheckReceipt> =>
-    postJSON(`/api/providers/${encodeURIComponent(providerId)}/check`, {}),
   system: (): Promise<SystemStatus> => getJSON('/api/system'),
   jobs: (): Promise<PaperJobSummary[]> => getJSON('/api/jobs'),
   job: (id: string): Promise<JobDetail> => getJSON(`/api/jobs/${id}`),

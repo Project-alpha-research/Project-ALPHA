@@ -9,7 +9,6 @@ import type { ValidateManifest } from '../explain/types'
 import validateA from '../explain/__fixtures__/validate-a.json'
 import validateB from '../explain/__fixtures__/validate-b.json'
 import validateD from '../explain/__fixtures__/validate-d-kronos.json'
-import { ActivityFeedView } from './ActivityFeed'
 import { edgeReviewRows } from './edgeReviewModel'
 import { PipelineLatest } from './Pipeline'
 import { paletteHint, toastDetail } from './readingModel'
@@ -18,7 +17,6 @@ import { Gates } from './rundetail/Gates'
 import { ExplainCard } from './rundetail/common'
 import { SOME } from './__fixtures__/readings'
 import { BANNED } from './__fixtures__/scanWords'
-import type { ActivityEvent } from '../state/activity'
 
 // Owner-facing words that left these screens, and a lone letter grade. The owner's phrase for the old level ("the level used by
 // the old grade"), the retired-grade glossary name and the muted old-rules line are taken out before the scan.
@@ -140,10 +138,8 @@ describe('the Pipeline', () => {
   })
 })
 
-describe('the activity feed, toasts and command palette', () => {
-  const feed = (run: RunListItem): ActivityEvent[] => [{ seq: 1, at: 1_700_000_000_000, type: 'run_added', run }]
+describe('toasts and command palette', () => {
   it.each(runs)('show the evidence word, never a grade or gate result, for %s', (_name, run) => {
-    assertOwnerText(renderToStaticMarkup(<ActivityFeedView feed={feed(run)} connection="live" />))
     assertOwnerText(`<p>${toastDetail(run)}</p>`)
     assertOwnerText(`<p>${paletteHint(run)}</p>`)
   })

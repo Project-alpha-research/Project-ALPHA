@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any, Literal, cast
 
+from alpha_cli import run_price_cmds
 from alpha_cli.figures import _sources as src
 from alpha_cli.figures._common import (
     _UNIT_LABELS,
@@ -13,6 +14,7 @@ from alpha_cli.figures._common import (
     _truncation,
 )
 from alpha_cli.figures._held import held_zones, open_position_zone
+from alpha_cli.run_projection import MAX_CHART_BARS
 from alpha_core import DataError
 from alpha_research.figures import (
     CandleMark,
@@ -212,11 +214,31 @@ def _indicator_panels(
     return overlays, panels
 
 
+_NOT_DRAWN = {
+    run_price_cmds.BARS_CHANGED: "the stored price bars no longer match the bars this run used "
+    "(the fingerprint check failed). Run the test again to chart the bars stored now.",
+    run_price_cmds.NOT_SAVED: "this run did not record enough to find and check its bars.",
+}
+
+
+def _stored_rows(ctx: BuildContext) -> list[dict[str, float]]:
+    """A rule test's bars from the store, cut at the held-back date, only when they hash to the
+    run's recorded source fingerprint."""
+    status, rows = run_price_cmds.verified_bars(ctx.manifest, data_dir=ctx.data_dir)
+    if status != run_price_cmds.AVAILABLE or not rows:
+        reason = _NOT_DRAWN.get(status, "the stored price bars of this run could not be read.")
+        raise DataError(f"The price chart is not drawn: {reason}")
+    return [rows[index] for index in src.sample(len(rows), MAX_CHART_BARS)]
+
+
 def price_signal(ctx: BuildContext) -> FigureSpec:
     keys = ("symbol", "snapshot_id", "start", "end", "timeframe", "source_timeframe", "session")
-    rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
-    if reason is not None or not rows:
-        raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
+    if not ctx.field("snapshot_id") and isinstance(ctx.manifest.get("spine"), dict):
+        rows = _stored_rows(ctx)
+    else:
+        rows, reason = src.bars({key: ctx.field(key) for key in keys}, data_dir=ctx.data_dir)
+        if reason is not None or not rows:
+            raise DataError(f"price bars unavailable for this run ({reason or 'no bars'})")
     span = _run_span(ctx)
     if span is not None:
         # The store can hold years of bars past the run's last session; the figure is about

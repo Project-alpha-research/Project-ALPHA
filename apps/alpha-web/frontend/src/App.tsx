@@ -15,6 +15,7 @@ import { MenuBar } from './shell/MenuBar'
 import { restoreDocumentTabs, type TerminalDocument } from './shell/documentTabs'
 import { Toolbox } from './shell/Toolbox'
 import { FollowToday } from './panels/FollowToday'
+import { IdeaWorkspace } from './panels/idea/IdeaWorkspace'
 import { registerNavigator } from './panels/actions'
 import { ContextBar } from './shell/ContextBar'
 import { DOCUMENTS } from './shell/documents'
@@ -180,6 +181,7 @@ function WorkstationApp() {
           <div className="workflow-cards">{pages.filter(item => !['overview', 'settings'].includes(item.id)).map(item => <a key={item.id} href={workflowHash(item.id)}><h2>{item.title}</h2><p>{item.description}</p><span>Open {item.title.toLowerCase()} →</span></a>)}</div>
           <div className="workflow-overview-status"><h2>Continue your work</h2><p>{running} active jobs · {linked.projectId ? `Selected project: ${linked.projectId}` : 'No project selected. Start a research idea.'}</p></div>
           <div className="workflow-panel workflow-overview-panel"><PanelHost name="FollowToday" component={FollowToday} /></div>
+          <div className="workflow-panel workflow-overview-panel"><PanelHost name="IdeaWorkspace" component={IdeaWorkspace} /></div>
         </> : <>
           {page.id === 'settings' ? <div className="workflow-preferences">
             <label>Density<select aria-label="Density" className="field" value={settings.density} onChange={e => setSettings({ density: e.target.value as 'compact' | 'comfortable' })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>

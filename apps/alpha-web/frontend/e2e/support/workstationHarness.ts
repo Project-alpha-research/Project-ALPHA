@@ -2252,6 +2252,7 @@ function responseFor(route: Route, options: MockOptions): unknown {
   }
   if (url.pathname === '/api/strategies' || url.pathname === '/api/commands') return []
   if (url.pathname === '/api/providers') return []
+  if (url.pathname === '/api/ideas') return { cards: [], total: 0, truncated: false }
   if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
   if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []

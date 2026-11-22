@@ -2,11 +2,11 @@
 
 ## Result
 - Providers and Activity panes are gone. Eight unused Workstation files are gone, with their tests.
-- Home page (Overview) now shows the Today view (`FollowToday`). `ResearchBacklog` left the home page.
+- Home page (Overview) now shows the Today view (`FollowToday`) and the Ideas list (`IdeaWorkspace`). `ResearchBacklog` left the home page.
 - Lines: 36 added, 1,251 removed (git diff against `origin/main`, without this report).
 
 ## Pane counts (before → after)
-- Overview: 1 → 1 (`ResearchBacklog` → `FollowToday`).
+- Overview: 1 → 2 (`ResearchBacklog` → `FollowToday` and `IdeaWorkspace`).
 - Operations: 6 → 4 (Providers & system and Activity removed; Jobs, Data jobs, Alerts, Paper stay).
 - Toolbox tabs: 6 → 5 (Log removed).
 - The "Jobs & providers" document is now "Jobs".
@@ -20,7 +20,7 @@
 - Entries of deleted screens are out of `documents.ts`, `workflowModel.ts` (description only) and `terminalModel.ts`. `profiles.ts` had no entry to remove (the `jobs` window stays).
 
 ## Decisions
-1. **No Ideas list exists in the Workstation.** The brief says one exists. The web app has no Ideas screen and no route; only `alpha idea list` in the CLI. I added none (brief: no new feature). The home page shows Today only. Today already lists the followed ideas.
+1. The brief said an Ideas list existed. When I first built, it did not. `main` gained it later (`IdeaWorkspace`, M66), so after merging `main` I put it on the home page next to Today. The Workstation e2e harness mocks `/api/ideas` and `/api/follow/today` for the home page.
 2. `ResearchBacklog` stays: the Research document still uses it as a side pane.
 3. `/api/providers`, `/api/system` and `/api/activity/stream` stay: Data Manager, Governance, Paper and the toasts use them.
 4. `scripts/check_openapi_operations.py` still has a branch for the removed path. It is protected, so I left it dead.
@@ -32,6 +32,7 @@
 - Frontend: typecheck, lint, 866 unit tests, build: pass.
 - Playwright reference lane: 222 passed. One test (`market-overview`, real backend) failed in the full run and passed when run alone; I treat it as a flake.
 - Console error check on the new home page: none.
+- Later CI rounds fixed: the task-folder guard, a stale commands count after `main` moved, the capability map line for the deleted panel, and registry entries for panes `main` had retired (`AiConsole`, `CodexBench`).
 - Fail-first evidence: this is a deletion build. The new test surface is the e2e mock; the first lane run failed 10 tests with `unmocked API request: GET /api/follow/today`, then passed after the fix.
 - Not run: `fs.py verify` (as ordered).
 

@@ -1,5 +1,7 @@
 """One explicit catalogue. Legacy names are read only at the storage boundary."""
 
+from dataclasses import replace
+
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.toolbox.contract import ToolSpec
 from alpha_cli.toolbox.families.context import PUBLISHED_FACTORS
@@ -23,8 +25,9 @@ from alpha_cli.toolbox.families.risk_sizing import CHECKS as RISK_SIZING_CHECKS
 from alpha_cli.toolbox.families.robustness import START_END_DATES
 from alpha_cli.toolbox.families.timeseries import CHECKS as TIMESERIES_CHECKS
 from alpha_cli.toolbox.families.trades import DEPENDENCE
+from alpha_cli.toolbox.situations import QUESTIONS
 
-SPECS = (
+_OWN = (
     ATTRIBUTION,
     VOL_REGIMES,
     CHANGEPOINTS,
@@ -48,6 +51,21 @@ SPECS = (
     *RESAMPLING_MORE,
     *RISK_SIZING_CHECKS,
     *PERFORMANCE_STATS,
+)
+# A check also answers the questions of `situations.QUESTIONS` that name it.
+SPECS = tuple(
+    replace(
+        spec,
+        situations=(
+            *spec.situations,
+            *(
+                tag
+                for tag, ids in QUESTIONS.items()
+                if spec.id in ids and tag not in spec.situations
+            ),
+        ),
+    )
+    for spec in _OWN
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

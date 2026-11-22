@@ -5,7 +5,7 @@ from __future__ import annotations
 from ._base import StrictModel
 
 
-class MlFold(StrictModel):
+class MlStoredFold(StrictModel):
     fold: int
     train_start: str
     train_end: str
@@ -13,7 +13,7 @@ class MlFold(StrictModel):
     test_end: str
 
 
-class MlMetrics(StrictModel):
+class MlStoredMetrics(StrictModel):
     """Stored numbers after costs; a number that could not be worked out is null with a reason."""
 
     total_return: float | None
@@ -27,7 +27,7 @@ class MlMetrics(StrictModel):
     sharpe_reason: str | None
 
 
-class MlRun(StrictModel):
+class MlStoredRun(StrictModel):
     run_id: str
     mtime: float
     assets: list[str]
@@ -36,10 +36,10 @@ class MlRun(StrictModel):
     split_sentence: str | None
     n_oos_periods: int | None
     label: str | None
-    metrics: MlMetrics
-    folds: list[MlFold]
+    metrics: MlStoredMetrics
+    folds: list[MlStoredFold]
 
 
-class MlRunList(StrictModel):
+class MlStoredRunList(StrictModel):
     total: int
-    items: list[MlRun]
+    items: list[MlStoredRun]

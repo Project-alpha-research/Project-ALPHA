@@ -17,6 +17,9 @@ Rules for `alpha setup find`, `alpha setup study`, `alpha setup trade` and `alph
   It prints the stored outcome's reading ([rule](cli-rule-readings.md#rule-test-readings)).
 
 ## Setup find
+- `alpha setup new` and the direct options (`--when`, `--horizon`, `--stop`, `--target`, `--asset`) build the spec in
+  `_setup_spec_build.py`, check each option alone and name it in the error, and never overwrite a file. Direct options
+  write `specs/quick-<hash>.toml`; the same options give the same file and find id. A file and options together are refused.
 - `alpha setup find` resolves daily spec assets in order, honours `@store`, and records no outcome after the entry open.
 - Per-asset errors remain visible; all failed assets produce `FIND_FAILED`. Invalid specs and unknown selections fail loud. Events at most ten bars
   apart share a cluster; draw only its first accepted day. Counts and facts retain matching days and occurrences.

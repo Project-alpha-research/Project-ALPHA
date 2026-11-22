@@ -12,8 +12,6 @@ class Refusal { readonly detail: string; constructor(detail: string) { this.deta
 // View menu, the Navigator or the toolbar rather than from a fixed tab strip.
 const DOCUMENTS = [
   { title: 'Chart', id: 'chart' },
-  { title: 'Research', id: 'research' },
-  { title: 'Build', id: 'build' },
   { title: 'Strategy Builder', id: 'builder' },
   { title: 'Scanner', id: 'scanner' },
   { title: 'Strategy Performance Report', id: 'report' },
@@ -2248,6 +2246,9 @@ function responseFor(route: Route, options: MockOptions): unknown {
   }
   if (url.pathname === '/api/strategies' || url.pathname === '/api/commands') return []
   if (url.pathname === '/api/providers') return []
+  if (url.pathname === '/api/recent-runs') return { total: 0, items: [] }
+  if (url.pathname === '/api/ideas') return { cards: [], total: 0, truncated: false }
+  if (url.pathname === '/api/market/overview') return { store: '1D', available_stores: ['1D'], bar_unit: 'day', window: 90, limit: 15, assets_in_store: 0, assets_scanned: 0, scan_cap: 200, bars_cap: 400, eligible_assets: 0, data_to: null, assets: [], too_few_bars: [], unreadable: [], generated_at: '2026-11-19T10:00:00+00:00' }
   if (url.pathname === '/api/follow/today') return { as_of: '2026-11-20T01:00:00+00:00', paper: true, followed: 0, behind: 0, markets: [], groups: [], rows: [], notice: 'Paper only. Forward use; not research. Not advice.' }
   if (url.pathname === '/api/system') return SYSTEM_STATUS
   if (url.pathname === '/api/jobs') return options.jobs ?? []
@@ -2350,7 +2351,8 @@ export async function preparePage(page: Page, options: MockOptions = {}): Promis
   await page.addInitScript(([initialSymbol, settings]: [string | null, Record<string, unknown> | null]) => {
     localStorage.clear()
     localStorage.setItem('alpha.workflow.context', JSON.stringify({ symbol: initialSymbol }))
-    if (settings) localStorage.setItem('alpha.settings', JSON.stringify(settings))
+    // The fixtures are crypto pairs: start on the Crypto market unless a test chooses another.
+    localStorage.setItem('alpha.settings', JSON.stringify({ profile: 'crypto', ...(settings ?? {}), profileChosen: true }))
 
     class DeterministicEventSource extends EventTarget {
       static readonly CONNECTING = 0
@@ -2485,8 +2487,8 @@ export async function preparePage(page: Page, options: MockOptions = {}): Promis
     })
   })
 
-  await page.goto('/#page=research&pane=ResearchCockpit')
-  await expect(page.getByRole('region', { name: 'Research Case', exact: true })).toBeVisible()
+  await page.goto('/#page=overview')
+  await expect(page.getByRole('region', { name: 'Recent tests', exact: true })).toBeVisible()
 }
 
 async function expectReleaseAccessibility(page: Page): Promise<void> {

@@ -178,3 +178,21 @@ def test_a_finished_build_is_reused_under_its_lock_file(home: Path, tmp_path: Pa
     assert (base / "done").is_file()
     assert (home / "ml_runs" / f"{base.name}.lock").is_file()
     assert ml_run.run_spec(spec, data_dir=home)["run_id"] == first["run_id"]
+
+
+def test_as_of_cutoff_is_kept_in_the_stored_run(home: Path, tmp_path: Path) -> None:
+    result = ml_run.run_spec(_spec(tmp_path), data_dir=home, as_of="2023-06-30")
+    manifest = json.loads((home / "runs" / result["run_id"] / "manifest.json").read_text())
+    assert manifest["research_cutoff"] == "2023-06-30"
+    assert result["folds"][-1]["test_end"] <= "2023-06-30"
+
+
+def test_a_tampered_snapshot_is_not_reused(home: Path) -> None:
+    store = ParquetStore(home / "store")
+    snapshot_id = ml_run._freeze(home, SYMBOLS)
+    bars = ParquetStore(home / "snapshots" / snapshot_id)._bars_path(SYMBOLS[0])
+    bars.chmod(0o644)
+    bars.write_bytes(bars.read_bytes() + b"x")
+    assert store._bars_path(SYMBOLS[0]).is_file()
+    with pytest.raises(ml_run.MlRunError, match="changed while it was frozen"):
+        ml_run._freeze(home, SYMBOLS)

@@ -17,6 +17,7 @@ from typing import Any
 
 from alpha_cli import ml_cmds
 from alpha_cli._ml_replay import run_ml_replay
+from alpha_cli._runner import parse_as_of
 from alpha_cli.ml_contract import (
     MLContractError,
     canonical_json_bytes,
@@ -83,12 +84,10 @@ def _require_worker(project: Path | None) -> Path:
     return root
 
 
-def _freeze(data_dir: Path, assets: list[str]) -> str:
-    """Freeze the stored bars of the assets into one immutable snapshot; reuse an equal one."""
-    store = ParquetStore(store_dir(data_dir, DAILY))
+def _content_key(store: ParquetStore, symbols: list[str]) -> str:
+    """Hash the bars, actions and pull record of each symbol; the same for a store or snapshot."""
     digest = hashlib.sha256()
-    source: dict[str, object] | None = None
-    for symbol in sorted(assets):
+    for symbol in symbols:
         bars = store._bars_path(symbol)
         if not bars.is_file():
             raise MlRunError(
@@ -97,26 +96,45 @@ def _freeze(data_dir: Path, assets: list[str]) -> str:
         for part in (bars, store._actions_path(symbol), store._provenance_path(symbol)):
             digest.update(symbol.encode() + part.name.encode())
             digest.update(hashlib.sha256(part.read_bytes()).digest() if part.is_file() else b"-")
+    return f"ml-{digest.hexdigest()[:16]}"
+
+
+def _freeze(data_dir: Path, assets: list[str]) -> str:
+    """Freeze the stored bars of the assets into one immutable snapshot; reuse an equal one.
+
+    The snapshot id is the hash of its own bytes: a snapshot is reused only after its files hash
+    to its id, and a fresh one that does not (the store changed while copying) is removed.
+    """
+    symbols = sorted(assets)
+    store = ParquetStore(store_dir(data_dir, DAILY))
+    snapshot_id = _content_key(store, symbols)
+    source: dict[str, object] | None = None
+    for symbol in symbols:
         found = store.read_provenance(symbol)
         if found is None or (source is not None and found["source"] != source["source"]):
             raise MlRunError(
                 f"The stored bars of {symbol} have no single pull record. Pull the assets again."
             )
         source = source or found
-    snapshot_id = f"ml-{digest.hexdigest()[:16]}"
     root = data_dir / "snapshots"
-    if not resolve_snapshot_dir(root, snapshot_id).exists():
+    target = resolve_snapshot_dir(root, snapshot_id)
+    created = not target.exists()
+    if created:
         assert source is not None
         create_snapshot(
             store,
             root,
             snapshot_id,
-            sorted(assets),
+            symbols,
             source=str(source["source"]),
             adapter_version=str(source["adapter_version"]),
             parser_version=str(source["parser_version"]),
             created_at=datetime.now(UTC),
         )
+    if _content_key(ParquetStore(target), symbols) != snapshot_id:
+        if created:
+            shutil.rmtree(target)
+        raise MlRunError("The stored data changed while it was frozen. Run the command again.")
     return snapshot_id
 
 
@@ -243,7 +261,9 @@ def run_spec(
     with base.with_suffix(".lock").open("a+b") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)  # one build per key; a second waits, then reuses
         _build(base, experiment, project, as_of)
-    replayed = run_ml_replay(base / "exchange", data_dir=data_dir)
+    replayed = run_ml_replay(
+        base / "exchange", data_dir=data_dir, research_cutoff=parse_as_of(as_of)
+    )
     manifest = replayed.manifest
     folds = _folds(base)
     return {

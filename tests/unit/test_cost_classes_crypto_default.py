@@ -57,7 +57,9 @@ def test_crypto_without_costs_takes_the_crypto_default(
         result,
         {},
     )
-    assert prepared.spec.fee_bps == pytest.approx(cc.ROWS["crypto_spot"].fee_bps, rel=1e-9, abs=1e-12)
+    assert prepared.spec.fee_bps == pytest.approx(
+        cc.ROWS["crypto_spot"].fee_bps, rel=1e-9, abs=1e-12
+    )
     assert prepared.spec.slippage_bps == pytest.approx(
         cc.ROWS["crypto_spot"].slippage_bps, rel=1e-9, abs=1e-12
     )
@@ -65,7 +67,8 @@ def test_crypto_without_costs_takes_the_crypto_default(
 
 
 @pytest.mark.parametrize(
-    ("symbol", "expected"), [("BTC-USD", "crypto_spot"), ("ETH-USDT", "crypto_spot"), ("AAPL", None)]
+    ("symbol", "expected"),
+    [("BTC-USD", "crypto_spot"), ("ETH-USDT", "crypto_spot"), ("AAPL", None)],
 )
 def test_class_costs_know_a_yfinance_crypto_ticker_by_its_symbol(
     tmp_path: Path, symbol: str, expected: str | None

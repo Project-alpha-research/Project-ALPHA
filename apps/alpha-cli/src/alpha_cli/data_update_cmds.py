@@ -59,7 +59,9 @@ def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -
         typer.echo(json.dumps({"symbols": rows}, sort_keys=True))
         return
     if not rows:
-        typer.echo("No data is stored yet. Pull some with: alpha data pull SYMBOL --start ... --end ...")
+        typer.echo(
+            "No data is stored yet. Pull some with: alpha data pull SYMBOL --start ... --end ..."
+        )
         return
     typer.echo(f"{'symbol':<14}{'first date':<12}{'last date':<12}{'bars':>6}  health")
     for row in rows:
@@ -70,7 +72,9 @@ def coverage(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -
 
 
 def update(
-    dry_run: bool = typer.Option(False, "--dry-run", help="print what would be pulled; pull nothing"),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="print what would be pulled; pull nothing"
+    ),
 ) -> None:
     """Pull every stored symbol up to today, from the source recorded for it."""
     home = AlphaSettings().data_dir
@@ -93,7 +97,7 @@ def update(
             continue
         done = subprocess.run(alpha_argv(tail), capture_output=True, text=True, check=False)
         if done.returncode == 0:
-            typer.echo(f"{symbol}: updated. {done.stdout.strip().splitlines()[0] if done.stdout.strip() else ''}")
+            typer.echo(f"{symbol}: updated. {(done.stdout.strip().splitlines() or [''])[0]}")
         else:
             failed += 1
             last = (done.stderr.strip().splitlines() or ["no message"])[-1]

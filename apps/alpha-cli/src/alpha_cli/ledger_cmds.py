@@ -175,8 +175,13 @@ def _totals(snapshot: LedgerSnapshot) -> dict[str, Any]:
     total, unknown = result["all_trials"], result["unknown_rows"]
     rows = len(snapshot.records) + len(snapshot.unknown)
     # Repeats of one try are rows but not new trials: say both numbers, so the table matches.
-    text = f"{total} trials" if rows == total else (
-        f"{rows} rows recorded; {total} count as separate trials (a repeat of one try counts once)"
+    text = (
+        f"{total} trials"
+        if rows == total
+        else (
+            f"{rows} rows recorded; {total} count as separate trials "
+            "(a repeat of one try counts once)"
+        )
     )
     if unknown:
         text += f", including {unknown} rows ALPHA could not interpret (counted anyway)"
@@ -218,9 +223,7 @@ def _share_per_kind(records: list[TrialRecord], limit: int) -> list[TrialRecord]
 
 
 @ledger_app.callback(invoke_without_command=True)
-def default_view(
-    ctx: typer.Context, rdagent_ledger: RD = None, json_out: JSON = False
-) -> None:
+def default_view(ctx: typer.Context, rdagent_ledger: RD = None, json_out: JSON = False) -> None:
     """With no subcommand, list the newest trials of every kind (same as `ledger list`)."""
     if ctx.invoked_subcommand is None:
         list_trials(rdagent_ledger=rdagent_ledger, json_out=json_out)

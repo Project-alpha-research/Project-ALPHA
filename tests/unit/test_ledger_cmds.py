@@ -251,9 +251,14 @@ def test_the_default_list_keeps_a_share_for_every_kind(
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     result = CliRunner().invoke(ledger_app, ["list", "--limit", "3", "--rdagent-ledger", str(rd)])
-    kinds = {row["kind"] for row in json.loads(CliRunner().invoke(
-        ledger_app, ["list", "--limit", "3", "--rdagent-ledger", str(rd), "--json"]
-    ).output)["records"]}
+    kinds = {
+        row["kind"]
+        for row in json.loads(
+            CliRunner()
+            .invoke(ledger_app, ["list", "--limit", "3", "--rdagent-ledger", str(rd), "--json"])
+            .output
+        )["records"]
+    }
     assert kinds == {"rule_test", "factor", "rule_family"}
     assert "Showing 3 of 7 rows" in result.output
 

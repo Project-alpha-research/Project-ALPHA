@@ -28,3 +28,6 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 - `alpha ledger` with no subcommand shows the list view. The default list (no `--kind`) gives each kind an equal share of `--limit`, newest first, so RD-Agent rows are not pushed out by newer rule tests. It ends with "Showing N of M rows".
 - The summary line now reads "106 rows recorded; 20 count as separate trials (a repeat of one try counts once)" when the two numbers differ; unchanged when they match.
 - Cause not seen on real data (none available): the list sorted newest-first and cut at 50, and rows without a date sort last.
+
+## 7. Context list
+`alpha context list` prints tables (FRED series; free tables with a name column). `--json` keeps JSON and the free rows gain a `name`. A CFTC market name is made plain from the stored `market_name` ("E-Mini S&P 500 (Chicago Mercantile Exchange)"); no code-to-name table was invented. Test: `test_list_prints_a_table_with_a_plain_market_name`.

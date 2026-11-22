@@ -111,7 +111,8 @@ def asset_class(resolved: ResolvedAsset, *, by_symbol: bool = False) -> str | No
 
     A stored dataset identity decides. Without one, a crypto provider or a slash pair is crypto
     spot; an equity provider alone does not tell a stock from an ETF, so it is not known. When
-    costs are chosen by class (``by_symbol``), a broad US index fund or a dash-quoted crypto ticker is also known by its symbol;
+    costs are chosen by class (``by_symbol``), a broad US index fund or a dash-quoted crypto
+    ticker is also known by its symbol;
     a run with stated costs records only what the store says, as every stored run did.
     """
     path = ParquetStore(store_dir(resolved.data_dir, DAILY))._provenance_path(resolved.symbol)

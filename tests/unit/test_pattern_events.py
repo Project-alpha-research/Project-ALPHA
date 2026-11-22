@@ -140,3 +140,20 @@ def test_head_and_shoulders_is_one_event_per_head_with_its_neckline() -> None:
         assert len(heads) == len(set(heads))
         for e in events:
             assert len(e.anchors) == 5  # left shoulder, neckline, head, neckline, right shoulder
+
+
+@pytest.mark.parametrize("family", ["trendlines", "harmonics"])
+def test_events_are_the_same_on_the_prefixes_around_each_event(family: str) -> None:
+    """A line or pattern seen only one bar later must be stamped on that later bar."""
+    seen = 0
+    for seed in (1, 3):
+        bars = geometric_brownian_series(420, seed=seed, vol_per_bar=0.02)
+        full = pe.event_series(bars, pe.FAMILIES[family])
+        marks = {i for v in full.values() for i, x in enumerate(v) if x == 1.0}
+        seen += len(marks)
+        cuts = sorted({c for m in marks for c in (m - 1, m, m + 1) if pe.WARMUP <= c < 419})
+        for cut in cuts:
+            part = pe.event_series(_head(bars, cut + 1), pe.FAMILIES[family])
+            for name in pe.FAMILIES[family]:
+                assert part[name] == full[name][: cut + 1], (family, name, seed, cut)
+    assert seen > 0

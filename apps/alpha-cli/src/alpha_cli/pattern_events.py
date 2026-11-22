@@ -135,10 +135,17 @@ def _line_breaks(bars: OHLCV, name: str, flip: bool) -> list[PatternEvent]:
     return out
 
 
-def _trendlines(bars: OHLCV) -> list[PatternEvent]:
+def _line_events(bars: OHLCV) -> list[PatternEvent]:
     return _line_breaks(bars, "falling_line_break", False) + _line_breaks(
         _mirror(bars), "rising_line_break", True
     )
+
+
+def _trendlines(bars: OHLCV) -> list[PatternEvent]:
+    """A break may show one bar after its line is confirmed, so run again at k and k+1 of each."""
+    rough = _line_events(bars)
+    extra = [i for e in rough for i in (e.confirmed_index, e.confirmed_index + 1)]
+    return replay(bars, _line_events, extra)
 
 
 def _flags(bars: OHLCV) -> list[PatternEvent]:
@@ -224,7 +231,7 @@ def _triple_taps(bars: OHLCV) -> list[PatternEvent]:
     ]
 
 
-def _harmonics(bars: OHLCV) -> list[PatternEvent]:
+def _harmonic_events(bars: OHLCV) -> list[PatternEvent]:
     from alpha_patterns import detect_harmonics, directional_change
 
     scan = detect_harmonics(bars, directional_change(bars, sigma=DC_SIGMA))
@@ -234,6 +241,14 @@ def _harmonics(bars: OHLCV) -> list[PatternEvent]:
         pts = [(i, float(bars.close[i])) for i in (h.x, h.a, h.b, h.c, h.d)]
         out.append(ev(f"harmonic_{side}", h.confirmed_index, pts, f"{h.name} ({side}ish)", "line"))
     return out
+
+
+def _harmonics(bars: OHLCV) -> list[PatternEvent]:
+    """The scan reveals a pattern only once the next extreme is confirmed: run at each of those."""
+    from alpha_patterns import directional_change
+
+    extra = [e.confirmed_index for e in directional_change(bars, sigma=DC_SIGMA)]
+    return replay(bars, _harmonic_events, extra)
 
 
 _BUILDERS: dict[str, Callable[[OHLCV], list[PatternEvent]]] = {

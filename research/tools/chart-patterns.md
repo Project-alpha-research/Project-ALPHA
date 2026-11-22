@@ -13,7 +13,7 @@ verified: 0000000000000000
 
 **See it**
 ```text
-uv run alpha chart overlays NVDA -p trendlines [--since 2024-01-01] [--end 2025-06-30]
+alpha chart overlays NVDA -p trendlines [--since 2024-01-01] [--end 2025-06-30]
 ```
 It writes a plain and an annotated picture and prints 3 lines: how many, the most recent and its date, the paths.
 Swings and other markers are all drawn; lines and outlines show the 5 most recent that do not crowd, numbered in the legend.
@@ -25,7 +25,7 @@ head_shoulders, wedges, triple_taps, harmonics. Drawn only, no events: pips, mar
 `research/examples/setup-pivot-reversal.example.toml`.
 Series: swing_/dc_/structure_ + high or low, falling_/rising_line_break, bull_/bear_ + flag or pennant, hs_top, hs_bottom,
 wedge_ + falling, rising or symmetrical, triple_tap, harmonic_bull, harmonic_bear.
-`uv run alpha setup find <spec.toml> --json`, then `uv run alpha setup study <find_id> --json`.
+`alpha setup find <spec.toml> --json`, then `alpha setup study <find_id> --json`.
 
 **How to read it**
 - An event is 1 on the bar where it became known, else 0. A swing is known only after its confirmation bars, so the event sits on

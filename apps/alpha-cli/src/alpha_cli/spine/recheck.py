@@ -26,7 +26,7 @@ from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.ledger import read_trials_readonly
 from alpha_cli.spine.recheck_compare import MISMATCH_EXIT, compare_runs
-from alpha_cli.spine.run import new_result, prepare_asset, write_run
+from alpha_cli.spine.run import gauntlet_knobs, new_result, prepare_asset, write_run
 from alpha_cli.spine.spec import IdeaSpec
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.spine.trial_record import TestKey, row_test_key
@@ -205,11 +205,7 @@ def recheck_idea(
 ) -> dict[str, Any]:
     """One recheck per asset, in the shape of a rule-test result with a `recheck` block."""
     idea_card.require(home, idea.idea_card)
-    knobs = _gauntlet.GauntletParams(seed=seed)
-    if quick:
-        knobs = replace(
-            knobs, tier1_paths=20, tier2_paths=4, tier3_paths=4, n_resamples=50, max_workers=1
-        )
+    knobs = gauntlet_knobs(seed, quick)
     rows = read_trials_readonly(home)
     results = []
     for asset in idea.assets:

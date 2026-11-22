@@ -27,6 +27,23 @@ def _card(card: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _papers(found: list[dict[str, Any]]) -> list[str]:
+    if not found:
+        return ["  No paper is linked. A paper is a source for ideas only, never evidence."]
+    lines = ["  A paper is a source for ideas only. It is not evidence, a test or an approval."]
+    for p in found:
+        if not p["readable"]:
+            lines.append(f"  {p['paper_id']}: the paper file cannot be read.")
+            continue
+        authors = ", ".join(p["authors"]) if p["authors"] else "authors not stated"
+        lines.append(
+            f"  {p['paper_id']}  {p['title'] or 'title not stated'} "
+            f"({authors}; {p['year'] if p['year'] is not None else 'year not stated'})"
+            + ("  [RETRACTED]" if p.get("retracted") is True else "")
+        )
+    return lines
+
+
 def _map(steps: list[dict[str, Any]]) -> list[str]:
     lines = ["  This is a map of what has been done. It is not a gate."]
     for s in steps:
@@ -149,6 +166,26 @@ def _open(o: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _rdagent(found: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for e in found:
+        lines.append(f"  RD-Agent idea {e['ref']}" + (" (exploratory)" if e["exploratory"] else ""))
+        if e["problem"]:
+            lines.append(f"    Fault: {e['problem']}.")
+        for n, s in enumerate(e["steps"], 1):
+            lines += _wrap(f"{n}. {s['title']} ({s['who']}):", str(s["text"]), 4)
+            lines += [f"       {m['label']}: {m['display']}" for m in s["numbers"]]
+            if s["figure"]:
+                lines.append(f"       Figure: {s['figure']}")
+            if s["exploratory"]:
+                lines.append("       This step is exploratory.")
+    return lines
+
+
+def _notes(notes: list[dict[str, Any]]) -> list[str]:
+    return [f"  {n['at'][:16]}  [{n['kind']}] {n['text']}" for n in notes]
+
+
 def render(facts: dict[str, Any]) -> str:
     card = facts["card"]
     parts = [
@@ -158,7 +195,12 @@ def render(facts: dict[str, Any]) -> str:
         ("3. Readings so far, oldest first", _readings(facts["readings"])),
         ("4. Counts", _counts(facts["counts"])),
         ("5. Open points", _open(facts["open_points"])),
+        ("6. Papers it draws on", _papers(facts.get("papers", []))),
     ]
+    if facts.get("rdagent"):
+        parts.append(("6. RD-Agent steps", _rdagent(facts["rdagent"])))
+    if facts.get("notes"):
+        parts.append(("7. Notes and decisions, newest first", _notes(facts["notes"])))
     out: list[str] = []
     for title, lines in parts:
         out += [title, *lines]

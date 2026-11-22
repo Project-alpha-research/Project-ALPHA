@@ -4,7 +4,7 @@ sources:
   - workers/rdagent/**
   - apps/alpha-cli/src/alpha_cli/_native_rule_environment.py
   - scripts/gate_components.py
-verified: d726bf49f1125228
+verified: 9caaba5ecf2b6203
 ---
 
 # RD-Agent worker invariants
@@ -143,6 +143,12 @@ Rules for the pinned RD-Agent worker in `workers/rdagent/`. The other workers ar
   old receipts keep their policy. Joins preserve earlier bars, reject overlap and record `identity_joins`.
 - Optional futures funding is a separate hash-bound panel table; daily timing, identity joins and factor-specific eligibility:
   [README](../../../workers/rdagent/judge-rules.md#futures-funding). Tests: `test_rdagent_funding_columns.py`.
+
+## Model replay bench
+
+- `alpha rdagent bench` replays stored prompts on candidate models and scores them with the worker's own deterministic checks. It adds a
+  measurement only: no prompt, reflection, feedback, memory or context of the loop changes. It never writes the trial ledger or the
+  loop memory, and its caps are the gateway's (60 calls, USD 10 per run, USD 50 per month). Rules: [command line native](cli-native.md#model-replay-bench).
 
 ## Viewer
 

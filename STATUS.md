@@ -4,7 +4,7 @@ _Generated — do not edit; run: `uv run python scripts/status.py`_
 
 ## At a glance
 
-- **Capabilities:** 34 working, 37 partly working, 0 demo only, 4 shelved, 1 not started.
+- **Capabilities:** 35 working, 38 partly working, 0 demo only, 3 shelved, 1 not started.
 - **Known defects:** 0.
 - **Decisions waiting for you:** 5.
 
@@ -25,7 +25,8 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **Front door (alpha next)** — uv run alpha next
 - **Idea card (alpha idea)** — uv run alpha idea new --from research/examples/idea-card.example.toml
 - **Library of published ideas (alpha library)** — uv run alpha library list
-- **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md).
+- **Nightly real run (alpha nightly)** — uv run alpha nightly status More: [research/tools/nightly-run.md](research/tools/nightly-run.md). More: [research/tools/nightly-alert.md](research/tools/nightly-alert.md).
+- **Back up and restore the data home (alpha home)** — uv run alpha home backup <folder outside the data home> More: [research/tools/home-backup.md](research/tools/home-backup.md). More: [docs/operations/data-home-backup.md](docs/operations/data-home-backup.md).
 - **Risk numbers that state what they are based on (C04)** — uv run alpha risk scenario --from-run <run-id> --json --include-metric-basis (a real run is recorded)
 - **Quick idea screening (Phase C)** — uv run alpha scan hypotheses --as-of <date> (a real run is recorded)
 - **Machine-learning experiments with Qlib** — uv run alpha ml capabilities
@@ -71,7 +72,7 @@ Runs on real market data are still to be confirmed on the Mac, except where note
 - **AI-run daily trading-rule study (Packet 3, W08)** — with its Docker image now qualified here, the full daily study's tests pass on made-up bars; it has no end-to-end smoke check, the storage settings are not yet created, and no real data has been acquired. Needs: the Dell's storage settings, created by you (docs/operations/storage-settings.md; 10 GB reserve per ADR-0043); real Binance daily bars admitted into that storage. More: [docs/roadmap/rd-agent-in-alpha.md](docs/roadmap/rd-agent-in-alpha.md). More: [docs/operations/storage-settings.md](docs/operations/storage-settings.md).
 - **Running ALPHA on your Mac with real data providers** — one final review and a run on your Mac. Needs: your Mac; access to a real data provider (blocked since 31 August).
 - **Macro context data as first published** — installed-command smoke test written; execution and live FRED behavior await verification. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
-- **Provider-neutral options data layer** — no provider adapter, derived series, health rows or command; waits for the paid data package. More: [docs/reference/project/components/options-data.md](docs/reference/project/components/options-data.md).
+- **Provider-neutral options data layer** — no provider adapter, health rows or context-store join; waits for the paid data package. More: [docs/reference/project/components/options-data.md](docs/reference/project/components/options-data.md).
 - **Test a trading rule on several assets with one command** — installed-command synthetic run checked; smoke suite awaits execution outside the sandbox. More: [docs/reference/project/components/command-line.md](docs/reference/project/components/command-line.md).
 - **Automatic diagnostic pass and audit on every rule test** — end-to-end smoke verification outside the builder sandbox. More: [docs/reference/invariants/cli-runs.md](docs/reference/invariants/cli-runs.md).
 - **Company filings, earnings dates and insider trades as filed** — live SEC check (ticker map, submissions, time zone, Form 4 path) needs ALPHA_SEC_USER_AGENT. More: [docs/reference/project/components/data-layer.md](docs/reference/project/components/data-layer.md).
@@ -86,6 +87,7 @@ Tested piece by piece inside the test suite, but not yet run from start to finis
 - **Write trading rules and scan markets** — tested in-process and in a browser against a test server.
 - **Strategy development workspace** — tested in-process only.
 - **Prop-firm challenge check** — tested in-process only.
+- **Ask the AI assistant about a recorded run (Codex)** — tested in a browser against a test server only (a real run is recorded).
 - **Let an AI assistant use ALPHA's tools (MCP)** — tested in-process only.
 - **Purged cross-validation for labels that last several days** — tested in-process only (a real run is recorded).
 - **Fractional differencing with d chosen on training data only** — tested in-process only (a real run is recorded).
@@ -104,7 +106,6 @@ Found by running the installed program; each has a check that will fail once it 
 
 ## Shelved
 
-- **Download bookkeeping: receipts and quota** — shelved 2026-11-14: not wired into any command; kept for a future download-budget policy and durable acquisition journal.
 - **Qlib model refit evidence (W11)** — shelved 2026-11-14: not wired into any fit; kept for Qlib fold retraining once the reviewed statistics modules exist.
 - **Qlib models inside research cases (W09)** — shelved 2026-11-14: unused groundwork, not wired in; kept for routing Qlib models through RD-Agent research cases after the daily rule study.
 - **Qlib and Nautilus demonstration views** — shelved 2026-11-14: made-up prices only, not a production path; kept as a demonstration that Qlib and Nautilus connect (it re-ran on this computer on 2026-11-14).

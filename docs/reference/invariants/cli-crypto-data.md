@@ -8,7 +8,7 @@ sources:
   - tests/unit/test_crypto_*.py
   - tests/integration/test_crypto_*.py
   - tests/integration/test_data_*.py
-verified: 3c664bd67a0abcd0
+verified: 6c209c3dd25568b8
 ---
 
 # Command line data invariants
@@ -94,8 +94,7 @@ and [research integrity § Invalid data fails loud](research-integrity.md#invali
 - `_crypto_backfill.py` plans windows strictly under each provider page limit and calls the unchanged single-window
   acquisition per window, so every manifest is what a hand-typed `acquire` would produce. A full page splits the window.
 - The JSON ledger under `data_dir/crypto/backfill/` is operational progress, not evidence; manifests remain the only
-  evidence. A provider `DataError` on one window is recorded and the run continues; an accounting refusal
-  (`FixtureAccountingBlocked`) stops the run and never splits or retries.
+  evidence. A provider `DataError` on one window is recorded and the run continues.
 - Backfill reuses one lazily opened bulk store per command, including completed-window verification.
   Archive revision lookup uses the store's in-memory discovery index ([data storage](data-crypto.md#crypto-storage));
   each acquisition still checks capacity and verifies its new raw inputs.

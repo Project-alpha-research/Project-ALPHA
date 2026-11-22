@@ -120,7 +120,9 @@ def test_screen_is_recorded_replayed_and_recomputes_independently(screening_home
     assert receipts["started"]["status"] == "started"
     assert receipts["resolved"]["scan_id"] == result["scan_id"]
     assert receipts["resolved"]["planned_trials"] == 4
-    assert receipts["result"] == result
+    # `counted` (the tries this run added) is printed, never stored: the stored digest stays stable.
+    assert receipts["result"] == {k: v for k, v in result.items() if k != "counted"}
+    assert result["counted"]["tries_added"] == 24
     assert receipts["finished"]["status"] == "completed"
     assert receipts["finished"]["scan_id"] == result["scan_id"]
     assert receipts["finished"]["result_digest"] == result["result_digest"]

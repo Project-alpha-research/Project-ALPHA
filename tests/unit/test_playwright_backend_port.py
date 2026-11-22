@@ -71,8 +71,8 @@ def test_combined_backend_keeps_disposable_fixtures_and_restores_cwd(
         assert Path.cwd() == store.resolve()
         assert os.environ["ALPHA_BULK_DATA_DIR"] == str(store / "bulk")
         assert "ALPHA_TIINGO_API_KEY" not in os.environ
-        assert any(
-            getattr(route, "path", None) == "/__fixture/investigations" for route in app.routes
+        assert not any(
+            str(getattr(route, "path", "")).startswith("/__fixture") for route in app.routes
         )
         assert (store / "store").is_dir()
 

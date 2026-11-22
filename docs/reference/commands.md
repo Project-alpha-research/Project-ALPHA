@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-297 commands in 42 groups. Options marked (required) are
+318 commands in 44 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -116,6 +116,7 @@ Data ingestion, snapshots, and integrity.
 - `alpha data pull <SYMBOL>` — Pull raw bars + corporate actions for SYMBOL and store them. Options: `--start (required)`, `--end (required)`, +8 more
 - `alpha data repair <PROVIDER> <RECEIPT_ID>` — Promote one exact quarantined receipt after explicit owner review. Options: `--approve-differences`, +1 more
 - `alpha data rollback-promotion <SYMBOL>` — Recover a canonical symbol after a process interruption during promotion. Options: `--acknowledge`, `--timeframe`
+- `alpha data run-price <RUN_ID>` — Stored price bars of a rule test, only when they hash to the run's recorded source. Options: `--json`
 - `alpha data snapshot <SNAPSHOT_ID> <SYMBOLS>` — Freeze the current store for SYMBOLS into an immutable, hashed snapsh… Options: `--source`, +2 more
 - `alpha data snapshots` — List every immutable snapshot's manifest summary in deterministic id order. Options: `--json`, `--with-content`
 - `alpha data source-status <SYMBOL>` — Show canonical provenance and pending candidate/quarantine receipts for SYMBOL. Options: `--json`, `--timeframe`
@@ -143,10 +144,10 @@ Append-only cited findings and negative-result memory.
 Render publication-quality figures for a stored run.
 
 - `alpha figures clean <RUN_ID>` — Delete cached figures. Options: `--all`, `--json`
-- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +2 more
+- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +3 more
 - `alpha figures list` — Show the figure catalogue, optionally with per-run availability. Options: `--run`, `--json`
-- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--dark`, `--json`
-- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--dark`, `--json`
+- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--variant`, +2 more
+- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--variant`, `--dark`, `--json`
 - `alpha figures theme` — Emit the canonical figure theme document. Options: `--json`
 - `alpha figures theme-css` — Write (or verify) the SPA's generated theme stylesheet. Options: `--out (required)`, `--check`
 
@@ -156,8 +157,8 @@ Follow a tested idea forward on paper.
 
 - `alpha follow book` — Every active follow as a share of ONE paper account, and the sum per asset. Options: `--json`
 - `alpha follow list` — One row per follow, with its state. Options: `--json`
-- `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--json`
-- `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--factor`, `--card`, `--size-pct`, `--json`
+- `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--all`, `--last`, `--json`
+- `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--trade`, `--asset`, `--factor`, `--card`, +2 more
 - `alpha follow stop <FOLLOW_ID>` — Stop a follow. Options: `--reason`, `--json`
 - `alpha follow today` — What is active today: one row per active follow, grouped. Options: `--json`
 - `alpha follow update <FOLLOW_ID>` — Book the sessions that closed since the last entry of a followed rule test. Options: `--all`, `--json`
@@ -170,13 +171,23 @@ Kronos foundation-model forecasting (probabilistic outcome cones).
 - `alpha forecast eval <SYMBOL>` — Score SYMBOL's forecaster at rolling origins vs realized outcomes + baselines. Options: `--horizon`, `--stride`, +16 more
 - `alpha forecast run <SYMBOL>` — Sample future OHLCV paths for SYMBOL and write the outcome-cone artifacts. Options: `--horizon`, `--samples`, +12 more
 
+## alpha home
+
+Back up the data home, check a backup, restore it to a new folder.
+
+- `alpha home backup <FOLDER>` — Write one archive of the whole data home, with a manifest and its SHA-256. Options: `--json`
+- `alpha home restore <ARCHIVE> <FOLDER>` — Check a backup, then write it into a NEW EMPTY folder. Options: `--json`
+- `alpha home verify-backup <ARCHIVE>` — Read a backup again and check every file against its manifest. Options: `--json`
+
 ## alpha idea
 
 Write an idea card before you test an idea.
 
 - `alpha idea file <CARD_ID>` — One page for one idea: the card, the map, every reading, the counts, the open points. Options: `--json`
+- `alpha idea link <CARD_ID>` — Link a stored RD-Agent journey to a card, or remove the link. Options: `--rdagent (required)`, `--unlink`, `--json`
 - `alpha idea list` — List every card with its idea and whether a test is linked to it. Options: `--json`
-- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +5 more
+- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +7 more
+- `alpha idea note <CARD_ID> <TEXT>` — Add a note to a card. Options: `--decision`, `--json`
 - `alpha idea show <CARD_ID>` — Print one card, and name the fields that are not stated. Options: `--json`
 
 ## alpha info
@@ -216,7 +227,10 @@ Browse published ideas and turn one into an idea card.
 
 - `alpha library card <RECORD_ID>` — Make an idea card from a record. Options: `--json`
 - `alpha library import-catalogue <SOURCE>` — Turn a published signal table into facts-only 'imported' records. Options: `--from (required)`, +3 more
+- `alpha library import-pdf <FILE_PATH>` — Keep the text of one PDF as a paper. Options: `--title`, `--author`, `--year`, `--json`
 - `alpha library list` — List the records. Options: `--market`, `--tier`, `--json`
+- `alpha library papers` — List the papers kept from searches and PDF imports. Options: `--json`
+- `alpha library search <WORDS>` — Search the literature sources and keep the hits as papers. Options: `--unpaywall-email (required)`, +2 more
 - `alpha library show <RECORD_ID>` — Print one record and the idea cards already made from it. Options: `--json`
 
 ## alpha lookalike
@@ -263,6 +277,12 @@ Parameter sweeps judged for overfitting (Deflated Sharpe + PBO + SPA).
 
 - `alpha optim grid <SYMBOL>` — Sweep SYMBOL over the ''--grid'' axes and report the overfitting-aware best config. Options: `--grid`, `--strategy`, +27 more
 - `alpha optim mcpt <SYMBOL>` — In-sample Monte Carlo permutation test of the ''--grid'' sweep (overfit test, not OOS). Options: `--grid`, +24 more
+
+## alpha options
+
+Stored option chains: derived volatility series (readings only).
+
+- `alpha options derived <UNDERLYING>` — Show iv30, IV rank and percentile, 25-delta skew, term slope and IV minus real… Options: `--series`, `--rows`, +4 more
 
 ## alpha owner-auth
 
@@ -348,6 +368,9 @@ Explicit, receipted provider readiness checks.
 
 Start RD-Agent with one command and watch the run.
 
+- `alpha rdagent bench plan` — Print the number of calls and the cost estimate. Options: `--prompts (required)`, `--models (required)`, +4 more
+- `alpha rdagent bench report` — Print readings per model and per pair. Options: `--prompts (required)`, `--models (required)`, `--store (required)`, +3 more
+- `alpha rdagent bench run` — Send each stored prompt to each model. Options: `--prompts (required)`, `--models (required)`, `--prices (required)`, +6 more
 - `alpha rdagent run` — Start the RD-Agent factor loop from rdagent.toml. Options: `--config`, `--dry-run`, `--run-id`
 - `alpha rdagent status` — Say where a run is: working, waiting for you, finished or stopped, and what to type next. Options: `--run-dir`, `--config`, `--json`
 
@@ -373,8 +396,12 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research data register-crypto <SNAPSHOT_ID>` — Register an eligible CryptoSnapshotV1 after re-verifying every… Options: `--symbol (required)`, +2 more
 - `alpha research decide <PROJECT_ID>` — Record the owner-only research outcome/disposition and close the case. Options: `--outcome (required)`, +4 more
 - `alpha research decision-view <PROJECT_ID>` — Assemble the owner decision view: checklist, full scorecard, packet, an… Options: `--json`
+- `alpha research diagnostic acquire-comparisons <CASE> <PLAN>` — Execute one frozen comparison acquisition batch in private case storage.
+- `alpha research diagnostic acquisition-plan <CASE>` — Draft a bounded Tiingo comparison request for an inspected case… Options: `--symbol (required)`, +2 more
 - `alpha research diagnostic check-review <PATH>` — Check a typed advisory review and its local JSON evidence hashes/selectors.
 - `alpha research diagnostic execution-digest <RUN_ID>` — Verify existing baseline/validation execution, including fill… Options: `--as-of (required)`
+- `alpha research diagnostic investigate <CASE>` — Investigate one verified recorded run with Codex; persists budget an… Options: `--run-id`, `--as-of`, +5 more
+- `alpha research diagnostic investigation-tool <CASE> <ACTION>` — Fixed-case diagnostic seam used by the restricted MCP service.
 - `alpha research diagnostic native-result` — Recover owner-observed synthetic receipt/result; never launch, resume or…
 - `alpha research diagnostic run-plan <PATH>` — Run a frozen momentum baseline and validation; always read the terminal receipt.
 - `alpha research diagnostic suggest <RUN_ID>` — Act as a research teammate: suggest useful next tests over verified ex… Options: `--as-of (required)`, +1 more
@@ -385,6 +412,13 @@ Governed research cases, contracts, sources, and bounded runs.
 - `alpha research evidence-hub <PROJECT_ID>` — Project the eleven-section Evidence Hub with honest NOT_TESTED empty sta… Options: `--json`
 - `alpha research export <PROJECT_ID>` — Generate a deterministic Markdown dossier from authority projections. Options: `--output-dir`, `--json`
 - `alpha research import-pdf <PROJECT_ID>` — Import text from one owner-selected local PDF; no links are followed. Options: `--file (required)`, +2 more
+- `alpha research investigations acquire <IDENTIFIER>` — (no description) Options: `--request (required)`
+- `alpha research investigations create` — (no description) Options: `--request (required)`
+- `alpha research investigations draft <IDENTIFIER>` — (no description) Options: `--request (required)`
+- `alpha research investigations eligibility <RUN_ID>` — (no description)
+- `alpha research investigations list` — (no description) Options: `--run-id (required)`
+- `alpha research investigations run <IDENTIFIER>` — (no description) Options: `--request`
+- `alpha research investigations show <IDENTIFIER>` — (no description)
 - `alpha research list` — List bounded research-case backlog rows, newest research activity first. Options: `--limit`, `--offset`, `--json`
 - `alpha research note add <PROJECT_ID>` — Append one commentary note — structurally outside the evidence model. Options: `--kind (required)`, +5 more
 - `alpha research note list <PROJECT_ID>` — List this case's commentary notes, newest first (never evidence). Options: `--limit`, `--offset`, `--json`

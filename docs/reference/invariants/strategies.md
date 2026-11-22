@@ -3,6 +3,7 @@ owner: strategy layer
 sources:
   - packages/alpha-strategies/src/**
   - tests/unit/test_rules*.py
+  - tests/unit/test_rule_paths.py
   - tests/unit/test_signal*.py
   - tests/unit/test_sizing.py
   - tests/unit/test_ts_momentum_signal.py
@@ -10,7 +11,7 @@ sources:
   - tests/bias_guards/test_momentum_signal_lookahead.py
   - tests/bias_guards/test_signal_window_boundary.py
   - tests/integration/test_order_rejection.py
-verified: 0be2231a520117c9
+verified: a532ab85c8e2ae60
 ---
 
 # Strategy invariants
@@ -24,7 +25,11 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   `alpha_strategies depends only on core and patterns` in `pyproject.toml`.
   [engineering § Import layers](engineering.md#import-layers).
 - Take indicators from `alpha_patterns` (the functions `alpha chart overlays` draws); never re-implement
-  one here. Parity is pinned by `tests/unit/test_rules_indicators_parity.py`.
+  one here. Parity is pinned by `tests/unit/test_rules_indicators_parity.py`. One exception, for speed only:
+  `rule_paths.py` runs the same arithmetic of `sma`, `ema`, `rsi`, `atr`, `bbands`, `macd` and the `highest` and
+  `lowest` channels on every trailing window of a path at once, for the Tier-1 surrogate. A lagged operand reads
+  the window cut to its first `history - lag` bars. Its values must equal `operand_series` exactly (`==`, no
+  tolerance): `tests/unit/test_rule_paths.py`. Every other indicator falls back to `operand_series` per window.
 - Never import `alpha_backtest`. The engine reaches the strategy only through the optional
   `configure_cash_execution` hook it looks up with `getattr`, so the dependency stays one-way.
 
@@ -58,6 +63,8 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   the target is net liquidation value less a 0.2% buffer, divided by close times fee and slippage,
   rounded down to the instrument increment; units are held while long and zero when flat. Long
   only. The Tier-1 surrogate models it as weight 1 or 0. `tests/unit/test_all_in_sizing.py`.
+  The `rules` strategy takes `sizing` too: under all-in its warm-up is `history` (vol-target keeps `max(history, vol_window + 1)`).
+  This is how an owner rule runs in `alpha test` ([language](../owner-rule-language.md)). `tests/unit/test_owner_rule_engine.py`.
 - If an all-in or `size_on_equity` long entry from flat exceeds free CASH including rounded fees, reduce it to the
   largest affordable instrument size step at the opening ask, with no extra buffer. Affordable orders,
   raising an open long, fixed-unit/fixed-capital orders, shorts, exits, MARGIN and paper execution retain their behavior.
@@ -73,13 +80,18 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 - `evaluate_rules` takes exactly `history` trailing bars and raises otherwise. The fixed window keeps the
   decision point-in-time and makes the engine, the Tier-1 surrogate and scans agree bar for bar.
 - A non-finite operand on the decision bar (warm-up or undefined statistic) is a `DataError`, never zero.
-- Indicator operands are exactly `rules.INDICATOR_ARITY`, the table `alpha chart overlays` accepts (every chart
-  indicator except `rsi_pc1`, whose PCA lives in `alpha_research`). `INDICATOR_FIELDS` names the multi-series
-  fields; `FLOAT_FIRST` marks `hawkes`, whose first parameter is a decay rate, not a window.
+- Indicator operands are `rules.RULE_ARITY`: `INDICATOR_ARITY`, the table `alpha chart overlays` accepts (every chart
+  indicator except `rsi_pc1`, whose PCA lives in `alpha_research`), plus the rule-only channels `highest` and
+  `lowest` (`CHANNEL_FIELDS`: `field` is the price source). The chart and the rule builder mirror only
+  `INDICATOR_ARITY` and `INDICATOR_FIELDS` (the multi-series fields); `FLOAT_FIRST` marks `hawkes`, whose first
+  parameter is a decay rate, not a window. A channel includes the bar it is read on; `lag = 1` excludes it.
 - `RuleStrategy` sets `min_history = spec.history`, and its indicator snapshot records every operand's value on
-  the decision bar.
-- Sources are `high`, `low`, `close` only (the history the base keeps). A source `lag` is a non-negative
-  integer; an omitted or zero lag keeps the original bytes. `tests/unit/test_rules_source_lag.py`.
+  the decision bar. It computes each operand once per bar (`evaluate_values`); the decision and the snapshot read
+  the same value. A non-finite snapshot value fails the run (`IndicatorTrace` requires finite values), also when
+  the decision did not reach that condition.
+- Sources are `high`, `low`, `close` only (the history the base keeps). A source or indicator `lag` is a
+  non-negative integer: bar t reads bar t - lag, on the same decision window, so warm-up grows by the lag. An omitted
+  or zero lag keeps the original bytes. `tests/unit/test_rules_source_lag.py`, `test_rules_indicator_lag.py`.
 - `canonical_json` (sorted keys, compact separators, no NaN) is the run-identity byte string and
   `spec_sha256` hashes it. Never change how an existing spec serialises: it changes run ids.
   `tests/unit/test_run_identity_rules.py`. Bias guard: `tests/unit/test_rules_bias_guard.py`.
@@ -125,7 +137,7 @@ and patterns"); only `alpha_cli` composes it. A strategy decides on the close of
 the next open, never earlier.
 
 - Code: `packages/alpha-strategies/src/alpha_strategies/` (`base.py`, `signals.py`, `sizing.py`,
-  one module per strategy, `rule_strategy.py` for rule specs).
+  one module per strategy, `rule_strategy.py` for rule specs, `rule_paths.py` for whole-path rule signals).
 - Tests: `tests/unit/test_*strategy*.py`, `tests/unit/test_signals*.py`, `tests/unit/test_sizing*.py`,
   `tests/unit/test_rules_*.py`, `tests/unit/test_entry_gap_sizing.py`; bias guards `tests/bias_guards/test_momentum_signal_lookahead.py`,
   `test_signal_window_boundary.py`; integration `tests/integration/test_nautilus_engine.py`.

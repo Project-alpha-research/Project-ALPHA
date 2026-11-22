@@ -8,7 +8,7 @@ sources:
   - scripts/gate.py
   - scripts/gate_components.py
   - pyproject.toml
-verified: 157a0a48072934a8
+verified: a4c1654f3db3846b
 ---
 
 # Checks
@@ -17,6 +17,8 @@ Every automated check, the breakage it exists to catch, where it runs and how lo
 Pull requests merge on the one required check, `ci-ok`. Times are wall time on GitHub's
 standard runners, measured on pull request #134 (run 43482233439, 2026-11-13) unless marked otherwise.
 `tests/unit/test_checks_reference.py` fails when a CI job or a pytest marker is missing here.
+A DRAFT pull request runs only `changes` and `static`, and its `ci-ok` fails on purpose with a message. The full run starts when the pull
+request is marked ready (`gh pr ready <number>`). Nothing merges without the full green run.
 
 Tiers: **PR** runs on every pull request and every push to main. **PR (paths)** runs on a pull
 request only when its paths (or the workflow and gate files) change, and always on main.
@@ -30,7 +32,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `changes` job: picks the conditional jobs | a path-filtered job silently skipped (unknown history selects all) | PR | 8 s |
 | `static` job: `uv lock --check`, `uv sync --locked` | a dependency change without its lock file | PR | 7 s (job 1.4 min) |
 | `static`: ruff lint and format | style and simple bug patterns (unused names, bad comparisons) | PR | 1 s |
-| `static`: living documents (`fs.py stale --strict`) | a source changed without its document being re-read and verified | PR | 1 s |
+| `static`: living documents (`fs.py stale`) | broken front matter or a missing source (blocks); stale documents are listed, not blocked | PR | 1 s |
 | `static`: import contracts (`lint-imports`) | a package importing a layer it must not (the import DAG) | PR | 0.4 s |
 | `static`: mypy, one strict run over packages, apps, tests and harness scripts | type errors | PR | 45 s |
 | `static`: harness lint and doctor | a removed deny rule, unwired hook, lowered coverage floor or `-x` in CI | PR | 0.2 s |
@@ -48,7 +50,7 @@ request only when its paths (or the workflow and gate files) change, and always 
 | `coverage` job: changed product lines (`packages/*/src`, `apps/*/src`) | new or changed code shipped without tests (below 85% of changed lines) | PR | 30 s |
 | `coverage`: whole-suite line coverage | nothing (reported in the job summary, never gated) | PR | in `coverage` |
 | `quant` job: `slow_oracle` marker | a statistic that no longer recovers known truth | PR (quant) | not measured here |
-| `quant` job: mutation gate on the touched modules | weak tests (kill rate < 0.90), or a module the gate could not measure | PR (quant) | ~21 min per module |
+| `quant` job: mutation gate on the touched modules | weak tests (kill rate < 0.90), or a module the gate could not measure | PR (quant) | max 90 min each |
 | `frontend` job: lint, build with types, unit tests with coverage | TypeScript, lint and component failures | PR | 22 s (job 9.6 min) |
 | `frontend`: API client freshness | `src/api/generated.ts` out of date with `openapi.json` | PR | in `frontend` |
 | `frontend`: browser journeys at the reference viewport (plus reference-only ones) | broken Workstation screens and flows, real backend | PR | 8.6 min |

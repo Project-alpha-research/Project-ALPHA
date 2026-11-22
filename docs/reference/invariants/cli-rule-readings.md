@@ -8,13 +8,13 @@ sources:
   - apps/alpha-cli/src/alpha_cli/spine/idea_map.py
   - tests/unit/test_idea_file.py
   - apps/alpha-cli/src/alpha_cli/spine/run.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_rule.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_reading.py
+  - apps/alpha-cli/src/alpha_cli/spine/owner_variants.py
+  - apps/alpha-cli/src/alpha_cli/spine/diagnose.py
+  - tests/unit/test_owner_counts.py
+  - tests/unit/test_owner_variants.py
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
-  - apps/alpha-cli/src/alpha_cli/_context_gate.py
-  - apps/alpha-cli/src/alpha_cli/_context_plan.py
-  - apps/alpha-cli/src/alpha_cli/spine/setup_context.py
-  - tests/unit/test_rule_context_gate.py
-  - tests/unit/test_rule_context_plan.py
-  - tests/unit/test_rule_context_identity.py
   - apps/alpha-cli/src/alpha_cli/results_cmds.py
   - apps/alpha-cli/src/alpha_cli/report_cmds.py
   - apps/alpha-cli/src/alpha_cli/spine/report_readings.py
@@ -28,7 +28,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/backtest_cmds.py
   - apps/alpha-cli/src/alpha_cli/optim_cmds.py
   - apps/alpha-web/frontend/src/explain/gates.ts
-verified: 655e0dfacb1217f3
+verified: 6d7cb94085efa825
 ---
 
 # Command line rule-test readings invariants
@@ -64,9 +64,22 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   "Fault: ... Fix this first. No reading." Fact checks stay hard.
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
-- `--json` keeps `verdict` and adds `reading`.
-- A run id hashes every `alpha_cli` source byte, so any edit moves it. `tests/unit/test_reading_rule.py` holds that input fixed and
-  proves the reading changes no id.
+- `--json` keeps `verdict` and adds `reading`, with its `costs` lines ([cost classes](cli-cost-classes.md)).
+- A run id hashes every `alpha_cli` source byte, so any edit moves it, and the rows before the held-back boundary. It never hashes a later row,
+  their count, a data-health verdict or a whole-file fingerprint. `tests/unit/test_reading_rule.py` holds that input fixed: the reading moves no id.
+
+## Owner-rule labels
+
+- An owner rule (`rule.kind = "owner"`, [language](../owner-rule-language.md)) is read like the old kinds: same reading, same words. Its
+  ledger `rule` field and family are `owner:<shape12>`. The label `null-closes-for-high-low` says the first random-price null used closes
+  for high and low (the rule reads `atr`, `hawkes`, `cmma` or a high or low source). It is a caveat on one null, not a result.
+- Every new owner-rule reading adds `count_sentence`: "This rule shape: K tests on this data. All rules on <asset>: M tests. The
+  deflated Sharpe uses N = max(K, M)." K and M are `trials.owner_counts` in the diagnostics (the family `n_trials` and the
+  same-asset `available_sharpes`); N is `n_trials_used`. Nothing about how N is computed changed. Other rule kinds add nothing.
+- `alpha test` also runs parameter variants of an owner rule (`spine/owner_variants.py`): each window and each non-zero constant
+  at 0.8 and 1.2 times, windows rounded to whole bars (at least 2, a lag at least 1), equal variants left out, at most 8. Each is a
+  full-sample re-run and counts as a try. The reading adds `variant_table` (name, kind, Sharpe, total return, maximum drawdown,
+  reasons): readings in run order, no best pick, no verdict. `costs_x2` runs first, as for the old kinds.
 
 ## Ledger words
 
@@ -99,45 +112,18 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   counts are the stored run's. It writes no ledger row, run folder, manifest, figure or lock file. `--check-data` is refused with
   it (a health report is a file). Held-back period, point-in-time reads and data health are as in a normal run.
 - Compared: every field of the manifest, the diagnostics and `spec.json`, and every value of every parquet table (trades, folds,
-  fills, equity). Left out: the code fingerprints (reported as `code_changed`), the health record and `data-health-*` labels,
-  `spine.test_id`, file bytes (`sha256`, `size_bytes`), the HTML report, and the folder named in a "no macro data" detail.
-  A field or file on one side only is a difference. Integers, words and labels are equal. Floats are equal within
-  `rel=1e-9, abs=1e-12` (another summation order); `bit_identical` says if every float was equal. Two NaN are equal.
-- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed}`. `code_changed` is true
-  when the stored run's execution fingerprint differs from now; it never excuses a difference. With nothing to compare with:
-  `computed: false, match: null`, nothing is computed or created, and `reason` says why (nothing stored; the stored bars
-  changed; only other engine settings stored). Exit 0 on a match or nothing to compare; exit 4 on a difference.
-- Normal results also carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger
-  or any identity hash. `repeat` still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for
-  the setup tests: the summary and every row of the stored table compared; ledger count, health record, health labels and facts
-  left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
-
-## Context gate plan
-
-- A spec may carry `context` (`{alias: "series@key"}`) and `when` (a condition over the aliases). `when` needs `context`, and
-  `context` needs `when`, and `when` must read every alias. Aliases follow the Setup Lab rule (`check_aliases`): lowercase,
-  never a price source or a function, so an alias cannot shadow a price. A bad alias, series, key or condition fails when the spec loads.
-- Canonical form (`_context_gate.canon`): each alias becomes `c0`, `c1`, ... in the sorted order of the bound `series@key`
-  texts, and `when` is printed again from its parse tree. The spec hash takes this form; the stored `spec.json` keeps the text as
-  written. So alias names and spacing make no new test; a new series, key, threshold or structure does. A spec without context
-  hashes and dumps exactly as before (a test pins three hashes and the stored bytes).
-- `build_gate` attaches through `setup_context.attach_bindings` (the one call to `attach_context` for Setup Lab and the rule
-  gate; daily bars; reserve cutoff) under the canonical names, then reads canonical `when` with `compile_expr` and the canonical
-  names as context sources. The language is three-valued: a missing value never makes the condition true, also under `not`,
-  `within_bars` and `for_bars`. A null gate is false on that bar and is counted by reason (`not-yet-known`, `stale`, a derived
-  reason, `series-warm-up`, `expression-undefined`). True, false and null bars add up to the bar count. The gate is a map from
-  bar timestamp to a boolean, never an index.
-- `context_fp` is the sha256 of the used rows hashes (from `attach_context`, under the canonical names), the recipe, the
-  staleness limits and canonical `when`. The data id is `idea_id(spec hash, sha256(source fingerprint + context_fp))`. Source
-  table hashes are provenance only. Rows after the reserve or not known by the cutoff are not used rows, so adding them changes
-  no test key. The family stays `spine:<rule kind>`: ten thresholds are ten tests in one family.
-- `alpha test <spec> --plan [--json]` reads bars and context and prints, per asset: the context span (bars where every series has
-  a value), gate true and false bars, the separate spells, null counts by reason, labels (`short-context-history` when the span is
-  under 3 years), the test key and one sentence. It runs no engine and writes no ledger row, run folder or lock file; a test lists
-  every path with size and mtime on each branch.
-- `alpha test <spec>` without `--plan`, and `--recheck`, refuse a context spec: "the gated engine is not built yet; use --plan".
-  `assemble_run_spec` also refuses a context spec, so no path runs the ungated rule. `--plan` on a spec without context is
-  refused. The words are readings: no pass, fail or advice.
+  fills, equity). Left out: the code fingerprints (reported as `code_changed`), the health record and `data-health-*` labels, the held-back
+  count, cut-off and label, `spine.test_id`, file bytes (`sha256`, `size_bytes`), the HTML report, and the "no macro data" folder name.
+  A run stored before 2026-11-22 fingerprinted the whole bar file; `recheck.identity_note` says so, and its numbers are compared, not its identity.
+  A field or file on one side only is a difference. Integers, words and labels are equal. Floats are equal within `rel=1e-9, abs=1e-12`
+  (another summation order); `bit_identical` says if every float was equal. Two NaN are equal.
+- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed, identity_note}`.
+  `code_changed` is true when the stored run's execution fingerprint differs from now; it never excuses a difference. With nothing to compare
+  with: `computed: false, match: null`, nothing is computed or created, and `reason` says why (nothing stored; the stored bars changed; only
+  other engine settings stored). Exit 0 on a match or nothing to compare; exit 4 on a difference.
+- Normal results carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger or any identity hash. `repeat`
+  still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for the setup tests: summary and every stored table row
+  compared; ledger count, health record, health labels and facts left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
 
 ## Idea file
 
@@ -189,4 +175,4 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - The Workstation walk-forward card counts windows once, in `foldCounts` (`explain/gates.ts`). With a window that has no Sharpe it says
   "N windows. A were above zero, B were at or below zero, and C had no Sharpe recorded"; the manifest stores no cause per fold, so none is
   stated. The chip reads "A of N (C with no Sharpe)". The CLI prints no walk-forward above-zero count.
-- The HTML tear sheet is written by `alpha_validation/tearsheet.py` and still prints the old PASS/FAIL words. It is not changed here.
+- The HTML tear sheet (`alpha_validation/tearsheet.py`) prints each number beside the old grade's level; no overall verdict; A-F headed "Old grade".

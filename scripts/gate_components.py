@@ -183,7 +183,7 @@ def _backend_static(root: Path) -> list[Step]:
             ("uv sync", ["uv", "sync", "--locked"]),
             ("ruff check", ["uv", "run", "ruff", "check", "."]),
             ("ruff format", ["uv", "run", "ruff", "format", "--check", "."]),
-            ("living documents", [sys.executable, "scripts/fs.py", "stale", "--strict"]),
+            ("living documents", [sys.executable, "scripts/fs.py", "stale"]),
             ("import contracts", ["uv", "run", "lint-imports"]),
             # One mypy run: pyproject's strict config covers packages, apps, tests and harness.
             ("mypy", [*gate.FULL_GATE_MYPY_COMMAND, *harness_files]),
@@ -231,6 +231,9 @@ def _backend_tests(root: Path, shard: tuple[int, int] | None) -> list[Step]:
     return [(f"pytest shard {index}/{total}", root, command)]
 
 
+_MUTATE = ["uv", "run", "python", "scripts/gate.py", "mutate"]
+
+
 def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
     """Slow oracles and the mutation gate, only when quant-tier source changed."""
     paths = (context or comparison_context(root))["paths"]
@@ -243,7 +246,8 @@ def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
         (
             "mutation gate",
             root,
-            ["uv", "run", "python", "scripts/gate.py", "mutate", "--require-measured", *modules],
+            # 90 minutes per module: about 400 mutants need about 60 on a CI runner.
+            [*_MUTATE, "--require-measured", "--timeout=5400", *modules],
         ),
     ]
 

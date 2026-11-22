@@ -19,8 +19,13 @@ Design choices, each deliberate:
 
 Sources are limited to ``high``/``low``/``close`` because that is the history the vol-target base
 strategy keeps; volume and open rules can be added when the base keeps them.
-Source operands may declare a nonnegative integer ``lag``: ``close`` with ``lag: 20`` reads
-the close twenty completed bars before the decision bar. Omitted/zero lag preserves V1 bytes.
+Source and indicator operands may declare a nonnegative integer ``lag``: ``close`` with
+``lag: 20`` reads the close twenty completed bars before the decision bar, and ``rsi`` with
+``lag: 1`` is the RSI as it stood one bar ago (computed on the same decision window). A lag never
+reads a later bar. Omitted or zero lag preserves V1 bytes. ``highest``/``lowest`` (field =
+``high``/``low``/``close``) are the rolling extreme of that source over the last ``window`` bars
+*including* the bar they are read on; ``lag: 1`` reads the window that ends one bar earlier, so
+``close > highest(20, high, lag 1)`` never compares a bar with itself.
 """
 
 from __future__ import annotations
@@ -28,8 +33,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from typing import Literal, TypedDict
 
 import numpy as np
@@ -85,6 +90,11 @@ INDICATOR_FIELDS: Mapping[str, tuple[str, ...]] = {
     "macd": ("line", "signal", "histogram"),
     "vg_path": ("price", "inverse"),
 }
+#: rule-only rolling channels: ``field`` is the price source. Not chart overlays, so they stay
+#: out of the two tables above, which the chart and the Workstation rule builder mirror.
+CHANNEL_FIELDS: Mapping[str, tuple[str, ...]] = {"highest": SOURCES, "lowest": SOURCES}
+RULE_ARITY: Mapping[str, int] = {**INDICATOR_ARITY, "highest": 1, "lowest": 1}
+RULE_FIELDS: Mapping[str, tuple[str, ...]] = {**INDICATOR_FIELDS, **CHANNEL_FIELDS}
 #: indicators whose first parameter is a positive decay rate rather than a window of bars
 FLOAT_FIRST: frozenset[str] = frozenset({"hawkes"})
 
@@ -114,7 +124,8 @@ class Operand:
         if self.kind == "value":
             return _fmt(float(self.value or 0.0))
         head = ":".join([str(self.indicator), *(_fmt(p) for p in self.params)])
-        return f"{head}:{self.field}" if self.field else head
+        text = f"{head}:{self.field}" if self.field else head
+        return f"{text}:lag:{self.lag}" if self.lag else text
 
     @property
     def bars_needed(self) -> int:
@@ -123,6 +134,10 @@ class Operand:
             return self.lag + 1
         if self.kind != "indicator":
             return 1
+        return self._base_bars + self.lag
+
+    @property
+    def _base_bars(self) -> int:
         p = [int(v) for v in self.params]  # a decay rate is never read as a window
         if self.indicator == "rsi":
             return p[0] + 1
@@ -149,6 +164,8 @@ class Operand:
         out: dict[str, object] = {"indicator": self.indicator, "params": params}
         if self.field is not None:
             out["field"] = self.field
+        if self.lag:
+            out["lag"] = self.lag
         return out
 
 
@@ -235,32 +252,34 @@ def _window(value: object, where: str) -> float:
     return number
 
 
+def _lag(raw: Mapping[str, object], where: str) -> int:
+    lag = raw.get("lag", 0)
+    if type(lag) is not int or not 0 <= lag < MAX_HISTORY:
+        raise DataError(f"{where}.lag must be an integer between 0 and {MAX_HISTORY - 1}")
+    return lag
+
+
 def parse_operand(payload: object, where: str) -> Operand:
     raw = _require_mapping(payload, where)
     if "source" in raw:
         _reject_unknown(raw, {"source", "lag"}, where)
         if raw["source"] not in SOURCES:
             raise DataError(f"{where}.source must be one of {list(SOURCES)}, got {raw['source']!r}")
-        lag = raw.get("lag", 0)
-        if type(lag) is not int or not 0 <= lag < MAX_HISTORY:
-            raise DataError(f"{where}.lag must be an integer between 0 and {MAX_HISTORY - 1}")
-        return Operand(kind="source", source=raw["source"], lag=lag)
+        return Operand(kind="source", source=raw["source"], lag=_lag(raw, where))
     if "value" in raw:
         _reject_unknown(raw, {"value"}, where)
         return Operand(kind="value", value=_number(raw["value"], f"{where}.value"))
     if "indicator" in raw:
-        _reject_unknown(raw, {"indicator", "params", "field"}, where)
+        _reject_unknown(raw, {"indicator", "params", "field", "lag"}, where)
         name = raw["indicator"]
-        if not isinstance(name, str) or name not in INDICATOR_ARITY:
-            raise DataError(
-                f"{where}.indicator must be one of {sorted(INDICATOR_ARITY)}, got {name!r}"
-            )
+        if not isinstance(name, str) or name not in RULE_ARITY:
+            raise DataError(f"{where}.indicator must be one of {sorted(RULE_ARITY)}, got {name!r}")
         params_raw = raw.get("params", [])
         if not isinstance(params_raw, Sequence) or isinstance(params_raw, str):
             raise DataError(f"{where}.params must be a list")
-        if len(params_raw) != INDICATOR_ARITY[name]:
+        if len(params_raw) != RULE_ARITY[name]:
             raise DataError(
-                f"{where}: {name} takes {INDICATOR_ARITY[name]} parameter(s), got {len(params_raw)}"
+                f"{where}: {name} takes {RULE_ARITY[name]} parameter(s), got {len(params_raw)}"
             )
         params: list[float] = []
         for index, item in enumerate(params_raw):
@@ -281,7 +300,7 @@ def parse_operand(payload: object, where: str) -> Operand:
             raise DataError(f"{where}: reversibility window must be >= 10, got {params[0]:g}")
         if name == "macd" and not params[0] < params[1]:
             raise DataError(f"{where}: macd fast window must be shorter than slow")
-        fields = INDICATOR_FIELDS.get(name)
+        fields = RULE_FIELDS.get(name)
         field = raw.get("field")
         if fields is None and field is not None:
             raise DataError(f"{where}: {name} has a single series; drop 'field'")
@@ -292,6 +311,7 @@ def parse_operand(payload: object, where: str) -> Operand:
             indicator=name,
             params=tuple(params),
             field=str(field) if field is not None else None,
+            lag=_lag(raw, where),
         )
     raise DataError(f"{where} must have exactly one of 'source', 'indicator', 'value'")
 
@@ -377,17 +397,29 @@ def rule_spec_from_json(text: str) -> RuleSpec:
 # --- evaluation -----------------------------------------------------------------------------------
 
 
+def rolling_extreme(source: FloatArray, window: int, which: str) -> FloatArray:
+    """Max (``highest``) or min (``lowest``) of the last ``window`` bars, the current bar included;
+    the first ``window - 1`` bars are NaN."""
+    values = np.asarray(source, dtype=np.float64)
+    out = np.full(values.size, np.nan, dtype=np.float64)
+    if values.size >= window:
+        view = np.lib.stride_tricks.sliding_window_view(values, window)
+        out[window - 1 :] = view.max(axis=1) if which == "highest" else view.min(axis=1)
+    return out
+
+
 def operand_series(series: OHLCV, operand: Operand) -> FloatArray:
     """The operand's value on every bar of ``series``; warm-up bars are NaN, never a guess."""
     n = len(series)
-    if operand.kind == "source":
-        source = np.asarray(getattr(series, str(operand.source)), dtype=np.float64)
-        if not operand.lag:
-            return source
+    if operand.lag:
+        # The value ``lag`` bars ago: the unlagged series moved later, so bar t reads bar t - lag.
+        base = operand_series(series, replace(operand, lag=0))
         values = np.full(n, np.nan, dtype=np.float64)
         if operand.lag < n:
-            values[operand.lag :] = source[: n - operand.lag]
+            values[operand.lag :] = base[: n - operand.lag]
         return values
+    if operand.kind == "source":
+        return np.asarray(getattr(series, str(operand.source)), dtype=np.float64)
     if operand.kind == "value":
         return np.full(n, float(operand.value or 0.0), dtype=np.float64)
     p = [int(v) if float(v).is_integer() else float(v) for v in operand.params]
@@ -431,6 +463,8 @@ def operand_series(series: OHLCV, operand: Operand) -> FloatArray:
         values, warm = (price if operand.field == "price" else inverse), w
     elif name == "reversibility":
         values, warm = rolling_perm_reversibility(series.close, window=int(p[0])), int(p[0]) - 1
+    elif name in {"highest", "lowest"}:
+        values, warm = rolling_extreme(getattr(series, str(operand.field)), int(p[0]), name), 0
     else:
         fast, slow, signal = (int(v) for v in p)
         out = macd(series.close, fast=fast, slow=slow, signal=signal)
@@ -442,15 +476,31 @@ def operand_series(series: OHLCV, operand: Operand) -> FloatArray:
     return values
 
 
-def _condition_result(condition: Condition, series: OHLCV) -> tuple[float, float, bool]:
-    left = float(operand_series(series, condition.left)[-1])
-    right = float(operand_series(series, condition.right)[-1])
+def no_value_message(condition: Condition, history: int) -> str:
+    """The error of a reached condition with no finite value on the decision bar."""
+    return (
+        f"rule '{condition.label}' has no finite value on the decision bar "
+        f"(history {history} bars); lengthen 'history', or the statistic is undefined "
+        "on this window (one-signed runs, a zero range, absent ordinal patterns)"
+    )
+
+
+#: an operand's value on the decision bar of one window
+OperandValue = Callable[[Operand], float]
+
+
+def last_values(series: OHLCV) -> OperandValue:
+    """Each operand's value on the last bar of ``series``."""
+    return lambda operand: float(operand_series(series, operand)[-1])
+
+
+def _condition_result(
+    condition: Condition, value: OperandValue, history: int
+) -> tuple[float, float, bool]:
+    left = value(condition.left)
+    right = value(condition.right)
     if not (math.isfinite(left) and math.isfinite(right)):
-        raise DataError(
-            f"rule '{condition.label}' has no finite value on the decision bar "
-            f"(history {len(series)} bars); lengthen 'history', or the statistic is undefined "
-            "on this window (one-signed runs, a zero range, absent ordinal patterns)"
-        )
+        raise DataError(no_value_message(condition, history))
     if condition.op == ">":
         passed = left > right
     elif condition.op == "<":
@@ -462,8 +512,8 @@ def _condition_result(condition: Condition, series: OHLCV) -> tuple[float, float
     return left, right, passed
 
 
-def _holds(condition: Condition, series: OHLCV) -> bool:
-    return _condition_result(condition, series)[2]
+def _holds(condition: Condition, value: OperandValue, history: int) -> bool:
+    return _condition_result(condition, value, history)[2]
 
 
 class ConditionExplanation(TypedDict):
@@ -516,6 +566,7 @@ def explain_rules(
     result: RuleExplanation = {"signal": None, "conditions": rows, "error": error}
     if error is not None or series is None:
         return result
+    value = last_values(series)
     offset = 0
     outcomes = []
     for _, conditions in sides:
@@ -526,7 +577,7 @@ def explain_rules(
                 row["reason"] = "Not evaluated: side short-circuited after a failed condition"
                 continue
             try:
-                left, right, passed = _condition_result(condition, series)
+                left, right, passed = _condition_result(condition, value, len(series))
             except DataError as exc:
                 result["error"] = row["reason"] = str(exc)
                 return result
@@ -556,17 +607,26 @@ def evaluate_rules(spec: RuleSpec, series: OHLCV) -> int:
         raise DataError(
             f"rules evaluate over exactly {spec.history} trailing bars, got {len(series)}"
         )
-    long = bool(spec.long_when) and all(_holds(c, series) for c in spec.long_when)
-    short = bool(spec.short_when) and all(_holds(c, series) for c in spec.short_when)
+    return evaluate_values(spec, last_values(series), len(series))
+
+
+def evaluate_values(spec: RuleSpec, value: OperandValue, history: int) -> int:
+    """``evaluate_rules`` from operand values already read off one window of ``history`` bars.
+
+    ``value`` must give each operand's last-bar value on that window; the engine passes one that
+    computes each operand once per bar, for the decision and the indicator trace both.
+    """
+    long = bool(spec.long_when) and all(_holds(c, value, history) for c in spec.long_when)
+    short = bool(spec.short_when) and all(_holds(c, value, history) for c in spec.short_when)
     if long == short:
         return 0
     return 1 if long else -1
 
 
 def trailing_ohlcv(
-    highs: Sequence[float],
-    lows: Sequence[float],
-    closes: Sequence[float],
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
     *,
     history: int,
     symbol: str = "RULES",
@@ -597,7 +657,10 @@ def trailing_ohlcv(
 
 
 def rule_signal(
-    spec: RuleSpec, highs: Sequence[float], lows: Sequence[float], closes: Sequence[float]
+    spec: RuleSpec,
+    highs: Sequence[float] | FloatArray,
+    lows: Sequence[float] | FloatArray,
+    closes: Sequence[float] | FloatArray,
 ) -> int:
     """Convenience: build the trailing window and evaluate — the one call the engine, the Tier-1
     surrogate and a scanner all make."""

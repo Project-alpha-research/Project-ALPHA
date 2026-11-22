@@ -69,20 +69,20 @@ def test_the_text_is_commented_toml_that_loads_to_the_same_spec(tmp_path: Path) 
     assert load_setup_spec(path).spec_sha256 == load_setup_spec(build_spec(options)).spec_sha256
 
 
+BASE = SpecOptions(name="x")
+
+
 @pytest.mark.parametrize(
-    ("changes", "words"),
+    ("options", "words"),
     [
-        ({"when": "nonsense("}, "--when"),
-        ({"horizon": 0}, "--horizon"),
-        ({"stop": "wide"}, "--stop"),
-        ({"target": "0 %"}, "--target"),
-        ({"name": "../evil"}, "name"),
+        (replace(BASE, when="nonsense("), "--when"),
+        (replace(BASE, horizon=0), "--horizon"),
+        (replace(BASE, stop="wide"), "--stop"),
+        (replace(BASE, target="0 %"), "--target"),
+        (replace(BASE, name="../evil"), "name"),
     ],
 )
-def test_a_bad_option_is_one_plain_sentence_naming_it(
-    changes: dict[str, object], words: str
-) -> None:
-    options = replace(SpecOptions(name="x"), **changes)
+def test_a_bad_option_is_one_plain_sentence_naming_it(options: SpecOptions, words: str) -> None:
     with pytest.raises(SpineError) as caught:
         spec_text(options)
     assert words in str(caught.value)

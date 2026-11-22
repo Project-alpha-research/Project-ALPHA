@@ -1,5 +1,6 @@
 # Example config for `alpha rdagent run --config rdagent.toml`. Every path below is a placeholder.
-# Copy this file, change the paths, and keep the copy outside git.
+# You do not need to write this by hand: `alpha rdagent init` writes the six paths for this machine.
+# Keep any copy outside git.
 # Each key has the name of one option of workers/rdagent/factor_loop_launch.py (`--loop-n` is
 # `loop_n`). A key left out puts nothing on the command line: the launcher's own default applies.
 

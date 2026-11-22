@@ -17,6 +17,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from alpha_cli import rdagent_defaults
+from alpha_core.config import AlphaSettings
+
 LAUNCHER = "workers/rdagent/factor_loop_launch.py"
 PYTHON = ".venv/bin/python"
 KEYFILE_VARIABLE = "ALPHA_RDAGENT_KEYFILE"
@@ -137,6 +140,15 @@ def _words(error: ValidationError) -> list[str]:
     return lines
 
 
+def _inside(path: Path, folder: Path) -> bool:
+    return path == folder or folder in path.parents
+
+
+def _problem(name: str, path: Path) -> str:
+    fix = rdagent_defaults.FIXES.get(name, f"Fix {name} in the config, or remove it.")
+    return f"The path for {name} does not exist: {path}. Fix: {fix}"
+
+
 def _missing(config: RdagentConfig, environ: dict[str, str]) -> list[str]:
     work = config.working_directory
     checks: list[tuple[str, Path | None, bool]] = [
@@ -150,10 +162,14 @@ def _missing(config: RdagentConfig, environ: dict[str, str]) -> list[str]:
         ("trial_ledger's folder", config.trial_ledger.parent, True),
         ("gateway_data_dir's parent folder", config.gateway_data_dir.parent, True),
     ]
+    # ALPHA makes the gateway and ledger folders inside the data home when a run starts.
+    made = (config.trial_ledger.parent, config.gateway_data_dir.parent)
     problems = [
-        f"The path for {name} does not exist: {path}"
+        _problem(name, path)
         for name, path, folder in checks
-        if path is not None and not (path.is_dir() if folder else path.exists())
+        if path is not None
+        and not (path.is_dir() if folder else path.exists())
+        and not (path in made and _inside(path, config.data_dir))
     ]
     for name, path, variable in (
         ("rdagent_source", config.rdagent_source, SOURCE_VARIABLE),
@@ -165,25 +181,47 @@ def _missing(config: RdagentConfig, environ: dict[str, str]) -> list[str]:
                 f"Set {name} in the config or {variable} in the environment. {SETUP_HINT}"
             )
         elif not chosen.exists():
-            problems.append(f"The path for {name} does not exist: {chosen}")
+            problems.append(_problem(name, chosen))
     return problems
 
 
-def load_config(path: Path, environ: dict[str, str] | None = None) -> RdagentConfig:
-    """Read, type-check and path-check the config. Relative paths count from the config's folder."""
+def _read(path: Path | None) -> dict[str, object]:
+    """The file's settings. No file (None) means every setting comes from its default."""
+    if path is None:
+        return {}
     if not path.is_file():
         raise RdagentConfigError(f"The config file does not exist: {path}")
     try:
-        raw = tomllib.loads(path.read_text(encoding="utf-8"))
+        return tomllib.loads(path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as error:
         raise RdagentConfigError(f"The config is not valid TOML: {error}") from error
-    base = path.resolve().parent
+    except (OSError, UnicodeError) as error:
+        raise RdagentConfigError(f"The config file cannot be read: {path} ({error})") from error
+
+
+def load_config(path: Path | None, environ: dict[str, str] | None = None) -> RdagentConfig:
+    """Read, type-check and path-check the config. A path left out has a default.
+
+    Relative paths count from the config's folder. With no file, every path has its default.
+    """
+    env = environ if environ is not None else {}
+    raw = _read(path)
+    base = path.resolve().parent if path is not None else Path.cwd()
     raw = {k: _absolute(v, base) if k in PATH_KEYS else v for k, v in raw.items()}
+    home = Path(str(raw.get("data_dir") or AlphaSettings().data_dir)).expanduser().resolve()
+    defaults = rdagent_defaults.default_paths(home, env, rdagent_defaults.find_checkout())
+    for key, value in defaults.items():
+        raw.setdefault(key, str(value))
+    if "working_directory" not in raw:
+        raise RdagentConfigError(
+            f"The setting working_directory is not set and the Project-ALPHA folder was not "
+            f"found. Fix: {rdagent_defaults.FIXES['working_directory']}"
+        )
     try:
         config = RdagentConfig.model_validate(raw)
     except ValidationError as error:
         raise RdagentConfigError("\n".join(_words(error))) from error
-    if problems := _missing(config, environ if environ is not None else {}):
+    if problems := _missing(config, env):
         raise RdagentConfigError("\n".join(problems))
     return config
 

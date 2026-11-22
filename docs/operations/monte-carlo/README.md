@@ -55,12 +55,13 @@ governed confirmation, or sealed holdout requirements.
 ## Run and reproduce
 
 ```text
-alpha monte-carlo classical --from-run VALIDATION_RUN_ID
-alpha monte-carlo kronos --from-run VALIDATION_RUN_ID --forecast-eval-run EVALUATION_RUN_ID
+alpha monte-carlo classical --from-run RUN_ID
+alpha monte-carlo kronos --from-run RUN_ID --forecast-eval-run EVALUATION_RUN_ID
 alpha suite run PROJECT EXPERIMENT monte_carlo
 ```
 
-These are command forms, not commands executed by reading this guide. The classical command
+`RUN_ID` is the id of an `alpha test` run (rule or owner rule) or of a validation run. The output names
+the run, the out-of-sample days and the counts it used. These are command forms, not commands executed by reading this guide. The classical command
 publishes three families together; Kronos remains a separate heavyweight run. Defaults are 10,000
 paths per classical family and 128 Kronos paths. Prefer the canonical suite for the linked source
 validation and evaluation selection.

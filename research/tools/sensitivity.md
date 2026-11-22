@@ -14,9 +14,9 @@ setting. Every rule test already made the cheap re-runs.
 **Commands**
 
 ```text
-uv run alpha diagnose <run_id> --json
-uv run alpha results cite <run_id> delayed_sharpe
-uv run alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --fee-bps 5 --slippage-bps 10 --json
+alpha diagnose <run_id> --json
+alpha results cite <run_id> delayed_sharpe
+alpha test --rule ma_cross --param fast=50 --param slow=200 --asset SPY --fee-bps 5 --slippage-bps 10 --json
 ```
 
 **How to read it**

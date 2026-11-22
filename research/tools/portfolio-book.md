@@ -11,8 +11,8 @@ verified: 43519cc7a5a9beb8
 **Reach for it when** two or more rule tests look good and the owner asks if they are the same bet, or how much paper size is in use.
 **Command**
 ```text
-uv run alpha results correlate <run id> <run id> --json
-uv run alpha follow book --json
+alpha results correlate <run id> <run id> --json
+alpha follow book --json
 ```
 
 `results correlate` takes 2 to 8 rule-test runs. It reads only what each run stored: the walk-forward equity and the exposure.

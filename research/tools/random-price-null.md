@@ -14,9 +14,9 @@ prices with no pattern in them?". Every rule test already ran it, at three level
 **Commands**
 
 ```text
-uv run alpha report <run_id>
-uv run alpha figures render <run_id> --figure null_distribution
-uv run alpha optim mcpt <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=100,200 --perms 100
+alpha report <run_id>
+alpha figures render <run_id> --figure null_distribution
+alpha optim mcpt <SYMBOL> --strategy ma_crossover --grid fast=20,50 --grid slow=100,200 --perms 100
 ```
 
 **How to read it**

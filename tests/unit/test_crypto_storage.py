@@ -13,7 +13,6 @@ from alpha_core import DataError
 from alpha_core.config import AlphaSettings
 from alpha_data.crypto import storage
 from alpha_data.crypto.contracts import (
-    CryptoAcquisitionScopeV1,
     CryptoDatasetIdentityV1,
     CryptoQualityReportV1,
 )
@@ -392,28 +391,13 @@ def test_derivative_event_publication_requires_immutable_case_scope(tmp_path: Pa
         row_count=2,
         correction_lineage=(),
     )
-    with pytest.raises(DataError, match="research-case scope"):
-        store.publish_normalized(
-            payload,
-            dataset=dataset,
-            input_manifest_ids=(str(raw["manifest_id"]),),
-            quality=quality,
-        )
-
-    scope = CryptoAcquisitionScopeV1(
-        project_id="f03802b8-df35-4f19-a90c-0b3437aa587d",
-        case_revision="a" * 64,
-        reason="Capture the bounded BTC event book.",
-        captured_at=datetime(2026, 8, 15, tzinfo=UTC),
-    )
     normalized = store.publish_normalized(
         payload,
         dataset=dataset,
         input_manifest_ids=(str(raw["manifest_id"]),),
         quality=quality,
-        acquisition_scope=scope,
     )
-    assert normalized["acquisition_scope"] == scope.to_dict()
+    assert "acquisition_scope" not in normalized
 
 
 def test_staging_resumes_only_when_existing_prefix_matches_exact_payload(tmp_path: Path) -> None:

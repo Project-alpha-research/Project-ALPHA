@@ -16,6 +16,7 @@ from alpha_cli._runner import parse_as_of
 from alpha_cli.ml_compare import compare_exchanges, publish_comparison
 from alpha_cli.ml_contract import (
     MLContractError,
+    ValidatedResult,
     evaluate_result_bundle,
     prepare_exchange,
     publish_replay_signal_frame,
@@ -25,7 +26,7 @@ from alpha_cli.ml_contract import (
     validate_request_bundle,
     validate_result_bundle,
 )
-from alpha_cli.ml_input import export_project_input
+from alpha_cli.ml_input import export_input as export_ml_input
 from alpha_cli.ml_refit import plan_refit, publish_refit_plan, status_refit_plan
 from alpha_cli.spine.reserve import describe
 from alpha_core import DataError
@@ -171,9 +172,13 @@ def capabilities(
 
 @ml_app.command("export-input")
 def export_input(
-    project_id: Annotated[str, typer.Argument(help="strategy project id")],
-    experiment_id: Annotated[str, typer.Argument(help="immutable experiment id")],
     output: Annotated[Path, typer.Argument(help="new immutable input-bundle directory")],
+    spec: Annotated[
+        Path,
+        typer.Option(
+            "--spec", help="experiment spec JSON file (snapshot, universe, splits, costs)"
+        ),
+    ],
     as_of: Annotated[
         str | None,
         typer.Option("--as-of", help="inclusive research cutoff YYYY-MM-DD"),
@@ -182,10 +187,9 @@ def export_input(
 ) -> None:
     """Generate a validated Alpha158 starter bundle from one frozen ALPHA snapshot."""
     try:
-        summary = export_project_input(
+        summary = export_ml_input(
             data_dir=AlphaSettings().data_dir,
-            project_id=project_id,
-            experiment_id=experiment_id,
+            spec_path=spec,
             output_dir=output,
             as_of=as_of,
         )
@@ -320,6 +324,56 @@ def refit_status(
     _emit(report, as_json=as_json)
 
 
+def train_exchange(
+    exchange: Path,
+    *,
+    mode: str,
+    worker_project: Path | None,
+    no_sync: bool,
+    timeout_seconds: int,
+) -> ValidatedResult:
+    """Run the separately locked worker on a prepared exchange; return its validated result."""
+    request = validate_request_bundle(exchange, for_execution=True)
+    expected_input_anchor = validate_input_anchor(exchange)
+    project, lock = _worker_project(worker_project)
+    actual_lock_hash = sha256_file(lock)
+    if request.request["worker_lock_hash"] != actual_lock_hash:
+        raise MLContractError(
+            "request worker_lock_hash does not match the selected isolated worker lock"
+        )
+    uv = shutil.which("uv")
+    if uv is None:
+        raise MLContractError("uv is required to launch the isolated Qlib worker")
+    command = [uv, "run", "--project", str(project), "--locked"]
+    if no_sync:
+        command.append("--no-sync")
+    command.extend(
+        [
+            "alpha-qlib-worker",
+            mode,
+            str(Path(exchange).resolve()),
+            "--worker-lock",
+            str(lock.resolve()),
+        ]
+    )
+    environment = _worker_environment(seed=int(request.request["seed"]))
+    completed = subprocess.run(
+        command,
+        cwd=project,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = "\n".join([*completed.stdout.splitlines(), *completed.stderr.splitlines()][-20:])
+        raise MLContractError(
+            f"isolated {mode} worker failed with exit {completed.returncode}: {detail}"
+        )
+    return validate_result_bundle(exchange, expected_input_anchor=expected_input_anchor)
+
+
 @ml_app.command()
 def train(
     exchange: Annotated[Path, typer.Argument(help="prepared worker exchange directory")],
@@ -356,47 +410,13 @@ def train(
     if mode not in {"real", "fake"}:
         raise typer.BadParameter("--mode must be 'real' or 'fake'")
     try:
-        request = validate_request_bundle(exchange, for_execution=True)
-        expected_input_anchor = validate_input_anchor(exchange)
-        project, lock = _worker_project(worker_project)
-        actual_lock_hash = sha256_file(lock)
-        if request.request["worker_lock_hash"] != actual_lock_hash:
-            raise MLContractError(
-                "request worker_lock_hash does not match the selected isolated worker lock"
-            )
-        uv = shutil.which("uv")
-        if uv is None:
-            raise MLContractError("uv is required to launch the isolated Qlib worker")
-        command = [uv, "run", "--project", str(project), "--locked"]
-        if no_sync:
-            command.append("--no-sync")
-        command.extend(
-            [
-                "alpha-qlib-worker",
-                mode,
-                str(Path(exchange).resolve()),
-                "--worker-lock",
-                str(lock.resolve()),
-            ]
+        validated = train_exchange(
+            exchange,
+            mode=mode,
+            worker_project=worker_project,
+            no_sync=no_sync,
+            timeout_seconds=timeout_seconds,
         )
-        environment = _worker_environment(seed=int(request.request["seed"]))
-        completed = subprocess.run(
-            command,
-            cwd=project,
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-            check=False,
-        )
-        if completed.returncode != 0:
-            detail = "\n".join(
-                [*completed.stdout.splitlines(), *completed.stderr.splitlines()][-20:]
-            )
-            raise MLContractError(
-                f"isolated {mode} worker failed with exit {completed.returncode}: {detail}"
-            )
-        validated = validate_result_bundle(exchange, expected_input_anchor=expected_input_anchor)
     except subprocess.TimeoutExpired as exc:
         raise typer.BadParameter(
             f"isolated {mode} worker exceeded {timeout_seconds} seconds"
@@ -536,3 +556,22 @@ def replay(
         },
         as_json=as_json,
     )
+
+
+@ml_app.command("run")
+def run(
+    spec: Annotated[Path, typer.Argument(help="spec.toml: assets, features, model, split")],
+    as_of: Annotated[
+        str | None,
+        typer.Option("--as-of", help="inclusive research cutoff YYYY-MM-DD"),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="emit machine-readable JSON")] = False,
+) -> None:
+    """Train a Qlib model from a plain spec and replay it with costs; store one ordinary run."""
+    from alpha_cli import ml_run
+
+    try:
+        result = ml_run.run_spec(spec, data_dir=AlphaSettings().data_dir, as_of=as_of)
+    except (DataError, MLContractError, ml_run.MlRunError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _emit(result, as_json=as_json)

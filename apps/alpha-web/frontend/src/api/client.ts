@@ -766,8 +766,8 @@ export const api = {
     const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
     return getJSON(`/api/ml/experiments${query}`)
   },
-  mlExperimentPreflight: (projectId: string): Promise<MlExperimentPreflight> =>
-    getJSON(`/api/ml/experiments/preflight?project_id=${encodeURIComponent(projectId)}`),
+  mlExperimentPreflight: (spec: Record<string, unknown>): Promise<MlExperimentPreflight> =>
+    postJSON('/api/ml/experiments/preflight', { spec }),
   mlTearsheet(exchangeId: string, timelineOffset = 0): Promise<MlTearSheetProjection> {
     if (!Number.isInteger(timelineOffset) || timelineOffset < 0 || timelineOffset > 1_000_000) {
       throw new RangeError('ML tear-sheet timeline offset must be an integer from 0 to 1,000,000')
@@ -782,6 +782,6 @@ export const api = {
       `/api/ml/exchanges/${encodeURIComponent(exchangeId)}/tear-sheet?${params.toString()}`,
     )
   },
-  createMlExperiment: (projectId: string, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
-    postJSON('/api/ml/experiments', { project_id: projectId, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
+  createMlExperiment: (spec: Record<string, unknown>, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
+    postJSON('/api/ml/experiments', { spec, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
 }

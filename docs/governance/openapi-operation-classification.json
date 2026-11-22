@@ -484,11 +484,11 @@
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
-      "method": "GET",
+      "method": "POST",
       "mode": "fixture_backed",
-      "operation_id": "get_experiment_preflight_api_ml_experiments_preflight_get",
+      "operation_id": "post_experiment_preflight_api_ml_experiments_preflight_post",
       "path": "/api/ml/experiments/preflight",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
       "method": "GET",
@@ -1359,11 +1359,11 @@
       "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
-      "method": "GET",
+      "method": "POST",
       "mode": "fixture_backed",
-      "operation_id": "v3_get_experiment_preflight_api_v3_ml_experiments_preflight_get",
+      "operation_id": "v3_post_experiment_preflight_api_v3_ml_experiments_preflight_post",
       "path": "/api/v3/ml/experiments/preflight",
-      "reason": "Parameterized safe read uses typed identity and boundary fixtures."
+      "reason": "Mutation is exercised with deterministic local fixtures and no vendor network."
     },
     {
       "method": "GET",

@@ -19,9 +19,10 @@ from tests.fixtures.cli_fixtures import seed_store
 # fixed, so only the reading could move an id.
 # Pin change (2026-11-22): the identity payload no longer holds the health verdict, a whole-file
 # fingerprint or the held-back count, so the run id and test id moved; the idea id did not.
-PINNED_RUN_ID = "424c47ed5862e4a6"
-PINNED_TEST_ID = "453e4d92d6aee5ad"
-PINNED_IDEA_ID = "086e65226d0ce566"
+# Pin change (2026-11-22, #393): a spec without costs takes its class cost; all ids moved.
+PINNED_RUN_ID = "c38137c941f86f0f"
+PINNED_TEST_ID = "97ce8384b281b0b4"
+PINNED_IDEA_ID = "9d09feec665da1c6"
 PINNED_VERDICT = "C"
 FORBIDDEN_WORDS = re.compile(r"\b(supported|rejected|pass|fail|profit)\b", re.IGNORECASE)
 LETTER_GRADE = re.compile(r"(?<![\w'./-])[A-F](?![\w'./-])")

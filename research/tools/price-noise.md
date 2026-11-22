@@ -13,8 +13,8 @@ verified: 5b14ac172b6eee8e
 
 **Commands**
 ```text
-uv run alpha diagnose <run_id>
-uv run alpha results cite <run_id> price_noise_p05_sharpe
+alpha diagnose <run_id>
+alpha results cite <run_id> price_noise_p05_sharpe
 ```
 
 **How to read it**

@@ -39,12 +39,14 @@ Sources:
 
 - The RD-Agent factor judge (`_rdagent_costs.py`) reads the crypto spot row at each call. It keeps no cost numbers of its own, so a
   change of the row reaches its next score.
+- The native daily rule study (`_native_daily_rule_study.py`) states 10 bp fee and 5 bp slippage itself: the file is hash-bound for
+  daily approvals and may not import the unbound table. A unit test holds its terms equal to the crypto spot row.
 - A judge trial stores `costs` (`fee_bps`, `slippage_bps`, `source: class-default`, `asset_class`). A stored trial keeps the costs it was
   made with and is never rewritten; one without `costs` was made before the table (10 bp fee, 6 bp slippage). The judge feedback says how
   many earlier trials used other costs: they stay in the trial count and are not re-scored.
-- Not on the table: the native daily rule study (`_native_daily_rule_study.py`: 10 and 5 bp, equal to the row today; it is in the hash-bound
-  daily guard files, which may not import the table), `research_cmds.py` (old research-case lane, flat 1 and 2 bp) and the judge's worker
-  prompt text in `workers/rdagent`.
+- Not on the table: `research_cmds.py` (old research-case lane, flat 1 and 2 bp) and the judge's worker prompt text in `workers/rdagent`.
+
+## Rules
 
 - The class comes from the store's dataset identity (`asset_class` and `venue`): US `etf` is the large ETF row, US `stock` the stock row,
   `crypto` the spot row. Without an identity, a slash pair or a crypto provider is crypto spot. Nothing else is read, never the ticker text.

@@ -1,4 +1,4 @@
-"""The judge reads its costs from the one cost table."""
+"""The judge and the daily rule study read their costs from the one cost table."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import pytest
 
 from alpha_cli import _rdagent_costs as costs
 from alpha_cli import _rdagent_judge as judge
+from alpha_cli._native_daily_rule_study import daily_rule_terms_proposal
 from alpha_cli.spine import cost_classes
 
 
@@ -85,3 +86,12 @@ def test_old_stored_scores_are_not_altered_and_are_named() -> None:
     assert repr(history) == snapshot
     assert "1 earlier scores were made under other costs" in costs.other_cost_note(1)
     assert costs.other_cost_note(0) == ""
+
+
+def test_daily_rule_study_terms_match_the_table() -> None:
+    # The study file is hash-bound for daily approvals, so it cannot import the unbound table;
+    # its stated terms must equal the crypto spot row.
+    economics, _ = daily_rule_terms_proposal()
+    row = cost_classes.ROWS["crypto_spot"]
+    assert economics.fee_bps_per_side == row.fee_bps
+    assert economics.slippage_bps_per_side == row.slippage_bps

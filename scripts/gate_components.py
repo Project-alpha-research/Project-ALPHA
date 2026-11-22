@@ -231,6 +231,9 @@ def _backend_tests(root: Path, shard: tuple[int, int] | None) -> list[Step]:
     return [(f"pytest shard {index}/{total}", root, command)]
 
 
+_MUTATE = ["uv", "run", "python", "scripts/gate.py", "mutate"]
+
+
 def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
     """Slow oracles and the mutation gate, only when quant-tier source changed."""
     paths = (context or comparison_context(root))["paths"]
@@ -243,7 +246,8 @@ def _backend_quant(root: Path, context: dict[str, Any] | None) -> list[Step]:
         (
             "mutation gate",
             root,
-            ["uv", "run", "python", "scripts/gate.py", "mutate", "--require-measured", *modules],
+            # 90 minutes per module: about 400 mutants need about 60 on a CI runner.
+            [*_MUTATE, "--require-measured", "--timeout=5400", *modules],
         ),
     ]
 

@@ -126,7 +126,6 @@ def _stored(
     """The outputs already stored and what they cost. A stored output made from a different
     prompt text is refused: the same id must mean the same prompt."""
     done: set[tuple[str, str, int]] = set()
-    spent = 0.0
     for model in models:
         for p in prompts:
             for sample in range(samples):
@@ -140,12 +139,19 @@ def _stored(
                         "Use a new id or a new store."
                     )
                 done.add((model, p.id, sample))
-                spent += float(record["charged_usd"])
+    # Everything else already in this store counts toward the run's budget and call cap, whatever
+    # models, stages or prompts this invocation selects.
+    selected = len(done)
+    every = [
+        json.loads(p.read_text(encoding="utf-8")) for p in (store / "outputs").glob("*/*.json")
+    ]
+    others = len(every) - selected
+    spent = sum(float(r["charged_usd"]) for r in every)
     failed_usd, failed_calls = _unsettled(store)
-    return done, spent + failed_usd, failed_calls
+    return done, spent + failed_usd, failed_calls + others
 
 
-def run_bench(
+def _run(
     prompts: list[StoredPrompt],
     models: list[str],
     samples: int,
@@ -156,13 +162,7 @@ def run_bench(
     spend: Path,
     max_new_calls: int | None = None,
 ) -> RunResult:
-    """Send each stored prompt to each model `samples` times. An output already stored is kept.
-
-    The plan is checked first. Then, before each call, the spend so far plus that call's
-    estimate must stay within the run cap and the month cap: a model that writes more than the
-    recorded counts stops the run, and the outputs stored so far are kept for a resume.
-    """
-    check_outside_git(store)
+    """The run itself, with the store's lock already held by `run_bench`."""
     now = datetime.now(UTC)
     month = month_spent(spend, now)
     done, run_usd, failed = _stored(prompts, models, samples, store)
@@ -207,10 +207,49 @@ def run_bench(
                         "was charged."
                     )
                 record = _record(model, p, sample, reply, prices[model], estimate)
+                _settle(spend, now, estimate, record)  # a billed reply is booked before it is saved
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
                     stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
-                _settle(spend, now, estimate, record)
                 run_usd += float(record["charged_usd"])
                 new += 1
     return RunResult(new_calls=new, finished=True)
+
+
+def run_bench(
+    prompts: list[StoredPrompt],
+    models: list[str],
+    samples: int,
+    prices: Mapping[str, tuple[float, float]],
+    client: Client,
+    store: Path,
+    *,
+    spend: Path,
+    max_new_calls: int | None = None,
+) -> RunResult:
+    """Send each stored prompt to each model `samples` times. An output already stored is kept.
+
+    The plan is checked first. Then, before each call, the spend so far plus that call's
+    estimate must stay within the run cap and the month cap: a model that writes more than the
+    recorded counts stops the run, and the outputs stored so far are kept for a resume.
+    One run at a time may use a store: a second one is refused before any call.
+    """
+    check_outside_git(store)
+    store.mkdir(parents=True, exist_ok=True)
+    with (store / ".run.lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise BenchError(
+                "Another bench run is using this store. Wait for it to end."
+            ) from error
+        return _run(
+            prompts,
+            models,
+            samples,
+            prices,
+            client,
+            store,
+            spend=spend,
+            max_new_calls=max_new_calls,
+        )

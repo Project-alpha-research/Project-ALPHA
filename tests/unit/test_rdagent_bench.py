@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -674,3 +675,37 @@ def test_a_code_reply_in_a_json_envelope_is_checked_on_the_code_inside(tmp_path:
     run_bench(prompts, ["a"], 1, prices, FakeClient(data), store, spend=_spend(tmp_path))
     reading = score_store(prompts, ["a"], store, closed=set(), dropped=set()).models["a"]
     assert reading.by_prompt == {"p0": 1.0, "p1": 0.0, "p2": 0.0, "p3": 1.0}
+
+
+def test_a_store_keeps_one_run_budget_when_the_models_change(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    row["prompt_tokens"], row["completion_tokens"] = 6_000_000, 0  # 6 USD at the test price
+    (folder / "p0.json").write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    same = tmp_path / "same.toml"
+    same.write_text(
+        "[a]\nin_per_mtok = 1.0\nout_per_mtok = 2.0\n[b]\nin_per_mtok = 1.0\nout_per_mtok = 2.0\n"
+    )
+    prices = load_prices(same, ["a", "b"])
+    one = {"a": {"p0": [_reply(6_000_000, 0)]}, "b": {"p0": [_reply(6_000_000, 0)]}}
+    client = FakeClient(one)
+    store = tmp_path / "store"
+    run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    # Model b would cost 6 USD more in this store: 12 USD in all, over the 10 USD run cap.
+    with pytest.raises(BenchError, match="10"):
+        run_bench(prompts, ["b"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 1
+
+
+def test_a_store_in_use_by_another_run_is_refused_before_any_call(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    store = tmp_path / "store"
+    store.mkdir()
+    client = FakeClient({"a": {"p0": [_reply(1000, 500)]}})
+    with (store / ".run.lock").open("w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        with pytest.raises(BenchError, match="Another bench run"):
+            run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 0

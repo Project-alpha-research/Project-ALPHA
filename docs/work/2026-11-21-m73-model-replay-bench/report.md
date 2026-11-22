@@ -87,3 +87,8 @@ With a single gateway, `ALPHA_BENCH_GATEWAY_TOKEN` still works. Tokens are never
 ## Review round 7 (Codex)
 A coder reply is often a JSON envelope `{"code": "..."}`. The buildability check now parses the `code` string inside, not the envelope
 (the envelope alone is a valid Python expression, so a broken program used to count as buildable).
+
+## Review round 8 (Codex)
+1. A store keeps one run budget: every output already in it counts toward the 10 USD and 60-call caps, whatever models, stages or prompts
+   a later run selects.
+2. One run at a time may use a store (a lock on `.run.lock`); a second is refused before any call. A billed reply is booked before it is saved.

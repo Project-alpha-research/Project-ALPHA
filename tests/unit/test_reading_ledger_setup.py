@@ -343,13 +343,15 @@ def test_no_setup_study_is_ever_clear_of_chance() -> None:
 
 
 # Ids and numbers measured on origin/main with the same seeded synthetic setups.
+# Pin change (2026-11-22): the study and trade digests moved because the stored health record
+# no longer holds whole-file fingerprints; the find, study and trade ids and every number did not.
 PINNED: dict[str, dict[str, Any]] = {
     "lift": dict(
         find="d03490186ae11b2f",
         study="e186fcb8683fb87d",
         trade="cb1db04a562f394f",
-        study_sha="0edc2362a68def58",
-        trade_sha="b8198d19f3ed7b26",
+        study_sha="9ed269869227fe9f",
+        trade_sha="4d807a0d668b7c78",
         lift=0.004,
         word="some evidence",
     ),
@@ -357,8 +359,8 @@ PINNED: dict[str, dict[str, Any]] = {
         find="2017fcb5873c3430",
         study="0a14bd41f15883a7",
         trade="2bfe8ba67d56fb15",
-        study_sha="21f93e3ab79fecaf",
-        trade_sha="55c4f14ed8c99377",
+        study_sha="9ebb5987ea4b6dd2",
+        trade_sha="882fb98cc5f8c226",
         lift=0.0,
         word="not clear of chance",
     ),

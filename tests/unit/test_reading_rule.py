@@ -17,8 +17,10 @@ from tests.fixtures.cli_fixtures import seed_store
 # Ids of the seeded synthetic run below, taken BEFORE the reading existed; it must change none.
 # A run id hashes every alpha_cli source byte, so any edit moves it. The test holds that one input
 # fixed, so only the reading could move an id.
-PINNED_RUN_ID = "8f301ae2e5debf9a"
-PINNED_TEST_ID = "fdd2adbd8f795cb9"
+# Pin change (2026-11-22): the identity payload no longer holds the health verdict, a whole-file
+# fingerprint or the held-back count, so the run id and test id moved; the idea id did not.
+PINNED_RUN_ID = "424c47ed5862e4a6"
+PINNED_TEST_ID = "453e4d92d6aee5ad"
 PINNED_IDEA_ID = "086e65226d0ce566"
 PINNED_VERDICT = "C"
 FORBIDDEN_WORDS = re.compile(r"\b(supported|rejected|pass|fail|profit)\b", re.IGNORECASE)

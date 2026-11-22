@@ -7,6 +7,7 @@ from alpha_cli.toolbox.families.costs import BREAK_EVEN
 from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REGIMES
 from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
 from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
+from alpha_cli.toolbox.families.overfit_controls import CHECKS as OVERFIT_CONTROLS
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
 from alpha_cli.toolbox.families.performance_stats import CHECKS as PERFORMANCE_STATS
 from alpha_cli.toolbox.families.resampling import (
@@ -37,6 +38,7 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *OVERFIT_CONTROLS,
     *RESAMPLING_MORE,
     *RISK_SIZING_CHECKS,
     *PERFORMANCE_STATS,

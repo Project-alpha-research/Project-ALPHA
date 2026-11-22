@@ -130,7 +130,7 @@ def _line_breaks(bars: OHLCV, name: str, flip: bool) -> list[PatternEvent]:
         pts = [(i1, p1), (i2, p2), (at, brk.line_price)]
         if flip:
             pts = [(i, 1.0 / p) for i, p in pts]
-        word = "Rising line broke down" if flip else "Falling line broke up"
+        word = "Support line broke down" if flip else "Resistance line broke up"
         out.append(ev(name, at, pts, f"{word} ({line.touches} touches)", "line"))
     return out
 
@@ -157,7 +157,11 @@ def _flags(bars: OHLCV) -> list[PatternEvent]:
 
 
 def _head_shoulders(bars: OHLCV) -> list[PatternEvent]:
-    return replay(bars, _hs_events)
+    """One event per head: later sightings of the same head with another shoulder are dropped."""
+    first: dict[tuple[str, int], PatternEvent] = {}
+    for e in replay(bars, _hs_events):
+        first.setdefault((e.series, e.anchors[2][0]), e)
+    return list(first.values())
 
 
 def _hs_events(bars: OHLCV) -> list[PatternEvent]:
@@ -171,8 +175,14 @@ def _hs_events(bars: OHLCV) -> list[PatternEvent]:
         ("hs_bottom", "Inverse head and shoulders", bottoms),
     ):
         for h in found:
-            pts = [(h.ls_index, h.ls_price), (h.head_index, h.head_price), (h.rs_index, h.rs_price)]
-            out.append(ev(name, h.confirmed_index, pts, word, "outline"))
+            pts = [
+                (h.ls_index, h.ls_price),
+                (h.n1_index, h.n1_price),
+                (h.head_index, h.head_price),
+                (h.n2_index, h.n2_price),
+                (h.rs_index, h.rs_price),
+            ]
+            out.append(ev(name, h.confirmed_index, pts, word, "line"))
     return out
 
 

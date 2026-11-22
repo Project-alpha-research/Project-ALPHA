@@ -92,6 +92,21 @@ def test_the_same_bars_give_the_same_picture_bytes(tmp_path: Path) -> None:
     assert a.annotated.read_bytes() == b.annotated.read_bytes()
 
 
+def test_a_tangle_of_lines_is_not_drawn() -> None:
+    from alpha_cli.chart_cmds import to_ohlcv
+    from alpha_cli.chart_pattern_picture import MAX_DRAWN, _figure, _shapes
+
+    series = to_ohlcv(_bars())
+    shapes = _shapes(series, "trendlines")
+    assert len(shapes) > MAX_DRAWN
+    window = (date(2021, 1, 1), date(2023, 6, 18))
+    figure = _figure(series, shapes, "trendlines", window, annotated=True)
+    legend = figure.axes[0].get_legend()
+    assert legend is not None
+    numbered = [t for t in legend.get_texts() if t.get_text()[:1].isdigit()]
+    assert 0 < len(numbered) <= MAX_DRAWN
+
+
 def test_help_lists_every_pattern() -> None:
     result = CliRunner().invoke(chart_app, ["overlays", "--help"], terminal_width=400)
     flat = " ".join(result.output.split())

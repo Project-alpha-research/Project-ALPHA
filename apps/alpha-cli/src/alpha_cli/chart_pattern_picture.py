@@ -25,6 +25,35 @@ if TYPE_CHECKING:
 
 DEFAULT_DAYS = 730
 NOTES = 3  # the most recent events that get a note in the annotated picture
+GAP_DAYS = 15  # drawn lines and outlines are known at least this many days apart
+MAX_DRAWN = 5  # lines and outlines: only the most recent are drawn, or the picture is a tangle
+COLOURS = ("C1", "C2", "C3", "C4", "C5")
+HIGH_WORDS = ("high", "top", "bear")  # series names that mark a high or a bearish shape
+WHAT = {
+    "swings": "Red triangles mark swing highs and green triangles swing lows: a bar higher, or "
+    "lower, than the 5 bars on each side of it.",
+    "dc_extremes": "Triangles mark turning points: a high or low is fixed once the price has "
+    "reversed 2% from it.",
+    "structure_levels": "Triangles mark the larger swing highs and lows, judged against the "
+    "average daily range.",
+    "trendlines": "Each coloured line joins two swing points and runs on to the day the close "
+    "broke through it; the cross marks that day. A resistance line (joining highs) broken upward "
+    "is a break up; a support line (joining lows) broken downward is a break down.",
+    "flags": "Each coloured outline is a sharp move followed by a small drift against it; its "
+    "last corner is the day the flag was confirmed.",
+    "head_shoulders": "Each coloured line joins the left shoulder, the head and the right "
+    "shoulder; the dashed line is the neckline. A top has three highs with the middle one "
+    "highest; the inverse has three lows.",
+    "wedges": "Each coloured outline joins the swing points of two lines that close in on each "
+    "other.",
+    "triple_taps": "Each coloured line joins three touches of nearly the same price level.",
+    "harmonics": "Each coloured line joins the five points X, A, B, C and D whose distances "
+    "match a harmonic shape; D is the last.",
+    "pips": "The line joins the most important turning points of the window. They move as the "
+    "window moves, so they cannot be tested.",
+    "market_profile": "The lines are price levels where the most trading happened in the window.",
+    "levels": "The lines are Fibonacci levels between the latest swing high and low.",
+}
 
 
 @dataclass(frozen=True)
@@ -43,6 +72,7 @@ class _Shape:
     shape: str  # marker | line | outline
     points: tuple[tuple[datetime, float], ...]
     known: datetime
+    series: str = ""
 
 
 def _when(series: OHLCV, index: int) -> datetime:
@@ -60,6 +90,7 @@ def _shapes(series: OHLCV, pattern: str) -> list[_Shape]:
                 e.shape,
                 tuple((_when(series, i), p) for i, p in e.anchors),
                 _when(series, e.confirmed_index),
+                e.series,
             )
             for e in family_events(series, pattern)
         ]
@@ -70,7 +101,7 @@ def _shapes(series: OHLCV, pattern: str) -> list[_Shape]:
             (datetime.fromtimestamp(a["ts"], tz=UTC), float(a["value"])) for a in row["anchors"]
         )
         shape = "marker" if row["kind"] == "marker" else "line"
-        shapes.append(_Shape(row["label"], shape, points, known))
+        shapes.append(_Shape(row["label"], shape, points, known, pattern))
     return shapes
 
 
@@ -79,15 +110,59 @@ def _num(when: datetime) -> float:
     return when.timestamp() / 86400.0
 
 
-def _draw_shape(axes: Axes, s: _Shape, label: str | None) -> None:
+def _clear(s: _Shape, other: _Shape) -> bool:
+    """True when two shapes can share a picture: trend lines need only different break days;
+    every other shape must also cover a different stretch of days."""
+    if s.series.endswith("_line_break"):
+        return abs((s.known - other.known).days) >= GAP_DAYS
+    first = min(p[0] for p in s.points)
+    first_other = min(p[0] for p in other.points)
+    return s.known < first_other or other.known < first
+
+
+def _spread(shapes: list[_Shape]) -> list[_Shape]:
+    """The most recent shapes, newest picked first, that do not crowd each other."""
+    chosen: list[_Shape] = []
+    for s in sorted(shapes, key=lambda x: x.known, reverse=True):
+        if all(_clear(s, c) for c in chosen):
+            chosen.append(s)
+        if len(chosen) == MAX_DRAWN:
+            break
+    return chosen
+
+
+def _draw_shape(axes: Axes, s: _Shape, colour: str, number: int | None) -> None:
     xs = [_num(p[0]) for p in s.points]
     ys = [p[1] for p in s.points]
     if s.shape == "marker":
-        axes.scatter(xs, ys, color="C1", s=22, zorder=4, label=label)
+        high = any(w in s.series for w in HIGH_WORDS)
+        axes.scatter(
+            xs, ys, color="C3" if high else "C2", marker="v" if high else "^", s=34, zorder=4
+        )
         return
-    if s.shape == "outline":
-        xs, ys = [*xs, xs[0]], [*ys, ys[0]]
-    axes.plot(xs, ys, color="C1", lw=1.4, marker="o", ms=3, zorder=4, label=label)
+    text = None if number is None else f"{number}  {s.label}, {s.known.date()}"
+    if s.series.endswith("_line_break"):
+        axes.plot(xs[:2], ys[:2], color=colour, lw=1.6, marker="o", ms=4, zorder=4, label=text)
+        axes.plot(xs[1:], ys[1:], color=colour, lw=1.2, ls="--", zorder=4)
+        axes.plot(xs[-1:], ys[-1:], color=colour, marker="x", ms=8, mew=2, zorder=5)
+    else:
+        if s.series.startswith("hs_"):
+            axes.plot(xs[1:4:2], ys[1:4:2], color=colour, lw=1.0, ls="--", zorder=4)
+        if s.shape == "outline":
+            xs, ys = [*xs, xs[0]], [*ys, ys[0]]
+            axes.fill(xs, ys, color=colour, alpha=0.12, zorder=3)
+        axes.plot(xs, ys, color=colour, lw=1.6, marker="o", ms=4, zorder=4, label=text)
+    if number is not None:
+        axes.annotate(
+            str(number),
+            (xs[-1], ys[-1]),
+            xytext=(4, 5),
+            textcoords="offset points",
+            fontsize=9,
+            fontweight="bold",
+            color=colour,
+            zorder=6,
+        )
 
 
 def _summary(shapes: list[_Shape], pattern: str, start: date, end: date) -> tuple[str, int]:
@@ -105,11 +180,25 @@ def _figure(
     from alpha_cli.figures import plain_style as ps
 
     start, end = window
+    drawn = [s for s in shapes if s.shape == "marker"]
+    inside = [
+        s for s in shapes if s.shape != "marker" and min(p[0] for p in s.points).date() >= start
+    ]
+    drawn += _spread(inside)
+    drawn.sort(key=lambda x: x.known)
     sentences = [
-        f"The line is the daily close of {series.symbol}.",
-        "Orange marks and lines are the pattern, drawn on the bar where it could first be known.",
+        f"The blue line is the daily close of {series.symbol}; the grey band behind it is each "
+        "day's low to high.",
+        WHAT[pattern],
+        "Markers sit on the bar's own high or low, but each pattern is known only on the later "
+        "day in its note.",
         "A pattern is a reading about the past; it does not say what comes next.",
     ]
+    if len(shapes) > len(drawn):
+        sentences.insert(
+            -1,
+            f"Of {len(shapes)} found, {len(drawn)} recent ones that do not crowd are drawn.",
+        )
     box = ps.box_height(sentences) if annotated else 0.0
     height = 6.0 + box
     figure = ps.new_figure(height)
@@ -117,15 +206,19 @@ def _figure(
     figure.subplots_adjust(top=0.84, bottom=(box + 0.9) / height, left=0.07, right=0.98)
     days = [_when(series, i) for i in range(len(series))]
     keep = [i for i, d in enumerate(days) if start <= d.date() <= end]
+    x = [_num(days[i]) for i in keep]
+    low = [float(series.low[i]) for i in keep]
+    high = [float(series.high[i]) for i in keep]
+    axes.fill_between(x, low, high, color="0.85", lw=0, label="Daily low to high", zorder=1)
     axes.plot(
-        [_num(days[i]) for i in keep],
-        [float(series.close[i]) for i in keep],
-        color="C0",
-        lw=1.0,
-        label="Close",
+        x, [float(series.close[i]) for i in keep], color="C0", lw=1.0, label="Close", zorder=2
     )
-    for n, s in enumerate(shapes):
-        _draw_shape(axes, s, pattern if n == 0 else None)
+    lines = [s for s in drawn if s.shape != "marker"]
+    for s in drawn:
+        number = lines.index(s) + 1 if s in lines else None
+        _draw_shape(axes, s, COLOURS[((number or 1) - 1) % len(COLOURS)], number)
+    span = max(high) - min(low)
+    axes.set_ylim(min(low) - 0.04 * span, max(high) + 0.04 * span + 0.05 * span * len(lines))
     axes.set_xlim(
         _num(datetime.combine(start, datetime.min.time(), UTC)),
         _num(datetime.combine(end, datetime.min.time(), UTC)) + 1.0,
@@ -134,15 +227,16 @@ def _figure(
     axes.set_ylabel("Price (native quote)")
     axes.set_xlabel("Date (UTC)")
     axes.grid(True, color="0.88", lw=0.6)
-    axes.legend(loc="upper left")
+    axes.legend(loc="upper left", fontsize=8.5)
     ps.title_block(
         axes, f"Price with {pattern} drawn", f"{series.symbol}  ·  {pattern}  ·  {start} to {end}"
     )
     if annotated:
         used: list[Any] = []
-        for s in sorted(shapes, key=lambda x: x.known)[-NOTES:]:
-            x, y = s.points[-1]
-            ps.callout(axes, f"{s.label}, known {s.known.date()}", (_num(x), y), used)
+        noted = [s for s in drawn if s.shape == "marker"][-NOTES:] or drawn[-1:]
+        for s in noted:
+            px, py = s.points[-1]
+            ps.callout(axes, f"{s.label}, known {s.known.date()}", (_num(px), py), used)
         ps.how_to_read(figure, sentences, 0.15)
     return figure
 

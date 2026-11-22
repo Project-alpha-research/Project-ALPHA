@@ -127,3 +127,16 @@ def test_events_carry_a_label_a_confirmation_bar_and_anchors() -> None:
         assert event.label
         assert max(i for i, _ in event.anchors) <= event.confirmed_index
         assert np.isfinite([p for _, p in event.anchors]).all()
+
+
+def test_head_and_shoulders_is_one_event_per_head_with_its_neckline() -> None:
+    for bars in (
+        inject_head_shoulders(500, direction="bullish")[0],
+        inject_head_shoulders(500, direction="bearish")[0],
+    ):
+        events = pe.family_events(bars, "head_shoulders")
+        heads = [e.anchors[2][0] for e in events]
+        assert events
+        assert len(heads) == len(set(heads))
+        for e in events:
+            assert len(e.anchors) == 5  # left shoulder, neckline, head, neckline, right shoulder

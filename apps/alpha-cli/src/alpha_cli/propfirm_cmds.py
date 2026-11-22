@@ -12,6 +12,7 @@ numbers are approximate, not authoritative firm terms.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import typer
@@ -81,12 +82,7 @@ def run(
     """Score SYMBOL (or --from-run RUN_ID) against a prop firm and write a verdict manifest."""
     if (symbol is None) == (from_run is None):
         raise typer.BadParameter("provide exactly one of SYMBOL or --from-run RUN_ID")
-    if firm is not None and firm not in FIRM_PRESETS:
-        typer.echo(
-            f"Unknown firm preset {firm!r}. Valid presets: {', '.join(sorted(FIRM_PRESETS))}. "
-            "Leave --firm out for the custom rules. Nothing was run."
-        )
-        raise typer.Exit(2)
+    _refuse_unknown(firm)
     eval_days = horizon if horizon is not None else DEFAULT_EVAL_DAYS
 
     settings = AlphaSettings()
@@ -183,9 +179,31 @@ def run(
     _propfirm.stamp_held(manifest, out.held)
     _artifacts.write_manifest(rdir, manifest)
 
+    label = symbol if symbol is not None else f"run {from_run}"
+    _report(out, label=label, run_id=run_id, manifest_path=rdir / "manifest.json", horizon=horizon)
+
+
+def _refuse_unknown(firm: str | None) -> None:
+    """An unknown preset name stops the command before any data is read."""
+    if firm is not None and firm not in FIRM_PRESETS:
+        typer.echo(
+            f"Unknown firm preset {firm!r}. Valid presets: {', '.join(sorted(FIRM_PRESETS))}. "
+            "Leave --firm out for the custom rules. Nothing was run."
+        )
+        raise typer.Exit(2)
+
+
+def _report(
+    out: _propfirm.PropFirmRunResult,
+    *,
+    label: str,
+    run_id: str,
+    manifest_path: Path,
+    horizon: int | None,
+) -> None:
+    """The rules used and the evaluation length first, then the rates, in plain words."""
     res = out.result
     days = "n/a" if math.isnan(res.median_days_to_pass) else f"{res.median_days_to_pass:.0f}"
-    label = symbol if symbol is not None else f"run {from_run}"
     length = (
         "(set with --horizon)"
         if horizon is not None
@@ -195,7 +213,7 @@ def run(
         "\n".join(
             [
                 *rule_lines(out.firm, out.rules),
-                f"Evaluation length: {eval_days} trading days {length}.",
+                f"Evaluation length: {res.horizon_days} trading days {length}.",
             ]
         )
     )
@@ -205,7 +223,7 @@ def run(
         f"payout {res.payout_probability:.1%}, median days-to-pass {days}\n"
         f"  expected payout ${res.expected_payout:,.0f} over {res.horizon_days} days "
         f"({res.n_paths} paths)\n"
-        f"  manifest at {rdir / 'manifest.json'}" + (out.held.note() if out.held else "")
+        f"  manifest at {manifest_path}" + (out.held.note() if out.held else "")
     )
 
 

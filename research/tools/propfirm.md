@@ -11,9 +11,9 @@ verified: 0000000000000000
 **Reach for it when** the owner asks "could this rule pass a funded-trader evaluation?" or "how often would it blow the account?".
 **Command**
 ```text
-uv run alpha propfirm run SPY --firm topstep          # a fresh backtest of SPY against a preset
-uv run alpha propfirm run --from-run <run id>         # the equity curve of a stored run, custom rules
-uv run alpha propfirm run SPY --firm apex --horizon 60 --profit-target 2500
+alpha propfirm run SPY --firm topstep          # a fresh backtest of SPY against a preset
+alpha propfirm run --from-run <run id>         # the equity curve of a stored run, custom rules
+alpha propfirm run SPY --firm apex --horizon 60 --profit-target 2500
 ```
 Presets: `apex`, `takeprofit`, `topstep`; leave `--firm` out for the custom rules. An unknown name is refused with the list.
 Any rule flag (`--profit-target`, `--max-drawdown`, `--daily-loss`, `--account-size`, ...) overrides the preset.

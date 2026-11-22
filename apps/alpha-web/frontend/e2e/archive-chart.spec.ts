@@ -149,8 +149,8 @@ test('an archive read error stays explicit and never falls back to canonical can
   await page.getByRole('button', { name: 'Symbol, venue and timeframe' }).click()
   await page.getByRole('combobox', { name: 'Active asset' }).click()
   await page.getByRole('option', { name: /^ETH\/USDT / }).click()
-  await expect(page.getByRole('region', { name: 'Price', exact: true })).toContainText('The Workstation refused this request.')
-  expect(requests).toEqual([`?manifest_id=${id}`])
+  await expect.poll(() => requests).toEqual([`?manifest_id=${id}`])
+  await expect(page.locator('.price-panel .placeholder')).toContainText('The Workstation refused this request.')
   await expect(page.locator('.price-panel .count')).toHaveCount(0)
 })
 

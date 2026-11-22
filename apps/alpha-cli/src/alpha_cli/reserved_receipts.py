@@ -20,9 +20,10 @@ from pathlib import Path
 from typing import Any, Final
 
 from alpha_cli.control_store import DATABASE_NAME, ControlStore
+from alpha_cli.owner_auth import RESERVED_ACTION, check_assertion
 from alpha_core import DataError
 
-ACTION: Final = "confirm_reserved_period"
+ACTION: Final = RESERVED_ACTION
 SLOTS: Final = 10
 TABLES: Final = (
     "reserved_period_authorizations",
@@ -88,8 +89,6 @@ def read(data_dir: Path) -> Iterator[sqlite3.Connection | None]:
 
 def reverify(connection: sqlite3.Connection, auth: Mapping[str, Any]) -> None:
     """Check one stored Touch ID yes again: its signature, its challenge and its binding."""
-    from alpha_cli.owner_auth import check_assertion
-
     found = connection.execute(
         """SELECT c.challenge, c.binding_json, k.public_key FROM owner_auth_challenges c
         JOIN owner_credentials k ON k.credential_id = ?

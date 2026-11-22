@@ -32,7 +32,6 @@ from webauthn.helpers.structs import (
     UserVerificationRequirement,
 )
 
-from alpha_cli import reserved_slots
 from alpha_cli.control_store import (
     OWNER_ACTION_TYPES,
     ControlStore,
@@ -49,8 +48,9 @@ CHALLENGE_LIFETIME_SECONDS: Final = 60
 ENROLLMENT_LIFETIME_SECONDS: Final = 300
 _MAX_ACTION_JSON_BYTES: Final = 65_536
 # The one owner action that is not a research-case action: confirm a frozen test on the reserved
-# period. Touch ID only; the trusted CLI issues it (`alpha confirm request`), never a route.
-RESERVED_ACTION: Final = reserved_slots.ACTION
+# period. Touch ID only; the trusted CLI issues it (`alpha confirm request`), never a route. Its
+# module (`reserved_slots`) is imported only on that action's own path, never on a daily one.
+RESERVED_ACTION: Final = "confirm_reserved_period"
 
 
 def _now() -> datetime:
@@ -362,11 +362,13 @@ def reserved_confirmation_options(
 
     WebAuthn only: this action has no local-click form, and no web route issues it.
     """
+    from alpha_cli import reserved_slots
+
     clean = _object(payload, "action payload")
     if len(artifact_hash) != 64 or any(c not in "0123456789abcdef" for c in artifact_hash):
         raise DataError("owner action artifact hash must be lowercase SHA-256")
     binding = {
-        "action_type": reserved_slots.ACTION,
+        "action_type": RESERVED_ACTION,
         "authorization_method": "webauthn",
         "artifact_hash": artifact_hash,
         "request_hash": reserved_slots.sha256(clean),
@@ -397,7 +399,9 @@ def verify_action_assertion(
     store = ControlStore(data_dir)
     snapshot = store.get_owner_action_challenge_snapshot(challenge_id, now=verified_at)
     snapshot_binding = _object(snapshot["binding"], "action binding")
-    if snapshot_binding.get("action_type") == reserved_slots.ACTION:
+    if snapshot_binding.get("action_type") == RESERVED_ACTION:
+        from alpha_cli import reserved_slots
+
         recorded = reserved_slots.record_authorization(
             data_dir,
             challenge_id=challenge_id,
@@ -497,7 +501,7 @@ def local_confirmation_options(
     *, data_dir: Path, binding: Mapping[str, object], now: datetime | None = None
 ) -> dict[str, object]:
     """Issue a single-use local intent token; this does not prove physical presence."""
-    if binding.get("action_type") == reserved_slots.ACTION:
+    if binding.get("action_type") == RESERVED_ACTION:
         raise DataError("a reserved-period confirmation needs Touch ID, not a local click")
     issued = _now() if now is None else now
     token = secrets.token_bytes(32)
@@ -533,7 +537,7 @@ def verify_local_confirmation(
     ):
         raise DataError("invalid local confirmation token")
     action_type = str(binding["action_type"])
-    if action_type == reserved_slots.ACTION:
+    if action_type == RESERVED_ACTION:
         raise DataError("a reserved-period confirmation needs Touch ID, not a local click")
     if action_type == "record_semantic_event" and challenge["used_at"] is not None:
         result = store.recover_semantic_event_authorization(

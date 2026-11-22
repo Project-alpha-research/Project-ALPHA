@@ -7,7 +7,6 @@ from importlib.metadata import version
 from alpha_core.corporate import ActionType, CorporateAction
 from alpha_core.costs import bps_rate
 from alpha_core.errors import AlphaError, DataError, LookAheadError
-from alpha_core.protocols import ExecutionEventSink
 from alpha_core.types import (
     Bar,
     ChartAnchor,
@@ -35,7 +34,6 @@ __all__ = [
     "DecisionTrace",
     "ExecutionRejectionTrace",
     "IndicatorTrace",
-    "ExecutionEventSink",
     "LookAheadError",
     "ValidationOutcome",
     "__version__",

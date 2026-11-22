@@ -21,7 +21,6 @@ GROUPS: tuple[tuple[str, str, str], ...] = (
     ("backtest", "alpha_cli.backtest_cmds", "backtest_app"),
     ("forecast", "alpha_cli.forecast_cmds", "forecast_app"),
     ("optim", "alpha_cli.optim_cmds", "optim_app"),
-    ("paper", "alpha_cli.paper_cmds", "paper_app"),
     ("propfirm", "alpha_cli.propfirm_cmds", "propfirm_app"),
     ("provider", "alpha_cli.provider_cmds", "provider_app"),
     ("info", "alpha_cli.info_cmds", "info_app"),

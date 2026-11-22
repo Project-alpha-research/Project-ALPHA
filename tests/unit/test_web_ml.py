@@ -617,24 +617,14 @@ def test_ml_experiment_preflight_is_server_authoritative_and_complete(
             "active_job_id": None,
         },
     )
-    monkeypatch.setattr(
-        _ml,
-        "_run_json",
-        lambda *args, **kwargs: {
-            "current_experiment_id": experiment_id,
-            "research_gate_state": "passed",
-            "experiments": [
-                {
-                    "experiment_id": experiment_id,
-                    "snapshot_id": "snapshot-1",
-                    "universe": [f"S{index:02d}" for index in range(20)],
-                }
-            ],
-        },
-    )
     monkeypatch.setattr(_ml, "_aligned_history_count", lambda **_: 800)
+    spec = {
+        "experiment_id": experiment_id,
+        "snapshot_id": "snapshot-1",
+        "universe": [f"S{index:02d}" for index in range(20)],
+    }
 
-    result = _ml.experiment_preflight(project_id="project-1", data_dir=tmp_path)
+    result = _ml.experiment_preflight(spec=spec, data_dir=tmp_path)
 
     assert result["schema_version"] == 1
     assert result["ready"] is True
@@ -643,9 +633,7 @@ def test_ml_experiment_preflight_is_server_authoritative_and_complete(
     assert result["universe_count"] == 20
     assert result["aligned_sessions"] == 800
     assert [check["check_id"] for check in result["checks"]] == [
-        "experiment",
         "snapshot",
-        "research_gate",
         "worker",
         "universe",
         "aligned_history",
@@ -689,25 +677,13 @@ def test_ml_experiment_preflight_returns_actionable_blockers_without_launching(
         "service_status",
         lambda **_: {"worker_ready": False, "active_job_id": "job-active"},
     )
-    monkeypatch.setattr(
-        _ml,
-        "_run_json",
-        lambda *args, **kwargs: {
-            "current_experiment_id": None,
-            "research_gate_state": "open",
-            "experiments": [],
-        },
-    )
-
-    result = _ml.experiment_preflight(project_id="project-1", data_dir=tmp_path)
+    result = _ml.experiment_preflight(spec={}, data_dir=tmp_path)
 
     assert result["ready"] is False
     assert result["experiment_id"] is None
     states = {check["check_id"]: check["state"] for check in result["checks"]}
     assert states == {
-        "experiment": "blocked",
         "snapshot": "blocked",
-        "research_gate": "blocked",
         "worker": "blocked",
         "universe": "blocked",
         "aligned_history": "blocked",
@@ -1296,27 +1272,27 @@ def test_input_generation_uses_cli_owned_snapshot_producer_and_opaque_journal(
         lambda job_id, action, args, **kwargs: started.append(args),
     )
 
+    spec = {"snapshot_id": "snapshot-1", "universe": ["AAA"]}
     accepted = _ml.launch_input_generation(
         data_dir=tmp_path,
-        project_id="project-1",
-        experiment_id="ex_" + "a" * 64,
+        spec=spec,
         input_bundle_id=INPUT_ID,
         timeout_seconds=600,
     )
 
     create = calls[0]
     request = json.loads(create[create.index("--request-json") + 1])
+    spec_file = Path(started[0][started[0].index("--spec") + 1])
+    assert json.loads(spec_file.read_text(encoding="utf-8")) == spec
     assert request == {
         "action": "export-input",
-        "experiment_id": "ex_" + "a" * 64,
         "input_bundle_id": INPUT_ID,
-        "project_id": "project-1",
+        "spec_sha256": spec_file.stem,
     }
-    assert started[0][:4] == [
+    assert started[0][:3] == [
         "ml",
         "export-input",
-        "project-1",
-        "ex_" + "a" * 64,
+        str(tmp_path / "control" / "ml" / "inputs" / INPUT_ID),
     ]
     assert accepted["input_bundle_id"] == INPUT_ID
     assert str(tmp_path) not in json.dumps(request)
@@ -1326,13 +1302,6 @@ def test_one_click_experiment_generation_exports_then_prepares(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     calls: list[list[str]] = []
-    monkeypatch.setattr(
-        _ml,
-        "_run_json",
-        lambda args, **kwargs: {
-            "current_experiment_id": "ex_" + "a" * 64,
-        },
-    )
 
     def journal(args: list[str], **kwargs: object) -> dict[str, str]:
         del kwargs
@@ -1356,8 +1325,7 @@ def test_one_click_experiment_generation_exports_then_prepares(
 
     accepted = _ml.launch_experiment_generation(
         data_dir=tmp_path,
-        project_id="project-1",
-        experiment_id=None,
+        spec={"snapshot_id": "snapshot-1"},
         timeout_seconds=1200,
         model="linear",
         parameters={"alpha": 2.0},
@@ -1379,9 +1347,6 @@ def test_default_experiment_generation_keeps_the_frozen_recipe(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     calls: list[list[str]] = []
-    monkeypatch.setattr(
-        _ml, "_run_json", lambda args, **kwargs: {"current_experiment_id": "ex_" + "a" * 64}
-    )
 
     def journal(args: list[str], **kwargs: object) -> dict[str, str]:
         del kwargs
@@ -1399,7 +1364,7 @@ def test_default_experiment_generation_keeps_the_frozen_recipe(
     monkeypatch.setattr(_ml, "_worker_project", lambda: worker)
 
     _ml.launch_experiment_generation(
-        data_dir=tmp_path, project_id="project-1", experiment_id=None, timeout_seconds=1200
+        data_dir=tmp_path, spec={"snapshot_id": "snapshot-1"}, timeout_seconds=1200
     )
 
     prepare = pipelines[0][1][1]
@@ -1411,8 +1376,7 @@ def test_default_experiment_generation_keeps_the_frozen_recipe(
     with pytest.raises(_ml.MlError, match="require an explicit model override"):
         _ml.launch_experiment_generation(
             data_dir=tmp_path,
-            project_id="project-1",
-            experiment_id=None,
+            spec={"snapshot_id": "snapshot-1"},
             timeout_seconds=1200,
             parameters={"alpha": 2.0},
         )
@@ -1438,7 +1402,7 @@ def test_generation_pipeline_journals_each_step_then_succeeds(
     monkeypatch.setattr(_ml, "_run_process", run_process)
     monkeypatch.setattr(_ml, "_journal", journal)
     steps = [
-        ("export-input", ["ml", "export-input", "project", "experiment", "opaque"], 600),
+        ("export-input", ["ml", "export-input", "opaque", "--spec", "spec.json"], 600),
         ("prepare", ["ml", "prepare", "spec", "panel", "exchange"], 600),
     ]
 
@@ -1491,8 +1455,6 @@ def test_ml_generate_forwards_selected_model_after_preflight(
             "job_id": "job",
             "status": "queued",
             "action": "generate-experiment",
-            "project_id": "project-1",
-            "experiment_id": "ex_" + "a" * 64,
             "input_bundle_id": INPUT_ID,
             "exchange_id": EXCHANGE_ID,
         }
@@ -1502,7 +1464,7 @@ def test_ml_generate_forwards_selected_model_after_preflight(
     response = client.post(
         "/api/ml/experiments",
         json={
-            "project_id": "project-1",
+            "spec": {"snapshot_id": "snapshot-1"},
             "model": model,
             "parameters": {"alpha": 2.0},
         },
@@ -1515,12 +1477,14 @@ def test_ml_generate_forwards_selected_model_after_preflight(
         "experiment_preflight",
         lambda **_: {
             "ready": False,
-            "checks": [{"state": "blocked", "message": "research gate blocked"}],
+            "checks": [{"state": "blocked", "message": "spec blocked"}],
         },
     )
-    denied = client.post("/api/ml/experiments", json={"project_id": "project-1", "model": model})
+    denied = client.post(
+        "/api/ml/experiments", json={"spec": {"snapshot_id": "snapshot-1"}, "model": model}
+    )
     assert denied.status_code == 422
-    assert "research gate blocked" in json.dumps(denied.json())
+    assert "spec blocked" in json.dumps(denied.json())
     assert len(received) == 1
 
 
@@ -1539,7 +1503,7 @@ def test_ml_generate_rejects_non_tabular_selection(selection: dict[str, object])
     response = TestClient(create_app()).post(
         "/api/ml/experiments",
         json={
-            "project_id": "project-1",
+            "spec": {"snapshot_id": "snapshot-1"},
             **selection,
         },
     )
@@ -1588,7 +1552,7 @@ def test_tabular_tearsheet_keeps_predictive_timeline_without_portfolio(
 def test_ml_generate_accepts_explicit_linear_estimator(estimator: str) -> None:
     request = ml_api.MlExperimentGenerateRequest.model_validate(
         {
-            "project_id": "project-1",
+            "spec": {"snapshot_id": "snapshot-1"},
             "model": "linear",
             "parameters": {"estimator": estimator},
         }

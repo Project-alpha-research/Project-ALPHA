@@ -91,7 +91,7 @@ Three kinds: the code locks it out (it refuses reserved rows or aborts), only la
   hedged-basis candidate of ADR-0033) cuts at 2023-12-31 by default and caps a later `--as-of`; it records `reserve` and the label. Its count reads time
   columns only, up to the user's cut-off. A new case's sealed split (D1, D2, D3) divides only the data left after the cut. An older case frozen on later
   bars fails loud on reload (its data hash or its group commitment no longer matches); its split never changes silently.
-- ML input and forecast evaluation: `alpha ml export-input` (`ml_input.py`) and `alpha forecast eval` (plain and governed) use the same `Hold`,
+- ML input and forecast evaluation: `alpha ml export-input` (`ml_input.py`) and `alpha forecast eval` use the same `Hold`,
   cut-off and sentence. A Qlib bundle with held-back bars gains `reserve.json`; with none it is unchanged. `alpha ml prepare` copies that file into
   the exchange, and `alpha ml replay` records `reserve` and the label on its run; a later replay `--as-of` is recorded as 2023-12-31.
   Labels and fold targets come from the cut panel only, so the last panel session has no label. `alpha forecast run` stays forward use: its

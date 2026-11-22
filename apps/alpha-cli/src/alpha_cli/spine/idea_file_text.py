@@ -165,6 +165,26 @@ def _open(o: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _rdagent(found: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for e in found:
+        lines.append(f"  RD-Agent idea {e['ref']}" + (" (exploratory)" if e["exploratory"] else ""))
+        if e["problem"]:
+            lines.append(f"    Fault: {e['problem']}.")
+        for n, s in enumerate(e["steps"], 1):
+            lines += _wrap(f"{n}. {s['title']} ({s['who']}):", str(s["text"]), 4)
+            lines += [f"       {m['label']}: {m['display']}" for m in s["numbers"]]
+            if s["figure"]:
+                lines.append(f"       Figure: {s['figure']}")
+            if s["exploratory"]:
+                lines.append("       This step is exploratory.")
+    return lines
+
+
+def _notes(notes: list[dict[str, Any]]) -> list[str]:
+    return [f"  {n['at'][:16]}  [{n['kind']}] {n['text']}" for n in notes]
+
+
 def render(facts: dict[str, Any]) -> str:
     card = facts["card"]
     parts = [
@@ -176,6 +196,10 @@ def render(facts: dict[str, Any]) -> str:
         ("5. Open points", _open(facts["open_points"])),
         ("6. Papers it draws on", _papers(facts["papers"])),
     ]
+    if facts.get("rdagent"):
+        parts.append(("6. RD-Agent steps", _rdagent(facts["rdagent"])))
+    if facts.get("notes"):
+        parts.append(("7. Notes and decisions, newest first", _notes(facts["notes"])))
     out: list[str] = []
     for title, lines in parts:
         out += [title, *lines]

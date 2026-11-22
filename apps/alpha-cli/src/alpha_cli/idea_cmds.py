@@ -9,7 +9,7 @@ import typer
 
 from alpha_cli._cli_json import emit
 from alpha_cli.spine import idea_card as cards
-from alpha_cli.spine import idea_file, papers
+from alpha_cli.spine import idea_file, idea_notes, idea_rdagent, papers
 from alpha_cli.spine.errors import SpineError, fail
 from alpha_cli.spine.idea_file_text import render
 from alpha_core.config import AlphaSettings
@@ -58,6 +58,9 @@ def new(
         list[str] | None,
         typer.Option("--paper", help="A paper id from `alpha library papers`; repeat for more."),
     ] = None,
+    from_rdagent: Annotated[
+        str, typer.Option("--from-rdagent", help="Make the card from <run>/<idea> of RD-Agent.")
+    ] = "",
     json_out: JSON = False,
 ) -> None:
     """Save a card. Any field may stay empty; it then reads "not stated"."""
@@ -75,7 +78,15 @@ def new(
     }
     home = AlphaSettings().data_dir
     try:
-        if from_file is not None:
+        if from_rdagent:
+            if any(flags.values()) or from_file is not None:
+                raise SpineError(
+                    "IDEA_CARD_MIXED",
+                    "An RD-Agent idea and other card flags cannot be used together.",
+                    "Use `--from-rdagent` alone.",
+                )
+            card = idea_rdagent.card_from_journey(home, from_rdagent)
+        elif from_file is not None:
             if any(flags.values()):
                 raise SpineError(
                     "IDEA_CARD_MIXED",
@@ -90,6 +101,8 @@ def new(
         identity, created = cards.save(home, card)
         for wanted in paper or []:
             papers.link(home, identity, wanted)
+        if from_rdagent:
+            idea_rdagent.link(home, identity, from_rdagent)
     except SpineError as exc:
         fail(exc, json_out)
     path = home / "ideas" / f"{identity}.toml"
@@ -169,3 +182,44 @@ def file_cmd(
     except SpineError as exc:
         fail(exc, json_out)
     emit(facts, json_out=json_out, fallback=render(facts))
+
+
+@idea_app.command("link")
+def link_cmd(
+    card_id: Annotated[str, typer.Argument(help="Card id (or its first characters).")],
+    rdagent: Annotated[str, typer.Option("--rdagent", help="<run>/<idea> of an RD-Agent idea.")],
+    unlink: Annotated[bool, typer.Option("--unlink", help="Remove the link.")] = False,
+    json_out: JSON = False,
+) -> None:
+    """Link a stored RD-Agent journey to a card, or remove the link. The journey must exist."""
+    home = AlphaSettings().data_dir
+    try:
+        if unlink:
+            identity = idea_rdagent.unlink(home, card_id, rdagent)
+            changed = True
+        else:
+            identity, changed = idea_rdagent.link(home, card_id, rdagent)
+    except SpineError as exc:
+        fail(exc, json_out)
+    word = "unlinked from" if unlink else "linked to" if changed else "already linked to"
+    emit(
+        {"card": identity, "rdagent": rdagent, "linked": not unlink, "changed": changed},
+        json_out=json_out,
+        fallback=f"RD-Agent idea {rdagent} {word} idea card {identity}.",
+    )
+
+
+@idea_app.command("note")
+def note_cmd(
+    card_id: Annotated[str, typer.Argument(help="Card id (or its first characters).")],
+    text: Annotated[str, typer.Argument(help="The note, in words.")],
+    decision: Annotated[bool, typer.Option("--decision", help="Mark it as a decision.")] = False,
+    json_out: JSON = False,
+) -> None:
+    """Add a note to a card. Notes are only added: none is edited or deleted."""
+    home = AlphaSettings().data_dir
+    try:
+        row = idea_notes.append(home, card_id, text, decision=decision)
+    except SpineError as exc:
+        fail(exc, json_out)
+    emit(row, json_out=json_out, fallback=f"Saved a {row['kind']} on idea card {row['card']}.")

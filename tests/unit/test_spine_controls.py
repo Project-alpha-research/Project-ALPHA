@@ -309,3 +309,34 @@ def test_a_shrinking_short_book_keeps_trading_whole_units() -> None:
     assert len(original.trades) >= 2
     assert len(inverted.trades) == len(original.trades)
     assert [t.exit_ts for t in inverted.trades] == [t.exit_ts for t in original.trades]
+
+
+def test_the_control_is_short_on_every_bar_the_rule_is_long() -> None:
+    # Re-sizing the short on every bar leaves a float remainder in the unit count when it is
+    # covered. A remainder above zero read as "a long is held" stopped the control after its
+    # second trade on this series; it must mirror the rule to the end.
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    closes = 100.0 * np.cumprod(1.0 + 0.0008 + rng.normal(0.0, 0.012, 900))
+    bars = [
+        Bar(
+            symbol="SPY",
+            ts=datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i),
+            open=float(c),
+            high=float(c),
+            low=float(c),
+            close=float(c),
+            volume=1000.0,
+        )
+        for i, c in enumerate(closes)
+    ]
+    idea = load_spec(None, rule="ma_cross", param=["fast=5", "slow=20"], asset=["SPY"])
+    spec = replace(assemble_run_spec(idea, "SPY", 365, len(bars)), fee_bps=0, slippage_bps=0)
+    original = _runner.run_full_backtest(bars, spec)
+    inverted = controls.run_inverted_backtest(bars, spec, original)
+    long_days = [row.net_exposure > 1e-9 for row in original.portfolio_state_trace]
+    short_days = [row.net_exposure < -1e-9 for row in inverted.portfolio_state_trace]
+    assert sum(long_days) > 400
+    assert short_days == long_days
+    assert len(inverted.trades) == len(original.trades)

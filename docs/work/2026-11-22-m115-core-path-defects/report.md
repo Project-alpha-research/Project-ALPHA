@@ -115,3 +115,21 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   `test_reading_ledger_setup.py` (1) (pinned run ids) and 3 `test_research_playbook.py` checks (new toolbox cards on main).
 - CI: the pull request is a draft as the rules ask, so `ci-ok` runs the quick checks only (they pass) and then fails by
   design. The full run starts when the owner or the reviewer marks it ready for review.
+
+## Review round (landing)
+
+- Item 5: `alpha test` now prints, under the headline, how the reading's deflated-Sharpe count relates to it
+  ("This reading's deflated Sharpe counts 12 tries: 7 tests of spine:ma_cross on any asset, plus 5 nearby settings.").
+  The deflated Sharpe counts the larger of the rule family on any asset and the tries on the asset, plus nearby settings,
+  so the per-asset headline is its floor. `ledger families` prints no per-family row counts beside the headline.
+  Test: `test_alpha_test_ties_the_headline_to_the_deflated_sharpe_count`.
+- Final check: an older run of a test (the same test ran again after a code change) was refused with
+  "0 differences". It now names the newest run to confirm. Test: `test_an_older_run_of_the_test_names_the_newest_run`.
+- Final check: the plan showed the spec's placeholder costs (1 + 2 bps), and the reserved run took today's class table.
+  Both now use the class costs the stored test used. Test: `test_the_final_check_keeps_the_class_costs_the_stored_test_used`.
+- Recheck fields not compared (labels only): `manifest.execution_fingerprint`, `strategy_fingerprint`, `data_health`,
+  `research_cutoff`, `reserve`; `spine.test_id`, `spine.reserve`, `spine.idea_card`; artifact `sha256`, `size_bytes`
+  (tables compared value by value); the final check also allows `manifest.spine.reserve.held_back_bars`.
+- Proven on a copy of the real data home: idea card, `--quick` SPY test linked to it, recheck "the same result, bit for
+  bit", an exact repeat added no ledger row, plan and final check ran (both readings shown, slot listed), and a rule
+  with no trades in the held-back years read "made no trades ... nothing can be concluded", with the warning before.

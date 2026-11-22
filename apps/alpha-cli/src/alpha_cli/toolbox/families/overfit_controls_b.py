@@ -5,8 +5,6 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Any
 
-from scipy import stats
-
 from alpha_cli.toolbox.contract import Output, Param, Result, Value
 from alpha_cli.toolbox.families.overfit_controls_base import (
     BASIS,
@@ -74,6 +72,8 @@ def deflated(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> R
 
 
 def hurdle(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
+    from scipy import stats
+
     keys = ("t_stat", "p_value", "hurdle", "hurdle_p_value", "bars")
     data = sample(inputs)
     if data.reason:

@@ -429,7 +429,7 @@ def test_plan_detects_noncurrent_single_asset_and_managed_qlib_resources(tmp_pat
     first = _suite.build_suite_plan(
         qstore, qproject, qexperiment, "qlib", data_dir=tmp_path / "qlib"
     )
-    managed_input = Path(first.steps[0].argv[4])
+    managed_input = Path(first.steps[0].argv[2])
     managed_input.mkdir(parents=True)
     duplicate = _suite.build_suite_plan(
         qstore, qproject, qexperiment, "qlib", data_dir=tmp_path / "qlib"

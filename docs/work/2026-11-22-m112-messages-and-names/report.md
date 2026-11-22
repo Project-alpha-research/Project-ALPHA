@@ -34,3 +34,6 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 
 ## 8. Progress line
 `_progress.with_heartbeat` (new, 50 lines) prints "<label>: still running, N seconds so far." to stderr every 10 s on `monte-carlo classical`, `monte-carlo kronos` and `forecast eval`. A run under 10 s prints nothing; stdout and `--json` are unchanged; no default or number changed. Test: `test_progress_heartbeat.py` (failed first: the module did not exist).
+
+## 9. Lookalike "Now"
+When bars were held back, the first line of `alpha lookalike` says "The comparison ends at the held-back boundary (DATE), not today: later bars are kept for the owner's confirmation of an idea." The figure subtitle gets a short form ("Ends at the held-back boundary, DATE, not today"). Nothing changes when no bar is held back. Test: `test_the_headline_says_the_comparison_ends_at_the_held_back_boundary` (failed first).

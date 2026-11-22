@@ -7,7 +7,7 @@ sources:
   - tests/bias_guards/test_market_state_future_poison.py
   - tests/bias_guards/test_poison_variants.py
   - tests/unit/test_figure_*.py
-verified: 61a95ddc5d74e787
+verified: 428ec363dbb2e794
 ---
 
 # Research primitive invariants
@@ -137,12 +137,16 @@ General rule: [research integrity § Statistical evidence](research-integrity.md
 - The figure engine draws; it never computes. Every number arrives pre-computed, and each figure ships with
   its catalogued question, uncertainty and caveat text.
 - `FigureSpec` cannot express a secondary y-axis; two scales become two stacked panels.
+- The Workstation and `alpha figures` draw each `FigureSpec` through `alpha_cli.figures.plain_spec`
+  as a white plain chart and an annotated chart; this package's renderer and catalogue text are unchanged.
 - Rendering is pure and byte-stable within the locked environment: Agg/SVG backends only (never `pyplot`),
   rcParams from `rcParamsDefault`, pinned `svg.hashsalt`, date/software metadata stripped, bundled DejaVu fonts
   required, no `tight_layout`, module-placed ticks. Enforced by `tests/unit/test_figure_render.py` and
   `tests/integration/test_figure_determinism.py`.
 - Bump `RENDERER_VERSION` on any visual change; it is folded into `svg.hashsalt`, so old cached figures become
   unreachable rather than stale. Change `FIGURES_CACHE_VERSION` only with `alpha_cli.figure_cache`, kept equal by a drift test.
+- `terminal_classic.json` is the renderer's own default.
+  The CLI figure pack no longer uses it: one white standard look ([figures](cli-figures.md)).
 - The default theme is `terminal_classic.json`; `alpha_dark.json` remains loadable. The SPA canvas tokens are
   generated from the default theme and drift-guarded by `tests/unit/test_theme_drift.py`.
 - `render_research_line_chart` emits a byte-stable PNG with no creation timestamp. It seeds every

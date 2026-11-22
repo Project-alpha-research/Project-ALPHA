@@ -2,7 +2,7 @@
 owner: invariants router
 sources:
   - tests/unit/test_filesystem_contract.py
-verified: 8115bbcdee4c05e0
+verified: 8a77650b29ee8769
 ---
 # Invariants: which file to load
 | file | owns | load when |
@@ -38,7 +38,7 @@ verified: 8115bbcdee4c05e0
 ## Command line
 | file | owns | load when |
 |---|---|---|
-| [cli-runs.md](cli-runs.md), [cli-nightly.md](cli-nightly.md) | runs, publication; the nightly run | `alpha run`, `alpha nightly` |
+| [cli-runs.md](cli-runs.md), [cli-figures.md](cli-figures.md), [cli-nightly.md](cli-nightly.md) | runs; figures; nightly | `alpha run`, `figures`, `nightly` |
 | [cli-setups.md](cli-setups.md), [cli-idea-file.md](cli-idea-file.md) | `alpha setup`; `alpha idea file` | `alpha setup`, `alpha idea file` |
 | [cli-research.md](cli-research.md) | governed Research Case commands | `alpha research` |
 | [cli-control-store.md](cli-control-store.md) | SQLite control plane, receipts, jobs, holdouts | control store, jobs, confirmations |

@@ -111,3 +111,9 @@ def test_a_failed_asset_of_a_setup_find_is_named_in_the_summary() -> None:
     )
     assert "Not completed: MISSING: not found" in lines
     assert not any("SPY" in line for line in lines)
+
+
+def test_a_stored_period_reads_as_two_dates() -> None:
+    period = {"first_ts": "1993-01-29T00:00:00+00:00", "last_ts": "2023-12-29T00:00:00+00:00"}
+    lines = summary_lines({"run_id": "r", "facts": [{"metric": "data_period", "value": period}]})
+    assert "  data period: 1993-01-29 to 2023-12-29" in lines

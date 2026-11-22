@@ -36,6 +36,8 @@ def table(headers: Sequence[str], rows: Sequence[Sequence[object]]) -> list[str]
 
 
 def _number(value: object) -> str:
+    if isinstance(value, dict) and {"first_ts", "last_ts"} <= value.keys():
+        return f"{str(value['first_ts'])[:10]} to {str(value['last_ts'])[:10]}"
     return f"{value:.4g}" if isinstance(value, float) else cell(value)
 
 

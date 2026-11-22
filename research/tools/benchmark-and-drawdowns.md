@@ -11,9 +11,9 @@ verified: 23d56ad7ad814512
 the result works in some years only.
 **Commands**
 ```text
-uv run alpha diagnose <run_id> --json
-uv run alpha results cite <run_id> benchmark_sharpe
-uv run alpha figures render <run_id> --figure equity_vs_passive --figure drawdown_episodes
+alpha diagnose <run_id> --json
+alpha results cite <run_id> benchmark_sharpe
+alpha figures render <run_id> --figure equity_vs_passive --figure drawdown_episodes
 ```
 **How to read it**
 - In diagnostics, `benchmark` buys at the first open of the full history and holds without costs.

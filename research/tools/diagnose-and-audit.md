@@ -10,7 +10,7 @@ verified: 6f65c02a0cb1b6bb
 
 **Reach for it when** a rule test finishes, and before any result is reported: it is the review step.
 
-**Command** `uv run alpha diagnose <run_id> --json` (reads the pass stored with the run; costs nothing).
+**Command** `alpha diagnose <run_id> --json` (reads the pass stored with the run; costs nothing).
 
 **How to read it**
 - `flags`: observations, each with a `detail` sentence: `below-benchmark`, `drawdown-with-market`,

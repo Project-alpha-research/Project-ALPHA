@@ -63,6 +63,10 @@ def fmt_x(spec: FigureSpec, value: float) -> str:
         return month(value)
     if spec.x_kind == "category" and 0 <= round(value) < len(spec.x_categories):
         return spec.x_categories[round(value)]
+    name = spec.x_label.split(" (")[0].lower()
+    if spec.x_kind == "numeric" and float(value).is_integer() and len(name) <= 24:
+        # An index axis ("Trade", "Walk-forward fold"): say which one, not a bare number.
+        return f"{name} {int(value)}"
     return f"{value:,.3g}"
 
 
@@ -78,8 +82,14 @@ def _line_plan(spec: FigureSpec, panel: Panel, mark: LineMark) -> Plan:
     )
     if mark.fill_to is None or y[lo] >= mark.fill_to:
         calls = [Call(f"Highest: {fmt_y(panel, y[hi])}, {fmt_x(spec, x[hi])}", x[hi], y[hi])]
-        if lo != hi:
+        if lo not in (hi, 0):
             calls.append(Call(f"Lowest: {fmt_y(panel, y[lo])}, {fmt_x(spec, x[lo])}", x[lo], y[lo]))
+        elif hi != len(y) - 1:
+            # A low at the very start says nothing; where the line ends does (as in the sample).
+            end = len(y) - 1
+            calls.append(
+                Call(f"Ends at {fmt_y(panel, y[end])}, {fmt_x(spec, x[end])}", x[end], y[end])
+            )
         return Plan(tuple(calls), (), (sentence,))
     below = y < mark.fill_to
     longest, begin = (0, 0), None
@@ -96,7 +106,7 @@ def _line_plan(spec: FigureSpec, panel: Panel, mark: LineMark) -> Plan:
     ground = "a prior peak" if drawdown else "zero"
     head = "Worst" if drawdown else "Lowest"
     text = (
-        f"Lowest point {fmt_y(panel, y[lo])} on {fmt_x(spec, x[lo])}. The line was below "
+        f"Lowest point {fmt_y(panel, y[lo])} on {fmt_x(spec, x[lo])}; the line was below "
         f"{ground} at {pct(share)} of the plotted points."
     )
     bands: tuple[tuple[float, float, str], ...] = ()
@@ -111,12 +121,14 @@ def _line_plan(spec: FigureSpec, panel: Panel, mark: LineMark) -> Plan:
     return Plan(
         (Call(f"{head}: {fmt_y(panel, y[lo])}, {fmt_x(spec, x[lo])}", x[lo], y[lo]),),
         bands,
-        (sentence, text),
+        (text, sentence),  # the depth and time below come first when room is short
     )
 
 
 def _histogram_plan(spec: FigureSpec, panel: Panel, mark: HistogramMark) -> Plan:
-    counts = np.asarray(mark.counts)
+    # One set of bars split into parts (profitable and unprofitable) is read as one whole.
+    parts = [m for m in panel.marks if isinstance(m, HistogramMark) and m.edges == mark.edges]
+    counts = np.sum([np.asarray(m.counts) for m in parts], axis=0)
     edges = np.asarray(mark.edges)
     total = float(counts.sum())
     top = int(counts.argmax())
@@ -138,9 +150,9 @@ def _histogram_plan(spec: FigureSpec, panel: Panel, mark: HistogramMark) -> Plan
         # A rule that carries its own printed value ("mean 0.09%") keeps that wording.
         printed = rule.annotate.text if rule.annotate is not None else None
         label = rule.label or "Marked value"
-        calls.append(
-            Call(printed or f"{label}: {rule.position:,.3g}", rule.position, counts[top] * 0.5)
-        )
+        # A label that already carries its number ("Median 1 d") is not given it twice.
+        named = label if any(ch.isdigit() for ch in label) else f"{label}: {rule.position:,.3g}"
+        calls.append(Call(printed or named, rule.position, counts[top] * 0.5))
         where = (
             f"The marked line ({printed})" if printed else f"{label} sits at {rule.position:,.3g}"
         )
@@ -164,43 +176,69 @@ def _bar_plan(spec: FigureSpec, panel: Panel, mark: BarMark) -> Plan:
     x = np.asarray(mark.x)
     hi, lo = int(y.argmax()), int(y.argmin())
     calls = [Call(f"Largest: {fmt_y(panel, y[hi])} at {fmt_x(spec, x[hi])}", x[hi], y[hi])]
-    if lo != hi:
+    # A smallest bar of zero among bars that never go below it says nothing.
+    if lo != hi and y[lo] != 0:
         calls.append(Call(f"Smallest: {fmt_y(panel, y[lo])} at {fmt_x(spec, x[lo])}", x[lo], y[lo]))
+    # A drawn mean line states its own mean (fold charts leave flat folds out of it); a plain
+    # mean of the bars would then contradict the line.
+    marked = [
+        m.annotate.text
+        for m in panel.marks
+        if isinstance(m, RuleMark)
+        and m.orientation == "horizontal"
+        and m.annotate is not None
+        and m.annotate.text.startswith("mean")
+    ]
+    mean = (
+        f"the dashed line marks the {marked[0]}"
+        if marked
+        else f"the mean is {fmt_y(panel, float(y.mean()))}"
+    )
     sentence = (
         f"There are {len(y):,} bars; the largest is {fmt_y(panel, y[hi])} at {fmt_x(spec, x[hi])} "
-        f"and the smallest is {fmt_y(panel, y[lo])} at {fmt_x(spec, x[lo])}; "
-        f"the mean is {fmt_y(panel, float(y.mean()))}."
+        f"and the smallest is {fmt_y(panel, y[lo])} at {fmt_x(spec, x[lo])}; {mean}."
     )
-    if mark.horizontal:
-        calls = []
+    if mark.horizontal or len(set(np.abs(y).tolist())) == 1:
+        calls = []  # bars of one height (win or loss signs) have no extreme worth a note
     return Plan(tuple(calls), (), (sentence,))
 
 
 def _heatmap_plan(mark: HeatmapMark) -> Plan:
+    """Calls carry the side notes of an annotated heatmap; their x, y are the cell's column, row."""
     data = np.array([[np.nan if v is None else v for v in row] for row in mark.values], dtype=float)
     if not np.isfinite(data).any():
         return Plan(sentences=("Every cell is empty.",))
     hi = np.unravel_index(np.nanargmax(data), data.shape)
     lo = np.unravel_index(np.nanargmin(data), data.shape)
-    name = mark.colorbar_label
+    unit = "%" if "%" in mark.colorbar_label else ""
 
     def cell(index: tuple[int, ...] | tuple[np.intp, ...]) -> str:
-        return f"{data[index]:,.3g} ({mark.rows[index[0]]}, {mark.columns[index[1]]})"
+        return f"{data[index]:,.3g}{unit} ({mark.rows[index[0]]}, {mark.columns[index[1]]})"
 
-    calls = (
-        Call("Highest", float(hi[1]), float(hi[0])),
-        Call("Lowest", float(lo[1]), float(lo[0])),
+    calls = [
+        Call(f"Green outline: highest cell\n{cell(hi)}", float(hi[1]), float(hi[0])),
+        Call(f"Red outline: lowest cell\n{cell(lo)}", float(lo[1]), float(lo[0])),
+    ]
+    filled = int(np.isfinite(data).sum())
+    zero = int((data == 0).sum())
+    sentences = [
+        f"The highest cell is {cell(hi)} and the lowest is {cell(lo)}; the highest is "
+        "outlined green and the lowest red."
+    ]
+    if zero:
+        calls.append(Call(f"{zero} of {filled} cells are exactly 0.0", -1.0, -1.0))
+        sentences.append(f"{zero} of the {filled} filled cells are exactly zero.")
+    # A cell with no colour but a printed number (a summary column) is not empty.
+    texts = mark.cell_text or tuple(("",) * len(mark.columns) for _ in mark.rows)
+    empty = sum(
+        1
+        for r, row in enumerate(texts)
+        for c, text in enumerate(row)
+        if np.isnan(data[r, c]) and not text
     )
-    empty = int(np.isnan(data).sum())
-    note = f" {empty} cells are empty." if empty else ""
-    return Plan(
-        calls,
-        (),
-        (
-            f"On the {name} scale the highest cell is {cell(hi)} and the lowest is {cell(lo)}. "
-            f"The highest cell is outlined solid and the lowest dashed.{note}",
-        ),
-    )
+    if empty:
+        sentences.append(f"{empty} cells are empty (no data for that period).")
+    return Plan(tuple(calls), (), tuple(sentences))
 
 
 def _errorbar_plan(spec: FigureSpec, panel: Panel, mark: ErrorBarMark) -> Plan:
@@ -208,7 +246,12 @@ def _errorbar_plan(spec: FigureSpec, panel: Panel, mark: ErrorBarMark) -> Plan:
     spans = np.asarray(mark.upper) - np.asarray(mark.lower)
     wide = int(spans.argmax())
     crossing = int(((np.asarray(mark.lower) <= 0) & (np.asarray(mark.upper) >= 0)).sum())
-    call = Call(f"Widest interval: {mark.categories[wide]}", float(point[wide]), float(wide))
+    call = Call(
+        f"Widest interval: {mark.categories[wide]} {point[wide]:,.3g} "
+        f"({mark.lower[wide]:,.3g} to {mark.upper[wide]:,.3g})",
+        float(point[wide]),
+        float(wide),
+    )
     sentence = (
         f"There are {len(point):,} intervals; the point estimates run from "
         f"{point.min():,.3g} to {point.max():,.3g}, "
@@ -220,9 +263,15 @@ def _errorbar_plan(spec: FigureSpec, panel: Panel, mark: ErrorBarMark) -> Plan:
 def _scatter_plan(spec: FigureSpec, panel: Panel, mark: ScatterMark) -> Plan:
     y = np.asarray(mark.y)
     x = np.asarray(mark.x)
-    hi = int(y.argmax())
-    text = f"{len(y):,} points; the highest is {fmt_y(panel, y[hi])} at {fmt_x(spec, x[hi])}."
-    return Plan((Call(f"Highest: {fmt_y(panel, y[hi])}", x[hi], y[hi]),), (), (text,))
+    hi, lo = int(y.argmax()), int(y.argmin())
+    text = (
+        f"{len(y):,} points; the highest is {fmt_y(panel, y[hi])} at {fmt_x(spec, x[hi])} "
+        f"and the lowest is {fmt_y(panel, y[lo])} at {fmt_x(spec, x[lo])}."
+    )
+    calls = [Call(f"Highest: {fmt_y(panel, y[hi])}", x[hi], y[hi])]
+    if lo != hi:
+        calls.append(Call(f"Lowest: {fmt_y(panel, y[lo])}", x[lo], y[lo]))
+    return Plan(tuple(calls), (), (text,))
 
 
 def panel_plan(spec: FigureSpec, panel: Panel) -> Plan:
@@ -232,7 +281,36 @@ def panel_plan(spec: FigureSpec, panel: Panel) -> Plan:
     ]
     if lines:
         subject = [m for m in lines if m.role in ("subject", "feature", "categorical")]
-        return _line_plan(spec, panel, (subject or lines)[0])
+        first = (subject or lines)[0]
+        pieces = [m for m in subject if m.label is None and m.role == first.role]
+        if first.label is None and len(pieces) > 1:
+            # One series drawn in stretches (a line that breaks where it is undefined).
+            first = LineMark(
+                x=tuple(v for m in pieces for v in m.x),
+                y=tuple(v for m in pieces for v in m.y),
+                role=first.role,
+                palette_index=first.palette_index,
+            )
+        plan = _line_plan(spec, panel, first)
+        if first.label and sum(1 for m in lines if m.label) > 1:
+            # Several named lines: each callout says which line it points at.
+            plan = Plan(
+                tuple(
+                    Call(f"{first.label.split(' (')[0]} {c.text[0].lower()}{c.text[1:]}", c.x, c.y)
+                    for c in plan.calls
+                ),
+                plan.bands,
+                plan.sentences,
+            )
+        # The comparison line gets its end value too, as in the approved sample.
+        passive = [m for m in lines if (m.label or "").startswith("Buy and hold")]
+        if passive:
+            last = passive[0]
+            text = f"Buy and hold ends at {fmt_y(panel, last.y[-1])}"
+            plan = Plan(
+                (*plan.calls, Call(text, last.x[-1], last.y[-1])), plan.bands, plan.sentences
+            )
+        return plan
     for mark in panel.marks:
         if isinstance(mark, HistogramMark):
             return _histogram_plan(spec, panel, mark)

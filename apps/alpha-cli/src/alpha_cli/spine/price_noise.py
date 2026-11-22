@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import multiprocessing
+from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 import numpy as np
@@ -97,26 +100,43 @@ def noise_summary(runs: list[dict[str, Any]], original: float | None) -> dict[st
     }
 
 
+def _engine_run(task: tuple[list[Bar], _runner.RunSpec, list[CorporateAction]]) -> tuple[Any, int]:
+    """One full-sample engine run: its equity values and its count of closed trades."""
+    bars, spec, dividends = task
+    result = _runner.run_full_backtest(bars, spec, dividends=dividends)
+    return [value for _, value in result.equity_curve], len(result.trades)
+
+
+def engine_runs(
+    tasks: Sequence[tuple[list[Bar], _runner.RunSpec, list[CorporateAction]]], workers: int
+) -> list[tuple[Any, int]]:
+    """Independent engine runs, in order. With workers > 1 they share a spawn pool; each run is
+    deterministic and ``map`` keeps the order, so the results equal the serial ones."""
+    if workers <= 1 or len(tasks) < 2:
+        return [_engine_run(task) for task in tasks]
+    # spawn, not fork: the engine loads nautilus, and forking it is a known deadlock hazard.
+    context = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(max_workers=workers, mp_context=context) as pool:
+        return list(pool.map(_engine_run, tasks))
+
+
 def price_noise(
     bars: list[Bar],
     dividends: list[CorporateAction],
     spec: _runner.RunSpec,
     run_id: str,
     original: float | None,
+    workers: int = 1,
 ) -> dict[str, Any]:
+    tasks = [(noisy_bars(bars, run_id, copy), spec, dividends) for copy in range(NOISE_SEEDS)]
     runs = []
-    for copy in range(NOISE_SEEDS):
-        result = _runner.run_full_backtest(
-            noisy_bars(bars, run_id, copy), spec, dividends=dividends
-        )
-        summary = performance(
-            [value for _, value in result.equity_curve], spec.periods_per_year, BASIS
-        )
+    for copy, (equity, trades) in enumerate(engine_runs(tasks, workers)):
+        summary = performance(equity, spec.periods_per_year, BASIS)
         runs.append(
             {
                 "copy": copy,
                 "sharpe": summary["sharpe"],
-                "trades": len(result.trades),
+                "trades": trades,
                 "reasons": summary["reasons"],
             }
         )

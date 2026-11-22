@@ -13,9 +13,9 @@ charts the run can render.
 
 **Commands**
 ```text
-uv run alpha results show <run_id> --json
-uv run alpha figures list --run <run_id>
-uv run alpha figures render <run_id> --figure equity_vs_passive --json
+alpha results show <run_id> --json
+alpha figures list --run <run_id>
+alpha figures render <run_id> --figure equity_vs_passive --json
 ```
 
 **How to read it**

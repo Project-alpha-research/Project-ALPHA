@@ -25,7 +25,7 @@ from alpha_cli.ml_contract import (
     validate_request_bundle,
     validate_result_bundle,
 )
-from alpha_cli.ml_input import export_project_input
+from alpha_cli.ml_input import export_input as export_ml_input
 from alpha_cli.ml_refit import plan_refit, publish_refit_plan, status_refit_plan
 from alpha_cli.spine.reserve import describe
 from alpha_core import DataError
@@ -171,9 +171,13 @@ def capabilities(
 
 @ml_app.command("export-input")
 def export_input(
-    project_id: Annotated[str, typer.Argument(help="strategy project id")],
-    experiment_id: Annotated[str, typer.Argument(help="immutable experiment id")],
     output: Annotated[Path, typer.Argument(help="new immutable input-bundle directory")],
+    spec: Annotated[
+        Path,
+        typer.Option(
+            "--spec", help="experiment spec JSON file (snapshot, universe, splits, costs)"
+        ),
+    ],
     as_of: Annotated[
         str | None,
         typer.Option("--as-of", help="inclusive research cutoff YYYY-MM-DD"),
@@ -182,10 +186,9 @@ def export_input(
 ) -> None:
     """Generate a validated Alpha158 starter bundle from one frozen ALPHA snapshot."""
     try:
-        summary = export_project_input(
+        summary = export_ml_input(
             data_dir=AlphaSettings().data_dir,
-            project_id=project_id,
-            experiment_id=experiment_id,
+            spec_path=spec,
             output_dir=output,
             as_of=as_of,
         )

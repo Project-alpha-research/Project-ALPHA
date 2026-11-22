@@ -20,6 +20,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 | An idea to test ([idea card](idea-card.md), [library](library.md)) | [rule test](rule-test.md), [follow](follow.md), [final](reserved-confirmation.md) |
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A copy of everything stored here, and proof the copy is good | [back up and restore the data home](home-backup.md) |
+| "Show me the trend lines, flags or head and shoulders"; test one as a condition | [chart patterns](chart-patterns.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md), [with a context condition](setup-context.md) |
 | What followed each separate setup occurrence | [setup study](setup-study.md) |
 | A setup traded with stops, targets and a time limit | [setup trade](setup-trade.md) |

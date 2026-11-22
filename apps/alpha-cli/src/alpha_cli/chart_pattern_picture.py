@@ -10,6 +10,7 @@ only; no authority.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -73,15 +74,20 @@ def _shapes(series: OHLCV, pattern: str) -> list[_Shape]:
     return shapes
 
 
-def _draw_shape(axes: Axes, s: _Shape, tag: dict[str, str]) -> None:
-    xs = [p[0] for p in s.points]
+def _num(when: datetime) -> float:
+    """The x value matplotlib reads as this day: days since 1970-01-01 UTC."""
+    return when.timestamp() / 86400.0
+
+
+def _draw_shape(axes: Axes, s: _Shape, label: str | None) -> None:
+    xs = [_num(p[0]) for p in s.points]
     ys = [p[1] for p in s.points]
     if s.shape == "marker":
-        axes.scatter(xs, ys, color="C1", s=22, zorder=4, **tag)
+        axes.scatter(xs, ys, color="C1", s=22, zorder=4, label=label)
         return
     if s.shape == "outline":
         xs, ys = [*xs, xs[0]], [*ys, ys[0]]
-    axes.plot(xs, ys, color="C1", lw=1.4, marker="o", ms=3, zorder=4, **tag)
+    axes.plot(xs, ys, color="C1", lw=1.4, marker="o", ms=3, zorder=4, label=label)
 
 
 def _summary(shapes: list[_Shape], pattern: str, start: date, end: date) -> tuple[str, int]:
@@ -96,8 +102,6 @@ def _summary(shapes: list[_Shape], pattern: str, start: date, end: date) -> tupl
 def _figure(
     series: OHLCV, shapes: list[_Shape], pattern: str, window: tuple[date, date], annotated: bool
 ) -> Any:
-    import matplotlib.dates as mdates
-
     from alpha_cli.figures import plain_style as ps
 
     start, end = window
@@ -114,18 +118,19 @@ def _figure(
     days = [_when(series, i) for i in range(len(series))]
     keep = [i for i, d in enumerate(days) if start <= d.date() <= end]
     axes.plot(
-        [days[i] for i in keep],
+        [_num(days[i]) for i in keep],
         [float(series.close[i]) for i in keep],
         color="C0",
         lw=1.0,
         label="Close",
     )
     for n, s in enumerate(shapes):
-        _draw_shape(axes, s, {"label": pattern} if n == 0 else {})
+        _draw_shape(axes, s, pattern if n == 0 else None)
     axes.set_xlim(
-        datetime.combine(start, datetime.min.time(), UTC),
-        datetime.combine(end, datetime.min.time(), UTC) + timedelta(days=1),
+        _num(datetime.combine(start, datetime.min.time(), UTC)),
+        _num(datetime.combine(end, datetime.min.time(), UTC)) + 1.0,
     )
+    axes.xaxis_date()
     axes.set_ylabel("Price (native quote)")
     axes.set_xlabel("Date (UTC)")
     axes.grid(True, color="0.88", lw=0.6)
@@ -137,9 +142,16 @@ def _figure(
         used: list[Any] = []
         for s in sorted(shapes, key=lambda x: x.known)[-NOTES:]:
             x, y = s.points[-1]
-            ps.callout(axes, f"{s.label}, known {s.known.date()}", (mdates.date2num(x), y), used)
+            ps.callout(axes, f"{s.label}, known {s.known.date()}", (_num(x), y), used)
         ps.how_to_read(figure, sentences, 0.15)
     return figure
+
+
+def _writer(data: bytes) -> Callable[[Path], object]:
+    def write(path: Path) -> object:
+        return path.write_bytes(data)
+
+    return write
 
 
 def draw_pattern_pictures(
@@ -162,7 +174,7 @@ def draw_pattern_pictures(
         data = to_bytes(_figure(series, shapes, pattern, (start, end), annotated), "png")
         tag = hashlib.sha256(data).hexdigest()[:8]
         path = out_dir / f"{series.symbol}-{pattern}-{start}-{end}-{kind}-{tag}.png"
-        publish_artifact(path, lambda p, d=data: p.write_bytes(d))
+        publish_artifact(path, _writer(data))
         files[kind] = path
     summary += f"\nPictures: {files['plain']} and {files['annotated']}"
     return PatternPicture(files["plain"], files["annotated"], count, start, end, summary)

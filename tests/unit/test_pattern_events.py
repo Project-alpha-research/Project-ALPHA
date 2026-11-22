@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from alpha_cli import pattern_events as pe
+from alpha_cli.pattern_event_base import SWING_LOOKBACK
 from alpha_core import DataError
 from alpha_patterns import (
     OHLCV,
@@ -97,10 +98,10 @@ def test_a_swing_shows_on_its_confirmation_bar_not_its_own_bar() -> None:
     bars = geometric_brownian_series(300, seed=4, vol_per_bar=0.02)
     from alpha_patterns import find_swings
 
-    swing = find_swings(bars, lookback=pe.SWING_LOOKBACK, kind="high")[3]
+    swing = find_swings(bars, lookback=SWING_LOOKBACK, kind="high")[3]
     flags = pe.event_series(bars, ("swing_high",))["swing_high"]
     assert flags[swing.confirmed_index] == 1.0
-    assert swing.confirmed_index == swing.index + pe.SWING_LOOKBACK
+    assert swing.confirmed_index == swing.index + SWING_LOOKBACK
     assert flags[swing.index] == 0.0
 
 

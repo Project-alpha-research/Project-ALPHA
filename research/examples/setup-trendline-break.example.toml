@@ -1,0 +1,15 @@
+# Example spec: every time a rising trend line broke down, what came next?
+# Copy it, then change the asset. The values here are placeholders, not results.
+# rising_line_break is 1 on the bar where the break was first known, never earlier.
+[setup]
+name = "rising-line-broke-down"
+idea = "A rising trend line broke down (placeholder idea)"
+assets = ["NVDA"]
+timeframe = "1D"
+event = "line_broke == 1"
+[context]
+# alias = "series@SELF": SELF means the asset's own bars. Other names: falling_line_break (a falling line broke up).
+line_broke = "rising_line_break@SELF"
+[study]
+horizons = [5, 10, 20]
+primary = 10

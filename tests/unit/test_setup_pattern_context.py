@@ -61,15 +61,21 @@ def test_the_event_bar_is_never_before_its_confirmation(tmp_path: Path) -> None:
     assert frame.height > 0
     bars = pl.read_parquet(next((tmp_path / "store").rglob("*.parquet")))
     closes = bars["ts"].to_list()
-    from alpha_patterns import find_swings
-
     from alpha_cli.chart_cmds import to_ohlcv
     from alpha_core import Bar
+    from alpha_patterns import find_swings
 
     series = to_ohlcv(
         [
-            Bar(symbol="SPY", ts=r["ts"], open=r["open"], high=r["high"], low=r["low"],
-                close=r["close"], volume=r["volume"])
+            Bar(
+                symbol="SPY",
+                ts=r["ts"],
+                open=r["open"],
+                high=r["high"],
+                low=r["low"],
+                close=r["close"],
+                volume=r["volume"],
+            )
             for r in bars.iter_rows(named=True)
         ]
     )
@@ -93,3 +99,13 @@ def test_an_unknown_pattern_series_fails_loud_with_the_names(tmp_path: Path) -> 
     assert caught.value.payload["code"] == "SPEC_INVALID"
     assert "hs_top" in str(caught.value.payload)
     assert "cot_nc_net_oi" in str(caught.value.payload)
+
+
+@pytest.mark.parametrize(
+    "name", ["setup-trendline-break.example.toml", "setup-pivot-reversal.example.toml"]
+)
+def test_the_example_specs_run(tmp_path: Path, name: str) -> None:
+    seed_bars(tmp_path)
+    text = (Path(__file__).resolve().parents[2] / "research" / "examples" / name).read_text()
+    result = find(tmp_path, text.replace('assets = ["NVDA"]', 'assets = ["SPY"]'))
+    assert result["assets"][0]["context"]["recipe"] == pattern_events.RECIPE

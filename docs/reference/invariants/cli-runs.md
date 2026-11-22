@@ -171,6 +171,8 @@ Figure cache, themes and builders: [command line figures](cli-figures.md).
   `*_known_by(last)` check, and fails loud on any other non-finite value. Only the indicators in `_NAN_AFTER_WARMUP` may null a legitimately undefined later
   window. Each indicator refuses a window shorter than its longest lookback, and each pattern names in `reason` the bar it became drawable. Enforced by
   `tests/unit/test_chart_overlays_bias_guard.py`.
+- With `-p` and no `--json`, `alpha chart overlays` also writes a plain and an annotated PNG (`chart_pattern_picture`) and prints a 3-line summary; each
+  event sits on the bar it became known. Pattern events are `series@SELF` Setup Lab conditions (`pattern_events`, `spine/pattern_context`).
 - `figures`, `chart` and `scan` produce no run and stay out of `alpha info commands` (`info_cmds._NON_RUN_COMMAND_PREFIXES`).
 ## Setup find
 Moved to [cli-setups.md § Setup find](cli-setups.md#setup-find).

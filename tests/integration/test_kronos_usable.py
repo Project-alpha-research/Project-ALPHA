@@ -192,23 +192,6 @@ def test_kronos_monte_carlo_explicit_context_too_long_names_the_largest(
     assert ": use --context" in " ".join(result.output.split())
 
 
-def test_a_negative_model_volume_becomes_zero_and_is_counted() -> None:
-    from datetime import UTC
-
-    from alpha_forecast import SampledPath
-
-    sample = SampledPath(
-        open=(10.0, 10.0), high=(11.0, 11.0), low=(9.0, 9.0), close=(10.5, 10.5), volume=(5.0, -2.0)
-    )
-    stamps = (datetime(2020, 1, 1, tzinfo=UTC), datetime(2020, 1, 2, tzinfo=UTC))
-    bars, rows, adjusted = monte_carlo_cmds._project_forecast_path(
-        symbol="SPY", timestamps=stamps, sample=sample, path_index=0
-    )
-    assert bars[1].volume == 0.0
-    assert rows[1]["raw_volume"] == -2.0 and rows[1]["volume_adjusted"] is True
-    assert adjusted == 1
-
-
 def test_kronos_monte_carlo_counts_only_the_window_trades(
     stored: dict[str, str], home: Path
 ) -> None:

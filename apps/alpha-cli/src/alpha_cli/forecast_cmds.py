@@ -466,8 +466,8 @@ def evaluate(
     }
     held.stamp(manifest_payload)
     manifest = sanitize(manifest_payload)
-    origins = _origins_frame(out)
-    _artifacts.publish_artifact(rdir / "origins.parquet", origins.write_parquet)
+    origins_frame = _origins_frame(out)
+    _artifacts.publish_artifact(rdir / "origins.parquet", origins_frame.write_parquet)
     _artifacts.write_manifest(rdir, manifest)
 
     typer.echo(

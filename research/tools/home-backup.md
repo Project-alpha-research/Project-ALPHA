@@ -12,9 +12,9 @@ verified: a3faa58f0d76f0d5
 
 **Command**
 ```text
-uv run alpha home backup <folder outside the home> [--json]
-uv run alpha home verify-backup <archive.tar> [--json]
-uv run alpha home restore <archive.tar> <new empty folder> [--json]
+alpha home backup <folder outside the home> [--json]
+alpha home verify-backup <archive.tar> [--json]
+alpha home restore <archive.tar> <new empty folder> [--json]
 ```
 
 **How to read it**
@@ -30,7 +30,7 @@ uv run alpha home restore <archive.tar> <new empty folder> [--json]
   `BACKUP CHECK FAILED` names each bad file; the exit code is 1.
 - `restore` checks the archive first, then writes it into a new or empty folder. It refuses a folder with anything in it,
   and it refuses the live home. It keeps file and folder modes and times, then reads every written file again from disk and checks it
-  against the manifest. A restore that fails leaves an incomplete folder: delete it. To look at the copy: `ALPHA_DATA_DIR=<folder> uv run alpha next`.
+  against the manifest. A restore that fails leaves an incomplete folder: delete it. To look at the copy: `ALPHA_DATA_DIR=<folder> alpha next`.
 
 **What it cannot tell you** Whether the data inside was right when you made the backup: it copies bytes and judges nothing.
 The lock stops only a nightly run started from the crontab line. Another command you start by hand is caught by the changed-file check

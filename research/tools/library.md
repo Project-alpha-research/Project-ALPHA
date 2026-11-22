@@ -14,10 +14,10 @@ verified: 563e9cc54e1c1da5
 
 **Command**
 ```text
-uv run alpha library list --market crypto --json   # also: show <id>, card <id>
-uv run alpha library search "momentum" --unpaywall-email <contact>
-uv run alpha library import-pdf <file.pdf> --title "..." --author "..." --year 2001
-uv run alpha library papers
+alpha library list --market crypto --json   # also: show <id>, card <id>
+alpha library search "momentum" --unpaywall-email <contact>
+alpha library import-pdf <file.pdf> --title "..." --author "..." --year 2001
+alpha library papers
 ```
 
 A record is a paper in our own words: idea, why it is said to work, data needed, holding time, decay evidence, can test today.

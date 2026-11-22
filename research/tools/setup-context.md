@@ -19,8 +19,8 @@ es_pos = "cot_nc_net_pct_156w@13874A"   # alias = "series@key"; the key is decla
 very_long = "es_pos > 0.9"
 ```
 ```text
-uv run alpha setup find <spec.toml> --json
-uv run alpha setup study <find_id> --json
+alpha setup find <spec.toml> --json
+alpha setup study <find_id> --json
 ```
 **How to read it**
 

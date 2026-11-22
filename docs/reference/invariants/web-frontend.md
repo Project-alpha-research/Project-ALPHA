@@ -82,6 +82,15 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   (`actions.openStoredMarket`). Colour is never the only signal. Enforced by `src/panels/MarketOverview.test.tsx`, `marketModel.test.ts`,
   `e2e/market-overview.spec.ts`.
 
+- The Market screen shows empty tile frames (a skeleton) while the bars are read, never the word "Loading".
+
+## Machine learning screen
+
+- The Machine learning screen (Research › Machine learning, pane `MachineLearning`, a workflow pane) lists the runs made by `alpha ml run` from
+  `GET /api/ml-runs`. For one run it shows the split sentence, assets, model, costs, a reading, the equity and drawdown charts (`GET /api/runs/{id}/equity`)
+  and the fold table. A number the run did not store reads "not recorded", never zero. It starts no training; the empty state names the one command to ask
+  the AI for. Enforced by `src/panels/mlRunsModel.test.ts`, `MachineLearning.test.tsx` and `tests/unit/test_web_ml_runs.py`.
+
 ## Today screen
 
 - The Today screen (Overview, and Research › Today; pane `FollowToday`, a workflow pane) shows `alpha follow today --json` from `GET /api/follow/today`.

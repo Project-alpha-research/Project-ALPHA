@@ -13971,6 +13971,282 @@
         "title": "MlSpecRequest",
         "type": "object"
       },
+      "MlStoredFold": {
+        "additionalProperties": false,
+        "properties": {
+          "fold": {
+            "title": "Fold",
+            "type": "integer"
+          },
+          "test_end": {
+            "title": "Test End",
+            "type": "string"
+          },
+          "test_start": {
+            "title": "Test Start",
+            "type": "string"
+          },
+          "train_end": {
+            "title": "Train End",
+            "type": "string"
+          },
+          "train_start": {
+            "title": "Train Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fold",
+          "train_start",
+          "train_end",
+          "test_start",
+          "test_end"
+        ],
+        "title": "MlStoredFold",
+        "type": "object"
+      },
+      "MlStoredMetrics": {
+        "additionalProperties": false,
+        "description": "Stored numbers after costs; a number that could not be worked out is null with a reason.",
+        "properties": {
+          "benchmark_total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Total Return"
+          },
+          "cagr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown"
+          },
+          "mean_turnover": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Turnover"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "sharpe_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe Reason"
+          },
+          "total_fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Fees"
+          },
+          "total_return": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Return"
+          },
+          "total_slippage_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Slippage Cost"
+          }
+        },
+        "required": [
+          "total_return",
+          "benchmark_total_return",
+          "max_drawdown",
+          "sharpe",
+          "cagr",
+          "mean_turnover",
+          "total_fees",
+          "total_slippage_cost",
+          "sharpe_reason"
+        ],
+        "title": "MlStoredMetrics",
+        "type": "object"
+      },
+      "MlStoredRun": {
+        "additionalProperties": false,
+        "properties": {
+          "assets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "costs": {
+            "title": "Costs",
+            "type": "string"
+          },
+          "folds": {
+            "items": {
+              "$ref": "#/components/schemas/MlStoredFold"
+            },
+            "title": "Folds",
+            "type": "array"
+          },
+          "folds_total": {
+            "title": "Folds Total",
+            "type": "integer"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/MlStoredMetrics"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "mtime": {
+            "title": "Mtime",
+            "type": "number"
+          },
+          "n_oos_periods": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Oos Periods"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "split_sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Split Sentence"
+          },
+          "survivorship_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survivorship Warning"
+          }
+        },
+        "required": [
+          "run_id",
+          "mtime",
+          "assets",
+          "model",
+          "costs",
+          "split_sentence",
+          "n_oos_periods",
+          "label",
+          "survivorship_warning",
+          "metrics",
+          "folds",
+          "folds_total"
+        ],
+        "title": "MlStoredRun",
+        "type": "object"
+      },
+      "MlStoredRunList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MlStoredRun"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "items"
+        ],
+        "title": "MlStoredRunList",
+        "type": "object"
+      },
       "MlTabularModelRecipe": {
         "additionalProperties": false,
         "properties": {
@@ -30344,6 +30620,38 @@
         "summary": "Overview",
         "tags": [
           "market"
+        ]
+      }
+    },
+    "/api/ml-runs": {
+      "get": {
+        "description": "The newest stored runs made by ``alpha ml run``, each with its split, model and folds.",
+        "operationId": "list_ml_runs_api_ml_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MlStoredRunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "List Ml Runs",
+        "tags": [
+          "ml"
         ]
       }
     },

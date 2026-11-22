@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  filterChoices, filterRuns, formatDay, formatSharpe, nextSort, NO_FILTER, plainError, sortRuns, sparkPath, type RecentRun,
+  filterChoices, filterRuns, formatDay, formatSharpe, nextSort, NO_FILTER, plainError, readingCell, OLDER_RUN_LINK, sortRuns, sparkPath, type RecentRun,
 } from './recentTestsModel'
 
 function run(id: string, extra: Partial<RecentRun> = {}): RecentRun {
@@ -43,5 +43,13 @@ describe('recent tests table', () => {
     expect(plainError(new Error('500 Internal Server Error — No such run. [request abc]'), 'the tests'))
       .toBe('Could not load the tests. No such run. Check that the Workstation server is running, then reload the page.')
     expect(plainError(new TypeError('Failed to fetch'), 'the tests')).toContain('The server did not answer.')
+  })
+})
+
+describe('reading cell', () => {
+  it('shows the words, or a link to the report for a run with none', () => {
+    expect(readingCell(run('a'))).toEqual({ words: 'some evidence', link: null })
+    expect(readingCell(run('b', { evidence: null }))).toEqual({ words: null, link: OLDER_RUN_LINK })
+    expect(OLDER_RUN_LINK).toBe('older run: open the report')
   })
 })

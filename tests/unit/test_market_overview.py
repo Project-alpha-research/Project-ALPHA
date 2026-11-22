@@ -170,6 +170,34 @@ def test_the_command_changes_no_file_and_prints_json(
     assert not (data_dir / "ledger").exists()
 
 
+def test_load_bars_last_keeps_only_the_newest_bars(data_dir: Path) -> None:
+    from alpha_cli._runner import load_bars
+
+    full, _ = load_bars("AAA", data_dir=data_dir)
+    cut, _ = load_bars("AAA", data_dir=data_dir, last=30)
+    assert cut == full[-30:]
+
+
+def test_overview_validates_only_the_window_of_a_long_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import alpha_core
+
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
+    _write(tmp_path, "LONG", 2000, 100.0, 0.01, 1000.0, 1000.0)
+    built: list[int] = []
+    original_init = alpha_core.Bar.__init__
+
+    def counting_init(self: alpha_core.Bar, **data: object) -> None:
+        built.append(1)
+        original_init(self, **data)
+
+    monkeypatch.setattr(alpha_core.Bar, "__init__", counting_init)
+    result = market_overview_cmds.build_market_overview(tmp_path, store="1D", window=30, limit=5)
+    assert result["assets"][0]["asset"] == "LONG"
+    assert len(built) <= market_overview_cmds.MAX_BARS_READ
+
+
 def test_the_text_overview_states_the_period_beside_each_percent(data_dir: Path) -> None:
     result = runner.invoke(app, ["data", "market-overview", "--window", "30", "--limit", "2"])
     assert result.exit_code == 0, result.output

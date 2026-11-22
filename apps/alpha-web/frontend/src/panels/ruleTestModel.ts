@@ -46,6 +46,27 @@ const LABEL_MEANING: Record<string, string> = {
   hindsight: 'Part of this result uses the whole history, which was not knowable at the time.',
   'hindsight-disagrees': 'The hindsight split tells a different story from the split made at the time.',
   'parameters-fit-in-sample': 'The model settings were fitted on the same history they describe.',
+  'reserved-period-held-back': "Data from 2024-01-01 on was held back for the owner's confirmation and was not used.",
+  'class-default-costs': 'Costs came from the default for this kind of market, not from a setting you chose.',
+  'cost-class-assumed': 'The kind of market was not recorded, so the higher crypto cost assumption was used.',
+  'borrow-at-class-rate': 'Borrow or funding for a short is an assumed charge per day held, at the usual rate for this market.',
+  'short-borrow-not-charged': 'The cost of borrowing for a short is stated but not charged in the result.',
+  'costs-assumed-high': 'The market was not identified, so the higher crypto cost assumption was used.',
+  'short-costs-assumed': 'Borrow or funding is an assumed charge per calendar day held.',
+  'short-needs-perpetual': 'A crypto short needs a perpetual contract. Spot prices are only a stand-in.',
+  'fragile-to-price-noise': 'The result changes a lot when small random noise is added to prices.',
+  'halves-disagree': 'The two halves of the history have average returns with opposite signs.',
+  'many-skipped': 'More than a quarter of the occurrences were skipped because a trade was already open.',
+  'no-random-control': 'The random-date comparison is not available; see the stored reason.',
+  'no-time-exit': 'No time exit was set, so the tool used its 250-bar limit.',
+  'not-primary': 'Also looked at, not tested as the main holding period.',
+  'older-cost-rule': 'Recorded under an earlier cost rule.',
+  'outcomes-not-viewed': 'This find recorded that outcomes had not been viewed yet.',
+  'outcomes-viewed': 'Outcomes have been viewed in a study or trade run.',
+  'overlapping-outcomes': 'Some outcome windows overlap, so the results are not independent.',
+  'remeasured-new-cost-rule': 'An earlier find measured again under a new cost rule.',
+  'single-asset': 'Only one asset was studied.',
+  'too-few-occurrences': 'Fewer than 30 complete occurrences or trades: too few to judge.',
 }
 
 export const RULE_TEST_TITLE =
@@ -209,7 +230,7 @@ export function summaryHeadline(test: RuleTest, row?: PeriodResult): string {
   if (isFiniteNum(result)) {
     const wording = comparisonWording(row?.relative_return)
     const comparison = isFiniteNum(hold)
-      ? `${wording} ${pct(hold).text} for simply holding the market`
+      ? `${wording} ${pct(hold).text} for simply holding the market over the same days (${dateRange(row?.first_ts, row?.last_ts)})`
       : 'but the buy-and-hold return is unavailable'
     return `${subject}. It returned ${pct(result).text} after costs, ${comparison}.`
   }

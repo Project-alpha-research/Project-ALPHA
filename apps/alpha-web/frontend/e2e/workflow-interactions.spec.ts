@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import type { ProviderDefinition } from '../src/api/types'
 import { preparePage, openTask } from './support/workstationHarness'
 
-const provider: ProviderDefinition = { asset_classes: ['crypto'], budget_tier: 'public', granted_capabilities: [], last_receipt_id: null, limitations: [], paper_execution: false, recovery_action: '', research_authority: false, timeframes: ['1D'], verified_at: null, id: 'ccxt', label: 'CCXT', installed: true, configured: true, capabilities: ['historical_bars'], credential_env: [], options: {}, network_required: true, verification_state: 'unverified', configuration_state: 'available_without_credentials' }
+const provider: ProviderDefinition = { asset_classes: ['crypto'], budget_tier: 'public', granted_capabilities: [], last_receipt_id: null, limitations: [], recovery_action: '', research_authority: false, timeframes: ['1D'], verified_at: null, id: 'ccxt', label: 'CCXT', installed: true, configured: true, capabilities: ['historical_bars'], credential_env: [], options: {}, network_required: true, verification_state: 'unverified', configuration_state: 'available_without_credentials' }
 
 async function dataPage(page: import('@playwright/test').Page) {
   await openTask(page, 'Data & Assets', 'Data downloads')

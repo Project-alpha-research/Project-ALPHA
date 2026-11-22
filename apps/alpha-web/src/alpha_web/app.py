@@ -7,7 +7,7 @@ web app, its subprocesses, and the CLI share one store. Binds loopback only (loc
 the port comes from ``ALPHA_WEB_PORT`` (preferred) or ``PORT``, defaulting to 8801 — an invalid
 value fails loud with :class:`alpha_core.AlphaError`.
 
-Routers include runs/jobs/catalog, candles, provider/system readiness, durable paper monitoring,
+Routers include runs/jobs/catalog, candles, provider/system readiness,
 and CLI-backed v3 project/evidence/AgentBrief projections.
 The SPA is served at ``/`` (and ``/app``); its assets ride the ``/static`` mount.
 """
@@ -43,7 +43,6 @@ from alpha_web.api import market as market_api
 from alpha_web.api import ml as ml_api
 from alpha_web.api import native_results as native_results_api
 from alpha_web.api import owner_auth as owner_auth_api
-from alpha_web.api import paper as paper_api
 from alpha_web.api import rdagent as rdagent_api
 from alpha_web.api import recent_runs as recent_runs_api
 from alpha_web.api import research as research_api
@@ -139,7 +138,6 @@ def create_app() -> FastAPI:
     app.include_router(figures_api.router)
     app.include_router(workspaces_api.router)
     app.include_router(owner_auth_api.router)
-    app.include_router(paper_api.router)
     app.include_router(risk_api.router)
     app.include_router(rules_api.router)
     app.include_router(scans_api.router)

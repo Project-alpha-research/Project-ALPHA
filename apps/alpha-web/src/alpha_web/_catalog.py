@@ -55,7 +55,6 @@ _PROCESS_ENV_NAMES = frozenset(
 _DATA_ENV_NAMES = frozenset({"ALPHA_BULK_DATA_DIR", "ALPHA_BULK_VOLUME_UUID"})
 _PROVIDER_ENV_NAMES = {
     "coingecko": frozenset({"ALPHA_COINGECKO_API_KEY"}),
-    "ibkr": frozenset({"ALPHA_IBKR_GATEWAY_IMAGE", "ALPHA_IBKR_PAPER_ACCOUNT"}),
     "tiingo": frozenset({"ALPHA_TIINGO_API_KEY"}),
 }
 
@@ -210,14 +209,6 @@ def ticker(*, data_dir: Path, symbol: str, exchange: str) -> dict[str, object]:
 def providers(*, data_dir: Path) -> list[dict[str, Any]]:
     """Provider capability/configuration registry (fresh so credential presence can change)."""
     result: list[dict[str, Any]] = _run_json(["info", "providers", "--json"], data_dir=data_dir)
-    return result
-
-
-def provider_check(*, data_dir: Path, provider_id: str) -> dict[str, Any]:
-    """Run one explicit CLI-owned provider check and return only its redacted receipt."""
-    result: dict[str, Any] = _run_json(
-        ["provider", "check", provider_id, "--json"], data_dir=data_dir, timeout_seconds=45.0
-    )
     return result
 
 

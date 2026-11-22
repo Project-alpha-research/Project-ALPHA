@@ -21,7 +21,6 @@ const CATALOG_GROUPS = [
   'monte-carlo',
   'optim',
   'owner-auth',
-  'paper',
   'partner',
   'project',
   'propfirm',
@@ -133,7 +132,6 @@ describe('commandHome', () => {
   it('sends owner-authority groups to the document that performs them and data groups to the dock', () => {
     expect(commandHome('project create')).toEqual({ kind: 'window', id: 'build' })
     expect(commandHome('research capture')).toEqual({ kind: 'window', id: 'research' })
-    expect(commandHome('paper run')).toEqual({ kind: 'window', id: 'paper' })
     expect(commandHome('provider check')).toEqual({ kind: 'window', id: 'jobs' })
     expect(commandHome('crypto-data acquire')).toEqual({ kind: 'dock', id: 'DataManager' })
     expect(commandHome('data pull')).toEqual({ kind: 'dock', id: 'DataManager' })

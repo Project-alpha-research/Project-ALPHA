@@ -3,7 +3,7 @@
 // `symbol` is never read to guess a market — and `unknown` rows always stay visible under their
 // own leaf so nothing the owner produced can disappear. `showAll` lifts the profile filter.
 
-import type { PaperSession, ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { ProjectSummary, RunListItem, StrategyDef } from '../api/types'
 import type { Profile } from '../state/settings'
 import { profile as manifest } from '../shell/profiles'
 import type { StorageRow } from './dataManagerModel'
@@ -16,7 +16,6 @@ export const NAVIGATOR_GROUPS = [
   'Research cases',
   'Data',
   'Scripts',
-  'Paper sandbox',
 ] as const
 export type NavigatorGroupLabel = (typeof NAVIGATOR_GROUPS)[number]
 
@@ -47,7 +46,6 @@ export interface NavigatorInput {
   runs: readonly RunListItem[]
   projects: readonly ProjectSummary[]
   strategies: readonly StrategyDef[]
-  sessions: readonly PaperSession[]
   storage: StorageRow
   /** Venue display name → stored pairs on it (from the Market Watch provenance reads). */
   pairsByVenue?: Readonly<Record<string, number>>
@@ -129,20 +127,9 @@ export function navigatorTree(input: NavigatorInput): NavigatorGroup[] {
       leaves: input.strategies.map((strategy) => ({
         id: `script:${strategy.name}`,
         label: strategy.name,
-        sub: strategy.supports_live_paper ? 'paper-capable' : null,
+        sub: null,
         tone: 'none',
         action: { kind: 'none' },
-      })),
-      unknown: [],
-    },
-    {
-      label: 'Paper sandbox',
-      leaves: input.sessions.map((session) => ({
-        id: `paper:${session.session_id}`,
-        label: `${session.symbol} · ${session.strategy}`,
-        sub: `${session.execution_mode} · ${session.status}`,
-        tone: session.status === 'failed' ? 'bad' : session.status === 'running' ? 'ok' : 'none',
-        action: { kind: 'symbol', symbol: session.symbol },
       })),
       unknown: [],
     },

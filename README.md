@@ -8,8 +8,7 @@ data with costs included, and it keeps an honest record of everything it tried.
 
 **ALPHA is a research system. It does not promise profits and it has not found an edge.** Every
 result it shows is exploratory until it has been confirmed on real data and by you. It trades no
-real money: there is no live-trading route, and the practice (paper) trading path is optional and
-unfinished.
+real money: there is no live-trading route and no broker connection.
 
 ![The ALPHA Workstation overview: five areas (data, research, strategies and tests, results, operations) and a research backlog](docs/assets/workstation/overview.png)
 
@@ -55,7 +54,7 @@ current count of capabilities that are Working, Partial, Shelved and Not started
   look-alike and "what is unusual now" tools.
 - **Partial:** the one-command rule test and its automatic diagnostics (the final end-to-end
   check is still pending), the macro, filings and funding context data, stock and ETF data,
-  research cases, paper trading, and the RD-Agent factor loop.
+  research cases, and the RD-Agent factor loop.
 - **Not started:** an autonomous AI research team. **Shelved:** five older pieces, kept but not
   wired in.
 
@@ -167,7 +166,7 @@ code has changed since they were checked. See the [architecture](docs/ARCHITECTU
   backtest is not an edge, and a passing software test is not a profitable strategy.
 - Almost everything has only been run on made-up data. Real-data runs are mostly still to be
   confirmed on the owner's own machine.
-- Paper trading is optional and Partial. **No live-capital route exists.**
+- **No live-capital route exists.**
 - Only the owner can approve a result or a trading step; screens, AI output and passing checks
   confer no approval. See [research integrity](docs/reference/invariants/research-integrity.md).
 - Private, local, single-owner use. The repository has no declared project licence; see the

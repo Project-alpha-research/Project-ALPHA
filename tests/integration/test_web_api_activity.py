@@ -167,7 +167,6 @@ def _touch(path: Path, text: str = "x") -> None:
         ("research", "research/projects/p1/status.json"),
         ("control", "control/workstation.sqlite3-wal"),
         ("bars", "store/bars/BTC/USDT.parquet"),
-        ("paper", "paper/s1/journal.jsonl"),
         ("workspaces", "web/workspaces/idea.json"),
         ("alerts", "scans/alerts.jsonl"),
     ],

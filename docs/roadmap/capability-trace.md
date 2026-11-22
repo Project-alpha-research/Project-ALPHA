@@ -75,7 +75,6 @@ table. A capability may serve several rows; a row may be served by several capab
 | `paper-to-experiment` | Find papers, screen their claims, tie a claim to its test, keep the PDF |
 | `ai-tools-connection` | Tool server so Claude or Codex can call ALPHA, cut down to the nine verbs |
 | `providers-and-jobs` | Provider checks and a job list for long downloads |
-| `paper-trading` | Paper trading: local crypto practice account or a broker practice account |
 | `ml-lab` | Machine-learning models trained by Qlib and replayed with costs |
 | `alpha158-v2` | Qlib's upstream price features (Alpha158) |
 | `alpha158-v3` | Qlib's upstream price features (Alpha158) |

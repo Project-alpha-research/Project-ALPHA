@@ -25,7 +25,6 @@ describe('PROFILES', () => {
     for (const hidden of ['corporate-actions'] as const) {
       expect(crypto.windows).not.toContain(hidden)
     }
-    expect(crypto.paperVenues).not.toContain('ibkr')
     expect(crypto.providers[0]).toBe('ccxt')
     expect(crypto.providers).toEqual(expect.arrayContaining(['binance', 'bybit', 'coingecko', 'geckoterminal', 'coinmetrics']))
     expect(crypto.defaultSource).toBe('ccxt')
@@ -41,7 +40,6 @@ describe('PROFILES', () => {
     for (const hidden of ['funding', 'open-interest', 'onchain', 'dex', 'crowding'] as const) {
       expect(equities.windows).not.toContain(hidden)
     }
-    expect(equities.paperVenues).not.toContain('binance-sandbox')
     expect(equities.starterWatchlist).toEqual(['SPY', 'AAPL'])
     expect(equities.symbolStyle).toBe('ticker')
   })

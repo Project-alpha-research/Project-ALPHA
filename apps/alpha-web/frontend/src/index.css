@@ -1707,61 +1707,6 @@ textarea.field:focus {
   }
 }
 
-.feed {
-  display: flex;
-  flex-direction: column;
-}
-.feed-row {
-  all: unset;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 4px 12px;
-  min-height: var(--row-h);
-  border-bottom: 1px solid var(--line);
-  font-size: var(--font-size);
-  cursor: pointer;
-}
-.feed-row:disabled {
-  cursor: default;
-}
-.feed-row:not(:disabled):hover {
-  background: var(--elevated);
-}
-.feed-time {
-  color: var(--muted);
-  font-size: var(--font-size);
-}
-.feed-tag {
-  font-size: var(--font-size);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 1px 5px;
-  border-radius: 2px;
-}
-.feed-tag.t-good {
-  color: var(--up);
-  background: var(--up-soft);
-}
-.feed-tag.t-bad {
-  color: var(--negative-text);
-  background: var(--down-soft);
-}
-.feed-tag.t-warn {
-  color: var(--gold);
-  background: var(--gold-soft);
-}
-.feed-tag.t-info {
-  color: var(--accent-text);
-  background: var(--accent-soft);
-}
-.feed-cmd {
-  color: var(--ink-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .jobs {
   display: flex;
   flex-direction: column;
@@ -1892,16 +1837,6 @@ textarea.field:focus {
 }
 
 /* provider + system control plane */
-.control-plane {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.provider-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 8px;
-}
 .provider-card {
   display: flex;
   flex-direction: column;
@@ -1911,44 +1846,14 @@ textarea.field:focus {
   border-radius: var(--r-lg);
   background: var(--panel-2);
 }
-.provider-card-head,
-.provider-credential,
-.provider-option {
+.provider-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
-.provider-label {
-  color: var(--ink);
-  font-weight: 600;
-}
-.provider-capabilities {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.provider-credentials {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
-.provider-credential,
-.provider-option,
-.provider-limit,
-.provider-limitations {
+.provider-limit {
   font-size: var(--font-size);
-}
-.provider-limitations {
-  margin: 0;
-  padding-left: 17px;
-  color: var(--muted);
-}
-.provider-limitations li + li {
-  margin-top: 4px;
 }
 
 /* sandbox paper monitor */

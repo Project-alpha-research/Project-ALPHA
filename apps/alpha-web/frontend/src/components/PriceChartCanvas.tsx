@@ -73,7 +73,7 @@ function seriesMarker(marker: EvidenceMarker, selected: boolean, colors: ChartPa
           : 'square',
     color: markerColor(marker, colors),
     size: selected ? 1.8 : 1.1,
-    ...(selected || marker.id.startsWith('paper:') ? { text: marker.label } : {}),
+    ...(selected ? { text: marker.label } : {}),
   }
 }
 

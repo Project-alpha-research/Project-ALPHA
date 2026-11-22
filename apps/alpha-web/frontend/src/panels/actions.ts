@@ -29,7 +29,6 @@ export interface Navigator {
   showResearchData(): void
   /** Open the Data Manager and put the cursor in its symbol field. */
   showDataSymbol(): void
-  showProviders(): void
   /** Open the Compare document (the selected run is ticked there). */
   showCompare(): void
   /** Open the Insert › Indicators dialog for the current profile's chart overlays. */
@@ -44,7 +43,6 @@ let active: Navigator = {
   showResearchSources: () => undefined,
   showResearchData: () => undefined,
   showDataSymbol: () => undefined,
-  showProviders: () => undefined,
   showCompare: () => undefined,
   showIndicators: () => undefined,
 }
@@ -127,10 +125,6 @@ export function openCompare(): void {
 
 export function openIndicators(): void {
   active.showIndicators()
-}
-
-export function openProviderCenter(): void {
-  active.showProviders()
 }
 
 /** Open stored chart at the evaluated bar, clearing unrelated frozen/run context. */

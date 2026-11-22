@@ -4,10 +4,7 @@ import type { ProviderDefinition } from '../api/types'
 import {
   buildDataPullArgs,
   historicalProviders,
-  livePaperStrategies,
-  missingCredentialNames,
   providerOptionDefault,
-  providerReadinessLabel,
 } from './controlPlane'
 
 const PROVIDERS: ProviderDefinition[] = [
@@ -22,7 +19,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['stock', 'etf'],
     timeframes: ['quote'],
     research_authority: false,
-    paper_execution: false,
     budget_tier: 'free_optional',
     installed: true,
     configured: false,
@@ -46,7 +42,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['crypto'],
     timeframes: ['1D'],
     research_authority: true,
-    paper_execution: false,
     budget_tier: 'free_public',
     installed: true,
     configured: true,
@@ -68,7 +63,6 @@ const PROVIDERS: ProviderDefinition[] = [
     asset_classes: ['stock', 'etf'],
     timeframes: ['1D'],
     research_authority: false,
-    paper_execution: false,
     budget_tier: 'free_audit_only',
     installed: false,
     configured: false,
@@ -89,13 +83,6 @@ describe('provider-driven Data Explorer', () => {
   it('uses the registry option default', () => {
     expect(providerOptionDefault(PROVIDERS[1], 'exchange')).toBe('coinbase')
     expect(providerOptionDefault(PROVIDERS[0], 'exchange')).toBeNull()
-  })
-
-  it('reports missing credential names without carrying any secret values', () => {
-    expect(missingCredentialNames(PROVIDERS[0])).toEqual(['ALPHA_NEWSFEED_API_KEY'])
-    expect(providerReadinessLabel(PROVIDERS[0])).toBe('OPTIONAL DISABLED')
-    expect(providerReadinessLabel(PROVIDERS[2])).toBe('NOT INSTALLED')
-    expect(providerReadinessLabel(PROVIDERS[1])).toBe('UNVERIFIED')
   })
 
   it('threads the CCXT venue into the CLI and omits it for other sources', () => {
@@ -129,15 +116,5 @@ describe('provider-driven Data Explorer', () => {
         exchange: 'coinbase',
       }),
     ).toThrow('end 2026-06-31 is not a real calendar date')
-  })
-
-  it('keeps unsupported model strategies out of the live-paper launcher', () => {
-    const strategies = [
-      { name: 'ts_momentum', supports_live_paper: true },
-      { name: 'kronos', supports_live_paper: false },
-    ]
-    expect(livePaperStrategies(strategies).map((strategy) => strategy.name)).toEqual([
-      'ts_momentum',
-    ])
   })
 })

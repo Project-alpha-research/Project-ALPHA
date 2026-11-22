@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PaperSession, ProjectSummary, RunListItem, StrategyDef } from '../api/types'
+import type { ProjectSummary, RunListItem, StrategyDef } from '../api/types'
 import { storageRow } from './dataManagerModel'
 import { MARKET_UNKNOWN_LABEL, NAVIGATOR_GROUPS, isStrategyProject, navigatorTree } from './navigatorModel'
 
@@ -10,9 +10,7 @@ const run = (id: string, market: RunListItem['market'], symbol: string | null, p
 const project = (id: string, market: ProjectSummary['market'], gate: ProjectSummary['research_gate_state']) =>
   ({ project_id: id, name: `Project ${id}`, market, research_gate_state: gate, status: 'active' }) as ProjectSummary
 
-const script = (name: string) => ({ name, supports_live_paper: false }) as StrategyDef
-const session = (id: string, status: PaperSession['status']) =>
-  ({ session_id: id, symbol: 'BTC/USDT', strategy: 'sma', execution_mode: 'local_sandbox', status }) as PaperSession
+const script = (name: string) => ({ name }) as unknown as StrategyDef
 
 const READY = storageRow({ state: 'ready', blocker: null, bulk_root_label: 'Bulk', free_bytes: 1e12, total_bytes: 2e12 })
 
@@ -23,7 +21,6 @@ function tree(overrides: Partial<Parameters<typeof navigatorTree>[0]> = {}) {
     runs: [],
     projects: [],
     strategies: [],
-    sessions: [],
     storage: READY,
     ...overrides,
   })
@@ -32,7 +29,7 @@ function tree(overrides: Partial<Parameters<typeof navigatorTree>[0]> = {}) {
 describe('navigatorModel', () => {
   it('builds the six groups in spec order', () => {
     expect(tree().map((group) => group.label)).toEqual([...NAVIGATOR_GROUPS])
-    expect([...NAVIGATOR_GROUPS]).toEqual(['Strategies', 'Backtests', 'Research cases', 'Data', 'Scripts', 'Paper sandbox'])
+    expect([...NAVIGATOR_GROUPS]).toEqual(['Strategies', 'Backtests', 'Research cases', 'Data', 'Scripts'])
   })
 
   it('never colours a run good or bad from its stored gate flag', () => {
@@ -61,7 +58,7 @@ describe('navigatorModel', () => {
     expect(backtests.leaves.map((leaf) => leaf.id)).toEqual(['run:aaaaaaaa11111111'])
     expect(backtests.leaves[0]).toMatchObject({ label: 'Run aaaa', sub: 'aaaaaaaa', tone: 'none', action: { kind: 'run', runId: 'aaaaaaaa11111111' } })
     expect(backtests.unknown.map((leaf) => leaf.id)).toEqual(['run:cccccccc33333333'])
-    const equities = navigatorTree({ profile: 'equities', showAll: false, runs, projects: [], strategies: [], sessions: [], storage: READY })
+    const equities = navigatorTree({ profile: 'equities', showAll: false, runs, projects: [], strategies: [], storage: READY })
     expect(equities[1].leaves.map((leaf) => leaf.id)).toEqual(['run:bbbbbbbb22222222'])
     expect(MARKET_UNKNOWN_LABEL).toBe('Market unknown')
   })
@@ -100,10 +97,8 @@ describe('navigatorModel', () => {
     expect(ssd).toMatchObject({ label: 'Storage: not configured', tone: 'warn' })
   })
 
-  it('lists scripts and paper sessions', () => {
-    const groups = tree({ strategies: [script('sma_cross')], sessions: [session('s1', 'running'), session('s2', 'failed')] })
+  it('lists scripts', () => {
+    const groups = tree({ strategies: [script('sma_cross')] })
     expect(groups[4].leaves[0]).toMatchObject({ label: 'sma_cross', action: { kind: 'none' } })
-    expect(groups[5].leaves.map((leaf) => leaf.tone)).toEqual(['ok', 'bad'])
-    expect(groups[5].leaves[0].label).toBe('BTC/USDT · sma')
   })
 })

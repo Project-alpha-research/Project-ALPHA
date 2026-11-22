@@ -6,7 +6,7 @@ const base: ActivityState = {
   connection: 'live',
   runsVersion: 0,
   jobsVersion: 0,
-  areaVersions: { research: 0, control: 3, bars: 0, paper: 0, workspaces: 0, alerts: 0, ideas: 0 },
+  areaVersions: { research: 0, control: 3, bars: 0, workspaces: 0, alerts: 0, ideas: 0 },
   runningJobs: 0,
   feed: [],
 }
@@ -16,7 +16,7 @@ describe('activity store areas', () => {
     const patch = storeChangedPatch(base, { area: 'control', at: 1 })
     expect(patch).toEqual({
       area: 'control',
-      areaVersions: { research: 0, control: 4, bars: 0, paper: 0, workspaces: 0, alerts: 0, ideas: 0 },
+      areaVersions: { research: 0, control: 4, bars: 0, workspaces: 0, alerts: 0, ideas: 0 },
     })
   })
 

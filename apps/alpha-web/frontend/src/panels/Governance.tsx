@@ -2,8 +2,7 @@
  * Governance: one place for what the working screens used to shout on every pane — authority
  * and status, Touch ID, research gates, overrides, providers, storage, glossary. It is an MDI
  * document (spec 2026-09-01 §4.5) opened from the toolbar, the status chip and the View menu; the
- * MDI tab closes it. It renders existing client reads only (system, providers, overrides, paper
- * sessions, crypto storage, the linked project's gate and the selected run's watermark) and
+ * MDI tab closes it. It renders existing client reads only (system, providers, overrides, crypto storage, the linked project's gate and the selected run's watermark) and
  * derives no authority in the browser.
  */
 
@@ -13,7 +12,6 @@ import { api } from '../api/client'
 import type {
   ActiveResearchGateOverride,
   CryptoStorage,
-  PaperSession,
   ProviderDefinition,
   SystemStatus,
 } from '../api/types'
@@ -61,7 +59,6 @@ function GovernancePages() {
   const system = useRead<SystemStatus>(api.system)
   const providers = useRead<ProviderDefinition[]>(api.providers)
   const overrides = useRead<ActiveResearchGateOverride[]>(api.researchGateOverrides)
-  const sessions = useRead<PaperSession[]>(api.paperSessions)
   const storage = useRead<CryptoStorage>(api.cryptoStorage)
   const [pageId, setPageId] = useState('authority')
 
@@ -69,7 +66,6 @@ function GovernancePages() {
     system,
     providers,
     overrides,
-    sessions,
     storage,
     gate,
     watermark,

@@ -66,8 +66,8 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
 - `--json` keeps `verdict` and adds `reading`, with its `costs` lines ([cost classes](cli-cost-classes.md)).
-- A run id hashes every `alpha_cli` source byte, so any edit moves it. `tests/unit/test_reading_rule.py` holds that input fixed and
-  proves the reading changes no id.
+- A run id hashes every `alpha_cli` source byte, so any edit moves it, and the rows before the held-back boundary. It never hashes a later row,
+  their count, a data-health verdict or a whole-file fingerprint. `tests/unit/test_reading_rule.py` holds that input fixed: the reading moves no id.
 
 ## Owner-rule labels
 
@@ -107,18 +107,18 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   counts are the stored run's. It writes no ledger row, run folder, manifest, figure or lock file. `--check-data` is refused with
   it (a health report is a file). Held-back period, point-in-time reads and data health are as in a normal run.
 - Compared: every field of the manifest, the diagnostics and `spec.json`, and every value of every parquet table (trades, folds,
-  fills, equity). Left out: the code fingerprints (reported as `code_changed`), the health record and `data-health-*` labels,
-  `spine.test_id`, file bytes (`sha256`, `size_bytes`), the HTML report, and the folder named in a "no macro data" detail.
-  A field or file on one side only is a difference. Integers, words and labels are equal. Floats are equal within
-  `rel=1e-9, abs=1e-12` (another summation order); `bit_identical` says if every float was equal. Two NaN are equal.
-- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed}`. `code_changed` is true
-  when the stored run's execution fingerprint differs from now; it never excuses a difference. With nothing to compare with:
-  `computed: false, match: null`, nothing is computed or created, and `reason` says why (nothing stored; the stored bars
-  changed; only other engine settings stored). Exit 0 on a match or nothing to compare; exit 4 on a difference.
-- Normal results also carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger
-  or any identity hash. `repeat` still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for
-  the setup tests: the summary and every row of the stored table compared; ledger count, health record, health labels and facts
-  left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
+  fills, equity). Left out: the code fingerprints (reported as `code_changed`), the health record and `data-health-*` labels, the held-back
+  count, cut-off and label, `spine.test_id`, file bytes (`sha256`, `size_bytes`), the HTML report, and the "no macro data" folder name.
+  A run stored before 2026-11-22 fingerprinted the whole bar file; `recheck.identity_note` says so, and its numbers are compared, not its identity.
+  A field or file on one side only is a difference. Integers, words and labels are equal. Floats are equal within `rel=1e-9, abs=1e-12`
+  (another summation order); `bit_identical` says if every float was equal. Two NaN are equal.
+- Per asset: `recheck: {compared_with, computed, seconds, match, bit_identical, differences (first 10), code_changed, identity_note}`.
+  `code_changed` is true when the stored run's execution fingerprint differs from now; it never excuses a difference. With nothing to compare
+  with: `computed: false, match: null`, nothing is computed or created, and `reason` says why (nothing stored; the stored bars changed; only
+  other engine settings stored). Exit 0 on a match or nothing to compare; exit 4 on a difference.
+- Normal results carry `executed` (`true` if the engine ran this time, `false` if the stored run came back), not in the ledger or any identity hash. `repeat`
+  still means the same test by key. `alpha setup study|trade <find_id> --recheck` does the same for the setup tests: summary and every stored table row
+  compared; ledger count, health record, health labels and facts left out; `code_changed` is null ("not recorded"). Setup find reports `executed` only.
 
 ## Context gate plan
 

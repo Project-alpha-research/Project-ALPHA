@@ -26,8 +26,9 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
   [engineering § Import layers](engineering.md#import-layers).
 - Take indicators from `alpha_patterns` (the functions `alpha chart overlays` draws); never re-implement
   one here. Parity is pinned by `tests/unit/test_rules_indicators_parity.py`. One exception, for speed only:
-  `rule_paths.py` runs the same arithmetic of `sma`, `ema`, `rsi`, `atr`, `bbands` and `macd` on every trailing
-  window of a path at once, for the Tier-1 surrogate. Its values must equal `operand_series` exactly (`==`, no
+  `rule_paths.py` runs the same arithmetic of `sma`, `ema`, `rsi`, `atr`, `bbands`, `macd` and the `highest` and
+  `lowest` channels on every trailing window of a path at once, for the Tier-1 surrogate. A lagged operand reads
+  the window cut to its first `history - lag` bars. Its values must equal `operand_series` exactly (`==`, no
   tolerance): `tests/unit/test_rule_paths.py`. Every other indicator falls back to `operand_series` per window.
 - Never import `alpha_backtest`. The engine reaches the strategy only through the optional
   `configure_cash_execution` hook it looks up with `getattr`, so the dependency stays one-way.
@@ -79,15 +80,18 @@ vol-target sizing, owner-authored rule specs, and the shared Nautilus lifecycle 
 - `evaluate_rules` takes exactly `history` trailing bars and raises otherwise. The fixed window keeps the
   decision point-in-time and makes the engine, the Tier-1 surrogate and scans agree bar for bar.
 - A non-finite operand on the decision bar (warm-up or undefined statistic) is a `DataError`, never zero.
-- Indicator operands are exactly `rules.INDICATOR_ARITY`, the table `alpha chart overlays` accepts (every chart
-  indicator except `rsi_pc1`, whose PCA lives in `alpha_research`). `INDICATOR_FIELDS` names the multi-series
-  fields; `FLOAT_FIRST` marks `hawkes`, whose first parameter is a decay rate, not a window.
+- Indicator operands are `rules.RULE_ARITY`: `INDICATOR_ARITY`, the table `alpha chart overlays` accepts (every chart
+  indicator except `rsi_pc1`, whose PCA lives in `alpha_research`), plus the rule-only channels `highest` and
+  `lowest` (`CHANNEL_FIELDS`: `field` is the price source). The chart and the rule builder mirror only
+  `INDICATOR_ARITY` and `INDICATOR_FIELDS` (the multi-series fields); `FLOAT_FIRST` marks `hawkes`, whose first
+  parameter is a decay rate, not a window. A channel includes the bar it is read on; `lag = 1` excludes it.
 - `RuleStrategy` sets `min_history = spec.history`, and its indicator snapshot records every operand's value on
   the decision bar. It computes each operand once per bar (`evaluate_values`); the decision and the snapshot read
   the same value. A non-finite snapshot value fails the run (`IndicatorTrace` requires finite values), also when
   the decision did not reach that condition.
-- Sources are `high`, `low`, `close` only (the history the base keeps). A source `lag` is a non-negative
-  integer; an omitted or zero lag keeps the original bytes. `tests/unit/test_rules_source_lag.py`.
+- Sources are `high`, `low`, `close` only (the history the base keeps). A source or indicator `lag` is a
+  non-negative integer: bar t reads bar t - lag, on the same decision window, so warm-up grows by the lag. An omitted
+  or zero lag keeps the original bytes. `tests/unit/test_rules_source_lag.py`, `test_rules_indicator_lag.py`.
 - `canonical_json` (sorted keys, compact separators, no NaN) is the run-identity byte string and
   `spec_sha256` hashes it. Never change how an existing spec serialises: it changes run ids.
   `tests/unit/test_run_identity_rules.py`. Bias guard: `tests/unit/test_rules_bias_guard.py`.

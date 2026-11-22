@@ -149,9 +149,13 @@ def list_results(
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None
             }
-        lines.append(f"Total trials: {len(rows)}")
+        from alpha_cli.spine.trial_reader import spine_snapshot
+        from alpha_cli.spine.tries import sentence, tries
+
+        counted = tries(spine_snapshot(AlphaSettings().data_dir), symbol)
+        lines.append(sentence(counted))
         emit(
-            {"items": items, "total_trials": len(rows)},
+            {"items": items, "total_trials": len(rows), "tries": counted},
             json_out=json_out,
             fallback="\n".join(lines),
         )

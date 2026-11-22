@@ -12,6 +12,7 @@ numbers are approximate, not authoritative firm terms.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import typer
@@ -20,6 +21,12 @@ from alpha_cli import _artifacts, _propfirm, _runner
 from alpha_cli._artifacts import sanitize
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+from alpha_validation import FIRM_PRESETS, PropFirmRules
+
+# The simulated evaluation length when --horizon is not given. No preset states a time limit, so
+# a typical evaluation of about 30 trading days is used, never the whole history (over decades a
+# trailing drawdown is breached almost surely, which says nothing about one evaluation).
+DEFAULT_EVAL_DAYS = 30
 
 propfirm_app = typer.Typer(
     help="Prop-firm Monte Carlo: pass/payout probabilities for a funded-trader evaluation."
@@ -32,7 +39,9 @@ def run(
         None, help="symbol to backtest; omit when using --from-run"
     ),
     strategy: str = "ts_momentum",
-    firm: str | None = typer.Option(None, help="preset: topstep | apex | takeprofit (else custom)"),
+    firm: str | None = typer.Option(
+        None, help="preset: apex | takeprofit | topstep (omit it for the custom rules)"
+    ),
     from_run: str | None = typer.Option(
         None, "--from-run", help="reuse a prior run's equity curve"
     ),
@@ -47,7 +56,9 @@ def run(
     n_paths: int = 5000,
     mean_block: float = 5.0,
     horizon: int | None = typer.Option(
-        None, help="cap the simulation to N trading days (default: the full return series)"
+        None,
+        help=f"trading days per simulated evaluation (default {DEFAULT_EVAL_DAYS}; "
+        "no preset sets a time limit)",
     ),
     seed: int | None = None,
     # backtest knobs (used only for a fresh inline backtest of SYMBOL)
@@ -71,6 +82,8 @@ def run(
     """Score SYMBOL (or --from-run RUN_ID) against a prop firm and write a verdict manifest."""
     if (symbol is None) == (from_run is None):
         raise typer.BadParameter("provide exactly one of SYMBOL or --from-run RUN_ID")
+    _refuse_unknown(firm)
+    eval_days = horizon if horizon is not None else DEFAULT_EVAL_DAYS
 
     settings = AlphaSettings()
     resolved_seed = seed if seed is not None else settings.random_seed
@@ -118,7 +131,7 @@ def run(
         "overrides": dict(sorted(overrides.items())),
         "n_paths": n_paths,
         "mean_block": mean_block,
-        "horizon": horizon,
+        "horizon": eval_days,
         "seed": resolved_seed,
     }
     if from_run is not None:
@@ -139,7 +152,7 @@ def run(
             n_paths=n_paths,
             mean_block=mean_block,
             seed=resolved_seed,
-            horizon_days=horizon,
+            horizon_days=eval_days,
         )
     except DataError as exc:  # missing run, unknown firm, degenerate returns, bad rule override
         raise typer.BadParameter(str(exc)) from exc
@@ -166,17 +179,73 @@ def run(
     _propfirm.stamp_held(manifest, out.held)
     _artifacts.write_manifest(rdir, manifest)
 
+    label = symbol if symbol is not None else f"run {from_run}"
+    _report(out, label=label, run_id=run_id, manifest_path=rdir / "manifest.json", horizon=horizon)
+
+
+def _refuse_unknown(firm: str | None) -> None:
+    """An unknown preset name stops the command before any data is read."""
+    if firm is not None and firm not in FIRM_PRESETS:
+        typer.echo(
+            f"Unknown firm preset {firm!r}. Valid presets: {', '.join(sorted(FIRM_PRESETS))}. "
+            "Leave --firm out for the custom rules. Nothing was run."
+        )
+        raise typer.Exit(2)
+
+
+def _report(
+    out: _propfirm.PropFirmRunResult,
+    *,
+    label: str,
+    run_id: str,
+    manifest_path: Path,
+    horizon: int | None,
+) -> None:
+    """The rules used and the evaluation length first, then the rates, in plain words."""
     res = out.result
     days = "n/a" if math.isnan(res.median_days_to_pass) else f"{res.median_days_to_pass:.0f}"
-    label = symbol if symbol is not None else f"run {from_run}"
+    length = (
+        "(set with --horizon)"
+        if horizon is not None
+        else "(the default when the preset sets no time limit; change it with --horizon)"
+    )
+    typer.echo(
+        "\n".join(
+            [
+                *rule_lines(out.firm, out.rules),
+                f"Evaluation length: {res.horizon_days} trading days {length}.",
+            ]
+        )
+    )
     typer.echo(
         f"propfirm {label} -> run {run_id}: {out.firm}\n"
         f"  pass {res.pass_probability:.1%}, bust {res.bust_probability:.1%}, "
         f"payout {res.payout_probability:.1%}, median days-to-pass {days}\n"
         f"  expected payout ${res.expected_payout:,.0f} over {res.horizon_days} days "
         f"({res.n_paths} paths)\n"
-        f"  manifest at {rdir / 'manifest.json'}" + (out.held.note() if out.held else "")
+        f"  manifest at {manifest_path}" + (out.held.note() if out.held else "")
     )
+
+
+def rule_lines(firm: str, rules: PropFirmRules) -> list[str]:
+    """The rule set the simulation used, in plain words, before any result."""
+    title = (
+        "custom rules"
+        if firm == "custom"
+        else f"{firm} preset, approximate; check the firm's own terms"
+    )
+    daily = (
+        "none" if rules.daily_loss_limit is None else f"${rules.daily_loss_limit:,.0f} (end of day)"
+    )
+    floor = "trailing the high-water mark" if rules.trailing else "fixed below the start"
+    return [
+        f"Rules used ({title}):",
+        f"  Profit target: ${rules.profit_target:,.0f} on a ${rules.account_size:,.0f} account",
+        f"  Daily loss limit: {daily}",
+        f"  Maximum loss: ${rules.max_drawdown:,.0f}, {floor}",
+        "  Time limit: none set by this preset" if firm != "custom" else "  Time limit: none set",
+        f"  Minimum trading days: {rules.min_trading_days}",
+    ]
 
 
 def _manifest(out: _propfirm.PropFirmRunResult, *, run_id: str, seed: int) -> dict[str, Any]:

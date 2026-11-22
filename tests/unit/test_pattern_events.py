@@ -142,9 +142,12 @@ def test_head_and_shoulders_is_one_event_per_head_with_its_neckline() -> None:
             assert len(e.anchors) == 5  # left shoulder, neckline, head, neckline, right shoulder
 
 
-@pytest.mark.parametrize("family", ["trendlines", "harmonics"])
+@pytest.mark.parametrize("family", sorted(pe.FAMILIES))
 def test_events_are_the_same_on_the_prefixes_around_each_event(family: str) -> None:
-    """A line or pattern seen only one bar later must be stamped on that later bar."""
+    """An event seen only one bar later must be stamped on that later bar.
+
+    Every family: the fixed cuts above miss an event stamped one bar early for flags, wedges and
+    harmonics; the prefixes on each side of every event catch it."""
     seen = 0
     for seed in (1, 3):
         bars = geometric_brownian_series(420, seed=seed, vol_per_bar=0.02)

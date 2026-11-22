@@ -40,3 +40,14 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   "Reading: fault. Fault: the out-of-sample Sharpe could not be computed." and the numpy warnings).
 - Docs: `cli-rule-readings.md` (the exception), `research/tools/reserved-confirmation.md`.
 - Seen, not mine: `test_reading_rule.py` (3) and `test_reading_ledger_setup.py` (1) fail on `origin/main` too (pinned run ids).
+
+### 4. An exact repeat wrote a ledger row
+
+- Cause: `run_idea` appended a ledger row for every result, also when the stored run was served (`executed: false`). The row
+  was labelled `repeat` and left out of the deflation counts, but it raised the raw row count, the family `rows` of
+  `alpha ledger families` (the 11 to 12), `same_asset_repeats` and the ledger entry number. The diagnostics wrote no row.
+- Change: a served repeat writes no ledger row (the idea-card link is still noted). Decision: a repeat after a code change ran
+  the engine again into a new run folder, so it keeps its labelled row (that run must stay findable by `confirm` and `recheck`).
+- Test: `tests/unit/test_repeat_adds_nothing.py` (fail first: rows 1 to 2, family rows 1 to 2, same-asset repeats 0 to 1).
+  Updated to the new rule: `test_run_identity_held_back.py`, `test_idea_card.py` (they asserted the repeat row).
+- Docs: `cli-trial-ledger.md`.

@@ -16,10 +16,20 @@ _cache: dict[tuple[object, ...], dict[str, Any]] = {}
 
 
 def _fingerprint(root: Path) -> tuple[tuple[str, int, int], ...]:
-    """Name, change time and size of every stored bar file: it changes when any bar file does."""
+    """Name, change time and size of every stored bar, action and pull-record file.
+
+    The overview reads prices adjusted by the stored corporate actions, so a changed action or
+    pull-record file must change the key just as a changed bar file does.
+    """
+    files = sorted(
+        path
+        for folder in ("bars", "actions", "provenance")
+        for path in root.glob(f"store*/{folder}/**/*")
+        if path.is_file()
+    )
     return tuple(
         (str(path.relative_to(root)), info.st_mtime_ns, info.st_size)
-        for path in sorted(root.glob("store*/bars/**/*.parquet"))
+        for path in files
         for info in (path.stat(),)
     )
 

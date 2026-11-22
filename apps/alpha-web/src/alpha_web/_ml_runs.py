@@ -19,6 +19,8 @@ from alpha_web import _runs
 
 MAX_RUNS = 50
 MAX_FOLDS = 200
+#: The index is filtered by command before the newest 50 are kept, so the limit must not cut it.
+ALL_RUNS = 1_000_000
 _METRICS = (
     "total_return",
     "max_drawdown",
@@ -42,7 +44,7 @@ def _folds(rdir: Path) -> list[dict[str, Any]]:
     path = rdir / "folds.parquet"
     if not path.is_file():
         return []
-    frame = pl.read_parquet(path).head(MAX_FOLDS)
+    frame = pl.read_parquet(path)
     return [
         {
             "fold": int(row["fold"]),
@@ -86,7 +88,8 @@ def _row(record: Mapping[str, Any], *, data_dir: Path) -> dict[str, Any]:
         if metrics["sharpe"] is None
         else None
     )
-    folds = _folds(rdir)
+    all_folds = _folds(rdir)
+    folds = all_folds[:MAX_FOLDS]
     universe = manifest.get("universe")
     periods = manifest.get("n_oos_periods")
     return {
@@ -95,17 +98,18 @@ def _row(record: Mapping[str, Any], *, data_dir: Path) -> dict[str, Any]:
         "assets": [str(a) for a in universe] if isinstance(universe, list) else [],
         "model": _model(manifest, rdir),
         "costs": _costs(manifest),
-        "split_sentence": split_sentence(folds) if folds else None,
+        "split_sentence": split_sentence(all_folds) if all_folds else None,
         "n_oos_periods": periods if isinstance(periods, int) else None,
         "label": manifest.get("label") if isinstance(manifest.get("label"), str) else None,
         "metrics": metrics,
         "folds": folds,
+        "folds_total": len(all_folds),
     }
 
 
 def ml_runs(*, data_dir: Path) -> dict[str, Any]:
     """The newest stored ML runs; an unreadable run is skipped."""
-    listed = _runs.query_runs(data_dir=data_dir, limit=500)
+    listed = _runs.query_runs(data_dir=data_dir, limit=ALL_RUNS)
     found = [r for r in listed["items"] if r.get("command") == "ml_replay"]
     items: list[dict[str, Any]] = []
     for record in found[:MAX_RUNS]:

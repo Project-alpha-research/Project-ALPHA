@@ -11,7 +11,8 @@ function run(extra: Partial<MlStoredRun['metrics']> = {}): MlStoredRun {
       total_return: 0.085, benchmark_total_return: 0.12, max_drawdown: -0.07, sharpe: 0.8, cagr: 0.04, mean_turnover: 0.3,
       total_fees: 1, total_slippage_cost: 2, sharpe_reason: null, ...extra,
     },
-    folds: [{ fold: 0, train_start: '2020-01-01', train_end: '2020-02-20', test_start: '2020-03-02', test_end: '2020-03-31' }],
+    folds_total: 1,
+  folds: [{ fold: 0, train_start: '2020-01-01', train_end: '2020-02-20', test_start: '2020-03-02', test_end: '2020-03-31' }],
   }
 }
 

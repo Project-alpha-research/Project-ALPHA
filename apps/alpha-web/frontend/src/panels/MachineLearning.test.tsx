@@ -8,6 +8,7 @@ const run: MlStoredRun = {
   costs: '1 bp fee and 2 bp slippage per trade', split_sentence: 'The model was refit 1 times, each on days before its own test days.',
   n_oos_periods: 63, label: null,
   metrics: { total_return: 0.05, benchmark_total_return: 0.02, max_drawdown: -0.03, sharpe: null, cagr: null, mean_turnover: null, total_fees: null, total_slippage_cost: null, sharpe_reason: 'Fewer than two scored periods.' },
+  folds_total: 1,
   folds: [{ fold: 0, train_start: '2020-01-01', train_end: '2020-02-20', test_start: '2020-03-02', test_end: '2020-03-31' }],
 }
 

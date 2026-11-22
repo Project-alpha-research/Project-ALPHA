@@ -38,6 +38,8 @@ class MlStoredRun(StrictModel):
     label: str | None
     metrics: MlStoredMetrics
     folds: list[MlStoredFold]
+    # All folds the run stored; `folds` keeps the first 200 for the table.
+    folds_total: int
 
 
 class MlStoredRunList(StrictModel):

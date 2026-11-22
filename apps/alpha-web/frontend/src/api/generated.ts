@@ -8967,6 +8967,8 @@ export interface components {
             costs: string;
             /** Folds */
             folds: components["schemas"]["MlStoredFold"][];
+            /** Folds Total */
+            folds_total: number;
             /** Label */
             label: string | null;
             metrics: components["schemas"]["MlStoredMetrics"];

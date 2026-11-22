@@ -118,3 +118,26 @@ def test_newest_first_and_unreadable_run_is_skipped(
     (tmp_path / "runs" / ("e" * 16) / "folds.parquet").write_bytes(b"not parquet")
     items = _client(tmp_path, monkeypatch).get("/api/ml-runs").json()["items"]
     assert [item["run_id"] for item in items] == ["d" * 16]
+
+
+def test_ml_runs_are_found_behind_many_newer_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _ml_run(tmp_path, "f" * 16, mtime=1)
+    for index in range(520):
+        _other_run(tmp_path, f"{index:016x}")
+        os.utime(tmp_path / "runs" / f"{index:016x}" / "manifest.json", (10_000 + index,) * 2)
+    body = _client(tmp_path, monkeypatch).get("/api/ml-runs").json()
+    assert [item["run_id"] for item in body["items"]] == ["f" * 16]
+
+
+def test_the_split_sentence_covers_every_fold_when_the_table_is_cut(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web import _ml_runs
+
+    monkeypatch.setattr(_ml_runs, "MAX_FOLDS", 2)
+    _ml_run(tmp_path, "9" * 16, mtime=1)
+    run = _client(tmp_path, monkeypatch).get("/api/ml-runs").json()["items"][0]
+    assert len(run["folds"]) == 2 and run["folds_total"] == 3
+    assert run["split_sentence"].startswith("The model was refit 3 times")

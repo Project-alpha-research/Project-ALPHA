@@ -14144,6 +14144,10 @@
             "title": "Folds",
             "type": "array"
           },
+          "folds_total": {
+            "title": "Folds Total",
+            "type": "integer"
+          },
           "label": {
             "anyOf": [
               {
@@ -14203,7 +14207,8 @@
           "n_oos_periods",
           "label",
           "metrics",
-          "folds"
+          "folds",
+          "folds_total"
         ],
         "title": "MlStoredRun",
         "type": "object"

@@ -107,3 +107,16 @@ def test_overview_is_cached_until_a_bar_file_changes(
     _seed(tmp_path, "BIG", 61, 100.0, 1000.0)
     client.get("/api/market/overview", params={"window": "30"})
     assert len(calls) == 2
+
+
+def test_a_changed_corporate_action_file_makes_a_new_cache_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web.api import market
+
+    _client(tmp_path, monkeypatch)
+    before = market._fingerprint(tmp_path)
+    actions = tmp_path / "store" / "actions"
+    actions.mkdir(parents=True, exist_ok=True)
+    (actions / "BIG.json").write_text("[]", encoding="utf-8")
+    assert market._fingerprint(tmp_path) != before

@@ -63,6 +63,7 @@ export function MachineLearningView({ run }: { run: MlStoredRun }) {
           <tbody>{rows.map(row => <tr key={row.fold}><td className="num mono">{row.fold}</td><td>{row.trained}</td><td>{row.tested}</td></tr>)}</tbody>
         </table>
       ) : <p className="muted">This run did not store its folds.</p>}
+      {run.folds_total > rows.length ? <p className="muted">The table shows the first {rows.length} of {run.folds_total} folds.</p> : null}
     </article>
   )
 }

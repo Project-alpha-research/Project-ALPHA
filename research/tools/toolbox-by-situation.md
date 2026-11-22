@@ -22,15 +22,18 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - Big drawdown, or how deep the drop could get: `performance.downside_ratios`, `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`,
   `resampling.student_t_paths`
 - How wide is the return range: `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
-- Works in some years or windows only: `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`
+- Works in some years or windows only: `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`, `regimes.year_by_year`,
+  `regimes.day_of_week`, `regimes.calendar_month`, `regimes.bull_bear`, `regimes.trend_range`, `regimes.sub_period_stability`, `regimes.turn_of_month`,
+  `regimes.halloween`
 - Does it earn in calm or turbulent markets: `market.vol_regimes`
-- When did the behaviour change: `market.changepoints`
+- When did the behaviour change: `market.changepoints`, `regimes.chow_test`, `regimes.cusum_mean`, `regimes.cusum_variance`, `regimes.sup_f`,
+  `regimes.break_count`
 - Few trades: `trades.concentration`, `resampling.sharpe_interval`, `resampling.return_interval`, `trades.dependence`
 - Profit from a handful of trades: `trades.concentration`
 - Wins and losses cluster or alternate: `trades.dependence`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `costs.break_even`
-- Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`
+- Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`, `regimes.bull_bear`, `regimes.asymmetric_beta`
 - Return compared with the risk taken: `performance.downside_ratios`
 - Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.
 - Would a slightly different data feed change the answer: No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.

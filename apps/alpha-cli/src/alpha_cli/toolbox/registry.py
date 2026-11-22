@@ -8,6 +8,7 @@ from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REG
 from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
 from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
+from alpha_cli.toolbox.families.regimes import CHECKS as REGIME_CHECKS
 from alpha_cli.toolbox.families.resampling import (
     BLOCK_PATHS,
     DRAWDOWN_DISTRIBUTION,
@@ -34,6 +35,7 @@ SPECS = (
     BLOCK_PATHS,
     STUDENT_T_PATHS,
     PUBLISHED_FACTORS,
+    *REGIME_CHECKS,
 )
 ALIASES = {
     "attribution": ATTRIBUTION.id,

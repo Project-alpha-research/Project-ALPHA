@@ -19,11 +19,11 @@ The result is then marked `declared`, otherwise `exploratory`. Nothing is refuse
 - The result looks too good: `robustness.start_end_dates`, `trades.concentration`, `context.published_factors`, `resampling.sharpe_interval`,
   `resampling.drawdown_distribution`, `overfit.deflated_sharpe`
 - The result looks too good after many tries: `overfit.deflated_sharpe`
-- Big drawdown, or how deep the drop could get: `risk.parametric_var`, `risk.cornish_fisher_var`, `risk.worst_windows`, `risk.fractional_kelly`,
-  `attribution.drawdown_causes`, `performance.downside_ratios`, `risk.tail_fit`, `risk.var_coverage`, `risk.var_independence`,
-  `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
-- How wide is the return range: `risk.parametric_var`, `risk.cornish_fisher_var`, `risk.worst_windows`, `risk.tail_fit`, `risk.var_coverage`,
-  `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
+- Big drawdown, or how deep the drop could get: `risk.parametric_var`, `risk.cornish_fisher_var`, `risk.fractional_kelly`, `attribution.drawdown_causes`,
+  `performance.downside_ratios`, `risk.tail_fit`, `risk.var_coverage`, `risk.var_independence`, `resampling.drawdown_distribution`,
+  `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
+- How wide is the return range: `risk.parametric_var`, `risk.cornish_fisher_var`, `risk.tail_fit`, `risk.var_coverage`, `resampling.sharpe_interval`,
+  `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
 - Works in some years or windows only: `attribution.weekday`, `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`
 - Does it earn in calm or turbulent markets: `risk.vol_target`, `market.vol_regimes`
 - When did the behaviour change: `market.changepoints`

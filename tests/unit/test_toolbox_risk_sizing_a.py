@@ -1,6 +1,5 @@
 """Known answers: parametric VaR, Cornish-Fisher VaR and the worst windows."""
 
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +8,7 @@ import pytest
 from scipy import stats
 
 from alpha_validation.metrics import value_at_risk
-from tests.unit.risk_sizing_support import put_equity, put_returns, read, stored
+from tests.unit.risk_sizing_support import put_returns, read, stored
 
 REL, ABS = 1e-9, 1e-12
 
@@ -42,6 +41,18 @@ def test_parametric_var(tmp_path: Path) -> None:
     )
 
 
+def test_parametric_var_refuses_a_collapsed_student_t_fit(tmp_path: Path) -> None:
+    # A run flat 40% of the time (out of the market) makes the Student-t fit collapse onto zero.
+    stored(tmp_path)
+    r = np.random.default_rng(3).normal(0.0004, 0.01, 200)
+    r[np.arange(200) % 5 < 2] = 0.0
+    put_returns(tmp_path, r)
+    doc = read(tmp_path, "risk.parametric_var")
+    assert doc["values"]["t_var"] is None and doc["values"]["t_df"] is None
+    assert "flat" in doc["reasons"]["t_var"]
+    assert doc["values"]["normal_var"] > 0
+
+
 def test_cornish_fisher_var(tmp_path: Path) -> None:
     stored(tmp_path)
     r = skewed_returns()
@@ -67,29 +78,3 @@ def test_cornish_fisher_says_when_the_expansion_breaks(tmp_path: Path) -> None:
     assert doc["values"]["cf_var"] is None
     assert "expansion" in doc["reasons"]["cf_var"]
     assert doc["values"]["skew"] == pytest.approx(stats.skew(r), rel=REL, abs=ABS)
-
-
-def test_worst_windows(tmp_path: Path) -> None:
-    stored(tmp_path)
-    head = np.array([100.0, 101, 99, 98, 103, 104, 90, 92, 95, 96, 97, 98])
-    equity = np.r_[head, np.linspace(98.0, 110.0, 30)] / 100
-    put_equity(tmp_path, equity)
-    values = read(tmp_path, "risk.worst_windows")["values"]
-    # The single worst bar is the drop from 104 to 90 on the seventh bar (index 6).
-    assert values["worst_1"] == pytest.approx(90 / 104 - 1, rel=REL, abs=ABS)
-    assert values["end_1"] == "2022-01-07"
-    for size in (5, 21):
-        ratios = equity[size:] / equity[:-size] - 1
-        assert values[f"worst_{size}"] == pytest.approx(ratios.min(), rel=REL, abs=ABS)
-        end = datetime(2022, 1, 1) + timedelta(days=int(ratios.argmin()) + size)
-        assert values[f"end_{size}"] == end.strftime("%Y-%m-%d")
-
-
-def test_worst_windows_short_history_names_the_count(tmp_path: Path) -> None:
-    stored(tmp_path)
-    put_equity(tmp_path, np.array([1.0, 0.9, 0.95, 1.0, 1.1, 1.05]))
-    doc = read(tmp_path, "risk.worst_windows")
-    assert doc["values"]["worst_1"] == pytest.approx(-0.1, rel=REL, abs=ABS)
-    assert doc["values"]["worst_5"] == pytest.approx(1.05 - 1, rel=REL, abs=ABS)
-    assert doc["values"]["worst_21"] is None
-    assert "found 5" in doc["reasons"]["worst_21"]

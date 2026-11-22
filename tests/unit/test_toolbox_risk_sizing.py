@@ -26,7 +26,7 @@ TRADE_ONLY = {
 }
 EQUITY_TOOLS = set(IDS) - TRADE_ONLY
 # Keys that stay available on the tiny fixtures below; every other output must say why not.
-STILL_READ = {"risk.worst_windows": {"worst_1", "end_1"}}
+STILL_READ: dict[str, set[str]] = {}
 
 
 def test_the_checks_are_registered_once() -> None:

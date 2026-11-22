@@ -11,7 +11,6 @@ from alpha_cli.toolbox.families.risk_common import (
     PAST,
     bar_returns,
     check,
-    equity_and_dates,
     unavailable,
 )
 
@@ -23,7 +22,6 @@ if TYPE_CHECKING:
 
 TESTS = "test_toolbox_risk_sizing_a"
 MINIMUM = 30
-WINDOWS = (1, 5, 21)
 
 
 def _sample(inputs: Inputs) -> tuple[FloatArray, str | None]:
@@ -54,11 +52,17 @@ def parametric_var(inputs: Inputs, params: dict[str, Any], rng: Generator | None
     }
     df, loc, scale = stats.t.fit(returns)
     quantile = -float(stats.t.ppf(1 - level, df, loc=loc, scale=scale))
-    if np.isfinite([df, quantile]).all():
+    sd = float(returns.std(ddof=1))
+    # Many flat bars (out of the market) pull the fit onto zero: a tiny scale and a tail weight
+    # below two (no finite spread). Such a fit says nothing about a loss, so it is not shown.
+    if np.isfinite([df, scale, quantile]).all() and df > 2.0 and scale > 1e-3 * sd:
         values.update(t_var=max(0.0, quantile), t_df=float(df))
         return Result(values, {}, basis=BASIS)
     values.update(t_var=None, t_df=None)
-    reason = "The Student-t fit did not give finite numbers."
+    reason = (
+        "The Student-t fit did not give a usable tail, often because many bars were flat"
+        " (out of the market)."
+    )
     return Result(values, {"t_var": reason, "t_df": reason}, basis=BASIS)
 
 
@@ -94,40 +98,6 @@ def cornish_fisher_var(inputs: Inputs, params: dict[str, Any], rng: Generator | 
         )
         return Result(values, {"cf_var": reason}, basis=BASIS)
     return Result(values, {}, basis=BASIS)
-
-
-def worst_windows(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
-    equity, dates = equity_and_dates(inputs)
-    values: dict[str, Any] = {}
-    reasons = {}
-    for size in WINDOWS:
-        keys = (f"worst_{size}", f"end_{size}")
-        if len(equity) < size + 1:
-            values.update(dict.fromkeys(keys))
-            why = f"Needs {size} bar returns; found {max(len(equity) - 1, 0)}."
-            reasons.update(dict.fromkeys(keys, why))
-            continue
-        change = equity[size:] / equity[:-size] - 1
-        worst = int(change.argmin())
-        values[keys[0]] = float(change[worst])
-        values[keys[1]] = dates[worst + size].date().isoformat()
-    return Result(values, reasons, basis=BASIS)
-
-
-def _window_outputs() -> tuple[Output, ...]:
-    outputs: list[Output] = []
-    for size in WINDOWS:
-        label = "bar" if size == 1 else f"{size} bars"
-        outputs += [
-            Output(
-                f"worst_{size}",
-                f"Worst {label}",
-                f"Lowest after-cost return over any {size} consecutive bar(s), compounded.",
-                "fraction",
-            ),
-            Output(f"end_{size}", f"Worst {label} ends", "Date the worst window ended.", "date"),
-        ]
-    return tuple(outputs)
 
 
 CHECKS = (
@@ -203,20 +173,5 @@ CHECKS = (
         ),
         caveats=(PAST + " The expansion is unreliable when skew and kurtosis are very large.",),
         compute=cornish_fisher_var,
-    ),
-    check(
-        "risk.worst_windows",
-        TESTS,
-        question="What were the worst one, five and twenty-one bar losses?",
-        answers=("What was the worst day, week and month?",),
-        situations=("drawdown", "return-range"),
-        needs=("stored_equity",),
-        outputs=_window_outputs(),
-        reading=(
-            "The worst bar lost {worst_1:.1%} (ended {end_1}), the worst five bars {worst_5:.1%}"
-            " (ended {end_5}) and the worst twenty-one bars {worst_21:.1%} (ended {end_21})."
-        ),
-        caveats=("Windows count bars, not calendar days; the next loss can be worse.",),
-        compute=worst_windows,
     ),
 )

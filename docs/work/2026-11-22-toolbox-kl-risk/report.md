@@ -1,13 +1,12 @@
 # Report: toolbox family K and L (risk, sizing, attribution)
 
-Fourteen checks are built. Fail-first: before the module existed, `tests/unit/test_toolbox_risk_sizing.py`
+Thirteen checks are built (`risk.worst_windows` was removed in review: it repeats `performance.worst_windows`). Fail-first: before the module existed, `tests/unit/test_toolbox_risk_sizing.py`
 stopped at collection with `ModuleNotFoundError: alpha_cli.toolbox.families.risk_sizing`.
 
 | Check id | Catalogue row | Known-answer source |
 |---|---|---|
 | `risk.parametric_var` | L2 | Hand formula -(mean + z sd) with scipy `norm.ppf`; scipy `t.fit` for the Student-t fit |
 | `risk.cornish_fisher_var` | L3 | Zangari 1996 / Favre-Galeano 2002 polynomial, scipy skew and kurtosis |
-| `risk.worst_windows` | L21 | Hand-built equity; numpy window ratios |
 | `risk.tail_fit` | L5 | Hill by hand on a geometric tail ((k+1)/2 ln 1.2); scipy `genpareto.fit`; McNeil-Frey formulas |
 | `risk.var_coverage` | L6 | Kupiec 1995 by `math.log` on a series with 3 planted breaches |
 | `risk.var_independence` | L7 | Christoffersen 1998 by `math.log` from hand-counted transitions |

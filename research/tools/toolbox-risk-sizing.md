@@ -14,7 +14,6 @@ Run one with `alpha tool run <id> <run_id>`. Each gives a reading, never a pass 
 |---|---|
 | `risk.parametric_var` | How large a loss does a bell-curve fit give for one bar? |
 | `risk.cornish_fisher_var` | How much does skew and fat tails change the one-bar loss figure? |
-| `risk.worst_windows` | What were the worst one, five and twenty-one bar losses? |
 | `risk.tail_fit` | How heavy is the loss tail once the worst bars are fitted on their own? |
 | `risk.var_coverage` | Did losses beyond the loss figure happen as often as the figure says? (Kupiec) |
 | `risk.var_independence` | Do the loss-figure breaches bunch together? (Christoffersen) |

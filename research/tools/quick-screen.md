@@ -21,7 +21,7 @@ uv run alpha scan replay <scan_id>
 - Each row is one signal at one horizon: mean rank correlation (IC) with its t statistic, the top-minus-bottom spread, the spread after cost and turnover.
 - The t statistics are plain. Horizons over 1 overlap and are not corrected. Nothing is adjusted for the number of tries.
 - Every hypothesis counts as one try on each asset in the screen, in the one trial ledger. The screen says how many tries it added.
-- The same screen on the same data counts once. A replay adds no tries.
+- The same screen on the same data counts once. A replay adds no tries, unless the screen was stored before screens counted: then the replay counts it once.
 - A later `alpha test` on one of these assets counts the tries, so its deflated Sharpe is lower than if the screen had not run.
 **What it cannot tell you**
 - Whether any signal works after costs and out-of-sample. A screen has no return stream and no deflated Sharpe.

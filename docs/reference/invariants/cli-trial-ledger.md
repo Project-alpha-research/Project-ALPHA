@@ -109,7 +109,8 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
 
 - `alpha scan hypotheses` appends one `screen_trial` row per evaluated hypothesis (signal at one horizon) and asset (`_screen_trials.py`), through
   `append_trial`. The row has no Sharpe, so it never enters a spread. The spec hash is the hypothesis, the data id the frozen snapshot or manifests.
-  Same key as a rule test: the same screen on the same data counts once (label `repeat`). A failed screen and `scan replay` append nothing.
+  Same key as a rule test: the same screen on the same data counts once (label `repeat`). The rows are written before the result is stored
+  or shown. A failed screen appends nothing. `scan replay` appends only tries not yet in the ledger (a screen stored before screens counted).
   The same-asset count counts these rows by kind; the family count does not (`spine-screen`). The screen output says how many tries it added.
 
 ## Queries and factor rows

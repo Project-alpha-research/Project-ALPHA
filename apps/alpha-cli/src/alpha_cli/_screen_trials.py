@@ -14,7 +14,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from alpha_cli.spine.ledger import append_trial
+from alpha_cli.spine.ledger import append_trial, read_trials
+from alpha_cli.spine.trial_record import row_test_key
 
 KIND = "screen_trial"
 
@@ -93,11 +94,24 @@ def counted_note(added: int, *, hypotheses: int, assets: int) -> dict[str, Any]:
     return {"tries_added": added, "hypotheses": hypotheses, "assets": assets, "sentence": sentence}
 
 
-def replay_note(result: Mapping[str, Any]) -> dict[str, Any]:
-    """A replay re-reads a stored screen; it adds no tries."""
-    note = counted_note(0, hypotheses=len(result["results"]), assets=len(result["symbols"]))
-    note["sentence"] = (
-        "This replay added 0 tries to the count: the first run counted them. "
-        "A screen is a first look, not a test."
+def record_uncounted_trials(
+    data_dir: Path, spec: Mapping[str, Any], result: Mapping[str, Any]
+) -> dict[str, Any]:
+    """A replay appends only the tries not yet in the ledger, so it adds none to a counted screen.
+
+    A stored screen whose tries were never counted (run before screens counted) is counted here,
+    once; a replay is never a way to see a screen's results without its tries counted.
+    """
+    counted = {row_test_key(row) for row in read_trials(data_dir) if row.get("kind") == KIND}
+    missing = [row for row in screen_trial_rows(spec, result) if row_test_key(row) not in counted]
+    for row in missing:
+        append_trial(data_dir, row)
+    note = counted_note(
+        len(missing), hypotheses=len(result["results"]), assets=len(result["symbols"])
     )
+    if not missing:
+        note["sentence"] = (
+            "This replay added 0 tries to the count: the first run counted them. "
+            "A screen is a first look, not a test."
+        )
     return note

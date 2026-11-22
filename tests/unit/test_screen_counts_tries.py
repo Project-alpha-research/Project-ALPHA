@@ -105,3 +105,34 @@ def test_counted_words_are_plain_and_not_a_verdict(tmp_path: Path) -> None:
     for word in ("pass", "fail", "best", "winner"):
         assert word not in text
     assert json.dumps(counted)
+
+
+def test_tries_are_counted_before_the_result_is_stored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An interrupt after evaluation and before the result is stored still leaves the tries."""
+    frozen_equities(tmp_path)
+    publish = scan._publish
+
+    def interrupted(path: Path, payload: object) -> None:
+        if path.name == "result.json":
+            raise KeyboardInterrupt
+        publish(path, payload)
+
+    monkeypatch.setattr(scan, "_publish", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        scan.run_hypotheses(tmp_path, request())
+    assert len(screen_rows(tmp_path)) == 2 * 5
+
+
+def test_replay_of_a_screen_never_counted_counts_it_once(tmp_path: Path) -> None:
+    """A stored screen with no ledger rows (run before screens counted) is counted on replay."""
+    frozen_equities(tmp_path)
+    first = scan.run_hypotheses(tmp_path, request())
+    (tmp_path / "ledger" / "trials.jsonl").unlink()
+    replay = scan.replay_hypotheses(tmp_path, first["scan_id"])
+    assert replay["counted"]["tries_added"] == 10
+    assert len(screen_rows(tmp_path)) == 10
+    again = scan.replay_hypotheses(tmp_path, first["scan_id"])
+    assert again["counted"]["tries_added"] == 0
+    assert len(screen_rows(tmp_path)) == 10

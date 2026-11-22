@@ -46,14 +46,18 @@ bundle](#built-static-bundle), [Tests](#tests), [Adding a panel](#adding-a-panel
   page; `shell/profiles.ts` decides which windows a profile shows.
 - Only the selected task panel mounts, so hidden panels do not poll. The exception is `ChartWorkspace`: once opened it stays mounted (hidden) so charts keep
   their captured context and range.
-- `shell/menuModel.ts` `GROUP_MENU` must name every CLI command group the server's catalog serves, and no others. An unmapped group throws and blanks the menu
-  bar. Enforced by `tests/unit/test_web_menu_groups.py`.
+- The menu bar lists screens only (View, Insert › Indicators, Window, Help › Search); a menu with no item is hidden. Raw CLI commands are not listed: they
+  are terminal steps. `shell/menuModel.ts` `GROUP_MENU` still names every CLI command group the server's catalog serves
+  (`tests/unit/test_web_menu_groups.py`).
+- Nothing dead on screen: a menu item, button, tab or tree node either works on stored data or is removed. Research cases, projects (the Project selector),
+  providers, paper and the crypto-only data windows were removed from the product and have no entry. The Navigator lists only stored runs.
+- Overview shows the recent tests (`panels/RecentTests.tsx`, `GET /api/recent-runs`), what is followed today and the market view. Results opens on All tests.
+- The Market selector defaults to Stocks & ETFs; a saved Crypto counts only when the owner picked it (`profileChosen`). The chart opens the market's
+  default symbol (SPY or BTC/USDT) when it is stored, else the first stored symbol.
+- An error says what failed and what to try (`api/client.ts` `responseError`): the server's message, field errors and recovery step, never the HTTP status
+  or request id.
 - Archive-chart identity belongs to `App`. Run, project, profile and stored-market navigation clear it.
 - A control no capability backs renders disabled with the reason in its `title`; never a silent no-op.
-- The toolbar status chip (`shell/statusModel.statusChip`) shows the strongest state: the selected run's research-gate watermark verbatim, else `Research gate
-  open` for the linked project (reason in `title`), else `Paper only`.
-- The project selector allows `No project — browse data`. A failed project inventory is shown as an error with retry, never as an empty list. Loading settles
-  after request or projection failure as well as an empty success; disposed reads cannot update the selector. Enforced by `src/shell/ContextBar.test.tsx`.
 
 ## Market data views
 

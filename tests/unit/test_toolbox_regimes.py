@@ -394,6 +394,12 @@ def test_break_count_none_in_noise(tmp_path: Path) -> None:
     assert doc["values"]["first_break"] is None and doc["reasons"]["first_break"]
 
 
+def test_break_count_none_reads_in_plain_words(tmp_path: Path) -> None:
+    doc = go(tmp_path, BREAKS, noise(300, 19, 0.01))
+    assert "unavailable" not in doc["reading"]
+    assert doc["values"]["largest_gap"] == 0.0
+
+
 def test_best_partitions_match_brute_force() -> None:
     y = np.array([1.0, 2.0, 1.5, 7.0, 8.0, 7.5, 3.0, 2.0, 2.5, 3.5, 9.0, 8.0, 8.5, 1.0, 0.0, 1.0])
     rss, parts = best_partitions(y, 2, 3)

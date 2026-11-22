@@ -202,11 +202,11 @@ def bai_perron(inputs: Inputs, params: dict[str, Any], rng: Generator | None) ->
         "last_break": dates[cuts[-1]].date().isoformat() if cuts else None,
         "largest_gap": max(abs(b - a) for a, b in zip(means, means[1:], strict=False))
         if cuts
-        else None,
+        else 0.0,
         "bars": int(n),
     }
     reason = "No break was chosen, so the history is read as one part."
-    reasons = {k: reason for k in ("first_break", "last_break", "largest_gap") if values[k] is None}
+    reasons = {k: reason for k in ("first_break", "last_break") if values[k] is None}
     parts = [
         {"first_date": dates[a].date().isoformat(), "bars": b - a, "mean_return": m}
         for (a, b), m in zip(zip(edges, edges[1:], strict=False), means, strict=True)
@@ -245,8 +245,9 @@ BAI_PERRON = spec(
         ),
         Output("bars", "Bars", "Number of scored bars.", "count"),
     ),
-    "The information criterion chose {breaks} breaks in the mean return; the largest step between"
-    " neighbouring parts was {largest_gap:.4%} per bar.",
+    "The information criterion chose {breaks} breaks in the mean return. The largest step in the"
+    " average bar return between neighbouring parts was {largest_gap:.4%}; it is zero when there is"
+    " no break.",
     "This follows Bai and Perron (1998) for up to five breaks, with parts of at least 15 percent of"
     " the bars, but it picks the count by the Yao (1988) criterion instead of their sequential"
     " tests, so it gives no p-value. Breaks are placed to within a few bars on long histories.",

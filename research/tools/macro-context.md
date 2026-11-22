@@ -14,9 +14,9 @@ economy doing then?": rates, the yield curve, volatility, credit spreads, unempl
 **Commands**
 
 ```text
-uv run alpha context list --json
-uv run alpha context window --start 2022-01-03 --end 2022-10-12 --json
-uv run alpha context show DGS10 --start 2022-01-01 --end 2022-12-31 --json
+alpha context list --json
+alpha context window --start 2022-01-03 --end 2022-10-12 --json
+alpha context show DGS10 --start 2022-01-01 --end 2022-12-31 --json
 ```
 
 **How to read it**

@@ -12,8 +12,8 @@ It reports on the system. It says nothing about whether an idea is good.
 
 **Command**
 ```text
-uv run alpha nightly status [--json]
-uv run alpha next
+alpha nightly status [--json]
+alpha next
 ```
 Both only read. The [nightly run](nightly-run.md) writes the marker and the size.
 
@@ -34,5 +34,5 @@ Both only read. The [nightly run](nightly-run.md) writes the marker and the size
 **What it cannot tell you** Why the disk grew, or which folder grew. It sends no e-mail and uses no network: you must look.
 A size is the sum of file sizes; the space used on disk can differ a little.
 
-**Next** Read the marker file, then `uv run alpha nightly status` for the command that reproduces each defect.
+**Next** Read the marker file, then `alpha nightly status` for the command that reproduces each defect.
 Low on space: make a [backup](home-backup.md) on another disk before you delete anything.

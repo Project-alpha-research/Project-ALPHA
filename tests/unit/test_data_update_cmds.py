@@ -19,7 +19,7 @@ RUNNER = CliRunner()
 
 def _home(tmp_path: Path, source: str = YFinanceAdapter.name) -> Path:
     store = ParquetStore(tmp_path / "store")
-    days = [datetime(2024, 1, d, tzinfo=UTC) for d in (2, 3, 4)]
+    days = [datetime(2023, 12, d, tzinfo=UTC) for d in (20, 21, 22)]
     store.write_bars(
         "AAA",
         pl.DataFrame(
@@ -43,13 +43,13 @@ def test_coverage_table_and_json(tmp_path: Path) -> None:
     code, out = _run(_home(tmp_path), "coverage")
     assert code == 0
     assert "first date" in out and "health" in out
-    assert "AAA" in out and "2024-01-02" in out and "2024-01-04" in out and "unchecked" in out
+    assert "AAA" in out and "2023-12-20" in out and "2023-12-22" in out and "unchecked" in out
     code, raw = _run(tmp_path, "coverage", "--json")
     row = json.loads(raw)["symbols"][0]
     assert (row["symbol"], row["first"], row["last"], row["bars"], row["health"]) == (
         "AAA",
-        "2024-01-02",
-        "2024-01-04",
+        "2023-12-20",
+        "2023-12-22",
         3,
         "unchecked",
     )
@@ -65,7 +65,7 @@ def test_update_dry_run_prints_the_pull_and_pulls_nothing(tmp_path: Path) -> Non
     before = (home / "store" / "bars" / "AAA.parquet").read_bytes()
     code, out = _run(home, "update", "--dry-run")
     assert code == 0
-    assert "AAA: would run alpha data pull AAA --source yfinance --start 2024-01-02 --end " in out
+    assert "AAA: would run alpha data pull AAA --source yfinance --start 2023-12-20 --end " in out
     assert (home / "store" / "bars" / "AAA.parquet").read_bytes() == before
 
 
@@ -113,3 +113,21 @@ def test_update_keeps_the_pull_report_lines(
     monkeypatch.setattr("alpha_cli.data_update_cmds.subprocess.run", fake)
     code, text = _run(_home(tmp_path), "update")
     assert code == 0 and "AAA: updated." in text and "2 bars revised" in text
+
+
+def test_coverage_reads_a_series_without_provenance(tmp_path: Path) -> None:
+    home = _home(tmp_path)
+    (home / "store" / "provenance" / "AAA.json").unlink()
+    row = json.loads(_run(home, "coverage", "--json")[1])["symbols"][0]
+    assert (row["bars"], row["first"], row["last"]) == (3, "2023-12-20", "2023-12-22")
+
+
+def test_coverage_says_why_a_series_cannot_be_read_instead_of_showing_zero(
+    tmp_path: Path,
+) -> None:
+    home = _home(tmp_path)
+    (home / "store" / "bars" / "AAA.parquet").write_bytes(b"not a parquet file")
+    row = json.loads(_run(home, "coverage", "--json")[1])["symbols"][0]
+    assert row["bars"] is None and "cannot be read" in row["note"]
+    text = _run(home, "coverage")[1]
+    assert "cannot be read" in text

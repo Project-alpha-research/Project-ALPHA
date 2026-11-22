@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
+from polars.exceptions import PolarsError
 
 from alpha_cli.nightly_steps import alpha_argv
 from alpha_core import DataError
@@ -35,22 +36,32 @@ def _health(store: ParquetStore, symbol: str) -> str:
 
 
 def coverage_rows(data_dir: Path) -> list[dict[str, object]]:
-    from alpha_cli.nightly_refresh import _bars, _span
+    """One row per stored symbol. Bars are read through the cut read, so the last date stops at the
+    held-back boundary. A series that cannot be read says why; it is never shown as zero bars."""
+    from alpha_cli._runner import load_bars
+    from alpha_cli.spine import reserve
 
     store = ParquetStore(store_dir(data_dir, DAILY))
     rows: list[dict[str, object]] = []
     for symbol in store.list_symbols():
-        frame = _bars(data_dir, symbol)
-        span = _span(frame)
-        rows.append(
-            {
-                "symbol": symbol,
-                "first": span[0].date().isoformat() if span else None,
-                "last": span[1].date().isoformat() if span else None,
-                "bars": frame.height if frame is not None else 0,
-                "health": _health(store, symbol),
-            }
-        )
+        row: dict[str, object] = {
+            "symbol": symbol,
+            "first": None,
+            "last": None,
+            "bars": None,
+            "note": None,
+            "health": _health(store, symbol),
+        }
+        try:
+            bars, _ = load_bars(symbol, data_dir=data_dir, as_of=reserve.CUTOFF)
+            row.update(
+                first=bars[0].ts.date().isoformat(),
+                last=bars[-1].ts.date().isoformat(),
+                bars=len(bars),
+            )
+        except (DataError, OSError, ValueError, PolarsError) as exc:
+            row["note"] = f"cannot be read: {exc}"
+        rows.append(row)
     return rows
 
 
@@ -66,10 +77,13 @@ def run_coverage(json_out: bool) -> None:
         return
     typer.echo(f"{'symbol':<14}{'first date':<12}{'last date':<12}{'bars':>6}  health")
     for row in rows:
+        bars = "-" if row["bars"] is None else str(row["bars"])
         typer.echo(
             f"{row['symbol']!s:<14}{row['first'] or '-':<12}{row['last'] or '-':<12}"
-            f"{row['bars']!s:>6}  {row['health']}"
+            f"{bars:>6}  {row['health']}"
         )
+        if row["note"]:
+            typer.echo(f"  {row['symbol']}: {row['note']}")
 
 
 def run_update(dry_run: bool) -> None:

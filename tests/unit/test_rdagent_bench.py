@@ -709,3 +709,33 @@ def test_a_store_in_use_by_another_run_is_refused_before_any_call(tmp_path: Path
         with pytest.raises(BenchError, match="Another bench run"):
             run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
     assert client.calls == 0
+
+
+def test_each_call_reserves_against_the_month_it_is_made_in(tmp_path: Path) -> None:
+    folder = _prompts(tmp_path / "pr", 2)
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    spend = _spend(tmp_path)
+    spend.parent.mkdir(parents=True)
+    # November's cap is untouched; December already holds 50 USD from another bench run.
+    spend.write_text(json.dumps({"ts": "2026-12-01T00:00:01+00:00", "usd": 50.0}) + "\n")
+    times = iter(
+        [
+            datetime(2026, 11, 30, 23, 59, tzinfo=UTC),  # plan and first call
+            datetime(2026, 11, 30, 23, 59, tzinfo=UTC),
+            datetime(2026, 12, 1, 0, 1, tzinfo=UTC),  # second call, next month
+        ]
+    )
+    client = FakeClient({"a": {f"p{i}": [_reply(1000, 500)] for i in range(2)}})
+    with pytest.raises(BenchError, match="50"):
+        run_bench(
+            prompts,
+            ["a"],
+            1,
+            prices,
+            client,
+            tmp_path / "store",
+            spend=spend,
+            clock=lambda: next(times),
+        )
+    assert client.calls == 1

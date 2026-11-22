@@ -92,3 +92,6 @@ A coder reply is often a JSON envelope `{"code": "..."}`. The buildability check
 1. A store keeps one run budget: every output already in it counts toward the 10 USD and 60-call caps, whatever models, stages or prompts
    a later run selects.
 2. One run at a time may use a store (a lock on `.run.lock`); a second is refused before any call. A billed reply is booked before it is saved.
+
+## Review round 9 (Codex)
+Each call now reads the clock itself, so a run that crosses a UTC month boundary reserves and settles against the month the call is made in.

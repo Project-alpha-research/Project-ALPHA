@@ -5,7 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -161,10 +161,10 @@ def _run(
     *,
     spend: Path,
     max_new_calls: int | None = None,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> RunResult:
     """The run itself, with the store's lock already held by `run_bench`."""
-    now = datetime.now(UTC)
-    month = month_spent(spend, now)
+    month = month_spent(spend, clock())
     done, run_usd, failed = _stored(prompts, models, samples, store)
     make_plan(prompts, models, samples, prices, month, done, failed)
     new = 0
@@ -183,6 +183,7 @@ def _run(
                         f"The next call would pass the cap of {RUN_MAX_USD:g} USD per run. "
                         "The stored outputs are kept."
                     )
+                now = clock()  # each call reserves against the month it is made in
                 _reserve(spend, now, estimate)
                 try:
                     reply = client.complete(model, p, sample)
@@ -226,6 +227,7 @@ def run_bench(
     *,
     spend: Path,
     max_new_calls: int | None = None,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> RunResult:
     """Send each stored prompt to each model `samples` times. An output already stored is kept.
 
@@ -252,4 +254,5 @@ def run_bench(
             store,
             spend=spend,
             max_new_calls=max_new_calls,
+            clock=clock,
         )

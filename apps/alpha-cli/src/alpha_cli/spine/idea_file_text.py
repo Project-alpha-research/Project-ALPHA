@@ -39,6 +39,7 @@ def _papers(found: list[dict[str, Any]]) -> list[str]:
         lines.append(
             f"  {p['paper_id']}  {p['title'] or 'title not stated'} "
             f"({authors}; {p['year'] if p['year'] is not None else 'year not stated'})"
+            + ("  [RETRACTED]" if p.get("retracted") is True else "")
         )
     return lines
 

@@ -25,6 +25,7 @@ RECORDED_SEARCH: dict[str, Any] = {
             "year": 2001,
             "provider": "openalex",
             "doi": "10.0000/synthetic",
+            "retracted": True,
             "open_access_url": "https://arxiv.org/pdf/0000.00000",
             "relevance_explanation": "title shares: momentum",
         },
@@ -206,3 +207,23 @@ def test_a_hostile_file_name_and_title_cannot_leave_the_library_folder(tmp_path:
     assert all(p == odd or home in p.parents for p in written)
     assert all(str(home / "library" / "papers") in str(p) for p in written if p != odd)
     assert not (tmp_path / "escape").exists()
+
+
+def test_retraction_is_kept_and_unknown_is_not_read_as_not_retracted(tmp_path: Path) -> None:
+    _facts(tmp_path, "library", "search", "momentum", "--unpaywall-email", "x@example.org")
+    by_title = {p["title"]: p for p in _facts(tmp_path, "library", "papers")["papers"]}
+    assert by_title["Momentum in a synthetic market"]["retracted"] is True
+    assert "retracted" not in by_title["Momentum in a synthetic market"]["not_stated"]
+    assert by_title["No year here"]["retracted"] is None
+    assert "retracted" in by_title["No year here"]["not_stated"]
+    assert "[RETRACTED]" in _cli(tmp_path, "library", "papers")[1]
+    card = _facts(
+        tmp_path,
+        "idea",
+        "new",
+        "--claim",
+        "c",
+        "--paper",
+        by_title["Momentum in a synthetic market"]["paper_id"],
+    )
+    assert "[RETRACTED]" in _cli(tmp_path, "idea", "file", card["id"])[1]

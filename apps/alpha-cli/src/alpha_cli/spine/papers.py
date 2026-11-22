@@ -45,6 +45,7 @@ def make_record(
     facts: dict[str, Any],
     file_sha256: str | None = None,
     text: dict[str, Any] | None = None,
+    retracted: bool | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     clean = {name: facts.get(name) or None for name in FIELDS}
@@ -52,12 +53,13 @@ def make_record(
         "paper_id": identity,
         "state": state,
         **clean,
+        "retracted": retracted,
         "file_sha256": file_sha256,
         "text": text,
         "not_stated": [
             name
-            for name in (*FIELDS, "file_sha256", "text")
-            if _blank(name, clean, file_sha256, text)
+            for name in (*FIELDS, "retracted", "file_sha256", "text")
+            if _blank(name, clean, file_sha256, text, retracted)
         ],
         "trust_label": "UNTRUSTED_SOURCE",
         "use": "A source for ideas only. Not evidence, not a test, not an approval.",
@@ -65,7 +67,11 @@ def make_record(
     }
 
 
-def _blank(name: str, facts: dict[str, Any], file_sha256: str | None, text: Any) -> bool:
+def _blank(
+    name: str, facts: dict[str, Any], file_sha256: str | None, text: Any, retracted: bool | None
+) -> bool:
+    if name == "retracted":
+        return retracted is None  # not stated by the provider; never read as "not retracted"
     if name == "file_sha256":
         return file_sha256 is None
     if name == "text":
@@ -166,6 +172,9 @@ def papers_of(home: Path, card: str) -> list[dict[str, Any]]:
             found.append({"paper_id": identity, "readable": False})
             continue
         found.append(
-            {**{k: record.get(k) for k in ("paper_id", "state", *FIELDS)}, "readable": True}
+            {
+                **{k: record.get(k) for k in ("paper_id", "state", *FIELDS, "retracted")},
+                "readable": True,
+            }
         )
     return found

@@ -25,7 +25,8 @@ def _line(record: dict[str, Any]) -> str:
     year = record["year"] if record["year"] is not None else "year not stated"
     title = record["title"] or "title not stated"
     source = record["source"] or "source not stated"
-    return f"  {record['paper_id']}  {title} ({authors}; {year}; {source}; {record['state']})"
+    flag = "  [RETRACTED]" if record.get("retracted") is True else ""
+    return f"  {record['paper_id']}  {title} ({authors}; {year}; {source}; {record['state']}){flag}"
 
 
 def _int_or_none(value: object) -> int | None:
@@ -72,6 +73,7 @@ def search(
                 candidate.get("candidate_id"), str
             ):
                 raise DataError("literature worker returned a candidate without an id")
+            found_retracted = candidate.get("retracted")
             record = papers.make_record(
                 identity=papers.paper_id("candidate", candidate["candidate_id"]),
                 state="candidate",
@@ -85,6 +87,7 @@ def search(
                     "doi": candidate.get("doi"),
                     "url": candidate.get("open_access_url"),
                 },
+                retracted=found_retracted if isinstance(found_retracted, bool) else None,
                 extra={"relevance_explanation": candidate.get("relevance_explanation")},
             )
             stored = papers.save(home, record)[0]

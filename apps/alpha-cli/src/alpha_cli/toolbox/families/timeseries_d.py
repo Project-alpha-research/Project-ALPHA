@@ -70,8 +70,13 @@ def _hurst(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Res
 
 
 def runs_reading(r: FloatArray) -> dict[str, float] | None:
-    """Wald-Wolfowitz (1940) runs test on the signs of the returns (zeros break a run)."""
+    """Wald-Wolfowitz (1940) runs test on the signs of the returns.
+
+    Flat (zero) bars are left out: the test needs two categories.
+    """
     from alpha_validation.trade_dependence import trade_runs_test
+
+    r = r[r != 0.0]
 
     test = trade_runs_test(r)
     if test is None:
@@ -87,8 +92,10 @@ def runs_reading(r: FloatArray) -> dict[str, float] | None:
 def _runs(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Result:
     keys = ("runs", "expected", "z", "p_value")
     r = inputs.stored.scored_returns()
-    if r.size < 10:
-        return too_little(keys, 10, r.size)
+    moving = int((r != 0.0).sum())
+    if moving < 10:
+        reason = f"Needs at least 10 bars with a non-zero return; this run has {moving}."
+        return unavailable(keys, reason, r.size)
     got = runs_reading(r)
     if got is None:
         return unavailable(keys, "Needs both up and down bars among the returns.", r.size)
@@ -189,8 +196,8 @@ CHECKS = (
         "Up and down bars formed {runs:.0f} streaks; random order would give about {expected:.1f}"
         " (p-value {p_value:.3f}). Fewer streaks than expected means bars of one direction"
         " bunched.",
-        "Wald & Wolfowitz (1940). It looks at direction only, not size, and a flat bar breaks"
-        " a streak.",
+        "Wald & Wolfowitz (1940). It looks at direction only, not size, and flat bars"
+        " (zero return) are left out.",
         _runs,
         "test_known_runs_hand_case",
         situations=("trade-streaks",),

@@ -291,3 +291,10 @@ def test_arch_lm_constant_squares_is_unavailable(tmp_path: Path) -> None:
     doc = run(tmp_path, ARCH, RUN)
     assert all(v is None for v in doc["values"].values())
     assert all("squared returns do not vary" in r for r in doc["reasons"].values())
+
+
+def test_runs_leave_out_flat_bars() -> None:
+    # Flat bars neither add nor break streaks: zeros between the same signs change nothing.
+    signs = np.array([1, 1, -1, -1, 1, -1, 1, 1, -1, 1]) * 0.01
+    padded = np.insert(signs, [2, 5, 5, 9], 0.0)
+    assert td.runs_reading(padded) == td.runs_reading(signs)

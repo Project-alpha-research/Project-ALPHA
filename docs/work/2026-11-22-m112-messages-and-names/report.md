@@ -60,3 +60,4 @@ Fixed from my own changes: `scan`/`data` lazy imports, the structural-digest rea
 - `data coverage` reads through the cut read (needs no provenance) and shows a reason, never a false zero, for a series it cannot read (review finding). Tests added. Note: a series stored wholly after the held-back boundary reads as 'cannot be read'.
 - After merging main, `test_cli_entry_lazy_groups` (partner selftest, next command) fails: `next` -> `spine.reading_read` -> `spine.facts` -> `toolbox.registry` imports scipy. That chain is in main; none of those files is mine. Not touched.
 - `results show` of a setup find names each failed asset and its stored reason (review finding). Test added.
+- Owning page `data-freeze-before-replace.md` got one line on `data update` and `data coverage`.

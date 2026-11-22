@@ -44,6 +44,7 @@ the MCP tool `data_pull` (the same command) and the daily Tiingo cycle.
 - An identical re-pull leaves the stored files byte-identical, so the series fingerprint in run identity is unchanged.
 - Cost: a 30-year daily series is about 289 KB per snapshot. `alpha data snapshots` prints the total. Snapshots are
   never deleted automatically. Pruning is an owner decision and is not built.
+- `alpha data update [--dry-run]` runs `alpha data pull` for each stored symbol, with the source recorded for it, from its first stored bar to today (a pull replaces the whole series, so the same freeze rule holds). `alpha data coverage` lists first date, last date, bars and last health result per symbol, read through the held-back cut (`data_update_cmds.py`).
 - Not covered: the private acquisition stores of the comparison worker (a fresh store per batch) and the derived
   `RULES` projection bars. Neither holds a downloaded series that a pull replaces.
 - Code: `pull_store.py`, `snapshot_reuse.py` and `series_diff.py` in `packages/alpha-data/src/alpha_data/`.

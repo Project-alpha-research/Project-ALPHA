@@ -52,9 +52,14 @@ def _provider(root: Path, underlying: str, wanted: str | None) -> str:
         return wanted
     if len(found) == 1:
         return found[0]
-    raise DataError(
-        f"no stored options for {underlying!r}" if not found else f"several providers: {found}"
-    )
+    if found:
+        raise DataError(f"several providers: {found}")
+    if not any((root / "options").glob("*/*")):
+        raise DataError(
+            "No options data is stored yet, for any name. This feature needs a stored "
+            "option-chain history from a data provider; ALPHA has none until one is imported."
+        )
+    raise DataError(f"no stored options for {underlying!r}")
 
 
 def _realized(underlying: str, data_dir: Path) -> dict[date, RealizedPoint]:

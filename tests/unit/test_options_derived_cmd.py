@@ -57,7 +57,12 @@ def test_plain_text_has_hints_coverage_and_a_null_reason(tmp_path: Path) -> None
 
 def test_unknown_underlying_and_series_fail_loud(tmp_path: Path) -> None:
     code, out = _run(tmp_path)
-    assert code != 0 and "no stored options" in out
+    assert code != 0 and "No options data is stored yet" in out
+    assert "option-chain history" in " ".join(out.replace("│", " ").split())
+    other = RUNNER.invoke(
+        app, ["options", "derived", "ZZZ"], env={"ALPHA_DATA_DIR": str(_home(tmp_path / "g"))}
+    )
+    assert other.exit_code != 0 and "no stored options for 'ZZZ'" in other.output
     code, out = _run(_home(tmp_path / "h"), "--series", "bogus")
     assert code != 0 and "unknown series" in out
 

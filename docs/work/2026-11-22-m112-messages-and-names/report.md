@@ -13,3 +13,6 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 
 ## 3. Screen on one asset
 `_hypothesis_scan._need_assets` says "A screen needs at least N assets to compare, and you gave M" before any data is read (symbols and universe). The research package message is not touched (protected). `scan hypotheses --help` lists all signal names. `replay` was already shown in `alpha scan --help`; a test pins it. Fail-first: both tests in `test_scan_plain_messages.py` failed before.
+
+## 4. No options stored
+`options derived` now says "No options data is stored yet, for any name" and what it needs (an option-chain history from a data provider) when no chain exists at all. When chains exist for other names it keeps the short per-name line. Test: `test_unknown_underlying_and_series_fail_loud` (new text did not exist before, so it failed first).

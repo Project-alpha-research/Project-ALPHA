@@ -100,3 +100,7 @@ Each call now reads the clock itself, so a run that crosses a UTC month boundary
 1. The report checks each stored output's prompt hash against the prompt it is given, and refuses on a mismatch, so a pair never mixes two requests.
 2. A dispatched call is written to the store before the request is sent and cancelled after a settled reply or a refusal before dispatch.
    Ctrl-C or a crash in flight therefore leaves the attempt and its estimated charge counted against the run's cost and call caps.
+
+## Review round 11 (Codex)
+A billed reply is now held in the store's accounting (its actual charge and the attempt) until its output file is written. The record is built
+before the file is opened, so a failed save leaves nothing half-written, and a resume still counts the paid call against the run's caps.

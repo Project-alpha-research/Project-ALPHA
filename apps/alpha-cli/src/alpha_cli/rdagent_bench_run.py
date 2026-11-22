@@ -208,10 +208,13 @@ def _run(
                     )
                 record = _record(model, p, sample, reply, prices[model], estimate)
                 _settle(spend, now, estimate, record)  # a billed reply is booked before it is saved
-                _note(store, now, -estimate, -1)
+                charged = float(record["charged_usd"])
+                _note(store, now, charged - estimate, 0)  # the in-flight entry now holds the charge
+                body = json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
                 path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open("x", encoding="utf-8") as stream:
-                    stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
+                    stream.write(body)
+                _note(store, now, -charged, -1)  # stored: the output now carries the accounting
                 run_usd += float(record["charged_usd"])
                 new += 1
     return RunResult(new_calls=new, finished=True)

@@ -784,3 +784,30 @@ def test_the_report_refuses_outputs_made_from_a_different_prompt(tmp_path: Path)
     (folder / "p0.json").write_text(json.dumps(row))
     with pytest.raises(BenchError, match="changed"):
         score_store(load_prompts(folder, None), ["a"], store, closed=set(), dropped=set())
+
+
+def test_a_billed_reply_that_cannot_be_saved_stays_in_the_run_accounting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder = _prompts(tmp_path / "pr", 1)
+    row = json.loads((folder / "p0.json").read_text())
+    row["prompt_tokens"], row["completion_tokens"] = 6_000_000, 0  # a 6 USD estimate
+    (folder / "p0.json").write_text(json.dumps(row))
+    prompts = load_prompts(folder, None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(6_000_000, 0)]}})
+    store = tmp_path / "store"
+    real_dumps = json.dumps
+
+    def failing_dumps(value: Any, **kwargs: Any) -> str:
+        if kwargs.get("sort_keys") and "prompt_sha256" in value:  # the output record only
+            raise OSError("disk full")
+        return real_dumps(value, **kwargs)
+
+    monkeypatch.setattr("alpha_cli.rdagent_bench_run.json.dumps", failing_dumps)
+    with pytest.raises(OSError, match="disk full"):
+        run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    # The 6 USD already paid is remembered: a second paid call would pass the 10 USD run cap.
+    with pytest.raises(BenchError, match="10"):
+        run_bench(prompts, ["a"], 1, prices, client, store, spend=_spend(tmp_path))
+    assert client.calls == 1

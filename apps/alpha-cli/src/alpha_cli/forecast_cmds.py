@@ -23,6 +23,7 @@ import typer
 
 from alpha_cli import _artifacts, _forecast, _forecast_eval, _runner
 from alpha_cli._artifacts import sanitize
+from alpha_cli._progress import with_heartbeat
 from alpha_cli.control_store import ControlStore
 from alpha_cli.spine import reserve
 from alpha_core import DataError
@@ -473,6 +474,7 @@ def _origins_frame(
 
 
 @forecast_app.command(name="eval")
+@with_heartbeat("Forecast evaluation")
 def evaluate(
     symbol: str = typer.Argument(..., help="symbol in the store (run `alpha data pull` first)"),
     horizon: int = typer.Option(21, help="forecast steps per origin (sessions)"),

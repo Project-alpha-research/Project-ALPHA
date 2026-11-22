@@ -31,3 +31,6 @@ The gap found: a dash-quoted crypto ticker from a stock-data vendor (BTC-USD) wa
 
 ## 7. Context list
 `alpha context list` prints tables (FRED series; free tables with a name column). `--json` keeps JSON and the free rows gain a `name`. A CFTC market name is made plain from the stored `market_name` ("E-Mini S&P 500 (Chicago Mercantile Exchange)"); no code-to-name table was invented. Test: `test_list_prints_a_table_with_a_plain_market_name`.
+
+## 8. Progress line
+`_progress.with_heartbeat` (new, 50 lines) prints "<label>: still running, N seconds so far." to stderr every 10 s on `monte-carlo classical`, `monte-carlo kronos` and `forecast eval`. A run under 10 s prints nothing; stdout and `--json` are unchanged; no default or number changed. Test: `test_progress_heartbeat.py` (failed first: the module did not exist).

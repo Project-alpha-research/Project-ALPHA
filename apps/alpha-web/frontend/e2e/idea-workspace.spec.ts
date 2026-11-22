@@ -64,7 +64,7 @@ test('the list opens one page that tells the whole story, and a click on a test 
   await expect(page.getByRole('heading', { name: 'Quiet weeks lead to a bigger move.' })).toBeVisible()
   const nav = page.getByRole('navigation', { name: 'Steps of this idea' })
   await expect(nav.locator('.idea-nav-item')).toHaveCount(11)
-  await expect(nav.getByRole('button', { name: /9 RD-Agent steps: not built yet/ })).toBeVisible()
+  await expect(nav.getByRole('button', { name: /9 RD-Agent steps: nothing recorded yet/ })).toBeVisible()
   await expect(page.getByText('No RD-Agent work is linked to this idea yet.')).toBeVisible()
   await expect(page.getByText('The rule is ma cross, with fast 5, slow 20 on QQQ.')).toBeVisible()
   await page.getByText('See the exact spec').click()

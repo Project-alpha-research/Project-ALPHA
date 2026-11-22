@@ -51,3 +51,8 @@ Finding: the toolbox number and the test's stored deflated Sharpe come from the 
 ## Checks
 Full unit run before the health revert: 190 failures. After it, on the failing files: 18 failed and 15 errors. On origin/main the same files already fail: `test_reading_rule` (3), `test_reading_ledger_setup` (1), `test_research_playbook`, `test_suite_plan_golden`; `web-frontend.md` is 204 lines (limit 200) and `research/tools/rule-test.md` line 12 is too long. Not mine, not touched. The process-group tests (assistant cleanup, durable lease, suite executor, web invoke, native daily, research execution, CI bootstrap, home backup, model gateway) error in this container; I did not check them on main.
 Fixed from my own changes: `scan`/`data` lazy imports, the structural-digest reader list (commands are now plain decorators), an empty results table.
+
+## Review round 1 (automated review)
+- Setup study/trade readings and outcomes (plain text in their summary) now print first in `results show`. Test added.
+- `data update` now prints the pull's whole report (snapshot, revised or removed bars) under each symbol. Test added.
+- Owning page `cli-runs.md` got two sentences on the new text outputs. `commands.md` and `fs.py verify` were left alone, as the brief says; the new commands `data coverage` and `data update` appear in `commands.md` only once the owner regenerates it.

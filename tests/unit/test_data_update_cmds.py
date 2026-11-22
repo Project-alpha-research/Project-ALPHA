@@ -98,3 +98,18 @@ def test_update_runs_the_pull_for_each_symbol_and_reports_a_failure(
     code, out = _run(_home(tmp_path), "update")
     assert code == 1 and "AAA: failed (exit 2). provider said no" in out
     assert "pull" in calls[0] and "AAA" in calls[0]
+
+
+def test_update_keeps_the_pull_report_lines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    out = "pulled AAA: 3 bars\nsnapshot pull-1 kept; 2 bars revised\n"
+
+    def fake(argv: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(argv, 0, out, "")
+
+    monkeypatch.setattr("alpha_cli.data_update_cmds.subprocess.run", fake)
+    code, text = _run(_home(tmp_path), "update")
+    assert code == 0 and "AAA: updated." in text and "2 bars revised" in text

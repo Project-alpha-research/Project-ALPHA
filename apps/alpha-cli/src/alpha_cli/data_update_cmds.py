@@ -95,7 +95,10 @@ def run_update(dry_run: bool) -> None:
             continue
         done = subprocess.run(alpha_argv(tail), capture_output=True, text=True, check=False)
         if done.returncode == 0:
-            typer.echo(f"{symbol}: updated. {(done.stdout.strip().splitlines() or [''])[0]}")
+            typer.echo(f"{symbol}: updated.")
+            # The pull's own report: counts, the snapshot, and any revised or removed old bars.
+            for line in done.stdout.strip().splitlines():
+                typer.echo(f"  {line}")
         else:
             failed += 1
             last = (done.stderr.strip().splitlines() or ["no message"])[-1]

@@ -42,6 +42,10 @@ def _number(value: object) -> str:
 def summary_lines(run: dict[str, Any]) -> list[str]:
     """What fits on one screen: the numbers, counts of checks and flags, and where to read more."""
     lines: list[str] = []
+    # A setup study or trade stores its reading and outcome as plain text: show both first.
+    for key, label in (("reading", "Reading"), ("outcome", "Outcome")):
+        if isinstance(run.get(key), str) and run[key].strip():
+            lines.append(f"{label}: {run[key]}")
     facts = [
         fact
         for fact in run.get("facts", [])

@@ -89,3 +89,11 @@ def test_table_and_summary_helpers_show_a_missing_value_as_a_dash() -> None:
 
 def test_an_empty_table_keeps_its_header() -> None:
     assert table(("a", "bb"), []) == ["a  bb"]
+
+
+def test_a_setup_reading_and_outcome_are_in_the_summary() -> None:
+    lines = summary_lines(
+        {"run_id": "r", "reading": "Too few occurrences to read.", "outcome": "inconclusive"}
+    )
+    assert lines[0] == "Reading: Too few occurrences to read."
+    assert lines[1] == "Outcome: inconclusive"

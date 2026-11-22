@@ -1,7 +1,7 @@
 # Report: review of the eight toolbox pull requests (2026-11-22)
 
 Result: all eight pull requests are merged. The toolbox has 101 checks (`uv run alpha tool list | wc -l`).
-16 existed before. 85 are new. Three checks were removed in review.
+16 existed before. 85 are new. Two checks were removed in review.
 
 ## Pull requests
 
@@ -43,7 +43,6 @@ Family G needs the bars and the rule spec in the loader. The owner decides that 
 
 - `risk.worst_windows`: a duplicate of `performance.worst_windows`.
 - `resampling.circular_block_paths`: it differs from `resampling.moving_block_paths` only at the ends of the history.
-- (One more check of family G was never built; see #394.)
 
 ## Final index
 

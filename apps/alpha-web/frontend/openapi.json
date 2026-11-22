@@ -17525,6 +17525,173 @@
         "title": "RdAgentStory",
         "type": "object"
       },
+      "RecentRun": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "first_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Ts"
+          },
+          "idea": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idea"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ts"
+          },
+          "mtime": {
+            "title": "Mtime",
+            "type": "number"
+          },
+          "oos_sharpe": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oos Sharpe"
+          },
+          "rule_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Name"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "spark": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Spark",
+            "type": "array"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "trades": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trades"
+          },
+          "tries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tries"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "mtime",
+          "display_name",
+          "symbol",
+          "idea",
+          "rule_name",
+          "first_ts",
+          "last_ts",
+          "trades",
+          "tries",
+          "oos_sharpe",
+          "evidence",
+          "spark"
+        ],
+        "title": "RecentRun",
+        "type": "object"
+      },
+      "RecentRunList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecentRun"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "items"
+        ],
+        "title": "RecentRunList",
+        "type": "object"
+      },
       "RecordedFact": {
         "additionalProperties": false,
         "properties": {
@@ -32736,6 +32903,62 @@
         "summary": "Journey Figure",
         "tags": [
           "rdagent"
+        ]
+      }
+    },
+    "/api/recent-runs": {
+      "get": {
+        "description": "The newest stored runs with idea, asset, trades, out-of-sample Sharpe and evidence word.",
+        "operationId": "recent_runs_api_recent_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "spark",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Spark",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentRunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorV1"
+                }
+              }
+            },
+            "description": "Stable, redacted Workstation error"
+          }
+        },
+        "summary": "Recent Runs",
+        "tags": [
+          "runs"
         ]
       }
     },

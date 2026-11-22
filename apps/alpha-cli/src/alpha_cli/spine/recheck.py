@@ -27,7 +27,7 @@ from alpha_cli.spine.facts import read_json
 from alpha_cli.spine.ledger import read_trials_readonly
 from alpha_cli.spine.recheck_compare import MISMATCH_EXIT, compare_runs
 from alpha_cli.spine.run import gauntlet_knobs, new_result, prepare_asset, write_run
-from alpha_cli.spine.spec import IdeaSpec
+from alpha_cli.spine.spec import Costs, IdeaSpec
 from alpha_cli.spine.trial_reader import spine_snapshot
 from alpha_cli.spine.trial_record import TestKey, row_test_key
 
@@ -46,6 +46,10 @@ OLDER_RULE = (
     "The stored run used the older identity rule: it fingerprinted the whole stored bar file, "
     "held-back rows included. Its numbers are compared with the numbers computed now from the "
     "rows before the boundary; its identity is not compared."
+)
+FLAT_COSTS = (
+    "This idea file states no costs. The stored run is older than the asset-class default, so it "
+    "is rechecked with the flat costs it was made with (fee 1, slippage 2 basis points)."
 )
 SHOWN = 10
 ENGINE_LABELS = ("quick", "no-diagnostics")
@@ -251,6 +255,13 @@ def recheck_one(
     return result
 
 
+def _flat_cost_spec(idea: IdeaSpec) -> IdeaSpec | None:
+    """The same spec with the flat default costs, when the spec states no costs; else None."""
+    if "costs" in idea.model_fields_set:
+        return None
+    return idea.model_copy(update={"costs": Costs()})
+
+
 def recheck_idea(
     idea: IdeaSpec,
     *,
@@ -270,6 +281,20 @@ def recheck_idea(
         result = new_result(asset, quick=quick, no_diagnose=no_diagnose)
         try:
             _recheck_asset(idea, asset, home, knobs, rows, result, accept_bad_data, report_time)
+            older = _flat_cost_spec(idea)
+            if older is not None and not result["recheck"]["computed"]:
+                # A spec without costs meant the flat default before 2026-11-22; a run stored
+                # then is found under that spec and rechecked with the costs it stored.
+                earlier = new_result(asset, quick=quick, no_diagnose=no_diagnose)
+                _recheck_asset(
+                    older, asset, home, knobs, rows, earlier, accept_bad_data, report_time
+                )
+                if earlier["recheck"]["computed"]:
+                    note = earlier["recheck"]["identity_note"]
+                    earlier["recheck"]["identity_note"] = (
+                        f"{note} {FLAT_COSTS}" if note else FLAT_COSTS
+                    )
+                    result = earlier
         except SpineError:
             raise
         except Exception as exc:  # one asset's failure is reported; the others continue

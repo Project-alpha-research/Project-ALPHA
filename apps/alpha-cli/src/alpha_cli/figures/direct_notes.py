@@ -44,7 +44,7 @@ def mark_extremes(axes: Any, values: list[float], label: str) -> None:
     """Callouts for the highest and lowest bar of a bar chart (x is the bar index)."""
     if len(values) < 2:
         return
-    used: list[int] = []
+    used: list[ps.Rect] = []
     high, low = int(np.argmax(values)), int(np.argmin(values))
     ps.callout(axes, f"Best {label}: {ps.pct(values[high])}", (float(high), values[high]), used)
     if low != high:

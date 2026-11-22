@@ -70,7 +70,12 @@ def _reason(definition: FigureDefinition, rdir: Path, manifest: dict[str, Any]) 
     metadata = manifest.get("metadata")
     nested = metadata if isinstance(metadata, dict) else {}
     snapshot = manifest.get("snapshot_id") or nested.get("snapshot_id")
-    if definition.requires_snapshot and not snapshot:
+    # A rule test saves no snapshot: its price chart reads the stored bars, fingerprint-checked.
+    if (
+        definition.requires_snapshot
+        and not snapshot
+        and not isinstance(manifest.get("spine"), dict)
+    ):
         return "snapshot_unavailable"
     return None
 

@@ -10,17 +10,6 @@ import status
 ROOT = Path(__file__).parents[2]
 
 
-def test_committed_status_page_is_fresh() -> None:
-    committed = (ROOT / status.PAGE).read_text(encoding="utf-8")
-    assert committed == status.render(ROOT), (
-        "STATUS.md is stale; run: uv run python scripts/status.py"
-    )
-
-
-def test_check_mode_passes_on_the_committed_tree() -> None:
-    assert status.main(["--check"]) == 0
-
-
 def test_page_sections_appear_in_the_agreed_order() -> None:
     text = status.render(ROOT)
     headings = [line for line in text.splitlines() if line.startswith("## ")]

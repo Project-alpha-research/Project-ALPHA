@@ -17,11 +17,11 @@ Run each as `alpha tool run <id> <run_id>`. Each gives a reading, never a verdic
 
 | Check | Question |
 |---|---|
-| `timeseries.ljung_box` | Are returns on nearby days linked to each other? |
+| `timeseries.ljung_box` | Are returns on nearby bars linked to each other? |
 | `timeseries.autocorrelation` | At which lags are returns correlated with their own past? |
 | `timeseries.variance_ratio` | Do returns trend or reverse over several days? |
 | `timeseries.hurst` | Do returns trend, wander or reverse over long spans? |
-| `timeseries.up_down_runs` | Do up days and down days come in random order? |
+| `timeseries.up_down_runs` | Do up bars and down bars come in random order? |
 | `timeseries.arch_lm` | Do large moves cluster in time? |
 | `timeseries.normality` | Do returns look like a bell curve? |
 | `timeseries.dfa` | Do returns remember their own past over long spans, even through trends? |

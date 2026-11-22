@@ -283,3 +283,11 @@ def test_future_input_rejected(tool: str, tmp_path: Path) -> None:
     ).write_parquet(path)
     with pytest.raises(SpineError, match="run period"):
         run(tmp_path, tool, RUN)
+
+
+def test_arch_lm_constant_squares_is_unavailable(tmp_path: Path) -> None:
+    # Alternating +0.5 / -0.5 vary, but every squared residual is the same.
+    put(tmp_path, ARCH, np.array([0.5, -0.5] * 20))
+    doc = run(tmp_path, ARCH, RUN)
+    assert all(v is None for v in doc["values"].values())
+    assert all("squared returns do not vary" in r for r in doc["reasons"].values())

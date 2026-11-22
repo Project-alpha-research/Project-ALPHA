@@ -102,14 +102,14 @@ def _out(key: str, label: str, gloss: str, unit: Any = "ratio") -> Output:
 CHECKS = (
     make(
         "variance_ratio",
-        "Do returns trend or reverse over several days?",
-        (Param("q", int, 5, range(2, 61), "Horizon in days."),),
+        "Do returns trend or reverse over several bars?",
+        (Param("q", int, 5, range(2, 61), "Horizon in bars."),),
         (
             _out("horizon", "Horizon", "Days per step of the comparison.", "count"),
             _out(
                 "ratio",
                 "Variance ratio",
-                "Variance of q-day moves over q times the one-day variance.",
+                "Variance of q-bar moves over q times the one-bar variance.",
             ),
             _out("z", "Robust z-score", "Lo-MacKinlay z-score, robust to changing volatility."),
             _out(
@@ -119,11 +119,11 @@ CHECKS = (
                 "p_value",
             ),
         ),
-        "Over {horizon:.0f} days the variance ratio is {ratio:.3f} (z {z:+.2f}, p-value"
+        "Over {horizon:.0f} bars the variance ratio is {ratio:.3f} (z {z:+.2f}, p-value"
         " {p_value:.3f}). A random walk gives a ratio of one. Above one means moves tended to"
         " continue; below one means they tended to reverse."
         " A large p-value means the gap from one could be chance.",
-        "Lo & MacKinlay (1988). The ratio compares overlapping q-day moves; it does not say why"
+        "Lo & MacKinlay (1988). The ratio compares overlapping q-bar moves; it does not say why"
         " returns trend or reverse, and one horizon is one look.",
         _variance_ratio,
         "test_known_variance_ratio",
@@ -168,14 +168,14 @@ CHECKS = (
     ),
     make(
         "up_down_runs",
-        "Do up days and down days come in random order?",
+        "Do up bars and down bars come in random order?",
         (),
         (
-            _out("runs", "Streaks", "Number of unbroken streaks of up or down days.", "count"),
+            _out("runs", "Streaks", "Number of unbroken streaks of up or down bars.", "count"),
             _out(
                 "expected",
                 "Expected streaks",
-                "Streaks expected if the same up and down days came in random order.",
+                "Streaks expected if the same up and down bars came in random order.",
                 "count",
             ),
             _out("z", "Runs z-score", "Negative means bunching, positive means alternation."),
@@ -186,10 +186,10 @@ CHECKS = (
                 "p_value",
             ),
         ),
-        "Up and down days formed {runs:.0f} streaks; random order would give about {expected:.1f}"
-        " (p-value {p_value:.3f}). Fewer streaks than expected means days of one direction"
+        "Up and down bars formed {runs:.0f} streaks; random order would give about {expected:.1f}"
+        " (p-value {p_value:.3f}). Fewer streaks than expected means bars of one direction"
         " bunched.",
-        "Wald & Wolfowitz (1940). It looks at direction only, not size, and a flat day breaks"
+        "Wald & Wolfowitz (1940). It looks at direction only, not size, and a flat bar breaks"
         " a streak.",
         _runs,
         "test_known_runs_hand_case",

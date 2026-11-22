@@ -133,7 +133,7 @@ CHECKS = (
         "sample_entropy",
         "How irregular is the return series?",
         (
-            Param("m", int, 2, (1, 2, 3), "Length of the patterns compared, in days."),
+            Param("m", int, 2, (1, 2, 3), "Length of the patterns compared, in bars."),
             Param(
                 "r_frac",
                 float,
@@ -152,7 +152,7 @@ CHECKS = (
                 "fraction",
             ),
         ),
-        "The sample entropy is {sample_entropy:.3f} for patterns of {m:.0f} days at a tolerance of"
+        "The sample entropy is {sample_entropy:.3f} for patterns of {m:.0f} bars at a tolerance of"
         " {tolerance:.0%} of the return spread. Higher means patterns repeated less often than"
         " lower; random noise of a similar shape gives a high value.",
         "Richman & Moorman (2000). It has no pass level and no p-value; read it next to the other"
@@ -163,7 +163,7 @@ CHECKS = (
     ),
     make(
         "compressibility",
-        "How compressible are the up and down days?",
+        "How compressible are the up and down bars?",
         (),
         (
             _out(
@@ -179,9 +179,9 @@ CHECKS = (
             ),
             _out("up_share", "Up share", "Share of bars with a positive return.", "fraction"),
         ),
-        "The up and down days parse into {complexity:.0f} parts, a relative complexity of"
+        "The up and down bars parse into {complexity:.0f} parts, a relative complexity of"
         " {normalised:.2f}. A fair random sequence reads about one; lower means more repetition,"
-        " though a lopsided share of up days ({up_share:.0%} here) also lowers it.",
+        " though a lopsided share of up bars ({up_share:.0%} here) also lowers it.",
         "Lempel & Ziv (1976). Direction only; it does not give a p-value and cannot say whether"
         " the repetition can be used.",
         _lz,
@@ -191,7 +191,7 @@ CHECKS = (
     make(
         "permutation_entropy",
         "How ordered is the sequence of returns?",
-        (Param("order", int, 3, (3, 4, 5), "Number of days in each ordering pattern."),),
+        (Param("order", int, 3, (3, 4, 5), "Number of bars in each ordering pattern."),),
         (
             _out(
                 "entropy",
@@ -200,7 +200,7 @@ CHECKS = (
             ),
             _out("order", "Pattern length", "Days per ordering pattern.", "count"),
         ),
-        "The permutation entropy over patterns of {order:.0f} days is {entropy:.3f}. A value of"
+        "The permutation entropy over patterns of {order:.0f} bars is {entropy:.3f}. A value of"
         " one means every ordering of up and down moves was equally common; lower means some"
         " orderings were favoured.",
         "Bandt & Pompe (2002). It needs many more bars than orderings; it describes order, not"

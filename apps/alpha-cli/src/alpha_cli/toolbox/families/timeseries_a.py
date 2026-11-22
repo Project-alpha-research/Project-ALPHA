@@ -113,8 +113,8 @@ def _out(key: str, label: str, gloss: str, unit: Any = "ratio") -> Output:
 CHECKS = (
     make(
         "ljung_box",
-        "Are returns on nearby days linked to each other?",
-        (Param("lags", int, 10, range(1, 61), "Number of days back to include."),),
+        "Are returns on nearby bars linked to each other?",
+        (Param("lags", int, 10, range(1, 61), "Number of bars back to include."),),
         (
             _out("lags", "Days back", "Number of lags in the test.", "count"),
             _out("q", "Ljung-Box statistic", "Weighted sum of squared autocorrelations."),
@@ -125,8 +125,8 @@ CHECKS = (
                 "p_value",
             ),
         ),
-        "Over {lags:.0f} days back the Ljung-Box statistic is {q:.1f} (p-value {p_value:.3f}). A"
-        " small p-value means returns on nearby days moved together more than chance alone"
+        "Over {lags:.0f} bars back the Ljung-Box statistic is {q:.1f} (p-value {p_value:.3f}). A"
+        " small p-value means returns on nearby bars moved together more than chance alone"
         " usually gives; a large one means this test found no clear link.",
         "It measures linear links only, in any direction and size, and says nothing about whether"
         " they could be traded. The p-value assumes steady volatility; volatility clusters make it"
@@ -139,12 +139,12 @@ CHECKS = (
     make(
         "autocorrelation",
         "At which lags are returns correlated with their own past?",
-        (Param("max_lag", int, 10, range(1, 41), "Longest lag to show, in days."),),
+        (Param("max_lag", int, 10, range(1, 41), "Longest lag to show, in bars."),),
         (
             _out(
                 "lag1",
                 "Lag-1 autocorrelation",
-                "Correlation of a day's return with the day before.",
+                "Correlation of a bar's return with the bar before.",
             ),
             _out(
                 "band",
@@ -176,7 +176,7 @@ CHECKS = (
                 "count",
             ),
         ),
-        "The day-to-day (lag-1) autocorrelation is {lag1:+.3f}. The strongest lag is"
+        "The bar-to-bar (lag-1) autocorrelation is {lag1:+.3f}. The strongest lag is"
         " {peak_lag:.0f} at {peak_acf:+.3f}; the noise band is about plus or minus {band:.3f}."
         " {outside:.0f} lags lie outside it. The strongest partial lag is {peak_pacf_lag:.0f}"
         " at {peak_pacf:+.3f}.",

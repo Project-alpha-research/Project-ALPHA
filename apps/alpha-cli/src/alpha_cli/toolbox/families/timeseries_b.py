@@ -47,6 +47,11 @@ def _arch(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Resu
         return too_little(keys, max(30, 5 * lags), r.size)
     if flat(r):
         return unavailable(keys, FLAT, r.size)
+    squares = (r - r.mean()) ** 2
+    if flat(squares[lags:]):
+        return unavailable(
+            keys, "The squared returns do not vary, so there is nothing to regress.", r.size
+        )
     lm, p = arch_lm(r, lags)
     return finished({"lags": lags, "lm": lm, "p_value": p}, "Undefined.")
 
@@ -143,7 +148,7 @@ CHECKS = (
     make(
         "arch_lm",
         "Do large moves cluster in time?",
-        (Param("lags", int, 5, range(1, 31), "Number of days back to include."),),
+        (Param("lags", int, 5, range(1, 31), "Number of bars back to include."),),
         (
             _out("lags", "Days back", "Number of lags in the test.", "count"),
             _out(
@@ -158,7 +163,7 @@ CHECKS = (
                 "p_value",
             ),
         ),
-        "The ARCH-LM statistic over {lags:.0f} days back is {lm:.1f} (p-value {p_value:.3f})."
+        "The ARCH-LM statistic over {lags:.0f} bars back is {lm:.1f} (p-value {p_value:.3f})."
         " A small p-value means big moves tended to follow big moves; a large one means this test"
         " found no clear clustering.",
         "Engle (1982). It detects clustering of the size of moves, not their direction,"

@@ -251,18 +251,15 @@ codes = ["W05"]
 what = "Freeze chosen crypto datasets into one exact snapshot, and refuse to reuse it if its source files are missing, changed or ambiguous."
 see_it = [
   "uv run alpha crypto-data snapshot-create …, then uv run alpha crypto-data snapshot-verify <snapshot-id>",
-  "uv run alpha crypto-data snapshot-query …",
   "Workstation: View → Funding → Crypto Data Center",
 ]
 entry_points = [
   "cli: alpha crypto-data snapshot-create",
   "cli: alpha crypto-data snapshot-verify",
-  "cli: alpha crypto-data snapshot-query",
   "cli: alpha crypto-data asset-master-verify",
   "api: POST /api/crypto-data/snapshots/{snapshot_id}/verify",
 ]
 proof_synthetic = [
-  "tests/integration/test_crypto_snapshot_query_cli.py::test_snapshot_query_reopens_exact_id_and_preserves_frozen_files",
   "tests/integration/test_asset_master_provenance.py::test_valid_sources_contract_and_snapshot_reopen_without_rebuilding_identity",
 ]
 proof_smoke = [

@@ -155,3 +155,5 @@ first unfinished task. Batch execution never grants research, paper, broker, or 
 - `apps/alpha-cli/src/alpha_cli/provider_readiness.py`
 - `apps/alpha-web/frontend/src/panels/ResearchDataExplorer.tsx`
 - `tests/unit/test_crypto_*.py` and `tests/integration/test_crypto_data_house.py`
+
+Removed 2026-11-22: the coverage profile, liquidity-freeze, one-minute selection, asset lookup and `compare` commands, and their web routes and Workstation screens.

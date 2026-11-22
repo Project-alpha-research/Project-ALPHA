@@ -57,12 +57,9 @@ removed schemas). Hand-written additions are about 20 lines.
 
 ## Code-size test (left red on purpose)
 
-`tests/unit/test_code_size.py` fails with `FileNotFoundError` for the deleted `_crypto_yield_catalog.py` entry. For the orchestrator, in
-`.claude/code-size-baseline.json`:
-- remove file entry `_crypto_yield_catalog.py` and `crypto_snapshot_query.py` if listed;
+`tests/unit/test_code_size.py` is the one red test. CI names the baseline changes, in `.claude/code-size-baseline.json`:
 - lower `files` entry `apps/alpha-cli/src/alpha_cli/crypto_data_cmds.py` from 4704 to 3536;
-- remove function entry `crypto_data_cmds.py::_freeze_binance_liquidity` (156);
-- re-check `packages/alpha-data/src/alpha_data/crypto/quality.py` (two entries, `_family_checks`, `audit_daily_bar_grid`): the file got shorter.
+- remove function entry `apps/alpha-cli/src/alpha_cli/crypto_data_cmds.py::_freeze_binance_liquidity` (156).
 
 ## Decisions
 

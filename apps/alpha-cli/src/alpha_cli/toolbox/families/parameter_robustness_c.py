@@ -25,7 +25,7 @@ NEAR = 0.2
 def _guarded(spec: ToolSpec, inputs: Inputs) -> Result | None:
     if reason := common.too_little(inputs.run):
         keys = [o.key for o in spec.outputs]
-        return common.unavailable(keys, reason, engine_runs=0, tries_added=0)
+        return common.unavailable(keys, reason, engine_runs=0)
     return None
 
 
@@ -86,8 +86,8 @@ def skip_entries(inputs: Inputs, params: dict[str, Any], rng: Generator | None) 
     ]
     run = inputs.run
     base = common.original(run)
-    rows, added = common.rerun(run, SKIP_ENTRIES.id, variants)
-    values: dict[str, Value] = {"engine_runs": len(rows), "tries_added": added}
+    rows, _ = common.rerun(run, SKIP_ENTRIES.id, variants, control=True)
+    values: dict[str, Value] = {"engine_runs": len(rows)}
     reasons: dict[str, str] = {}
     common.fill(values, reasons, "sharpe", base, "sharpe")
     for share in SKIPS:
@@ -121,9 +121,9 @@ def price_noise(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
         for copy in range(NOISE_SEEDS)
     ]
     base = common.original(run)
-    rows, added = common.rerun(run, PRICE_NOISE.id, variants)
+    rows, _ = common.rerun(run, PRICE_NOISE.id, variants, control=True)
     summary = noise_summary(rows, base["sharpe"])
-    values: dict[str, Value] = {"engine_runs": len(rows), "tries_added": added}
+    values: dict[str, Value] = {"engine_runs": len(rows)}
     reasons: dict[str, str] = {}
     for key in ("median_sharpe", "p05_sharpe", "p95_sharpe", "sign_flip_share"):
         values[key] = summary[key]
@@ -202,7 +202,6 @@ SKIP_ENTRIES = ToolSpec(
             for side, word in (("low", "Lowest"), ("high", "Highest"))
         ),
         common.RUNS,
-        common.TRIES,
     ),
     reading=(
         "With entries skipped at random, the Sharpe ratio ran from {sharpe_low_10:.2f} to "
@@ -212,8 +211,12 @@ SKIP_ENTRIES = ToolSpec(
         "({engine_runs:.0f} re-runs; "
         "as tested {sharpe:.2f})."
     )
-    + common.TRY_SENTENCE,
-    caveats=(*CAVEATS, "A skipped entry stays out until the rule's next entry."),
+    + common.CONTROL_SENTENCE,
+    caveats=(
+        *CAVEATS,
+        "A skipped entry stays out until the rule's next entry.",
+        common.not_a_pick("filter out some of the rule's entries"),
+    ),
     reference=common.TESTS + "test_skipping_no_entry_reproduces_the_rule",
     compute=skip_entries,
     cost="minutes",
@@ -244,7 +247,6 @@ PRICE_NOISE = ToolSpec(
             "fraction",
         ),
         common.RUNS,
-        common.TRIES,
     ),
     reading=(
         "With every price nudged at random by about a tenth of a percent, the Sharpe ratio ran "
@@ -253,8 +255,12 @@ PRICE_NOISE = ToolSpec(
         "copies (median {median_sharpe:.2f}, as tested {sharpe:.2f}); the sign flipped in "
         "{sign_flip_share:.0%}."
     )
-    + common.TRY_SENTENCE,
-    caveats=(*CAVEATS, "The noise is independent from bar to bar; real data errors may not be."),
+    + common.CONTROL_SENTENCE,
+    caveats=(
+        *CAVEATS,
+        "The noise is independent from bar to bar; real data errors may not be.",
+        common.not_a_pick("smooth the prices the rule reads"),
+    ),
     reference=common.TESTS + "test_price_noise_spreads_around_the_rule",
     compute=price_noise,
     cost="minutes",

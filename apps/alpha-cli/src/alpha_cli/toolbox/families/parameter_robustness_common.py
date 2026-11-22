@@ -48,6 +48,20 @@ TRY_SENTENCE = (
     " It made {engine_runs:.0f} engine runs. Making this reading added {tries_added:.0f} new "
     "tries to the count; shown again, it adds none."
 )
+# A control re-runs the same rule and settings on changed data or execution: not a try.
+CONTROL_SENTENCE = (
+    " It made {engine_runs:.0f} engine runs. These are controls of the same rule, not new tries."
+)
+
+
+def not_a_pick(example: str) -> str:
+    """The caveat of a control: it measures fragility; it never picks a better variant."""
+    return (
+        f"A control is not a way to pick a better variant: if you now want to {example}, that "
+        "is a new rule: test it as one."
+    )
+
+
 RUNS = Output("engine_runs", "Engine runs", "Engine re-runs this check made.", "count")
 
 
@@ -185,11 +199,17 @@ def rerun(
     tool: str,
     variants: list[Variant],
     execute: Callable[[Variant], tuple[Any, int]] | None = None,
+    *,
+    control: bool = False,
 ) -> tuple[list[dict[str, Any]], int]:
-    """Count the variants as tries, run them and score each; return the rows and the new tries."""
+    """Run the variants and score each; return the rows and the new tries.
+
+    Other settings of the rule are tries, counted before any run. A ``control`` (the same rule on
+    changed data or execution) writes no ledger row and adds no try.
+    """
     from alpha_cli.spine.diagnostics import performance
 
-    added = count_tries(run, tool, variants)
+    added = 0 if control else count_tries(run, tool, variants)
     seconds = sum(len(_bars(run, v)) for v in variants) * SECONDS_PER_BAR
     with progress(len(variants), seconds):
         if execute is not None:

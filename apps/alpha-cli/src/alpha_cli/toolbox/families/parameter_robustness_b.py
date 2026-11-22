@@ -21,7 +21,7 @@ MONTHS = (3, 6, 12)
 AFTER_WARMUP = 60
 CAVEATS = (
     "Full-sample re-runs on the same bars, not walk-forward results.",
-    "Each re-run is a try: it counts in the trial ledger and in later deflated Sharpe ratios.",
+    "Controls of the same rule and settings: they add nothing to the trial ledger.",
 )
 
 
@@ -37,9 +37,9 @@ def _ladder(
     run = inputs.run
     base = common.original(run)
     ready = [v for v in variants if v is not None]
-    rows, added = common.rerun(run, spec.id, ready, execute) if ready else ([], 0)
+    rows, _ = common.rerun(run, spec.id, ready, execute, control=True) if ready else ([], 0)
     by_label = {row["name"]: row for row in rows}
-    values: dict[str, Value] = {"engine_runs": len(rows), "tries_added": added}
+    values: dict[str, Value] = {"engine_runs": len(rows)}
     reasons: dict[str, str] = {}
     common.fill(values, reasons, "sharpe", base, "sharpe")
     for step, variant in zip(steps, variants, strict=True):
@@ -52,7 +52,7 @@ def _ladder(
 def _guarded(spec: ToolSpec, inputs: Inputs) -> Result | None:
     if reason := common.too_little(inputs.run):
         keys = [o.key for o in spec.outputs]
-        return common.unavailable(keys, reason, engine_runs=0, tries_added=0)
+        return common.unavailable(keys, reason, engine_runs=0)
     return None
 
 
@@ -83,7 +83,7 @@ def cost_ladder(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -
     if spec.fee_bps == 0 and spec.slippage_bps == 0:
         keys = [o.key for o in COST_LADDER.outputs]
         reason = "This run charged no fees or slippage. There is nothing to multiply."
-        return common.unavailable(keys, reason, engine_runs=0, tries_added=0)
+        return common.unavailable(keys, reason, engine_runs=0)
     variants = [
         common.Variant(
             f"costs x{m}",
@@ -134,7 +134,12 @@ def inversion(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> 
 
 
 def _ladder_spec(
-    tool: str, steps: tuple[Any, ...], names: dict[Any, str], reading: str, **fields: Any
+    tool: str,
+    steps: tuple[Any, ...],
+    names: dict[Any, str],
+    reading: str,
+    pick: str,
+    **fields: Any,
 ) -> ToolSpec:
     outputs = [
         Output(
@@ -163,9 +168,9 @@ def _ladder_spec(
         family="parameters",
         needs=("run_rerun",),
         params=(),
-        outputs=(*outputs, common.RUNS, common.TRIES),
-        reading=reading + common.TRY_SENTENCE,
-        caveats=CAVEATS,
+        outputs=(*outputs, common.RUNS),
+        reading=reading + common.CONTROL_SENTENCE,
+        caveats=(*CAVEATS, common.not_a_pick(pick)),
         cost="minutes",
         time_safety="hindsight",
         poison_test=common.POISON,
@@ -190,6 +195,7 @@ ENTRY_DELAY = _ladder_spec(
     "Entering one, two and three bars later than the rule says gave Sharpe ratios of "
     + _three(DELAYS, "{} later")
     + ", against {sharpe:.2f} as tested.",
+    "trade with a 2-bar delay",
     question="What if each entry came 1, 2 or 3 bars later than the rule says?",
     answers=("Does the result need perfect entry timing?", "What if I enter a bar or two late?"),
     situations=("timing-sensitivity",),
@@ -203,6 +209,7 @@ EXIT_DELAY = _ladder_spec(
     "Leaving one, two and three bars later than the rule says gave Sharpe ratios of "
     + _three(DELAYS, "{} later")
     + ", against {sharpe:.2f} as tested.",
+    "leave each trade 2 bars later",
     question="What if each exit came 1, 2 or 3 bars later than the rule says?",
     answers=("Does the result need perfect exit timing?", "What if I exit a bar or two late?"),
     situations=("timing-sensitivity",),
@@ -217,6 +224,7 @@ COST_LADDER = _ladder_spec(
     "the Sharpe ratio was "
     + _three(COSTS, "{} times")
     + ", against {sharpe:.2f} at today's costs.",
+    "change the rule so it trades less because of these costs",
     question="What is left at 2, 3 and 5 times the fees and slippage, re-filled by the engine?",
     answers=("How much cost can this rule carry?", "Does it survive much higher costs?"),
     situations=("cost-fragile",),
@@ -230,6 +238,7 @@ START_DATE = _ladder_spec(
     "Starting the test three, six and twelve months later gave Sharpe ratios of "
     + _three(MONTHS, "{} months")
     + ", against {sharpe:.2f} as tested.",
+    "start the rule from a later date",
     question="What if the test had started 3, 6 or 12 months later?",
     answers=(
         "Does the result hang on the first months?",
@@ -246,6 +255,7 @@ INVERSION = _ladder_spec(
     "The opposite rule (short when the rule is long) had a Sharpe ratio of {sharpe_opposite:.2f} "
     "and a return of {return_opposite:.1%}, against {sharpe:.2f} for the rule. If both look good, "
     "the result may come from the market's drift, the data or the costs, not the rule.",
+    "trade the opposite rule",
     question="Does the opposite rule also look good?",
     answers=("Is the rule better than its opposite?", "Does the inverted rule also make money?"),
     situations=("just-the-market", "looks-too-good"),

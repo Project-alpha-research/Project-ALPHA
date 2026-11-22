@@ -29,6 +29,15 @@ from tests.unit.parameter_robustness_support import RUN, synthetic_series
 
 REL, ABS = 1e-9, 1e-12
 BY_ID = {spec.id: spec for spec in CHECKS}
+# A try is another setting of the rule; a control is the same rule on changed data or execution.
+TRIES = {
+    "parameters.one_at_a_time",
+    "parameters.neighbour_stability",
+    "parameters.worst_neighbour",
+    "parameters.plateau",
+}
+CONTROLS = {spec.id for spec in CHECKS} - TRIES
+CONTROL_WORDS = "These are controls of the same rule, not new tries."
 
 
 def _compute(spec: ToolSpec, series: inputs.RunSeries, seed: int = 7, **params: Any) -> Result:
@@ -256,7 +265,8 @@ def test_inversion_matches_the_stored_control(series: inputs.RunSeries) -> None:
     control = run_inverted_backtest(list(series.bars), series.spec, series.full)
     curve = [v for _, v in control.equity_curve]
     assert values["return_opposite"] == pytest.approx(curve[-1] / curve[0] - 1, rel=REL, abs=ABS)
-    assert values["engine_runs"] == values["tries_added"] == 1
+    assert values["engine_runs"] == 1
+    assert "tries_added" not in values
 
 
 def test_skipping_no_entry_reproduces_the_rule(series: inputs.RunSeries) -> None:
@@ -295,9 +305,9 @@ def test_price_noise_spreads_around_the_rule(series: inputs.RunSeries) -> None:
 def test_too_little_data_runs_nothing(spec: ToolSpec, series: inputs.RunSeries) -> None:
     sparse = replace(series, full=SimpleNamespace(trades=[object()] * 3))
     result = _compute(spec, sparse)
-    assert result.values["engine_runs"] == result.values["tries_added"] == 0
+    assert result.values["engine_runs"] == 0
     shown = {k for k, v in result.values.items() if v is not None}
-    assert shown == {"engine_runs", "tries_added"}
+    assert shown == ({"engine_runs", "tries_added"} if spec.id in TRIES else {"engine_runs"})
     assert all("closed 3 trades" in result.reasons[k] for k in result.values if k not in shown)
     assert not _tries(series.home)
 
@@ -324,6 +334,11 @@ def test_repeat_is_identical_and_adds_no_try(
     first, second = (_compute(spec, synthetic_series(home)) for home in homes)
     assert first == second
     again = _compute(spec, synthetic_series(homes[0]))
+    if spec.id in CONTROLS:
+        # A control writes no ledger row, the first time or again.
+        assert again.values == first.values and "tries_added" not in first.values
+        assert not _tries(homes[0])
+        return
     assert again.values == {**first.values, "tries_added": 0}
     assert len(_tries(homes[0])) == first.values["engine_runs"]
 
@@ -455,10 +470,40 @@ def test_cost_ladder_on_a_stored_run_matches_its_diagnostics(stored: tuple[Path,
 
 
 @pytest.mark.parametrize("spec", CHECKS, ids=lambda spec: spec.id)
-def test_reading_says_runs_and_tries_and_that_a_repeat_adds_none(spec: ToolSpec) -> None:
-    # A repeat shows the stored reading: its try count is of the first look, never of this one.
+def test_reading_says_runs_and_whether_they_are_tries_or_controls(spec: ToolSpec) -> None:
     assert "{engine_runs:.0f} engine runs" in spec.reading
-    assert "shown again, it adds none" in spec.reading
+    keys = {o.key for o in spec.outputs}
+    if spec.id in TRIES:
+        # A repeat shows the stored reading: its try count is of the first look, never of this one.
+        assert "shown again, it adds none" in spec.reading and "tries_added" in keys
+        assert not any("not a way to pick" in c for c in spec.caveats)
+    else:
+        assert spec.reading.endswith(CONTROL_WORDS) and "tries_added" not in keys
+        assert "{tries_added" not in spec.reading
+        # Words, not machinery, against using a control to pick a better variant.
+        (caveat,) = [c for c in spec.caveats if "not a way to pick a better variant" in c]
+        assert "new rule: test it as one" in caveat
+        assert not any("is a try" in c for c in spec.caveats)
+
+
+def test_a_try_check_writes_tries_and_a_control_check_writes_none(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        common,
+        "engine",
+        lambda tasks, pool: [(list(np.linspace(1, 1.2, len(t[0]))), 9) for t in tasks],
+    )
+    series = synthetic_series(tmp_path)
+    before = len(_tries(tmp_path))
+    tried = _compute(BY_ID["parameters.one_at_a_time"], series)
+    after_try = len(_tries(tmp_path))
+    controlled = _compute(BY_ID["parameters.price_noise"], series, seed=3)
+    for check in ("parameters.entry_delay", "parameters.cost_ladder", "parameters.inversion"):
+        _compute(BY_ID[check], series)
+    assert (before, after_try) == (0, 8) == (0, tried.values["tries_added"])
+    assert controlled.values["engine_runs"] == 50
+    assert len(_tries(tmp_path)) == after_try
 
 
 def test_a_final_check_run_is_never_re_run(stored: tuple[Path, str], tmp_path: Path) -> None:

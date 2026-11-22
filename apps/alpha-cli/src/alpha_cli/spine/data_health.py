@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from alpha_cli.spine.errors import SpineError
+from alpha_core.reserve import RESERVED_DAY
 
 if TYPE_CHECKING:
     from alpha_cli.spine.stores import ResolvedAsset
@@ -27,6 +28,16 @@ class HealthRecord(dict[str, Any]):
     def __init__(self, data: dict[str, Any], guards: tuple[str, ...]) -> None:
         super().__init__(data)
         self.guards = guards
+
+
+def _held_back_only(check: Any) -> bool:
+    """A problem whose every row is listed and falls on or after the reserved day.
+
+    A check that lists no dates, or fewer dates than its count, may touch a row a test reads, so
+    it is never set aside.
+    """
+    dates = check.example_dates
+    return bool(dates) and check.count == len(dates) and min(dates) >= RESERVED_DAY
 
 
 # In increasing order of severity. Stale evidence and absent evidence share a disclosure label.
@@ -59,13 +70,20 @@ def _series(
         fingerprint = saved.source_fingerprint
     outcome = "unchecked"
     checks = []
+    held_problems = 0
     if saved is not None:
         outcome = saved.verdict if saved.source_fingerprint == fingerprint else "out-of-date"
         if outcome != "out-of-date":
+            flagged = [c for c in saved.checks if c.status in {"warn", "fail"}]
+            held = [c for c in flagged if _held_back_only(c)]
+            held_problems = sum(c.count for c in held)
+            if held:
+                rest = [c.status for c in saved.checks if c not in held]
+                outcome = "fail" if "fail" in rest else "warn" if "warn" in rest else "pass"
             checks = [
                 c.model_dump(mode="json", include={"id", "status", "finding", "example_dates"})
-                for c in saved.checks
-                if c.status in {"warn", "fail"}
+                for c in flagged
+                if c not in held
             ]
     shown = dict(
         asset=f"{asset.symbol}@{asset.store_name}",
@@ -73,6 +91,7 @@ def _series(
         checks=checks,
         report_time=saved.report_time.isoformat() if saved else None,
         peers_used=len(saved.peer_symbols) if saved and saved.peer_symbols is not None else None,
+        **({"held_back_problems": held_problems} if held_problems else {}),
     )
     return shown, fingerprint
 
@@ -115,6 +134,12 @@ def run_health_record(
             # The report covers every stored bar at its report time, the held-back ones too.
             checked = f"{asset}: report of {row['report_time'][:10]} covers all stored bars."
             parts.append(checked)
+            if row.get("held_back_problems"):
+                n = row["held_back_problems"]
+                parts.append(
+                    f"{asset}: {n} {'problem' if n == 1 else 'problems'} "
+                    "in held-back rows, not used."
+                )
             if row["status"] == "fail":
                 failures.append(checked)
         if row["status"] not in {"unchecked", "out-of-date"} and row["peers_used"] is not None:

@@ -14,11 +14,11 @@ verified: 03f12254bb58b8f0
 **Reach for it when** a rule test or setup find is done and the owner wants to see it work on new bars, on paper.
 **Command**
 ```text
-uv run alpha follow start --test <run id> --size-pct 10
-uv run alpha follow start --trade <setup trade id> --asset SPY
-uv run alpha follow start --find <find id>   # records the find; it cannot be updated
-uv run alpha follow list    # also: today, show, update, verify, book ([portfolio book](portfolio-book.md))
-uv run alpha follow update <follow id>
+alpha follow start --test <run id> --size-pct 10
+alpha follow start --trade <setup trade id> --asset SPY
+alpha follow start --find <find id>   # records the find; it cannot be updated
+alpha follow list    # also: today, show, update, verify, book ([portfolio book](portfolio-book.md))
+alpha follow update <follow id>
 ```
 
 The follow is frozen when it starts: the source, the spec hash, the assets, the paper size (a percent of a paper account) and the

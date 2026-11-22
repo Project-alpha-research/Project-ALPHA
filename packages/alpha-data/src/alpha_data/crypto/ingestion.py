@@ -13,7 +13,6 @@ import polars as pl
 from alpha_core import DataError
 
 from .contracts import (
-    CryptoAcquisitionScopeV1,
     CryptoDatasetIdentityV1,
     CryptoQualityReportV1,
     CryptoRawReceiptV1,
@@ -60,7 +59,6 @@ def ingest_provider_payload(
     availability_column: str | None = None,
     correction_lineage: tuple[str, ...] = (),
     unexplained_revision: bool = False,
-    acquisition_scope: CryptoAcquisitionScopeV1 | None = None,
 ) -> CryptoIngestionResultV1:
     """Freeze exact provider bytes before parsing, then publish qualified Parquet separately."""
     receipt, raw_manifest = _stage_one_page(
@@ -89,7 +87,6 @@ def ingest_provider_payload(
         availability_column=availability_column,
         correction_lineage=correction_lineage,
         unexplained_revision=unexplained_revision,
-        acquisition_scope=acquisition_scope,
     )
     return CryptoIngestionResultV1(
         receipt=receipt,
@@ -119,7 +116,6 @@ def ingest_provider_pages(
     availability_column: str | None = None,
     correction_lineage: tuple[str, ...] = (),
     unexplained_revision: bool = False,
-    acquisition_scope: CryptoAcquisitionScopeV1 | None = None,
 ) -> CryptoPagedIngestionResultV1:
     """Freeze every exact provider page, then qualify one deterministically ordered dataset."""
     if not pages or len(pages) > 100:
@@ -170,7 +166,6 @@ def ingest_provider_pages(
         availability_column=availability_column,
         correction_lineage=correction_lineage,
         unexplained_revision=unexplained_revision,
-        acquisition_scope=acquisition_scope,
     )
     return CryptoPagedIngestionResultV1(
         receipts=tuple(receipts),
@@ -277,7 +272,6 @@ def _publish_qualified(
     availability_column: str | None,
     correction_lineage: tuple[str, ...],
     unexplained_revision: bool,
-    acquisition_scope: CryptoAcquisitionScopeV1 | None,
 ) -> tuple[CryptoQualityReportV1, dict[str, object]]:
     """Qualify one normalized frame and publish it against its exact raw lineage."""
     output = io.BytesIO()
@@ -302,7 +296,6 @@ def _publish_qualified(
         dataset=dataset,
         input_manifest_ids=input_manifest_ids,
         quality=quality,
-        acquisition_scope=acquisition_scope,
     )
     return quality, normalized_manifest
 

@@ -13,9 +13,9 @@ verified: e1fd9aceca0d9f21
 factor?" or "is the result new?". It is a reading in context, never a pass or fail.
 
 ```text
-uv run alpha context pull-osap-portfolios --release <RELEASE> --released <DATE>
-uv run alpha tool run context.published_factors <run_id> --json
-uv run alpha tool describe context.published_factors
+alpha context pull-osap-portfolios --release <RELEASE> --released <DATE>
+alpha tool run context.published_factors <run_id> --json
+alpha tool describe context.published_factors
 ```
 
 **How to read it**

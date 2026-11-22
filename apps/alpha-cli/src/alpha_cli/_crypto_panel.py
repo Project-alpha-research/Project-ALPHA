@@ -201,6 +201,24 @@ def held_back_rows(data_dir: Path, spec: Mapping[str, Any]) -> int:
     return sum(len(bucket) for bucket in stamps.values())
 
 
+def cut_rows(data_dir: Path, frozen: Sequence[Mapping[str, Any]]) -> list[list[Any]]:
+    """Every frozen row stamped before the reserved day, once, sorted: what the screen may read."""
+    store = bulk_store(data_dir)
+    rows: set[tuple[str, str, str, float]] = set()
+    for item in frozen:
+        dataset = item["dataset"]
+        column = FAMILIES[dataset["family"]][3]
+        path = store.bulk_root / str(store.verify_manifest(item["manifest_id"])["artifact_key"])
+        frame = read_before_reserved(path)[1]
+        if not {"timestamp", column}.issubset(frame.columns):
+            raise DataError(f"crypto {dataset['family']} is missing screening columns")
+        for stamp, value in frame.select("timestamp", column).iter_rows():
+            when = _time(stamp)
+            if when < reserve.RESERVED_INSTANT:
+                rows.add((dataset["instrument"], dataset["family"], when.isoformat(), value))
+    return [list(row) for row in sorted(rows)]
+
+
 def freeze_crypto_inputs(data_dir: Path, options: Mapping[str, Any]) -> list[dict[str, Any]]:
     store = bulk_store(data_dir)
     cutoff = datetime.combine(date.fromisoformat(options["as_of"]), time.min, tzinfo=UTC)

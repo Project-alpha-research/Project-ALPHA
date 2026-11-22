@@ -12,9 +12,9 @@ verified: 8edd6a246f76c789
 
 **Commands**
 ```text
-uv run alpha diagnose <run_id>
-uv run alpha results cite <run_id> inverted_sharpe
-uv run alpha results cite <run_id> inverted_sharpe_se
+alpha diagnose <run_id>
+alpha results cite <run_id> inverted_sharpe
+alpha results cite <run_id> inverted_sharpe_se
 ```
 
 **How to read it**

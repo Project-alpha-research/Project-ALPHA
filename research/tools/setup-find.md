@@ -13,15 +13,14 @@ uptrend") and wants to see every past match before any rule is fixed.
 
 **Commands**
 ```text
-uv run alpha setup find <spec.toml> --json
-uv run alpha setup find <spec.toml> --asset SPY --context-bars 60
+alpha setup find <spec.toml> --json
+alpha setup find <spec.toml> --asset SPY --context-bars 60
 ```
 **See stored results:** Workstation → Research → Setup Lab.
 **How to read it**
 
-- The spec (TOML) has a setup table (name, idea, assets, timeframe "1D", event), ordered filters, an optional
-  trigger (when, within) and reference levels; expressions read only past bars
-  ([setup causality](../../docs/reference/invariants/study.md#setup-causality)). An optional `idea_card` links an [idea card](idea-card.md).
+- The spec is a TOML file: every section and key is in [setup spec](setup-spec.md). Expressions read only past bars
+  ([setup causality](../../docs/reference/invariants/study.md#setup-causality)).
 - Lead with separate occurrences, not matching days: days within ten bars of each other are one
   occurrence (`accepted_clusters` against `accepted` in `totals`).
 - `sheets` lists contact sheets: accepted matches (the first day of each occurrence), and one greyed sheet

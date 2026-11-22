@@ -658,8 +658,9 @@ export function DevelopmentCenter() {
 }
 
 export function MlResearch() {
-  const linked = useLinked()
   const [status, setStatus] = useState<MlServiceStatus | null>(null)
+  const [specText, setSpecText] = useState('')
+  const [checkedSpec, setCheckedSpec] = useState<string | null>(null)
   const [capabilities, setCapabilities] = useState<MlCapabilities | null>(null)
   const [capabilityError, setCapabilityError] = useState<string | null>(null)
   const [model, setModel] = useState<MlModelChoice>(EXPERIMENT_RECIPE)
@@ -688,24 +689,17 @@ export function MlResearch() {
         setBusy(true)
       }
       if (next.available) {
-        const [page, checks] = await Promise.all([
-          api.mlExperiments(linked.projectId),
-          linked.projectId ? api.mlExperimentPreflight(linked.projectId) : Promise.resolve(null),
-        ])
-        if (live) {
-          setExperiments(page)
-          setPreflight(checks)
-        }
+        const page = await api.mlExperiments()
+        if (live) setExperiments(page)
       }
     }).catch((reason: unknown) => live && setError(String(reason)))
     return () => { live = false }
-  }, [linked.projectId])
+  }, [])
 
   useEffect(() => {
     if (!activeJobId) return
     let live = true
     let timer: number | undefined
-    const projectId = linked.projectId
     const poll = async () => {
       try {
         const job = await api.developmentJob(activeJobId)
@@ -716,15 +710,10 @@ export function MlResearch() {
           if (job.status !== 'succeeded') {
             setError(job.terminal_error || `ML experiment job ${job.status}`)
           }
-          const [nextExperiments, nextStatus, nextPreflight] = await Promise.all([
-            api.mlExperiments(projectId),
-            api.mlStatus(),
-            projectId ? api.mlExperimentPreflight(projectId) : Promise.resolve(null),
-          ])
+          const [nextExperiments, nextStatus] = await Promise.all([api.mlExperiments(), api.mlStatus()])
           if (live) {
             setExperiments(nextExperiments)
             setStatus(nextStatus)
-            setPreflight(nextPreflight)
             setActiveJobId(null)
           }
           return
@@ -741,17 +730,39 @@ export function MlResearch() {
       live = false
       if (timer !== undefined) window.clearTimeout(timer)
     }
-  }, [activeJobId, linked.projectId])
+  }, [activeJobId])
 
   const backend = model === EXPERIMENT_RECIPE ? null : selectedModelCapability(capabilities, model)
-  const ready = preflight?.ready === true && linked.projectId !== null && (model === EXPERIMENT_RECIPE || backend?.status === 'available')
+  const ready = preflight?.ready === true && checkedSpec === specText && (model === EXPERIMENT_RECIPE || backend?.status === 'available')
+  function parseSpec(): Record<string, unknown> | null {
+    try {
+      const parsed: unknown = JSON.parse(specText)
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>
+    } catch { /* reported below */ }
+    setError('The experiment spec must be one JSON object.')
+    return null
+  }
+  async function checkSpec() {
+    setError(null)
+    setPreflight(null)
+    const spec = parseSpec()
+    if (!spec) return
+    try {
+      setPreflight(await api.mlExperimentPreflight(spec))
+      setCheckedSpec(specText)
+    } catch (reason) {
+      setError(String(reason))
+    }
+  }
   async function createExperiment() {
-    if (!ready || !linked.projectId) return
+    if (!ready) return
+    const spec = parseSpec()
+    if (!spec) return
     setBusy(true)
     setError(null)
     try {
       const request = mlLaunchRequest(model, estimator)
-      const accepted = await api.createMlExperiment(linked.projectId, request.model, request.parameters)
+      const accepted = await api.createMlExperiment(spec, request.model, request.parameters)
       setActiveJobId(accepted.job_id)
       setJobState(accepted.status)
     } catch (reason) {
@@ -763,7 +774,11 @@ export function MlResearch() {
     <div className="panel">
       <div className="panel-toolbar"><span className="title">ML Research</span><span className="chip kind">QLIB ISOLATED WORKER</span><span className="spacer" />{status ? <span className={`chip ${status.worker_ready ? 'pass' : 'fail'}`}>{status.worker_ready ? 'WORKER READY' : 'WORKER BLOCKED'}</span> : null}</div>
       <div className="panel-body panel-pad workbench" tabIndex={0} aria-label="ML research control content">
-        <ContextLine />
+        <div>
+          <label className="eyebrow" htmlFor="ml-spec">Experiment spec (JSON: snapshot_id, universe, split_policy, costs, seeds, stage_config)</label>
+          <textarea id="ml-spec" aria-label="Experiment spec" className="field mono" rows={8} value={specText} disabled={busy} onChange={(event) => { setSpecText(event.target.value); setPreflight(null) }} />
+          <button className="btn" disabled={busy || !specText.trim()} onClick={() => void checkSpec()}>Check spec</button>
+        </div>
         {error ? <div className="workbench-notice"><strong>ML CONTROL ERROR</strong><span>{error}</span></div> : status?.message ? <div className="workbench-notice"><strong>{status.worker_ready ? 'READY' : 'BLOCKED'}</strong><span>{status.message}</span></div> : null}
         {activeJobId ? <div className="durable-job-banner"><span className={`chip ${jobState === 'failed' ? 'fail' : ''}`}>{jobState ?? 'queued'}</span><span>Durable ML journal</span><span className="mono">{shortId(activeJobId)}</span><span className="spacer" /><span className="muted mono">SAFE TO LEAVE THIS PANEL · POLLING CONTROL DB</span></div> : null}
         {preflight ? (
@@ -819,7 +834,7 @@ export function MlResearch() {
         <button className="btn primary" disabled={!ready || busy} onClick={createExperiment} title={ready ? 'Generate the exact preflighted experiment through the isolated worker service' : 'Every server-verified preflight check and the selected worker backend must be available'}>{busy ? `ML job ${jobState ?? 'queued'}…` : 'Generate preflighted ML experiment'}</button>
         {status === null && !error ? <span className="muted mono">CHECKING ISOLATED WORKER READINESS…</span> : null}
         {status && !status.available ? <span className="muted mono">BUTTON DISABLED · {status.message ?? 'isolated worker service unavailable'}</span> : null}
-        {status?.available && status.worker_ready && !linked.projectId ? <span className="muted mono">SELECT OR CREATE A STRATEGY PROJECT IN DEVELOPMENT CENTER TO ENABLE TRAINING</span> : null}
+        {status?.available && status.worker_ready && !preflight ? <span className="muted mono">PASTE AN EXPERIMENT SPEC AND CHECK IT TO ENABLE TRAINING</span> : null}
       </div>
     </div>
   )

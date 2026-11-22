@@ -95,3 +95,44 @@ def test_daily_rule_study_terms_match_the_table() -> None:
     row = cost_classes.ROWS["crypto_spot"]
     assert economics.fee_bps_per_side == row.fee_bps
     assert economics.slippage_bps_per_side == row.slippage_bps
+
+
+_CLOCKS = ("daily", "weekly", "monthly")
+
+
+def _repeat_row(sha: str) -> dict[str, Any]:
+    clock = {"status": "PASS", "p": 0.5, "q": 0.5, "screen": {}, "replay": {}}
+    return {
+        "status": "REPEAT",
+        "code_sha256": sha,
+        "costs": costs.judge_costs(),
+        "clocks": {c: dict(clock) for c in ("daily", "weekly", "monthly")},
+    }
+
+
+@pytest.mark.parametrize("recorded", [True, False])
+def test_a_repeat_keeps_the_costs_of_its_first_trial(recorded: bool) -> None:
+    from alpha_cli import rdagent_factor_eval as ev
+
+    first: dict[str, Any] = {
+        "status": "PASS",
+        "schema": "AlphaRdagentFactorTrialV3",
+        "code_sha256": "a" * 64,
+        "run_id": "r",
+        "iteration": 1,
+        "name": "f",
+        "screen": {},
+        "replay": {},
+        "clocks": {
+            c: {"status": "PASS", "p": 0.5, "q": 0.5, "screen": {}, "replay": {}} for c in _CLOCKS
+        },
+        "lead_clock": "daily",
+    }
+    if recorded:
+        first["costs"] = {**costs.judge_costs(), "slippage_bps": 6.0}
+    row = _repeat_row("a" * 64)
+    ev._deflate([row], [first], {}, {})
+    if recorded:
+        assert row["costs"]["slippage_bps"] == pytest.approx(6.0, rel=1e-9, abs=1e-12)
+    else:
+        assert "costs" not in row

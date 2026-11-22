@@ -98,6 +98,8 @@ import type {
   MarketOverview,
   FollowToday,
   FollowShow,
+  IdeaFile,
+  IdeaList,
   ChartOverlays,
   RuleList,
   RuleRecord,
@@ -143,18 +145,14 @@ import type {
   MlCapabilities,
   MlModelName,
   MlModelParameters,
+  JobSummary,
   MlTearSheetProjection,
   NativeTearSheetProjection,
   NullTiers,
   OptimTrials,
-  PaperEvent,
-  PaperJobSummary,
-  PaperReadinessReport,
-  PaperSession,
   PortfolioAnalyticsProjection,
   PropfirmPaths,
   ProviderDefinition,
-  ProviderCheckReceipt,
   ProjectDetail,
   ProjectPage,
   ProjectSummary,
@@ -476,6 +474,8 @@ export const api = {
   marketOverview: (store: string, window: number, limit = 15): Promise<MarketOverview> =>
     getJSON(`/api/market/overview?${new URLSearchParams({ store, window: String(window), limit: String(limit) })}`),
   followToday: (): Promise<FollowToday> => getJSON('/api/follow/today'),
+  ideaList: (): Promise<IdeaList> => getJSON('/api/ideas'),
+  ideaFile: (card: string): Promise<IdeaFile> => getJSON(`/api/ideas/${encodeURIComponent(card)}`),
   followShow: (id: string): Promise<FollowShow> => getJSON(`/api/follow/${encodeURIComponent(id)}`),
   firstBar: (symbol: string, exchange: string): Promise<FirstBar> =>
     getJSON(
@@ -540,10 +540,8 @@ export const api = {
     symbol: string,
   ): Promise<CryptoSnapshotRegister> =>
     postJSON(`/api/crypto-data/snapshots/${encodeURIComponent(snapshotId)}/register`, { symbol }),
-  providerCheck: (providerId: string): Promise<ProviderCheckReceipt> =>
-    postJSON(`/api/providers/${encodeURIComponent(providerId)}/check`, {}),
   system: (): Promise<SystemStatus> => getJSON('/api/system'),
-  jobs: (): Promise<PaperJobSummary[]> => getJSON('/api/jobs'),
+  jobs: (): Promise<JobSummary[]> => getJSON('/api/jobs'),
   job: (id: string): Promise<JobDetail> => getJSON(`/api/jobs/${id}`),
   async launch(
     command: string,
@@ -786,10 +784,4 @@ export const api = {
   },
   createMlExperiment: (projectId: string, model?: MlModelName, parameters?: MlModelParameters): Promise<MlExperimentJobAccepted> =>
     postJSON('/api/ml/experiments', { project_id: projectId, ...(model ? { model, parameters: parameters ?? {} } : {}) }),
-  paperSessions: (): Promise<PaperSession[]> => getJSON('/api/paper/sessions'),
-  paperReadiness: (): Promise<PaperReadinessReport> => getJSON('/api/paper/readiness'),
-  paperSession: (id: string): Promise<PaperSession> =>
-    getJSON(`/api/paper/sessions/${encodeURIComponent(id)}`),
-  paperEvents: (id: string, after = 0): Promise<PaperEvent[]> =>
-    getJSON(`/api/paper/sessions/${encodeURIComponent(id)}/events?after=${after}`),
 }

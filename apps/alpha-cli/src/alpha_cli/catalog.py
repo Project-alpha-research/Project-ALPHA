@@ -38,8 +38,9 @@ _EMPIRICAL_ROOTS = frozenset(
         "setup",
     }
 )
+# `confirm` spends a reserved-period slot: terminal only (never the web launcher or MCP).
 # `home` reads and writes folders the caller names (backup, restore): terminal only.
-_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "project", "suite", "provider", "home"})
+_OWNER_ONLY_ROOTS = frozenset({"owner-auth", "confirm", "project", "suite", "provider", "home"})
 _SAFE_ROOTS = frozenset(
     {
         "info",
@@ -103,12 +104,6 @@ def classify_generic_command(argv: list[str]) -> GenericCommandClass:
             "owner_only"
             if len(argv) > 1 and argv[1] in {"repair", "rollback-promotion"}
             else "safe"
-        )
-    if root == "paper":
-        return (
-            "safe"
-            if len(argv) > 1 and argv[1] in {"sessions", "readiness", "scheduler-status", "show"}
-            else "owner_only"
         )
     if root == "crypto-data":
         return "safe" if len(argv) > 1 and argv[1] in _CRYPTO_DATA_SAFE else "owner_only"

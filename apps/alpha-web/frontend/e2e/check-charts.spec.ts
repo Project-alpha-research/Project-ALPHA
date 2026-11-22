@@ -35,8 +35,7 @@ async function openRun(page: Page, manifest: Record<string, unknown>, withData: 
   await page.route('**/api/candles/AAPL**', route => prices === 'error'
     ? route.fulfill({ status: 500, json: { detail: 'store unavailable' } })
     : route.fulfill({ json: {
-      symbol: 'AAPL', snapshot_id: null, provenance: {}, paper_markers: [],
-      bars: prices === 'empty' ? [] : Array.from({ length: 2500 }, (_, i) => { const c = 100 + i * 0.05 + Math.sin(i / 40) * 8; return { t: (START + i * DAY) / 1000, o: c, h: c, l: c, c, v: 1 } }),
+      symbol: 'AAPL', snapshot_id: null, provenance: {},       bars: prices === 'empty' ? [] : Array.from({ length: 2500 }, (_, i) => { const c = 100 + i * 0.05 + Math.sin(i / 40) * 8; return { t: (START + i * DAY) / 1000, o: c, h: c, l: c, c, v: 1 } }),
     } }))
   await page.goto(`/#run=${runId}`)
   await page.getByRole('button', { name: 'Gates', exact: true }).click()

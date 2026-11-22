@@ -9,7 +9,7 @@ sources:
   - scripts/claude_hooks.py
   - tests/bias_guards/**
   - tests/oracles/**
-verified: 9ac190b6407b526a
+verified: 6da3c17b2fb74ddd
 ---
 
 # Research integrity
@@ -141,7 +141,9 @@ an ADR, never a quiet code change.
   server, model output, broker or account state and passing checks never carry that authority, and
   approvals are never inferred — not from silence, a past approval, or a green check.
 - Owner authority flows only through the existing bounded owner-auth actions
-  (`apps/alpha-cli/src/alpha_cli/owner_auth.py`); never add another path. Which surface may do what is
+  (`apps/alpha-cli/src/alpha_cli/owner_auth.py`); never add another path. One exception: the final
+  check on the reserved period has no confirmation step; Claude runs `alpha confirm run` when the
+  owner asks in chat ([reserved period](../project/reserved-period.md#the-owners-confirmation)). Which surface may do what is
   listed in the generated [capability authority matrix](../../governance/capability-authority-matrix.md).
 - Owner actions need explicit local confirmation: an expiring, one-use token bound to the action,
   project, artefact, case revision, consequence and reason. It records local intent, not proof of
@@ -153,11 +155,7 @@ an ADR, never a quiet code change.
 
 ## No live capital
 
-- No code path places live-capital orders. Crypto execution is the local Sandbox only; IBKR is a
-  paper account only, with explicit opt-in flags that default to off.
-  [ADR-0017](../../adr/0017-authoritative-daily-data-and-broker-paper-boundary.md)
-- Paper sessions are operational records, not research runs; they never become validation evidence.
-  [ADR-0012](../../adr/0012-operational-paper-sessions.md)
+- No code path places live-capital orders or reaches a broker. Forward paper tracking is `alpha follow`.
 
 ## Protected and hidden tests
 

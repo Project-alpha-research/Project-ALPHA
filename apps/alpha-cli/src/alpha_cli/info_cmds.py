@@ -42,7 +42,6 @@ def _strategy_catalog() -> list[dict[str, Any]]:
             "name": name,
             "params": [asdict(p) for p in STRATEGY_PARAM_SCHEMA.get(name, ())],
             "has_tier1_surrogate": STRATEGIES[name].surrogate is not None,
-            "supports_live_paper": STRATEGIES[name].supports_live_paper,
         }
         for name in known_strategies()
     ]
@@ -220,5 +219,3 @@ def system(json_out: bool = typer.Option(False, "--json", help="emit JSON")) -> 
         f"nautilus={status['nautilus']['installed_version']} "
         f"(pinned {status['nautilus']['pinned_version']})"
     )
-    typer.echo(f"paper_enabled={status['paper_enabled']}")
-    typer.echo(f"ibkr_paper_enabled={status['ibkr_paper_enabled']}")

@@ -24,11 +24,10 @@ scripts/alpha-with-keychain-provider tiingo check
 
 | Provider | Keychain service | Variable | What it unlocks | Verify |
 |---|---|---|---|---|
-| Tiingo | `project-alpha-tiingo` | `ALPHA_TIINGO_API_KEY` | authoritative stock/ETF EOD — the receipt→candidate→quality→canonical promotion path, and the daily scheduler | `scripts/alpha-with-keychain-provider tiingo check` |
+| Tiingo | `project-alpha-tiingo` | `ALPHA_TIINGO_API_KEY` | authoritative stock/ETF EOD — the receipt→candidate→quality→canonical promotion path | `scripts/alpha-with-keychain-provider tiingo check` |
 | CoinGecko | `project-alpha-coingecko` | `ALPHA_COINGECKO_API_KEY` | crypto reference/catalog acquisition | `scripts/alpha-with-keychain-provider coingecko check` |
-| IBKR | `project-alpha-ibkr-paper-account` | `ALPHA_IBKR_PAPER_ACCOUNT`, `ALPHA_IBKR_GATEWAY_IMAGE`, `TWS_USERNAME`, `TWS_PASSWORD` | native IBKR Paper boundary | `uv run alpha provider check ibkr` |
 
-`alpha provider check` is registered for `tiingo`, `coingecko`, and `ibkr`, and writes
+`alpha provider check` is registered for `tiingo` and `coingecko`, and writes
 a redacted `ProviderCheckReceiptV1` under `data_dir`. Finnhub was retired on 2026-09-10 together
 with `alpha_screener` (edge-first audit F6); the launcher no longer accepts it. QuantPad was
 removed on 2026-11-14 (its command, adapter, archive code and launcher action); its keychain item
@@ -38,7 +37,7 @@ removed on 2026-11-14 (its command, adapter, archive code and launcher action); 
 credential and already report `configured: true`.
 
 **All five keychain items exist on this machine** (verified 2026-08-19 by metadata read, no
-values seen). Tiingo, QuantPad and the IBKR account were created 2026-08-04 with account
+values seen). Tiingo and QuantPad were created 2026-08-04 with account
 `project-alpha`; CoinGecko 2026-08-14 and Finnhub 2026-08-19 with account `hunternovotny`. The
 launcher looks items up by *service* only, so the inconsistent account names are harmless — but
 match the existing account when you update an item, or you will create a second one beside it.
@@ -48,7 +47,7 @@ exported anything; the launcher is what makes them configured, per-process.
 
 **All four credentialed data providers were verified live on 2026-08-19** — Tiingo, QuantPad
 and CoinGecko each returned `verified` with a fresh receipt, and Finnhub returned a live SPY
-quote. IBKR returned `connectivity_failed`; see below.
+quote. 
 
 ### Finnhub — the key is exposed and the owner has accepted that
 
@@ -89,25 +88,6 @@ and every `find-generic-password -w` form. Agents may read item *metadata* only:
 security find-generic-password -s project-alpha-tiingo
 ```
 
-### IBKR — preview before any release
-
-The what-if lane exists so the paper boundary can be exercised without releasing an order:
-
-```bash
-uv run alpha provider check ibkr --json
-uv run alpha paper ibkr-what-if-plan --json
-uv run alpha paper ibkr-what-if-execute --json
-```
-
-`ibkr-what-if-execute` writes a preview receipt; `alpha paper ibkr-run` is the only command that
-releases a real paper order and is denied to agents outright.
-
-**Checked 2026-08-19: `connectivity_failed`, because Docker is not running.** The receipt reads
-`docker_cli: true, docker_daemon: false` — the CLI is installed but the daemon is down, so the
-gateway container cannot start. Start Docker Desktop and re-run the check. Two owner review
-items are also still open in the same receipt and no agent can clear them:
-`image_digest_reviewed: false` and `signed_local_app_reviewed: false`.
-
 ### Bulk crypto storage — configured and verified
 
 The crypto acquisition lanes write to an external volume and fail closed if
@@ -132,16 +112,6 @@ diskutil info /Volumes/Expansion | grep 'Volume UUID'
 | Codex project trust | lets Codex run in this directory without re-prompting | already set — `trust_level = "trusted"` for `/Users/hunternovotny/Desktop/Project-ALPHA` in `~/.codex/config.toml` | `grep -A2 'Project-ALPHA' ~/.codex/config.toml` |
 | Codex ChatGPT login | the optional second-model seam | see `codex-second-model-runbook.md` | `python3 scripts/codex_bridge.py probe` |
 | claude.ai connectors (Linear, Slack, Notion, …) | 14 plugin MCP servers await OAuth | authorize in claude.ai connector settings, or `/mcp` in an interactive session | those tools stop reporting as unauthenticated |
-
-## Opt-ins currently off (deliberately)
-
-| Flag | Unlocks | Note |
-|---|---|---|
-| `ALPHA_PAPER_ENABLED=true` | public Binance data + local Nautilus sandbox orders | never a live-capital route |
-| `ALPHA_IBKR_PAPER_ENABLED=true` | native IBKR Paper intent release (needs `ALPHA_PAPER_ENABLED` too) | loopback port + DU account only; live ports are rejected |
-
-Set these only in the one command that needs them — never in `.env`, never exported into a shell
-that launches an agent. **Verify:** `uv run alpha info system --json`.
 
 ## Deliberately deferred
 

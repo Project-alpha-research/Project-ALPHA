@@ -38,5 +38,3 @@ def test_system_api_reports_local_readiness_without_network(
     assert status["data_dir"]["path"] == str(tmp_path)
     assert status["counts"] == {"symbols": 0, "snapshots": 0}
     assert status["nautilus"]["pinned_version"] == "1.228.0"
-    assert status["paper_enabled"] is False
-    assert status["ibkr_paper_enabled"] is False

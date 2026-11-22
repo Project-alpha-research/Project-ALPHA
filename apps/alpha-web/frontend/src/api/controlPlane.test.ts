@@ -43,15 +43,6 @@ describe('control-plane API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/system')
   })
 
-  it('encodes a session id and advances the paper-event cursor', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([]))
-    vi.stubGlobal('fetch', fetchMock)
-
-    await api.paperEvents('unsafe/id', 41)
-
-    expect(fetchMock).toHaveBeenCalledWith('/api/paper/sessions/unsafe%2Fid/events?after=41')
-  })
-
   it('cancels through the linked job endpoint with DELETE', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ status: 'cancelled' }))
     vi.stubGlobal('fetch', fetchMock)

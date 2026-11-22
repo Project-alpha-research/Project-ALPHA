@@ -12,7 +12,6 @@
 import type { FunctionComponent } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
-import { ActivityFeed } from '../panels/ActivityFeed'
 import { CompareRuns } from '../panels/CompareRuns'
 import { DataManager } from '../panels/DataManager'
 import { EvidenceHub } from '../panels/EvidenceHub'
@@ -21,11 +20,10 @@ import { JobMonitor } from '../panels/JobMonitor'
 import { KronosStudio } from '../panels/KronosStudio'
 import { MlDiagnostics } from '../panels/MlDiagnostics'
 import { NativeJobResult } from '../panels/NativeJobResult'
-import { PaperMonitor } from '../panels/PaperMonitor'
 import { Pipeline } from '../panels/Pipeline'
 import { PriceChart } from '../panels/PriceChart'
-import { ProviderSystem } from '../panels/ProviderSystem'
 import { RdAgentPanel } from '../panels/RdAgentPanel'
+import { IdeaWorkspace } from '../panels/idea/IdeaWorkspace'
 import { SetupLabPanel } from '../panels/SetupLabPanel'
 import { ResearchBacklog } from '../panels/ResearchBacklog'
 import { ResearchCockpit } from '../panels/ResearchCockpit'
@@ -50,7 +48,6 @@ export type DocumentKind =
   | 'forecast'
   | 'ml'
   | 'jobs'
-  | 'paper'
   | 'data'
   | 'tools'
 
@@ -66,7 +63,6 @@ export const DOCUMENT_KINDS: readonly DocumentKind[] = Object.freeze([
   'forecast',
   'ml',
   'jobs',
-  'paper',
   'data',
   'tools',
 ])
@@ -90,6 +86,7 @@ export interface DocumentDefinition {
 }
 
 export const DOCUMENTS: readonly DocumentDefinition[] = [
+  { id: 'ideas', kind: 'research', title: 'Ideas', panes: [{ name: 'IdeaWorkspace', title: 'Ideas', component: IdeaWorkspace }] },
   { id: 'rdagent', kind: 'research', title: 'RD-Agent', panes: [{ name: 'RdAgentPanel', title: 'RD-Agent', component: RdAgentPanel }] },
   { id: 'setup-lab', kind: 'research', title: 'Setup Lab', panes: [{ name: 'SetupLabPanel', title: 'Setup Lab', component: SetupLabPanel }] },
   {
@@ -176,18 +173,8 @@ export const DOCUMENTS: readonly DocumentDefinition[] = [
   {
     id: 'jobs',
     kind: 'jobs',
-    title: 'Jobs & providers',
-    panes: [
-      { name: 'JobMonitor', title: 'Jobs', component: JobMonitor },
-      { name: 'ProviderSystem', title: 'Providers & system', component: ProviderSystem },
-      { name: 'ActivityFeed', title: 'Activity', component: ActivityFeed, area: 'side' },
-    ],
-  },
-  {
-    id: 'paper',
-    kind: 'paper',
-    title: 'Paper sessions',
-    panes: [{ name: 'PaperMonitor', title: 'Paper sessions', component: PaperMonitor }],
+    title: 'Jobs',
+    panes: [{ name: 'JobMonitor', title: 'Jobs', component: JobMonitor }],
   },
   // Equities-only windows.
   {
@@ -288,7 +275,7 @@ export const DOCKS: readonly DockDefinition[] = [
     id: 'Toolbox',
     side: 'bottom',
     title: 'Toolbox',
-    tabs: ['Jobs', 'Trades', 'Backtests', 'Data pulls', 'Log', 'Alerts'],
+    tabs: ['Jobs', 'Backtests', 'Data pulls', 'Alerts'],
   },
 ]
 

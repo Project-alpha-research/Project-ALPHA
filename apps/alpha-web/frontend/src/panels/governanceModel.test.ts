@@ -6,7 +6,6 @@ const EMPTY: GovernanceInput = {
   system: null,
   providers: null,
   overrides: null,
-  sessions: null,
   storage: null,
   gate: { lock: null, projectId: null, projectName: null },
   watermark: null,
@@ -14,8 +13,6 @@ const EMPTY: GovernanceInput = {
 }
 
 const SYSTEM = {
-  paper_enabled: false,
-  ibkr_paper_enabled: false,
   nautilus: { available: true, version: '1.200.0' },
 } as unknown as NonNullable<GovernanceInput['system']>
 
@@ -43,14 +40,9 @@ describe('governancePages', () => {
     for (const sentence of Object.values(GOVERNANCE_SENTENCES)) expect(rows).toContain(sentence)
   })
 
-  it('reads paper flags and the activity connection from the projections, never inventing them', () => {
-    const rows = page(governancePages({ ...EMPTY, system: SYSTEM, connection: 'live' }), 'authority')
-      .rows
-    expect(rows).toContainEqual({ label: 'Paper sessions', value: 'disabled (ALPHA_PAPER_ENABLED unset)', tone: 'warn' })
-    expect(rows).toContainEqual({ label: 'IBKR paper', value: 'disabled', tone: 'warn' })
+  it('reads the activity connection from the projection, never inventing it', () => {
+    const rows = page(governancePages({ ...EMPTY, system: SYSTEM, connection: 'live' }), 'authority').rows
     expect(rows).toContainEqual({ label: 'Activity stream', value: 'live', tone: 'ok' })
-    const unloaded = page(governancePages(EMPTY), 'authority').rows
-    expect(unloaded).toContainEqual({ label: 'Paper sessions', value: 'not loaded', tone: 'warn' })
   })
 
   it('carries the selected run watermark as a row so the pane is the third surface', () => {

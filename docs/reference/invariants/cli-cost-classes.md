@@ -9,7 +9,7 @@ sources:
   - tests/unit/test_cost_classes_recheck.py
   - apps/alpha-cli/src/alpha_cli/spine/recheck.py
   - apps/alpha-cli/src/alpha_cli/spine/recheck_compare.py
-verified: 0000000000000000
+verified: 48051fd15ae9622c
 ---
 
 # Command line cost classes invariants

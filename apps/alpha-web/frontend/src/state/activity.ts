@@ -12,16 +12,16 @@ import type { JobSummary, RunListItem } from '../api/types'
 export type ConnectionState = 'connecting' | 'live' | 'down'
 
 /** The governed data areas the server watches by mtime (`_activity.AREAS`). */
-export const STORE_AREAS = ['research', 'control', 'bars', 'paper', 'workspaces', 'alerts'] as const
+export const STORE_AREAS = ['research', 'control', 'bars', 'workspaces', 'alerts', 'ideas'] as const
 export type StoreArea = (typeof STORE_AREAS)[number]
 
 export const AREA_TEXT: Record<StoreArea, string> = {
   research: 'research case changed on disk',
   control: 'control plane changed (projects · evidence · versions · jobs)',
   bars: 'bar store changed (pull or snapshot)',
-  paper: 'paper journal changed',
   workspaces: 'workspaces changed',
   alerts: 'scan alerts changed',
+  ideas: 'idea cards or their tests changed',
 }
 
 export interface ActivityEvent {
@@ -59,9 +59,9 @@ const ZERO_AREAS: Record<StoreArea, number> = {
   research: 0,
   control: 0,
   bars: 0,
-  paper: 0,
   workspaces: 0,
   alerts: 0,
+  ideas: 0,
 }
 
 let state: ActivityState = {

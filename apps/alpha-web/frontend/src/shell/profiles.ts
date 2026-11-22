@@ -14,12 +14,12 @@ export type WindowId =
   | 'scanner'
   | 'research'
   | 'rdagent'
+  | 'ideas'
   | 'setup-lab'
   | 'governance'
   | 'forecast'
   | 'ml-lab'
   | 'jobs'
-  | 'paper'
   | 'corporate-actions'
   | 'funding'
   | 'open-interest'
@@ -42,7 +42,6 @@ export interface ProfileManifest {
   readonly defaultSymbol: string
   readonly symbolStyle: 'pair' | 'ticker'
   readonly starterWatchlist: readonly string[]
-  readonly paperVenues: readonly string[]
   readonly glossaryTags: readonly string[]
 }
 
@@ -56,12 +55,12 @@ export const MARKET_NEUTRAL_WINDOWS: readonly WindowId[] = Object.freeze([
   'scanner',
   'research',
   'rdagent',
+  'ideas',
   'setup-lab',
   'governance',
   'forecast',
   'ml-lab',
   'jobs',
-  'paper',
 ])
 
 const DOCKS: readonly DockId[] = Object.freeze(['MarketWatch', 'Navigator', 'DataManager', 'Toolbox'])
@@ -85,7 +84,6 @@ export const PROFILES: Readonly<Record<Profile, ProfileManifest>> = freeze({
     defaultSymbol: 'XRP/USDT',
     symbolStyle: 'pair',
     starterWatchlist: ['BTC/USDT', 'ETH/USDT', 'XRP/USDT', 'SOL/USDT'],
-    paperVenues: ['binance-sandbox'],
     glossaryTags: ['crypto'],
   },
   equities: {
@@ -99,7 +97,6 @@ export const PROFILES: Readonly<Record<Profile, ProfileManifest>> = freeze({
     defaultSymbol: 'AAPL',
     symbolStyle: 'ticker',
     starterWatchlist: ['SPY', 'AAPL'],
-    paperVenues: ['ibkr'],
     glossaryTags: ['equities'],
   },
 })

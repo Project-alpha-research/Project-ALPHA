@@ -8,6 +8,7 @@ from typing import Annotated, Any
 
 import typer
 
+from alpha_cli import reserved_slots
 from alpha_cli._cli_json import emit
 from alpha_cli.follow_counts import followed_counts, followed_line
 from alpha_cli.nightly_status import last_night_line
@@ -174,8 +175,12 @@ def collect(home: Path) -> dict[str, Any]:
         )
     notes.append("Decisions waiting are not shown: no local status data is read.")
     followed = followed_counts(home)
+    spent = reserved_slots.receipts(home)
+    slots = {"used": len(spent), "left": reserved_slots.SLOTS - len(spent)}
+    slots["unfinished"] = sum(r["result"] is None for r in spent)
     return {
         **({"followed": followed} if followed else {}),
+        **({"reserved_slots": slots} if spent else {}),
         "last_night": last_night_line(home),
         "stores": stores,
         "recent_trials": _trial_facts(home),
@@ -216,6 +221,13 @@ def _text(facts: dict[str, Any]) -> str:
         )
     if facts.get("followed"):
         lines.append(followed_line(facts["followed"]))
+    if facts.get("reserved_slots"):
+        slots = facts["reserved_slots"]
+        unfinished = f", {slots['unfinished']} not finished" if slots["unfinished"] else ""
+        lines.append(
+            f"Reserved period: {slots['used']} of {reserved_slots.SLOTS} confirmation slots used"
+            f"{unfinished}, {slots['left']} left. See them: alpha confirm list"
+        )
     ideas = facts["ideas"]
     plural = "" if ideas["cards"] == 1 else "s"
     lines.append(

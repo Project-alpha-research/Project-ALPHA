@@ -10,7 +10,7 @@ import type { ChartLinkRegistry } from '../shell/chartLinkRegistry'
 import { setChartHover } from '../context/chartHover'
 import { api, type ArchiveChartDataset } from '../api/client'
 import { ArchiveChartSelect } from '../components/ArchiveChartSelect'
-import type { Candle, CandleProvenance, ChartBundle, ChartOverlays, PaperCandleMarker } from '../api/types'
+import type { Candle, CandleProvenance, ChartBundle, ChartOverlays } from '../api/types'
 import { Placeholder } from '../components/Placeholder'
 import { TechnicalChart } from '../components/technical/TechnicalChart'
 import { ChartSurface } from '../theme/ChartSurface'
@@ -61,7 +61,6 @@ export function PriceChart(props: PanelHandleProps) {
   const [overlayError, setOverlayError] = useState<string | null>(null)
   const [bars, setBars] = useState<Candle[] | null>(null)
   const [bundle, setBundle] = useState<ChartBundle | null>(null)
-  const [paperMarkers, setPaperMarkers] = useState<PaperCandleMarker[]>([])
   const [candleProvenance, setCandleProvenance] = useState<CandleProvenance | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [evidenceLayer, setEvidenceLayer] = useState<EvidenceLayer>('executions')
@@ -137,7 +136,6 @@ export function PriceChart(props: PanelHandleProps) {
       .then((c) => {
         if (!live) return
         setBars(c.bars)
-        setPaperMarkers(c.paper_markers)
         setCandleProvenance(c.provenance)
       })
       .catch((e: unknown) => live && setError(String(e)))
@@ -154,7 +152,6 @@ export function PriceChart(props: PanelHandleProps) {
     let live = true
     setError(null)
     setBars(null)
-    setPaperMarkers([])
     setCandleProvenance(null)
     setBundle(null)
     api
@@ -186,17 +183,9 @@ export function PriceChart(props: PanelHandleProps) {
   const evidence = useMemo(
     () => {
       if (bars && bundle) return buildEvidenceMarkers(bundle, bars.map((bar) => bar.t))
-      return paperMarkers.map((marker) => ({
-        id: `paper:${marker.session_id}:${marker.sequence}`,
-        sequenceId: marker.sequence,
-        kind: marker.event_type === 'fill' ? 'fill' as const : 'decision' as const,
-        barTs: marker.t,
-        exactTs: marker.exact_ts,
-        label: `P ${marker.event_type.toUpperCase()}${marker.side ? ` ${marker.side}` : ''}`,
-        tone: marker.side?.toUpperCase().includes('SELL') ? 'negative' as const : 'positive' as const,
-      }))
+      return []
     },
-    [bars, bundle, paperMarkers],
+    [bars, bundle],
   )
   const selectedSequenceId = useMemo(
     () =>
@@ -269,7 +258,6 @@ export function PriceChart(props: PanelHandleProps) {
           </span>
         ) : null}
         {bundle ? <span className="chip chart-run-provenance">{bundle.provenance.command ?? 'run'} · artifact v{bundle.provenance.artifact_contract_version ?? 'legacy'}</span> : null}
-        {!bundle && paperMarkers.length ? <span className="chip kind">{paperMarkers.length} paper events</span> : null}
         {!bundle && candleProvenance ? (
           <span className={`chip ${candleProvenance.quality_status === 'legacy_unqualified' ? 'fail' : 'pass'}`}>
             {candleProvenance.source} · {candleProvenance.venue ?? 'venue n/a'} · {candleProvenance.timeframe} · {candleProvenance.quality_status}

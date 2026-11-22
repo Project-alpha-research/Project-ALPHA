@@ -49,7 +49,6 @@ class StrategyDef:
     build: Callable[[RunSpec, InstrumentId, BarType], Strategy]
     surrogate: Callable[[RunSpec], Surrogate]
     params: frozenset[str] = frozenset()
-    supports_live_paper: bool = False
 
 
 # --- ts_momentum (the v1 strategy) -------------------------------------------------------------
@@ -409,35 +408,30 @@ STRATEGIES: dict[str, StrategyDef] = {
         build=_ts_momentum_build,
         surrogate=_ts_momentum_surrogate,
         params=frozenset(),  # its knobs (lookback/skip/...) are first-class RunSpec fields
-        supports_live_paper=True,
     ),
     "ma_crossover": StrategyDef(
         warmup=_ma_crossover_warmup,
         build=_ma_crossover_build,
         surrogate=_ma_crossover_surrogate,
         params=frozenset({"fast", "slow"}),
-        supports_live_paper=True,
     ),
     "mean_reversion": StrategyDef(
         warmup=_mean_reversion_warmup,
         build=_mean_reversion_build,
         surrogate=_mean_reversion_surrogate,
         params=frozenset({"window", "entry_z"}),
-        supports_live_paper=True,
     ),
     "breakout": StrategyDef(
         warmup=_breakout_warmup,
         build=_breakout_build,
         surrogate=_breakout_surrogate,
         params=frozenset({"window"}),
-        supports_live_paper=True,
     ),
     "rules": StrategyDef(
         warmup=_rules_warmup,
         build=_rules_build,
         surrogate=_rules_surrogate,
         params=frozenset(),  # the rule set itself is selected with --rules NAME
-        supports_live_paper=False,
     ),
     "kronos": StrategyDef(
         warmup=_kronos_warmup,
@@ -446,7 +440,6 @@ STRATEGIES: dict[str, StrategyDef] = {
         params=frozenset(
             {"context", "horizon", "samples", "temperature", "top_p", "top_k", "min_edge", "band"}
         ),
-        supports_live_paper=False,
     ),
 }
 
@@ -457,7 +450,6 @@ STRATEGIES = {
         build=sdef.build,
         surrogate=sdef.surrogate,
         params=frozenset(_param_specs_for(name)),
-        supports_live_paper=sdef.supports_live_paper,
     )
     for name, sdef in STRATEGIES.items()
 }
@@ -521,8 +513,6 @@ def build_strategy(
     spec: RunSpec,
     instrument_id: InstrumentId,
     bar_type: BarType,
-    *,
-    event_sink: object | None = None,
 ) -> Strategy:
     """Construct the nautilus ``Strategy`` for ``spec`` (engine imports happen lazily inside)."""
     sdef = _resolve(spec.strategy_name)
@@ -534,15 +524,6 @@ def build_strategy(
         if not isinstance(strategy, VolTargetStrategy):
             raise DataError("all_in sizing requires VolTargetStrategy")
         strategy.configure_sizing_costs(fee_bps=spec.fee_bps, slippage_bps=spec.slippage_bps)
-    if event_sink is not None:
-        from alpha_core import ExecutionEventSink
-        from alpha_strategies.base import VolTargetStrategy
-
-        if not isinstance(event_sink, ExecutionEventSink):
-            raise DataError("paper event sink does not implement ExecutionEventSink")
-        if not isinstance(strategy, VolTargetStrategy):
-            raise DataError(f"strategy {spec.strategy_name!r} cannot journal paper events")
-        strategy.set_execution_event_sink(event_sink)
     return strategy
 
 

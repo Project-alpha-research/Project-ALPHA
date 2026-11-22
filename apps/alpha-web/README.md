@@ -6,7 +6,7 @@ sources:
   - apps/alpha-web/frontend/index.html
   - apps/alpha-web/frontend/src/**
   - apps/alpha-web/frontend/package.json
-verified: 408dfac40167f7c4
+verified: 4886f8c5e04fe3b8
 ---
 
 # alpha-web: code map and change loop
@@ -44,7 +44,7 @@ grants authority.
   It reads `GET /api/runs/{id}/series` (`_run_series.py`, `api/models/series.py`). Browser spec: `e2e/rule-test-summary.spec.ts`.
 - The reading block (`components/ReadingBlock.tsx`, model `panels/readingModel.ts`) is used by `RuleTestReport.tsx` and `SetupLabPanel.tsx`. The rule-test reading
   and the declared or exploratory word come with `GET /api/runs/{id}/checks` (`_checks.py`); Setup Lab's come from `alpha setup show` (`_setup_runs.py`). Browser spec: `e2e/reading-block.spec.ts`.
-- The other places that show a run's reading (Navigator run list `panels/navigatorModel.ts`, Pipeline, activity feed, toasts, command palette, Gates tab
+- The other places that show a run's reading (Navigator run list `panels/navigatorModel.ts`, Pipeline, toasts, command palette, Gates tab
   `explain/gates.ts`, Summary and edge review rows) use the helpers in `panels/readingModel.ts`. Rules: [readings in the remaining places](../../docs/reference/invariants/web-run-detail.md#readings-in-the-remaining-places). Specs: `panels/readingEverywhere.test.tsx`, `e2e/readings-everywhere.spec.ts`.
 - The Gates tab charts (`panels/rundetail/WalkForward.tsx`, `CheckCharts.tsx`, `NullChart.tsx`; pure models `walkForwardModel.ts`, `checkChartModel.ts`, `nullChartModel.ts`; reads in `useCheckChartData.ts`) use `GET /api/candles` and `GET /api/runs/{id}/nulls`, no new route. Browser spec: `e2e/check-charts.spec.ts`.
 - The Market screen (Data & Assets › Market) is `panels/MarketOverview.tsx` with pure helpers in `panels/marketModel.ts`. It reads `GET /api/market/overview`
@@ -53,6 +53,8 @@ grants authority.
 - The Today screen (Research › Today) is `panels/FollowToday.tsx` with helpers in `panels/followTodayModel.ts`. It reads `GET /api/follow/today` and
   `GET /api/follow/{id}` (`api/follow.py`, `api/models/follow.py`), which relay `alpha follow today|show`. Browser spec: `e2e/follow-today.spec.ts`.
   Rules: [Today screen](../../docs/reference/invariants/web-frontend.md#today-screen), [reads](../../docs/reference/invariants/web-api-reads.md#follow-today-read).
+- The Ideas page (View → Research → Ideas) is `panels/idea/IdeaWorkspace.tsx` (sections in `IdeaSections.tsx`, run charts and checks in `IdeaRunPanels.tsx`, pure helpers in `ideaModel.ts`). It reads `GET /api/ideas` and `GET /api/ideas/{card}` (`api/ideas.py`, `api/models/ideas.py`), which relay `alpha idea list|file`. Browser spec: `e2e/idea-workspace.spec.ts`.
+  Rules: [Ideas page](../../docs/reference/invariants/web-frontend-ideas.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.

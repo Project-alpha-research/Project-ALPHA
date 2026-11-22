@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import type { Candles } from '../src/api/types'
+
 import { preparePage } from './support/workstationHarness'
 import { studySeries, walkBars } from './support/technicalFixture'
 import { waitForTechnicalChartWidth } from './support/technicalLayout'
@@ -54,35 +54,6 @@ test('@reference-only ordinary chart uses bounded real Bokeh printf formats', as
   await observePrintf(page)
   await openChart(page, 'classic')
   await expectBoundedPrintf(page, 'f')
-})
-
-test('@reference-only hostile API marker values stay literal in real Bokeh hover', async ({ page }) => {
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
-  const side = '%.101f %.101e %.101g @y{%.101f} <img data-printf-payload src=x>'
-  const bars = BARS.slice(0, 120).map(bar => ({ ...bar, o: 100, h: 101, l: 99, c: 100 }))
-  await preparePage(page, { candles: { 'XRP/USDT': bars }, settings: { chartTemplate: 1, overlays: { crypto: { indicators: [], patterns: [] } } } })
-  const response: Candles = {
-    symbol: 'XRP/USDT', snapshot_id: null, bars,
-    provenance: { source: 'synthetic:printf-regression', venue: null, timeframe: '1D', snapshot_id: null,
-      provenance_sha256: null, receipt_id: null, knowledge_cutoff: null, quality_status: 'legacy_unqualified' },
-    paper_markers: bars.map((bar, sequence) => ({ session_id: 'synthetic-printf', sequence, t: bar.t, exact_ts: bar.t,
-      event_type: 'fill', execution_mode: 'local_sandbox', side, quantity: 1, price: bar.c, intent_id: null })),
-  }
-  await page.route('**/api/candles/**', route => route.fulfill({ json: response }))
-  await page.goto('/#page=data&pane=PriceChart')
-  const host = page.locator('[data-panel-id=primary] .technical-host')
-  await expect(host.locator('canvas').first()).toBeVisible()
-  const tag = host.locator('.technical-tag').filter({ hasText: /^100\.00$/ }).first()
-  await expect(tag).toBeVisible()
-  const box = (await host.boundingBox())!, tagBox = (await tag.boundingBox())!
-  const y = tagBox.y + 6
-  await page.mouse.move(box.x + box.width / 2, y)
-  const cursor = host.locator('.technical-cursor').first()
-  await expect(cursor).toBeVisible()
-  await page.mouse.move((await cursor.boundingBox())!.x, y)
-  await expect(page.locator('.bk-Tooltip').getByText(`P FILL ${side}`, { exact: true })).toBeVisible()
-  await expect(page.locator('[data-printf-payload]')).toHaveCount(0)
-  expect(errors).toEqual([])
 })
 
 for (const scale of [1e-200, 1e200]) {

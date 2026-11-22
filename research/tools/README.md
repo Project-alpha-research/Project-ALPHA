@@ -6,7 +6,7 @@ sources:
   - apps/alpha-cli/src/alpha_cli/test_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_cmds.py
   - apps/alpha-cli/src/alpha_cli/context_sources_cmds.py
-verified: 49b5ca65c0fb042a
+verified: 661aaca963b74726
 ---
 
 # Research tools, by symptom
@@ -17,7 +17,7 @@ Start from the symptom. Each card gives a tool's command, how to read it, its li
 |---|---|
 | Stored daily bars may have a missing split, gaps or bad timestamps | [daily data health](data-health.md) |
 | "Which check fits my situation?", "a better model for RD-Agent?" | [toolbox by situation](toolbox-by-situation.md), [model bench](rdagent-model-bench.md) |
-| An idea to test (write the [idea card](idea-card.md) first; [library](library.md) has published ones) | [rule test](rule-test.md), then [follow](follow.md) |
+| An idea to test ([idea card](idea-card.md), [library](library.md)) | [rule test](rule-test.md), [follow](follow.md), [final](reserved-confirmation.md) |
 | "Does the pipeline still work?", "did last night fail?", "is the disk filling up?" | [nightly run](nightly-run.md), [failure marker, disk](nightly-alert.md) |
 | A copy of everything stored here, and proof the copy is good | [back up and restore the data home](home-backup.md) |
 | A chart setup: "show me every time this happened" | [setup find](setup-find.md), [with a context condition](setup-context.md) |

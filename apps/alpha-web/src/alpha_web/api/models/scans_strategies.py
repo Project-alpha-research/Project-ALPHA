@@ -118,4 +118,3 @@ class StrategyDefinition(StrictModel):
     name: str
     params: list[ParamDefinition]
     has_tier1_surrogate: bool
-    supports_live_paper: bool

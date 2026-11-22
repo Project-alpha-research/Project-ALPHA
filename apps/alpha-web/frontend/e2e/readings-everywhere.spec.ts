@@ -102,9 +102,9 @@ for (const theme of THEMES) {
 }
 
 for (const theme of THEMES) {
-  test(`the activity feed and the toast show the evidence word, not a verdict or a gate result, in the ${theme} theme`, async ({ page }) => {
+  test(`the toast shows the evidence word, not a verdict or a gate result, in the ${theme} theme`, async ({ page }) => {
     await preparePage(page)
-    await page.goto('/#page=operations&pane=ActivityFeed')
+    await page.goto('/#page=operations&pane=JobMonitor')
     await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption(theme)
     const send = (run: Record<string, unknown>) => page.evaluate(data => {
       const stream = (window as unknown as { __alphaStream: EventTarget }).__alphaStream
@@ -112,10 +112,6 @@ for (const theme of THEMES) {
     }, run)
     await send(listed('c'.repeat(16), { evidence: 'not clear of chance', verdict: 'D', passed: false }))
     await send(listed('d'.repeat(16), { evidence: null, verdict: 'A', passed: true }))
-    const feed = page.locator('.feed')
-    await expect(feed).toContainText('not clear of chance')
-    await expect(feed).toContainText('graded A under the old rules')
-    assertOwnerText(await feed.innerText())
     const toasts = page.locator('.toasts')
     await expect(toasts).toContainText('SYN · ma_cross — not clear of chance')
     await expect(page.locator('.toast.tone-good, .toast.tone-bad')).toHaveCount(0)

@@ -107,6 +107,7 @@ def build_market_overview(data_dir: Path, *, store: str, window: int, limit: int
                 data_dir=data_dir,
                 timeframe=timeframe.canonical,
                 source_timeframe=timeframe.canonical,
+                last=MAX_BARS_READ,
             )
         except (DataError, OSError, PolarsError) as exc:
             few = _FEW_BARS.search(str(exc)) if isinstance(exc, DataError) else None

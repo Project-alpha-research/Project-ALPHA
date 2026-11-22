@@ -37,9 +37,15 @@ class PointInTimeSource:
     def available_symbols(self) -> list[str]:
         return self._store.list_symbols()
 
-    def as_of(self, symbol: str, when: AwareDatetime) -> list[Bar]:
-        """Validated, chronologically-ordered bars knowable at ``when`` (split-adjusted)."""
+    def as_of(self, symbol: str, when: AwareDatetime, *, last: int | None = None) -> list[Bar]:
+        """Validated, chronologically-ordered bars knowable at ``when`` (split-adjusted).
+
+        ``last`` keeps only the newest that many bars, cut after the point-in-time filter and
+        before bars are validated, so a display that needs a window does not pay for the history.
+        """
         frame = self._reader.as_of(symbol, when)
+        if last is not None:
+            frame = frame.tail(last)
         bars = []
         for row in frame.iter_rows(named=True):
             try:

@@ -72,7 +72,8 @@ What the Workstation backend reads, writes and relays. The other backend rules a
 
 - `GET /api/market/overview` relays `alpha data market-overview --json` (`api/market.py`, 120 s timeout). The CLI reads stored bars only through
   `load_bars`, the point-in-time reader the chart uses. It writes nothing, reads no run, ledger or research result, and never uses the network. The
-  web adds no second bar reader. Caps: 200 assets per store (name order) and the newest 400 bars each (`MAX_ASSETS_SCANNED`, `MAX_BARS_READ`); windows
+  web adds no second bar reader. The CLI cuts each asset to its newest bars before it builds them (`load_bars(last=)`). The route keeps the last 8 answers
+  in memory, keyed by the request and the name, size and change time of every stored bar file (a stat, no read); a changed file makes a new key. Caps: 200 assets per store (name order) and the newest 400 bars each (`MAX_ASSETS_SCANNED`, `MAX_BARS_READ`); windows
   30, 90 or 365; 1 to 30 assets. "Top" assets rank by median close times volume over the window. An asset with too few bars, or one that cannot be
   read, is listed with its reason, never dropped. Enforced by `tests/unit/test_market_overview.py` and `tests/integration/test_web_api_market.py`.
 

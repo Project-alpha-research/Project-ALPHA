@@ -223,6 +223,7 @@ def load_bars(
     timeframe: str = "1D",
     source_timeframe: str | None = None,
     session: str | None = None,
+    last: int | None = None,
 ) -> tuple[list[Bar], str | None]:
     """Load the point-in-time history for ``symbol`` — live store or a frozen snapshot.
 
@@ -234,6 +235,8 @@ def load_bars(
     ``data_dir/snapshots/<id>`` (integrity-verified first), so the manifest's provenance claim is
     what the run actually consumed — the live store is wholesale-replaced by pulls and cannot back a
     reproducibility claim. Fails loud (``DataError``) on a missing/tampered snapshot or < 2 bars.
+    ``last`` keeps only the newest that many bars (after the point-in-time filter and any
+    resampling), for displays that show a window.
     """
     from pydantic import ValidationError
 
@@ -251,7 +254,7 @@ def load_bars(
     when = as_of if as_of is not None else datetime(2999, 1, 1, tzinfo=UTC)
     if target.is_daily and stored.is_daily:
         source = PointInTimeSource(store, actions)
-        bars = source.as_of(symbol, when)
+        bars = source.as_of(symbol, when, last=last if as_of is None else None)
         if as_of is not None and as_of.astimezone(UTC).time() < time(23, 59, 59):
             # A date cutoff (end of that UTC day) keeps its historical meaning. An exact instant
             # inside a day must not see that day's daily bar before it closes: a stored daily bar
@@ -263,6 +266,10 @@ def load_bars(
                 for bar in bars
                 if bar_known_at(bar.ts, timeframe=stored, calendar=calendar) <= as_of
             ]
+            if last is not None:
+                bars = bars[-last:]
+        elif last is not None and as_of is not None:
+            bars = bars[-last:]
     else:
         reader = PointInTimeReader(store, actions, timeframe=stored, calendar=calendar)
         frame = filter_session(
@@ -272,6 +279,8 @@ def load_bars(
             frame = resample_bars(
                 frame, source=stored, target=target, calendar=calendar, known_by=as_of
             )
+        if last is not None:
+            frame = frame.tail(last)
         bars = []
         for row in frame.iter_rows(named=True):
             try:

@@ -81,3 +81,26 @@ def test_overview_on_an_empty_store_is_a_409_not_a_500(
 ) -> None:
     monkeypatch.setenv("ALPHA_DATA_DIR", str(tmp_path))
     assert TestClient(create_app()).get("/api/market/overview").status_code == 409
+
+
+def test_overview_is_cached_until_a_bar_file_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alpha_web.api import market
+
+    market._cache.clear()
+    client = _client(tmp_path, monkeypatch)
+    calls: list[list[str]] = []
+    real = market._run_json
+
+    def counting(args: list[str], **kwargs: object) -> dict[str, object]:
+        calls.append(args)
+        return real(args, **kwargs)
+
+    monkeypatch.setattr(market, "_run_json", counting)
+    first = client.get("/api/market/overview", params={"window": "30"}).json()
+    second = client.get("/api/market/overview", params={"window": "30"}).json()
+    assert len(calls) == 1 and first == second
+    _seed(tmp_path, "BIG", 61, 100.0, 1000.0)
+    client.get("/api/market/overview", params={"window": "30"})
+    assert len(calls) == 2

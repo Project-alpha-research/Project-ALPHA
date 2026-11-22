@@ -63,7 +63,8 @@ jobs:
     # ready (owner decision 2026-11-21: every push to a draft filled the queue with 20-minute runs).
     if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 40, not 25: with many runs active a shard that needs 23 minutes was cancelled and repeated.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:

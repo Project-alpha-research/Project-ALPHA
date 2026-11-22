@@ -35,12 +35,12 @@ def series(home: Path, symbol: str, prices: tuple[float, float] = (101, 102)) ->
 
 
 def test_lookup_and_refresh(tmp_path: Path) -> None:
-    from alpha_cli.spine.data_health import run_health_record
+    from alpha_cli.spine.data_health import HealthRecord, run_health_record
 
     store = series(tmp_path, "ABC")
     asset = resolve_asset("ABC", data_dir=tmp_path)
 
-    def lookup(check: bool = False, at: datetime = CHECKED) -> dict[str, Any]:
+    def lookup(check: bool = False, at: datetime = CHECKED) -> HealthRecord:
         return run_health_record([asset], check_data=check, report_time=at)
 
     missing = lookup()
@@ -56,7 +56,7 @@ def test_lookup_and_refresh(tmp_path: Path) -> None:
     provenance.write_bytes(provenance.read_bytes() + b" ")
     stale = lookup()
     assert stale["verdict"] == "out-of-date"
-    assert stale["series"][0]["source_fingerprint"] != report["series"][0]["source_fingerprint"]
+    assert stale.guards != report.guards  # the guard still bites on the whole stored file
     late = lookup(True, datetime(2024, 2, 1, tzinfo=UTC))
     assert late["verdict"] == "warn"
     assert late["series"][0]["checks"] and late["sentence"] != missing["sentence"]
@@ -266,7 +266,8 @@ def test_old_find_is_preserved_and_health_does_not_change_controls(tmp_path: Pat
         path.write_text(json.dumps(value))
     legacy = (folder / "manifest.json").read_bytes()
     retry = run_find(tmp_path / "spec.toml", home=tmp_path)
-    assert retry["find_id"] != original["find_id"]
+    # The id no longer holds the health record (it describes held-back rows too): the same find.
+    assert retry["find_id"] == original["find_id"] and retry["executed"] is False
     assert (folder / "manifest.json").read_bytes() == legacy
     later = run_study(
         retry["find_id"],

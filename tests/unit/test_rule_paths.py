@@ -45,6 +45,19 @@ OPERANDS: list[dict[str, Any]] = [
     {"indicator": "vg_path", "params": [12], "field": "price"},
     {"indicator": "reversibility", "params": [20]},
     {"value": 0.5},
+    {"indicator": "sma", "params": [20], "lag": 1},
+    {"indicator": "ema", "params": [12], "lag": 5},
+    {"indicator": "rsi", "params": [14], "lag": 1},
+    {"indicator": "rsi", "params": [2], "lag": 3},
+    {"indicator": "atr", "params": [14], "lag": 2},
+    {"indicator": "bbands", "params": [20, 2], "field": "upper", "lag": 1},
+    {"indicator": "macd", "params": [12, 26, 9], "field": "signal", "lag": 2},
+    {"indicator": "hawkes", "params": [0.1, 20], "lag": 1},
+    {"indicator": "highest", "params": [20], "field": "high"},
+    {"indicator": "highest", "params": [20], "field": "high", "lag": 1},
+    {"indicator": "lowest", "params": [10], "field": "low", "lag": 1},
+    {"indicator": "lowest", "params": [30], "field": "close", "lag": 4},
+    {"indicator": "highest", "params": [69], "field": "close", "lag": 1},
 ]
 
 
@@ -125,6 +138,17 @@ RULES: list[list[dict[str, Any]]] = [
         },
     ],  # fmt: skip
     [{"left": {"indicator": "runs_z", "params": [10]}, "op": "<", "right": {"value": 0.5}}],
+    [  # crossed above 30, and a break above the prior 20-bar high
+        {"left": {"indicator": "rsi", "params": [3]}, "op": ">", "right": {"value": 40}},
+        {"left": {"indicator": "rsi", "params": [3], "lag": 1}, "op": "<=", "right": {"value": 40}},
+    ],
+    [
+        {
+            "left": {"source": "close"},
+            "op": ">",
+            "right": {"indicator": "highest", "params": [5], "field": "high", "lag": 1},
+        }
+    ],
 ]
 
 

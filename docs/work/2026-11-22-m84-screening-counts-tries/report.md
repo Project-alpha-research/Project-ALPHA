@@ -27,3 +27,9 @@ Before the code: `uv run pytest tests/unit/test_screen_counts_tries.py` gave `5 
 - `lint-imports`: 13 kept, 0 broken. `gate.py check --base origin/main`: mypy and pytest pass; ruff fixed after the first run.
 - `tests/smoke/test_family_deflation_smoke.py` errors here only because Linux needs `scripts/run_owned_test.py` (environment, not this change).
 - No `.claude/code-size-baseline.json` entry was reported by `test_code_size.py`.
+
+## CI round 1 (fixed)
+- `tests/smoke/test_screening_smoke.py` compared the stored `result.json` to the CLI JSON. `counted` is printed but not stored (a stored copy would break the replay digest), so the test now leaves it out and checks `tries_added == 24` (4 hypotheses on 6 assets).
+- The tools README was 61 lines (limit 60): I merged my row into the deflated-Sharpe row.
+- The task folder needs a `brief.md`: copied from `work/m80-briefs`.
+- The first ready-for-review run skipped the full jobs (the PR still read as draft). I toggled draft and ready through the CCR routes to start the full run.

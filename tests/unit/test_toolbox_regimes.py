@@ -250,6 +250,16 @@ def test_asymmetric_beta_known_answer(tmp_path: Path) -> None:
     )
 
 
+def test_asymmetric_beta_leaves_flat_market_bars_out(tmp_path: Path) -> None:
+    market = noise(500, 7, 0.01)
+    rets = np.where(market > 0, 0.5, 1.5) * market + noise(500, 8, 0.002)
+    plain = go(tmp_path / "plain", BETA, rets, market)
+    # 60 flat-market bars with large positive strategy returns must change nothing.
+    flat = go(tmp_path / "flat", BETA, np.r_[rets, np.full(60, 0.02)], np.r_[market, np.zeros(60)])
+    assert flat["values"] == CLOSE(plain["values"])
+    assert flat["result"]["flat_market_bars"] == 60
+
+
 def test_trend_range_known_answer(tmp_path: Path) -> None:
     # Straight climb (efficiency 1) for 200 bars, then a zig-zag (efficiency 0) for 200 bars.
     market = np.r_[np.full(200, 0.001), np.tile([0.01, -0.00990099], 100)]

@@ -135,6 +135,10 @@ def asymmetric_beta(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
             f"Needs at least {MIN_GROUP} up bars and {MIN_GROUP} down bars of the market;"
             f" found {int(up.sum())} and {int(down.sum())}.",
         )
+    # Flat-market bars belong to neither side: leave them out of the fit and its degrees of freedom.
+    flat_bars = int((~up & ~down).sum())
+    keep = up | down
+    market, strategy, down = market[keep], strategy[keep], down[keep]
     # One regression with a down-bar intercept and slope: each side's fit equals its own fit.
     flag = down.astype(float)
     design = np.column_stack([np.ones_like(market), market, flag, market * flag])
@@ -160,7 +164,7 @@ def asymmetric_beta(inputs: Inputs, params: dict[str, Any], rng: Generator | Non
             "down_bars": int(down.sum()),
         },
         {},
-        details={"t_stat": t_stat, "flat_market_bars": int((~up & ~down).sum())},
+        details={"t_stat": t_stat, "flat_market_bars": flat_bars},
         basis=MARKET_BASIS,
     )
 

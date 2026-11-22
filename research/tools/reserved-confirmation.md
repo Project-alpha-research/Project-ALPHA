@@ -20,7 +20,6 @@ uv run alpha confirm show <run id>       # one finished confirmation
 Run `run` only when the owner asks for the final check, by idea name, in chat. Show `plan` first. There is no
 confirmation step and no Touch ID ([owner decision](../../docs/reference/project/owner-decisions-6.md)). A spent
 slot cannot be given back. No nightly run, RD-Agent loop, MCP tool, web page or follow can start it.
-
 Only a stored `alpha test` run made with the period held back can be confirmed, exactly as it ran: the same spec, costs,
 asset, data and engine settings. The earlier period is computed again first; if it does not match the stored run, nothing
 is spent. Then a slot receipt is written, and only then are the reserved bars read.

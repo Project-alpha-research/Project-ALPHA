@@ -17,6 +17,7 @@ from typer.testing import CliRunner
 from alpha_cli import confirm_cmds, next_cmds
 from alpha_cli.catalog import classify_generic_command
 from alpha_cli.spine import confirm_run as confirm_run_module
+from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.run import run_idea
 from alpha_cli.spine.spec import load_spec
 from alpha_data.store import ParquetStore
@@ -110,7 +111,7 @@ def test_plan_says_what_is_spent_and_run_prints_the_plan_before_it_spends(
     def fake_run(found_home: Path, found_run: str, **_: Any) -> dict[str, Any]:
         order.append("run")
         assert (found_home, found_run) == (home, run_id)
-        raise confirm_run_module.SpineError("RECHECK_MISMATCH", "No slot was used.", "x")
+        raise SpineError("RECHECK_MISMATCH", "No slot was used.", "x")
 
     monkeypatch.setattr(confirm_run_module, "confirm_run", fake_run)
     ran = runner.invoke(confirm_cmds.confirm_app, ["run", run_id])

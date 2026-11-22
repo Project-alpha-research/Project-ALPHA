@@ -18,10 +18,10 @@ from typing import TYPE_CHECKING, Any
 from alpha_cli import _runner
 from alpha_cli.run_store import find_run_dir, read_manifest
 from alpha_cli.spine.errors import SpineError
-from alpha_cli.spine.reserve import CONFIRMATION
+from alpha_cli.spine.reserve import CONFIRMATION, CUTOFF
 from alpha_cli.spine.run import assemble_run_spec
 from alpha_cli.spine.spec import Costs, IdeaSpec
-from alpha_cli.spine.stores import periods_per_year, resolve_asset
+from alpha_cli.spine.stores import ResolvedAsset, periods_per_year, resolve_asset
 from alpha_cli.toolbox.reference import vintage_fingerprint
 from alpha_cli.toolbox.reserve import RESERVED_DAY
 from alpha_validation.attribution import MIN_BARS
@@ -51,6 +51,11 @@ class RunSeries:
     positions: tuple[bool, ...] = ()
     # The run's own bars, already cut at the held-back boundary (empty when a caller gives none).
     bars: tuple[Bar, ...] = ()
+    # Re-run checks only (``load_rerun``): what the run used, to run the engine again.
+    dividends: tuple[CorporateAction, ...] = ()
+    idea: IdeaSpec | None = None
+    spec: _runner.RunSpec | None = None
+    full: Any = None
 
     def reserve_labels(self) -> tuple[str, ...]:
         last = self.manifest["metadata"].get("last_ts")
@@ -58,7 +63,9 @@ class RunSeries:
         return ("reserved-period-seen",) if end.date() >= RESERVED_DAY else ()
 
 
-RUN_KINDS = frozenset(("run_returns", "run_positions", "run_bars", "reference_factors"))
+RUN_KINDS = frozenset(
+    ("run_returns", "run_positions", "run_bars", "reference_factors", "run_rerun")
+)
 
 
 STORED_FILES = {
@@ -175,6 +182,9 @@ class Target:
             hashes.update(market=market.fingerprint, market_asset=market.name)
         if "reference_factors" in needs:
             hashes.update(vintage_fingerprint(home))
+        if "run_rerun" in needs:
+            # A re-run reads the bars again: its result is bound to the data it re-ran on.
+            hashes.update(data_fingerprint=self.manifest.get("source_fingerprint"))
         return market, hashes
 
 
@@ -196,20 +206,19 @@ def resolve(home: Path, run_id: str) -> Target:
     return Target(run_id, rdir, manifest)
 
 
-def load_run(home: Path, target: Target) -> RunSeries:
-    from alpha_cli.spine.diagnose import full_sample
-    from alpha_cli.spine.diagnostics import buy_and_hold
-    from alpha_cli.spine.facts import read_json
-
-    rdir, manifest, run_id = target.directory, target.manifest, target.run_id
-    if CONFIRMATION in (manifest.get("spine") or {}).get("labels", []):
+def _refuse_confirmation(target: Target) -> None:
+    if CONFIRMATION in (target.manifest.get("spine") or {}).get("labels", []):
         raise SpineError(
             "CONFIRMATION_RUN",
-            f"Run {run_id} is the owner's one look at the reserved period. Tools never read it "
-            "again: a second look at that period is not a fresh test.",
+            f"Run {target.run_id} is the owner's one look at the reserved period. Tools never read "
+            "it again: a second look at that period is not a fresh test.",
             "Run alpha confirm show with the confirmed run id; run tools on that earlier run.",
         )
-    stored = read_json(rdir / "spec.json")
+
+
+def load_run(home: Path, target: Target) -> RunSeries:
+    _refuse_confirmation(target)
+    manifest = target.manifest
     meta = manifest["metadata"]
     resolved = resolve_asset(f"{meta['symbol']}@{manifest['spine']['store']}", data_dir=home)
     last = datetime.fromisoformat(meta["last_ts"])
@@ -224,11 +233,59 @@ def load_run(home: Path, target: Target) -> RunSeries:
     dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=cutoff)
     changed = SpineError(
         "RUN_DATA_CHANGED",
-        f"The stored history of {resolved.symbol} no longer reproduces run {run_id}.",
+        f"The stored history of {resolved.symbol} no longer reproduces run {target.run_id}.",
         "Run alpha test again from the saved spec, then run alpha tool on the new run.",
     )
+    return _replay(home, target, resolved, bars, dividends, changed)
+
+
+def load_rerun(home: Path, target: Target) -> RunSeries:
+    """The run's inputs loaded as ``alpha test`` loads them, to re-run the engine with them.
+
+    Bars and dividends are read at the held-back boundary (``reserve.CUTOFF``), up to the run's
+    last bar. They must give the run's stored data fingerprint; otherwise the check refuses.
+    """
+    _refuse_confirmation(target)
+    manifest = target.manifest
+    meta = manifest["metadata"]
+    resolved = resolve_asset(f"{meta['symbol']}@{manifest['spine']['store']}", data_dir=home)
+    last = datetime.fromisoformat(meta["last_ts"])
+    bars = [
+        bar
+        for bar in _runner.load_bars(resolved.symbol, data_dir=resolved.data_dir, as_of=CUTOFF)[0]
+        if bar.ts <= last
+    ]
+    dividends = _runner.load_dividends(resolved.symbol, data_dir=resolved.data_dir, as_of=CUTOFF)
+    changed = SpineError(
+        "RUN_DATA_CHANGED",
+        f"The data of {resolved.symbol} before the held-back period is not the data run "
+        f"{target.run_id} used, so this check cannot re-run it with other settings.",
+        "Run alpha test again from the saved spec, then run this check on the new run.",
+    )
+    return _replay(home, target, resolved, bars, dividends, changed, keep=True)
+
+
+def _replay(
+    home: Path,
+    target: Target,
+    resolved: ResolvedAsset,
+    bars: list[Bar],
+    dividends: list[CorporateAction],
+    changed: SpineError,
+    *,
+    keep: bool = False,
+) -> RunSeries:
+    """Check the loaded data against the run's fingerprint and replay its full-sample run."""
+    from alpha_cli.spine.diagnose import full_sample
+    from alpha_cli.spine.diagnostics import buy_and_hold
+    from alpha_cli.spine.facts import read_json
+
+    rdir, manifest, run_id = target.directory, target.manifest, target.run_id
+    if not bars:
+        raise changed
     if _runner.source_fingerprint(bars, dividends=dividends) != manifest.get("source_fingerprint"):
         raise changed
+    stored = read_json(rdir / "spec.json")
     idea = IdeaSpec.model_validate({k: v for k, v in stored.items() if k != "spec_sha256"})
     if idea.costs_class_default:
         # The class row was chosen when the run was made; replay with the numbers it stored.
@@ -261,6 +318,10 @@ def load_run(home: Path, target: Target) -> RunSeries:
         benchmark_equity=dict(zip(dates, buy_and_hold(bars, dividends), strict=True)),
         positions=tuple(states[ts] for ts in dates),
         bars=tuple(bars),
+        dividends=tuple(dividends) if keep else (),
+        idea=idea if keep else None,
+        spec=spec if keep else None,
+        full=full if keep else None,
     )
 
 

@@ -11,6 +11,7 @@ from alpha_cli.toolbox.families.market import ATTRIBUTION, CHANGEPOINTS, VOL_REG
 from alpha_cli.toolbox.families.montecarlo import STUDENT_T_PATHS
 from alpha_cli.toolbox.families.overfit import DEFLATED_SHARPE
 from alpha_cli.toolbox.families.overfit_controls import CHECKS as OVERFIT_CONTROLS
+from alpha_cli.toolbox.families.parameter_robustness import CHECKS as PARAMETER_ROBUSTNESS
 from alpha_cli.toolbox.families.performance import CONCENTRATION, DOWNSIDE_RATIOS, SIDE_CONTRIBUTION
 from alpha_cli.toolbox.families.performance_stats import CHECKS as PERFORMANCE_STATS
 from alpha_cli.toolbox.families.regimes import CHECKS as REGIME_CHECKS
@@ -51,6 +52,7 @@ _OWN = (
     *RESAMPLING_MORE,
     *RISK_SIZING_CHECKS,
     *PERFORMANCE_STATS,
+    *PARAMETER_ROBUSTNESS,
 )
 # A check also answers the questions of `situations.QUESTIONS` that name it.
 SPECS = tuple(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -45,18 +45,25 @@ def prefix(bars: OHLCV, n: int, start: int = 0) -> OHLCV:
     )
 
 
-def replay(bars: OHLCV, build: Callable[[OHLCV], list[PatternEvent]]) -> list[PatternEvent]:
+def replay(
+    bars: OHLCV,
+    build: Callable[[OHLCV], list[PatternEvent]],
+    extra: Iterable[int] = (),
+) -> list[PatternEvent]:
     """Run `build` on the bars up to each pivot-confirmation bar; keep each event's first sighting.
 
     Head and shoulders picks its best right shoulder, and a wedge may be judged, with bars after
     its own confirmation. A single run over all bars would let those later bars decide an earlier
     value. Here the event bar is the first bar on which a run over the bars up to that bar sees it.
+    The runs happen at each swing-confirmation bar and at the bars in `extra` (where a caller knows
+    an event can first show, for example one bar after a trend line becomes active).
     """
     from alpha_patterns import find_swings
 
     swings = find_swings(bars, lookback=SWING_LOOKBACK, kind="high")
     swings += find_swings(bars, lookback=SWING_LOOKBACK, kind="low")
-    checkpoints = sorted({s.confirmed_index for s in swings})
+    n = len(bars)
+    checkpoints = sorted({s.confirmed_index for s in swings} | {i for i in extra if 0 <= i < n})
     seen: dict[tuple[str, tuple[tuple[int, float], ...]], PatternEvent] = {}
     for at in checkpoints:
         if at < 1:

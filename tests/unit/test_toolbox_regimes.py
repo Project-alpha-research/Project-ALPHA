@@ -332,6 +332,15 @@ def test_cusum_mean_known_answer(tmp_path: Path) -> None:
     assert doc["values"]["bars"] == 60
 
 
+def test_recursive_residuals_square_to_the_full_sample_rss() -> None:
+    # Brown, Durbin and Evans (1975): sigma-hat squared is RSS / (T - k) of the full fit, and the
+    # squared recursive residuals add up to that RSS. For a constant mean it is uncentered.
+    rets = np.r_[noise(30, 10, 0.002), noise(30, 11, 0.002) + 0.01]
+    w = np.array(residuals_by_loop(rets.tolist()))
+    assert float((w**2).sum()) == CLOSE(float(((rets - rets.mean()) ** 2).sum()))
+    assert float(w.mean()) != CLOSE(0.0, abs=1e-6)  # the shift makes the residual mean non-zero
+
+
 def test_cusum_mean_steady_series_stays_inside(tmp_path: Path) -> None:
     doc = go(tmp_path, CUSUM, noise(300, 12, 0.005))
     assert doc["values"]["peak_ratio"] < 1

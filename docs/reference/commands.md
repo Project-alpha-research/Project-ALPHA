@@ -11,7 +11,7 @@ Every `alpha` command, generated from the CLI's own command tree (the catalogue 
 `alpha info commands --all --json` plus each command's help text). Do not edit by hand;
 run `uv run python scripts/commands_reference.py`. Full options: `alpha <group> <command> --help`.
 
-318 commands in 45 groups. Options marked (required) are
+320 commands in 45 groups. Options marked (required) are
 mandatory; `<ARG>` is a positional argument.
 
 ## alpha assistant
@@ -154,10 +154,10 @@ Append-only cited findings and negative-result memory.
 Render publication-quality figures for a stored run.
 
 - `alpha figures clean <RUN_ID>` — Delete cached figures. Options: `--all`, `--json`
-- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +2 more
+- `alpha figures export <RUN_ID>` — Write one figure outside the cache, for a paper or a deck. Options: `--figure (required)`, `--out (required)`, +3 more
 - `alpha figures list` — Show the figure catalogue, optionally with per-run availability. Options: `--run`, `--json`
-- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--dark`, `--json`
-- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--dark`, `--json`
+- `alpha figures path <RUN_ID>` — Print a figure's cache key and path without rendering it. Options: `--figure (required)`, `--format`, `--variant`, +2 more
+- `alpha figures render <RUN_ID>` — Render figures for a run into the derived cache. Options: `--figure`, `--format`, `--force`, `--variant`, `--dark`, `--json`
 - `alpha figures theme` — Emit the canonical figure theme document. Options: `--json`
 - `alpha figures theme-css` — Write (or verify) the SPA's generated theme stylesheet. Options: `--out (required)`, `--check`
 
@@ -167,8 +167,8 @@ Follow a tested idea forward on paper.
 
 - `alpha follow book` — Every active follow as a share of ONE paper account, and the sum per asset. Options: `--json`
 - `alpha follow list` — One row per follow, with its state. Options: `--json`
-- `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--json`
-- `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--factor`, `--card`, `--size-pct`, `--json`
+- `alpha follow show <FOLLOW_ID>` — The frozen record, the entries by kind and the chain head. Options: `--all`, `--last`, `--json`
+- `alpha follow start` — Follow a tested rule or setup forward on paper. Options: `--test`, `--find`, `--trade`, `--asset`, `--factor`, `--card`, +2 more
 - `alpha follow stop <FOLLOW_ID>` — Stop a follow. Options: `--reason`, `--json`
 - `alpha follow today` — What is active today: one row per active follow, grouped. Options: `--json`
 - `alpha follow update <FOLLOW_ID>` — Book the sessions that closed since the last entry of a followed rule test. Options: `--all`, `--json`
@@ -194,8 +194,10 @@ Back up the data home, check a backup, restore it to a new folder.
 Write an idea card before you test an idea.
 
 - `alpha idea file <CARD_ID>` — One page for one idea: the card, the map, every reading, the counts, the open points. Options: `--json`
+- `alpha idea link <CARD_ID>` — Link a stored RD-Agent journey to a card, or remove the link. Options: `--rdagent (required)`, `--unlink`, `--json`
 - `alpha idea list` — List every card with its idea and whether a test is linked to it. Options: `--json`
-- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +5 more
+- `alpha idea new` — Save a card. Options: `--claim`, `--mechanism`, `--other-side`, `--disproved-by`, `--baseline`, `--signal-forms`, `--held-for`, +6 more
+- `alpha idea note <CARD_ID> <TEXT>` — Add a note to a card. Options: `--decision`, `--json`
 - `alpha idea show <CARD_ID>` — Print one card, and name the fields that are not stated. Options: `--json`
 
 ## alpha info

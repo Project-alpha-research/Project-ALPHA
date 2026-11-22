@@ -12,6 +12,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from alpha_web._owner_rule_words import owner_rule_sentence
+
 MAX_DIAGNOSTICS_BYTES = 2 * 1024 * 1024
 _METRICS = ("total_return", "cagr", "sharpe", "max_drawdown")
 
@@ -224,14 +226,19 @@ def rule_test(manifest: Mapping[str, Any], rdir: Path) -> dict[str, Any] | None:
         for key, value in rule.items()
         if key != "kind" and _count(value) is not None
     }
+    kind = _text(rule.get("kind"))
+    owner = kind == "owner"
     diagnostics, reason = _stored_diagnostics(rdir)
     trials = (diagnostics or {}).get("trials") or {}
     return {
         "name": _text(spine.get("name")),
         "idea": _text(spine.get("idea")),
-        "rule_kind": _text(rule.get("kind")),
+        "rule_kind": kind,
         "rule_params": params,
-        "rule_sentence": rule_sentence(_text(rule.get("kind")), params, metadata),
+        "rule_sentence": owner_rule_sentence(rule.get("spec"))
+        if owner
+        else rule_sentence(kind, params, metadata),
+        "rule_family": _text(spine.get("family")) if owner else None,
         "symbol": _text(metadata.get("symbol")),
         "source": _text(manifest.get("source")),
         "store": _text(spine.get("store")),

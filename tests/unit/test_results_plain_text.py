@@ -97,3 +97,17 @@ def test_a_setup_reading_and_outcome_are_in_the_summary() -> None:
     )
     assert lines[0] == "Reading: Too few occurrences to read."
     assert lines[1] == "Outcome: inconclusive"
+
+
+def test_a_failed_asset_of_a_setup_find_is_named_in_the_summary() -> None:
+    lines = summary_lines(
+        {
+            "run_id": "r",
+            "assets": [
+                {"symbol": "MISSING", "error": {"code": "UNKNOWN_ASSET", "message": "not found"}},
+                {"symbol": "SPY", "error": None},
+            ],
+        }
+    )
+    assert "Not completed: MISSING: not found" in lines
+    assert not any("SPY" in line for line in lines)

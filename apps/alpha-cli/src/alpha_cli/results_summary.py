@@ -46,6 +46,12 @@ def summary_lines(run: dict[str, Any]) -> list[str]:
     for key, label in (("reading", "Reading"), ("outcome", "Outcome")):
         if isinstance(run.get(key), str) and run[key].strip():
             lines.append(f"{label}: {run[key]}")
+    # A setup find that failed for some assets says which, so partial coverage is visible.
+    for asset in run.get("assets") or []:
+        error = asset.get("error") if isinstance(asset, dict) else None
+        if isinstance(error, dict):
+            reason = error.get("message") or error.get("code") or "no reason stored"
+            lines.append(f"Not completed: {asset.get('symbol') or 'an asset'}: {reason}")
     facts = [
         fact
         for fact in run.get("facts", [])

@@ -363,9 +363,12 @@ def test_run_id_hashing_inputs_are_unchanged(
 
     monkeypatch.setattr(_runner, "run_identity_for", record_payload)
     prepared = spine_run.prepare_asset(idea, "SPY", tmp_path, knobs, result)
-    assert captured.pop("data_health")["verdict"] == "unchecked"
-    assert "data-health-unchecked" in captured["labels"]
-    captured["labels"] = [label for label in captured["labels"] if label != "data-health-unchecked"]
+    # Pin change (2026-11-22): the payload holds the assets and override only, no health label,
+    # and always the cut-off; put the old values back to rebuild the id from before health existed.
+    assert captured.pop("data_health") == {"assets": ["SPY@home"], "override_reason": None}
+    assert "data-health-unchecked" not in captured["labels"]
+    assert captured["research_cutoff"] == "2023-12-31"
+    captured["research_cutoff"] = None
     legacy = original(captured, source_fingerprint=prepared.identity.source_fingerprint)
     assert legacy.run_id == "3d7c42078dd76b34"
     assert prepared.identity.run_id != legacy.run_id

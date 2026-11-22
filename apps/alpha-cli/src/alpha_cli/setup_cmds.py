@@ -182,7 +182,7 @@ def run_find(
             json.dumps(results),
             "Correct the asset errors and run alpha setup find again.",
         )
-    find_id = health_find_id(home, spec.spec_sha256, results, context_bars, record)
+    find_id = health_find_id(spec.spec_sha256, results, context_bars, record)
     identity = dict(find_id=find_id, spec_sha256=spec.spec_sha256, name=spec.setup.name)
     folder = home / "setups" / find_id
     labels = ["exploratory", "outcomes-not-viewed", "dev-machine-data", "daily-only"]

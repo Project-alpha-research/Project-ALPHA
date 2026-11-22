@@ -63,11 +63,19 @@ COMMANDS: tuple[tuple[str, str, str], ...] = (
 
 def _group(name: str, module: str, attribute: str) -> typer.Typer:
     group: typer.Typer = getattr(importlib.import_module(module), attribute)
+    if name == "library":
+        importlib.import_module("alpha_cli.library_papers_cmds")
     if name == "research":
         from alpha_cli.local_pdf_cmds import import_pdf_command
 
         if not any(info.name == "import-pdf" for info in group.registered_commands):
             group.command(name="import-pdf")(import_pdf_command)
+        from alpha_cli.moved_notice import announce
+        from alpha_cli.research_cmds import sources_app
+
+        announce(group, "import-pdf", "alpha library import-pdf")
+        announce(sources_app, "discover", "alpha library search")
+        announce(sources_app, "acquire", "alpha library import-pdf")
         from alpha_cli.native_stock_cmds import native_result_command
         from alpha_cli.research_diagnostic_cmds import diagnostic_app
 

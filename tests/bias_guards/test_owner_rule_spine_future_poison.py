@@ -15,7 +15,7 @@ harness compares the published run files of a clean home and a poisoned home row
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -173,16 +173,18 @@ def runs(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Run]:
 
 
 @pytest.fixture(scope="module")
-def leaky_runs(tmp_path_factory: pytest.TempPathFactory) -> Iterator[dict[str, Run]]:
+def leaky_runs(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Run]:
     original = _runner.load_bars
 
     def leaky_load(symbol: str, **kwargs: Any) -> tuple[list[Bar], str | None]:
         rows, snapshot = original(symbol, **kwargs)
         return _peek_one_bar_ahead(rows), snapshot
 
+    # The leak is undone as soon as both runs exist: a module-scoped fixture that stays patched
+    # would make `runs` leaky too whenever a worker builds `leaky_runs` first (pytest-xdist).
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(_runner, "load_bars", leaky_load)
-        yield {
+        return {
             "clean": _run(tmp_path_factory.mktemp("leaky-clean"), _bars()),
             "poisoned": _run(tmp_path_factory.mktemp("leaky-poisoned"), _bars(poison_after=K)),
         }

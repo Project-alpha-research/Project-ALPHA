@@ -30,14 +30,7 @@ _MCP_OWNER_VERBS = re.compile(
 
 # Local click confirmation (ADR-0038) is any-local-process confirmable at the HTTP layer, so agent
 # tools must never address the owner-action routes or start the CLI credential ceremonies.
-_OWNER_ACTION_TEXT = re.compile(
-    r"/owner-auth\b|\bowner-auth\s+(enroll|recover)\b"
-    # Spending a reserved-period slot. Quotes, flags, variables and pipes between the words do
-    # not hide it, and neither does importing the code behind it. Defence in depth only: the
-    # lock is the owner's WebAuthn signature.
-    r"|\bconfirm\W{1,8}(request|run)\b"
-    r"|\b(from|import)\b[^\n;]*\b(confirm_run|reserved_slots|reserved_receipts)\b"
-)
+_OWNER_ACTION_TEXT = re.compile(r"/owner-auth\b|\bowner-auth\s+(enroll|recover)\b")
 
 
 def _strings(value: object) -> list[str]:

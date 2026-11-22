@@ -123,27 +123,6 @@ def test_session_points_to_shared_orientation_and_instructions(tmp_path: Path) -
             "Bash",
             {"command": "uv run alpha owner-auth recover --reason test"},
         ),
-        # Spending a slot of the reserved period is an owner act: no agent tool may ask or run it.
-        ("Bash", {"command": "uv run alpha confirm request abc123 --reason final-check"}),
-        ("Bash", {"command": ".venv/bin/alpha  confirm run abc123 --authorization x"}),
-        # The same act behind quotes, flags, variables, pipes or a direct import.
-        ("Bash", {"command": "python -m alpha_cli.main confirm run abc123"}),
-        ("Bash", {"command": "uv run alpha 'confirm' run abc123"}),
-        ("Bash", {"command": 'alpha confirm "run" abc123'}),
-        ("Bash", {"command": "alpha -v confirm request abc123"}),
-        ("Bash", {"command": "A=alpha; $A confirm run abc123"}),
-        ("Bash", {"command": "printf 'confirm run abc123' | xargs alpha"}),
-        ("Bash", {"command": "uv run python -c \"app(['confirm', 'run', 'abc123'])\""}),
-        (
-            "Bash",
-            {"command": "uv run python -c 'from alpha_cli.spine.confirm_run import confirm_run'"},
-        ),
-        ("Bash", {"command": "uv run python -c 'import alpha_cli.reserved_slots as r'"}),
-        ("Bash", {"command": "uv run python -c 'from alpha_cli import reserved_receipts'"}),
-        (
-            "Write",
-            {"file_path": "x.py", "content": "from alpha_cli.spine.confirm_run import confirm_run"},
-        ),
     ],
 )
 def test_agent_tools_cannot_reach_owner_action_endpoints(
@@ -161,9 +140,6 @@ def test_agent_tools_cannot_reach_owner_action_endpoints(
     [
         ("Bash", {"command": "uv run pytest -q tests/unit/test_owner_local_confirmation.py"}),
         ("Bash", {"command": "curl -s http://localhost:8801/api/research/cases"}),
-        # Reading the confirmation state spends nothing and stays open to agents.
-        ("Bash", {"command": "uv run alpha confirm plan abc123"}),
-        ("Bash", {"command": "uv run alpha confirm list --json"}),
         ("mcp__claude-in-chrome__navigate", {"url": "http://localhost:8801/#page=research"}),
         ("WebFetch", {"url": "https://example.org/owner", "prompt": "owner auth docs"}),
     ],

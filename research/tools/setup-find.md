@@ -13,8 +13,9 @@ uptrend") and wants to see every past match before any rule is fixed.
 
 **Commands**
 ```text
-alpha setup find <spec.toml> --json
-alpha setup find <spec.toml> --asset SPY --context-bars 60
+alpha setup new <name> --asset SPY --when "<condition>" --horizon 10 --stop "5 %"  # writes <data folder>/specs/<name>.toml; options left out keep defaults
+alpha setup find --when "<condition>"     # no file: same options; also on study and trade
+alpha setup find <spec.toml> --asset SPY --context-bars 60 --json
 ```
 **See stored results:** Workstation → Research → Setup Lab.
 **How to read it**

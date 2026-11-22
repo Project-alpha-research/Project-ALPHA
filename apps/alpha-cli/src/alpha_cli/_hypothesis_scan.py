@@ -167,6 +167,14 @@ def _publish(path: Path, payload: object) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _need_assets(given: int, minimum: object) -> None:
+    if type(minimum) is int and 0 < given < minimum:
+        raise DataError(
+            f"A screen needs at least {minimum} assets to compare, and you gave {given}. "
+            "Add more assets, or lower --min-names (the lowest is 3)."
+        )
+
+
 def _options(request: Mapping[str, Any]) -> dict[str, Any]:
     expected = {
         "lane",
@@ -210,6 +218,7 @@ def _options(request: Mapping[str, Any]) -> dict[str, Any]:
         raise DataError("crypto hypotheses require explicit symbols and no equity snapshot")
     if options["category"] not in {"linear", "inverse"}:
         raise DataError("category must be linear or inverse")
+    _need_assets(len(options["symbols"]), options["min_names"])
     available = EQUITY_SIGNALS if lane == "equity" else CRYPTO_SIGNALS
     names = options["signals"]
     if not isinstance(names, list) or not names or any(name not in available for name in names):
@@ -263,6 +272,7 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         memberships = ParquetStore(data_dir / "store").read_universe(options["universe"])
         memberships.sort(key=lambda item: (item.symbol, item.effective_from))
         options["symbols"] = sorted({item.symbol for item in memberships})
+        _need_assets(len(options["symbols"]), options["min_names"])
     result["memberships"] = [item.model_dump(mode="json") for item in memberships]
     result["membership_hash"] = _digest(result["memberships"])
     result["data_hash"] = _equity_data_hash(data_dir, options)

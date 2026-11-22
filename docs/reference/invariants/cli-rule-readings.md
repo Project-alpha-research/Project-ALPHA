@@ -57,7 +57,9 @@ grades. The stored run files are in [command line runs](cli-runs.md#stored-facts
   `within the uncertainty of the aim`. The benchmark's own uncertainty is not included, and the basis line says so. With no
   same-days benchmark or no stored interval there is no aim row.
 - A statistic that could not be computed, a look-ahead flag in the audit, or a failed data check is a fault:
-  "Fault: ... Fix this first. No reading." Fact checks stay hard.
+  "Fault: ... Fix this first. No reading." Fact checks stay hard. One exception: a scored span with 0 trades and a volatility
+  of exactly 0 is an outcome, not a fault. It reads "The rule made no trades from <first> to <last>; nothing can be concluded
+  from this period." with `too little to read`, and the numbers check is `not-checked`.
 - A manifest without `reading` gets one derived from its stored numbers on read. A ledger row with only a letter reads
   "graded C under the old rules". Owner text for rule tests never prints a letter grade, "supported", "rejected", "pass", "fail" or "profit".
 - `--json` keeps `verdict` and adds `reading`, with its `costs` lines ([cost classes](cli-cost-classes.md)).

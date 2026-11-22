@@ -15,7 +15,7 @@ verified: 563e9cc54e1c1da5
 **Command**
 ```text
 alpha library list --market crypto --json   # also: show <id>, card <id>
-alpha library search "momentum" --unpaywall-email <contact>
+alpha library search "momentum"       # offline: seed ideas and kept papers; --online --unpaywall-email <contact>
 alpha library import-pdf <file.pdf> --title "..." --author "..." --year 2001
 alpha library papers
 ```
@@ -28,7 +28,8 @@ A record is a paper in our own words: idea, why it is said to work, data needed,
 - `card` writes an idea card with the idea, the mechanism and the holding time. What would disprove it and the
   baseline stay "not stated": the owner fills them. The `source` line names the record (an imported one says "not
   hand-checked"; its idea is a neutral label: edit it). The line is not in the card id.
-- `search` keeps each hit as a paper under `<home>/library/papers/`. `import-pdf` keeps one local PDF: title, authors,
+- `search` looks offline through every record and kept paper (all words must match). `--online` searches the network and
+  keeps each hit as a paper under `<home>/library/papers/`. `import-pdf` keeps one local PDF: title, authors,
   year, source, file hash, text place. The same file twice gives one paper. A value not given reads "not stated".
 - `idea new --paper <id>` links a paper to a card; `alpha idea file` lists them. A paper is a source for ideas only:
   not evidence, a test or an approval. The old `alpha research` literature commands still run and name these.
@@ -36,5 +37,4 @@ A record is a paper in our own words: idea, why it is said to work, data needed,
 
 **What it cannot tell you** Whether an idea works today; published results often shrink.
 "Can test today" names missing data; "citation to check" means verify first.
-
 **Next** Fill the card, then test it ([rule test](rule-test.md)); the card id goes in the spec ([idea card](idea-card.md)).

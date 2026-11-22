@@ -124,7 +124,8 @@ def test_totals_wording_and_grouping_note(tmp_path: Path, monkeypatch: pytest.Mo
     home, rd = example(tmp_path)
     monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
     out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
-    assert "9 trials, including 2 rows ALPHA could not interpret (counted anyway)" in out
+    assert "2 ledger rows ALPHA could not interpret; the deflated Sharpe counts them anyway." in out
+    assert "Tries on all assets:" in out  # the one headline number, not the row total
     out = CliRunner().invoke(ledger_app, ["query", "by-asset", "--rdagent-ledger", str(rd)]).output
     assert "Grouping normalises names" in out
 
@@ -230,3 +231,45 @@ def test_plain_ledger_names_clock_beside_figures(tmp_path: Path) -> None:
 
     record = map_row("rdagent", tmp_path / "ledger", 1, factor(clocks=clock_rows(0.99)))
     assert "weekly: IC 0.04, q 0.04" in _render({"records": [asdict(record)]})
+
+
+def test_bare_ledger_lists_every_kind_with_a_kind_column(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    out = CliRunner().invoke(ledger_app, ["--rdagent-ledger", str(rd)]).output
+    header = out.splitlines()[0].split("\t")
+    assert "kind" in header
+    assert {"rule_test", "factor", "rule_family"} <= {
+        line.split("\t")[header.index("kind")] for line in out.splitlines()[1:] if "\t" in line
+    }
+
+
+def test_the_default_list_keeps_a_share_for_every_kind(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    result = CliRunner().invoke(ledger_app, ["list", "--limit", "3", "--rdagent-ledger", str(rd)])
+    kinds = {
+        row["kind"]
+        for row in json.loads(
+            CliRunner()
+            .invoke(ledger_app, ["list", "--limit", "3", "--rdagent-ledger", str(rd), "--json"])
+            .output
+        )["records"]
+    }
+    assert kinds == {"rule_test", "factor", "rule_family"}
+    assert "Showing 3 of 7 rows" in result.output
+
+
+def test_the_default_list_never_exceeds_the_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    home, rd = example(tmp_path)
+    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
+    out = CliRunner().invoke(
+        ledger_app, ["list", "--limit", "1", "--rdagent-ledger", str(rd), "--json"]
+    )
+    assert len(json.loads(out.output)["records"]) == 1

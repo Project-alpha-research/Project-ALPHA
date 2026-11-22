@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -20,6 +21,28 @@ from alpha_cli.spine.spec import IdeaSpec, load_spec
 from alpha_cli.spine.stores import _stores
 from alpha_core import DataError
 from alpha_core.config import AlphaSettings
+
+
+def _echo_notes(text: str) -> None:
+    """What the run printed while it worked: warnings first, then the places files were saved."""
+    lines = [line for line in text.splitlines() if line.strip()]
+    paths = [line for line in lines if "saved to:" in line or line.startswith("Figure")]
+    for line in [*(line for line in lines if line not in paths), *paths]:
+        typer.echo(line)
+
+
+def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
+    """The stored deflated-Sharpe count of this reading, tied to the headline count of tries."""
+    from alpha_cli import _artifacts
+    from alpha_cli.spine.facts import read_json
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    if not result.get("run_id"):
+        return []
+    diagnostics = read_json(_artifacts.run_dir(home, result["run_id"]) / "diagnostics.json")
+    family = (diagnostics.get("trials") or {}).get("family")
+    said = reading_count_sentence(family, result["symbol"]) if isinstance(family, dict) else None
+    return [said] if said else []
 
 
 def _recheck_lines(output: dict[str, Any]) -> list[str]:
@@ -155,6 +178,7 @@ def test_rule(
 ) -> None:
     """Test a long/flat trading rule on several assets and record every trial."""
     settings = AlphaSettings()
+    notes = io.StringIO()
     try:
         parsed = load_spec(
             spec,
@@ -173,7 +197,7 @@ def test_rule(
         if recheck:
             _recheck(parsed, settings, quick, accept_bad_data, check_data, json_out)
             return
-        with redirect_stdout(sys.stderr if json_out else sys.stdout):
+        with redirect_stdout(sys.stderr if json_out else notes):
             output = run_idea(
                 parsed,
                 home=settings.data_dir,
@@ -184,6 +208,7 @@ def test_rule(
                 no_diagnose=no_diagnose,
             )
         if all(result["error"] is not None for result in output["results"]):
+            _echo_notes(notes.getvalue())
             fail(
                 test_error(
                     "; ".join(result["error"] for result in output["results"]),
@@ -192,11 +217,17 @@ def test_rule(
                 json_out,
             )
     except SpineError as exc:
+        _echo_notes(notes.getvalue())
         fail(exc, json_out)
     except (ValueError, OSError, DataError) as exc:
+        _echo_notes(notes.getvalue())
         fail(test_error(str(exc)), json_out)
+    from alpha_cli.spine.trial_reader import spine_snapshot
+    from alpha_cli.spine.tries import sentence, tries
+
+    snapshot = spine_snapshot(settings.data_dir)
     lines = [
-        f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
+        f"Test {output['test_id']} — {output['name']}",
         "ASSET\tRUN\tREADING\tOOS SHARPE\tLABELS / ERROR",
     ]
     for result in output["results"]:
@@ -221,4 +252,9 @@ def test_rule(
             lines.append(health_sentence(result["data_health"]))
         if not result.get("executed", True) and result["run_id"]:
             lines.append("The engine did not run: the stored run for this test was returned.")
+        if result.get("symbol"):
+            lines.append(sentence(tries(snapshot, result["symbol"])))
+            lines.extend(_reading_count(settings.data_dir, result))
     emit(output, json_out=json_out, fallback="\n".join(lines))
+    if not json_out:
+        _echo_notes(notes.getvalue())

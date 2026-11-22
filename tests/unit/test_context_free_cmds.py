@@ -125,3 +125,15 @@ def test_offline_pull_exits_with_a_clear_message(
 def test_module_constants_are_importable() -> None:
     assert cftc_cot.DATASET == "6dca-aqww" and finra_short.SOURCE == "finra-short-volume"
     assert date(2024, 1, 1) < datetime(2024, 1, 2, tzinfo=UTC).date()
+
+
+def test_list_prints_a_table_with_a_plain_market_name(home: Path) -> None:
+    invoke("pull-cftc-cot", "--market", "13874A", "--since", "2024-01-01", "--json")
+    plain = CliRunner().invoke(context_app, ["list"])
+    assert plain.exit_code == 0, plain.output
+    assert not plain.stdout.lstrip().startswith("{")
+    row = next(line for line in plain.stdout.splitlines() if "13874A" in line)
+    assert "E-Mini S&P 500 (Chicago Mercantile Exchange)" in row
+    assert "source" in plain.stdout.splitlines()[0] or "source" in plain.stdout
+    listed = invoke("list", "--json")["free_context"]
+    assert listed[0]["name"] == "E-Mini S&P 500 (Chicago Mercantile Exchange)"

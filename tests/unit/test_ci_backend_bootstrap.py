@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def backend_command() -> list[str]:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
-    backend = workflow.split("  static:\n", 1)[1].split("  tests:\n", 1)[0]
+    backend = workflow.split("  static:\n", 1)[1].split("  quick:\n", 1)[0]
     commands = [line.split("run: ", 1)[1] for line in backend.splitlines() if "run: " in line]
     assert commands == [
         "uv run --no-project --python 3.12 python scripts/gate.py component backend-static"

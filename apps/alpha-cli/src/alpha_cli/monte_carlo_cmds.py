@@ -20,6 +20,7 @@ import polars as pl
 import typer
 
 from alpha_cli import _artifacts, _forecast, _forecast_cache, _mc_reading, _runner
+from alpha_cli._progress import with_heartbeat
 from alpha_cli._seeds import semantic_seed, semantic_seeds
 from alpha_cli.artifact_contract import sha256_file
 from alpha_cli.spine import reserve
@@ -368,6 +369,7 @@ def _summarize_families(
 
 
 @monte_carlo_app.command("classical")
+@with_heartbeat("Monte Carlo (classical)")
 def classical(
     from_run: str = typer.Option(..., "--from-run", help="completed validation run id"),
     paths: int = typer.Option(10_000, "--paths", min=1),
@@ -611,6 +613,7 @@ def classical(
 
 
 @monte_carlo_app.command("kronos")
+@with_heartbeat("Monte Carlo (Kronos)")
 def kronos(
     from_run: str = typer.Option(..., "--from-run", help="completed validation run id"),
     forecast_eval_run: str = typer.Option(

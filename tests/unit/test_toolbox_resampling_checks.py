@@ -288,3 +288,13 @@ def test_drawdown_chunk_sizes_match_one_draw(
         direct(DROP, inputs.stored.scored_returns(), 19), rel=1e-9, abs=1e-12
     )
     assert sum(sizes) == PARAMS[DROP]["n_paths"] and max(sizes) <= chunk_size
+
+
+def test_the_deflated_sharpe_sentence_says_what_it_is_and_why_the_test_can_differ(
+    tmp_path: Path,
+) -> None:
+    prepare_sample(tmp_path)
+    doc = run(tmp_path, DSR, RUN, [], seed=19)
+    text = " ".join(str(value) for value in doc.values() if isinstance(value, str))
+    assert "same count and formula as the test" in text
+    assert "not clear of chance" in text and "null test" in text

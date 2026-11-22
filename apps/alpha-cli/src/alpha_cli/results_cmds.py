@@ -9,6 +9,7 @@ from typing import Annotated, Any
 import typer
 
 from alpha_cli._cli_json import emit
+from alpha_cli.results_summary import summary_lines, table
 from alpha_cli.run_store import RUN_DIRS, find_run_dir, read_manifest, valid_run_id
 from alpha_cli.spine import book, reserve
 from alpha_cli.spine.check import FlagLookup, check_text, render_check
@@ -131,13 +132,29 @@ def list_results(
             for row in selected
         ]
         home = AlphaSettings().data_dir
-        lines = [
-            "\t".join(
-                _row_word(home, row, found.get("evidence")) if key == "verdict" else str(row[key])
-                for key in row
-            )
-            for row, found in zip(items, selected, strict=True)
-        ]
+        lines = table(
+            (
+                "trial",
+                "recorded",
+                "kind",
+                "name",
+                "symbol",
+                "reading",
+                "OOS Sharpe",
+                "buy-and-hold Sharpe",
+                "labels",
+                "run",
+                "idea",
+                "flags",
+            ),
+            [
+                [
+                    _row_word(home, row, found.get("evidence")) if key == "verdict" else row[key]
+                    for key in row
+                ]
+                for row, found in zip(items, selected, strict=True)
+            ],
+        )
         for row, found in zip(items, selected, strict=True):
             row["reading"] = run_reading(home, row["run_id"])
             row.update(evidence=found.get("evidence"), aim_relation=found.get("aim_relation"))
@@ -149,9 +166,13 @@ def list_results(
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None
             }
-        lines.append(f"Total trials: {len(rows)}")
+        from alpha_cli.spine.trial_reader import spine_snapshot
+        from alpha_cli.spine.tries import sentence, tries
+
+        counted = tries(spine_snapshot(AlphaSettings().data_dir), symbol)
+        lines.append(sentence(counted))
         emit(
-            {"items": items, "total_trials": len(rows)},
+            {"items": items, "total_trials": len(rows), "tries": counted},
             json_out=json_out,
             fallback="\n".join(lines),
         )
@@ -332,8 +353,9 @@ def show_results(run_id: str, json_out: bool = typer.Option(False, "--json")) ->
             + (f"\n{reading_text(row['reading'])}" if isinstance(row.get("reading"), dict) else "")
             for row in runs
         ]
-        details = [_show_text_fields(row) for row in runs]
-        lines.append(json.dumps({"runs": details, "failed": failed}, indent=2, allow_nan=False))
+        for row in runs:
+            lines.append("\n".join(summary_lines(_show_text_fields(row))))
+        lines += [f"Not completed: {item['symbol']}: {item['reason']}" for item in failed]
         emit(output, json_out=json_out, fallback="\n".join(lines))
     except (ValueError, OSError, DataError) as exc:
         _error(exc, json_out)

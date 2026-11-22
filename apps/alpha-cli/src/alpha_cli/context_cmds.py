@@ -84,6 +84,33 @@ def pull(
         raise typer.Exit(1)
 
 
+def _table(payload: dict[str, Any]) -> str:
+    """The stored context as two plain tables; a market code comes with its name."""
+    lines = []
+    if payload["series"]:
+        lines.append("FRED series\tname\tfrequency\tlast observation\tfetched")
+        lines += [
+            "\t".join(
+                str(r[k]) for k in ("series_id", "label", "frequency", "last_obs", "fetched_at")
+            )
+            for r in payload["series"]
+        ]
+    if payload["free_context"]:
+        lines.append("source\tkey\tname\trows\tfirst\tlast\tlast known from")
+        for row in payload["free_context"]:
+            cells = (
+                row["source"],
+                row["key"],
+                row.get("name", ""),
+                row.get("rows"),
+                row.get("first_period", ""),
+                row.get("last_period", ""),
+                row["last_known_from"],
+            )
+            lines.append("\t".join("" if c is None else str(c) for c in cells))
+    return "\n".join(lines) if lines else "No context data is stored yet."
+
+
 @context_app.command("list")
 def list_series(json_out: bool = typer.Option(False, "--json")) -> None:
     """List stored FRED series and free CFTC/FINRA tables with provenance (no network)."""
@@ -101,7 +128,8 @@ def list_series(json_out: bool = typer.Option(False, "--json")) -> None:
             )
     except (DataError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from None
-    _emit({"series": rows, "free_context": free.free_listing()}, json_out)
+    payload = {"series": rows, "free_context": free.free_listing()}
+    emit(payload, json_out=json_out, fallback=_table(payload))
 
 
 @context_app.command()

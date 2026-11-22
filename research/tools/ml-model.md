@@ -17,7 +17,7 @@ A spec file holds `assets` (at least 20 symbols with stored daily bars), and opt
 No project or experiment is needed. Set up the worker once: `bash scripts/setup.sh`.
 **How to read it**
 - `split_sentence` names the training days and the test days. The model never saw the test days.
-- The run is stored like any other: `alpha results show <run_id>`, `alpha report`, `alpha diagnose`.
+- The run is stored like any other: read it with `alpha report <run_id>` or `alpha results show <run_id>`. It has no diagnostics file, so `alpha diagnose` does not work on it.
 - Costs are fixed (1 bp fee, 2 bp slippage per trade) and shown in `costs`. Bars from 2024-01-01 on are held back (`reserve_sentence`).
 - `tries_sentence`: each new run counts 1 try in family `qlib`. The same spec on the same data counts once.
 **What it cannot tell you**

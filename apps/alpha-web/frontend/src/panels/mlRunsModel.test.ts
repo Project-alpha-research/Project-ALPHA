@@ -20,7 +20,7 @@ function run(extra: Partial<MlStoredRun['metrics']> = {}): MlStoredRun {
 describe('machine learning window words', () => {
   it('reads the stored numbers after costs without a verdict', () => {
     const words = readingWords(run()).join(' ')
-    expect(words).toContain('returned +8.5%, behind +12.0% for holding the same assets')
+    expect(words).toContain('returned +8.5%, behind +12.0% for an equal-weight mix of the same assets, rebalanced each tested period and without costs')
     expect(words).toContain('Largest fall from a peak: -7.0%')
     expect(words).toContain('Sharpe after costs: 0.80')
     expect(words).not.toMatch(/pass|fail|buy|sell|profit/i)
@@ -29,7 +29,7 @@ describe('machine learning window words', () => {
   it('says a missing number is missing, with its reason, and never zero', () => {
     const words = readingWords(run({ sharpe: null, sharpe_reason: 'Fewer than two scored periods.', benchmark_total_return: null })).join(' ')
     expect(words).toContain('Sharpe: not worked out. Fewer than two scored periods.')
-    expect(words).toContain('Holding the same assets: not recorded.')
+    expect(words).toContain('An equal-weight mix of the same assets, rebalanced each tested period and without costs: not recorded.')
     expect(fraction(null)).toBe('not recorded')
     expect(fraction(0)).toBe('0.0%')
   })

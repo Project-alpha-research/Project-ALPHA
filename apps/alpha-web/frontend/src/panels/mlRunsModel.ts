@@ -30,8 +30,8 @@ export function readingWords(run: MlStoredRun): string[] {
   const days = run.n_oos_periods === null ? 'the tested periods' : `${run.n_oos_periods} tested periods`
   lines.push(
     hold === null || m.total_return === null
-      ? `Over ${days}, after costs, the model returned ${fraction(m.total_return)}. Holding the same assets: ${fraction(hold)}.`
-      : `Over ${days}, after costs, the model returned ${fraction(m.total_return)}, ${comparison(m.total_return, hold)} ${fraction(hold)} for holding the same assets.`,
+      ? `Over ${days}, after costs, the model returned ${fraction(m.total_return)}. An equal-weight mix of the same assets, rebalanced each tested period and without costs: ${fraction(hold)}.`
+      : `Over ${days}, after costs, the model returned ${fraction(m.total_return)}, ${comparison(m.total_return, hold)} ${fraction(hold)} for an equal-weight mix of the same assets, rebalanced each tested period and without costs.`,
   )
   lines.push(`Largest fall from a peak: ${fraction(m.max_drawdown)}.`)
   lines.push(m.sharpe === null ? `Sharpe: not worked out. ${m.sharpe_reason ?? ''}`.trim() : `Sharpe after costs: ${m.sharpe.toFixed(2)}.`)

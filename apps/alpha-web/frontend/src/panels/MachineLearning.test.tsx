@@ -19,7 +19,7 @@ describe('machine learning run view', () => {
     expect(html).toContain('SPY, QQQ')
     expect(html).toContain('Qlib worker; the model type')
     expect(html).toContain('1 bp fee and 2 bp slippage per trade')
-    expect(html).toContain('ahead of +2.0% for holding the same assets')
+    expect(html).toContain('ahead of +2.0% for an equal-weight mix of the same assets, rebalanced each tested period and without costs')
     expect(html).toContain('Sharpe: not worked out. Fewer than two scored periods.')
     expect(html).toContain('Assets chosen from today&#x27;s members can flatter the past.')
     expect(html).toContain('<th scope="col">Tested on</th>')

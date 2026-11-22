@@ -210,6 +210,8 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         outcome = row.get("outcome", "recorded")
     elif kind == "other" and subkind == "screen_trial":
         family = "spine-screen"
+    elif kind == "other" and subkind == "ml_run":
+        family = "qlib"
     elif kind == "setup_find":
         family = f"spine-setup:{row['name']}"
     elif kind == "reserved_confirmation":
@@ -237,11 +239,15 @@ def _spine(row: dict[str, Any]) -> dict[str, Any]:
         family_id=family,
         family_size_recorded=None,
         counts_for_deflation=kind == "rule_test"
-        or (kind in {"setup_study", "setup_trade"} and "repeat" not in labels),
+        or (
+            kind in {"setup_study", "setup_trade", "other"}
+            and "repeat" not in labels
+            and (kind != "other" or subkind == "ml_run")
+        ),
         name=row.get("name"),
         spec_hash=row.get("spec_sha256"),
         assets=_strings(row["assets"])
-        if kind in {"setup_study", "setup_trade"}
+        if kind in {"setup_study", "setup_trade"} or subkind == "ml_run"
         else (row["symbol"],)
         if row.get("symbol")
         else (),

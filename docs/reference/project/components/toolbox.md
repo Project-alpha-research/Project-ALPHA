@@ -62,8 +62,9 @@ The Workstation report shows a rule test's stored checks.
 
 ## What is real today
 
-Sixteen checks are registered: three market descriptions, five that read a rule test's stored files, seven tests on
+Sixteen checks make the first batch: three market descriptions, five that read a rule test's stored files, seven tests on
 that stored history, and one that sets a run beside published factors ([rule](../../invariants/cli-toolbox.md#descriptive-reference-reads)).
+Eleven overfitting controls (`overfit_controls.*`) follow: Sharpe probability, haircut, record and backtest length, and more.
 `alpha tool` lists, describes and runs them. Every attempt is logged; stored answers are reused.
 `find`, `situations` and `declare` ([how](../../invariants/cli-toolbox.md#finding-checks-and-recording-the-plan))
 help choose and record checks. Two predeclared sets exist (`sets.py`): `market-context` and `rdagent-post-judge`. The second runs two fixed checks after

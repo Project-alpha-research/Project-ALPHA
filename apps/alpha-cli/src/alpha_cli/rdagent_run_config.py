@@ -25,6 +25,7 @@ PYTHON = ".venv/bin/python"
 KEYFILE_VARIABLE = "ALPHA_RDAGENT_KEYFILE"
 SOURCE_VARIABLE = "ALPHA_RDAGENT_SOURCE"
 PYTHON_VARIABLE = "ALPHA_FACTOR_PYTHON"
+WORKER_VARIABLES = {"rdagent_source": SOURCE_VARIABLE, "factor_python": PYTHON_VARIABLE}
 SHELL = f'set -a; . "${KEYFILE_VARIABLE}"; set +a; exec "$@"'
 SETUP_HINT = "bash scripts/setup_rdagent.sh --with-factor-runtime"
 RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -165,12 +166,13 @@ def _git_problems(config: RdagentConfig) -> list[str]:
     ]
 
 
-def _problem(name: str, path: Path) -> str:
+def _problem(name: str, path: Path, source: str | None = None) -> str:
     fix = rdagent_defaults.FIXES.get(name, f"Fix {name} in the config, or remove it.")
-    return f"The path for {name} does not exist: {path}. Fix: {fix}"
+    used = f" (used from {source})" if source else ""
+    return f"The path for {name} does not exist: {path}{used}. Fix: {fix}"
 
 
-def _missing(config: RdagentConfig, environ: dict[str, str]) -> list[str]:
+def _missing(config: RdagentConfig, environ: dict[str, str], sources: dict[str, str]) -> list[str]:
     work = config.working_directory
     checks: list[tuple[str, Path | None, bool]] = [
         ("working_directory", work, True),
@@ -202,7 +204,7 @@ def _missing(config: RdagentConfig, environ: dict[str, str]) -> list[str]:
                 f"Set {name} in the config or {variable} in the environment. {SETUP_HINT}"
             )
         elif not chosen.exists():
-            problems.append(_problem(name, chosen))
+            problems.append(_problem(name, chosen, sources.get(name)))
     return problems
 
 
@@ -231,8 +233,15 @@ def load_config(path: Path | None, environ: dict[str, str] | None = None) -> Rda
     raw = {k: _absolute(v, base) if k in PATH_KEYS else v for k, v in raw.items()}
     home = Path(str(raw.get("data_dir") or AlphaSettings().data_dir)).expanduser().resolve()
     defaults = rdagent_defaults.default_paths(home, env, rdagent_defaults.find_checkout())
+    sources = {key: "the config file" for key in WORKER_VARIABLES if key in raw}
     for key, value in defaults.items():
         raw.setdefault(key, str(value))
+    # One rule: an explicit environment variable wins over the file; the file wins over the default.
+    for key, variable in WORKER_VARIABLES.items():
+        if env.get(variable):
+            raw[key], sources[key] = env[variable], f"the environment variable {variable}"
+        else:
+            sources.setdefault(key, "the default")
     if "working_directory" not in raw:
         raise RdagentConfigError(
             f"The setting working_directory is not set and the Project-ALPHA folder was not "
@@ -242,7 +251,7 @@ def load_config(path: Path | None, environ: dict[str, str] | None = None) -> Rda
         config = RdagentConfig.model_validate(raw)
     except ValidationError as error:
         raise RdagentConfigError("\n".join(_words(error))) from error
-    if problems := [*_git_problems(config), *_missing(config, env)]:
+    if problems := [*_git_problems(config), *_missing(config, env, sources)]:
         raise RdagentConfigError("\n".join(problems))
     return config
 

@@ -478,3 +478,43 @@ def test_status_shows_spend_only_from_the_receipt(tmp_path: Path) -> None:
     )
     value = status_of(run)
     assert (value["calls_used"], value["calls_cap"], value["usd_spent"]) == (4, 60, None)
+
+
+def test_environment_variable_wins_over_the_file(layout: Layout, tmp_path: Path) -> None:
+    other = tmp_path / "other-python"
+    other.write_text("{}")
+
+    config = load_config(layout.config(), {"ALPHA_FACTOR_PYTHON": str(other)})
+
+    assert config.factor_python == other
+
+
+def test_missing_path_from_the_environment_names_its_source(layout: Layout, tmp_path: Path) -> None:
+    gone = tmp_path / "no-such-python"
+
+    with pytest.raises(RdagentConfigError) as raised:
+        load_config(layout.config(), {"ALPHA_FACTOR_PYTHON": str(gone)})
+
+    assert "factor_python" in str(raised.value)
+    assert "environment variable ALPHA_FACTOR_PYTHON" in str(raised.value)
+
+
+def test_missing_path_from_the_file_names_the_file(layout: Layout) -> None:
+    layout.python.unlink()
+
+    with pytest.raises(RdagentConfigError) as raised:
+        load_config(layout.config(), {})
+
+    assert "from the config file" in str(raised.value)
+
+
+def test_missing_default_names_the_default(layout: Layout) -> None:
+    path = layout.root / "rdagent.toml"
+    lines = [ln for ln in layout.text().splitlines() if not ln.startswith("factor_python")]
+    path.write_text("\n".join(lines) + "\n")
+
+    with pytest.raises(RdagentConfigError) as raised:
+        load_config(path, {})
+
+    assert "factor_python" in str(raised.value)
+    assert "default" in str(raised.value)

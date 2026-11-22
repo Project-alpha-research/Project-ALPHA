@@ -67,5 +67,5 @@ removed schemas). Hand-written additions are about 20 lines.
 ## Decisions
 
 - Commit trailer: the harness gave exact attribution lines for this session. They override the model name in the common rules.
-- Not run: `fs.py verify`, live-provider tests (no network here), Playwright e2e. `tsc -b`, `oxlint` and 874 vitest tests pass.
+- Not run: `fs.py verify` (common rules forbid it), live-provider tests (no network here). Playwright e2e ran after CI found one stale route list; 194 of 195 pass or ran. `tsc -b`, `oxlint` and 874 vitest tests pass.
 - Smoke tests need `scripts/run_owned_test.py` on Linux; they were not run through it.

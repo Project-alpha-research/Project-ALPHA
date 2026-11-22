@@ -133,7 +133,6 @@ export type ResearchDatasetPage = Schema['ResearchDatasetPage']
 export type ProviderCredential = Schema['CredentialStatus']
 export type ProviderOption = Schema['ProviderOption']
 export type ProviderDefinition = Schema['ProviderDefinition']
-export type ProviderCheckReceipt = Schema['ProviderCheckReceipt']
 export type SystemStatus = Schema['SystemStatus']
 
 // Intentionally opaque: trade schemas vary by engine and remain manifest-adjacent rows.

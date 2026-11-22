@@ -102,7 +102,7 @@ describe('dock registry', () => {
   })
 
   it('gives every dock the artboard tabs in order (Alerts, Favorites and Snapshots are shown disabled)', () => {
-    expect(dockOf('Toolbox').tabs).toEqual(['Jobs', 'Backtests', 'Data pulls', 'Log', 'Alerts'])
+    expect(dockOf('Toolbox').tabs).toEqual(['Jobs', 'Backtests', 'Data pulls', 'Alerts'])
     expect(dockOf('MarketWatch').tabs).toEqual(['Symbols', 'Details', 'Data'])
     expect(dockOf('Navigator').tabs).toEqual(['Common', 'Favorites'])
     expect(dockOf('DataManager').tabs).toEqual(['Pull', 'Snapshots', 'Quality', 'Storage'])

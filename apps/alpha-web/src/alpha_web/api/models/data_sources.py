@@ -57,27 +57,6 @@ class ProviderDefinition(StrictModel):
     recovery_action: str
 
 
-class ProviderCheckReceipt(StrictModel):
-    schema_version: Literal[1]
-    provider_id: str
-    verification_state: Literal[
-        "verified",
-        "unverified",
-        "authentication_failed",
-        "entitlement_denied",
-        "rate_limited",
-        "connectivity_failed",
-        "schema_drift",
-        "optional_disabled",
-    ]
-    checked_at: str
-    granted_capabilities: list[str]
-    recovery_action: str
-    details: dict[str, object]
-    receipt_id: str
-    content_sha256: str
-
-
 class KronosCacheStatus(StrictModel):
     configured: bool
     path: str | None

@@ -1,13 +1,13 @@
 // Toolbox dock (spec 2026-09-01 §4.2 item 6; artboard 1-Terminal): Jobs N · Backtests ·
-// Data pulls · Log · Alerts as one tab strip under the documents, tabs at the bottom. Only the
-// active tab mounts. Jobs is the dense job table with the real failure text; Backtests the run comparison; Data pulls the same jobs table filtered to data work
-// (pulls, snapshots, crypto acquisitions); Log the activity feed; Alerts the scan alert log (`alpha scan check`).
+// Data pulls · Alerts as one tab strip under the documents, tabs at the bottom. Only the
+// active tab mounts. Jobs is the dense job table with the real failure text; Backtests the run comparison;
+// Data pulls the same jobs table filtered to data work
+// (pulls, snapshots, crypto acquisitions); Alerts the scan alert log (`alpha scan check`).
 
 import type { FunctionComponent } from 'react'
 import { useState } from 'react'
 
 import type { PanelHandleProps } from '../context/panelHandle'
-import { ActivityFeed } from '../panels/ActivityFeed'
 import { Alerts } from '../panels/Alerts'
 import { CompareRuns } from '../panels/CompareRuns'
 import { DataPulls, JobMonitor } from '../panels/JobMonitor'
@@ -21,7 +21,6 @@ const PANELS: Record<string, { name: string; component: FunctionComponent<PanelH
   Jobs: { name: 'JobMonitor', component: JobMonitor },
   Backtests: { name: 'CompareRuns', component: CompareRuns },
   'Data pulls': { name: 'DataPulls', component: DataPulls },
-  Log: { name: 'ActivityFeed', component: ActivityFeed },
   Alerts: { name: 'Alerts', component: Alerts },
 }
 

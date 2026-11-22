@@ -43,6 +43,10 @@ Answer: `alpha ml run <spec.toml>` now goes from a plain spec to a stored, coste
 ## Review round 4
 - Fixed: the output now carries the replay's `authority`, `label` and `validation` (counterfactual refit not run, not promotion-eligible), as `alpha ml replay` does. Test added.
 
+## Review round 5
+- Codex found that the card promised `alpha results show` and `alpha diagnose` on an ML run. I tested them: `show` worked with a wrong hint; `diagnose` refused with a wrong hint. Fixed the two messages (`results_cmds.py`), the card, and added a test. No new diagnostics were built.
+- CI `quick` failed once in `test_reading_ledger_setup.py`; it also failed on `origin/main`. The owner's later merge of main fixed it.
+
 ## Fail-first evidence
 I wrote the tests before `ml_run.py`, but I did not run them before the module existed. The first run against the new code failed on a too-short fixture (728 sessions before the held-back day; 756 needed). I lengthened the fixture and all 7 passed. This is weaker than a true red run.
 
@@ -55,7 +59,8 @@ The old path (Workstation, `alpha ml export-input --spec`, then `prepare`, `trai
 - runs the worker in the foreground with `--no-sync` and a 2 h limit.
 
 ## Known gaps
-- `alpha results` lists rule tests only. I did not check that `alpha report` or the figures read an `ml_replay` run; `alpha ml replay` already produced the same kind of run before this change.
+- Checked on a fake-worker run: `alpha report` and `alpha results show` read it. `alpha diagnose` does not (an ML run has no `diagnostics.json`); it now says so plainly, and `alpha results show` no longer tells the owner to re-run `alpha test`. The tool card says the same. I did not check the figures or the toolbox on an ML run.
+- `alpha results` (the list) still shows the ML run row with a "numbers: fault" check, because the row has no Sharpe. I did not change that.
 - PR #392 was not on main; I merged `origin/chore/m101-no-project-ids` into this branch.
 - `gate.py check --base origin/main` passes in full after review round 1.
 

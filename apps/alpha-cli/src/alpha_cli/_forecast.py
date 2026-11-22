@@ -73,6 +73,66 @@ def _provenance(forecaster: Forecaster, *, model: str) -> dict[str, Any]:
     }
 
 
+# Kronos has no step cache: every new step re-reads the whole window (at most 512 bars) for every
+# path. Measured on a 6-core desktop CPU (2026-11-23): about this many seconds per bar read.
+SECONDS_PER_BAR_READ = 2.3e-4
+MAX_WINDOW = 512
+
+
+def estimate_seconds(*, context: int, horizon: int, rows: int) -> float:
+    """A rough CPU time for ``rows`` paths of ``horizon`` steps from a ``context``-bar window."""
+    reads = sum(min(context + step, MAX_WINDOW) for step in range(horizon))
+    return reads * rows * SECONDS_PER_BAR_READ
+
+
+def say_time(seconds: float) -> str:
+    if seconds < 90:
+        return f"about {max(1, round(seconds))} seconds"
+    if seconds < 5400:
+        return f"about {round(seconds / 60)} minutes"
+    return f"about {seconds / 3600:.1f} hours"
+
+
+def expected_time_line(model: str, seconds: float) -> str | None:
+    """The line printed before a Kronos run starts; the offline double needs none."""
+    if model == "fake":
+        return None
+    return f"Expected time: {say_time(seconds)} on a desktop CPU (a rough guide)."
+
+
+def fit_context(
+    requested: int | None, *, default: int, available: int, what: str
+) -> tuple[int, str | None]:
+    """The context to use, and a line to print when a default was lowered to fit the data.
+
+    An explicit value that does not fit fails and names the largest value that works.
+    """
+    if available < 2:
+        raise DataError(f"Only {available} {what} are available. Kronos needs at least 2.")
+    if requested is None:
+        if default <= available:
+            return default, None
+        return available, (
+            f"Context lowered from {default} to {available}: only {available} {what} are available."
+        )
+    if requested > available:
+        raise DataError(
+            f"Context {requested} is longer than the {available} {what} available. "
+            f"The largest that works is {available}: use --context {available}."
+        )
+    return requested, None
+
+
+def trading_day_line(as_of: datetime | None, last_bar: datetime) -> str | None:
+    """Say so when the as-of date has no bar and the last bar before it is used."""
+    if as_of is None or as_of.date() == last_bar.date():
+        return None
+    return (
+        f"{as_of.date().isoformat()} is not a trading day in the data; "
+        f"using the last trading day at or before it: {last_bar.date().isoformat()}."
+    )
+
+
 def forecast_seed(master: int) -> int:
     """Derive the forecast-sampling child seed from the master seed (independent stream)."""
     return int(np.random.SeedSequence([master, FORECAST_SEED_NS]).generate_state(1)[0])
@@ -125,7 +185,10 @@ def run_forecast(
         if not bars:
             raise DataError(f"no bars at or before as-of {as_of.isoformat()}")
     if len(bars) < context:
-        raise DataError(f"need >= {context} context bars, got {len(bars)}")
+        raise DataError(
+            f"Context {context} is longer than the {len(bars)} bars available. "
+            f"The largest that works is {len(bars)}: use --context {len(bars)}."
+        )
     window = list(bars[-context:])
 
     result = forecaster.forecast(

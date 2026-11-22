@@ -75,7 +75,8 @@ def test_kronos_projection_preserves_raw_values_and_only_expands_enclosure() -> 
     "sample",
     [
         SimpleNamespace(open=(0.0,), high=(1.0,), low=(1.0,), close=(1.0,), volume=(1.0,)),
-        SimpleNamespace(open=(1.0,), high=(1.0,), low=(1.0,), close=(1.0,), volume=(-1.0,)),
+        SimpleNamespace(open=(1.0,), high=(1.0,), low=(1.0,), close=(-1.0,), volume=(1.0,)),
+        SimpleNamespace(open=(1.0,), high=(1.0,), low=(1.0,), close=(1.0,), volume=(float("nan"),)),
     ],
 )
 def test_kronos_projection_rejects_invalid_model_values(sample: SimpleNamespace) -> None:
@@ -86,6 +87,18 @@ def test_kronos_projection_rejects_invalid_model_values(sample: SimpleNamespace)
             sample=sample,
             path_index=0,
         )
+
+
+def test_kronos_projection_sets_negative_volume_to_zero_and_records_it() -> None:
+    sample = SimpleNamespace(
+        open=(100.0,), high=(101.0,), low=(99.0,), close=(100.5,), volume=(-3.0,)
+    )
+    bars, rows, adjustments = _project_forecast_path(
+        symbol="SPY", timestamps=(datetime(2026, 1, 2, tzinfo=UTC),), sample=sample, path_index=0
+    )
+    assert bars[0].volume == 0.0 and bars[0].close == 100.5
+    assert rows[0]["raw_volume"] == -3.0 and rows[0]["volume_adjusted"] is True
+    assert adjustments == 0
 
 
 def test_kronos_projection_rejects_component_length_mismatch() -> None:

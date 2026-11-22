@@ -143,10 +143,10 @@ TEXTS: Final[dict[str, Text]] = {
             "The shaded cone is the range of outcomes the model considers plausible, wider "
             "for the outer band. The line inside is its central forecast."
         ),
-        "Look at how fast the cone widens, and where the recorded outcome falls against it.",
+        "Look at how fast the cone widens and how far the median moves from the last close.",
         (
-            "The chart cannot tell you that the cone is correct: coverage is checked in the "
-            "calibration figure."
+            "The chart cannot tell you where the price will go: the cone is a sample from a "
+            "model that may have seen this period in training, not a prediction or a trade signal."
         ),
     ),
     "forecast_skill": (

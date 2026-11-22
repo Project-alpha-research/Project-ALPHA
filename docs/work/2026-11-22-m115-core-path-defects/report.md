@@ -98,3 +98,11 @@ Rules: `docs/work/2026-11-21-common-build-rules/brief.md`.
   table), all on `SPY`; the config's assets are `SPY` and its header says the three files work together as they are.
 - Test: `tests/unit/test_nightly_example_set.py` loads the config with `load_config`, parses both specs and checks the
   `[exit]` table and the shared assets (fail first: `rule_spec names .../nightly-rule.toml, which is not a file`).
+
+### 9. `alpha follow update` with new bars
+
+- Cause: no test drove the command itself through newly appended bars.
+- Change: test only. `tests/unit/test_follow_update_new_bars.py` appends 2 synthetic bars to a temp store, runs
+  `alpha follow update` (injected clock), runs it again, appends 3 more and runs it twice: the journal holds exactly the 5
+  appended sessions, once each, in order (older ones `missed`, the newest one of each batch a `bar`). It passed on the first
+  run: the behaviour was right, only unproven.

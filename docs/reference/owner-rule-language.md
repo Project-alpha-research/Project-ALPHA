@@ -78,7 +78,7 @@ What an owner rule can say today, and what it cannot. The tool card is [rule tes
 ## Parameter variants
 
 - `alpha test` re-runs the rule with each window and each non-zero constant at 0.8 and 1.2 times its value, one change at a time.
-  Windows are the params of `sma`, `ema`, `rsi`, `atr`, the first of `bbands` and all three of `macd`, and a lag. They round to whole
+  Windows are the params of `sma`, `ema`, `rsi`, `atr`, `highest`, `lowest`, the first of `bbands`, all three of `macd`, and a lag. They round to whole
   bars (at least 2; a lag at least 1). A variant equal to the original, or one the language refuses, is left out. At most 8 run.
   A Bollinger width, a research indicator's params and a constant of 0 stay as written.
 - The reading shows them as a table of readings (Sharpe, total return, maximum drawdown). It picks no best one and gives no verdict.

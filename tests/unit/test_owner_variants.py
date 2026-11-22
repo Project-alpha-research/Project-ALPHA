@@ -106,3 +106,9 @@ def test_a_lag_is_varied_with_a_floor_of_one_and_zero_is_left() -> None:
     assert sorted(r["lag"] for r in _rights(owner_variants(_spec(cond)))) == [4, 6]
     flat = {"left": {"source": "close"}, "op": ">", "right": {"source": "close"}}
     assert owner_variants(_spec(flat)) == []
+
+
+def test_a_channel_window_is_varied() -> None:
+    channel = {"indicator": "highest", "params": [20], "field": "high", "lag": 1}
+    found = owner_variants(_spec({"left": {"source": "close"}, "op": ">", "right": channel}))
+    assert sorted(r["params"][0] for r in _rights(found)) == [16, 24]

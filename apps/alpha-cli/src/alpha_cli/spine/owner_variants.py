@@ -28,6 +28,8 @@ _WINDOW_INDEXES: dict[str, tuple[int, ...]] = {
     "atr": (0,),
     "bbands": (0,),
     "macd": (0, 1, 2),
+    "highest": (0,),
+    "lowest": (0,),
 }
 _SIDES = ("left", "right")
 

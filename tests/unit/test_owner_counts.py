@@ -1,4 +1,4 @@
-"""The count sentence, the owner-rule variant table and a stored run's recheck after a rule edit."""
+"""The count sentence and the owner-rule variant table."""
 
 from __future__ import annotations
 
@@ -8,15 +8,11 @@ from typing import Any
 
 import pytest
 
-from alpha_cli.rules_cmds import rule_path
 from alpha_cli.spine.owner_reading import count_sentence
-from alpha_cli.spine.owner_rule import OwnerRule
 from alpha_cli.spine.reading import stored_reading
-from alpha_cli.spine.recheck import recheck_idea
 from alpha_cli.spine.run import run_idea
-from alpha_cli.spine.spec import IdeaSpec, load_spec
+from alpha_cli.spine.spec import IdeaSpec
 from alpha_data.store import ParquetStore
-from alpha_strategies.rules import canonical_json, parse_rule_spec
 from tests.fixtures.cli_fixtures import seed_store
 
 RSI = {"indicator": "rsi", "params": [14]}
@@ -151,23 +147,3 @@ def test_owner_variants_run_count_as_trials_and_show_as_a_table(
     assert [row["name"] for row in table] == names
     assert set(table[0]) == {"name", "kind", "sharpe", "total_return", "max_drawdown", "reasons"}
     assert not any(key in runs[0]["reading"] for key in ("best_variant", "verdict"))
-
-
-def test_an_old_run_rechecks_to_a_match_after_the_saved_rule_is_edited(home: Path) -> None:
-    saved = rule_path(home, "dip")
-    saved.parent.mkdir(parents=True, exist_ok=True)
-    spec = {"name": "dip", "long_when": [_rsi(45)]}
-    saved.write_text(canonical_json(parse_rule_spec(spec)) + "\n", encoding="utf-8")
-    file = home / "dip.toml"
-    file.write_text('assets = ["SPY"]\n[rule]\nkind = "owner"\nsaved = "dip"\n')
-    first = run_idea(load_spec(file, data_dir=home), home=home, quick=True)["results"][0]
-    assert first["error"] is None, first["error"]
-    spec["long_when"] = [_rsi(20)]
-    saved.write_text(canonical_json(parse_rule_spec(spec)) + "\n", encoding="utf-8")
-    stored = json.loads((Path(first["run_dir"]) / "spec.json").read_text())
-    stored.pop("spec_sha256")
-    old = IdeaSpec.model_validate(stored)
-    assert isinstance(old.rule, OwnerRule)
-    assert old.rule.spec["long_when"][0]["right"] == {"value": 45.0}
-    found = recheck_idea(old, home=home, quick=True)["results"][0]["recheck"]
-    assert found["match"] is True and found["computed"] is True

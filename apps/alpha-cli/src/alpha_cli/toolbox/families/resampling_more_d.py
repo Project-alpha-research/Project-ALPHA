@@ -100,7 +100,7 @@ def halves(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Res
         {
             "median_gap": float(np.median(np.abs(sharpes[0] - sharpes[1]))),
             "weaker_half": float(np.quantile(np.minimum(*sharpes), 0.05)),
-            "share_both_positive": float(np.mean((means[0][valid] > 0) & (means[1][valid] > 0))),
+            "share_both_positive": float(np.mean((means[0] > 0) & (means[1] > 0))),
         },
         {},
         basis=RETURN_BASIS,

@@ -299,3 +299,14 @@ def test_specs_are_readings() -> None:
         spec = get(tool)
         assert spec.family == "resampling" and spec.look in {"test", "describe"}
         assert spec.question.endswith("?") and spec.caveats
+
+
+def test_halves_share_counts_flat_halves(tmp_path: Path) -> None:
+    returns = np.zeros(20)
+    returns[[3, 11]] = 0.01  # most random halves are flat, yet their means are defined
+    put(tmp_path, returns)
+    values = read(tmp_path, HALVES, n_splits=200)
+    order = np.random.default_rng(SEED).permuted(np.tile(np.arange(20), (200, 1)), axis=1)
+    both = np.mean([(returns[r[:10]].mean() > 0) and (returns[r[10:]].mean() > 0) for r in order])
+    assert values["share_both_positive"] == pytest.approx(both, **APPROX)
+    assert values["share_both_positive"] < 0.8

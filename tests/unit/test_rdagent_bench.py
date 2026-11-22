@@ -843,3 +843,48 @@ def test_the_call_cap_counts_every_possible_attempt(tmp_path: Path) -> None:
             gateway_retries=1,
         )
     assert client.calls == 0
+
+
+def test_a_negative_retry_count_is_refused_before_any_call(tmp_path: Path) -> None:
+    prompts = load_prompts(_prompts(tmp_path / "pr", 1), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a"])
+    client = FakeClient({"a": {"p0": [_reply(1000, 500)]}})
+    for bad in (-1, -5):
+        with pytest.raises(BenchError, match="retries"):
+            run_bench(
+                prompts,
+                ["a"],
+                1,
+                prices,
+                client,
+                tmp_path / "store",
+                spend=_spend(tmp_path),
+                gateway_retries=bad,
+            )
+    with pytest.raises(BenchError, match="retries"):
+        make_plan(prompts, ["a"], 1, prices, 0.0, attempts=0)
+    assert client.calls == 0
+
+
+def test_a_stored_output_keeps_the_attempts_it_was_counted_for(tmp_path: Path) -> None:
+    prompts_a = load_prompts(_prompts(tmp_path / "pr", 20), None)
+    prices = load_prices(_prices(tmp_path / "pr.toml"), ["a", "b"])
+    data = {name: {f"p{i}": [_reply(1000, 500)] for i in range(20)} for name in ("a", "b")}
+    client = FakeClient(data)
+    store = tmp_path / "store"
+    run_bench(
+        prompts_a, ["a"], 1, prices, client, store, spend=_spend(tmp_path), gateway_retries=1
+    )  # 20 outputs, each counted as 2 attempts: 40 in all
+    # 11 more outputs at 2 attempts each is 62 attempts in this store: over the 60-call cap.
+    with pytest.raises(BenchError, match="60"):
+        run_bench(
+            prompts_a[:11],
+            ["b"],
+            1,
+            prices,
+            client,
+            store,
+            spend=_spend(tmp_path),
+            gateway_retries=1,
+        )
+    assert client.calls == 20

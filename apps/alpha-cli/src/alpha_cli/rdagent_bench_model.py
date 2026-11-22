@@ -122,6 +122,12 @@ def load_prices(path: Path, models: list[str]) -> dict[str, tuple[float, float]]
     return prices
 
 
+def check_retries(retries: object) -> None:
+    """The gateway accepts 0 to 3 provider retries. A negative count would shrink the accounting."""
+    if type(retries) is not int or not 0 <= retries <= 3:
+        raise BenchError("The gateway retries must be a whole number from 0 to 3.")
+
+
 def make_plan(
     prompts: list[StoredPrompt],
     models: list[str],
@@ -139,8 +145,10 @@ def make_plan(
         raise BenchError("Give at least one model and one sample.")
     if len(set(models)) != len(models):
         raise BenchError("A model name is given twice. Give each model once.")
+    check_retries(attempts - 1)
     per_model: dict[str, tuple[int, float]] = {}
     missing_usd = 0.0
+    missing_calls = 0
     for model in models:
         usd = 0.0
         for p in prompts:
@@ -151,8 +159,11 @@ def make_plan(
             price_in, price_out = prices[model]
             each = (p.prompt_tokens * price_in + p.completion_tokens * price_out) / 1e6
             usd += samples * each
-            missing_usd += each * sum((model, p.id, n) not in done for n in range(samples))
-        per_model[model] = (samples * len(prompts) * attempts, usd * attempts)
+            absent = sum((model, p.id, n) not in done for n in range(samples))
+            missing_usd += each * absent
+            missing_calls += absent
+        per_model[model] = (missing_calls * attempts, usd * attempts)
+        missing_calls = 0
     calls = sum(c for c, _ in per_model.values())
     usd = sum(u for _, u in per_model.values())
     if calls + failed_attempts > RUN_MAX_CALLS:

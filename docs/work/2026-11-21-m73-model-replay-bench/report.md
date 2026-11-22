@@ -110,3 +110,8 @@ A gateway can retry a failed provider request and bill every attempt, while the 
 gateway endpoint reports its retry setting, so it counts worst case: `--gateway-retries N` (default 1, the gateway's own default) makes each call
 count as N+1 attempts in the plan, the reservation, the call cap and the settled charge. Start each gateway with `--provider-retries 0` and pass
 `--gateway-retries 0` to count one attempt per call. UNVERIFIED: the bench cannot check how a running gateway was started.
+
+## Review round 13 (Codex)
+1. `--gateway-retries` must be a whole number from 0 to 3 (the gateway's own range); anything else is refused before any file or call.
+2. Each stored output keeps the number of attempts it was counted for. A reused store restores the run's call count from these, plus failed
+   attempts, so a rerun with other models cannot pass the 60-attempt cap. The plan counts only the calls still missing.

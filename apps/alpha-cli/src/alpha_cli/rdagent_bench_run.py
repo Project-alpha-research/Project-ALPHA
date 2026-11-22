@@ -19,6 +19,7 @@ from alpha_cli.rdagent_bench_model import (
     RunResult,
     StoredPrompt,
     check_outside_git,
+    check_retries,
     make_plan,
     month_spent,
     output_path,
@@ -144,14 +145,13 @@ def _stored(
                 done.add((model, p.id, sample))
     # Everything else already in this store counts toward the run's budget and call cap, whatever
     # models, stages or prompts this invocation selects.
-    selected = len(done)
     every = [
         json.loads(p.read_text(encoding="utf-8")) for p in (store / "outputs").glob("*/*.json")
     ]
-    others = len(every) - selected
+    prior_attempts = sum(int(r.get("attempts", 1)) for r in every)
     spent = sum(float(r["charged_usd"]) for r in every)
     failed_usd, failed_calls = _unsettled(store)
-    return done, spent + failed_usd, failed_calls + others
+    return done, spent + failed_usd, failed_calls + prior_attempts
 
 
 def _run(
@@ -214,6 +214,7 @@ def _run(
                 record = _record(
                     model, p, sample, reply, prices[model], single, single * gateway_retries
                 )
+                record["attempts"] = attempts
                 _settle(spend, now, estimate, record)  # a billed reply is booked before it is saved
                 charged = float(record["charged_usd"])
                 _note(store, now, charged - estimate, 0)  # the in-flight entry now holds the charge
@@ -249,6 +250,7 @@ def run_bench(
     recorded counts stops the run, and the outputs stored so far are kept for a resume.
     One run at a time may use a store: a second one is refused before any call.
     """
+    check_retries(gateway_retries)
     check_outside_git(store)
     store.mkdir(parents=True, exist_ok=True)
     with (store / ".run.lock").open("w") as lock:

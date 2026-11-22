@@ -158,6 +158,14 @@ def _publish(path: Path, payload: object) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _need_assets(given: int, minimum: object) -> None:
+    if type(minimum) is int and 0 < given < minimum:
+        raise DataError(
+            f"A screen needs at least {minimum} assets to compare, and you gave {given}. "
+            "Add more assets, or lower --min-names (the lowest is 3)."
+        )
+
+
 def _options(request: Mapping[str, Any]) -> dict[str, Any]:
     expected = {
         "lane",
@@ -190,6 +198,7 @@ def _options(request: Mapping[str, Any]) -> dict[str, Any]:
     ):
         raise DataError("symbols must be a list of nonempty identifiers")
     options["symbols"] = sorted({s.strip() for s in symbols})
+    _need_assets(len(options["symbols"]), options["min_names"])
     universe = options["universe"]
     if universe is not None and (not isinstance(universe, str) or not universe.strip()):
         raise DataError("universe must be a name")
@@ -258,6 +267,7 @@ def freeze_spec(data_dir: Path, request: Mapping[str, Any]) -> dict[str, Any]:
         memberships = ParquetStore(data_dir / "store").read_universe(options["universe"])
         memberships.sort(key=lambda item: (item.symbol, item.effective_from))
         options["symbols"] = sorted({item.symbol for item in memberships})
+        _need_assets(len(options["symbols"]), options["min_names"])
     result["memberships"] = [item.model_dump(mode="json") for item in memberships]
     result["membership_hash"] = _digest(result["memberships"])
     held = reserve.hold_many(

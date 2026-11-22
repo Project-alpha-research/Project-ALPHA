@@ -158,21 +158,24 @@ def _annotate(figure: Figure, spec: FigureSpec, axes_list: list[Axes]) -> None:
     extent = time_extent(spec)
     for number, (axes, panel) in enumerate(zip(axes_list, spec.panels, strict=True)):
         plan = panel_plan(spec, panel)
+        used: list[ps.Rect] = []
         if held is not None:
             left = float(pm.x_values((extent[0] if extent else 0.0,), "time")[0])
             lo, hi = (float(v) for v in pm.x_values(held, "time"))
             axes.set_xlim(left, hi)
             ps.held_back_band(axes, lo, hi)
+            # No callout covers the held-back band.
+            start = axes.transAxes.inverted().transform(axes.transData.transform((lo, 0.0)))[0]
+            used.append((float(start), 0.0, 1.0, 1.0))
         if number == 0 and extent is not None:
             for a, b, label in figure_bands(spec):
                 lo, hi = (float(v) for v in pm.x_values((a, b), "time"))
-                ps.band(axes, lo, hi, label, y=0.93)
+                used.append(ps.band(axes, lo, hi, label, y=0.93))
         for a, b, label in plan.bands:
             lo, hi = (float(v) for v in pm.x_values((a, b), spec.x_kind))
-            ps.band(axes, lo, hi, label, y=0.86)
+            used.append(ps.band(axes, lo, hi, label, y=0.86))
         axes.get_xlim()
         axes.get_ylim()
-        used = [1] if panel.legend and panel.legend_entries else []
         if axes.images:
             _outline_cells(axes, plan)
             continue

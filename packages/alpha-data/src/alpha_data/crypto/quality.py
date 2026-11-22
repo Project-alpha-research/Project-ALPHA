@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Iterator
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final, cast
 
@@ -17,7 +16,6 @@ from .contracts import (
     CryptoDatasetIdentityV1,
     CryptoQualityReportV1,
     QualificationState,
-    content_digest,
     require_utc,
 )
 
@@ -25,131 +23,11 @@ QUALITY_METHOD_VERSION: Final = "crypto-quality-v1"
 _SHA256: Final = re.compile(r"^[0-9a-f]{64}$")
 
 
-@dataclass(frozen=True)
-class MarketComparisonSummaryV1:
-    comparison_id: str
-    primary_sha256: str
-    comparison_sha256: tuple[tuple[str, str], ...]
-    state: QualificationState
-    max_abs_divergence_bps: float
-    matched_observations: int
-    missing_observations: int
-    warning_bps: float
-    quarantine_bps: float
-    schema_version: int = 1
-
-    def to_dict(self) -> dict[str, object]:
-        return {
-            "schema_version": 1,
-            "comparison_id": self.comparison_id,
-            "primary_sha256": self.primary_sha256,
-            "comparison_sha256": [list(item) for item in self.comparison_sha256],
-            "state": self.state,
-            "max_abs_divergence_bps": self.max_abs_divergence_bps,
-            "matched_observations": self.matched_observations,
-            "missing_observations": self.missing_observations,
-            "warning_bps": self.warning_bps,
-            "quarantine_bps": self.quarantine_bps,
-        }
-
-
 def _source_column(provider: str, value_column: str) -> str:
     provider_key = re.sub(r"[^a-z0-9]+", "_", provider.lower()).strip("_")
     if not provider_key:
         raise DataError("crypto comparison provider is invalid")
     return f"{provider_key}_{value_column}"
-
-
-def compare_market_observations(
-    *,
-    primary: pl.DataFrame,
-    primary_provider: str,
-    primary_sha256: str,
-    comparisons: tuple[tuple[str, str, pl.DataFrame], ...],
-    timestamp_column: str,
-    value_column: str,
-    warning_bps: float,
-    quarantine_bps: float,
-) -> tuple[pl.DataFrame, MarketComparisonSummaryV1]:
-    """Compare exact observations while preserving the primary as primary."""
-    if _SHA256.fullmatch(primary_sha256) is None or any(
-        _SHA256.fullmatch(digest) is None for _, digest, _ in comparisons
-    ):
-        raise DataError("crypto comparison source hash is invalid")
-    if not 0 < warning_bps < quarantine_bps:
-        raise DataError("crypto comparison thresholds are invalid")
-    if not comparisons:
-        raise DataError("crypto comparison requires at least one independent source")
-    required = {timestamp_column, value_column}
-    if not required.issubset(primary.columns):
-        raise DataError("crypto comparison primary columns are missing")
-    primary_name = _source_column(primary_provider, value_column)
-    if primary.select(pl.struct((timestamp_column,)).is_duplicated().any()).item():
-        raise DataError("crypto comparison primary timestamps are duplicated")
-    diagnostics = primary.select(
-        timestamp_column, pl.col(value_column).cast(pl.Float64).alias(primary_name)
-    )
-    if diagnostics[primary_name].null_count() or any(
-        value <= 0 or not math.isfinite(value) for value in diagnostics[primary_name].to_list()
-    ):
-        raise DataError("crypto comparison primary values are invalid")
-    source_hashes: list[tuple[str, str]] = []
-    aliases = {primary_name}
-    missing = 0
-    matched = 0
-    max_abs = 0.0
-    for provider, digest, frame in comparisons:
-        if not required.issubset(frame.columns):
-            raise DataError("crypto comparison source columns are missing")
-        alias = _source_column(provider, value_column)
-        if alias in aliases:
-            raise DataError("crypto comparison provider aliases collide")
-        aliases.add(alias)
-        if frame.select(pl.struct((timestamp_column,)).is_duplicated().any()).item():
-            raise DataError("crypto comparison timestamps are duplicated")
-        source = frame.select(timestamp_column, pl.col(value_column).cast(pl.Float64).alias(alias))
-        diagnostics = diagnostics.join(source, on=timestamp_column, how="left", validate="1:1")
-        divergence = f"{alias}_divergence_bps"
-        diagnostics = diagnostics.with_columns(
-            pl.when(pl.col(alias).is_not_null())
-            .then(((pl.col(alias) / pl.col(primary_name) - 1) * 10_000).round(10))
-            .otherwise(None)
-            .alias(divergence)
-        )
-        missing += diagnostics[alias].null_count()
-        values = [value for value in diagnostics[divergence].to_list() if value is not None]
-        matched += len(values)
-        if values:
-            max_abs = max(max_abs, max(abs(value) for value in values))
-        source_hashes.append((provider, digest))
-    state: QualificationState
-    if max_abs > quarantine_bps:
-        state = "quarantined"
-    elif max_abs > warning_bps or missing:
-        state = "warning"
-    else:
-        state = "qualified"
-    identity_body = {
-        "schema_version": 1,
-        "primary_provider": primary_provider,
-        "primary_sha256": primary_sha256,
-        "comparison_sha256": source_hashes,
-        "timestamp_column": timestamp_column,
-        "value_column": value_column,
-        "warning_bps": warning_bps,
-        "quarantine_bps": quarantine_bps,
-    }
-    return diagnostics, MarketComparisonSummaryV1(
-        comparison_id=content_digest(identity_body),
-        primary_sha256=primary_sha256,
-        comparison_sha256=tuple(source_hashes),
-        state=state,
-        max_abs_divergence_bps=max_abs,
-        matched_observations=matched,
-        missing_observations=missing,
-        warning_bps=float(warning_bps),
-        quarantine_bps=float(quarantine_bps),
-    )
 
 
 def _times(frame: pl.DataFrame, column: str) -> list[datetime]:
@@ -422,8 +300,6 @@ def qualify_crypto_frame(
 
 __all__ = [
     "QUALITY_METHOD_VERSION",
-    "MarketComparisonSummaryV1",
-    "compare_market_observations",
     "qualify_crypto_frame",
 ]
 

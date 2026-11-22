@@ -1237,9 +1237,6 @@ const CRYPTO_COINGECKO_MANIFEST_ID = 'e'.repeat(64)
 const CRYPTO_COINGECKO_DETAIL_MANIFEST_ID = '4'.repeat(64)
 const CRYPTO_POOL_MANIFEST_ID = 'f'.repeat(64)
 const CRYPTO_SOLANA_POOL_MANIFEST_ID = '0'.repeat(64)
-const CRYPTO_PROFILE_ID = '1'.repeat(64)
-const CRYPTO_SELECTED_PROFILE_ID = '2'.repeat(64)
-const CRYPTO_PROFILE_TASK_ID = '3'.repeat(64)
 const CRYPTO_COVERAGE: components['schemas']['CryptoCoverageResponse'] = {
   verification: 'metadata_only',
   items: [
@@ -1401,34 +1398,6 @@ const CRYPTO_COVERAGE: components['schemas']['CryptoCoverageResponse'] = {
   count: 6,
   canonical_next_action: 'Select qualified families for a snapshot.',
   automatic_fallback: false,
-  execution_authority: false,
-}
-
-const CRYPTO_PROFILE_SUMMARY: components['schemas']['CryptoCoverageProfileSummaryResponse'] = {
-  profile_id: CRYPTO_PROFILE_ID,
-  as_of: '2026-08-15T00:00:00Z',
-  source_manifest_ids: ['a'.repeat(64)],
-  task_count: 1,
-  counts_by_provider: { binance: 1 },
-  counts_by_cadence: { daily: 1 },
-  counts_by_family: { market_bars: 1 },
-  execution_authority: false,
-}
-
-const CRYPTO_PROFILE_TASK: components['schemas']['CryptoCoverageTaskResponse'] = {
-  schema_version: 1,
-  task_id: CRYPTO_PROFILE_TASK_ID,
-  provider: 'binance',
-  family: 'market_bars',
-  instrument: 'BTCUSDT',
-  base_asset: 'BTC',
-  quote_asset: 'USDT',
-  category: 'spot',
-  frequency: '1d',
-  cadence: 'daily',
-  network: null,
-  metrics: [],
-  lookback_days: null,
   execution_authority: false,
 }
 
@@ -1909,19 +1878,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
       next_action: 'Freeze a snapshot bound to this exact asset-master version.',
     } satisfies components['schemas']['CryptoAssetMasterResponse']
   }
-  if (url.pathname === '/api/crypto-data/assets/contracts/ethereum/0xusdc') {
-    return {
-      schema_version: 1,
-      coingecko_id: 'usd-coin',
-      network: 'ethereum',
-      contract_address: '0xusdc',
-      native_asset: false,
-      provider_symbols: [['coingecko', 'usd-coin'], ['geckoterminal', '0xusdc']],
-      valid_from: '2026-08-15T00:00:00Z',
-      valid_to: null,
-      migration_lineage: [],
-    } satisfies components['schemas']['CryptoAssetIdentityResponse']
-  }
   if (url.pathname === '/api/crypto-data/storage') {
     if (options.storageUnmounted) {
       return {
@@ -1991,62 +1947,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
       research_authority: false, execution_authority: false,
       next_action: 'Bind this feature beside its exact frozen crypto snapshot.',
     } satisfies components['schemas']['CryptoFeatureResponse']
-  }
-  if (url.pathname === '/api/crypto-data/profiles' && route.request().method() === 'GET') {
-    return {
-      items: [CRYPTO_PROFILE_SUMMARY], count: 1, execution_authority: false,
-      next_action: 'Create a fresh profile after catalog membership changes.',
-    } satisfies components['schemas']['CryptoCoverageProfileListResponse']
-  }
-  if (url.pathname === '/api/crypto-data/profiles' && route.request().method() === 'POST') {
-    return {
-      ...CRYPTO_PROFILE_SUMMARY, state: 'frozen', binance_hourly_scopes: [],
-      binance_hourly_missing_scopes: [['spot', 'USDT']],
-      next_action: 'Acquire the complete prior-day scope.',
-    } satisfies components['schemas']['CryptoCoverageProfileCreateResponse']
-  }
-  if (url.pathname === `/api/crypto-data/profiles/${CRYPTO_PROFILE_ID}`) {
-    return {
-      ...CRYPTO_PROFILE_SUMMARY,
-      offset: Number(url.searchParams.get('offset') ?? 0),
-      limit: Number(url.searchParams.get('limit') ?? 50),
-      filtered_count: 1,
-      filters: {
-        provider: url.searchParams.get('provider'),
-        family: url.searchParams.get('family'),
-        category: url.searchParams.get('category'),
-        frequency: url.searchParams.get('frequency'),
-        cadence: url.searchParams.get('cadence'),
-      },
-      items: [CRYPTO_PROFILE_TASK], has_more: false, next_offset: null,
-      next_action: 'Run only the intended bounded cadence batch.',
-    } satisfies components['schemas']['CryptoCoverageProfilePageResponse']
-  }
-  if (url.pathname === `/api/crypto-data/profiles/${CRYPTO_PROFILE_ID}/batches`) {
-    return { job_id: 'crypto-profile-job', status: 'running', session_id: null }
-  }
-  if (url.pathname === '/api/crypto-data/batches') {
-    return {
-      items: [], count: 0, execution_authority: false,
-      next_action: 'Resume only a failed batch after resolving its blocker.',
-    } satisfies components['schemas']['CryptoCoverageBatchListResponse']
-  }
-  if (url.pathname === `/api/crypto-data/profiles/${CRYPTO_PROFILE_ID}/liquidity-membership`) {
-    return {
-      manifest_id: '4'.repeat(64), profile_id: CRYPTO_PROFILE_ID,
-      session: '2026-08-14', category: 'spot', quote_asset: 'USDT',
-      universe_count: 1, selected_count: 1, state: 'frozen', execution_authority: false,
-      next_action: 'Create a fresh profile.',
-    } satisfies components['schemas']['CryptoLiquidityFreezeResponse']
-  }
-  if (url.pathname === `/api/crypto-data/profiles/${CRYPTO_PROFILE_ID}/one-minute-selection`) {
-    return {
-      profile_id: CRYPTO_SELECTED_PROFILE_ID, base_profile_id: CRYPTO_PROFILE_ID,
-      selection_manifest_id: '5'.repeat(64), project_id: RESEARCH_CASE.project_id,
-      case_revision: RESEARCH_PROPOSAL_OPTIONS.case_revision, selected_count: 1,
-      frequency: '1m', acquisition_window: 'previous_complete_hour', state: 'frozen',
-      execution_authority: false, next_action: 'Run the intended hourly page.',
-    } satisfies components['schemas']['CryptoOneMinuteSelectionResponse']
   }
   if (url.pathname === '/api/crypto-data/estimate') {
     return {
@@ -2125,14 +2025,6 @@ function responseFor(route: Route, options: MockOptions): unknown {
       },
       next_action: 'Select this dataset for a frozen snapshot.',
     } satisfies components['schemas']['CryptoQualityResponse']
-  }
-  if (url.pathname === '/api/crypto-data/assets/BTC') {
-    return {
-      schema_version: 1,
-      coingecko_id: 'bitcoin', network: 'bitcoin', contract_address: null,
-      native_asset: true, provider_symbols: [['bybit', 'BTC']],
-      valid_from: '2009-01-03T00:00:00Z', valid_to: null, migration_lineage: [],
-    } satisfies components['schemas']['CryptoAssetIdentityResponse']
   }
   if (url.pathname === `/api/research/cases/${RESEARCH_CASE.project_id}/context-packets`) {
     return { items: [RESEARCH_PACKET], limit: 50, offset: 0 }
@@ -3092,9 +2984,6 @@ export async function cryptoDataCenterJourney(page: Page): Promise<void> {
   await expect(center.getByLabel('Instrument')).toHaveValue('all')
   await center.getByRole('button', { name: 'Build from latest qualified catalogs', exact: true }).click()
   await expect(center.getByText('FROZEN · 1 contract mappings', { exact: true })).toBeVisible()
-  await center.getByLabel('Contract address').fill('0xusdc')
-  await center.getByRole('button', { name: 'Resolve exact contract', exact: true }).click()
-  await expect(center.getByText('usd-coin', { exact: true })).toBeVisible()
   await center.getByRole('button', { name: 'Verify identity map', exact: true }).click()
   await expect(center.getByText('VERIFIED · 1 contract mappings', { exact: true })).toBeVisible()
   await center.getByRole('tab', { name: 'CEX History', exact: true }).click()
@@ -3154,19 +3043,6 @@ export async function cryptoDataCenterJourney(page: Page): Promise<void> {
   await expect(center.getByText('FROZEN AND VERIFIED · funding', { exact: true })).toBeVisible()
 
   await center.getByRole('tab', { name: 'Storage & Jobs', exact: true }).click()
-  await expect(center.getByText('Default coverage profile', { exact: true })).toBeVisible()
-  await expect(center.getByText('binance 1', { exact: true })).toBeVisible()
-  await expect(center.getByText('Run only the intended bounded cadence batch.')).toBeVisible()
-  await center.getByRole('button', { name: 'Run these 1 tasks', exact: true }).click()
-  await expect(center.getByText(/Running at most 25 exact tasks/)).toBeVisible()
-  await center.getByLabel('Complete UTC session').fill('2026-08-14')
-  await center.getByRole('button', { name: 'Freeze top-liquidity membership', exact: true }).click()
-  await expect(center.getByText('FROZEN · 1 OF 1', { exact: true })).toBeVisible()
-  const oneMinuteMarket = center.locator('.crypto-market-picker label').filter({ hasText: 'BTCUSDT' })
-  await oneMinuteMarket.getByRole('checkbox').check()
-  await expect(center.getByText('SELECT A RESEARCH CASE', { exact: true })).toBeVisible()
-  await expect(center.getByRole('button', { name: 'Freeze 1 selected market', exact: true })).toBeDisabled()
-  await expect(center.getByText(new RegExp(CRYPTO_PROFILE_ID))).toBeHidden()
   await expect(center.getByText('READY', { exact: true })).toBeVisible()
   await expect(center.getByText('1.8 TB free of 2.0 TB')).toBeVisible()
   await expect(center.getByText(/\/Volumes\//)).toHaveCount(0)
@@ -3891,27 +3767,8 @@ test('the Decision tab records the final disposition with local confirmation onc
   await expectReleaseAccessibility(page)
 })
 
-test('CLI-only steps hand over the exact command with the ADR that keeps them on the CLI', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        writeText: async (text: string) => {
-          ;(window as unknown as { __copiedText: string }).__copiedText = text
-        },
-      },
-    })
-  })
+test('Governance explains local confirmation without enrollment', async ({ page }) => {
   await preparePage(page)
-  // The Data Manager's reviewed-asset recipe is a receipted CLI regeneration (ADR-0032).
-  await openTask(page, 'Data & Assets', 'Data downloads')
-  await page.getByRole('tablist', { name: 'Data Manager sections' }).getByRole('tab', { name: 'Storage' }).click()
-  await page.getByText('Add a reviewed asset — CLI recipe (nothing is changed here)').click()
-  const step = page.getByRole('group', { name: 'Trusted CLI step' }).first()
-  await expect(step).toContainText('ADR-0032')
-  await step.getByRole('button', { name: 'Copy command' }).click()
-  await expect(step.getByRole('button', { name: 'Copied' })).toBeVisible()
-  expect(await page.evaluate(() => (window as unknown as { __copiedText?: string }).__copiedText)).toContain('alpha crypto-data asset-master-create')
   // Governance explains local confirmation without requiring enrollment.
   await page.getByRole('button', { name: 'Governance' }).click()
   await page.getByRole('region', { name: 'Governance' }).getByRole('button', { name: 'Owner confirmation' }).click()
@@ -4011,36 +3868,6 @@ test('a running case offers confirmed pause and cancel where the next action is 
   await expect.poll(() => challenge).not.toBeNull()
   expect(challenge).toMatchObject({ action_type: 'pause_research', project_id: RESEARCH_CASE.project_id })
   expect(challenge).not.toHaveProperty('actor')
-})
-
-test('DefiLlama pool selection sets exact UUID with native cadence', async ({ page }) => {
-  const pool = 'db678df9-3281-4bc2-a8bb-01160ffd6d48'
-  await preparePage(page, { extraGet: {
-    '/api/crypto-data/catalog': { families: [
-      { family: 'protocol_tvl', provider: 'defillama', role: 'primary_acquisition' },
-      { family: 'yield_pools', provider: 'defillama', role: 'primary_acquisition' },
-      { family: 'yield_history', provider: 'defillama', role: 'primary_acquisition' },
-    ], automatic_fallback: false, execution_authority: false, next_action: 'Acquire data' },
-    '/api/crypto-data/yield-pools': { state: 'available', manifest_id: 'a'.repeat(64), captured_at: '2026-10-02T00:00:00Z', total_matches: 1,
-      items: [{ pool_id: pool, project: 'aave-v3', chain: 'Ethereum', symbol: 'WEETH', tvl_usd: 100, apy: 2.5 }], next_action: 'Select pool' },
-  } })
-  await openDocument(page, 'Funding')
-  const center = page.getByRole('region', { name: 'Crypto Data Center' })
-  await center.getByRole('tab', { name: 'DeFi Fundamentals', exact: true }).click()
-  await expect(center.getByLabel('Frequency')).toHaveValue('1d')
-  await expect(center.getByLabel('Protocol slug')).toHaveValue('aave')
-  await center.getByLabel('Dataset family').selectOption('yield_pools')
-  await expect(center.getByLabel('Frequency')).toHaveValue('catalog_snapshot')
-  await center.getByLabel('Dataset family').selectOption('yield_history')
-  await expect(center.getByRole('button', { name: 'Acquire & qualify', exact: true })).toBeDisabled()
-  await expect(center.getByRole('combobox', { name: 'Pool', exact: true })).toBeEnabled()
-  await center.getByLabel('Search stored pools').fill('aave')
-  await expect(center.getByRole('combobox', { name: 'Pool', exact: true })).toBeEnabled()
-  await center.getByRole('combobox', { name: 'Pool', exact: true }).selectOption(pool)
-  await expect(center.getByLabel('Pool UUID')).toHaveValue(pool)
-  await expect(center.getByLabel('Frequency')).toHaveValue('1d')
-  await expect(center.getByRole('button', { name: 'Acquire & qualify', exact: true })).toBeEnabled()
-  await expect(center.getByRole('button', { name: 'Estimate storage', exact: true })).toHaveCount(0)
 })
 
 test('Data Manager Snapshots tab lists snapshots and Verify runs a data job', async ({ page }) => {

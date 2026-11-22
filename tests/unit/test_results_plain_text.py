@@ -77,7 +77,7 @@ def test_results_by_symbol_prints_a_table_with_headers(home: Path, answer: str) 
     out = CliRunner().invoke(app, ["results", "--symbol", "SPY"]).output
     head = out.splitlines()[0]
     assert "symbol" in head and "OOS Sharpe" in head and "labels" in head
-    assert "['" not in out and "Total trials: 1" in out
+    assert "['" not in out and "Tries on SPY: 1 try" in out
 
 
 def test_table_and_summary_helpers_show_a_missing_value_as_a_dash() -> None:

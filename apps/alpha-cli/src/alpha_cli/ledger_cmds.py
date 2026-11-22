@@ -190,16 +190,7 @@ def _run(
 def _totals(snapshot: LedgerSnapshot) -> dict[str, Any]:
     result = trials_for_deflation(snapshot, "")
     total, unknown = result["all_trials"], result["unknown_rows"]
-    rows = len(snapshot.records) + len(snapshot.unknown)
-    # Repeats of one try are rows but not new trials: say both numbers, so the table matches.
-    text = (
-        f"{total} trials"
-        if rows == total
-        else (
-            f"{rows} rows recorded; {total} count as separate trials "
-            "(a repeat of one try counts once)"
-        )
-    )
+    text = f"{total} trials"
     if unknown:
         text += f", including {unknown} rows ALPHA could not interpret (counted anyway)"
     return {"all_trials": total, "unknown_rows": unknown, "trials_text": text}

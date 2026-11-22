@@ -264,19 +264,6 @@ def test_the_default_list_keeps_a_share_for_every_kind(
     assert "Showing 3 of 7 rows" in result.output
 
 
-def test_the_summary_line_says_rows_and_trials_apart(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    home, rd = example(tmp_path)
-    monkeypatch.setenv("ALPHA_DATA_DIR", str(home))
-    monkeypatch.setattr(
-        "alpha_cli.ledger_cmds.trials_for_deflation",
-        lambda snapshot, family: {"all_trials": 5, "unknown_rows": 2},
-    )
-    out = CliRunner().invoke(ledger_app, ["summary", "--rdagent-ledger", str(rd)]).output
-    assert "9 rows recorded; 5 count as separate trials" in out
-
-
 def test_the_default_list_never_exceeds_the_limit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

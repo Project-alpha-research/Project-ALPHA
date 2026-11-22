@@ -574,4 +574,15 @@ def run(
         result = ml_run.run_spec(spec, data_dir=AlphaSettings().data_dir, as_of=as_of)
     except (DataError, MLContractError, ml_run.MlRunError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    _emit(result, as_json=as_json)
+    if as_json:
+        _emit(result, as_json=True)
+        return
+    from alpha_cli.ml_reading import ml_reading, run_text
+    from alpha_cli.run_store import find_run_dir, read_manifest
+
+    home = AlphaSettings().data_dir
+    rdir = find_run_dir(home, result["run_id"])
+    if rdir is None:
+        raise typer.BadParameter(f"the stored run {result['run_id']} cannot be found")
+    reading = ml_reading(home, rdir, read_manifest(rdir))
+    typer.echo(run_text(result, reading["sentence"], reading["folds"]))

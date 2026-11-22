@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Any
 
-from scipy import stats
+from scipy import special, stats
 
 from alpha_cli.toolbox.contract import Output, Param, Result, Value
 from alpha_cli.toolbox.families.overfit_controls_base import (
@@ -101,9 +101,12 @@ def haircut(inputs: Inputs, params: dict[str, Any], rng: Generator | None) -> Re
     if data.sharpe <= 0.0:
         return blank(keys, POOR, sharpe=data.sharpe, trials=count, bars=data.bars)
     t_stat = data.sharpe_bar * math.sqrt(data.bars)
-    p_value = 2.0 * float(stats.norm.sf(t_stat))
-    adjusted = min(1.0, count * p_value)
-    shrunk = float(stats.norm.isf(adjusted / 2.0)) / math.sqrt(data.years)
+    # Work on the log of the tail so a very large t-statistic does not underflow to zero.
+    log_p = math.log(2.0) + float(stats.norm.logsf(t_stat))
+    log_adjusted = min(0.0, math.log(count) + log_p)
+    p_value, adjusted = math.exp(log_p), math.exp(log_adjusted)
+    adjusted_t = -float(special.ndtri_exp(log_adjusted - math.log(2.0)))
+    shrunk = adjusted_t / math.sqrt(data.years)
     values: dict[str, Value] = {
         "sharpe": data.sharpe,
         "trials": count,

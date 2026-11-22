@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal
 
+import numpy as np
+
 from alpha_cli.toolbox.contract import Output, Param, Result, ToolSpec
 
 if TYPE_CHECKING:
@@ -108,7 +110,10 @@ def closed_trades(inputs: Inputs) -> FloatArray:
             raise ValueError(
                 "Closed trades require entry before exit within the recorded run period"
             )
-    return frame.sort("entry_ts", maintain_order=True)["realized_pnl"].to_numpy()
+    profits = frame.sort("entry_ts", maintain_order=True)["realized_pnl"].to_numpy()
+    if not np.isfinite(profits).all():
+        raise ValueError("Closed trades require finite realized profits")
+    return profits
 
 
 def check(

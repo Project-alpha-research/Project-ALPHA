@@ -384,3 +384,21 @@ def test_a_negative_sharpe_has_no_haircut(tmp_path: Path) -> None:
 
 def test_the_history_dates_stay_inside_the_run() -> None:
     assert START < END
+
+
+def test_haircut_survives_a_very_large_t_statistic(tmp_path: Path) -> None:
+    data = np.random.default_rng(8).normal(0.02, 0.01, 400)  # t-statistic near 40
+    prepare(tmp_path, data)
+    values = go(tmp_path, HAIRCUT, "n_trials=1")["values"]
+    assert values["t_stat"] > 30
+    assert values["adjusted_sharpe"] == pytest.approx(values["sharpe"], rel=1e-9)
+    assert values["haircut"] == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_non_finite_trade_profits_fail_loud(bad: float, tmp_path: Path) -> None:
+    prepare(tmp_path)
+    folder = tmp_path / "runs" / RUN
+    write_trades(folder, [1.0, bad, -1.0], ["BUY"] * 3)
+    with pytest.raises(SpineError, match="finite"):
+        go(tmp_path, TRADES)

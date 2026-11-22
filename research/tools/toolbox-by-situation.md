@@ -16,22 +16,27 @@ A check gives a reading in context, never a pass or fail. Any check may run at a
 Choose checks before you see results when you can: `alpha tool declare <run_id> --set <name>`.
 The result is then marked `declared`, otherwise `exploratory`. Nothing is refused. `alpha tool results <run_id>` shows the counts.
 <!-- situations:begin -->
-- The result looks too good: `robustness.start_end_dates`, `trades.concentration`, `context.published_factors`, `resampling.sharpe_interval`,
-  `resampling.drawdown_distribution`, `overfit.deflated_sharpe`
-- The result looks too good after many tries: `overfit.deflated_sharpe`
+- The result looks too good: `overfit_controls.min_backtest_length`, `overfit_controls.noise_best_sharpe`, `overfit_controls.required_history`,
+  `overfit_controls.shrunk_sharpe`, `overfit_controls.probabilistic_sharpe`, `overfit_controls.min_track_record`, `overfit_controls.haircut_sharpe`,
+  `overfit_controls.deflated_at_tries`, `overfit_controls.t_stat_hurdle`, `overfit_controls.sequential_test`, `robustness.start_end_dates`,
+  `trades.concentration`, `context.published_factors`, `resampling.sharpe_interval`, `resampling.drawdown_distribution`, `overfit.deflated_sharpe`
+- The result looks too good after many tries: `overfit_controls.min_backtest_length`, `overfit_controls.noise_best_sharpe`, `overfit_controls.haircut_sharpe`,
+  `overfit_controls.deflated_at_tries`, `overfit_controls.t_stat_hurdle`, `overfit.deflated_sharpe`
 - Big drawdown, or how deep the drop could get: `performance.downside_ratios`, `resampling.drawdown_distribution`, `resampling.block_bootstrap_paths`,
   `resampling.student_t_paths`
 - How wide is the return range: `resampling.sharpe_interval`, `resampling.return_interval`, `resampling.block_bootstrap_paths`, `resampling.student_t_paths`
 - Works in some years or windows only: `market.vol_regimes`, `market.changepoints`, `robustness.start_end_dates`
 - Does it earn in calm or turbulent markets: `market.vol_regimes`
 - When did the behaviour change: `market.changepoints`
-- Few trades: `trades.concentration`, `resampling.sharpe_interval`, `resampling.return_interval`, `trades.dependence`
+- Few trades: `overfit_controls.trade_count`, `overfit_controls.sequential_test`, `trades.concentration`, `resampling.sharpe_interval`,
+  `resampling.return_interval`, `trades.dependence`
 - Profit from a handful of trades: `trades.concentration`
 - Wins and losses cluster or alternate: `trades.dependence`
 - Which side earned the profit: `trades.side_contribution`
 - Fragile to costs: `costs.break_even`
 - Is this just the market going up: `market.attribution`, `costs.break_even`, `context.published_factors`
-- Return compared with the risk taken: `performance.downside_ratios`
+- Return compared with the risk taken: `overfit_controls.required_history`, `overfit_controls.shrunk_sharpe`, `overfit_controls.probabilistic_sharpe`,
+  `overfit_controls.min_track_record`, `performance.downside_ratios`
 - Does it hold up out of sample: No toolbox check yet. `alpha test` reports the out-of-sample numbers.
 - Would a slightly different data feed change the answer: No toolbox check yet. `alpha data health <ASSET>` reports the data's faults.
 - Is this just a known published factor: `context.published_factors`

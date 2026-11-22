@@ -25,7 +25,7 @@ from alpha_cli.spine.diagnose import staged_run
 from alpha_cli.spine.errors import SpineError
 from alpha_cli.spine.ledger import append_trial, read_trials
 from alpha_cli.spine.reading import reading_word, stored_reading
-from alpha_cli.spine.recheck import recheck_one
+from alpha_cli.spine.recheck import frozen_costs, recheck_one
 from alpha_cli.spine.run import (
     assemble_run_spec,
     gauntlet_knobs,
@@ -136,6 +136,7 @@ def _compute(home: Path, frozen: Frozen, receipt: dict[str, Any]) -> dict[str, A
         {"research_cutoff": None, "confirmation": receipt["receipt_id"], "of": frozen.run_id},
         ppy_given=(frozen.periods_per_year, frozen.periods_per_year_basis),
     )
+    prepared = frozen_costs(frozen.idea, prepared, _artifacts.run_dir(home, frozen.run_id), result)
     rdir = Path(result["run_dir"])
     if (rdir / "manifest.json").is_file():  # a resumed run that was already stored
         return _artifacts.read_manifest(rdir)

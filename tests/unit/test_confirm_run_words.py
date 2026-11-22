@@ -87,3 +87,27 @@ def test_an_older_run_of_the_test_names_the_newest_run(
     assert f"alpha confirm run {newer}" in ran.output and "No slot was used." in ran.output
     assert "0 differences" not in ran.output and SPENDING not in ran.output
     assert reserved_slots.receipts(tmp_path) == []
+
+
+def test_the_final_check_keeps_the_class_costs_the_stored_test_used(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from dataclasses import replace
+
+    from alpha_cli.spine import cost_classes
+    from alpha_cli.spine.facts import read_json
+
+    run_id = _home(tmp_path, monkeypatch)
+    stored = read_json(tmp_path / "runs" / run_id / "manifest.json")["spine"]["costs"]
+    assert stored["asset_class"] == "us_large_etf"
+    row = cost_classes.ROWS["us_large_etf"]
+    # The class table changes after the test: the frozen test keeps the costs it was tested with.
+    monkeypatch.setitem(cost_classes.ROWS, "us_large_etf", replace(row, fee_bps=7.0))
+    planned = CliRunner().invoke(confirm_cmds.confirm_app, ["plan", run_id])
+    assert planned.exit_code == 0, planned.output
+    assert f"costs {stored['fee_bps']} bps fee and {stored['slippage_bps']} bps" in planned.output
+    ran = CliRunner().invoke(confirm_cmds.confirm_app, ["run", run_id, "--json"])
+    assert ran.exit_code == 0, ran.output
+    reserved = reserved_slots.receipts(tmp_path)[0]["result"]["reserved"]["run_id"]
+    used = read_json(tmp_path / "runs" / reserved / "manifest.json")["spine"]["costs"]
+    assert (used["fee_bps"], used["slippage_bps"]) == (stored["fee_bps"], stored["slippage_bps"])

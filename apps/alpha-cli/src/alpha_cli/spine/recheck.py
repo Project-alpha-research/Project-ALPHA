@@ -122,8 +122,9 @@ def _earlier_ledger(home: Path, scratch: Path, upto: int) -> None:
     target.write_bytes(b"".join(lines[: upto - 1]))
 
 
-def _frozen_costs(idea: IdeaSpec, prepared: Any, run_dir: Path, result: dict[str, Any]) -> Any:
-    """A class-default run is rechecked with the costs it stored, never with today's table."""
+def frozen_costs(idea: IdeaSpec, prepared: Any, run_dir: Path, result: dict[str, Any]) -> Any:
+    """A class-default run is rechecked (and confirmed) with the costs it stored, never with
+    today's table."""
     if not idea.costs_class_default:
         return prepared
     spine = read_json(run_dir / "manifest.json").get("spine")
@@ -145,7 +146,7 @@ def _compute(
 ) -> dict[str, Any]:
     run_id, index = stored
     current = prepared.identity.execution_fingerprint
-    prepared = _frozen_costs(idea, prepared, _artifacts.run_dir(home, run_id), result)
+    prepared = frozen_costs(idea, prepared, _artifacts.run_dir(home, run_id), result)
     # The stored run id seeds the price-noise copies: the same seed, so the same test again,
     # even when the code (and so a new run id) changed.
     prepared = replace(prepared, identity=replace(prepared.identity, run_id=run_id))

@@ -237,6 +237,18 @@ def trade_rate(home: Path, frozen: Frozen) -> dict[str, Any]:
     }
 
 
+def _costs_used(home: Path, frozen: Frozen) -> dict[str, Any]:
+    """The spec's costs, or for a class-default spec the class costs the stored run used."""
+    costs: dict[str, Any] = frozen.idea.costs.model_dump(mode="json")
+    if frozen.idea.costs_class_default:
+        manifest = read_json(_artifacts.run_dir(home, frozen.run_id) / "manifest.json")
+        used = (manifest.get("spine") or {}).get("costs")
+        if not isinstance(used, dict):
+            raise ValueError(f"stored run {frozen.run_id} takes class costs but stored none")
+        costs.update(fee_bps=used["fee_bps"], slippage_bps=used["slippage_bps"])
+    return costs
+
+
 def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[str, Any]:
     """What would be tested and what it costs. Read-only: it writes nothing anywhere."""
     frozen = frozen_test(home, run_id, reserved_end=reserved_end)
@@ -250,7 +262,7 @@ def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[st
         "rule": {
             "kind": frozen.rule,
             "params": frozen.idea.rule.params,
-            "costs": frozen.idea.costs.model_dump(mode="json"),
+            "costs": _costs_used(home, frozen),
             "name": frozen.idea.name,
         },
         "slots": {"used": used, "left": reserved_slots.SLOTS - used, "total": reserved_slots.SLOTS},

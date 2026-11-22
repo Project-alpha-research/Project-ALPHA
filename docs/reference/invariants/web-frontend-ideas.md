@@ -17,5 +17,5 @@ What must not break when changing the Ideas page. The rest of the browser app is
 - The story column: idea, hypothesis, rule as built (exact spec in a disclosure), data, tests (a click selects a run), charts, checks, tools,
   RD-Agent (the journeys linked with `alpha idea link --rdagent`, each with its stored steps), forward follow, open points.
   Each step has an empty state in words.
-- Charts are the real `FigureCard` figures of the selected run, full width, with their summary and "Expand". Checks reuse `ReadingBlock` and `Gates`.
+- Charts are the real `FigureCard` figures of the selected run, full width, with their summary and "Open full screen". Checks reuse `ReadingBlock` and `Gates`.
   Under "no research cases yet": the card count, newest card and a link. Enforced by `src/panels/idea/*.test.ts(x)`, `e2e/idea-workspace.spec.ts`.

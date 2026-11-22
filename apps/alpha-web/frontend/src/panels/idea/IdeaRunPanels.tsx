@@ -39,7 +39,7 @@ export function RunCharts({ run }: { run: IdeaTest }) {
   if (!items.length) return <p className="idea-empty">The figure catalogue lists none of this run’s figures as drawable.</p>
   return (
     <div className="idea-figures">
-      <p className="muted">Each chart is drawn from the stored run, full width. “Expand” opens it full screen.</p>
+      <p className="muted">Each chart is drawn from the stored run, full width. “Open full screen” shows it large.</p>
       {items.map(item => (
         <section key={item.figure_id} className="idea-figure" aria-label={item.title}>
           <h4>{item.title}</h4>

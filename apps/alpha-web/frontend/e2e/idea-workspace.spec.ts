@@ -79,7 +79,7 @@ test('the list opens one page that tells the whole story, and a click on a test 
   await expect(page.getByRole('heading', { name: `Charts for run ${RUN_A.slice(0, 8)}` })).toBeVisible()
   await expect(page.getByRole('heading', { name: `Checks for run ${RUN_A.slice(0, 8)}` })).toBeVisible()
   await expect(page.getByText('Costs would have to reach 14 basis points a side.')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Expand', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Open full screen', exact: true })).toBeVisible()
   await expect(page.locator('.idea-story')).not.toContainText(/\b(supported|rejected|verdict|profit)\b/i)
   expect(problems).toEqual([])
 })
@@ -89,7 +89,7 @@ test('a figure opens full screen and nothing on the page sticks out at phone wid
   await page.setViewportSize({ width: 390, height: 800 })
   await page.goto(`/#page=research&pane=IdeaWorkspace&idea=${CARD}`)
   await expect(page.getByRole('heading', { name: 'Quiet weeks lead to a bigger move.' })).toBeVisible()
-  await page.getByRole('button', { name: 'Expand', exact: true }).click()
+  await page.getByRole('button', { name: 'Open full screen', exact: true }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.keyboard.press('Escape')
   // The shell chrome is outside this page; the idea page itself must fit its own box.

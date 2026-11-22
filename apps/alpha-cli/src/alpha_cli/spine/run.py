@@ -433,6 +433,14 @@ def write_run(
     return manifest
 
 
+def _recorded(home: Path, run_id: object) -> bool:
+    """A non-error ledger row already records this run."""
+    return any(
+        row.get("run_id") == run_id and "error" not in (row.get("labels") or ())
+        for row in read_trials(home)
+    )
+
+
 def gauntlet_knobs(seed: int, quick: bool) -> _gauntlet.GauntletParams:
     """The engine settings of a rule test: the full gauntlet, or the small labelled one.
 
@@ -543,6 +551,18 @@ def run_idea(
                 result["error"] = f"{type(exc).__name__}: {exc}"
         if result["error"] is not None:
             result["labels"].append("error")
+        elif result.get("executed") is False and _recorded(home, result["run_id"]):
+            # An exact repeat is served from the stored run: no ledger row, so no count moves.
+            # (A repeat after a code change ran the engine again and keeps its labelled row.)
+            idea_card.note_link(home, idea.idea_card, "rule_test", result["run_id"])
+            total = len(read_trials(home))
+            for key in ("first_ts", "last_ts", "n_bars"):
+                result.pop(key)
+            continue
+        elif result.get("executed") is False:
+            # A stored run whose ledger row was never written (a stop between the two): record
+            # it now, once, as the test it is, not as a repeat of itself.
+            result["labels"] = [label for label in result["labels"] if label != "repeat"]
         row = append_trial(
             home,
             {

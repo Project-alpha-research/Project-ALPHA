@@ -219,7 +219,7 @@ def test_adding_or_removing_the_link_is_a_repeat_not_a_new_trial(
     assert len({out["test_id"] for out in outs}) == 1
     ledger = (tmp_path / "ledger" / "trials.jsonl").read_text().splitlines()
     rows = [json.loads(line) for line in ledger]
-    assert [("repeat" in row["labels"]) for row in rows] == [False, True, True]
+    assert [("repeat" in row["labels"]) for row in rows] == [False]  # repeats write no row
     # The link given on a repeat run is still recorded once, beside the stored run.
     links = (tmp_path / "ideas" / "links.jsonl").read_text().splitlines()
     assert [json.loads(line)["card"] for line in links] == [card]

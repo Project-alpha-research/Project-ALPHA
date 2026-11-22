@@ -31,6 +31,20 @@ def _echo_notes(text: str) -> None:
         typer.echo(line)
 
 
+def _reading_count(home: Path, result: dict[str, Any]) -> list[str]:
+    """The stored deflated-Sharpe count of this reading, tied to the headline count of tries."""
+    from alpha_cli import _artifacts
+    from alpha_cli.spine.facts import read_json
+    from alpha_cli.spine.tries import reading_count_sentence
+
+    if not result.get("run_id"):
+        return []
+    diagnostics = read_json(_artifacts.run_dir(home, result["run_id"]) / "diagnostics.json")
+    family = (diagnostics.get("trials") or {}).get("family")
+    said = reading_count_sentence(family, result["symbol"]) if isinstance(family, dict) else None
+    return [said] if said else []
+
+
 def _recheck_lines(output: dict[str, Any]) -> list[str]:
     lines = []
     for result in output["results"]:
@@ -208,8 +222,12 @@ def test_rule(
     except (ValueError, OSError, DataError) as exc:
         _echo_notes(notes.getvalue())
         fail(test_error(str(exc)), json_out)
+    from alpha_cli.spine.trial_reader import spine_snapshot
+    from alpha_cli.spine.tries import sentence, tries
+
+    snapshot = spine_snapshot(settings.data_dir)
     lines = [
-        f"Test {output['test_id']} — {output['name']} (trials total: {output['trials_total']})",
+        f"Test {output['test_id']} — {output['name']}",
         "ASSET\tRUN\tREADING\tOOS SHARPE\tLABELS / ERROR",
     ]
     for result in output["results"]:
@@ -234,6 +252,9 @@ def test_rule(
             lines.append(health_sentence(result["data_health"]))
         if not result.get("executed", True) and result["run_id"]:
             lines.append("The engine did not run: the stored run for this test was returned.")
+        if result.get("symbol"):
+            lines.append(sentence(tries(snapshot, result["symbol"])))
+            lines.extend(_reading_count(settings.data_dir, result))
     emit(output, json_out=json_out, fallback="\n".join(lines))
     if not json_out:
         _echo_notes(notes.getvalue())

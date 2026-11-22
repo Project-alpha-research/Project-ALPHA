@@ -26,7 +26,8 @@ MISMATCH_EXIT = 4
 # test never read; a nightly pull moves them with no research cause. The code identity is reported
 # as `code_changed`; the data identity (`source_fingerprint`, of the rows read) is compared.
 # `artifacts.*.sha256` and `size_bytes` are file bytes: the tables are compared value by value
-# instead. `spine.test_id` names the command that wrote the run.
+# instead. `spine.test_id` names the command that wrote the run. `spine.idea_card` is a label on the
+# run (the spec excludes it from every hash): the stored link stands, a recheck never compares it.
 SKIPPED = {
     "manifest": {
         "execution_fingerprint",
@@ -35,7 +36,7 @@ SKIPPED = {
         "research_cutoff",
         "reserve",
     },
-    "spine": {"test_id", "reserve"},
+    "spine": {"test_id", "reserve", "idea_card"},
     "artifact": {"sha256", "size_bytes"},
 }
 # Statements added to new runs after older runs were written: `spine.costs` and `reading.costs`

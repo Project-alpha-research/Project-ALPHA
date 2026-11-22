@@ -189,6 +189,66 @@ def refuse_spent(frozen: Frozen, home: Path) -> None:
         )
 
 
+FEW_EXPECTED = 5  # fewer expected trades than this in the held-back span: say so before spending
+YEAR_DAYS = 365.25
+
+
+def _years(first: str, last: str) -> float:
+    return (datetime.fromisoformat(last) - datetime.fromisoformat(first)).days / YEAR_DAYS
+
+
+def trade_rate(home: Path, frozen: Frozen) -> dict[str, Any]:
+    """How often the rule traded in the earlier (scored) period, and what that implies for the
+    held-back span. From the stored run only; no held-back bar is read for this."""
+    manifest = read_json(_artifacts.run_dir(home, frozen.run_id) / "manifest.json")
+    scored = ((manifest.get("spine") or {}).get("periods") or {}).get("scored") or {}
+    trades = (scored.get("strategy") or {}).get("trades")
+    first, last = scored.get("first_ts"), scored.get("last_ts")
+    if not isinstance(trades, int) or isinstance(trades, bool) or not (first and last):
+        return {
+            "per_year": None,
+            "expected": None,
+            "warning": None,
+            "reason": "the stored run did not store its trade count and dates",
+        }
+    years = _years(str(first), str(last))
+    if years <= 0:
+        return {
+            "per_year": None,
+            "expected": None,
+            "warning": None,
+            "reason": "the earlier scored period is shorter than one day",
+        }
+    per_year = trades / years
+    expected = per_year * _years(frozen.reserved_first, frozen.reserved_end)
+    warning = (
+        f"Expect about {expected:.1f} trades in the held-back span: with fewer than "
+        f"{FEW_EXPECTED}, the final check can tell very little."
+        if expected < FEW_EXPECTED
+        else None
+    )
+    return {
+        "trades": trades,
+        "years": years,
+        "per_year": per_year,
+        "expected": expected,
+        "warning": warning,
+        "reason": None,
+    }
+
+
+def _costs_used(home: Path, frozen: Frozen) -> dict[str, Any]:
+    """The spec's costs, or for a class-default spec the class costs the stored run used."""
+    costs: dict[str, Any] = frozen.idea.costs.model_dump(mode="json")
+    if frozen.idea.costs_class_default:
+        manifest = read_json(_artifacts.run_dir(home, frozen.run_id) / "manifest.json")
+        used = (manifest.get("spine") or {}).get("costs")
+        if not isinstance(used, dict):
+            raise ValueError(f"stored run {frozen.run_id} takes class costs but stored none")
+        costs.update(fee_bps=used["fee_bps"], slippage_bps=used["slippage_bps"])
+    return costs
+
+
 def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[str, Any]:
     """What would be tested and what it costs. Read-only: it writes nothing anywhere."""
     frozen = frozen_test(home, run_id, reserved_end=reserved_end)
@@ -202,12 +262,13 @@ def plan(home: Path, run_id: str, *, reserved_end: str | None = None) -> dict[st
         "rule": {
             "kind": frozen.rule,
             "params": frozen.idea.rule.params,
-            "costs": frozen.idea.costs.model_dump(mode="json"),
+            "costs": _costs_used(home, frozen),
             "name": frozen.idea.name,
         },
         "slots": {"used": used, "left": reserved_slots.SLOTS - used, "total": reserved_slots.SLOTS},
         "consequences": list(CONSEQUENCES),
         "earlier_reading": frozen.reading,
+        "trade_rate": trade_rate(home, frozen),
         "code_changed": frozen.code_changed,
         # Every earlier confirmation, so a near-duplicate (another asset, another rule shape) is
         # seen before a slot is spent. No similarity is computed: the owner judges.

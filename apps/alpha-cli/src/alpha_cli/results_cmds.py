@@ -166,9 +166,13 @@ def list_results(
                 for key in ("oos_sharpe", "benchmark_sharpe", "flags_count")
                 if row[key] is None
             }
-        lines.append(f"Total trials: {len(rows)}")
+        from alpha_cli.spine.trial_reader import spine_snapshot
+        from alpha_cli.spine.tries import sentence, tries
+
+        counted = tries(spine_snapshot(AlphaSettings().data_dir), symbol)
+        lines.append(sentence(counted))
         emit(
-            {"items": items, "total_trials": len(rows)},
+            {"items": items, "total_trials": len(rows), "tries": counted},
             json_out=json_out,
             fallback="\n".join(lines),
         )
@@ -244,9 +248,7 @@ def _show(home: Path, run_id: str) -> dict[str, Any]:
         "labels": labels,
         "flags": diagnostics.get("flags", []),
         "audit": diagnostics.get("audit", []),
-        "diagnostics_reason": None
-        if diagnostics
-        else "diagnostics.json is unavailable; re-run alpha test for this spec",
+        "diagnostics_reason": None if diagnostics else _no_diagnostics_reason(manifest),
         # Investigation-tool outputs live outside the immutable run directory.
         "tool_history": history(home, run_id),
         "tools": [
@@ -404,11 +406,23 @@ def _plain_audit(output: dict[str, Any]) -> dict[str, Any]:
     return {**output, "audit": audit}
 
 
+def _no_diagnostics_reason(manifest: dict[str, Any]) -> str:
+    if manifest.get("command") == "ml_replay":
+        return "this ML run has no diagnostics file; alpha report shows its stored numbers"
+    return "diagnostics.json is unavailable; re-run alpha test for this spec"
+
+
 def diagnose_run(run_id: str, json_out: bool = typer.Option(False, "--json")) -> None:
     """Read the automatic diagnostic pass and audit stored with a rule test."""
     try:
         rdir, manifest = _run(AlphaSettings().data_dir, run_id)
         if not (rdir / "diagnostics.json").exists():
+            if manifest.get("command") == "ml_replay":
+                raise SpineError(
+                    "NO_DIAGNOSTICS",
+                    f"Run {run_id} is an ML replay. It has no diagnostics file.",
+                    f"Run alpha report {run_id} for its stored numbers.",
+                )
             raise SpineError(
                 "NO_DIAGNOSTICS",
                 f"Run {run_id} has no diagnostics.json.",

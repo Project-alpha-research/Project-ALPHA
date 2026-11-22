@@ -133,8 +133,8 @@ def test_the_repeat_is_counted_once_after_a_post_boundary_append(tmp_path: Path)
     again = run_idea(_idea(), home=home, quick=True)["results"][0]
     rows = read_trials(home)
     assert "repeat" in again["labels"] and again["executed"] is False
-    assert len(rows) == 2
-    assert rows[1]["run_id"] == rows[0]["run_id"]
+    assert len(rows) == 1  # an exact repeat is served and writes no row
+    assert again["run_id"] == rows[0]["run_id"]
     count = family_count(home, "ma_cross")
     assert count.prior_trials == 1  # one distinct test, not two
 

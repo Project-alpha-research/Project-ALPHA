@@ -25,6 +25,7 @@ from alpha_cli.spine.trial_reader import (
     trials_for_deflation,
 )
 from alpha_cli.spine.trial_record import TrialRecord
+from alpha_cli.spine.tries import sentence, tries
 from alpha_core.config import AlphaSettings
 
 ledger_app = typer.Typer(help="Read all recorded trials through one unchanged-ledger view.")
@@ -85,6 +86,8 @@ def _render(output: dict[str, Any]) -> str:
     rows = [{**row, "figures": figures(row)} if row.get("measure_clock") else row for row in rows]
     # A rule test's stored status is its old letter grade: it stays in the JSON, never in the text.
     rows = [{**row, "raw_status": None} if row.get("kind") == "rule_test" else row for row in rows]
+    # Beside the headline count of tries, no other count is printed: they stay in the JSON.
+    hidden = {"rows", "mapped", "unknown", "reader_trials"} if "tries" in output else set()
     keys = [
         key
         for key in (
@@ -105,16 +108,27 @@ def _render(output: dict[str, Any]) -> str:
             "reader_trials",
             "measure_value",
         )
-        if any(key in row for row in rows)
+        if key not in hidden and any(key in row for row in rows)
     ]
     lines = ["\t".join(keys)] if keys else []
     lines.extend(
         "\t".join("" if row.get(key) is None else str(row[key]) for key in keys) for row in rows
     )
+    counted = output.get("tries")
+    if isinstance(counted, dict):
+        # One headline number; the row counts stay in the JSON for machines.
+        lines.append(sentence(counted))
+        if output.get("breakdown"):
+            lines.append(f"By kind: {json.dumps(counted['by_kind'], sort_keys=True)}")
+            lines.append(f"By family: {json.dumps(counted['by_family'], sort_keys=True)}")
+        lines.append(counted["definition"])
+        if output.get("unknown_rows"):
+            lines.append(
+                f"{output['unknown_rows']} ledger rows ALPHA could not interpret; the deflated "
+                "Sharpe counts them anyway."
+            )
     for key in (
-        "by_kind",
-        "by_outcome",
-        "family_count",
+        *(() if isinstance(counted, dict) else ("by_kind", "by_outcome", "family_count")),
         "newest_created_at",
         "evidence_found",
         "evidence_sha256_now",
@@ -122,7 +136,7 @@ def _render(output: dict[str, Any]) -> str:
     ):
         if key in output:
             lines.append(f"{key}: {json.dumps(output[key], sort_keys=True)}")
-    if "trials_text" in output:
+    if "trials_text" in output and not isinstance(counted, dict):
         lines.append(output["trials_text"])
     if "note" in output:
         lines.append(output["note"])
@@ -142,7 +156,10 @@ def _render(output: dict[str, Any]) -> str:
 
 
 def _run(
-    rdagent: Path | None, json_out: bool, action: Callable[[LedgerSnapshot, Path], dict[str, Any]]
+    rdagent: Path | None,
+    json_out: bool,
+    action: Callable[[LedgerSnapshot, Path], dict[str, Any]],
+    text: Callable[[dict[str, Any]], str] = _render,
 ) -> None:
     try:
         home = AlphaSettings().data_dir
@@ -156,7 +173,7 @@ def _run(
         output = action(snapshot, home)
         output["sources"] = [asdict(s) for s in snapshot.sources]
         output["unknown"] = [asdict(row) for row in snapshot.unknown]
-        emit(output, json_out=json_out, fallback=_render(output))
+        emit(output, json_out=json_out, fallback=text(output))
     except (ValueError, OSError) as exc:
         fail(
             exc
@@ -190,6 +207,8 @@ def _totals(snapshot: LedgerSnapshot) -> dict[str, Any]:
 
 def _summary(snapshot: LedgerSnapshot, home: Path) -> dict[str, Any]:
     return {
+        "tries": tries(snapshot),
+        "breakdown": True,
         "by_kind": dict(Counter(r.kind for r in snapshot.records)),
         "by_outcome": dict(Counter(r.outcome for r in snapshot.records)),
         "family_count": len(family_counts(snapshot)),
@@ -355,9 +374,25 @@ def families(rdagent_ledger: RD = None, json_out: JSON = False) -> None:
         return {
             "families": family_counts(snapshot),
             **_totals(snapshot),
+            "tries": tries(snapshot),
         }
 
     _run(rdagent_ledger, json_out, select)
+
+
+@ledger_app.command("tries")
+def tries_cmd(
+    asset: str = typer.Argument(..., help="The asset symbol, e.g. SPY."),
+    rdagent_ledger: RD = None,
+    json_out: JSON = False,
+) -> None:
+    """How many tries on one asset, in one sentence (the count the deflated Sharpe uses)."""
+    _run(
+        rdagent_ledger,
+        json_out,
+        lambda snapshot, home: {"tries": tries(snapshot, asset)},
+        lambda output: sentence(output["tries"]),
+    )
 
 
 @ledger_app.command("query")

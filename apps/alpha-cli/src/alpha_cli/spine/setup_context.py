@@ -19,10 +19,11 @@ import polars as pl
 
 from alpha_cli import _runner
 from alpha_cli.spine import reserve
+from alpha_cli.spine.pattern_context import PATTERN_SERIES, add_patterns
 from alpha_cli.spine.stores import ResolvedAsset
 from alpha_core import DataError
 from alpha_data.context import derived
-from alpha_data.context.attach import AttachResult, Binding, attach_context
+from alpha_data.context.attach import SELF, AttachResult, Binding, attach_context
 from alpha_data.timeframe import DAILY
 from alpha_study.setup.context import condition_counts, parse_binding
 
@@ -49,7 +50,14 @@ def bindings(spec: Any) -> dict[str, Binding]:
 def check_series(spec: Any) -> None:
     """Fail loud before any data loads when a declared series does not exist."""
     for binding in bindings(spec).values():
-        derived.series_source(binding.series)
+        if binding.series in PATTERN_SERIES:
+            if binding.key != SELF:
+                raise DataError(f"pattern series {binding.series!r} takes the key SELF")
+            continue
+        try:
+            derived.series_source(binding.series)
+        except DataError as exc:
+            raise DataError(f"{exc}; chart-pattern series: {sorted(PATTERN_SERIES)}") from exc
 
 
 def calendar_of(resolved: ResolvedAsset) -> str | None:
@@ -67,15 +75,18 @@ def attach_bindings(
     cutoff: datetime = reserve.CUTOFF,
 ) -> AttachResult:
     """The one call to `attach_context` for Setup Lab and the rule gate: daily, reserve cutoff."""
-    return attach_context(
+    tables = {a: b for a, b in binds.items() if b.series not in PATTERN_SERIES}
+    result = attach_context(
         frame,
         timeframe=DAILY,
         calendar=calendar,
-        bindings=binds,
+        bindings=tables,
         data_dir=home,
         cutoff=cutoff,
         symbol=symbol,
     )
+    patterns = {a: b.series for a, b in binds.items() if b.series in PATTERN_SERIES}
+    return add_patterns(result, patterns, symbol) if patterns else result
 
 
 def attach(spec: Any, bars: list[Any], resolved: ResolvedAsset, home: Path) -> AttachResult:

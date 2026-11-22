@@ -21,7 +21,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 
@@ -41,6 +41,12 @@ from alpha_validation import (
 if TYPE_CHECKING:
     from alpha_backtest.results import BacktestResult
     from alpha_data.store import ParquetStore
+
+
+class SignalFilter(Protocol):
+    """A causal change to a built strategy's signals (a delayed entry, a skipped trade)."""
+
+    def attach(self, strategy: Any) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -362,8 +368,12 @@ def run_full_backtest(
     dividends: Sequence[CorporateAction] = (),
     warmup_bars: Sequence[Bar] = (),
     timeframe: BarTimeframe = DAILY,
+    signal_filter: SignalFilter | None = None,
 ) -> BacktestResult:
     """Run ``spec``'s fixed-parameter strategy over ``bars`` once, net of costs.
+
+    ``signal_filter`` (toolbox re-runs only) changes the built strategy's signals causally; the
+    rest of the run is the same path.
 
     The single source of truth for both ``alpha backtest run`` and the validation gauntlet (and
     every synthetic Tier-2 path). The concrete strategy is resolved through the registry
@@ -389,6 +399,8 @@ def run_full_backtest(
         slippage_bps=spec.slippage_bps,
     )
     strategy = _strategies.build_strategy(spec, instrument.id, bar_type)
+    if signal_filter is not None:
+        signal_filter.attach(strategy)
     if warmup_bars:
         if warmup_bars[-1].ts >= bars[0].ts:
             raise DataError("warmup bars must end before the first executable bar")

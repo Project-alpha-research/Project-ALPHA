@@ -94,6 +94,13 @@ def run_inverted_backtest(
         def _net_liq(self) -> float:
             return super()._net_liq() + self._dividend_cash
 
+        def on_order_filled(self, event: Any) -> None:
+            super().on_order_filled(event)
+            # Each fill is a whole number of size increments, but a float sum of the re-sized
+            # short's fills leaves a remainder near 1e-13 units once it is covered. Read as a
+            # held long, that remainder stopped every later short: keep the count on the grid.
+            self.net_units = round(self.net_units, instrument.size_precision) + 0.0
+
         def _signal(self) -> int:
             ts = self._history_ts[-1]
             signal = signals.get(ts)

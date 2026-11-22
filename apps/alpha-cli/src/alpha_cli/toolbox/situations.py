@@ -27,6 +27,8 @@ Situation = Literal[
     "weekday-month",
     "real-fills",
     "trade-size",
+    "parameter-sensitivity",
+    "timing-sensitivity",
 ]
 
 # Tag -> the plain words an owner would use. Wording follows research/tools/README.md.
@@ -55,6 +57,8 @@ SITUATIONS: dict[Situation, str] = {
     "weekday-month": "Does it depend on the weekday or the month",
     "real-fills": "Would real fills, spreads and taxes change the result",
     "trade-size": "Could I trade this size",
+    "parameter-sensitivity": "Does the result depend on the exact settings",
+    "timing-sensitivity": "Does the result need perfect entry or exit timing",
 }
 
 # The questions added with the second batch of checks. Each lists the checks that answer it, by the

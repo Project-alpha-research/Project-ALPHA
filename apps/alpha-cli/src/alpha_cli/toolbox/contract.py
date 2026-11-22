@@ -29,6 +29,8 @@ InputKind = Literal[
     "run_set",
     "asset_bars",
     "reference_factors",
+    # The run's bars, dividends, idea spec and run spec, for checks that re-run the engine.
+    "run_rerun",
 ]
 Value = float | str | None
 # Every result built from the "reference_factors" input carries this label (the runner adds it).

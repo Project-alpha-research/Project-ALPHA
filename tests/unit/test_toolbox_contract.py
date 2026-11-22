@@ -95,6 +95,11 @@ def test_registry_entry(spec: ToolSpec, tmp_path: Path, monkeypatch: pytest.Monk
             series, positions=tuple(i // 25 % 2 == 0 for i in range(len(series.dates)))
         )
         monkeypatch.setattr(inputs, "load_run", lambda home, run_id, result=series: result)
+        if "run_rerun" in spec.needs:
+            from tests.unit.parameter_robustness_support import synthetic_series
+
+            rerun = synthetic_series(home)
+            monkeypatch.setattr(inputs, "load_rerun", lambda home, target, result=rerun: result)
         if spec.id == "context.published_factors":
             from tests.unit.published_factors_support import planted_home
 

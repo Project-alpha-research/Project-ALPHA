@@ -159,6 +159,16 @@ SYNONYMS: dict[str, tuple[Situation, ...]] = {
     "liquid": ("trade-size",),
     "volume": ("trade-size",),
     "size": ("trade-size", "bet-size"),
+    "parameter": ("parameter-sensitivity",),
+    "setting": ("parameter-sensitivity",),
+    "sensitiv": ("parameter-sensitivity",),
+    "robust": ("parameter-sensitivity",),
+    "plateau": ("parameter-sensitivity",),
+    "neighbo": ("parameter-sensitivity",),
+    "tweak": ("parameter-sensitivity",),
+    "delay": ("timing-sensitivity",),
+    "timing": ("timing-sensitivity",),
+    "late": ("timing-sensitivity",),
 }
 # Situations with no toolbox check yet: the existing commands that do answer them.
 POINTERS: dict[Situation, str] = {
@@ -177,6 +187,7 @@ INPUT_WORDS: dict[InputKind, str] = {
     "run_set": "several stored runs together",
     "asset_bars": "the price bars of another asset",
     "reference_factors": "the stored published factor returns (a later-published data set)",
+    "run_rerun": "the run's own bars, idea spec and run spec, to re-run the engine",
 }
 
 

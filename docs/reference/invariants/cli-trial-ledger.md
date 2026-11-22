@@ -122,6 +122,10 @@ their existing records. See the [discussion protocol](../../../workers/rdagent/p
   Same key as a rule test: the same screen on the same data counts once (label `repeat`). The rows are written before the result is stored
   or shown. A failed screen appends nothing. `scan replay` appends only tries not yet in the ledger (a screen stored before screens counted).
   The same-asset count counts these rows by kind; the family count does not (`spine-screen`). The screen output says how many tries it added.
+- A toolbox settings check (`parameters.one_at_a_time`, `neighbour_stability`, `worst_neighbour`, `plateau`) appends one
+  `screen_trial` row per other setting, before it runs, with the fields `tool` and `of_run`; the spec hash is the idea spec and run
+  spec. A re-run already in the ledger, from any check, is not appended again. The control checks (delays, skips, costs, start
+  date, inversion, price noise) append nothing. Rows that controls wrote before 2026-11-23 stay; they are not migrated.
 
 ## Queries and factor rows
 

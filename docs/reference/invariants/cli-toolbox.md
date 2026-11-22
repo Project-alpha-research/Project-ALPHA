@@ -82,10 +82,13 @@ the run's stored data fingerprint, the check refuses (`RUN_DATA_CHANGED`). The d
 The `parameters.*` checks (`toolbox/families/parameter_robustness*.py`) re-run through the diagnostic pass's own engine path
 (`price_noise.engine_runs`, `run_full_backtest`). Variants come from `diagnose.variant_specs` and `owner_variants`. A delayed entry, a
 delayed exit or a skipped entry wraps the built strategy's own signal causally (`parameter_robustness_signals.py`).
-Unlike the honesty rule (3) above, every re-run is a try: before it runs, it is appended to the one trial ledger as a
-`screen_trial` row ([trial ledger](cli-trial-ledger.md#screen-tries)). A re-run already in the ledger adds nothing. Each output says
-how many tries it added. A run with fewer than 10 closed trades is too little to read: nothing is run. The checks say
-in advance how many engine runs they make, and print a progress line at least every 10 seconds. See the
+A try is another setting of the rule; a control is the same rule and settings on changed data or execution. Unlike the
+honesty rule (3) above, the four settings checks (`one_at_a_time`, `neighbour_stability`, `worst_neighbour`, `plateau`) add tries:
+before it runs, each re-run is appended to the one trial ledger as a `screen_trial` row
+([trial ledger](cli-trial-ledger.md#screen-tries)), and a re-run already there adds nothing. The other seven are controls, as in
+the diagnostic pass: they write no ledger row, and each says a control is not a way to pick a better variant. Each output says
+how many engine runs it made and whether they were tries or controls. A run with fewer than 10 closed trades is too little to
+read: nothing is run. The checks say in advance how many engine runs they make, and print a progress line at least every 10 seconds. See the
 [card](../../../research/tools/toolbox-parameter-robustness.md).
 
 ## Descriptive reference reads

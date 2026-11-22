@@ -19,6 +19,8 @@ export interface Settings {
   density: Density
   explain: ExplainMode
   profile: Profile
+  /** True once the owner picked the market in the selector; an older saved Crypto default is not a choice. */
+  profileChosen: boolean
   projectModes: Record<string, WorkspaceMode>
   /** Strict recorded backtest card; opt-in, off by default. */
   backtestResultCard: boolean
@@ -39,7 +41,8 @@ const STORAGE_KEY = 'alpha.settings'
 const DEFAULTS: Settings = {
   density: 'comfortable',
   explain: 'narrative',
-  profile: 'crypto',
+  profile: 'equities',
+  profileChosen: false,
   projectModes: {},
   backtestResultCard: false,
   liveTicker: false,
@@ -65,7 +68,8 @@ export function parseSettings(raw: string | null): Settings {
     return {
       density: parsed.density === 'compact' ? 'compact' : 'comfortable',
       explain: parsed.explain === 'terse' ? 'terse' : 'narrative',
-      profile: parsed.profile === 'equities' ? 'equities' : 'crypto',
+      profile: parsed.profile === 'crypto' && parsed.profileChosen === true ? 'crypto' : 'equities',
+      profileChosen: parsed.profileChosen === true,
       backtestResultCard: parsed.backtestResultCard === true,
       liveTicker: parsed.liveTicker === true,
       overlays: {

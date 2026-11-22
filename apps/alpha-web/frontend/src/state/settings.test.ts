@@ -8,6 +8,7 @@ const settings: Settings = {
   density: 'comfortable',
   explain: 'narrative',
   profile: 'crypto',
+  profileChosen: true,
   projectModes: { advanced_project: 'advanced' },
   backtestResultCard: false,
   liveTicker: false,
@@ -33,13 +34,15 @@ describe('profile setting', () => {
     vi.unstubAllGlobals()
   })
 
-  it('defaults to crypto and falls back to it on garbage', () => {
-    expect(parseSettings(null).profile).toBe('crypto')
+  it('defaults to stocks and keeps Crypto only when the owner chose it', () => {
+    expect(parseSettings(null).profile).toBe('equities')
     expect(parseSettings('{"profile":"equities"}').profile).toBe('equities')
+    expect(parseSettings('{"profile":"crypto"}').profile).toBe('equities')
+    expect(parseSettings('{"profile":"crypto","profileChosen":true}').profile).toBe('crypto')
     expect(parseSettings('{"liveTicker":true}').liveTicker).toBe(true)
     expect(parseSettings('{"liveTicker":"yes"}').liveTicker).toBe(false)
-    expect(parseSettings('{"profile":"forex"}').profile).toBe('crypto')
-    expect(parseSettings('not json').profile).toBe('crypto')
+    expect(parseSettings('{"profile":"forex"}').profile).toBe('equities')
+    expect(parseSettings('not json').profile).toBe('equities')
   })
 
   it('mirrors the profile onto <html data-profile> at boot and on change', () => {

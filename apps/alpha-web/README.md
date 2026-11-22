@@ -56,6 +56,10 @@ grants authority.
 - The Ideas page (View → Research → Ideas) is `panels/idea/IdeaWorkspace.tsx` (sections in `IdeaSections.tsx`, run charts and checks in `IdeaRunPanels.tsx`, pure helpers in `ideaModel.ts`). It reads `GET /api/ideas` and `GET /api/ideas/{card}` (`api/ideas.py`, `api/models/ideas.py`), which relay `alpha idea list|file`. Browser spec: `e2e/idea-workspace.spec.ts`.
   Rules: [Ideas page](../../docs/reference/invariants/web-frontend-ideas.md#ideas-page), [reads](../../docs/reference/invariants/web-api-reads.md#ideas-read).
 - Setup Lab ([component page](../../docs/reference/project/components/setup-lab.md); Research → Setup Lab), Kronos Studio (View → Forecast): [fields](../../docs/reference/invariants/web-api-reads.md#reads-and-writes).
+- The recent-tests table (Overview, and Results › All tests) is `panels/RecentTests.tsx` with pure helpers in `panels/recentTestsModel.ts`. It reads
+  `GET /api/recent-runs` (`api/recent_runs.py`, `_recent_runs.py`, `api/models/recent_runs.py`). Tests: `recentTestsModel.test.ts`,
+  `tests/unit/test_web_recent_runs.py`.
+- The server runs `alpha` through its own interpreter (`_catalog.alpha_executable`), never through PATH.
 - Tests: a backend test for every route (including the CLI-failure path), a vitest model test for
   new panel logic, and a browser spec when a page's behaviour changes.
 

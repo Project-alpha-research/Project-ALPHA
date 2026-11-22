@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { CommandDef } from '../api/types'
-import { GROUP_MENU, MENUS, assignCommands, commandGroup, commandHome, menuBar } from './menuModel'
+import { GROUP_MENU, MENUS, assignCommands, commandGroup, commandHome, menuBar, visibleMenus } from './menuModel'
 
 const command = (id: string): CommandDef => ({ id, args: [], options: [], run_type: null })
 
@@ -81,9 +81,8 @@ describe('menuModel', () => {
     expect(() => assignCommands([command('quantum thing')])).toThrow(/"quantum" \(quantum thing\) has no menu/)
   })
 
-  it('lists the open documents under Window and pins Governance under View', () => {
+  it('lists the open documents under Window and pins Governance under View; no raw commands', () => {
     const menus = menuBar(
-      [command('backtest run')],
       [
         { key: 'chart', window: 'chart', title: 'Chart' },
         { key: 'report:aaaaaaaa', window: 'report', title: 'Run A' },
@@ -99,30 +98,28 @@ describe('menuModel', () => {
       { kind: 'document', key: 'chart', label: 'Chart', active: false },
       { kind: 'document', key: 'report:aaaaaaaa', label: 'Run A', active: true },
     ])
-    expect(menus.Insert[0]).toEqual({ kind: 'shell', id: 'indicators', label: 'Indicators…' })
+    expect(menus.Insert).toEqual([{ kind: 'shell', id: 'indicators', label: 'Indicators…' }])
     expect(menus.View).toEqual([
       { kind: 'open', window: 'chart', label: 'Chart' },
       { kind: 'open', window: 'governance', label: 'Governance' },
       { kind: 'shell', id: 'settings', label: 'Settings' },
     ])
-    expect(menus.Backtest).toEqual([{ kind: 'command', id: 'backtest run', label: 'backtest run' }])
-    expect(menus.Research[0]).toEqual({ kind: 'shell', id: 'new-idea', label: 'New Idea…' })
-    expect(menus.Help[0]).toEqual({ kind: 'shell', id: 'palette', label: 'Search commands  Ctrl+K' })
+    expect(menus.Backtest).toEqual([])
+    expect(menus.Research).toEqual([])
+    expect(menus.Help).toEqual([{ kind: 'shell', id: 'palette', label: 'Search  Ctrl+K' }])
+    expect(visibleMenus(menus)).toEqual(['View', 'Insert', 'Window', 'Help'])
   })
 
-  it('reflects the dock toggles and the detail mode under View', () => {
-    const menus = menuBar([], [], null, [], {
+  it('reflects the dock toggles under View', () => {
+    const menus = menuBar([], null, [], {
       docks: [
         { id: 'MarketWatch', label: 'Market Watch', open: true },
         { id: 'DataManager', label: 'Data Manager', open: false },
       ],
-      mode: { current: 'guided', advancedAvailable: false },
     })
     expect(menus.View).toEqual([
       { kind: 'dock', id: 'MarketWatch', label: 'Market Watch', open: true },
       { kind: 'dock', id: 'DataManager', label: 'Data Manager', open: false },
-      { kind: 'mode', id: 'guided', label: 'Guided', active: true, disabled: false },
-      { kind: 'mode', id: 'advanced', label: 'Advanced', active: false, disabled: true },
       { kind: 'shell', id: 'settings', label: 'Settings' },
     ])
   })
@@ -130,8 +127,6 @@ describe('menuModel', () => {
 
 describe('commandHome', () => {
   it('sends owner-authority groups to the document that performs them and data groups to the dock', () => {
-    expect(commandHome('project create')).toEqual({ kind: 'window', id: 'build' })
-    expect(commandHome('research capture')).toEqual({ kind: 'window', id: 'research' })
     expect(commandHome('provider check')).toEqual({ kind: 'window', id: 'jobs' })
     expect(commandHome('crypto-data acquire')).toEqual({ kind: 'dock', id: 'DataManager' })
     expect(commandHome('data pull')).toEqual({ kind: 'dock', id: 'DataManager' })
@@ -146,11 +141,11 @@ describe('commandHome', () => {
 
 describe('chart windows', () => {
   it('offers Tile charts as a checkbox only when the shell reports the tiling state', () => {
-    const plain = menuBar([], [], null, [])
+    const plain = menuBar([], null, [])
     expect(plain.Window.some((item) => item.kind === 'shell' && item.id === 'tile')).toBe(false)
-    const tiled = menuBar([], [], null, [], { tiled: true })
+    const tiled = menuBar([], null, [], { tiled: true })
     expect(tiled.Window[1]).toEqual({ kind: 'shell', id: 'tile', label: 'Tile charts', checked: true })
-    expect(menuBar([], [], null, [], { tiled: false }).Window[1]).toEqual({
+    expect(menuBar([], null, [], { tiled: false }).Window[1]).toEqual({
       kind: 'shell',
       id: 'tile',
       label: 'Tile charts',
@@ -171,7 +166,7 @@ it('opens RD-Agent from View and the shared command-palette document registry', 
   const { documentRoute } = await import('./workflowModel')
   const entry = DOCUMENTS.find(item => item.id === 'rdagent')
   expect(entry?.title).toBe('RD-Agent')
-  expect(menuBar([], [], null, DOCUMENTS).View).toContainEqual({ kind: 'open', window: 'rdagent', label: 'RD-Agent' })
+  expect(menuBar([], null, DOCUMENTS).View).toContainEqual({ kind: 'open', window: 'rdagent', label: 'RD-Agent' })
   expect(showsWindow('crypto', 'rdagent')).toBe(true)
   expect(showsWindow('equities', 'rdagent')).toBe(true)
   expect(documentRoute('rdagent')).toEqual({ page: 'research', pane: 'RdAgentPanel' })

@@ -243,8 +243,7 @@ def test_a_thirty_year_heatmap_keeps_every_year_and_its_numbers(tmp_path: Path) 
     for variant in ("plain", "annotated"):
         figure = draw_spec(spec, variant, explanation(spec))
         figure.canvas.draw()
-        renderer = figure.canvas.get_renderer()
-        boxes = [t.get_window_extent(renderer) for t in figure.axes[0].get_yticklabels()]
+        boxes = [t.get_window_extent() for t in figure.axes[0].get_yticklabels()]
         assert len(boxes) == 30
         assert all(
             a.y0 >= b.y1 - 1 or b.y0 >= a.y1 - 1 for a, b in zip(boxes, boxes[1:], strict=False)
